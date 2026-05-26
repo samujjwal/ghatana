@@ -29,7 +29,9 @@ public final class PhrFhirR4Server implements KernelLifecycleAware {
             new PatientFhirResourceProvider(plugin, plugin),
             new ObservationFhirResourceProvider(plugin, plugin),
             new MedicationRequestFhirResourceProvider(plugin, plugin),
-            new ImmunizationFhirResourceProvider(plugin, plugin)
+            new ImmunizationFhirResourceProvider(plugin, plugin),
+            new DiagnosticReportFhirResourceProvider(plugin, plugin),
+            new DocumentReferenceFhirResourceProvider(plugin, plugin)
         );
     }
 

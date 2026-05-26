@@ -1,12 +1,21 @@
 {
-  "generatedAt": "2026-05-25T18:02:44.799Z",
-  "pass": true,
+  "generatedAt": "2026-05-25T19:38:35.573Z",
+  "pass": false,
   "evidenceRun": {
     "generatedBy": "scripts/check-production-readiness-task-map.mjs",
     "source": "scripts/check-production-readiness-task-map.mjs",
     "command": "pnpm check:production-readiness-task-map",
-    "commit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19"
+    "commit": "bdcee47c1e304454e7af848be60d981b24da1151",
+    "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+    "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+    "targetEnvironment": "staging"
   },
+  "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+  "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+  "targetEnvironment": "staging",
+  "validationStatus": "failed",
+  "reviewDueAt": "2026-05-26T19:38:35.573Z",
+  "expiresAt": "2026-05-27T19:38:35.573Z",
   "source": {
     "taskMap": "products/data-cloud/docs/audits/PRODUCTION_READINESS_TASK_MAP.md",
     "readiness": "products/data-cloud/lifecycle/readiness-evidence.yaml",
@@ -17,7 +26,7 @@
     "releaseBlockingRows": 12,
     "requiredTestClaims": 10,
     "verifiedTestClaims": 10,
-    "violationCount": 0
+    "violationCount": 24
   },
   "tasks": [
     {
@@ -215,5 +224,30 @@
       ]
     }
   ],
-  "violations": []
+  "violations": [
+    "DC-P0-001 readiness blocked until proof passes: release-blocking evidence must be verified, got pending",
+    "DC-P0-001 readiness blocked until proof passes: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151",
+    "DC-P0-002 regenerate current-head evidence: release-blocking evidence must be verified, got pending",
+    "DC-P0-002 regenerate current-head evidence: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151",
+    "DC-P0-002 Action Plane boundary evidence: release-blocking evidence must be verified, got pending",
+    "DC-P0-002 Action Plane boundary evidence: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151",
+    "DC-P0-002 product release readiness evidence: release-blocking evidence must be verified, got pending",
+    "DC-P0-002 product release readiness evidence: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151",
+    "DC-P0-002 AI governance behavioral proof: release-blocking evidence must be verified, got pending",
+    "DC-P0-002 AI governance behavioral proof: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151",
+    "DC-P1-004 Action Plane inventory drift: release-blocking evidence must be verified, got pending",
+    "DC-P1-004 Action Plane inventory drift: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151",
+    "DC-P3-003 agent capability duplicate evidence: release-blocking evidence must be verified, got pending",
+    "DC-P3-003 agent capability duplicate evidence: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151",
+    "DC-P3-003 agent runtime test exclude evidence: release-blocking evidence must be verified, got pending",
+    "DC-P3-003 agent runtime test exclude evidence: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151",
+    "DC-P5-003 agent usage audit evidence: release-blocking evidence must be verified, got pending",
+    "DC-P5-003 agent usage audit evidence: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151",
+    "DC-P10-002 audit completeness proof: release-blocking evidence must be verified, got pending",
+    "DC-P10-002 audit completeness proof: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151",
+    "DC-P11-002 operations readiness bundle: release-blocking evidence must be verified, got pending",
+    "DC-P11-002 operations readiness bundle: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151",
+    "DC-P14-002 task-map verification evidence: release-blocking evidence must be verified, got pending",
+    "DC-P14-002 task-map verification evidence: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151"
+  ]
 }

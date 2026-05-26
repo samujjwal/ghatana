@@ -12,6 +12,8 @@ import com.ghatana.agent.obsolescence.ObsolescenceDetector;
 import com.ghatana.agent.promotion.DefaultPromotionEngine;
 import com.ghatana.agent.promotion.PromotionEngine;
 import com.ghatana.datacloud.analytics.AnalyticsQueryEngine;
+import com.ghatana.datacloud.application.DataCloudProductReleaseReadinessRepository;
+import com.ghatana.datacloud.application.ProductReleaseReadinessService;
 import com.ghatana.datacloud.api.controller.MasteryController;
 import com.ghatana.datacloud.agent.learning.delta.DataCloudLearningDeltaRepository;
 import com.ghatana.datacloud.agent.mastery.DataCloudMasteryEvidenceRepository;
@@ -113,6 +115,7 @@ import com.ghatana.datacloud.launcher.http.handlers.DataProductHandler;
 import com.ghatana.datacloud.launcher.http.handlers.InMemoryContextStore;
 import com.ghatana.datacloud.launcher.http.handlers.LineageHandler;
 import com.ghatana.datacloud.launcher.http.handlers.ProviderConformanceHandler;
+import com.ghatana.datacloud.launcher.http.handlers.ProductReleaseReadinessHandler;
 import com.ghatana.datacloud.launcher.http.handlers.SemanticSearchHandler;
 import com.ghatana.datacloud.launcher.http.handlers.SettingsHandler;
 import com.ghatana.datacloud.launcher.http.handlers.SovereignProfileHandler;
@@ -431,6 +434,7 @@ public class DataCloudHttpServer {
     private ArchiveMigrationScheduler coldMigrationScheduler; // B10: L2→L3 cold tier scheduler
     private TierMigrationHandler tierMigrationHandler; // B10: manual tier migration API (wired in start())
     private SettingsHandler settingsHandler; // admin settings CRUD API
+    private ProductReleaseReadinessHandler productReleaseReadinessHandler;
     private UserActivityHandler userActivityHandler;
     private final Map<String, Supplier<Map<String, Object>>> healthSubsystemSuppliers = new LinkedHashMap<>();
 
@@ -1655,6 +1659,12 @@ public class DataCloudHttpServer {
         settingsHandler = new SettingsHandler(httpSupport, resolvedStore);
         log.info("[SETTINGS] Settings handler configured with storage mode: {}", resolvedStore.getStorageMode());
 
+        ProductReleaseReadinessService productReleaseReadinessService = new ProductReleaseReadinessService(
+            new DataCloudProductReleaseReadinessRepository(client),
+            metricsCollector
+        );
+        productReleaseReadinessHandler = new ProductReleaseReadinessHandler(httpSupport, productReleaseReadinessService);
+
         userActivityHandler = new UserActivityHandler(httpSupport);
 
         // P1.1: Data source connector registry handler — persists connection metadata in dc_connections
@@ -1708,6 +1718,7 @@ public class DataCloudHttpServer {
             .withTierMigrationRoutes(tierMigrationHandler, httpSupport)
             .withConnectorRoutes(dataSourceRegistryHandler, httpSupport)
             .withSettingsRoutes(settingsHandler)
+            .withProductReleaseReadinessRoutes(productReleaseReadinessHandler)
             .withComplianceRoutes(complianceHandler)
             .withSovereignProfileRoutes(sovereignProfileHandler)
             .withConformanceRoutes(conformanceHandler)

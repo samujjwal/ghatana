@@ -12,8 +12,14 @@ export { default as HeatMap } from './HeatMap';
 export * from './CostChart';
 export { default as CostChart } from './CostChart';
 
-export * from './EventCloudTopology';
-export { default as EventCloudTopology } from './EventCloudTopology';
+export * from './EventLogTopology';
+export {
+  default as EventLogTopology,
+  default as EventCloudTopology,
+} from './EventLogTopology';
 
-export * from './EventCloudLiveTopology';
-export { default as EventCloudLiveTopology } from './EventCloudLiveTopology';
+export * from './EventLogLiveTopology';
+export {
+  default as EventLogLiveTopology,
+  default as EventCloudLiveTopology,
+} from './EventLogLiveTopology';

@@ -322,6 +322,34 @@ class CampaignServiceImplTest extends EventloopTestBase {
         assertThat(pendingCount).isEqualTo(0L);
     }
 
+    @Test
+    @DisplayName("transitionCampaign persists immutable transition result and audits previous/new status")
+    void shouldPersistTransitionResultAndAuditStatusDelta() {
+        Campaign created = runPromise(() -> service.createCampaign(
+            ctx,
+            createCampaignCommand("TransitionedCampaign", CampaignType.PAID_SEARCH)
+        ));
+
+        Campaign transitioned = runPromise(() -> service.transitionCampaign(
+            ctx,
+            created.getId(),
+            CampaignStatus.PENDING_APPROVAL.name(),
+            "approver-1",
+            "ready for review"
+        ));
+
+        Campaign persisted = runPromise(() -> service.getCampaign(ctx, created.getId()));
+
+        assertThat(transitioned.getStatus()).isEqualTo(CampaignStatus.PENDING_APPROVAL);
+        assertThat(persisted.getStatus()).isEqualTo(CampaignStatus.PENDING_APPROVAL);
+        assertThat(kernelAdapter.auditActions()).contains("transition");
+        assertThat(kernelAdapter.auditAttributes())
+            .anySatisfy(attributes -> {
+                assertThat(attributes).containsEntry("previousStatus", CampaignStatus.DRAFT.name());
+                assertThat(attributes).containsEntry("newStatus", CampaignStatus.PENDING_APPROVAL.name());
+            });
+    }
+
     private static CampaignService.CreateCampaignCommand createCampaignCommand(String name, CampaignType type) {
         if (type == CampaignType.PAID_SEARCH) {
             return new CampaignService.CreateCampaignCommand(
@@ -379,6 +407,7 @@ class CampaignServiceImplTest extends EventloopTestBase {
         private final Map<String, Boolean> decisionMap = new ConcurrentHashMap<>();
         private volatile boolean defaultAuthorization = true;
         private final List<String> auditActions = new java.util.concurrent.CopyOnWriteArrayList<>();
+        private final List<Map<String, Object>> auditAttributes = new java.util.concurrent.CopyOnWriteArrayList<>();
 
         void setDefaultAuthorization(boolean allowed) {
             defaultAuthorization = allowed;
@@ -390,6 +419,10 @@ class CampaignServiceImplTest extends EventloopTestBase {
 
         List<String> auditActions() {
             return auditActions;
+        }
+
+        List<Map<String, Object>> auditAttributes() {
+            return auditAttributes;
         }
 
         @Override
@@ -430,6 +463,7 @@ class CampaignServiceImplTest extends EventloopTestBase {
             Map<String, Object> attributes
         ) {
             auditActions.add(action);
+            auditAttributes.add(Map.copyOf(attributes));
             return Promise.of("audit-1");
         }
 

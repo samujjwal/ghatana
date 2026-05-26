@@ -222,6 +222,17 @@ class DmosAuthHardeningTest {
     }
 
     @Test
+    @DisplayName("Route capability registry should resolve canonical manifest routes")
+    void routeCapabilityRegistry_shouldResolveCanonicalManifestRoutes() {
+        assertThat(DmosRouteCapabilityRegistry.capabilityForPath("/v1/workspaces/workspace-123/campaigns/abc/transition"))
+            .isEqualTo("dmos.campaigns");
+        assertThat(DmosRouteCapabilityRegistry.capabilityForPath("/v1/workspaces/workspace-123/strategy/strategy-1/approve"))
+            .isEqualTo("dmos.strategy");
+        assertThat(DmosRouteCapabilityRegistry.capabilityForPath("/v1/workspaces/workspace-123/approvals/request-1"))
+            .isNull();
+    }
+
+    @Test
     @DisplayName("Non-production mode should use client headers as fallback")
     void nonProductionMode_shouldUseClientHeadersAsFallback() {
         DmosHttpContextFactory factory = new DmosHttpContextFactory(false, null);

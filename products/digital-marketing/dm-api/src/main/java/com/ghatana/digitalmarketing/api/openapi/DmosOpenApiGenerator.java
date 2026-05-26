@@ -140,9 +140,7 @@ public final class DmosOpenApiGenerator {
 
     private static void addPath(Map<String, Object> paths, String path, String method, 
                                String summary, String description) {
-        Map<String, Object> pathItem = paths.containsKey(path) 
-            ? (Map<String, Object>) paths.get(path) 
-            : new LinkedHashMap<>();
+        Map<String, Object> pathItem = pathItem(paths, path);
         
         Map<String, Object> operation = new LinkedHashMap<>();
         operation.put("summary", summary);
@@ -157,6 +155,20 @@ public final class DmosOpenApiGenerator {
         ));
         pathItem.put(method.toLowerCase(), operation);
         paths.put(path, pathItem);
+    }
+
+    private static Map<String, Object> pathItem(Map<String, Object> paths, String path) {
+        Object existing = paths.get(path);
+        if (existing instanceof Map<?, ?> existingMap) {
+            Map<String, Object> typed = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : existingMap.entrySet()) {
+                if (entry.getKey() instanceof String key) {
+                    typed.put(key, entry.getValue());
+                }
+            }
+            return typed;
+        }
+        return new LinkedHashMap<>();
     }
 
     private static void addCampaignPaths(Map<String, Object> paths) {

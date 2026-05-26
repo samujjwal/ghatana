@@ -1,5 +1,7 @@
 package com.ghatana.phr.kernel.service;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ghatana.kernel.context.KernelContext;
 import io.activej.promise.Promise;
 
@@ -163,9 +165,15 @@ public class PatientRecordService extends PhrServiceBase {
         private final Instant updatedAt;
         private final boolean deleted;
 
-        public Patient(String id, String nationalId, Demographics demographics,
-                       MedicalHistory medicalHistory, Instant createdAt, Instant updatedAt,
-                       boolean deleted) {
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public Patient(
+                       @JsonProperty("id") String id,
+                       @JsonProperty("nationalId") String nationalId,
+                       @JsonProperty("demographics") Demographics demographics,
+                       @JsonProperty("medicalHistory") MedicalHistory medicalHistory,
+                       @JsonProperty("createdAt") Instant createdAt,
+                       @JsonProperty("updatedAt") Instant updatedAt,
+                       @JsonProperty("deleted") boolean deleted) {
             this.id = id;
             this.nationalId = nationalId;
             this.demographics = demographics;
@@ -234,8 +242,14 @@ public class PatientRecordService extends PhrServiceBase {
         private final Address address;
         private final Contact contact;
 
-        public Demographics(String givenName, String familyName, String dateOfBirth,
-                           String gender, Address address, Contact contact) {
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public Demographics(
+                           @JsonProperty("givenName") String givenName,
+                           @JsonProperty("familyName") String familyName,
+                           @JsonProperty("dateOfBirth") String dateOfBirth,
+                           @JsonProperty("gender") String gender,
+                           @JsonProperty("address") Address address,
+                           @JsonProperty("contact") Contact contact) {
             this.givenName = givenName;
             this.familyName = familyName;
             this.dateOfBirth = dateOfBirth;
@@ -259,7 +273,13 @@ public class PatientRecordService extends PhrServiceBase {
         private final String province;
         private final String postalCode;
 
-        public Address(String line1, String city, String district, String province, String postalCode) {
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public Address(
+                       @JsonProperty("line1") String line1,
+                       @JsonProperty("city") String city,
+                       @JsonProperty("district") String district,
+                       @JsonProperty("province") String province,
+                       @JsonProperty("postalCode") String postalCode) {
             this.line1 = line1;
             this.city = city;
             this.district = district;
@@ -280,7 +300,12 @@ public class PatientRecordService extends PhrServiceBase {
         private final String emergencyContact;
         private final String emergencyPhone;
 
-        public Contact(String phone, String email, String emergencyContact, String emergencyPhone) {
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public Contact(
+                       @JsonProperty("phone") String phone,
+                       @JsonProperty("email") String email,
+                       @JsonProperty("emergencyContact") String emergencyContact,
+                       @JsonProperty("emergencyPhone") String emergencyPhone) {
             this.phone = phone;
             this.email = email;
             this.emergencyContact = emergencyContact;
@@ -299,8 +324,12 @@ public class PatientRecordService extends PhrServiceBase {
         private final List<String> medications;
         private final String bloodType;
 
-        public MedicalHistory(List<String> conditions, List<String> allergies,
-                             List<String> medications, String bloodType) {
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public MedicalHistory(
+                             @JsonProperty("conditions") List<String> conditions,
+                             @JsonProperty("allergies") List<String> allergies,
+                             @JsonProperty("medications") List<String> medications,
+                             @JsonProperty("bloodType") String bloodType) {
             this.conditions = conditions != null ? conditions : List.of();
             this.allergies = allergies != null ? allergies : List.of();
             this.medications = medications != null ? medications : List.of();

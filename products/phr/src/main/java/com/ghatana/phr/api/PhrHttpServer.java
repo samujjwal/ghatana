@@ -5,9 +5,16 @@
 package com.ghatana.phr.api;
 
 import com.ghatana.kernel.service.KernelLifecycleAware;
+import com.ghatana.phr.api.routes.PhrAdministrativeRoutes;
+import com.ghatana.phr.api.routes.PhrClinicalRoutes;
+import com.ghatana.phr.api.routes.PhrConsentRoutes;
+import com.ghatana.phr.api.routes.PhrDocumentImagingRoutes;
 import com.ghatana.phr.api.routes.PhrEntitlementRoutes;
+import com.ghatana.phr.api.routes.PhrEmergencyRoutes;
 import com.ghatana.phr.api.routes.PhrFhirRoutes;
 import com.ghatana.phr.api.routes.PhrHealthRoutes;
+import com.ghatana.phr.api.routes.PhrPatientRecordRoutes;
+import com.ghatana.phr.api.routes.PhrReleaseReadinessRoutes;
 import com.ghatana.phr.fhir.server.PhrFhirR4Server;
 import com.ghatana.phr.kernel.service.BillingService;
 import io.activej.eventloop.Eventloop;
@@ -27,7 +34,31 @@ import java.util.Objects;
  *   POST   /fhir/:resourceType                          — Create a FHIR R4 resource
  *   GET    /fhir/:resourceType/:id                      — Read a FHIR R4 resource by ID
  *   GET    /fhir/:resourceType                          — Search FHIR R4 resources
+ *   POST   /patients                                    — Create a patient record
+ *   GET    /patients?patientId=:id                      — Search patient records
+ *   GET    /patients/:patientId                         — Read a patient record
+ *   PUT    /patients/:patientId                         — Update a patient record
+ *   GET    /patients/:patientId/history                 — Read patient record history
+ *   POST   /consents/grants                             — Grant consent
+ *   POST   /consents/grants/:grantId/revoke             — Revoke consent
+ *   GET    /consents/check                              — Check consent
+ *   GET    /consents?patientId=:id                      — List patient consent grants
+ *   POST   /clinical/labs/observations                  — Record a lab observation
+ *   GET    /clinical/labs?patientId=:id                 — List patient lab observations
+ *   POST   /clinical/medications/prescriptions          — Create a medication prescription
+ *   GET    /clinical/medications?patientId=:id          — List patient medications
+ *   POST   /clinical/immunizations                      — Record an immunization
+ *   GET    /clinical/immunizations?patientId=:id        — List patient immunizations
+ *   POST   /emergency/access                            — Request break-glass emergency access
+ *   POST   /emergency/reviews/:eventId                  — Review a break-glass event
+ *   GET    /emergency/reviews/pending                   — List pending emergency reviews
+ *   POST   /admin/telemedicine/sessions                 — Schedule a telemedicine session
+ *   POST   /admin/referrals                             — Create a referral
+ *   POST   /admin/billing/encounters                    — Create a billing encounter
+ *   POST   /records/documents                           — Upload a patient document
+ *   POST   /records/imaging/orders                      — Create an imaging order
  *   GET    /route-entitlements                          — Route/content entitlement payload
+ *   GET    /release-readiness                           — Admin release readiness runtime truth
  *   GET    /health                                      — Liveness probe
  *   GET    /ready                                       — Readiness probe
  * </pre>
@@ -48,6 +79,13 @@ public final class PhrHttpServer implements KernelLifecycleAware {
 
     private final Eventloop eventloop;
     private final PhrFhirRoutes fhirRoutes;
+    private final PhrPatientRecordRoutes patientRecordRoutes;
+    private final PhrConsentRoutes consentRoutes;
+    private final PhrClinicalRoutes clinicalRoutes;
+    private final PhrEmergencyRoutes emergencyRoutes;
+    private final PhrAdministrativeRoutes administrativeRoutes;
+    private final PhrDocumentImagingRoutes documentImagingRoutes;
+    private final PhrReleaseReadinessRoutes releaseReadinessRoutes;
     private final PhrEntitlementRoutes entitlementRoutes;
     private final PhrHealthRoutes healthRoutes;
     private volatile boolean started = false;
@@ -61,8 +99,66 @@ public final class PhrHttpServer implements KernelLifecycleAware {
      * @param healthRoutes         the health check route handlers; must not be null
      */
     public PhrHttpServer(Eventloop eventloop, PhrFhirRoutes fhirRoutes, PhrEntitlementRoutes entitlementRoutes, PhrHealthRoutes healthRoutes) {
+        this(eventloop, fhirRoutes, null, null, null, null, null, null, null, entitlementRoutes, healthRoutes);
+    }
+
+    /**
+     * Creates a new PHR HTTP server.
+     *
+     * @param eventloop             the eventloop; must not be null
+     * @param fhirRoutes            the FHIR route handlers; must not be null
+     * @param patientRecordRoutes   the patient record route handlers; may be null for legacy tests
+     * @param consentRoutes         the consent route handlers; may be null for legacy tests
+     * @param entitlementRoutes     the entitlement route handlers; must not be null
+     * @param healthRoutes          the health check route handlers; must not be null
+     */
+    public PhrHttpServer(
+            Eventloop eventloop,
+            PhrFhirRoutes fhirRoutes,
+            PhrPatientRecordRoutes patientRecordRoutes,
+            PhrConsentRoutes consentRoutes,
+            PhrClinicalRoutes clinicalRoutes,
+            PhrEmergencyRoutes emergencyRoutes,
+            PhrAdministrativeRoutes administrativeRoutes,
+            PhrDocumentImagingRoutes documentImagingRoutes,
+            PhrEntitlementRoutes entitlementRoutes,
+            PhrHealthRoutes healthRoutes) {
+        this(
+            eventloop,
+            fhirRoutes,
+            patientRecordRoutes,
+            consentRoutes,
+            clinicalRoutes,
+            emergencyRoutes,
+            administrativeRoutes,
+            documentImagingRoutes,
+            null,
+            entitlementRoutes,
+            healthRoutes
+        );
+    }
+
+    public PhrHttpServer(
+            Eventloop eventloop,
+            PhrFhirRoutes fhirRoutes,
+            PhrPatientRecordRoutes patientRecordRoutes,
+            PhrConsentRoutes consentRoutes,
+            PhrClinicalRoutes clinicalRoutes,
+            PhrEmergencyRoutes emergencyRoutes,
+            PhrAdministrativeRoutes administrativeRoutes,
+            PhrDocumentImagingRoutes documentImagingRoutes,
+            PhrReleaseReadinessRoutes releaseReadinessRoutes,
+            PhrEntitlementRoutes entitlementRoutes,
+            PhrHealthRoutes healthRoutes) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop cannot be null");
         this.fhirRoutes = Objects.requireNonNull(fhirRoutes, "fhirRoutes cannot be null");
+        this.patientRecordRoutes = patientRecordRoutes;
+        this.consentRoutes = consentRoutes;
+        this.clinicalRoutes = clinicalRoutes;
+        this.emergencyRoutes = emergencyRoutes;
+        this.administrativeRoutes = administrativeRoutes;
+        this.documentImagingRoutes = documentImagingRoutes;
+        this.releaseReadinessRoutes = releaseReadinessRoutes;
         this.entitlementRoutes = Objects.requireNonNull(entitlementRoutes, "entitlementRoutes cannot be null");
         this.healthRoutes = Objects.requireNonNull(healthRoutes, "healthRoutes cannot be null");
     }
@@ -113,8 +209,30 @@ public final class PhrHttpServer implements KernelLifecycleAware {
      * @return routing servlet; never null
      */
     public AsyncServlet getServlet() {
-        return RoutingServlet.builder(eventloop)
-            .with("/fhir/*", fhirRoutes.getServlet())
+        RoutingServlet.Builder builder = RoutingServlet.builder(eventloop)
+            .with("/fhir/*", fhirRoutes.getServlet());
+        if (patientRecordRoutes != null) {
+            builder.with("/patients/*", patientRecordRoutes.getServlet());
+        }
+        if (consentRoutes != null) {
+            builder.with("/consents/*", consentRoutes.getServlet());
+        }
+        if (clinicalRoutes != null) {
+            builder.with("/clinical/*", clinicalRoutes.getServlet());
+        }
+        if (emergencyRoutes != null) {
+            builder.with("/emergency/*", emergencyRoutes.getServlet());
+        }
+        if (administrativeRoutes != null) {
+            builder.with("/admin/*", administrativeRoutes.getServlet());
+        }
+        if (documentImagingRoutes != null) {
+            builder.with("/records/*", documentImagingRoutes.getServlet());
+        }
+        if (releaseReadinessRoutes != null) {
+            builder.with("/release-readiness", releaseReadinessRoutes.getServlet());
+        }
+        return builder
             .with("/route-entitlements", entitlementRoutes.getServlet())
             .with("/health", healthRoutes.getServlet())
             .with("/ready", healthRoutes.getReadyServlet())

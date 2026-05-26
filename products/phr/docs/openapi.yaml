@@ -1,88 +1,415 @@
 openapi: 3.0.3
 info:
   title: Ghatana PHR API
-  version: 1.0.0
-  description: Contract-first API surface for PHR billing and encounter workflows.
+  version: 1.1.0
+  description: Runtime-aligned API surface for PHR FHIR, patient records, consent, clinical, and billing workflows.
   x-sensitivity: healthcare
 servers:
-  - url: /api/v1
+  - url: /api/v1/phr
 security:
   - bearerAuth: []
 paths:
   /patients:
     get:
-      operationId: listPatients
-      summary: List patients
-      tags: [Patients]
-      x-pii: true
-      responses:
-        "200":
-          description: List of patients
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Patient"
-  /patients/{patientId}:
-    get:
-      operationId: getPatient
-      summary: Get patient by ID
+      operationId: searchPatientRecords
+      summary: Search patient records scoped by patientId
       tags: [Patients]
       x-pii: true
       parameters:
-        - in: path
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: query
           name: patientId
           required: true
-          schema:
-            type: string
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 0, maximum: 1000, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, minimum: 0, maximum: 10000, default: 0 }
       responses:
-        "200":
-          description: Patient details
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Patient"
-  /consent:
-    get:
-      operationId: listConsents
-      summary: List patient consents
-      tags: [Consent]
-      x-pii: true
-      responses:
-        "200":
-          description: List of consents
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Consent"
-  /consent/{consentId}:
+        "200": { $ref: "#/components/responses/PatientList" }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
     post:
-      operationId: updateConsent
-      summary: Update patient consent
-      tags: [Consent]
+      operationId: createPatientRecord
+      summary: Create a patient record
+      tags: [Patients]
       x-pii: true
       parameters:
-        - in: path
-          name: consentId
-          required: true
-          schema:
-            type: string
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateConsentRequest"
+            schema: { $ref: "#/components/schemas/Patient" }
       responses:
-        "200":
-          description: Consent updated
+        "201":
+          description: Patient record created
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/Consent"
+              schema: { $ref: "#/components/schemas/Patient" }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /patients/{patientId}:
+    get:
+      operationId: getPatientRecord
+      summary: Read a patient record
+      tags: [Patients]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - $ref: "#/components/parameters/PatientIdPath"
+      responses:
+        "200":
+          description: Patient record
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Patient" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    put:
+      operationId: updatePatientRecord
+      summary: Update a patient record
+      tags: [Patients]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - $ref: "#/components/parameters/PatientIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Patient" }
+      responses:
+        "200":
+          description: Patient record updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Patient" }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /patients/{patientId}/history:
+    get:
+      operationId: getPatientRecordHistory
+      summary: Read patient record history
+      tags: [Patients]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - $ref: "#/components/parameters/PatientIdPath"
+      responses:
+        "200":
+          description: Patient record history
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PatientHistory" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /consents:
+    get:
+      operationId: listConsentGrants
+      summary: List patient consent grants
+      tags: [Consent]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Consent grants
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConsentGrantList" }
+        "403": { $ref: "#/components/responses/Error" }
+  /consents/grants:
+    post:
+      operationId: createConsentGrant
+      summary: Create a consent grant
+      tags: [Consent]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ConsentGrant" }
+      responses:
+        "201":
+          description: Consent grant created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConsentGrant" }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /consents/grants/{grantId}/revoke:
+    post:
+      operationId: revokeConsentGrant
+      summary: Revoke a consent grant
+      tags: [Consent]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: grantId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Consent grant revoked }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /consents/check:
+    get:
+      operationId: checkConsent
+      summary: Check access against active consent grants
+      tags: [Consent]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: accessorId
+          schema: { type: string }
+        - in: query
+          name: resourceType
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Consent decision
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConsentDecision" }
+        "400": { $ref: "#/components/responses/Error" }
+  /clinical/labs:
+    get:
+      operationId: listLabObservations
+      summary: List patient lab observations
+      tags: [Clinical]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/ClinicalList" }
+        "403": { $ref: "#/components/responses/Error" }
+  /clinical/labs/observations:
+    post:
+      operationId: recordLabObservation
+      summary: Record a lab observation
+      tags: [Clinical]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LabObservation" }
+      responses:
+        "201": { description: Lab observation recorded }
+        "403": { $ref: "#/components/responses/Error" }
+  /clinical/labs/observations/{observationId}:
+    get:
+      operationId: getLabObservation
+      summary: Read a lab observation
+      tags: [Clinical]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: observationId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Lab observation }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /clinical/labs/trends:
+    get:
+      operationId: getLabTrend
+      summary: Read a LOINC trend for a patient
+      tags: [Clinical]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: loincCode
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/ClinicalList" }
+        "403": { $ref: "#/components/responses/Error" }
+  /clinical/medications:
+    get:
+      operationId: listActivePrescriptions
+      summary: List active patient prescriptions
+      tags: [Clinical]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/ClinicalList" }
+        "403": { $ref: "#/components/responses/Error" }
+  /clinical/medications/prescriptions:
+    post:
+      operationId: prescribeMedication
+      summary: Create a medication prescription
+      tags: [Clinical]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Prescription" }
+      responses:
+        "201": { description: Prescription created }
+        "403": { $ref: "#/components/responses/Error" }
+  /clinical/medications/prescriptions/{prescriptionId}:
+    get:
+      operationId: getPrescription
+      summary: Read a prescription
+      tags: [Clinical]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: prescriptionId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Prescription }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /clinical/medications/prescriptions/{prescriptionId}/discontinue:
+    post:
+      operationId: discontinuePrescription
+      summary: Discontinue a prescription
+      tags: [Clinical]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: prescriptionId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Prescription discontinued }
+        "403": { $ref: "#/components/responses/Error" }
+  /clinical/medications/prescriptions/{prescriptionId}/refill:
+    post:
+      operationId: refillPrescription
+      summary: Refill a prescription
+      tags: [Clinical]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: prescriptionId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Prescription refilled }
+        "403": { $ref: "#/components/responses/Error" }
+  /clinical/immunizations:
+    get:
+      operationId: listImmunizations
+      summary: List patient immunizations
+      tags: [Clinical]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/ClinicalList" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      operationId: recordImmunization
+      summary: Record an immunization
+      tags: [Clinical]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ImmunizationRecord" }
+      responses:
+        "201": { description: Immunization recorded }
+        "403": { $ref: "#/components/responses/Error" }
+  /clinical/immunizations/{immunizationId}:
+    get:
+      operationId: getImmunization
+      summary: Read an immunization
+      tags: [Clinical]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: immunizationId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Immunization }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
   /fhir/{resourceType}:
     get:
       operationId: searchFhirResources
@@ -90,44 +417,26 @@ paths:
       tags: [FHIR]
       x-pii: true
       parameters:
-        - in: path
-          name: resourceType
-          required: true
-          schema:
-            type: string
-            enum: [Patient, Encounter, Observation]
+        - $ref: "#/components/parameters/FhirResourceType"
       responses:
-        "200":
-          description: FHIR bundle
-          content:
-            application/fhir+json:
-              schema:
-                type: object
+        "200": { description: FHIR searchset bundle }
     post:
       operationId: createFhirResource
       summary: Create FHIR resource
       tags: [FHIR]
       x-pii: true
       parameters:
-        - in: path
-          name: resourceType
-          required: true
-          schema:
-            type: string
-            enum: [Patient, Encounter, Observation]
+        - $ref: "#/components/parameters/FhirResourceType"
       requestBody:
         required: true
         content:
           application/fhir+json:
-            schema:
-              type: object
+            schema: { type: object }
+          application/json:
+            schema: { type: object }
       responses:
-        "201":
-          description: Resource created
-          content:
-            application/fhir+json:
-              schema:
-                type: object
+        "201": { description: FHIR resource created }
+        "404": { description: Unsupported FHIR resource type }
   /fhir/{resourceType}/{id}:
     get:
       operationId: getFhirResource
@@ -135,24 +444,733 @@ paths:
       tags: [FHIR]
       x-pii: true
       parameters:
-        - in: path
-          name: resourceType
-          required: true
-          schema:
-            type: string
-            enum: [Patient, Encounter, Observation]
+        - $ref: "#/components/parameters/FhirResourceType"
         - in: path
           name: id
           required: true
-          schema:
-            type: string
+          schema: { type: string }
+      responses:
+        "200": { description: FHIR resource }
+        "404": { description: FHIR resource not found }
+  /emergency/access:
+    post:
+      operationId: requestEmergencyAccess
+      summary: Request break-glass emergency access
+      tags: [Emergency]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EmergencyAccessEvent" }
+      responses:
+        "201":
+          description: Emergency access logged and review workflow queued
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EmergencyAccessEvent" }
+        "400": { $ref: "#/components/responses/Error" }
+  /emergency/events/{eventId}:
+    get:
+      operationId: getEmergencyAccessEvent
+      summary: Read a break-glass event
+      tags: [Emergency]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: eventId
+          required: true
+          schema: { type: string }
       responses:
         "200":
-          description: FHIR resource
+          description: Emergency access event
           content:
-            application/fhir+json:
-              schema:
-                type: object
+            application/json:
+              schema: { $ref: "#/components/schemas/EmergencyAccessEvent" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /emergency/patients/{patientId}:
+    get:
+      operationId: getPatientEmergencyLog
+      summary: Read patient-visible emergency access log
+      tags: [Emergency]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - $ref: "#/components/parameters/PatientIdPath"
+      responses:
+        "200":
+          description: Patient emergency access log
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEnvelope" }
+        "403": { $ref: "#/components/responses/Error" }
+  /emergency/reviews/pending:
+    get:
+      operationId: listPendingEmergencyReviews
+      summary: List pending emergency access reviews
+      tags: [Emergency]
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 0, maximum: 1000, default: 100 }
+      responses:
+        "200": { $ref: "#/components/responses/ClinicalList" }
+        "403": { $ref: "#/components/responses/Error" }
+  /emergency/reviews/overdue:
+    get:
+      operationId: listOverdueEmergencyReviews
+      summary: List overdue emergency access reviews
+      tags: [Emergency]
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 0, maximum: 1000, default: 100 }
+      responses:
+        "200": { $ref: "#/components/responses/ClinicalList" }
+        "403": { $ref: "#/components/responses/Error" }
+  /emergency/reviews/{eventId}:
+    post:
+      operationId: reviewEmergencyAccess
+      summary: Complete post-hoc emergency access review
+      tags: [Emergency]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: eventId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EmergencyReviewRequest" }
+      responses:
+        "200":
+          description: Emergency review completed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EmergencyAccessEvent" }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /admin/appointments:
+    get:
+      operationId: listAppointments
+      summary: List patient appointments
+      tags: [Administrative]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/ClinicalList" }
+        "403": { $ref: "#/components/responses/Error" }
+  /admin/appointments/slots:
+    get:
+      operationId: listAppointmentSlots
+      summary: List provider appointment slots
+      tags: [Administrative]
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: query
+          name: providerId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: date
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/ClinicalList" }
+        "400": { $ref: "#/components/responses/Error" }
+  /admin/appointments/{appointmentId}/cancel:
+    post:
+      operationId: cancelAppointment
+      summary: Cancel an appointment
+      tags: [Administrative]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: appointmentId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Appointment cancelled }
+        "403": { $ref: "#/components/responses/Error" }
+  /admin/telemedicine:
+    get:
+      operationId: listTelemedicineSessions
+      summary: List patient telemedicine sessions
+      tags: [Administrative]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/ClinicalList" }
+        "403": { $ref: "#/components/responses/Error" }
+  /admin/telemedicine/sessions:
+    post:
+      operationId: scheduleTelemedicineSession
+      summary: Schedule a telemedicine session
+      tags: [Administrative]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TeleSession" }
+      responses:
+        "201": { description: Telemedicine session scheduled }
+        "403": { $ref: "#/components/responses/Error" }
+  /admin/telemedicine/sessions/{sessionId}:
+    get:
+      operationId: getTelemedicineSession
+      summary: Read a telemedicine session
+      tags: [Administrative]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Telemedicine session }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /admin/telemedicine/sessions/{sessionId}/start:
+    post:
+      operationId: startTelemedicineSession
+      summary: Start a telemedicine session
+      tags: [Administrative]
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Telemedicine session started }
+  /admin/telemedicine/sessions/{sessionId}/complete:
+    post:
+      operationId: completeTelemedicineSession
+      summary: Complete a telemedicine session
+      tags: [Administrative]
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Telemedicine session completed }
+  /admin/telemedicine/sessions/{sessionId}/cancel:
+    post:
+      operationId: cancelTelemedicineSession
+      summary: Cancel a telemedicine session
+      tags: [Administrative]
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Telemedicine session cancelled }
+  /admin/referrals:
+    get:
+      operationId: listReferrals
+      summary: List patient referrals
+      tags: [Administrative]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/ClinicalList" }
+    post:
+      operationId: createReferral
+      summary: Create a referral
+      tags: [Administrative]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Referral" }
+      responses:
+        "201": { description: Referral created }
+  /admin/referrals/{referralId}:
+    get:
+      operationId: getReferral
+      summary: Read a referral
+      tags: [Administrative]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: referralId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Referral }
+        "404": { $ref: "#/components/responses/Error" }
+  /admin/referrals/{referralId}/accept:
+    post:
+      operationId: acceptReferral
+      summary: Accept a referral
+      tags: [Administrative]
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: referralId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Referral accepted }
+  /admin/referrals/{referralId}/close:
+    post:
+      operationId: closeReferral
+      summary: Close a referral
+      tags: [Administrative]
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: referralId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Referral closed }
+  /admin/billing:
+    get:
+      operationId: listBillingHistory
+      summary: List patient billing history
+      tags: [Administrative]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/ClinicalList" }
+  /admin/billing/encounters:
+    post:
+      operationId: createAdminBillingEncounter
+      summary: Create billing encounter
+      tags: [Administrative]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BillingEncounter" }
+      responses:
+        "201": { description: Billing encounter created }
+  /admin/billing/encounters/{encounterId}:
+    get:
+      operationId: getBillingEncounter
+      summary: Read billing encounter
+      tags: [Administrative]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: encounterId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Billing encounter }
+        "404": { $ref: "#/components/responses/Error" }
+  /admin/billing/encounters/{encounterId}/close:
+    post:
+      operationId: closeAdminBillingEncounter
+      summary: Close billing encounter
+      tags: [Administrative]
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: encounterId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Billing encounter closed }
+  /admin/billing/claims:
+    post:
+      operationId: submitBillingClaim
+      summary: Submit billing claim
+      tags: [Administrative]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InsuranceClaim" }
+      responses:
+        "201": { description: Claim submitted }
+  /admin/billing/claims/{claimId}:
+    get:
+      operationId: getBillingClaim
+      summary: Read billing claim
+      tags: [Administrative]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: claimId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Billing claim }
+  /admin/billing/claims/{claimId}/status:
+    post:
+      operationId: updateBillingClaimStatus
+      summary: Update billing claim status
+      tags: [Administrative]
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: claimId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClaimStatusUpdate" }
+      responses:
+        "200": { description: Billing claim status updated }
+  /records/documents:
+    get:
+      operationId: listDocuments
+      summary: List patient documents
+      tags: [Records]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/ClinicalList" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      operationId: uploadDocument
+      summary: Upload patient document
+      tags: [Records]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DocumentUploadRequest" }
+      responses:
+        "201": { description: Document uploaded }
+  /records/documents/{documentId}:
+    get:
+      operationId: getDocument
+      summary: Read document metadata
+      tags: [Records]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: documentId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Document metadata }
+        "404": { $ref: "#/components/responses/Error" }
+    delete:
+      operationId: deleteDocument
+      summary: Soft-delete document
+      tags: [Records]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: documentId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Document deleted }
+  /records/documents/{documentId}/content:
+    get:
+      operationId: getDocumentContent
+      summary: Read document content
+      tags: [Records]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: documentId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Document content }
+        "404": { $ref: "#/components/responses/Error" }
+  /records/documents/{documentId}/fhir:
+    get:
+      operationId: getDocumentReferenceFhir
+      summary: Read FHIR DocumentReference for document
+      tags: [Records]
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: documentId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: FHIR DocumentReference }
+  /records/documents/{documentId}/consent:
+    post:
+      operationId: updateDocumentConsent
+      summary: Update document visibility consent
+      tags: [Records]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: documentId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DocumentConsentUpdate" }
+      responses:
+        "200": { description: Document consent updated }
+  /records/imaging/orders:
+    get:
+      operationId: listImagingOrders
+      summary: List patient imaging orders
+      tags: [Records]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/ClinicalList" }
+    post:
+      operationId: createImagingOrder
+      summary: Create imaging order
+      tags: [Records]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ImagingOrder" }
+      responses:
+        "201": { description: Imaging order created }
+  /records/imaging/orders/{orderId}:
+    get:
+      operationId: getImagingOrder
+      summary: Read imaging order
+      tags: [Records]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Imaging order }
+        "404": { $ref: "#/components/responses/Error" }
+  /records/imaging/studies:
+    get:
+      operationId: listImagingStudies
+      summary: List patient imaging studies
+      tags: [Records]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/ClinicalList" }
+    post:
+      operationId: registerImagingStudy
+      summary: Register imaging study metadata
+      tags: [Records]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ImagingStudy" }
+      responses:
+        "201": { description: Imaging study registered }
+  /records/imaging/reports:
+    post:
+      operationId: storeRadiologyReport
+      summary: Store radiology report
+      tags: [Records]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RadiologyReport" }
+      responses:
+        "201": { description: Radiology report stored }
+  /route-entitlements:
+    get:
+      operationId: getRouteEntitlements
+      summary: Read backend-owned PHR route entitlements
+      tags: [Entitlements]
+      responses:
+        "200": { description: Route entitlement payload }
+  /release-readiness:
+    get:
+      operationId: getPhrReleaseReadiness
+      summary: Read admin-only PHR release readiness runtime truth
+      tags: [Release Readiness]
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: header
+          name: X-Role
+          required: true
+          schema: { type: string, enum: [admin] }
+        - in: query
+          name: environment
+          required: false
+          schema: { type: string, enum: [local, dev, staging, prod], default: staging }
+      responses:
+        "200":
+          description: Release readiness runtime-truth payload
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PhrReleaseReadiness" }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
   /phr/billing/encounters:
     post:
       operationId: createBillingEncounter
@@ -163,15 +1181,13 @@ paths:
         required: true
         content:
           application/json:
-            schema:
-              $ref: "#/components/schemas/CreateEncounterRequest"
+            schema: { $ref: "#/components/schemas/CreateEncounterRequest" }
       responses:
         "201":
           description: Encounter created
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/BillingEncounter"
+              schema: { $ref: "#/components/schemas/BillingEncounter" }
   /phr/billing/encounters/{encounterId}/close:
     post:
       operationId: closeBillingEncounter
@@ -182,92 +1198,387 @@ paths:
         - in: path
           name: encounterId
           required: true
-          schema:
-            type: string
+          schema: { type: string }
       responses:
         "200":
           description: Encounter closed
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/BillingEncounter"
+              schema: { $ref: "#/components/schemas/BillingEncounter" }
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT bearer token for authentication
+  parameters:
+    TenantHeader:
+      in: header
+      name: X-Tenant-ID
+      required: true
+      schema: { type: string }
+    PrincipalHeader:
+      in: header
+      name: X-Principal-ID
+      required: true
+      schema: { type: string }
+    PatientIdPath:
+      in: path
+      name: patientId
+      required: true
+      schema: { type: string }
+    FhirResourceType:
+      in: path
+      name: resourceType
+      required: true
+      schema:
+        type: string
+        enum: [Patient, Observation, MedicationRequest, Immunization, DiagnosticReport, DocumentReference]
+  responses:
+    Error:
+      description: Error response
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    PatientList:
+      description: Patient list envelope
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ListEnvelope" }
+    ClinicalList:
+      description: Clinical list envelope
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ListEnvelope" }
   schemas:
+    ErrorResponse:
+      type: object
+      required: [error, message]
+      properties:
+        error: { type: string }
+        message: { type: string }
+    ListEnvelope:
+      type: object
+      required: [items, count]
+      properties:
+        patientId: { type: string }
+        items:
+          type: array
+          items: { type: object }
+        count: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
     Patient:
       type: object
-      required: [id, name]
+      required: [id, demographics]
+      x-pii: true
       properties:
-        id:
-          type: string
-        name:
-          type: string
-        dateOfBirth:
-          type: string
-          format: date
+        id: { type: string }
+        nationalId: { type: string, x-pii: true }
+        demographics:
+          type: object
           x-pii: true
-    Consent:
+          properties:
+            givenName: { type: string }
+            familyName: { type: string }
+            dateOfBirth: { type: string }
+            gender: { type: string }
+        medicalHistory:
+          type: object
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        deleted: { type: boolean }
+    PatientHistory:
       type: object
-      required: [id, patientId, type, status]
+      required: [patientId, history]
       properties:
-        id:
-          type: string
-        patientId:
-          type: string
-        type:
-          type: string
-        status:
-          type: string
-          enum: [GRANTED, REVOKED, EXPIRED]
-        grantedAt:
-          type: string
-          format: date-time
-    UpdateConsentRequest:
+        patientId: { type: string }
+        history:
+          type: array
+          items:
+            type: object
+            properties:
+              version: { type: integer }
+              createdAt: { type: string, format: date-time }
+              updatedAt: { type: string, format: date-time }
+              deleted: { type: boolean }
+    ConsentGrant:
+      type: object
+      required: [patientId, recipientId, scope, status, expiresAt]
+      x-pii: true
+      properties:
+        id: { type: string }
+        patientId: { type: string }
+        recipientId: { type: string }
+        status: { type: string, enum: [ACTIVE, REVOKED, EXPIRED] }
+        createdAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        revokedAt: { type: string, format: date-time }
+        scope:
+          type: object
+          required: [resourceTypes]
+          properties:
+            resourceTypes:
+              type: array
+              items: { type: string }
+            allDocuments: { type: boolean }
+            specificDocumentIds:
+              type: array
+              items: { type: string }
+            actions:
+              type: array
+              items: { type: string }
+    ConsentGrantList:
+      allOf:
+        - $ref: "#/components/schemas/ListEnvelope"
+    ConsentDecision:
+      type: object
+      required: [allowed, reason]
+      properties:
+        allowed: { type: boolean }
+        reason: { type: string }
+        grantId: { type: string }
+    PhrReleaseReadiness:
+      type: object
+      required: [product, tenantId, principalId, role, environment, targetCommitSha, runtimeTruthBlocked, requiredSections, sections]
+      properties:
+        product: { type: string, enum: [phr] }
+        tenantId: { type: string }
+        principalId: { type: string }
+        role: { type: string }
+        environment: { type: string, enum: [local, dev, staging, prod] }
+        generatedAt: { type: string, format: date-time }
+        targetCommitSha: { type: string }
+        runtimeTruthBlocked: { type: boolean }
+        requiredSections:
+          type: array
+          items: { type: string }
+        releaseReadiness:
+          type: object
+          additionalProperties: true
+        sections:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/PhrReleaseReadinessSection"
+    PhrReleaseReadinessSection:
+      type: object
+      required: [label, status, runtimeProven, message]
+      properties:
+        label: { type: string }
+        status: { type: string }
+        runtimeProven: { type: boolean }
+        message: { type: string }
+        details:
+          type: object
+          additionalProperties: true
+    LabObservation:
+      type: object
+      required: [patientId, loincCode]
+      x-pii: true
+      properties:
+        id: { type: string }
+        patientId: { type: string }
+        loincCode: { type: string }
+        loincDisplay: { type: string }
+        testName: { type: string }
+        value: { type: number }
+        unit: { type: string }
+        status: { type: string, enum: [PRELIMINARY, FINAL, AMENDED, CANCELLED] }
+    Prescription:
+      type: object
+      required: [patientId, medicationCode]
+      x-pii: true
+      properties:
+        id: { type: string }
+        patientId: { type: string }
+        prescriberId: { type: string }
+        medicationCode: { type: string }
+        medicationName: { type: string }
+        dosage: { type: string }
+        indication: { type: string }
+        refillsRemaining: { type: integer }
+        duration: { type: string }
+        status: { type: string, enum: [ACTIVE, COMPLETED, DISCONTINUED, EXPIRED] }
+    ImmunizationRecord:
+      type: object
+      required: [patientId, cvxCode]
+      x-pii: true
+      properties:
+        id: { type: string }
+        patientId: { type: string }
+        cvxCode: { type: string }
+        vaccineName: { type: string }
+        administeredBy: { type: string }
+        administeredAt: { type: string, format: date-time }
+        lotNumber: { type: string }
+        route: { type: string }
+        doseNumber: { type: integer }
+        adverseEvent: { type: boolean }
+        status: { type: string, enum: [ADMINISTERED, COMPLETED, ENTERED_IN_ERROR, NOT_DONE] }
+    EmergencyAccessEvent:
+      type: object
+      required: [patientId, accessorRole, justification, resourcesAccessed]
+      x-pii: true
+      properties:
+        id: { type: string }
+        patientId: { type: string }
+        accessorId: { type: string }
+        accessorRole: { type: string }
+        justification: { type: string }
+        resourcesAccessed:
+          type: array
+          items: { type: string }
+        accessedAt: { type: string, format: date-time }
+        accessExpiresAt: { type: string, format: date-time }
+        reviewStatus: { type: string, enum: [PENDING_REVIEW, REVIEWED, ESCALATED] }
+        reviewDueAt: { type: string, format: date-time }
+        reviewedAt: { type: string, format: date-time }
+        reviewedBy: { type: string }
+        reviewerNotes: { type: string }
+        reviewCaseId: { type: string }
+    EmergencyReviewRequest:
       type: object
       required: [status]
       properties:
-        status:
+        status: { type: string, enum: [REVIEWED, ESCALATED] }
+        notes: { type: string }
+    TeleSession:
+      type: object
+      required: [patientId, providerId, scheduledAt, durationMinutes, platform, joinUrl]
+      x-pii: true
+      properties:
+        id: { type: string }
+        patientId: { type: string }
+        providerId: { type: string }
+        scheduledAt: { type: string, format: date-time }
+        durationMinutes: { type: integer }
+        platform: { type: string }
+        joinUrl: { type: string }
+        status: { type: string, enum: [SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW] }
+        startedAt: { type: string, format: date-time }
+        endedAt: { type: string, format: date-time }
+        notes: { type: string }
+    Referral:
+      type: object
+      required: [patientId, referringProviderId, specialtyCode, clinicalReason, urgency]
+      x-pii: true
+      properties:
+        id: { type: string }
+        patientId: { type: string }
+        encounterId: { type: string }
+        referringProviderId: { type: string }
+        receivingProviderId: { type: string }
+        specialtyCode: { type: string }
+        clinicalReason: { type: string }
+        urgency: { type: string, enum: [ROUTINE, URGENT, EMERGENCY] }
+        status: { type: string, enum: [PENDING, ACCEPTED, DECLINED, COMPLETED, CANCELLED] }
+        createdAt: { type: string, format: date-time }
+        acceptedAt: { type: string, format: date-time }
+        closedAt: { type: string, format: date-time }
+    InsuranceClaim:
+      type: object
+      required: [patientId, encounterId, insurerId, policyNumber, claimedAmount, currency]
+      x-pii: true
+      properties:
+        id: { type: string }
+        patientId: { type: string }
+        encounterId: { type: string }
+        insurerId: { type: string }
+        policyNumber: { type: string }
+        claimedAmount: { type: number }
+        currency: { type: string }
+        status: { type: string, enum: [SUBMITTED, UNDER_REVIEW, APPROVED, DENIED, APPEALED, PAID] }
+        submittedAt: { type: string, format: date-time }
+        adjudicatedAt: { type: string, format: date-time }
+        adjudicationNote: { type: string }
+    ClaimStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [SUBMITTED, UNDER_REVIEW, APPROVED, DENIED, APPEALED, PAID] }
+        note: { type: string }
+    DocumentUploadRequest:
+      type: object
+      required: [patientId, documentType, title, contentType, content, contentHash, visibility]
+      x-pii: true
+      properties:
+        patientId: { type: string }
+        documentType: { type: string }
+        title: { type: string }
+        description: { type: string }
+        contentType: { type: string }
+        content:
           type: string
-          enum: [GRANTED, REVOKED]
+          format: byte
+        contentHash: { type: string }
+        visibility: { type: string, enum: [private, shared-with-provider, shared-with-all-granted] }
+    DocumentConsentUpdate:
+      type: object
+      required: [visibility]
+      properties:
+        visibility: { type: string, enum: [private, shared-with-provider, shared-with-all-granted] }
+    ImagingOrder:
+      type: object
+      required: [patientId, modalityCode]
+      x-pii: true
+      properties:
+        id: { type: string }
+        patientId: { type: string }
+        encounterId: { type: string }
+        orderingProviderId: { type: string }
+        modalityCode: { type: string }
+        bodyPart: { type: string }
+        clinicalIndication: { type: string }
+        status: { type: string, enum: [REQUESTED, PENDING, SCHEDULED, COMPLETED, FULFILLED, CANCELLED] }
+        orderedAt: { type: string, format: date-time }
+        fulfilledAt: { type: string, format: date-time }
+    ImagingStudy:
+      type: object
+      required: [patientId, dcmStudyInstanceUid]
+      x-pii: true
+      properties:
+        id: { type: string }
+        patientId: { type: string }
+        orderId: { type: string }
+        dcmStudyInstanceUid: { type: string }
+        modalityCode: { type: string }
+        pacsLocation: { type: string }
+        seriesCount: { type: integer }
+        instanceCount: { type: integer }
+        status: { type: string, enum: [COMPLETE, AVAILABLE, UNAVAILABLE, ENTERED_IN_ERROR] }
+        studyDate: { type: string, format: date-time }
+        bodyPart: { type: string }
+    RadiologyReport:
+      type: object
+      required: [patientId, studyId]
+      x-pii: true
+      properties:
+        id: { type: string }
+        patientId: { type: string }
+        studyId: { type: string }
+        reportingRadiologistId: { type: string }
+        findings: { type: string }
+        impression: { type: string }
+        recommendations: { type: string }
+        status: { type: string, enum: [PRELIMINARY, FINAL, AMENDED] }
+        reportedAt: { type: string, format: date-time }
     CreateEncounterRequest:
       type: object
       required: [patientId, providerId, currency, totalAmount]
       properties:
-        patientId:
-          type: string
-        providerId:
-          type: string
-        facilityId:
-          type: string
-        currency:
-          type: string
-          example: NPR
-        totalAmount:
-          type: number
-          format: double
+        patientId: { type: string }
+        providerId: { type: string }
+        facilityId: { type: string }
+        currency: { type: string, example: NPR }
+        totalAmount: { type: number, format: double }
     BillingEncounter:
       type: object
       required: [id, patientId, providerId, totalAmount, currency, status]
       properties:
-        id:
-          type: string
-        patientId:
-          type: string
-        providerId:
-          type: string
-        totalAmount:
-          type: number
-          format: double
-        currency:
-          type: string
-        status:
-          type: string
-          enum: [OPEN, CLOSED]
-        closedAt:
-          type: string
-          format: date-time
+        id: { type: string }
+        patientId: { type: string }
+        providerId: { type: string }
+        totalAmount: { type: number, format: double }
+        currency: { type: string }
+        status: { type: string, enum: [OPEN, CLOSED] }
+        closedAt: { type: string, format: date-time }

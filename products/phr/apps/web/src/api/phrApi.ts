@@ -7,6 +7,7 @@ import type {
   MedicationSummary,
   PatientProfile,
   PatientRecordSummary,
+  PhrReleaseReadiness,
 } from '../types';
 import { t } from '../i18n/phrI18n';
 
@@ -346,4 +347,30 @@ export async function exportPatientBundle(): Promise<string> {
     throw new PhrApiError(`Patient bundle export failed with status ${response.status}`, response.status);
   }
   return response.text();
+}
+
+export async function fetchReleaseReadiness(options: {
+  environment: 'local' | 'dev' | 'staging' | 'prod';
+  role: string;
+  tenantId?: string;
+  principalId?: string;
+}): Promise<PhrReleaseReadiness> {
+  const tenantId = options.tenantId ?? 'tenant-health-1';
+  const principalId = options.principalId ?? `${options.role}-release-cockpit`;
+  const url = new URL(`${API_BASE_URL}/release-readiness`);
+  url.searchParams.set('environment', options.environment);
+  const response = await fetch(url.toString(), {
+    headers: {
+      Accept: 'application/json',
+      'X-Tenant-Id': tenantId,
+      'X-Principal-Id': principalId,
+      'X-Role': options.role,
+      'X-Persona': options.role,
+      'X-Tier': 'clinical',
+    },
+  });
+  if (!response.ok) {
+    throw new PhrApiError(`PHR release readiness failed with status ${response.status}`, response.status);
+  }
+  return response.json() as Promise<PhrReleaseReadiness>;
 }

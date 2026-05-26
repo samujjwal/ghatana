@@ -55,6 +55,15 @@ const requiredEvidenceFiles = [
   summaryEvidencePath,
 ];
 
+const productReleaseReadinessEvidenceFiles = [
+  '.kernel/evidence/product-release-readiness.json',
+  '.kernel/evidence/product-release-readiness.phr.json',
+  '.kernel/evidence/phr/phr-release-readiness.json',
+  '.kernel/evidence/digital-marketing/dmos-release-readiness.json',
+  '.kernel/evidence/data-cloud-release-bundle.json',
+  '.kernel/evidence/production-readiness-task-map.json',
+];
+
 function loadFreshnessPolicy() {
   const absolutePath = path.join(repoRoot, freshnessPolicyPath);
   if (!existsSync(absolutePath)) {
@@ -428,6 +437,91 @@ function hasUnresolvedLifecycleBlockers(lifecycleReadiness) {
   return unresolvedBlocker || unresolvedAdapter;
 }
 
+const blockedChildStatusValues = new Set([
+  'blocked',
+  'failed',
+  'failure',
+  'incomplete',
+  'missing',
+  'partial',
+  'pending',
+  'pending-validation',
+  'stale',
+  'unproven',
+  'unvalidated',
+]);
+
+function isPassLikeEvidence(content) {
+  const passSignals = [
+    content?.pass,
+    content?.releaseVerdict,
+    content?.releaseReadiness?.status,
+    content?.summary?.overallStatus,
+    content?.status,
+    content?.ready,
+  ];
+
+  return passSignals.some((value) => {
+    const normalized = String(value ?? '').trim().toLowerCase();
+    return value === true
+      || normalized === 'pass'
+      || normalized === 'passed'
+      || normalized === 'ready'
+      || normalized === 'production-ready'
+      || normalized === 'ready-for-staging'
+      || normalized === 'ready-for-prod';
+  });
+}
+
+function collectBlockedChildProofs(value, pathSegments = []) {
+  const findings = [];
+  if (value === null || value === undefined) {
+    return findings;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (blockedChildStatusValues.has(normalized) || normalized === 'current head required') {
+      findings.push({ path: pathSegments.join('.') || '$', value });
+    }
+    return findings;
+  }
+
+  if (typeof value !== 'object') {
+    return findings;
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((entry, index) => {
+      findings.push(...collectBlockedChildProofs(entry, [...pathSegments, String(index)]));
+    });
+    return findings;
+  }
+
+  for (const [key, child] of Object.entries(value)) {
+    findings.push(...collectBlockedChildProofs(child, [...pathSegments, key]));
+  }
+
+  return findings;
+}
+
+function validateReleaseContentContradictions(label, content, errors) {
+  if (!content || typeof content !== 'object' || !isPassLikeEvidence(content)) {
+    return;
+  }
+
+  const blockedChildren = collectBlockedChildProofs(content)
+    .filter((finding) => !finding.path.endsWith('validationStatus'));
+
+  if (blockedChildren.length > 0) {
+    const sample = blockedChildren
+      .slice(0, 5)
+      .map((finding) => `${finding.path}=${finding.value}`)
+      .join(', ');
+    errors.push(`${label} cannot be ready/pass with partial, pending, blocked, stale, or current-HEAD-required child proof (${sample})`);
+  }
+}
+
 function validateReleaseIdentityFields(label, content, errors) {
   if (!content || typeof content !== 'object') {
     errors.push(`${label} must be a JSON object`);
@@ -750,6 +844,7 @@ function validatePerProductScorecards(errors, expectedProductIds = []) {
       errors.push(`Per-product scorecard must pass: ${path.basename(scorecardPath)}`);
     }
     validateReleaseIdentityFields(path.basename(scorecardPath), content, errors);
+    validateReleaseContentContradictions(path.basename(scorecardPath), content, errors);
     if (!Array.isArray(content.dimensions) || content.dimensions.length !== 47) {
       errors.push(`Per-product scorecard must contain 47 dimensions: ${path.basename(scorecardPath)}`);
     }
@@ -808,6 +903,17 @@ function main() {
   const productReadinessAggregate = readJson('.kernel/evidence/product-release-readiness.json', errors);
   if (productReadinessAggregate) {
     validateReleaseIdentityFields('product-release-readiness.json', productReadinessAggregate, errors);
+    validateReleaseContentContradictions('product-release-readiness.json', productReadinessAggregate, errors);
+  }
+  for (const relativePath of productReleaseReadinessEvidenceFiles) {
+    if (relativePath === '.kernel/evidence/product-release-readiness.json') {
+      continue;
+    }
+    const content = readJson(relativePath, errors);
+    if (content) {
+      validateReleaseIdentityFields(relativePath, content, errors);
+      validateReleaseContentContradictions(relativePath, content, errors);
+    }
   }
   const scopedProductIds = productReadinessAggregate?.affectedProducts ?? releaseSummary?.productScope ?? [];
   validatePerProductScorecards(errors, scopedProductIds);
@@ -865,4 +971,5 @@ export {
   getFreshnessProfile,
   loadFreshnessPolicy,
   resolveRepoRoot,
+  validateReleaseContentContradictions,
 };

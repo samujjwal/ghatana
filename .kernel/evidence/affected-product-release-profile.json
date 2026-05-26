@@ -1,6 +1,7 @@
 {
-  "generatedAt": "2026-05-25T18:11:31.238Z",
+  "generatedAt": "2026-05-26T00:13:17.360Z",
   "affectedProducts": [
+    "digital-marketing",
     "phr"
   ],
   "strictTargetCoverage": [
@@ -48,6 +49,27 @@
     }
   ],
   "perProductCoverage": [
+    {
+      "productId": "digital-marketing",
+      "requiredScripts": [
+        "build:digital-marketing",
+        "test:digital-marketing"
+      ],
+      "optionalCore": [
+        "validate:digital-marketing",
+        "package:digital-marketing"
+      ],
+      "hasAtLeastOneReleaseCore": true,
+      "hasWebSurface": true,
+      "hasBackendSurface": true,
+      "deploymentTargets": [
+        "compose-local",
+        "dev",
+        "staging",
+        "prod"
+      ],
+      "hasFoundationUsageProfile": true
+    },
     {
       "productId": "phr",
       "requiredScripts": [

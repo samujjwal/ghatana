@@ -148,6 +148,8 @@ export function createProductionReadinessTaskMapEvidence(root = process.cwd(), n
   const taskMapFullPath = path.join(root, TASK_MAP_PATH);
   const readinessFullPath = path.join(root, READINESS_PATH);
   const head = currentGitSha(root);
+  const targetCommitSha = process.env.TARGET_COMMIT_SHA ?? process.env.AUDIT_TARGET_COMMIT ?? head;
+  const targetEnvironment = process.env.RELEASE_ENVIRONMENT ?? 'staging';
   const scripts = packageScripts(root);
 
   if (!existsSync(taskMapFullPath)) {
@@ -179,9 +181,17 @@ export function createProductionReadinessTaskMapEvidence(root = process.cwd(), n
     const evidenceFile = cleanPath(row['Evidence File'] ?? '');
     const evidenceCommand = cleanPath(row['Evidence Command'] ?? '');
     const releaseBlocking = (row['Release Blocking'] ?? '').toLowerCase();
+    const evidenceStatus = (row['Evidence Status'] ?? '').toLowerCase();
+    const evidenceCommitValue = (row['Evidence Commit'] ?? '').toLowerCase();
 
     if (!['yes', 'no'].includes(releaseBlocking)) {
       violations.push(`${task}: Release Blocking must be yes/no`);
+    }
+    if (releaseBlocking === 'yes' && evidenceStatus !== 'verified') {
+      violations.push(`${task}: release-blocking evidence must be verified, got ${row['Evidence Status'] ?? 'missing'}`);
+    }
+    if (releaseBlocking === 'yes' && evidenceCommitValue.includes('current head required')) {
+      violations.push(`${task}: release-blocking evidence must be generated at current HEAD ${head}`);
     }
     if (evidenceFile && evidenceFile !== EVIDENCE_PATH && !existsSync(path.join(root, evidenceFile))) {
       violations.push(`${task}: evidence file/path does not exist: ${evidenceFile}`);
@@ -193,7 +203,7 @@ export function createProductionReadinessTaskMapEvidence(root = process.cwd(), n
       }
     }
     const commit = evidenceCommit(root, evidenceFile);
-    if ((row['Evidence Status'] ?? '').toLowerCase() === 'verified' && commit !== head) {
+    if (evidenceStatus === 'verified' && commit !== head) {
       violations.push(`${task}: cannot be verified because evidence commit ${commit ?? 'missing'} does not match HEAD ${head}`);
     }
   }
@@ -219,7 +229,16 @@ export function createProductionReadinessTaskMapEvidence(root = process.cwd(), n
       source: SCRIPT_PATH,
       command: COMMAND,
       commit: head,
+      sourceCommitSha: head,
+      targetCommitSha,
+      targetEnvironment,
     },
+    sourceCommitSha: head,
+    targetCommitSha,
+    targetEnvironment,
+    validationStatus: violations.length === 0 ? 'validated' : 'failed',
+    reviewDueAt: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+    expiresAt: new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(),
     source: {
       taskMap: TASK_MAP_PATH,
       readiness: READINESS_PATH,

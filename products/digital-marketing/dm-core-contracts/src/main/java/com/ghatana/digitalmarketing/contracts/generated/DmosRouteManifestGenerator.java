@@ -35,7 +35,7 @@ public final class DmosRouteManifestGenerator {
     // Paths relative to the dm-core-contracts module directory
     private static final String MANIFEST_PATH = "src/main/resources/dmos-route-manifest.yaml";
     private static final String JAVA_OUTPUT_DIR = "src/main/java/com/ghatana/digitalmarketing/contracts/generated";
-    private static final String SECURITY_OUTPUT_DIR = "../dm-api/src/main/java/com/ghatana/digitalmarketing/api/security";
+    private static final String SECURITY_OUTPUT_DIR = "src/main/java/com/ghatana/digitalmarketing/api/security";
     private static final String TS_OUTPUT_DIR = "../ui/src/generated";
 
     public static void main(String[] args) throws IOException {
@@ -54,6 +54,7 @@ public final class DmosRouteManifestGenerator {
         // Generate Java artifacts
         generateCapabilityRegistry(manifest, basePath);
         generateActionPermissionRegistry(manifest, basePath);
+        generateRouteCapabilityRegistry(manifest, basePath);
         
         // Generate TypeScript artifacts
         generateTypeScriptRouteManifest(manifest, basePath);
@@ -184,7 +185,7 @@ public final class DmosRouteManifestGenerator {
         sb.append("    }\n\n");
         sb.append("    public static boolean isActionAllowed(Set<String> roles, String action) {\n");
         sb.append("        Objects.requireNonNull(action, \"action must not be null\");\n\n");
-        sb.append("        String normalizedAction = action.trim().toLowerCase(Locale.ROOT);\n");
+        sb.append("        String normalizedAction = normalizeAction(action);\n");
         sb.append("        String minimumRole = ACTION_MINIMUM_ROLES.get(normalizedAction);\n");
         sb.append("        if (minimumRole == null) {\n");
         sb.append("            throw new IllegalArgumentException(\"Unknown DMOS action: \" + action);\n");
@@ -208,6 +209,12 @@ public final class DmosRouteManifestGenerator {
         sb.append("            .toLowerCase(Locale.ROOT)\n");
         sb.append("            .replace('_', '-')\n");
         sb.append("            .replace(' ', '-');\n");
+        sb.append("    }\n\n");
+        sb.append("    private static String normalizeAction(String action) {\n");
+        sb.append("        return action.trim()\n");
+        sb.append("            .toLowerCase(Locale.ROOT)\n");
+        sb.append("            .replace('_', '-')\n");
+        sb.append("            .replace(' ', '-');\n");
         sb.append("    }\n");
         sb.append("}\n");
 
@@ -215,6 +222,88 @@ public final class DmosRouteManifestGenerator {
         Files.createDirectories(outputPath.getParent());
         Files.writeString(outputPath, sb.toString());
         LOG.info("Generated DmosActionPermissionRegistry.java");
+    }
+
+    private static void generateRouteCapabilityRegistry(Manifest manifest, String basePath) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        sb.append("package com.ghatana.digitalmarketing.api.security;\n\n");
+        sb.append("import java.util.List;\n\n");
+        sb.append("/**\n");
+        sb.append(" * Canonical DMOS backend route-to-capability registry.\n");
+        sb.append(" *\n");
+        sb.append(" * <p>This class is generated from the canonical route manifest.\n");
+        sb.append(" * Do not edit manually - regenerate from dmos-route-manifest.yaml.</p>\n");
+        sb.append(" *\n");
+        sb.append(" * @doc.type class\n");
+        sb.append(" * @doc.purpose Canonical backend route capability authorization for DMOS APIs\n");
+        sb.append(" * @doc.layer product\n");
+        sb.append(" * @doc.pattern Policy, Registry\n");
+        sb.append(" */\n");
+        sb.append("public final class DmosRouteCapabilityRegistry {\n\n");
+        sb.append("    private record RouteCapability(String pathTemplate, String capabilityKey) {\n");
+        sb.append("    }\n\n");
+        sb.append("    private static final List<RouteCapability> ROUTES = List.of(\n");
+
+        List<Route> routes = new ArrayList<>(manifest.routes);
+        routes.sort(Comparator.comparing(route -> route.path));
+        for (int i = 0; i < routes.size(); i++) {
+            Route route = routes.get(i);
+            sb.append("        new RouteCapability(\"")
+                .append(route.path)
+                .append("\", ")
+                .append(route.capability == null ? "null" : "\"" + route.capability + "\"")
+                .append(")");
+            sb.append(i == routes.size() - 1 ? "\n" : ",\n");
+        }
+        sb.append("    );\n\n");
+        sb.append("    private DmosRouteCapabilityRegistry() {\n");
+        sb.append("    }\n\n");
+        sb.append("    public static String capabilityForPath(String path) {\n");
+        sb.append("        if (path == null || path.isBlank()) {\n");
+        sb.append("            return null;\n");
+        sb.append("        }\n");
+        sb.append("        String normalizedPath = trimQuery(path);\n");
+        sb.append("        for (RouteCapability route : ROUTES) {\n");
+        sb.append("            if (matches(route.pathTemplate(), normalizedPath)) {\n");
+        sb.append("                return route.capabilityKey();\n");
+        sb.append("            }\n");
+        sb.append("        }\n");
+        sb.append("        return null;\n");
+        sb.append("    }\n\n");
+        sb.append("    private static boolean matches(String template, String path) {\n");
+        sb.append("        String[] templateSegments = segments(template);\n");
+        sb.append("        String[] pathSegments = segments(path);\n");
+        sb.append("        if (templateSegments.length != pathSegments.length) {\n");
+        sb.append("            return false;\n");
+        sb.append("        }\n");
+        sb.append("        for (int i = 0; i < templateSegments.length; i++) {\n");
+        sb.append("            String templateSegment = templateSegments[i];\n");
+        sb.append("            if (templateSegment.startsWith(\":\")) {\n");
+        sb.append("                if (pathSegments[i].isBlank()) {\n");
+        sb.append("                    return false;\n");
+        sb.append("                }\n");
+        sb.append("                continue;\n");
+        sb.append("            }\n");
+        sb.append("            if (!templateSegment.equals(pathSegments[i])) {\n");
+        sb.append("                return false;\n");
+        sb.append("            }\n");
+        sb.append("        }\n");
+        sb.append("        return true;\n");
+        sb.append("    }\n\n");
+        sb.append("    private static String[] segments(String path) {\n");
+        sb.append("        String normalized = path.startsWith(\"/\") ? path.substring(1) : path;\n");
+        sb.append("        return normalized.isBlank() ? new String[0] : normalized.split(\"/\");\n");
+        sb.append("    }\n\n");
+        sb.append("    private static String trimQuery(String path) {\n");
+        sb.append("        int queryStart = path.indexOf('?');\n");
+        sb.append("        return queryStart >= 0 ? path.substring(0, queryStart) : path;\n");
+        sb.append("    }\n");
+        sb.append("}\n");
+
+        Path outputPath = Paths.get(basePath, SECURITY_OUTPUT_DIR, "DmosRouteCapabilityRegistry.java");
+        Files.createDirectories(outputPath.getParent());
+        Files.writeString(outputPath, sb.toString());
+        LOG.info("Generated DmosRouteCapabilityRegistry.java");
     }
 
     private static void generateTypeScriptRouteManifest(Manifest manifest, String basePath) throws IOException {
@@ -251,6 +340,7 @@ public final class DmosRouteManifestGenerator {
         sb.append("const LocalizationPage = lazyNamedPage(() => import('@/pages/LocalizationPage'), 'LocalizationPage');\n");
         sb.append("const AgencyOperationsPage = lazyNamedPage(() => import('@/pages/AgencyOperationsPage'), 'AgencyOperationsPage');\n");
         sb.append("const AiOptimizationPage = lazyNamedPage(() => import('@/pages/AiOptimizationPage'), 'AiOptimizationPage');\n\n");
+        sb.append("const DmosReleaseCockpit = lazyNamedPage(() => import('@/pages/DmosReleaseCockpit'), 'DmosReleaseCockpit');\n\n");
 
         // Type definitions
         sb.append("export interface DmosRouteManifestEntry extends ProductRouteCapability {\n");
@@ -323,6 +413,9 @@ public final class DmosRouteManifestGenerator {
         if (path.contains("/budget")) {
             return "/workspaces/:workspaceId/budget";
         }
+        if (path.contains("/release-readiness")) {
+            return "/workspaces/:workspaceId/release-readiness";
+        }
         return path.replaceFirst("^/v1", "");
     }
 
@@ -334,6 +427,7 @@ public final class DmosRouteManifestGenerator {
         if (path.contains("/campaigns")) return "CampaignsPage";
         if (path.contains("/strategy")) return "StrategyPage";
         if (path.contains("/budget")) return "BudgetPage";
+        if (path.contains("/release-readiness")) return "DmosReleaseCockpit";
         if (path.contains("/funnel-analytics")) return "FunnelAnalyticsPage";
         if (path.contains("/attribution")) return "AttributionPage";
         if (path.contains("/roi-roas")) return "RoiRoasPage";
@@ -355,6 +449,7 @@ public final class DmosRouteManifestGenerator {
         if (path.contains("/campaigns")) return "Campaigns";
         if (path.contains("/strategy")) return "Strategy";
         if (path.contains("/budget")) return "Budget";
+        if (path.contains("/release-readiness")) return "Release Cockpit";
         if (path.contains("/funnel-analytics")) return "Funnel Analytics";
         if (path.contains("/attribution")) return "Attribution";
         if (path.contains("/roi-roas")) return "ROI & ROAS";
@@ -375,6 +470,7 @@ public final class DmosRouteManifestGenerator {
         if (path.contains("/campaigns")) return "Campaign planning and orchestration.";
         if (path.contains("/strategy")) return "Strategy generation, review, and approvals.";
         if (path.contains("/budget")) return "Budget recommendations and approval decisions.";
+        if (path.contains("/release-readiness")) return "Evidence freshness, runtime proof, rollback, and launch blockers.";
         if (path.contains("/funnel-analytics")) return "Full-funnel conversion analytics and stage drop-off reporting.";
         if (path.contains("/attribution")) return "Multi-touch attribution models and channel credit distribution.";
         if (path.contains("/roi-roas")) return "Return on investment and return on ad spend dashboards.";
@@ -394,6 +490,7 @@ public final class DmosRouteManifestGenerator {
         if (path.contains("/campaigns")) return "Execution";
         if (path.contains("/strategy")) return "Execution";
         if (path.contains("/budget")) return "Execution";
+        if (path.contains("/release-readiness")) return "Governance";
         if (path.contains("/funnel-analytics")) return "Reporting";
         if (path.contains("/attribution")) return "Reporting";
         if (path.contains("/roi-roas")) return "Reporting";
@@ -414,6 +511,7 @@ public final class DmosRouteManifestGenerator {
         if (path.contains("/campaigns")) return "megaphone";
         if (path.contains("/strategy")) return "target";
         if (path.contains("/budget")) return "wallet";
+        if (path.contains("/release-readiness")) return "shield-check";
         if (path.contains("/funnel-analytics")) return "chart-bar";
         if (path.contains("/attribution")) return "share-nodes";
         if (path.contains("/roi-roas")) return "trending-up";

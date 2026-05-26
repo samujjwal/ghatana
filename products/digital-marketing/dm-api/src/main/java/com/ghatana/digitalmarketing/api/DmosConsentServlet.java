@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.digitalmarketing.application.suppression.SuppressionService;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
@@ -68,7 +69,9 @@ public final class DmosConsentServlet {
                 .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/suppression", this::handleAddSuppression)
                 .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/suppression/check", this::handleCheckSuppression)
                 .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/unsubscribe", this::handleUnsubscribe)
-                .build()
+                .build(),
+            DmosMetricsCollector.disabled(),
+            "consent"
         );
     }
 

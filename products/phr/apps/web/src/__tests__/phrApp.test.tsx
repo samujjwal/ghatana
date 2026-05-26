@@ -11,6 +11,7 @@ import { attachPhrRouteElement } from '../phrRouteElements';
 import { AppShell } from '../layout/AppShell';
 import { DashboardPage } from '../pages/DashboardPage';
 import { RecordDetailPage } from '../pages/RecordDetailPage';
+import { ReleaseCockpitPage } from '../pages/ReleaseCockpitPage';
 import { ProtectedPhrRoute } from '../routes';
 
 vi.mock('../api/phrApi', async () => {
@@ -56,7 +57,15 @@ function entitlementPayloadFor(role: PhrRole): Record<string, unknown> {
 }
 
 function mockEntitlementFetch(): void {
-  const fetchMock: typeof fetch = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+  const fetchMock: typeof fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    if (url.includes('/release-readiness')) {
+      return new Response(JSON.stringify(releaseReadinessFixture), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const headers = new Headers(init?.headers);
     const roleHeader = headers.get('X-Role');
     const role: PhrRole =
@@ -72,6 +81,62 @@ function mockEntitlementFetch(): void {
 
   vi.stubGlobal('fetch', fetchMock);
 }
+
+const releaseReadinessFixture = {
+  product: 'phr',
+  tenantId: 'tenant-health-1',
+  principalId: 'admin-release-cockpit',
+  role: 'admin',
+  environment: 'staging',
+  generatedAt: '2026-05-25T23:13:49.230Z',
+  targetCommitSha: 'bdcee47c1e304454e7af848be60d981b24da1151',
+  runtimeTruthBlocked: false,
+  requiredSections: ['evidenceFreshness', 'fhirRuntime', 'consentCache', 'deployment', 'rollback', 'dataCloudRuntime'],
+  releaseReadiness: {
+    status: 'ready',
+    overallScore: 9,
+    blockingIssues: [],
+    warnings: [],
+  },
+  sections: {
+    evidenceFreshness: {
+      label: 'Evidence freshness',
+      status: 'passed',
+      runtimeProven: true,
+      message: 'Evidence commit, target commit, and expiry are bound.',
+    },
+    fhirRuntime: {
+      label: 'FHIR runtime registry',
+      status: 'passed',
+      runtimeProven: true,
+      message: 'Runtime-supported FHIR resources are present in release evidence.',
+    },
+    consentCache: {
+      label: 'Consent cache proof',
+      status: 'passed',
+      runtimeProven: true,
+      message: 'Consent cache proof is runtime-proven.',
+    },
+    deployment: {
+      label: 'Deployment proof',
+      status: 'ready',
+      runtimeProven: true,
+      message: 'staging deployment proof is ready.',
+    },
+    rollback: {
+      label: 'Rollback proof',
+      status: 'ready',
+      runtimeProven: true,
+      message: 'Rollback proof is runtime-proven.',
+    },
+    dataCloudRuntime: {
+      label: 'Data Cloud runtime truth',
+      status: 'passed',
+      runtimeProven: true,
+      message: 'Provider and runtime profile proof are passing.',
+    },
+  },
+};
 
 const dashboardFixture: DashboardData = {
   patient: {
@@ -281,6 +346,33 @@ describe('PHR web app', () => {
       expect(screen.getByText('Emergency Access Review')).toBeInTheDocument();
     });
     expect(screen.getByText('Emergency')).toBeInTheDocument();
+  });
+
+  it('renders release cockpit only when admin entitlements expose the route', async () => {
+    window.localStorage.setItem('phr.currentRole', 'admin');
+
+    render(
+      <ThemeProvider>
+        <PhrAccessProvider>
+          <MemoryRouter initialEntries={['/release-readiness']}>
+            <ReleaseCockpitPage />
+          </MemoryRouter>
+        </PhrAccessProvider>
+      </ThemeProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('PHR release cockpit')).toBeInTheDocument();
+      expect(screen.getByText('FHIR runtime registry')).toBeInTheDocument();
+      expect(screen.getByText('bdcee47c1e30')).toBeInTheDocument();
+    });
+  });
+
+  it('keeps release cockpit admin-scoped in route metadata', () => {
+    const route = phrRouteContracts.find((candidate) => candidate.path === '/release-readiness');
+    expect(route?.minimumRole).toBe('admin');
+    expect(route?.actions).toContain('view-release-readiness');
+    expect(route).not.toHaveProperty('element');
   });
 
   it('defines emergency workflow as clinician-scoped in route metadata', () => {

@@ -1,8 +1,9 @@
 {
-  "generatedAt": "2026-05-25T18:08:45.603Z",
-  "sourceCommit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+  "generatedAt": "2026-05-26T00:25:32.794Z",
+  "sourceCommit": "bdcee47c1e304454e7af848be60d981b24da1151",
   "sourceBranch": "main",
   "productScope": [
+    "digital-marketing",
     "phr"
   ],
   "releaseEnvironment": "staging",
@@ -71,12 +72,12 @@
       "productCostBudgetsPass": true,
       "productDomainInvariantsPass": true,
       "openApiBreakingChangesPass": true,
-      "affectedProductCount": 1
+      "affectedProductCount": 2
     },
     "perProductReleaseReadiness": {
       "available": true,
       "pass": true,
-      "productCount": 1,
+      "productCount": 2,
       "failedProductCount": 0,
       "releaseTargetScore": 4,
       "dimensionValidation": {

@@ -32,6 +32,8 @@ import com.ghatana.digitalmarketing.application.command.DmCommandServiceImpl;
 import com.ghatana.digitalmarketing.application.connector.DmConnectorRepository;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCampaignApiClient;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCampaignLinkRepository;
+import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsConnectorReadinessService;
+import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsConnectorReadinessServiceImpl;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCredentialRepository;
 import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.application.metrics.MicrometerDmosMetricsCollector;
@@ -331,7 +333,9 @@ public final class DmosApiServer extends Launcher {
         AsyncServlet workspace = get(DmosWorkspaceServlet.class).getServlet();
         AsyncServlet routeEntitlements = get(DmosRouteEntitlementServlet.class).getServlet();
         AsyncServlet dashboard = get(DmosDashboardServlet.class).getServlet();
+        AsyncServlet releaseReadiness = get(DmosReleaseReadinessServlet.class).getServlet();
         AsyncServlet campaigns = get(DmosCampaignServlet.class).getServlet();
+        AsyncServlet connectors = get(DmosConnectorReadinessServlet.class).getServlet();
         AsyncServlet approvals = get(DmosApprovalServlet.class).routes();
         AsyncServlet aiActions = get(DmosAiActionLogServlet.class).routes();
         AsyncServlet strategy = get(DmosStrategyServlet.class).getServlet();
@@ -339,24 +343,38 @@ public final class DmosApiServer extends Launcher {
         AsyncServlet audit = get(DmosWebsiteAuditServlet.class).getServlet();
         AsyncServlet consent = get(DmosConsentServlet.class).getServlet();
         AsyncServlet boundaryReporting = get(DmosBoundaryReportingServlet.class).getServlet();
+        DmosHealthServlet healthServlet = getIfExists(DmosHealthServlet.class);
+        AsyncServlet health = healthServlet == null ? null : healthServlet.getServlet();
 
         AsyncServlet routed = request -> {
             String path = request.getPath();
             if (request.getMethod() == HttpMethod.OPTIONS) {
                 return Promise.of(corsPreflight(request.getHeader(HttpHeaders.of("Origin"))));
             }
-            if ("/health/live".equals(path)) {
-                return HttpResponse.ok200().withPlainText("ok").toPromise();
-            }
-            if ("/health/ready".equals(path)) {
-                return HttpResponse.ok200().withPlainText("ready").toPromise();
+            if (path.equals("/health") || path.startsWith("/health/")) {
+                if (health != null) {
+                    return health.serve(request);
+                }
+                if ("/health/live".equals(path)) {
+                    return HttpResponse.ok200().withPlainText("ok").toPromise();
+                }
+                if ("/health/ready".equals(path)) {
+                    return HttpResponse.ok200().withPlainText("ready").toPromise();
+                }
+                if ("/health".equals(path) || "/health/startup".equals(path)) {
+                    return Promise.of(fallbackHealthResponse());
+                }
             }
             try {
                 Promise<HttpResponse> response;
                 if (path.equals("/v1/route-entitlements")) {
                     response = routeEntitlements.serve(request);
+                } else if (path.contains("/release-readiness")) {
+                    response = releaseReadiness.serve(request);
                 } else if (path.contains("/dashboard")) {
                     response = dashboard.serve(request);
+                } else if (path.contains("/connectors")) {
+                    response = connectors.serve(request);
                 } else if (path.contains("/campaigns")) {
                     response = campaigns.serve(request);
                 } else if (path.contains("/approvals")) {
@@ -399,6 +417,36 @@ public final class DmosApiServer extends Launcher {
             .withHeader(HttpHeaders.of("Access-Control-Max-Age"), "600")
             .withHeader(HttpHeaders.of("Vary"), "Origin")
             .build();
+    }
+
+    private HttpResponse fallbackHealthResponse() {
+        try {
+            Map<String, DmosBridgeHealthIndicator.BridgeStatus> bridgeStatus =
+                get(DmosBridgeHealthIndicator.class).snapshot();
+            boolean bridgesHealthy = bridgeStatus.values().stream()
+                .noneMatch(status -> "DOWN".equalsIgnoreCase(status.status()));
+            Map<String, Object> body = Map.of(
+                "status", bridgesHealthy ? "UP" : "DOWN",
+                "timestamp", java.time.Instant.now().toString(),
+                "checks", Map.of(
+                    "kernelBridge", Map.of(
+                        "status", bridgesHealthy ? "UP" : "DOWN",
+                        "component", "BridgeHealthIndicator",
+                        "bridges", bridgeStatus
+                    ),
+                    "eventloop", Map.of(
+                        "status", "UP",
+                        "component", "ActiveJ Eventloop"
+                    )
+                )
+            );
+            return HttpResponse.ofCode(bridgesHealthy ? 200 : 503)
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json; charset=utf-8")
+                .withBody(new ObjectMapper().writeValueAsBytes(body))
+                .build();
+        } catch (Exception e) {
+            return HttpResponse.ofCode(500).withPlainText("health serialization failed").build();
+        }
     }
 
     private void buildComponents() {
@@ -614,18 +662,22 @@ public final class DmosApiServer extends Launcher {
         String developerToken = System.getenv("GOOGLE_ADS_DEVELOPER_TOKEN");
         String customerId = System.getenv("GOOGLE_ADS_CUSTOMER_ID");
         DmGoogleAdsCampaignApiClient apiClient;
+        DmosBridgeHealthIndicator bridgeHealthIndicator = get(DmosBridgeHealthIndicator.class);
         boolean hasCredentials = developerToken != null && !developerToken.isBlank()
             && customerId != null && !customerId.isBlank();
         if (hasCredentials) {
             ObjectMapper objectMapper = new ObjectMapper();
             apiClient = HttpDmGoogleAdsCampaignApiClientAdapter.create(
                 objectMapper, developerToken, customerId);
+            bridgeHealthIndicator.reportHealthy("connector.google-ads");
         } else if (productionMode && googleAdsEnabled) {
+            bridgeHealthIndicator.reportUnhealthy("connector.google-ads", "enabled but Google Ads credentials are missing");
             throw new IllegalStateException(
                 "Google Ads connector is enabled in production but credentials are missing. " +
                     "Set GOOGLE_ADS_DEVELOPER_TOKEN and GOOGLE_ADS_CUSTOMER_ID or disable DMOS_GOOGLE_ADS_ENABLED.");
         } else if (productionMode) {
             // Fail closed in production when connector is disabled.
+            bridgeHealthIndicator.reportDegraded("connector.google-ads", "disabled in production");
             apiClient = new DmGoogleAdsCampaignApiClient() {
                 @Override
                 public Promise<String> createSearchCampaign(String accessToken, CreateGoogleSearchCampaignRequest request) {
@@ -645,9 +697,23 @@ public final class DmosApiServer extends Launcher {
         } else {
             // Dev/test uses an in-memory connector until credentials are configured.
             apiClient = new EphemeralDmGoogleAdsCampaignApiClient();
+            bridgeHealthIndicator.reportDegraded("connector.google-ads", "ephemeral development connector");
         }
 
         ObjectMapper objectMapper = new ObjectMapper();
+        DmGoogleAdsConnectorReadinessService googleAdsReadinessService =
+            new DmGoogleAdsConnectorReadinessServiceImpl(
+                connectorRepo,
+                credentialRepo,
+                apiClient,
+                get(DigitalMarketingKernelAdapter.class)
+            );
+
+        register(DmConnectorRepository.class, connectorRepo);
+        register(DmGoogleAdsCredentialRepository.class, credentialRepo);
+        register(DmGoogleAdsCampaignLinkRepository.class, linkRepo);
+        register(DmGoogleAdsCampaignApiClient.class, apiClient);
+        register(DmGoogleAdsConnectorReadinessService.class, googleAdsReadinessService);
 
         DmCommandHandlerRegistry commandHandlerRegistry = new DmCommandHandlerRegistry(
             connectorRepo,
@@ -1076,6 +1142,12 @@ public final class DmosApiServer extends Launcher {
 
         DashboardSummaryService dashboardSummaryService = get(DashboardSummaryService.class);
         register(DmosDashboardServlet.class, new DmosDashboardServlet(dashboardSummaryService, eventloop, httpContextFactory));
+        register(DmosReleaseReadinessServlet.class, new DmosReleaseReadinessServlet(eventloop, httpContextFactory));
+        register(DmosConnectorReadinessServlet.class, new DmosConnectorReadinessServlet(
+            get(DmGoogleAdsConnectorReadinessService.class),
+            eventloop,
+            httpContextFactory
+        ));
 
         register(DmosConsentServlet.class, new DmosConsentServlet(
             get(ConsentPlugin.class),

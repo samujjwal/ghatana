@@ -268,6 +268,8 @@ public final class WorkspaceServiceImpl implements WorkspaceService {
         return capabilityKey.equals(DmosCapabilityRegistry.CAMPAIGNS)
             || capabilityKey.equals(DmosCapabilityRegistry.STRATEGY)
             || capabilityKey.equals(DmosCapabilityRegistry.BUDGET)
+            || capabilityKey.equals(DmosCapabilityRegistry.CONNECTORS)
+            || capabilityKey.equals(DmosCapabilityRegistry.RELEASE_READINESS)
             || capabilityKey.equals(DmosCapabilityRegistry.APPROVALS)
             || capabilityKey.equals(DmosCapabilityRegistry.AI_ACTIONS)
             || capabilityKey.equals(DmosCapabilityRegistry.AD_COPY_GENERATION)

@@ -153,7 +153,10 @@ public final class PhrEntitlementRoutes {
             route("/settings", "Settings", "patient", List.of("manage-profile-settings"), List.of("profile-controls")),
             route("/labs", "Labs", "caregiver", List.of("review-lab-results"), List.of("recent-lab-results")),
             route("/medications", "Medications", "caregiver", List.of("review-medications"), List.of("medication-adherence")),
-            route("/emergency", "Emergency", "clinician", List.of("break-glass-review"), List.of("override-audit-timeline"))
+            route("/emergency", "Emergency", "clinician", List.of("break-glass-review"), List.of("override-audit-timeline")),
+            route("/release-readiness", "Release cockpit", "admin", List.of("view-release-readiness"),
+                List.of("evidence-freshness", "fhir-runtime", "consent-cache-proof", "rollback-proof")),
+            route("/audit", "Audit", "admin", List.of("view-audit-trail"), List.of("audit-trail"))
         );
 
         List<ProductRouteEntitlement.RouteEntitlement> filtered = routeEntitlementEvaluator.filterByRole(allRoutes, role, roleOrder);

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.digitalmarketing.application.landingpage.LandingPageGeneratorService;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
@@ -92,7 +93,9 @@ public final class DmosLandingPageServlet {
             .with(HttpMethod.GET,
                 "/v1/workspaces/:workspaceId/content-items/:itemId/landing-page/latest-approved",
                 this::handleGetLatestApproved)
-            .build()
+            .build(),
+            DmosMetricsCollector.disabled(),
+            "landing-page"
         );
     }
 

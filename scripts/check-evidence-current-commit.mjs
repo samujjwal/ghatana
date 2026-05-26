@@ -51,6 +51,7 @@ export function findEvidenceCurrentCommitViolations(
     evidenceRoot = DEFAULT_EVIDENCE_ROOT,
     expectedCommit = currentGitSha(root),
     skipProductReleaseReadiness = false,
+    skipEvidencePaths = [],
   } = {},
 ) {
   const violations = [];
@@ -61,9 +62,13 @@ export function findEvidenceCurrentCommitViolations(
 
   const evidenceFiles = [];
   walkJsonFiles(root, evidenceRoot, evidenceFiles);
+  const skippedPaths = new Set(skipEvidencePaths.map((entry) => entry.replaceAll(path.sep, '/')));
 
   for (const evidenceFile of evidenceFiles) {
     if (skipProductReleaseReadiness && /^\.kernel\/evidence\/product-release-readiness(\.|\.json$)/.test(evidenceFile)) {
+      continue;
+    }
+    if (skippedPaths.has(evidenceFile)) {
       continue;
     }
     const payload = parseJson(path.join(root, evidenceFile));

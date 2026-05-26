@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-05-25T18:02:43.907Z",
+  "generatedAt": "2026-05-25T19:27:50.988Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/audit-agent-usage.mjs",
     "source": "scripts/audit-agent-usage.mjs",
     "command": "pnpm check:agent-usage-audit",
-    "commit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19"
+    "commit": "bdcee47c1e304454e7af848be60d981b24da1151"
   },
   "summary": {
     "scannedDirectories": 7,

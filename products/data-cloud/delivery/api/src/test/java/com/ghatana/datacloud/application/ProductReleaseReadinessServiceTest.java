@@ -330,6 +330,17 @@ class ProductReleaseReadinessServiceTest extends EventloopTestBase {
         public Promise<List<ProductReleaseReadinessService.ProductReleaseReadiness>> findByProductId(String productId, String tenantId) {
             return Promise.of(storedList);
         }
+
+        @Override
+        public Promise<List<ProductReleaseReadinessService.ProductReleaseReadiness>> findByTenant(String tenantId) {
+            return Promise.of(storedList);
+        }
+
+        @Override
+        public Promise<Void> deleteById(String id, String tenantId) {
+            storedList = storedList.stream().filter(item -> !id.equals(item.id())).toList();
+            return Promise.complete();
+        }
     }
 
     private static class FakeMetricsCollector implements MetricsCollector {

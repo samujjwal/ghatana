@@ -22,6 +22,8 @@ public final class DmosCapabilityRegistry {
     public static final String CAMPAIGNS = "dmos.campaigns";
     public static final String STRATEGY = "dmos.strategy";
     public static final String BUDGET = "dmos.budget";
+    public static final String CONNECTORS = "dmos.connectors";
+    public static final String RELEASE_READINESS = "dmos.release_readiness";
     public static final String APPROVALS = "dmos.approvals";
     public static final String AI_ACTIONS = "dmos.ai_actions";
 
@@ -59,6 +61,20 @@ public final class DmosCapabilityRegistry {
             BUDGET,
             "Budget management and recommendations",
             "Budget allocation, optimization, and performance tracking",
+            null,
+            null
+        )),
+        Map.entry(CONNECTORS, new CapabilityDefinition(
+            CONNECTORS,
+            "Connector runtime readiness",
+            "Connector status, credential health, and provider readiness",
+            null,
+            null
+        )),
+        Map.entry(RELEASE_READINESS, new CapabilityDefinition(
+            RELEASE_READINESS,
+            "Release readiness cockpit",
+            "Evidence freshness, runtime proof, rollback, and release blockers",
             null,
             null
         )),

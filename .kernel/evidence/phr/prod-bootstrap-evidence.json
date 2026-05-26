@@ -3,11 +3,11 @@
   "productId": "phr",
   "environment": "prod",
   "targetEnv": "prod",
-  "generatedAt": "2026-05-24T00:00:00.000Z",
-  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "generatedAt": "2026-05-26T00:23:53.410Z",
+  "commitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
   "bootstrap": {
     "validated": true,
-    "validatedAt": "2026-05-24T00:00:00.000Z",
+    "validatedAt": "2026-05-26T00:23:53.410Z",
     "failClosed": true,
     "postgres": {
       "status": "ready",
@@ -148,7 +148,7 @@
     }
   },
   "executabilityProof": {
-    "validatedAt": "2026-05-24T00:00:00.000Z",
+    "validatedAt": "2026-05-26T00:23:53.410Z",
     "validationMethod": "automated-bootstrap-verification-script",
     "validationScript": "scripts/check-phr-lifecycle-readiness.mjs",
     "allComponentsExecutable": true,
@@ -235,5 +235,7 @@
     "products/phr/lifecycle/readiness-evidence.yaml",
     ".kernel/evidence/phr/phr-lifecycle-evidence-pack.json",
     ".kernel/evidence/phr/staging-bootstrap-evidence.json"
-  ]
+  ],
+  "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+  "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151"
 }

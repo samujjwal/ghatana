@@ -920,8 +920,60 @@ function validateProductionEvidence(productId, productMetadata) {
   return gaps;
 }
 
+function productReleaseEvidencePath(productId) {
+  if (productId === 'phr') {
+    return path.join(evidenceDir, 'phr/phr-release-readiness.json');
+  }
+  if (productId === 'digital-marketing') {
+    return path.join(evidenceDir, 'digital-marketing/dmos-release-readiness.json');
+  }
+  return null;
+}
+
+function validateProductSpecificReleaseEvidence(productId) {
+  const gaps = [];
+  const evidencePath = productReleaseEvidencePath(productId);
+  if (!evidencePath || !existsSync(evidencePath)) {
+    return gaps;
+  }
+
+  const evidence = readJsonIfExists(evidencePath);
+  const summary = evidence?.summary ?? {};
+  const releaseStatus = String(evidence?.releaseReadiness?.status ?? summary.overallStatus ?? '').toLowerCase();
+  const partialCount = Number(summary.partial ?? 0);
+  const blockedCount = Number(summary.blocked ?? 0);
+  const failedCount = Number(summary.failed ?? 0);
+  const pendingText = JSON.stringify(evidence).toLowerCase();
+
+  if (
+    partialCount > 0
+    || blockedCount > 0
+    || failedCount > 0
+    || releaseStatus.includes('partial')
+    || releaseStatus.includes('blocked')
+    || pendingText.includes('"status":"pending"')
+    || pendingText.includes('"status": "pending"')
+    || pendingText.includes('"stagingprodproof":"pending"')
+  ) {
+    gaps.push({
+      severity: 'P0',
+      gate: 'product-specific-release-evidence',
+      reason: 'partial-or-pending-product-proof',
+      message: `Product ${productId} has partial, pending, blocked, or failed product release proof`,
+      evidencePath: path.relative(repoRoot, evidencePath),
+    });
+  }
+
+  return gaps;
+}
+
 export function buildProductScorecard(productId, runs, releaseProfiles, registry, options = {}) {
-  const { wave2Rows, releaseTargetScore } = options;
+  const {
+    wave2Rows,
+    releaseTargetScore,
+    enforceExistingEvidenceFreshness = false,
+    skipProductSpecificReleaseEvidence = false,
+  } = options;
   const runPassRatio = Number((runs.filter((run) => run.status === 0).length / Math.max(1, runs.length)).toFixed(2));
   const wave2Row = wave2Rows.get(productId);
   const productMetadata = registry[productId] ?? null;
@@ -968,8 +1020,18 @@ export function buildProductScorecard(productId, runs, releaseProfiles, registry
   const productionEvidenceGaps = validateProductionEvidence(productId, productMetadata);
   blockingGaps.push(...productionEvidenceGaps);
 
+  const productSpecificEvidenceGaps = skipProductSpecificReleaseEvidence
+    ? []
+    : validateProductSpecificReleaseEvidence(productId);
+  blockingGaps.push(...productSpecificEvidenceGaps);
+
   const consistencyGaps = validateRegistryAndEvidenceConsistency(productId, productMetadata);
   blockingGaps.push(...consistencyGaps);
+
+  const freshnessGap = enforceExistingEvidenceFreshness ? releaseEvidenceFreshnessGap(productId) : null;
+  if (freshnessGap) {
+    blockingGaps.push(freshnessGap);
+  }
 
   const averageScore = Number((dimensions.reduce((sum, dimension) => sum + dimension.score, 0) / dimensions.length).toFixed(2));
   const belowTargetDimensions = dimensions
@@ -1016,7 +1078,7 @@ export function buildProductScorecard(productId, runs, releaseProfiles, registry
 function writePerProductScorecards(affectedProducts, runs, releaseProfiles) {
   const registry = loadCanonicalRegistry(repoRoot);
   const wave2Rows = loadWave2ScoreRows();
-  const paths = [];
+  const scorecards = [];
 
   for (const productId of affectedProducts) {
     const scorecard = buildProductScorecard(productId, runs, releaseProfiles, registry, {
@@ -1025,10 +1087,15 @@ function writePerProductScorecards(affectedProducts, runs, releaseProfiles) {
     });
     const productEvidencePath = path.join(evidenceDir, `product-release-readiness.${productId}.json`);
     writeJsonWithRetry(productEvidencePath, scorecard);
-    paths.push(path.relative(repoRoot, productEvidencePath));
+    scorecards.push({
+      productId,
+      path: path.relative(repoRoot, productEvidencePath),
+      releaseVerdict: scorecard.releaseVerdict,
+      blockingGaps: scorecard.blockingGaps,
+    });
   }
 
-  return paths;
+  return scorecards;
 }
 
 export function runProductReleaseReadinessCheck({ writeEvidence = true } = {}) {
@@ -1157,31 +1224,51 @@ function runProductReleaseReadinessCli() {
     };
   });
 
+  const releaseProfiles = releaseProfileIds();
+  const perProductScorecards = affectedProducts.map((productId) => buildProductScorecard(productId, runs, releaseProfiles, loadCanonicalRegistry(repoRoot), {
+    wave2Rows: loadWave2ScoreRows(),
+    releaseTargetScore: defaultReleaseTargetScore,
+  }));
+  const perProductBlockingGaps = perProductScorecards.flatMap((scorecard) =>
+    scorecard.blockingGaps.map((gap) => ({
+      productId: scorecard.productId,
+      ...gap,
+    })),
+  );
+  const aggregatePass = perProductBlockingGaps.length === 0;
+
   const evidence = {
     generatedAt: new Date().toISOString(),
     evidenceRun: evidenceRunMetadata(),
-    ...evidenceLifecycleMetadata(true),
-    pass: true,
+    ...evidenceLifecycleMetadata(aggregatePass),
+    pass: aggregatePass,
+    reason: aggregatePass ? undefined : 'per-product-release-readiness-blocked',
     journeyResults,
     releaseAreaResults,
     runs,
     scopedCheckGroups,
     artifactAuthoringGateScripts: artifactAuthoringReadinessScripts,
-    releaseProfiles: releaseProfileIds(),
+    releaseProfiles,
     affectedProducts,
+    perProductBlockingGaps,
     scopedExecution: !options.full,
     plannedExecutionOrder,
   };
 
   mkdirSync(evidenceDir, { recursive: true });
   writeJsonWithRetry(evidencePath, evidence);
-  const perProductEvidencePaths = writePerProductScorecards(affectedProducts, runs, evidence.releaseProfiles);
+  const perProductEvidence = writePerProductScorecards(affectedProducts, runs, evidence.releaseProfiles);
+
+  if (!aggregatePass) {
+    console.error('Product release readiness failed because per-product scorecards contain blocking gaps.');
+    process.exit(1);
+  }
 
   console.log(`Product release readiness check passed. Evidence: ${path.relative(repoRoot, evidencePath)}`);
   return {
     status: 'passed',
     journeys: journeyMatrix,
-    perProductEvidencePaths,
+    perProductEvidencePaths: perProductEvidence.map((entry) => entry.path),
     ...evidence,
   };
 }

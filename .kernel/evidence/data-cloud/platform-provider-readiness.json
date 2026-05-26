@@ -2,7 +2,7 @@
   "productId": "data-cloud",
   "productKind": "platform-provider",
   "status": "pass",
-  "lastChecked": "2026-05-25T18:12:03.234Z",
+  "lastChecked": "2026-05-26T00:14:23.774Z",
   "checks": {
     "bootstrapBuildWithoutPlatformProviders": {
       "status": "passed",
@@ -54,22 +54,22 @@
     "products/flashit"
   ],
   "notes": "All platform-provider gates have executable proof and evidence refs are validated. Runtime signals (lifecycle-events, artifact-refs, health-snapshots, provenance-refs, tenant-scoping) all confirmed.",
-  "generatedAt": "2026-05-25T18:12:03.234Z",
+  "generatedAt": "2026-05-26T00:14:23.774Z",
   "evidenceRun": {
     "generatedBy": "scripts/check-data-cloud-platform-provider-readiness.mjs",
     "command": "pnpm check:data-cloud-platform-provider-readiness",
     "source": "scripts/check-data-cloud-platform-provider-readiness.mjs",
-    "commit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
-    "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
-    "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+    "commit": "bdcee47c1e304454e7af848be60d981b24da1151",
+    "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+    "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
     "targetEnvironment": "staging"
   },
-  "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
-  "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+  "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+  "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
   "targetEnvironment": "staging",
   "validationStatus": "validated",
-  "reviewDueAt": "2026-05-26T18:12:03.234Z",
-  "expiresAt": "2026-05-27T18:12:03.234Z",
+  "reviewDueAt": "2026-05-27T00:14:23.774Z",
+  "expiresAt": "2026-05-28T00:14:23.774Z",
   "conformance": {
     "keepStatusBlockedUntil": [
       "all-evidence-run-commits-match-current-head",

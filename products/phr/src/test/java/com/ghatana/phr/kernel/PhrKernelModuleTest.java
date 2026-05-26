@@ -186,7 +186,7 @@ class PhrKernelModuleTest extends EventloopTestBase {
 
         assertEquals(HealthStatus.Status.HEALTHY, status.getStatus());
         assertTrue(status.getMessage().contains("operational"));
-        assertEquals(21, status.getChecks().size());
+        assertEquals(23, status.getChecks().size());
     }
 
     @Test
@@ -214,6 +214,8 @@ class PhrKernelModuleTest extends EventloopTestBase {
         assertTrue(status.getChecks().containsKey("clinical-decision-support"));
         assertTrue(status.getChecks().containsKey("phr-notification-outbox"));
         assertTrue(status.getChecks().containsKey("phr-notification-outbox-dispatcher"));
+        assertTrue(status.getChecks().containsKey("phr-evidence-outbox-dispatcher"));
+        assertTrue(status.getChecks().containsKey("phr-regulated-evidence-outbox"));
         assertTrue(status.getChecks().containsKey("phr-fhir-r4-server"));
         assertTrue(status.getChecks().containsKey("phr-nepal-hie-integration"));
         assertTrue(status.getChecks().containsKey("phr-hl7-lab-integration"));

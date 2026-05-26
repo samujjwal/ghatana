@@ -1,6 +1,7 @@
 package com.ghatana.digitalmarketing.application;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 
@@ -24,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class FeatureFlagDriftDetectionTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final TypeReference<Map<String, Object>> MANIFEST_TYPE = new TypeReference<>() {};
 
     @Test
     @DisplayName("Canonical manifest should exist and be valid JSON")
@@ -31,7 +33,7 @@ class FeatureFlagDriftDetectionTest {
         InputStream is = getClass().getClassLoader().getResourceAsStream("FEATURE_FLAGS_MANIFEST.json");
         assertNotNull(is, "FEATURE_FLAGS_MANIFEST.json should exist in test resources");
         
-        Map<?, ?> manifest = MAPPER.readValue(is, Map.class);
+        Map<String, Object> manifest = MAPPER.readValue(is, MANIFEST_TYPE);
         
         assertNotNull(manifest.get("flags"), "Manifest should have 'flags' array");
         assertNotNull(manifest.get("version"), "Manifest should have 'version'");
@@ -41,11 +43,11 @@ class FeatureFlagDriftDetectionTest {
     @DisplayName("All flags in DmosFeatureFlags should exist in manifest")
     void backendFlagsShouldExistInManifest() throws Exception {
         InputStream is = getClass().getClassLoader().getResourceAsStream("FEATURE_FLAGS_MANIFEST.json");
-        Map<?, ?> manifest = MAPPER.readValue(is, Map.class);
-        List<Map<?, ?>> flags = (List<Map<?, ?>>) manifest.get("flags");
+        Map<String, Object> manifest = MAPPER.readValue(is, MANIFEST_TYPE);
+        List<?> flags = assertInstanceOf(List.class, manifest.get("flags"));
         
         List<String> manifestKeys = flags.stream()
-            .map(f -> (String) f.get("key"))
+            .map(FeatureFlagDriftDetectionTest::flagKey)
             .toList();
         
         assertEquals(DmosFeatureFlags.AI_ENABLED, "dmos.ai.enabled");
@@ -76,10 +78,11 @@ class FeatureFlagDriftDetectionTest {
     @DisplayName("All flags in manifest should have required fields")
     void manifestFlagsShouldHaveRequiredFields() throws Exception {
         InputStream is = getClass().getClassLoader().getResourceAsStream("FEATURE_FLAGS_MANIFEST.json");
-        Map<?, ?> manifest = MAPPER.readValue(is, Map.class);
-        List<Map<?, ?>> flags = (List<Map<?, ?>>) manifest.get("flags");
+        Map<String, Object> manifest = MAPPER.readValue(is, MANIFEST_TYPE);
+        List<?> flags = assertInstanceOf(List.class, manifest.get("flags"));
         
-        for (Map<?, ?> flag : flags) {
+        for (Object flagEntry : flags) {
+            Map<?, ?> flag = assertInstanceOf(Map.class, flagEntry);
             assertNotNull(flag.get("key"), "Flag should have 'key'");
             assertNotNull(flag.get("name"), "Flag should have 'name'");
             assertNotNull(flag.get("description"), "Flag should have 'description'");
@@ -97,15 +100,20 @@ class FeatureFlagDriftDetectionTest {
     @DisplayName("Flag keys should follow naming convention")
     void flagKeysShouldFollowNamingConvention() throws Exception {
         InputStream is = getClass().getClassLoader().getResourceAsStream("FEATURE_FLAGS_MANIFEST.json");
-        Map<?, ?> manifest = MAPPER.readValue(is, Map.class);
-        List<Map<?, ?>> flags = (List<Map<?, ?>>) manifest.get("flags");
+        Map<String, Object> manifest = MAPPER.readValue(is, MANIFEST_TYPE);
+        List<?> flags = assertInstanceOf(List.class, manifest.get("flags"));
         
-        for (Map<?, ?> flag : flags) {
-            String key = (String) flag.get("key");
+        for (Object flagEntry : flags) {
+            String key = flagKey(flagEntry);
             assertTrue(key.startsWith("dmos."), 
                 "Flag key should start with 'dmos.': " + key);
             assertTrue(key.matches("[a-z._-]+"), 
                 "Flag key should use lowercase, dots, and hyphens only: " + key);
         }
+    }
+
+    private static String flagKey(Object flagEntry) {
+        Map<?, ?> flag = assertInstanceOf(Map.class, flagEntry);
+        return assertInstanceOf(String.class, flag.get("key"));
     }
 }

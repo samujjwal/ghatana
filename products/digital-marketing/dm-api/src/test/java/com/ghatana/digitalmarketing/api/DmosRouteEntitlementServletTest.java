@@ -62,6 +62,9 @@ class DmosRouteEntitlementServletTest extends EventloopTestBase {
         assertThat(body.path("routes").isArray()).isTrue();
         assertThat(body.path("actions").isArray()).isTrue();
         assertThat(body.path("cards").isArray()).isTrue();
+        assertThat(routePaths(body.path("routes"))).contains("/workspaces/:workspaceId/release-readiness");
+        assertThat(actionIds(body.path("actions"))).contains("digital-marketing:view-release-readiness");
+        assertThat(cardIds(body.path("cards"))).contains("runtime-proof", "rollback-proof");
     }
 
     @Test
@@ -118,5 +121,17 @@ class DmosRouteEntitlementServletTest extends EventloopTestBase {
         List<String> paths = new ArrayList<>();
         routes.forEach(route -> paths.add(route.path("path").asText()));
         return paths;
+    }
+
+    private static List<String> actionIds(JsonNode actions) {
+        List<String> ids = new ArrayList<>();
+        actions.forEach(action -> ids.add(action.path("id").asText()));
+        return ids;
+    }
+
+    private static List<String> cardIds(JsonNode cards) {
+        List<String> ids = new ArrayList<>();
+        cards.forEach(card -> ids.add(card.path("id").asText()));
+        return ids;
     }
 }

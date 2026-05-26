@@ -92,6 +92,8 @@ function firstJsonFile(directory) {
 
 export function createDataCloudReleaseBundle(root = process.cwd(), now = new Date()) {
   const head = currentGitSha(root);
+  const targetCommitSha = process.env.TARGET_COMMIT_SHA ?? process.env.AUDIT_TARGET_COMMIT ?? head;
+  const targetEnvironment = process.env.RELEASE_ENVIRONMENT ?? 'staging';
   const items = Object.fromEntries(BUNDLE_ITEMS.map(([key, relativePath]) => [key, readJson(root, relativePath)]));
   const violations = [];
 
@@ -121,7 +123,16 @@ export function createDataCloudReleaseBundle(root = process.cwd(), now = new Dat
       source: SCRIPT_PATH,
       command: COMMAND,
       commit: head,
+      sourceCommitSha: head,
+      targetCommitSha,
+      targetEnvironment,
     },
+    sourceCommitSha: head,
+    targetCommitSha,
+    targetEnvironment,
+    validationStatus: violations.length === 0 ? 'validated' : 'failed',
+    reviewDueAt: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+    expiresAt: new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(),
     summary: {
       itemCount: BUNDLE_ITEMS.length,
       presentItems: Object.values(items).filter((item) => item.present).length,

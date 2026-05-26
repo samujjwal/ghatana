@@ -325,53 +325,6 @@ public final class DmosHttpContextFactory {
             return null;
         }
 
-        // Canonical route-to-capability mapping from dmos-route-manifest.yaml
-        // This mapping is derived from the route manifest and should stay in sync
-        if (path.contains("/campaigns")) {
-            return DmosCapability.DMOS_CAMPAIGNS.getKey();
-        }
-        if (path.contains("/strategy")) {
-            return DmosCapability.DMOS_STRATEGY.getKey();
-        }
-        if (path.contains("/budget") || path.contains("/budget-recommendation")) {
-            return DmosCapability.DMOS_BUDGET.getKey();
-        }
-        if (path.contains("/approvals")) {
-            // Approvals is a governance capability, not a feature capability
-            return null;
-        }
-        if (path.contains("/ai-actions")) {
-            // AI action log is governance, not a feature capability
-            return null;
-        }
-        if (path.contains("/ai-optimization")
-            || path.contains("/next-best-action-recommendations")) {
-            return DmosCapability.DMOS_AI_OPTIMIZATION.getKey();
-        }
-        if (path.contains("/funnel-analytics")
-            || path.contains("/attribution")
-            || path.contains("/roi-roas")) {
-            return DmosCapability.DMOS_REPORTING.getKey();
-        }
-        if (path.contains("/self-marketing-funnel")) {
-            return DmosCapability.DMOS_SELF_MARKETING.getKey();
-        }
-        if (path.contains("/market-research")
-            || path.contains("/competitor")
-            || path.contains("/audit")) {
-            return DmosCapability.DMOS_MARKET_RESEARCH.getKey();
-        }
-        if (path.contains("/advanced-channels")) {
-            return DmosCapability.DMOS_ADVANCED_CHANNELS.getKey();
-        }
-        if (path.contains("/localization")) {
-            return DmosCapability.DMOS_LOCALIZATION.getKey();
-        }
-        if (path.contains("/agency")) {
-            return DmosCapability.DMOS_AGENCY.getKey();
-        }
-        
-        // Workspace routes and dashboard don't require specific capability checks
-        return null;
+        return DmosRouteCapabilityRegistry.capabilityForPath(path);
     }
 }

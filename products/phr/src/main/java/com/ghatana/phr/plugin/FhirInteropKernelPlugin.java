@@ -346,7 +346,7 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
         Set<String> allowedTypes = Set.of(
                 "Patient", "Observation", "Encounter", "Condition", "Procedure",
                 "Medication", "AllergyIntolerance", "DiagnosticReport",
-                "MedicationRequest", "Immunization", "CarePlan", "Coverage");
+                "MedicationRequest", "Immunization", "DocumentReference", "CarePlan", "Coverage");
         if (!allowedTypes.contains(resourceType)) {
             return false;
         }
@@ -375,6 +375,8 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
                         root.has("status") && root.has("code") && root.has("subject");
                 case "DiagnosticReport" ->
                         root.has("status") && root.has("code") && root.has("subject");
+                case "DocumentReference" ->
+                        root.has("status") && root.has("type") && root.has("subject");
                 default -> true; // Other supported types: structural check sufficient
             };
         } catch (Exception e) {

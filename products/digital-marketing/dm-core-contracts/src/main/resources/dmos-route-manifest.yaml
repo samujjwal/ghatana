@@ -28,6 +28,12 @@ capabilities:
   dmos.budget:
     description: Budget recommendations and approval decisions
     tier: growth
+  dmos.connectors:
+    description: Connector runtime readiness and operational status
+    tier: core
+  dmos.release_readiness:
+    description: Release cockpit evidence freshness, rollback, bootstrap, and runtime proof
+    tier: core
   dmos.reporting:
     description: Analytics, attribution, and ROI/ROAS reporting
     tier: growth
@@ -84,6 +90,24 @@ routes:
     minimumRole: viewer
     lifecycle: stable
     servlet: DmosWorkspaceServlet
+
+  - path: /v1/workspaces/:workspaceId/connectors/google-ads/:connectorId/readiness
+    method: GET
+    capability: dmos.connectors
+    actions:
+      - view-connector-readiness
+    minimumRole: brand-manager
+    lifecycle: stable
+    servlet: DmosConnectorReadinessServlet
+
+  - path: /v1/workspaces/:workspaceId/release-readiness
+    method: GET
+    capability: dmos.release_readiness
+    actions:
+      - view-release-readiness
+    minimumRole: marketing-director
+    lifecycle: stable
+    servlet: DmosReleaseReadinessServlet
 
   - path: /v1/workspaces/:workspaceId/approvals
     method: GET
@@ -200,6 +224,33 @@ routes:
     actions:
       - rollback-campaign
     minimumRole: brand-manager
+    lifecycle: stable
+    servlet: DmosCampaignServlet
+
+  - path: /v1/workspaces/:workspaceId/campaigns/:id/transition
+    method: POST
+    capability: dmos.campaigns
+    actions:
+      - transition-campaign
+    minimumRole: brand-manager
+    lifecycle: stable
+    servlet: DmosCampaignServlet
+
+  - path: /v1/workspaces/:workspaceId/campaigns/:id/request-approval
+    method: POST
+    capability: dmos.campaigns
+    actions:
+      - request-campaign-approval
+    minimumRole: brand-manager
+    lifecycle: stable
+    servlet: DmosCampaignServlet
+
+  - path: /v1/workspaces/:workspaceId/campaigns/:id/approve
+    method: POST
+    capability: dmos.campaigns
+    actions:
+      - approve-campaign
+    minimumRole: marketing-director
     lifecycle: stable
     servlet: DmosCampaignServlet
 

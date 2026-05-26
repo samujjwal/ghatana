@@ -40,12 +40,14 @@ export {
 // REALTIME STREAMING INTEGRATION
 // ============================================
 export {
-    useEventCloudStream,
+    useEventLogStream,
+    useEventLogStream as useEventCloudStream,
     useBrainStateStream,
     useEntityChangeStream,
     DataCloudRealtimeProvider,
     useDataCloudRealtimeContext,
-    type EventCloudEvent,
+    type EventLogEvent,
+    type EventLogEvent as EventCloudEvent,
     type BrainStateUpdate,
     type EntityChangeEvent,
 } from './realtime-integration';

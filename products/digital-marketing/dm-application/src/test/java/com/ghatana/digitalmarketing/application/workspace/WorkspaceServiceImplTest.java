@@ -1,5 +1,6 @@
 package com.ghatana.digitalmarketing.application.workspace;
 
+import com.ghatana.digitalmarketing.application.capabilities.DmosCapabilityRegistry;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
@@ -226,6 +227,21 @@ class WorkspaceServiceImplTest extends EventloopTestBase {
 
         assertThatExceptionOfType(SecurityException.class)
             .isThrownBy(() -> runPromise(() -> service.reactivateWorkspace(ctx, created.getId().getValue())));
+    }
+
+    @Test
+    @DisplayName("active workspace enables connector and release-readiness runtime capabilities")
+    void shouldEnableRuntimeTruthCapabilitiesForActiveWorkspace() {
+        Workspace created = runPromise(() -> service.createWorkspace(ctx,
+            new WorkspaceService.CreateWorkspaceCommand("Runtime Truth", null)));
+
+        List<WorkspaceService.WorkspaceCapability> capabilities = runPromise(
+            () -> service.getWorkspaceCapabilities(ctx, created.getId().getValue()));
+
+        assertThat(capabilities)
+            .filteredOn(WorkspaceService.WorkspaceCapability::enabled)
+            .extracting(WorkspaceService.WorkspaceCapability::key)
+            .contains(DmosCapabilityRegistry.CONNECTORS, DmosCapabilityRegistry.RELEASE_READINESS);
     }
 
     // -----------------------------------------------------------------------

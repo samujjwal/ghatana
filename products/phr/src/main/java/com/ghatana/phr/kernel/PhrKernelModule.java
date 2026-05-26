@@ -1,8 +1,6 @@
 package com.ghatana.phr.kernel;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
-import com.ghatana.kernel.adapter.datacloud.DataWriteRequest;
 import com.ghatana.kernel.config.KernelConfigResolver;
 import com.ghatana.kernel.contracts.ContractRegistry;
 import com.ghatana.kernel.contracts.ModuleContract;
@@ -20,15 +18,24 @@ import com.ghatana.platform.http.security.RouteEntitlementEvaluator;
 import com.ghatana.phr.api.FhirController;
 import com.ghatana.phr.api.NepalHieController;
 import com.ghatana.phr.api.PhrHttpServer;
+import com.ghatana.phr.api.routes.PhrAdministrativeRoutes;
+import com.ghatana.phr.api.routes.PhrClinicalRoutes;
+import com.ghatana.phr.api.routes.PhrConsentRoutes;
+import com.ghatana.phr.api.routes.PhrDocumentImagingRoutes;
 import com.ghatana.phr.api.routes.PhrEntitlementRoutes;
+import com.ghatana.phr.api.routes.PhrEmergencyRoutes;
 import com.ghatana.phr.api.routes.PhrFhirRoutes;
 import com.ghatana.phr.api.routes.PhrHealthRoutes;
+import com.ghatana.phr.api.routes.PhrPatientRecordRoutes;
+import com.ghatana.phr.api.routes.PhrReleaseReadinessRoutes;
 import com.ghatana.phr.fhir.server.PhrFhirR4Server;
 import com.ghatana.phr.hie.HttpNepalHieClient;
 import com.ghatana.phr.hie.NepalHieConfig;
 import com.ghatana.phr.hie.NepalHieIntegrationService;
 import com.ghatana.phr.hie.NepalHieMessageBuilder;
 import com.ghatana.phr.hl7.Hl7LabResultIntegrationService;
+import com.ghatana.phr.kernel.evidence.FileBackedPhrEvidenceOutbox;
+import com.ghatana.phr.kernel.evidence.PhrEvidenceOutboxDispatcher;
 import com.ghatana.phr.kernel.event.PhrAuditEvent;
 import com.ghatana.phr.kernel.event.PhrConsentEvent;
 import com.ghatana.phr.kernel.event.PhrLifecycleEvent;
@@ -63,6 +70,7 @@ import io.activej.promise.Promises;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -105,14 +113,13 @@ public class PhrKernelModule implements KernelModule {
     private static final ObjectMapper EVENT_OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
 
     private static final int MAX_EVIDENCE_WRITE_RETRIES = 3;
-    private static final long EVIDENCE_WRITE_BASE_BACKOFF_MS = 100L;
-
     private final AtomicBoolean started = new AtomicBoolean(false);
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final AtomicLong evidenceWriteFailureCount = new AtomicLong(0);
     private final List<KernelLifecycleAware> services = new ArrayList<>();
     private volatile KernelContext context;
     private volatile PhrServiceCatalog serviceCatalog;
+    private volatile PhrEvidenceOutboxDispatcher evidenceOutboxDispatcher;
 
     @Override
     public String getModuleId() {
@@ -230,6 +237,23 @@ public class PhrKernelModule implements KernelModule {
         if (!allHealthy) {
             builder.withStatus(HealthStatus.Status.UNHEALTHY);
         }
+
+        if (evidenceOutboxDispatcher != null) {
+            HealthStatus evidenceHealth = evidenceOutboxDispatcher.getHealthStatus();
+            builder.withCheck(
+                "phr-regulated-evidence-outbox",
+                evidenceHealth.getStatus(),
+                evidenceHealth.getMessage(),
+                0
+            );
+            builder.withDetail("pendingEvidenceWrites", evidenceOutboxDispatcher.pendingCount());
+            builder.withDetail("deadLetterEvidenceWrites", evidenceOutboxDispatcher.deadLetterCount());
+            if (evidenceHealth.isUnhealthy()) {
+                builder.withStatus(HealthStatus.Status.UNHEALTHY);
+            } else if (evidenceHealth.isDegraded() && allHealthy) {
+                builder.withStatus(HealthStatus.Status.DEGRADED);
+            }
+        }
         
         return builder.build();
     }
@@ -266,7 +290,7 @@ public class PhrKernelModule implements KernelModule {
                 payload.put("tenantId", nullable(event.tenantId()));
                 payload.put("occurredAt", toIso(event.timestamp()));
 
-                persistEventEvidence(context, DATASET_LIFECYCLE, event.eventId(), payload, event.timestamp(), event.correlationId(), event.tenantId());
+                persistEventEvidence(DATASET_LIFECYCLE, event.eventId(), payload, event.timestamp(), event.correlationId(), event.tenantId());
             }
         );
 
@@ -291,7 +315,7 @@ public class PhrKernelModule implements KernelModule {
                 payload.put("correlationId", nullable(event.correlationId()));
                 payload.put("occurredAt", toIso(event.timestamp()));
 
-                persistEventEvidence(context, DATASET_AUDIT, event.eventId(), payload, event.timestamp(), event.correlationId(), event.tenantId());
+                persistEventEvidence(DATASET_AUDIT, event.eventId(), payload, event.timestamp(), event.correlationId(), event.tenantId());
             }
         );
 
@@ -316,7 +340,7 @@ public class PhrKernelModule implements KernelModule {
                 payload.put("correlationId", nullable(event.correlationId()));
                 payload.put("occurredAt", toIso(event.timestamp()));
 
-                persistEventEvidence(context, DATASET_CONSENT, event.eventId(), payload, event.timestamp(), event.correlationId(), event.tenantId());
+                persistEventEvidence(DATASET_CONSENT, event.eventId(), payload, event.timestamp(), event.correlationId(), event.tenantId());
 
                 // Trigger cache invalidation for the affected consent
                 if (context.hasDependency(DistributedCachePort.class)) {
@@ -329,6 +353,8 @@ public class PhrKernelModule implements KernelModule {
     }
 
     private void registerServices(KernelContext context) {
+        PhrEvidenceOutboxDispatcher evidenceDispatcher = createEvidenceOutboxDispatcher(context);
+        evidenceOutboxDispatcher = evidenceDispatcher;
         DurablePhrNotificationSender notificationSender = new DurablePhrNotificationSender(context);
         EmergencyAccessNotificationSender emergencyNotificationSender = new KernelEventEmergencyAccessNotificationSender(context);
         EmergencyAccessReviewAuditLogger emergencyAuditLogger = new KernelEventEmergencyAccessReviewAuditLogger(context);
@@ -372,12 +398,50 @@ public class PhrKernelModule implements KernelModule {
         // Create route objects with eventloop
         Eventloop eventloop = context.getEventloop();
         PhrFhirRoutes fhirRoutes = new PhrFhirRoutes(eventloop, fhirController);
-        PhrHealthRoutes healthRoutes = new PhrHealthRoutes(eventloop, fhirServer);
+        PhrPatientRecordRoutes patientRecordRoutes = new PhrPatientRecordRoutes(eventloop, patientRecords, consent);
+        PhrConsentRoutes consentRoutes = new PhrConsentRoutes(eventloop, consent);
+        PhrClinicalRoutes clinicalRoutes = new PhrClinicalRoutes(
+            eventloop,
+            labResults,
+            medications,
+            immunizations,
+            consent
+        );
+        PhrEmergencyRoutes emergencyRoutes = new PhrEmergencyRoutes(eventloop, emergencyAccess);
+        PhrAdministrativeRoutes administrativeRoutes = new PhrAdministrativeRoutes(
+            eventloop,
+            appointments,
+            telemedicine,
+            referrals,
+            billing,
+            consent
+        );
+        PhrDocumentImagingRoutes documentImagingRoutes = new PhrDocumentImagingRoutes(
+            eventloop,
+            documents,
+            imaging,
+            consent
+        );
+        PhrHealthRoutes healthRoutes = new PhrHealthRoutes(eventloop, fhirServer, evidenceDispatcher::getHealthStatus);
         RouteEntitlementEvaluator routeEntitlementEvaluator = new RouteEntitlementEvaluator(new RoleEvaluator.FailClosed());
         IdentityAwareBoundedCache<String, Map<String, Object>> entitlementCache = new IdentityAwareBoundedCache<>(1000, 300);
         PhrEntitlementRoutes entitlementRoutes = new PhrEntitlementRoutes(eventloop, routeEntitlementEvaluator, entitlementCache);
+        PhrReleaseReadinessRoutes releaseReadinessRoutes = new PhrReleaseReadinessRoutes(eventloop);
         
-        PhrHttpServer phrHttpServer = new PhrHttpServer(eventloop, fhirRoutes, entitlementRoutes, healthRoutes);
+        PhrHttpServer phrHttpServer = new PhrHttpServer(
+            eventloop,
+            fhirRoutes,
+            patientRecordRoutes,
+            consentRoutes,
+            clinicalRoutes,
+            emergencyRoutes,
+            administrativeRoutes,
+            documentImagingRoutes,
+            releaseReadinessRoutes,
+            entitlementRoutes,
+            healthRoutes
+        );
+        context.registerService(PhrEvidenceOutboxDispatcher.class, evidenceDispatcher);
         context.registerService(PhrHttpServer.class, phrHttpServer);
         context.registerService(PhrFhirR4Server.class, fhirServer);
         context.registerService(FhirController.class, fhirController);
@@ -399,6 +463,7 @@ public class PhrKernelModule implements KernelModule {
             new PhrServiceCatalog.EmergencyServices(emergencyAccess, emergencyReview)
         );
 
+        services.add(evidenceDispatcher);
         services.add(notificationSender);
         services.add(notificationDispatcher);
         services.add(patientRecords);
@@ -420,6 +485,22 @@ public class PhrKernelModule implements KernelModule {
         services.add(telemedicine);
         services.add(caregivers);
         services.add(emergencyAccess);
+    }
+
+    private PhrEvidenceOutboxDispatcher createEvidenceOutboxDispatcher(KernelContext context) {
+        String configuredPath = context.getOptionalConfig("phr.evidence.outbox.dir", String.class)
+            .filter(path -> !path.isBlank())
+            .orElseGet(() -> {
+                if ("test".equalsIgnoreCase(context.getEnvironment())) {
+                    return Path.of(System.getProperty("java.io.tmpdir"), "ghatana", "phr", "evidence-outbox").toString();
+                }
+                return ".kernel/runtime/phr/evidence-outbox";
+            });
+        return new PhrEvidenceOutboxDispatcher(
+            context,
+            new FileBackedPhrEvidenceOutbox(Path.of(configuredPath)),
+            MAX_EVIDENCE_WRITE_RETRIES
+        );
     }
 
     @SuppressWarnings("unchecked")
@@ -526,22 +607,12 @@ public class PhrKernelModule implements KernelModule {
     }
 
     private void persistEventEvidence(
-            KernelContext context,
             String datasetId,
             String eventId,
             Map<String, Object> payload,
             Instant timestamp,
             String correlationId,
             String tenantId) {
-        if (!context.hasDependency(DataCloudKernelAdapter.class)) {
-            long failures = evidenceWriteFailureCount.incrementAndGet();
-            LOG.error("[PHR-EVIDENCE-DURABILITY] DataCloudKernelAdapter unavailable — evidence write permanently lost. "
-                    + "dataset={} eventId={} tenantId={} correlationId={} totalFailures={}",
-                    datasetId, eventId, tenantId, correlationId, failures);
-            return;
-        }
-
-        DataCloudKernelAdapter dataCloud = context.getDependency(DataCloudKernelAdapter.class);
         byte[] body;
         try {
             body = EVENT_OBJECT_MAPPER.writeValueAsBytes(payload);
@@ -562,42 +633,15 @@ public class PhrKernelModule implements KernelModule {
             "contentType", "application/json"
         );
 
-        DataWriteRequest writeRequest = new DataWriteRequest(datasetId, eventId, body, metadata);
-        Exception lastError = null;
-        for (int attempt = 0; attempt <= MAX_EVIDENCE_WRITE_RETRIES; attempt++) {
-            try {
-                dataCloud.writeData(writeRequest);
-                if (attempt > 0) {
-                    LOG.info("[PHR-EVIDENCE-DURABILITY] PHR event evidence write succeeded after {} retries. "
-                            + "dataset={} eventId={}", attempt, datasetId, eventId);
-                }
-                return;
-            } catch (Exception writeError) {
-                lastError = writeError;
-                if (attempt < MAX_EVIDENCE_WRITE_RETRIES) {
-                    long backoffMs = EVIDENCE_WRITE_BASE_BACKOFF_MS * (1L << attempt);
-                    LOG.warn("[PHR-EVIDENCE-DURABILITY] PHR event evidence write failed (attempt {}/{}), retrying in {}ms. "
-                            + "dataset={} eventId={} error={}",
-                            attempt + 1, MAX_EVIDENCE_WRITE_RETRIES + 1, backoffMs,
-                            datasetId, eventId, writeError.getMessage());
-                    try {
-                        Thread.sleep(backoffMs);
-                    } catch (InterruptedException interruptedException) {
-                        Thread.currentThread().interrupt();
-                        long failures = evidenceWriteFailureCount.incrementAndGet();
-                        LOG.error("[PHR-EVIDENCE-DURABILITY] PHR event evidence write retry interrupted — evidence may be lost. "
-                                + "dataset={} eventId={} tenantId={} totalFailures={}",
-                                datasetId, eventId, tenantId, failures, interruptedException);
-                        return;
-                    }
-                }
-            }
+        if (evidenceOutboxDispatcher == null) {
+            long failures = evidenceWriteFailureCount.incrementAndGet();
+            LOG.error("[PHR-EVIDENCE-DURABILITY] PHR evidence outbox unavailable — regulated evidence was not accepted. "
+                    + "dataset={} eventId={} tenantId={} correlationId={} totalFailures={}",
+                    datasetId, eventId, tenantId, correlationId, failures);
+            return;
         }
 
-        long failures = evidenceWriteFailureCount.incrementAndGet();
-        LOG.error("[PHR-EVIDENCE-DURABILITY] PHR event evidence write failed after {} attempts — evidence permanently lost. "
-                + "dataset={} eventId={} tenantId={} correlationId={} totalFailures={}",
-                MAX_EVIDENCE_WRITE_RETRIES + 1, datasetId, eventId, tenantId, correlationId, failures, lastError);
+        evidenceOutboxDispatcher.enqueue(datasetId, eventId, body, metadata);
     }
 
     /**
@@ -607,7 +651,8 @@ public class PhrKernelModule implements KernelModule {
      * @return number of permanently failed evidence writes
      */
     public long getEvidenceWriteFailureCount() {
-        return evidenceWriteFailureCount.get();
+        long outboxDeadLetters = evidenceOutboxDispatcher == null ? 0L : evidenceOutboxDispatcher.deadLetterCount();
+        return evidenceWriteFailureCount.get() + outboxDeadLetters;
     }
 
     private String nullable(String value) {

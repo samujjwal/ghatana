@@ -43,7 +43,7 @@ public class PostgresIdempotencyTokenRepository implements IdempotencyTokenRepos
 
     @Override
     public Promise<IdempotentResponse> findByKey(DmWorkspaceId workspaceId, String idempotencyKey) {
-        return Promise.ofBlocking(executor, () -> {
+        Promise<Optional<IdempotentResponse>> lookup = Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT response_payload, response_status, response_headers
                 FROM idempotency_tokens
@@ -70,7 +70,8 @@ public class PostgresIdempotencyTokenRepository implements IdempotencyTokenRepos
                 LOG.error("Failed to find idempotency token: {}", idempotencyKey, e);
                 throw new DmPersistenceException("Failed to find idempotency token", e);
             }
-        }).then(opt -> unwrapOptional((Optional<IdempotentResponse>) opt));
+        });
+        return lookup.then(this::unwrapOptional);
     }
 
     @Override

@@ -1,29 +1,38 @@
 {
-  "generatedAt": "2026-05-25T16:38:06.336Z",
-  "pass": true,
+  "generatedAt": "2026-05-25T19:42:08.528Z",
+  "pass": false,
   "evidenceRun": {
     "generatedBy": "scripts/generate-data-cloud-release-bundle.mjs",
     "source": "scripts/generate-data-cloud-release-bundle.mjs",
     "command": "pnpm generate:data-cloud-release-bundle",
-    "commit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19"
+    "commit": "bdcee47c1e304454e7af848be60d981b24da1151",
+    "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+    "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+    "targetEnvironment": "staging"
   },
+  "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+  "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+  "targetEnvironment": "staging",
+  "validationStatus": "failed",
+  "reviewDueAt": "2026-05-26T19:42:08.528Z",
+  "expiresAt": "2026-05-27T19:42:08.528Z",
   "summary": {
     "itemCount": 23,
     "presentItems": 23,
-    "violationCount": 0
+    "violationCount": 2
   },
   "items": {
     "activeModuleEvidence": {
       "present": true,
       "path": ".kernel/evidence/data-cloud-active-modules.json",
       "payload": {
-        "generatedAt": "2026-05-25T16:31:23.324Z",
+        "generatedAt": "2026-05-25T19:35:15.430Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/generate-data-cloud-active-modules-evidence.mjs",
           "source": "scripts/generate-data-cloud-active-modules-evidence.mjs",
           "command": "pnpm check:data-cloud-active-module-evidence",
-          "commit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19"
+          "commit": "bdcee47c1e304454e7af848be60d981b24da1151"
         },
         "source": {
           "settings": "config/generated/settings-gradle-includes.kts",
@@ -423,13 +432,13 @@
       "present": true,
       "path": ".kernel/evidence/action-plane-boundaries.json",
       "payload": {
-        "generatedAt": "2026-05-25T16:31:23.722Z",
+        "generatedAt": "2026-05-25T19:27:39.694Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/check-action-plane-boundaries.mjs",
           "source": "scripts/check-action-plane-boundaries.mjs",
           "command": "pnpm check:action-plane-boundaries",
-          "commit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19"
+          "commit": "bdcee47c1e304454e7af848be60d981b24da1151"
         },
         "scope": {
           "scannedRoots": [
@@ -488,13 +497,13 @@
       "present": true,
       "path": ".kernel/evidence/action-plane-module-inventory.json",
       "payload": {
-        "generatedAt": "2026-05-25T16:31:24.545Z",
+        "generatedAt": "2026-05-25T19:27:39.360Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/check-action-plane-module-inventory.mjs",
           "source": "scripts/check-action-plane-module-inventory.mjs",
           "command": "pnpm check:action-plane-module-inventory",
-          "commit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19"
+          "commit": "bdcee47c1e304454e7af848be60d981b24da1151"
         },
         "source": {
           "inventory": "products/data-cloud/docs/architecture/ACTION_PLANE_MODULE_INVENTORY.md",
@@ -675,14 +684,23 @@
       "present": true,
       "path": ".kernel/evidence/production-readiness-task-map.json",
       "payload": {
-        "generatedAt": "2026-05-25T16:31:26.098Z",
-        "pass": true,
+        "generatedAt": "2026-05-25T19:38:35.573Z",
+        "pass": false,
         "evidenceRun": {
           "generatedBy": "scripts/check-production-readiness-task-map.mjs",
           "source": "scripts/check-production-readiness-task-map.mjs",
           "command": "pnpm check:production-readiness-task-map",
-          "commit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19"
+          "commit": "bdcee47c1e304454e7af848be60d981b24da1151",
+          "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+          "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+          "targetEnvironment": "staging"
         },
+        "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+        "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+        "targetEnvironment": "staging",
+        "validationStatus": "failed",
+        "reviewDueAt": "2026-05-26T19:38:35.573Z",
+        "expiresAt": "2026-05-27T19:38:35.573Z",
         "source": {
           "taskMap": "products/data-cloud/docs/audits/PRODUCTION_READINESS_TASK_MAP.md",
           "readiness": "products/data-cloud/lifecycle/readiness-evidence.yaml",
@@ -693,7 +711,7 @@
           "releaseBlockingRows": 12,
           "requiredTestClaims": 10,
           "verifiedTestClaims": 10,
-          "violationCount": 0
+          "violationCount": 24
         },
         "tasks": [
           {
@@ -891,20 +909,45 @@
             ]
           }
         ],
-        "violations": []
+        "violations": [
+          "DC-P0-001 readiness blocked until proof passes: release-blocking evidence must be verified, got pending",
+          "DC-P0-001 readiness blocked until proof passes: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151",
+          "DC-P0-002 regenerate current-head evidence: release-blocking evidence must be verified, got pending",
+          "DC-P0-002 regenerate current-head evidence: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151",
+          "DC-P0-002 Action Plane boundary evidence: release-blocking evidence must be verified, got pending",
+          "DC-P0-002 Action Plane boundary evidence: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151",
+          "DC-P0-002 product release readiness evidence: release-blocking evidence must be verified, got pending",
+          "DC-P0-002 product release readiness evidence: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151",
+          "DC-P0-002 AI governance behavioral proof: release-blocking evidence must be verified, got pending",
+          "DC-P0-002 AI governance behavioral proof: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151",
+          "DC-P1-004 Action Plane inventory drift: release-blocking evidence must be verified, got pending",
+          "DC-P1-004 Action Plane inventory drift: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151",
+          "DC-P3-003 agent capability duplicate evidence: release-blocking evidence must be verified, got pending",
+          "DC-P3-003 agent capability duplicate evidence: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151",
+          "DC-P3-003 agent runtime test exclude evidence: release-blocking evidence must be verified, got pending",
+          "DC-P3-003 agent runtime test exclude evidence: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151",
+          "DC-P5-003 agent usage audit evidence: release-blocking evidence must be verified, got pending",
+          "DC-P5-003 agent usage audit evidence: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151",
+          "DC-P10-002 audit completeness proof: release-blocking evidence must be verified, got pending",
+          "DC-P10-002 audit completeness proof: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151",
+          "DC-P11-002 operations readiness bundle: release-blocking evidence must be verified, got pending",
+          "DC-P11-002 operations readiness bundle: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151",
+          "DC-P14-002 task-map verification evidence: release-blocking evidence must be verified, got pending",
+          "DC-P14-002 task-map verification evidence: release-blocking evidence must be generated at current HEAD bdcee47c1e304454e7af848be60d981b24da1151"
+        ]
       }
     },
     "agentCapabilityDuplicateEvidence": {
       "present": true,
       "path": ".kernel/evidence/agent-capability-duplicates.json",
       "payload": {
-        "generatedAt": "2026-05-25T16:31:24.906Z",
+        "generatedAt": "2026-05-25T19:27:39.681Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/check-agent-capability-duplicates.mjs",
           "source": "scripts/check-agent-capability-duplicates.mjs",
           "command": "pnpm check:agent-capability-duplicates",
-          "commit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19"
+          "commit": "bdcee47c1e304454e7af848be60d981b24da1151"
         },
         "summary": {
           "scannedScopes": 15,
@@ -917,13 +960,13 @@
       "present": true,
       "path": ".kernel/evidence/agent-runtime-test-excludes.json",
       "payload": {
-        "generatedAt": "2026-05-25T16:31:25.394Z",
+        "generatedAt": "2026-05-25T19:27:51.272Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/check-agent-runtime-test-excludes.mjs",
           "source": "scripts/check-agent-runtime-test-excludes.mjs",
           "command": "pnpm check:agent-runtime-test-excludes",
-          "commit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19"
+          "commit": "bdcee47c1e304454e7af848be60d981b24da1151"
         },
         "summary": {
           "gradleFile": "products/data-cloud/planes/action/agent-runtime/build.gradle.kts",
@@ -936,13 +979,13 @@
       "present": true,
       "path": ".kernel/evidence/agent-usage-audit.json",
       "payload": {
-        "generatedAt": "2026-05-25T16:31:25.623Z",
+        "generatedAt": "2026-05-25T19:27:50.988Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/audit-agent-usage.mjs",
           "source": "scripts/audit-agent-usage.mjs",
           "command": "pnpm check:agent-usage-audit",
-          "commit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19"
+          "commit": "bdcee47c1e304454e7af848be60d981b24da1151"
         },
         "summary": {
           "scannedDirectories": 7,
@@ -977,13 +1020,13 @@
       "present": true,
       "path": ".kernel/evidence/audit-completeness.json",
       "payload": {
-        "generatedAt": "2026-05-25T16:31:26.567Z",
+        "generatedAt": "2026-05-25T19:27:50.954Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/check-audit-completeness.mjs",
           "source": "scripts/check-audit-completeness.mjs",
           "command": "pnpm check:audit-completeness",
-          "commit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19"
+          "commit": "bdcee47c1e304454e7af848be60d981b24da1151"
         },
         "summary": {
           "requiredFileCount": 10,
@@ -1055,13 +1098,13 @@
       "present": true,
       "path": ".kernel/evidence/data-cloud-operations-readiness.json",
       "payload": {
-        "generatedAt": "2026-05-25T16:31:26.814Z",
+        "generatedAt": "2026-05-25T19:31:05.487Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/check-data-cloud-operations-readiness.mjs",
           "source": "scripts/check-data-cloud-operations-readiness.mjs",
           "command": "pnpm check:data-cloud-operations-readiness",
-          "commit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19"
+          "commit": "bdcee47c1e304454e7af848be60d981b24da1151"
         },
         "summary": {
           "requiredFileCount": 15,
@@ -1102,23 +1145,24 @@
       "present": true,
       "path": ".kernel/evidence/product-release-readiness.json",
       "payload": {
-        "generatedAt": "2026-05-25T16:38:01.212Z",
+        "generatedAt": "2026-05-25T19:37:25.154Z",
         "evidenceRun": {
           "generatedBy": "scripts/check-product-release-readiness.mjs",
           "command": "pnpm check:product-release-readiness",
           "source": "scripts/check-product-release-readiness.mjs",
-          "commit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
-          "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
-          "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+          "commit": "bdcee47c1e304454e7af848be60d981b24da1151",
+          "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+          "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
           "targetEnvironment": "staging"
         },
-        "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
-        "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+        "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
         "targetEnvironment": "staging",
-        "validationStatus": "validated",
-        "reviewDueAt": "2026-05-26T16:38:01.222Z",
-        "expiresAt": "2026-05-27T16:38:01.222Z",
-        "pass": true,
+        "validationStatus": "failed",
+        "reviewDueAt": "2026-05-26T19:37:25.166Z",
+        "expiresAt": "2026-05-27T19:37:25.166Z",
+        "pass": false,
+        "reason": "per-product-release-readiness-blocked",
         "journeyResults": [
           {
             "journey": "vision-and-coherence",
@@ -1286,87 +1330,127 @@
           {
             "script": "pnpm:build:kernel-lifecycle-platform",
             "status": 0,
-            "durationMs": 7302
+            "durationMs": 10362
           },
           {
             "script": "./scripts/check-affected-product-strict-release-profile.mjs",
             "status": 0,
-            "durationMs": 68
+            "durationMs": 70
           },
           {
             "script": "./scripts/check-data-cloud-platform-provider-readiness.mjs",
             "status": 0,
-            "durationMs": 110
+            "durationMs": 111
           },
           {
             "script": "./scripts/check-data-cloud-release-runtime-profile.mjs",
             "status": 0,
-            "durationMs": 95026
+            "durationMs": 55795
           },
           {
             "script": "./scripts/check-digital-marketing-lifecycle-pilot.mjs",
             "status": 0,
-            "durationMs": 4007
+            "durationMs": 4252
           },
           {
             "script": "./scripts/check-dmos-boundary-workflow-coverage.mjs",
             "status": 0,
-            "durationMs": 55
+            "durationMs": 88
           },
           {
             "script": "./scripts/check-dmos-no-fake-data.mjs",
             "status": 0,
-            "durationMs": 142
+            "durationMs": 201
           },
           {
             "script": "./scripts/check-dmos-docs-matrix.mjs",
             "status": 0,
-            "durationMs": 58
+            "durationMs": 94
           },
           {
             "script": "./scripts/check-dmos-operations-docs.mjs",
             "status": 0,
-            "durationMs": 59
+            "durationMs": 92
           },
           {
             "script": "./scripts/check-dmos-duplicate-runtimes.mjs",
             "status": 0,
-            "durationMs": 228
+            "durationMs": 280
           },
           {
             "script": "./scripts/check-dmos-production-wiring.mjs",
             "status": 0,
-            "durationMs": 52
+            "durationMs": 79
           },
           {
             "script": "./scripts/check-dmos-runtime-module.mjs",
             "status": 0,
-            "durationMs": 54
+            "durationMs": 80
           },
           {
             "script": "./scripts/check-dmos-persistence.mjs",
             "status": 0,
-            "durationMs": 61
+            "durationMs": 75
           },
           {
             "script": "./scripts/check-dmos-kernel-context.mjs",
             "status": 0,
-            "durationMs": 55
+            "durationMs": 77
           },
           {
             "script": "./scripts/check-dmos-data-cloud-rls.mjs",
             "status": 0,
-            "durationMs": 54
+            "durationMs": 69
           },
           {
             "script": "./scripts/check-dmos-ai-action-log.mjs",
             "status": 0,
-            "durationMs": 49
+            "durationMs": 68
           },
           {
             "script": "./scripts/check-dmos-google-ads-connector.mjs",
             "status": 0,
-            "durationMs": 50
+            "durationMs": 81
+          },
+          {
+            "script": "./scripts/check-phr-lifecycle-readiness.mjs",
+            "status": 0,
+            "durationMs": 116
+          },
+          {
+            "script": "./scripts/check-phr-lifecycle-pilot.mjs",
+            "status": 0,
+            "durationMs": 222
+          },
+          {
+            "script": "./scripts/check-phr-kernel-context.mjs",
+            "status": 0,
+            "durationMs": 68
+          },
+          {
+            "script": "./scripts/check-phr-data-cloud-rls.mjs",
+            "status": 0,
+            "durationMs": 72
+          },
+          {
+            "script": "./scripts/check-phr-emergency-access-audit.mjs",
+            "status": 0,
+            "durationMs": 64
+          },
+          {
+            "script": "./scripts/check-phr-fhir-validation.mjs",
+            "status": 0,
+            "durationMs": 68
+          },
+          {
+            "script": "./scripts/check-phr-hipaa-compliance.mjs",
+            "status": 0,
+            "durationMs": 65
+          },
+          {
+            "script": "./scripts/check-phr-consent-cache.mjs",
+            "status": 0,
+            "durationMs": 66
           }
         ],
         "scopedCheckGroups": {
@@ -1465,7 +1549,26 @@
           "polyglot-service-release"
         ],
         "affectedProducts": [
-          "digital-marketing"
+          "digital-marketing",
+          "phr"
+        ],
+        "perProductBlockingGaps": [
+          {
+            "productId": "digital-marketing",
+            "severity": "P0",
+            "gate": "product-specific-release-evidence",
+            "reason": "partial-or-pending-product-proof",
+            "message": "Product digital-marketing has partial, pending, blocked, or failed product release proof",
+            "evidencePath": ".kernel/evidence/digital-marketing/dmos-release-readiness.json"
+          },
+          {
+            "productId": "phr",
+            "severity": "P0",
+            "gate": "product-specific-release-evidence",
+            "reason": "partial-or-pending-product-proof",
+            "message": "Product phr has partial, pending, blocked, or failed product release proof",
+            "evidencePath": ".kernel/evidence/phr/phr-release-readiness.json"
+          }
         ],
         "scopedExecution": true,
         "plannedExecutionOrder": [
@@ -1484,7 +1587,15 @@
           "./scripts/check-dmos-kernel-context.mjs",
           "./scripts/check-dmos-data-cloud-rls.mjs",
           "./scripts/check-dmos-ai-action-log.mjs",
-          "./scripts/check-dmos-google-ads-connector.mjs"
+          "./scripts/check-dmos-google-ads-connector.mjs",
+          "./scripts/check-phr-lifecycle-readiness.mjs",
+          "./scripts/check-phr-lifecycle-pilot.mjs",
+          "./scripts/check-phr-kernel-context.mjs",
+          "./scripts/check-phr-data-cloud-rls.mjs",
+          "./scripts/check-phr-emergency-access-audit.mjs",
+          "./scripts/check-phr-fhir-validation.mjs",
+          "./scripts/check-phr-hipaa-compliance.mjs",
+          "./scripts/check-phr-consent-cache.mjs"
         ]
       }
     },
@@ -1493,12 +1604,12 @@
       "path": ".kernel/evidence/ai-governance-behavioral-proof/ai-governance-behavioral-proof-latest.json",
       "payload": {
         "timestamp": "generated-on-demand",
-        "generatedAt": "2026-05-25T16:37:09.649Z",
+        "generatedAt": "2026-05-25T19:36:46.705Z",
         "evidenceRun": {
           "generatedBy": "scripts/check-ai-governance-behavioral-proof.mjs",
           "command": "pnpm check:ai-governance-behavioral-proof",
           "source": "scripts/check-ai-governance-behavioral-proof.mjs",
-          "commit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19"
+          "commit": "bdcee47c1e304454e7af848be60d981b24da1151"
         },
         "violations": [],
         "warnings": [],
@@ -1516,7 +1627,7 @@
       "present": true,
       "path": ".kernel/evidence/openapi-breaking-changes.json",
       "payload": {
-        "generatedAt": "2026-05-25T01:30:18.224Z",
+        "generatedAt": "2026-05-25T18:12:03.152Z",
         "status": "passed",
         "details": [
           {
@@ -1571,7 +1682,7 @@
       "present": true,
       "path": ".kernel/evidence/action-plane-route-lifecycle.json",
       "payload": {
-        "generatedAt": "2026-05-25T16:37:55.097Z",
+        "generatedAt": "2026-05-25T19:37:17.459Z",
         "productId": "data-cloud",
         "area": "action-plane-route-lifecycle",
         "targetScore": 5,
@@ -1619,22 +1730,22 @@
       "present": true,
       "path": ".kernel/evidence/data-cloud-release-runtime-profile.json",
       "payload": {
-        "generatedAt": "2026-05-25T16:37:56.268Z",
+        "generatedAt": "2026-05-25T19:37:18.808Z",
         "evidenceRun": {
           "generatedBy": "scripts/check-data-cloud-release-runtime-profile.mjs",
           "command": "pnpm check:data-cloud-release-runtime-profile",
           "source": "scripts/check-data-cloud-release-runtime-profile.mjs",
-          "commit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
-          "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
-          "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+          "commit": "bdcee47c1e304454e7af848be60d981b24da1151",
+          "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+          "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
           "targetEnvironment": "staging"
         },
-        "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
-        "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+        "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
         "targetEnvironment": "staging",
         "validationStatus": "validated",
-        "reviewDueAt": "2026-05-26T16:37:56.268Z",
-        "expiresAt": "2026-05-27T16:37:56.268Z",
+        "reviewDueAt": "2026-05-26T19:37:18.808Z",
+        "expiresAt": "2026-05-27T19:37:18.808Z",
         "checks": [
           {
             "check": "Runtime dependency failure-injection executable",
@@ -2020,13 +2131,13 @@
       "present": true,
       "path": ".kernel/evidence/data-cloud-security-sbom-proof.json",
       "payload": {
-        "generatedAt": "2026-05-25T16:31:26.337Z",
+        "generatedAt": "2026-05-25T19:28:02.880Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/check-data-cloud-security-sbom-proof.mjs",
           "source": "scripts/check-data-cloud-security-sbom-proof.mjs",
           "command": "pnpm check:data-cloud-security-sbom-proof",
-          "commit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19"
+          "commit": "bdcee47c1e304454e7af848be60d981b24da1151"
         },
         "source": {
           "workflow": ".github/workflows/data-cloud-release.yml"
@@ -2054,7 +2165,7 @@
       "present": true,
       "path": "release-evidence/smoke/smoke-e2e-report.json",
       "payload": {
-        "generatedAt": "2026-05-24T03:30:38.881Z",
+        "generatedAt": "2026-05-25T16:38:10.455Z",
         "source": "check:data-cloud-runbook-smoke",
         "summary": {
           "pass": 24,
@@ -2074,7 +2185,7 @@
       "present": true,
       "path": "release-evidence/backup/backup-drill-report.json",
       "payload": {
-        "drill_timestamp": "2026-05-24T03:30:39.817Z",
+        "drill_timestamp": "2026-05-25T16:38:10.846Z",
         "source": "check:release-rollback-drill",
         "pass": 1,
         "fail": 0,
@@ -2145,7 +2256,7 @@
       "present": true,
       "path": ".kernel/evidence/product-cost-budgets.json",
       "payload": {
-        "generatedAt": "2026-05-25T01:30:17.458Z",
+        "generatedAt": "2026-05-25T18:12:02.717Z",
         "status": "passed",
         "activeBusinessProducts": [
           "dcmaar",
@@ -2162,7 +2273,7 @@
       "present": true,
       "path": ".kernel/evidence/product-domain-invariants.json",
       "payload": {
-        "generatedAt": "2026-05-25T01:30:17.641Z",
+        "generatedAt": "2026-05-25T18:12:02.826Z",
         "status": "passed",
         "coverage": [
           {
@@ -2217,5 +2328,8 @@
       }
     }
   },
-  "violations": []
+  "violations": [
+    "productionReadinessTaskMapEvidence: pass is false",
+    "productReleaseReadiness: pass is false"
+  ]
 }

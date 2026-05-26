@@ -28,7 +28,9 @@ import io.activej.promise.Promise;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -46,12 +48,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PhrKernelModuleEventEvidenceTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("increments evidenceWriteFailureCount when DataCloudKernelAdapter is unavailable")
-    void incrementsFailureCountWhenDataCloudUnavailable() {
+    @DisplayName("queues evidence when DataCloudKernelAdapter is unavailable")
+    void queuesEvidenceWhenDataCloudUnavailable(@TempDir Path tempDir) {
         String originalMode = System.getenv("PHR_DATACLOUD_MODE");
         try {
             System.setProperty("PHR_DATACLOUD_MODE", "DEGRADED");
-            NoDataCloudKernelContext context = new NoDataCloudKernelContext();
+            NoDataCloudKernelContext context = new NoDataCloudKernelContext(tempDir.resolve("no-datacloud"));
             PhrKernelModule module = new PhrKernelModule();
             module.initialize(context);
 
@@ -70,7 +72,10 @@ class PhrKernelModuleEventEvidenceTest extends EventloopTestBase {
                 .build());
 
         assertThat(module.getEvidenceWriteFailureCount())
-                .as("Failure counter must be incremented when DataCloudKernelAdapter is absent")
+                .as("Unavailable Data Cloud leaves evidence pending instead of treating it as permanently lost")
+                .isEqualTo(0L);
+        assertThat(context.getDependency(com.ghatana.phr.kernel.evidence.PhrEvidenceOutboxDispatcher.class).pendingCount())
+                .as("Evidence must be durably queued for replay")
                 .isEqualTo(1L);
         } finally {
             if (originalMode != null) {
@@ -83,11 +88,11 @@ class PhrKernelModuleEventEvidenceTest extends EventloopTestBase {
 
     @Test
     @DisplayName("retries transient write failure and succeeds — evidenceWriteFailureCount stays zero")
-    void retriesTransientWriteFailureAndSucceeds() {
+    void retriesTransientWriteFailureAndSucceeds(@TempDir Path tempDir) {
         int transientFailureCount = 2;
         RetryCapturingDataCloudAdapter retryAdapter = new RetryCapturingDataCloudAdapter(transientFailureCount);
         CapturingConsentCache consentCache = new CapturingConsentCache();
-        CapturingKernelContext context = new CapturingKernelContext(retryAdapter, consentCache);
+        CapturingKernelContext context = new CapturingKernelContext(retryAdapter, consentCache, tempDir.resolve("transient"));
 
         PhrKernelModule module = new PhrKernelModule();
         module.initialize(context);
@@ -116,10 +121,10 @@ class PhrKernelModuleEventEvidenceTest extends EventloopTestBase {
 
     @Test
     @DisplayName("increments evidenceWriteFailureCount after all retries exhausted on persistent write failure")
-    void incrementsFailureCountAfterRetryBudgetExhausted() {
+    void incrementsFailureCountAfterRetryBudgetExhausted(@TempDir Path tempDir) {
         FailingDataCloudAdapter failingAdapter = new FailingDataCloudAdapter();
         CapturingConsentCache consentCache = new CapturingConsentCache();
-        CapturingKernelContext context = new CapturingKernelContext(failingAdapter, consentCache);
+        CapturingKernelContext context = new CapturingKernelContext(failingAdapter, consentCache, tempDir.resolve("persistent"));
 
         PhrKernelModule module = new PhrKernelModule();
         module.initialize(context);
@@ -149,10 +154,10 @@ class PhrKernelModuleEventEvidenceTest extends EventloopTestBase {
 
     @Test
     @DisplayName("writes lifecycle, audit, and consent evidence to Data Cloud and invalidates consent cache")
-    void writesEvidenceAndInvalidatesConsentCache() throws Exception {
+    void writesEvidenceAndInvalidatesConsentCache(@TempDir Path tempDir) throws Exception {
         CapturingDataCloudAdapter dataCloudAdapter = new CapturingDataCloudAdapter();
         CapturingConsentCache consentCache = new CapturingConsentCache();
-        CapturingKernelContext context = new CapturingKernelContext(dataCloudAdapter, consentCache);
+        CapturingKernelContext context = new CapturingKernelContext(dataCloudAdapter, consentCache, tempDir.resolve("success"));
 
         PhrKernelModule module = new PhrKernelModule();
         module.initialize(context);
@@ -230,12 +235,18 @@ class PhrKernelModuleEventEvidenceTest extends EventloopTestBase {
     private static class CapturingKernelContext implements KernelContext {
         protected final CapturingDataCloudAdapter dataCloudAdapter;
         private final CapturingConsentCache consentCache;
+        private final Path outboxDir;
         private final ConcurrentHashMap<Class<?>, EventHandler<?>> handlers = new ConcurrentHashMap<>();
         private final ConcurrentHashMap<Class<?>, Object> registeredServices = new ConcurrentHashMap<>();
 
         protected CapturingKernelContext(CapturingDataCloudAdapter dataCloudAdapter, CapturingConsentCache consentCache) {
+            this(dataCloudAdapter, consentCache, Path.of(System.getProperty("java.io.tmpdir"), "phr-evidence-outbox-test-" + System.nanoTime()));
+        }
+
+        protected CapturingKernelContext(CapturingDataCloudAdapter dataCloudAdapter, CapturingConsentCache consentCache, Path outboxDir) {
             this.dataCloudAdapter = dataCloudAdapter;
             this.consentCache = consentCache;
+            this.outboxDir = outboxDir;
         }
 
         @SuppressWarnings("unchecked")
@@ -305,6 +316,9 @@ class PhrKernelModuleEventEvidenceTest extends EventloopTestBase {
             if (type == Long.class && "phr.notification.provider.timeoutMillis".equals(key)) {
                 return Optional.of(type.cast(5000L));
             }
+            if (type == String.class && "phr.evidence.outbox.dir".equals(key)) {
+                return Optional.of(type.cast(outboxDir.toString()));
+            }
             return Optional.empty();
         }
         @Override public String getKernelVersion() { return "1.0.0"; }
@@ -319,8 +333,8 @@ class PhrKernelModuleEventEvidenceTest extends EventloopTestBase {
     }
 
     private static final class NoDataCloudKernelContext extends CapturingKernelContext {
-        private NoDataCloudKernelContext() {
-            super(null, new CapturingConsentCache());
+        private NoDataCloudKernelContext(Path outboxDir) {
+            super(null, new CapturingConsentCache(), outboxDir);
         }
 
         @Override

@@ -62,6 +62,7 @@ import org.slf4j.LoggerFactory;
  *     .withFederatedQueryRoutes(federatedQueryHandler, httpSupport)
  *     .withTierMigrationRoutes(tierMigrationHandler, httpSupport)
  *     .withConnectorRoutes(dataSourceRegistryHandler, httpSupport)
+ *     .withProductReleaseReadinessRoutes(productReleaseReadinessHandler)
  *     .build();
  * }</pre>
  *
@@ -760,6 +761,19 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.GET, "/api/v1/settings/approvals", settingsHandler::handleListApprovals)
             .with(HttpMethod.POST, "/api/v1/settings/approvals/:id/approve", settingsHandler::handleApproveRequest)
             .with(HttpMethod.POST, "/api/v1/settings/approvals/:id/reject", settingsHandler::handleRejectRequest);
+        return this;
+    }
+
+    /**
+     * Adds product release readiness endpoints for PHR/DMOS/Data Cloud cockpits.
+     */
+    public DataCloudRouterBuilder withProductReleaseReadinessRoutes(ProductReleaseReadinessHandler handler) {
+        builder
+            .with(HttpMethod.POST, "/api/v1/release-readiness", handler::handleProduceReleaseReadiness)
+            .with(HttpMethod.GET, "/api/v1/release-readiness/stats", handler::handleReleaseReadinessStats)
+            .with(HttpMethod.GET, "/api/v1/release-readiness/:productId/:productVersion/:releaseTarget", handler::handleGetReleaseReadiness)
+            .with(HttpMethod.GET, "/api/v1/release-readiness", handler::handleListReleaseReadiness)
+            .with(HttpMethod.DELETE, "/api/v1/release-readiness/:id", handler::handleDeleteReleaseReadiness);
         return this;
     }
 

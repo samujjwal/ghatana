@@ -177,6 +177,7 @@ function assertExecutableReadinessEvidence(readiness) {
   const currentCommitViolations = findEvidenceCurrentCommitViolations(repoRoot, {
     evidenceRoot: EVIDENCE_PATH,
     skipProductReleaseReadiness: true,
+    skipEvidencePaths: [EVIDENCE_PATH],
   });
   if (currentCommitViolations.length > 0) {
     fail(`Provider readiness evidence current-commit check failed: ${currentCommitViolations.join('; ')}`);

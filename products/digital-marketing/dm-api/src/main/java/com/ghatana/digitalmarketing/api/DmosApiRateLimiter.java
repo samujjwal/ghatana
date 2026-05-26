@@ -99,19 +99,6 @@ public final class DmosApiRateLimiter {
         return rateLimitWith429Envelope(getFilter().wrap(timed));
     }
 
-    /**
-     * Backwards-compatible overload that delegates to
-    * {@link #wrap(AsyncServlet, DmosMetricsCollector, String)} with a disabled collector
-     * and an {@code "unknown"} servlet label.
-     *
-     * @deprecated Prefer {@link #wrap(AsyncServlet, DmosMetricsCollector, String)} to get
-     *     timing telemetry and a meaningful servlet label in rate-limit metrics.
-     */
-    @Deprecated
-    public static AsyncServlet wrap(AsyncServlet delegate) {
-        return wrap(delegate, DmosMetricsCollector.disabled(), "unknown");
-    }
-
     // -------------------------------------------------------------------------
     // Package-private helpers — used by tests
     // -------------------------------------------------------------------------

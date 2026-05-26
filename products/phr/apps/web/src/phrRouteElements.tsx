@@ -1,6 +1,7 @@
 import React from 'react';
 import type { PhrRouteContract, PhrRoutePath } from './phrRouteContracts';
 import { AppointmentsPage } from './pages/AppointmentsPage';
+import { AuditPage } from './pages/AuditPage';
 import { ConsentPage } from './pages/ConsentPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { EmergencyAccessPage } from './pages/EmergencyAccessPage';
@@ -8,6 +9,7 @@ import { LabsPage } from './pages/LabsPage';
 import { MedicationsPage } from './pages/MedicationsPage';
 import { RecordDetailPage } from './pages/RecordDetailPage';
 import { RecordsPage } from './pages/RecordsPage';
+import { ReleaseCockpitPage } from './pages/ReleaseCockpitPage';
 import { SettingsPage } from './pages/SettingsPage';
 
 export interface PhrRouteManifestEntry extends PhrRouteContract {
@@ -22,6 +24,8 @@ const routeElements = {
   '/labs': <LabsPage />,
   '/medications': <MedicationsPage />,
   '/emergency': <EmergencyAccessPage />,
+  '/release-readiness': <ReleaseCockpitPage />,
+  '/audit': <AuditPage />,
   '/settings': <SettingsPage />,
   '/records/:recordId': <RecordDetailPage />,
 } satisfies Record<PhrRoutePath, React.ReactElement>;

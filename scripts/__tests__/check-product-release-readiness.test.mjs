@@ -111,9 +111,42 @@ test('product scorecard uses product execution evidence instead of global maturi
   const scorecard = buildProductScorecard('phr', runs, ['standard-web-api-release'], registry, {
     wave2Rows,
     releaseTargetScore: 4,
+    skipProductSpecificReleaseEvidence: true,
   });
 
   assert.equal(scorecard.releaseVerdict, 'pass');
   assert.equal(scorecard.averageScore, 5);
   assert.deepEqual(scorecard.belowTargetDimensions, []);
+});
+
+test('product scorecard cannot pass with partial lifecycle proof', () => {
+  const registry = {
+    phr: {
+      id: 'phr',
+      kind: 'business-product',
+      metadata: { status: 'active' },
+      lifecycleExecutionAllowed: true,
+      lifecycleStatus: 'enabled',
+      lifecycleReadiness: {
+        blockerGateAdapterMatrix: {
+          blockers: ['pending-distributed-cache-proof'],
+          adapters: [
+            { adapterId: 'consent-cache', readiness: 'partial' },
+          ],
+        },
+      },
+    },
+  };
+  const runs = [
+    { script: 'gate-a', status: 0 },
+    { script: 'gate-b', status: 0 },
+  ];
+
+  const scorecard = buildProductScorecard('phr', runs, ['standard-web-api-release'], registry, {
+    wave2Rows: new Map(),
+    releaseTargetScore: 4,
+  });
+
+  assert.equal(scorecard.releaseVerdict, 'fail');
+  assert.ok(scorecard.blockingGaps.some((gap) => gap.reason === 'unresolved-blocker-matrix'));
 });

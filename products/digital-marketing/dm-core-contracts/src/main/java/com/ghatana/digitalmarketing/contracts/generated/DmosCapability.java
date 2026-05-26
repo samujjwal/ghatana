@@ -9,7 +9,6 @@ package com.ghatana.digitalmarketing.application.capabilities;
  * @doc.type enum
  * @doc.purpose Canonical DMOS capability definitions
  * @doc.layer product
- * @doc.pattern Enumeration
  */
 public enum DmosCapability {
     /**
@@ -46,6 +45,12 @@ public enum DmosCapability {
     DMOS_CAMPAIGNS("dmos.campaigns"),
 
     /**
+     * Connector runtime readiness and operational status
+     * Tier: core
+     */
+    DMOS_CONNECTORS("dmos.connectors"),
+
+    /**
      * Multi-language campaign support
      * Tier: enterprise
      * Lifecycle: boundary
@@ -58,6 +63,12 @@ public enum DmosCapability {
      * Lifecycle: boundary
      */
     DMOS_MARKET_RESEARCH("dmos.market_research"),
+
+    /**
+     * Release cockpit evidence freshness, rollback, bootstrap, and runtime proof
+     * Tier: core
+     */
+    DMOS_RELEASE_READINESS("dmos.release_readiness"),
 
     /**
      * Analytics, attribution, and ROI/ROAS reporting

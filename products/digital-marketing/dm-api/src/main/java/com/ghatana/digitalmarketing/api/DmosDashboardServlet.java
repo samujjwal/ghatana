@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.digitalmarketing.application.analytics.DashboardSummaryService;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
@@ -68,7 +69,9 @@ public final class DmosDashboardServlet {
             RoutingServlet.builder(eventloop)
                 .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/dashboard", this::handleGetDashboardSummary)
                 .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/dashboard/kpi", this::handleGetKpiMetrics)
-                .build()
+                .build(),
+            DmosMetricsCollector.disabled(),
+            "dashboard"
         );
     }
 

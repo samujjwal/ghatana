@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "productId": "digital-marketing",
   "generatedAt": "2026-05-25T00:00:00.000Z",
-  "commitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+  "commitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
   "promotionPolicy": {
     "promotionRequires": [
       "test_coverage_gte_80",
@@ -13,7 +13,7 @@
       "no_pending_blocking_issues",
       "ephemeral_adapters_blocked"
     ],
-    "promotionLockSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+    "promotionLockSha": "bdcee47c1e304454e7af848be60d981b24da1151",
     "lockedAt": "2026-05-25T00:00:00.000Z",
     "promotionApprovedBy": "dmos-team-lead",
     "allAssetsLockedForPromotion": true
@@ -38,7 +38,7 @@
       "promotion_status": "promoted",
       "promotion_lock": {
         "lockedAt": "2026-05-25T00:00:00.000Z",
-        "lockedAtSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "lockedAtSha": "bdcee47c1e304454e7af848be60d981b24da1151",
         "promotionTarget": "shared-package",
         "approvedBy": "dmos-team-lead",
         "stagingBootstrapValidated": true,
@@ -78,8 +78,8 @@
         "min_version": "21",
         "platform": "jvm"
       },
-      "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
-      "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+      "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
       "validatedAt": "2026-05-25T00:00:00.000Z",
       "expiresAt": "2026-08-23T00:00:00.000Z",
       "owner_approval": {
@@ -107,7 +107,7 @@
       "promotion_status": "promoted",
       "promotion_lock": {
         "lockedAt": "2026-05-25T00:00:00.000Z",
-        "lockedAtSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "lockedAtSha": "bdcee47c1e304454e7af848be60d981b24da1151",
         "promotionTarget": "shared-package",
         "approvedBy": "dmos-team-lead",
         "stagingBootstrapValidated": true,
@@ -146,8 +146,8 @@
         "min_version": "21",
         "platform": "jvm"
       },
-      "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
-      "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+      "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
       "validatedAt": "2026-05-25T00:00:00.000Z",
       "expiresAt": "2026-08-23T00:00:00.000Z",
       "owner_approval": {
@@ -175,7 +175,7 @@
       "promotion_status": "promoted",
       "promotion_lock": {
         "lockedAt": "2026-05-25T00:00:00.000Z",
-        "lockedAtSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "lockedAtSha": "bdcee47c1e304454e7af848be60d981b24da1151",
         "promotionTarget": "shared-package",
         "approvedBy": "dmos-team-lead",
         "stagingBootstrapValidated": true,
@@ -211,8 +211,8 @@
         "min_version": "18.0.0",
         "platform": "web"
       },
-      "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
-      "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+      "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
       "validatedAt": "2026-05-25T00:00:00.000Z",
       "expiresAt": "2026-08-23T00:00:00.000Z",
       "owner_approval": {
@@ -240,7 +240,7 @@
       "promotion_status": "promoted",
       "promotion_lock": {
         "lockedAt": "2026-05-25T00:00:00.000Z",
-        "lockedAtSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "lockedAtSha": "bdcee47c1e304454e7af848be60d981b24da1151",
         "promotionTarget": "shared-package",
         "approvedBy": "dmos-team-lead",
         "stagingBootstrapValidated": true,
@@ -277,8 +277,8 @@
         "min_version": "18.0.0",
         "platform": "web"
       },
-      "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
-      "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+      "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
       "validatedAt": "2026-05-25T00:00:00.000Z",
       "expiresAt": "2026-08-23T00:00:00.000Z",
       "owner_approval": {
@@ -306,7 +306,7 @@
       "promotion_status": "promoted",
       "promotion_lock": {
         "lockedAt": "2026-05-25T00:00:00.000Z",
-        "lockedAtSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "lockedAtSha": "bdcee47c1e304454e7af848be60d981b24da1151",
         "promotionTarget": "shared-package",
         "approvedBy": "dmos-team-lead",
         "stagingBootstrapValidated": true,
@@ -342,8 +342,8 @@
         "min_version": "21",
         "platform": "jvm"
       },
-      "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
-      "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+      "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
       "validatedAt": "2026-05-25T00:00:00.000Z",
       "expiresAt": "2026-08-23T00:00:00.000Z",
       "owner_approval": {
@@ -353,13 +353,13 @@
       }
     }
   ],
-  "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
-  "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+  "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+  "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
   "targetEnvironment": "staging",
   "validationStatus": "validated",
   "expiresAt": "2026-08-23T00:00:00.000Z",
   "evidenceRun": {
-    "commit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+    "commit": "bdcee47c1e304454e7af848be60d981b24da1151",
     "generatedAt": "2026-05-25T00:00:00.000Z",
     "source": "product-family-asset-registry"
   }

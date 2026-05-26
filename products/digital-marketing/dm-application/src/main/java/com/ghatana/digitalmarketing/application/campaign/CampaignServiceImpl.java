@@ -734,7 +734,8 @@ public final class CampaignServiceImpl implements CampaignService {
                     if (!result.isSuccess()) {
                         return Promise.ofException(new IllegalStateException(result.getError()));
                     }
-                    return repository.save(ctx.getTenantId(), campaign)
+                    Campaign updatedCampaign = result.getUpdatedCampaign();
+                    return repository.save(ctx.getTenantId(), updatedCampaign)
                         .then(saved -> kernelAdapter.recordAudit(
                             ctx,
                             saved.getId(),
