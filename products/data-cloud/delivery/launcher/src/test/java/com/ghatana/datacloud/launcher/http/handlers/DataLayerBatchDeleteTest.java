@@ -113,7 +113,7 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
         when(request.loadBody())
             .thenReturn(Promise.of(ByteBuf.wrapForReading(batchJson.getBytes(StandardCharsets.UTF_8))));
 
-        HttpResponse response = runPromise(() -> handler.handleBatchDelete(request));
+        HttpResponse response = runPromise(() -> handler.handleBatchDeleteEntities(request));
 
         assertThat(response).isNotNull();
         verify(http).jsonResponse(argThat(body -> {
@@ -134,7 +134,7 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
         when(request.loadBody())
             .thenReturn(Promise.of(ByteBuf.wrapForReading(batchJson.getBytes(StandardCharsets.UTF_8))));
 
-        HttpResponse response = runPromise(() -> handler.handleBatchDelete(request));
+        HttpResponse response = runPromise(() -> handler.handleBatchDeleteEntities(request));
 
         assertThat(response).isNotNull();
         verify(client, never()).delete(anyString(), anyString(), anyString());
@@ -150,7 +150,7 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
         when(request.loadBody())
             .thenReturn(Promise.of(ByteBuf.wrapForReading(batchJson.getBytes(StandardCharsets.UTF_8))));
 
-        HttpResponse response = runPromise(() -> handler.handleBatchDelete(request));
+        HttpResponse response = runPromise(() -> handler.handleBatchDeleteEntities(request));
 
         assertThat(response).isSameAs(errorResponse);
         verify(http).errorResponse(eq(400), argThat(msg -> 
@@ -165,7 +165,7 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
         when(request.loadBody())
             .thenReturn(Promise.of(ByteBuf.wrapForReading(batchJson.getBytes(StandardCharsets.UTF_8))));
 
-        HttpResponse response = runPromise(() -> handler.handleBatchDelete(request));
+        HttpResponse response = runPromise(() -> handler.handleBatchDeleteEntities(request));
 
         assertThat(response).isSameAs(errorResponse);
         verify(http).errorResponse(eq(403), argThat(msg -> 
@@ -185,7 +185,7 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
         when(request.loadBody())
             .thenReturn(Promise.of(ByteBuf.wrapForReading(batchJson.getBytes(StandardCharsets.UTF_8))));
 
-        HttpResponse response = runPromise(() -> handler.handleBatchDelete(request));
+        HttpResponse response = runPromise(() -> handler.handleBatchDeleteEntities(request));
 
         assertThat(response).isSameAs(errorResponse);
         verify(http).errorResponse(eq(403), argThat(msg -> 
@@ -202,7 +202,7 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
         when(request.loadBody())
             .thenReturn(Promise.of(ByteBuf.wrapForReading(dryRunJson.getBytes(StandardCharsets.UTF_8))));
 
-        HttpResponse dryRunResponse = runPromise(() -> handler.handleBatchDelete(request));
+        HttpResponse dryRunResponse = runPromise(() -> handler.handleBatchDeleteEntities(request));
         
         // Extract token from dry-run response
         Map<String, Object> dryRunResult = captureJsonResponse();
@@ -218,7 +218,7 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
                 ("{\"ids\":[\"entity-1\"],\"confirmationToken\":\"" + tamperedToken + "\"}")
                     .getBytes(StandardCharsets.UTF_8))));
 
-        HttpResponse response = runPromise(() -> handler.handleBatchDelete(request));
+        HttpResponse response = runPromise(() -> handler.handleBatchDeleteEntities(request));
 
         assertThat(response).isSameAs(errorResponse);
         verify(http).errorResponse(eq(403), argThat(msg -> 
@@ -233,7 +233,7 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
         when(request.loadBody())
             .thenReturn(Promise.of(ByteBuf.wrapForReading(dryRunJson.getBytes(StandardCharsets.UTF_8))));
 
-        HttpResponse dryRunResponse = runPromise(() -> handler.handleBatchDelete(request));
+        HttpResponse dryRunResponse = runPromise(() -> handler.handleBatchDeleteEntities(request));
         
         Map<String, Object> dryRunResult = captureJsonResponse();
         String tokenForTenant1 = (String) dryRunResult.get("confirmationToken");
@@ -247,7 +247,7 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
                 ("{\"ids\":[\"entity-1\"],\"confirmationToken\":\"" + tokenForTenant1 + "\"}")
                     .getBytes(StandardCharsets.UTF_8))));
 
-        HttpResponse response = runPromise(() -> handler.handleBatchDelete(request));
+        HttpResponse response = runPromise(() -> handler.handleBatchDeleteEntities(request));
 
         assertThat(response).isSameAs(errorResponse);
         verify(http).errorResponse(eq(403), argThat(msg -> 
@@ -264,7 +264,7 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
         when(request.loadBody())
             .thenReturn(Promise.of(ByteBuf.wrapForReading(dryRunJson.getBytes(StandardCharsets.UTF_8))));
 
-        runPromise(() -> handler.handleBatchDelete(request));
+        runPromise(() -> handler.handleBatchDeleteEntities(request));
         
         Map<String, Object> dryRunResult = captureJsonResponse();
         String validToken = (String) dryRunResult.get("confirmationToken");
@@ -280,7 +280,7 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
         when(client.delete(anyString(), anyString(), eq("entity-2")))
             .thenReturn(Promise.of(true));
 
-        HttpResponse response = runPromise(() -> handler.handleBatchDelete(request));
+        HttpResponse response = runPromise(() -> handler.handleBatchDeleteEntities(request));
 
         assertThat(response).isNotNull();
         verify(client).delete(eq("tenant-1"), eq("test-collection"), eq("entity-1"));
@@ -295,7 +295,7 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
         when(request.loadBody())
             .thenReturn(Promise.of(ByteBuf.wrapForReading(dryRunJson.getBytes(StandardCharsets.UTF_8))));
 
-        runPromise(() -> handler.handleBatchDelete(request));
+        runPromise(() -> handler.handleBatchDeleteEntities(request));
         
         Map<String, Object> dryRunResult = captureJsonResponse();
         String tokenFor2Ids = (String) dryRunResult.get("confirmationToken");
@@ -307,7 +307,7 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
                 ("{\"ids\":[\"entity-1\",\"entity-2\",\"entity-3\"],\"confirmationToken\":\"" + tokenFor2Ids + "\"}")
                     .getBytes(StandardCharsets.UTF_8))));
 
-        HttpResponse response = runPromise(() -> handler.handleBatchDelete(request));
+        HttpResponse response = runPromise(() -> handler.handleBatchDeleteEntities(request));
 
         assertThat(response).isSameAs(errorResponse);
         verify(http).errorResponse(eq(403), argThat(msg -> 
@@ -333,7 +333,7 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
         when(request.loadBody())
             .thenReturn(Promise.of(ByteBuf.wrapForReading(dryRunJson.getBytes(StandardCharsets.UTF_8))));
 
-        runPromise(() -> handler.handleBatchDelete(request));
+        runPromise(() -> handler.handleBatchDeleteEntities(request));
         
         Map<String, Object> dryRunResult = captureJsonResponse();
         String validToken = (String) dryRunResult.get("confirmationToken");
@@ -351,7 +351,7 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
         when(client.delete(anyString(), anyString(), eq("entity-3")))
             .thenReturn(Promise.of(true));
 
-        HttpResponse response = runPromise(() -> handler.handleBatchDelete(request));
+        HttpResponse response = runPromise(() -> handler.handleBatchDeleteEntities(request));
 
         assertThat(response).isNotNull();
         // All three delete attempts should be made despite one failure
@@ -368,7 +368,7 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
         when(request.loadBody())
             .thenReturn(Promise.of(ByteBuf.wrapForReading(dryRunJson.getBytes(StandardCharsets.UTF_8))));
 
-        runPromise(() -> handler.handleBatchDelete(request));
+        runPromise(() -> handler.handleBatchDeleteEntities(request));
         
         Map<String, Object> dryRunResult = captureJsonResponse();
         String validToken = (String) dryRunResult.get("confirmationToken");
@@ -386,7 +386,7 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
         when(client.delete(anyString(), anyString(), eq("entity-3")))
             .thenReturn(Promise.of(true));
 
-        HttpResponse response = runPromise(() -> handler.handleBatchDelete(request));
+        HttpResponse response = runPromise(() -> handler.handleBatchDeleteEntities(request));
 
         assertThat(response).isNotNull();
         verify(http).jsonResponse(argThat(body -> {

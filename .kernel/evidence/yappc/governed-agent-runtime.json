@@ -1,15 +1,15 @@
 {
   "checkId": "YAPPC-003 governed agent runtime",
-  "generatedAt": "2026-05-26T17:49:52.637Z",
+  "generatedAt": "2026-05-26T18:18:39.549Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/check-yappc-governed-agent-runtime.mjs",
     "command": "node scripts/check-yappc-governed-agent-runtime.mjs",
-    "commit": "600bebfa0832716d6589d5bcae223191138563cc"
+    "commit": "37c2c98e32d9d7577cb6a9603762cf47387fc78a"
   },
   "summary": {
-    "checkCount": 24,
-    "passedChecks": 24,
+    "checkCount": 35,
+    "passedChecks": 35,
     "violationCount": 0
   },
   "checks": [
@@ -66,6 +66,12 @@
       "pass": true,
       "path": "products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/YappcDataCloudAgentRuntimeE2ETest.java",
       "message": "missing products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/YappcDataCloudAgentRuntimeE2ETest.java"
+    },
+    {
+      "name": "products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/services/lifecycle/operators/AgentExecutorOperatorGovernedRuntimeTest.java",
+      "pass": true,
+      "path": "products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/services/lifecycle/operators/AgentExecutorOperatorGovernedRuntimeTest.java",
+      "message": "missing products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/services/lifecycle/operators/AgentExecutorOperatorGovernedRuntimeTest.java"
     },
     {
       "name": "AgentExecutorOperator includes WorkflowStepOperatorAdapter",
@@ -136,6 +142,56 @@
       "name": "canonical adapter implements EventOperatorCapability",
       "pass": true,
       "path": "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/registry/AgentEventOperatorCapabilityAdapter.java"
+    },
+    {
+      "name": "governed runtime test proves WorkflowStepOperatorAdapter",
+      "pass": true,
+      "token": "WorkflowStepOperatorAdapter"
+    },
+    {
+      "name": "governed runtime test proves EventOperatorCapability",
+      "pass": true,
+      "token": "EventOperatorCapability"
+    },
+    {
+      "name": "governed runtime test proves capabilityRef",
+      "pass": true,
+      "token": "capabilityRef"
+    },
+    {
+      "name": "governed runtime test proves policy",
+      "pass": true,
+      "token": "policy"
+    },
+    {
+      "name": "governed runtime test proves approval",
+      "pass": true,
+      "token": "approval"
+    },
+    {
+      "name": "governed runtime test proves idempotencyKey",
+      "pass": true,
+      "token": "idempotencyKey"
+    },
+    {
+      "name": "governed runtime test proves audit",
+      "pass": true,
+      "token": "audit"
+    },
+    {
+      "name": "governed runtime test proves outputValidation",
+      "pass": true,
+      "token": "outputValidation"
+    },
+    {
+      "name": "governed runtime test proves agent_system_not_initialized",
+      "pass": true,
+      "token": "agent_system_not_initialized"
+    },
+    {
+      "name": "governed runtime test proves agent_not_found",
+      "pass": true,
+      "token": "agent_not_found"
     },
     {
       "name": "no YAPPC production path directly executes TypedAgent or workflow agent",

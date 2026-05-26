@@ -288,12 +288,12 @@ describe('Schema/client drift across OpenAPI, Zod, and TypeScript contracts (DC-
      * Migration target: consolidate 2 and 3 to use the canonical shared-spi enum.
      * Tracked in: DC-P1-388 Java duplicate consolidation.
      */
-    it('documents StorageTier Java duplicate locations for migration tracking', () => {
+    it.skip('documents StorageTier Java duplicate locations for migration tracking // DC-P1-388', () => {
       // This test is a documentation marker — the actual enforcement is via
       // ArchUnit tests that prevent cross-module imports of the duplicates.
       // When migration is complete, the duplicate inner enums must be removed
       // and this test updated to reflect consolidation.
-      expect(true).toBe(true); // Intentional — sentinel for migration tracking
+      // TODO: Remove duplicates and update test
     });
 
     /**
@@ -305,9 +305,9 @@ describe('Schema/client drift across OpenAPI, Zod, and TypeScript contracts (DC-
      *   1. com.ghatana.datacloud.FieldDefinition.FieldType (CANONICAL — shared-spi)
      *   2. com.ghatana.datacloud.config.model.FieldType (DUPLICATE — separate top-level class)
      */
-    it('documents RecordType and FieldType Java duplicate locations for migration tracking', () => {
+    it.skip('documents RecordType and FieldType Java duplicate locations for migration tracking // DC-P1-388', () => {
       // Sentinel only — see DC-P1-388 for migration plan.
-      expect(true).toBe(true);
+      // TODO: Remove duplicates and update test
     });
   });
 });

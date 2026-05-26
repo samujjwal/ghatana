@@ -13,6 +13,7 @@ const requiredFiles = [
   'products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudArtifactFacade.java',
   'products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudProjectFacade.java',
   'products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java',
+  'products/yappc/infrastructure/datacloud/src/test/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudContractIntegrationTest.java',
   'products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/datacloud/YappcDataCloudE2ETest.java',
   'products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/YappcDataCloudAgentRuntimeE2ETest.java',
 ];
@@ -47,6 +48,7 @@ for (const token of ['DataCloudClient', 'save(', 'findById(', 'findAll(', 'delet
 }
 
 const integrationText = [
+  readText('products/yappc/infrastructure/datacloud/src/test/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudContractIntegrationTest.java'),
   readText('products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/datacloud/YappcDataCloudE2ETest.java'),
   readText('products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/YappcDataCloudAgentRuntimeE2ETest.java'),
   readText('products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudProjectFacade.java'),
@@ -54,9 +56,9 @@ const integrationText = [
 
 const scenarios = {
   artifactMetadataPersistence: ['metadata', 'saved', 'preservesMetadata'],
-  projectWorkspaceContextPersistence: ['project', 'workspace', 'TenantContext'],
-  generatedContractStorage: ['DataCloudClient', 'YappcDataCloudRepository', 'save'],
-  artifactEvidenceStorage: ['audit', 'event', 'Data-Cloud event plane'],
+  projectWorkspaceContextPersistence: ['project-workspace-context', 'workspaceId', 'TenantContext'],
+  generatedContractStorage: ['generated-contract', 'DataCloudClient', 'YappcDataCloudRepository', 'save'],
+  artifactEvidenceStorage: ['artifact-evidence', 'evidenceRef', 'Data-Cloud event plane'],
   retrievalQuery: ['retrieved', 'findById', 'findAll', 'query'],
   tenantIsolation: ['tenantIsolation', 'tenant A', 'tenant B'],
 };

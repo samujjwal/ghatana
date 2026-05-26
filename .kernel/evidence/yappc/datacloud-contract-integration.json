@@ -1,15 +1,15 @@
 {
   "checkId": "YAPPC-002 Data-Cloud contract integration",
-  "generatedAt": "2026-05-26T17:48:46.139Z",
+  "generatedAt": "2026-05-26T18:17:44.343Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/check-yappc-datacloud-contract-integration.mjs",
     "command": "node scripts/check-yappc-datacloud-contract-integration.mjs",
-    "commit": "600bebfa0832716d6589d5bcae223191138563cc"
+    "commit": "37c2c98e32d9d7577cb6a9603762cf47387fc78a"
   },
   "summary": {
-    "checkCount": 33,
-    "passedChecks": 33,
+    "checkCount": 34,
+    "passedChecks": 34,
     "violationCount": 0
   },
   "checks": [
@@ -42,6 +42,12 @@
       "pass": true,
       "path": "products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java",
       "message": "missing products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java"
+    },
+    {
+      "name": "products/yappc/infrastructure/datacloud/src/test/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudContractIntegrationTest.java",
+      "pass": true,
+      "path": "products/yappc/infrastructure/datacloud/src/test/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudContractIntegrationTest.java",
+      "message": "missing products/yappc/infrastructure/datacloud/src/test/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudContractIntegrationTest.java"
     },
     {
       "name": "products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/datacloud/YappcDataCloudE2ETest.java",
@@ -201,8 +207,8 @@
       "name": "projectWorkspaceContextPersistence",
       "pass": true,
       "tokens": [
-        "project",
-        "workspace",
+        "project-workspace-context",
+        "workspaceId",
         "TenantContext"
       ]
     },
@@ -210,6 +216,7 @@
       "name": "generatedContractStorage",
       "pass": true,
       "tokens": [
+        "generated-contract",
         "DataCloudClient",
         "YappcDataCloudRepository",
         "save"
@@ -219,8 +226,8 @@
       "name": "artifactEvidenceStorage",
       "pass": true,
       "tokens": [
-        "audit",
-        "event",
+        "artifact-evidence",
+        "evidenceRef",
         "Data-Cloud event plane"
       ]
     },

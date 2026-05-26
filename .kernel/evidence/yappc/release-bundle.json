@@ -1,0 +1,308 @@
+{
+  "checkId": "YAPPC-001 independent release evidence bundle",
+  "generatedAt": "2026-05-26T18:18:53.186Z",
+  "pass": true,
+  "evidenceRun": {
+    "generatedBy": "scripts/generate-yappc-release-bundle.mjs",
+    "command": "node scripts/generate-yappc-release-bundle.mjs",
+    "commit": "37c2c98e32d9d7577cb6a9603762cf47387fc78a"
+  },
+  "summary": {
+    "checkCount": 40,
+    "passedChecks": 40,
+    "violationCount": 0
+  },
+  "checks": [
+    {
+      "name": "platformProviderReadiness evidence file scripts/check-yappc-platform-provider-readiness.mjs",
+      "pass": true,
+      "path": "scripts/check-yappc-platform-provider-readiness.mjs",
+      "message": "missing scripts/check-yappc-platform-provider-readiness.mjs"
+    },
+    {
+      "name": "platformProviderReadiness is scoped to YAPPC evidence",
+      "pass": true,
+      "file": "scripts/check-yappc-platform-provider-readiness.mjs"
+    },
+    {
+      "name": "productFamilyControlPlane evidence file scripts/check-yappc-product-family-control-plane.mjs",
+      "pass": true,
+      "path": "scripts/check-yappc-product-family-control-plane.mjs",
+      "message": "missing scripts/check-yappc-product-family-control-plane.mjs"
+    },
+    {
+      "name": "productFamilyControlPlane is scoped to YAPPC evidence",
+      "pass": true,
+      "file": "scripts/check-yappc-product-family-control-plane.mjs"
+    },
+    {
+      "name": "productUnitIntentHandoff evidence file scripts/check-yappc-product-unit-intent-handoff.mjs",
+      "pass": true,
+      "path": "scripts/check-yappc-product-unit-intent-handoff.mjs",
+      "message": "missing scripts/check-yappc-product-unit-intent-handoff.mjs"
+    },
+    {
+      "name": "productUnitIntentHandoff is scoped to YAPPC evidence",
+      "pass": true,
+      "file": "scripts/check-yappc-product-unit-intent-handoff.mjs"
+    },
+    {
+      "name": "artifactIntelligenceBoundary evidence file scripts/check-yappc-artifact-intelligence-boundary.mjs",
+      "pass": true,
+      "path": "scripts/check-yappc-artifact-intelligence-boundary.mjs",
+      "message": "missing scripts/check-yappc-artifact-intelligence-boundary.mjs"
+    },
+    {
+      "name": "artifactIntelligenceBoundary is scoped to YAPPC evidence",
+      "pass": true,
+      "file": "scripts/check-yappc-artifact-intelligence-boundary.mjs"
+    },
+    {
+      "name": "dataCloudIntegration evidence file .kernel/evidence/yappc/datacloud-contract-integration.json",
+      "pass": true,
+      "path": ".kernel/evidence/yappc/datacloud-contract-integration.json",
+      "message": "missing .kernel/evidence/yappc/datacloud-contract-integration.json"
+    },
+    {
+      "name": "dataCloudIntegration is scoped to YAPPC evidence",
+      "pass": true,
+      "file": ".kernel/evidence/yappc/datacloud-contract-integration.json"
+    },
+    {
+      "name": "dataCloudIntegration evidence passes",
+      "pass": true,
+      "file": ".kernel/evidence/yappc/datacloud-contract-integration.json"
+    },
+    {
+      "name": "agentIntegration evidence file .kernel/evidence/yappc/governed-agent-runtime.json",
+      "pass": true,
+      "path": ".kernel/evidence/yappc/governed-agent-runtime.json",
+      "message": "missing .kernel/evidence/yappc/governed-agent-runtime.json"
+    },
+    {
+      "name": "agentIntegration is scoped to YAPPC evidence",
+      "pass": true,
+      "file": ".kernel/evidence/yappc/governed-agent-runtime.json"
+    },
+    {
+      "name": "agentIntegration evidence passes",
+      "pass": true,
+      "file": ".kernel/evidence/yappc/governed-agent-runtime.json"
+    },
+    {
+      "name": "kernelBridgeIntegration evidence file .kernel/evidence/yappc/kernel-bridge-contracts.json",
+      "pass": true,
+      "path": ".kernel/evidence/yappc/kernel-bridge-contracts.json",
+      "message": "missing .kernel/evidence/yappc/kernel-bridge-contracts.json"
+    },
+    {
+      "name": "kernelBridgeIntegration is scoped to YAPPC evidence",
+      "pass": true,
+      "file": ".kernel/evidence/yappc/kernel-bridge-contracts.json"
+    },
+    {
+      "name": "kernelBridgeIntegration evidence passes",
+      "pass": true,
+      "file": ".kernel/evidence/yappc/kernel-bridge-contracts.json"
+    },
+    {
+      "name": "featureCompletenessMatrix evidence file .kernel/evidence/yappc/feature-completeness-matrix.json",
+      "pass": true,
+      "path": ".kernel/evidence/yappc/feature-completeness-matrix.json",
+      "message": "missing .kernel/evidence/yappc/feature-completeness-matrix.json"
+    },
+    {
+      "name": "featureCompletenessMatrix is scoped to YAPPC evidence",
+      "pass": true,
+      "file": ".kernel/evidence/yappc/feature-completeness-matrix.json"
+    },
+    {
+      "name": "featureCompletenessMatrix evidence passes",
+      "pass": true,
+      "file": ".kernel/evidence/yappc/feature-completeness-matrix.json"
+    },
+    {
+      "name": "artifactRoundtrip evidence file .kernel/evidence/yappc/kernel-artifact-roundtrip.json",
+      "pass": true,
+      "path": ".kernel/evidence/yappc/kernel-artifact-roundtrip.json",
+      "message": "missing .kernel/evidence/yappc/kernel-artifact-roundtrip.json"
+    },
+    {
+      "name": "artifactRoundtrip is scoped to YAPPC evidence",
+      "pass": true,
+      "file": ".kernel/evidence/yappc/kernel-artifact-roundtrip.json"
+    },
+    {
+      "name": "artifactRoundtrip evidence passes",
+      "pass": true,
+      "file": ".kernel/evidence/yappc/kernel-artifact-roundtrip.json"
+    },
+    {
+      "name": "duplicateRuntimePaths evidence file .kernel/evidence/yappc/duplicate-runtime-paths.json",
+      "pass": true,
+      "path": ".kernel/evidence/yappc/duplicate-runtime-paths.json",
+      "message": "missing .kernel/evidence/yappc/duplicate-runtime-paths.json"
+    },
+    {
+      "name": "duplicateRuntimePaths is scoped to YAPPC evidence",
+      "pass": true,
+      "file": ".kernel/evidence/yappc/duplicate-runtime-paths.json"
+    },
+    {
+      "name": "duplicateRuntimePaths evidence passes",
+      "pass": true,
+      "file": ".kernel/evidence/yappc/duplicate-runtime-paths.json"
+    },
+    {
+      "name": "failureDegradedWorkflows evidence file .kernel/evidence/yappc/failure-degraded-workflows.json",
+      "pass": true,
+      "path": ".kernel/evidence/yappc/failure-degraded-workflows.json",
+      "message": "missing .kernel/evidence/yappc/failure-degraded-workflows.json"
+    },
+    {
+      "name": "failureDegradedWorkflows is scoped to YAPPC evidence",
+      "pass": true,
+      "file": ".kernel/evidence/yappc/failure-degraded-workflows.json"
+    },
+    {
+      "name": "failureDegradedWorkflows evidence passes",
+      "pass": true,
+      "file": ".kernel/evidence/yappc/failure-degraded-workflows.json"
+    },
+    {
+      "name": "platformProviderReadiness command is declared or script-backed",
+      "pass": true,
+      "command": "pnpm check:yappc-platform-provider-readiness"
+    },
+    {
+      "name": "productFamilyControlPlane command is declared or script-backed",
+      "pass": true,
+      "command": "node ./scripts/check-yappc-product-family-control-plane.mjs"
+    },
+    {
+      "name": "productUnitIntentHandoff command is declared or script-backed",
+      "pass": true,
+      "command": "pnpm check:yappc-product-unit-intent-handoff"
+    },
+    {
+      "name": "artifactIntelligenceBoundary command is declared or script-backed",
+      "pass": true,
+      "command": "pnpm check:yappc-artifact-intelligence-boundary"
+    },
+    {
+      "name": "dataCloudIntegration command is declared or script-backed",
+      "pass": true,
+      "command": "pnpm check:yappc-datacloud-contract-integration"
+    },
+    {
+      "name": "agentIntegration command is declared or script-backed",
+      "pass": true,
+      "command": "pnpm check:yappc-governed-agent-runtime"
+    },
+    {
+      "name": "kernelBridgeIntegration command is declared or script-backed",
+      "pass": true,
+      "command": "pnpm check:yappc-kernel-bridge-contracts"
+    },
+    {
+      "name": "featureCompletenessMatrix command is declared or script-backed",
+      "pass": true,
+      "command": "pnpm check:yappc-feature-completeness-matrix"
+    },
+    {
+      "name": "artifactRoundtrip command is declared or script-backed",
+      "pass": true,
+      "command": "pnpm check:yappc-kernel-artifact-roundtrip"
+    },
+    {
+      "name": "duplicateRuntimePaths command is declared or script-backed",
+      "pass": true,
+      "command": "pnpm check:yappc-duplicate-runtime-paths"
+    },
+    {
+      "name": "failureDegradedWorkflows command is declared or script-backed",
+      "pass": true,
+      "command": "pnpm check:yappc-failure-degraded-workflows"
+    }
+  ],
+  "violations": [],
+  "evidenceItems": [
+    {
+      "id": "platformProviderReadiness",
+      "command": "pnpm check:yappc-platform-provider-readiness",
+      "files": [
+        "scripts/check-yappc-platform-provider-readiness.mjs"
+      ]
+    },
+    {
+      "id": "productFamilyControlPlane",
+      "command": "node ./scripts/check-yappc-product-family-control-plane.mjs",
+      "files": [
+        "scripts/check-yappc-product-family-control-plane.mjs"
+      ]
+    },
+    {
+      "id": "productUnitIntentHandoff",
+      "command": "pnpm check:yappc-product-unit-intent-handoff",
+      "files": [
+        "scripts/check-yappc-product-unit-intent-handoff.mjs"
+      ]
+    },
+    {
+      "id": "artifactIntelligenceBoundary",
+      "command": "pnpm check:yappc-artifact-intelligence-boundary",
+      "files": [
+        "scripts/check-yappc-artifact-intelligence-boundary.mjs"
+      ]
+    },
+    {
+      "id": "dataCloudIntegration",
+      "command": "pnpm check:yappc-datacloud-contract-integration",
+      "files": [
+        ".kernel/evidence/yappc/datacloud-contract-integration.json"
+      ]
+    },
+    {
+      "id": "agentIntegration",
+      "command": "pnpm check:yappc-governed-agent-runtime",
+      "files": [
+        ".kernel/evidence/yappc/governed-agent-runtime.json"
+      ]
+    },
+    {
+      "id": "kernelBridgeIntegration",
+      "command": "pnpm check:yappc-kernel-bridge-contracts",
+      "files": [
+        ".kernel/evidence/yappc/kernel-bridge-contracts.json"
+      ]
+    },
+    {
+      "id": "featureCompletenessMatrix",
+      "command": "pnpm check:yappc-feature-completeness-matrix",
+      "files": [
+        ".kernel/evidence/yappc/feature-completeness-matrix.json"
+      ]
+    },
+    {
+      "id": "artifactRoundtrip",
+      "command": "pnpm check:yappc-kernel-artifact-roundtrip",
+      "files": [
+        ".kernel/evidence/yappc/kernel-artifact-roundtrip.json"
+      ]
+    },
+    {
+      "id": "duplicateRuntimePaths",
+      "command": "pnpm check:yappc-duplicate-runtime-paths",
+      "files": [
+        ".kernel/evidence/yappc/duplicate-runtime-paths.json"
+      ]
+    },
+    {
+      "id": "failureDegradedWorkflows",
+      "command": "pnpm check:yappc-failure-degraded-workflows",
+      "files": [
+        ".kernel/evidence/yappc/failure-degraded-workflows.json"
+      ]
+    }
+  ]
+}

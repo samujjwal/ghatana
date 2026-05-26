@@ -127,7 +127,7 @@ class DataCloudSecurityFailClosedTest extends EventloopTestBase {
         );
         request.addHeader(io.activej.http.HttpHeaders.of("Authorization", "Bearer valid-jwt-token"));
 
-        HttpResponse response = runPromise(() -> filter.filter(request, req -> Promise.of(HttpResponse.ok(200))));
+        HttpResponse response = runPromise(() -> filter.filter(request, req -> Promise.of(HttpResponse.ok200().build())));
 
         // Should return 403 or 404, not reach the handler
         assertThat(response.getCode()).isNotEqualTo(200);
@@ -152,7 +152,7 @@ class DataCloudSecurityFailClosedTest extends EventloopTestBase {
         );
         request.addHeader(io.activej.http.HttpHeaders.of("Authorization", "Bearer valid-jwt-token"));
 
-        HttpResponse response = runPromise(() -> filter.filter(request, req -> Promise.of(HttpResponse.ok(200))));
+        HttpResponse response = runPromise(() -> filter.filter(request, req -> Promise.of(HttpResponse.ok200().build())));
 
         // Should return 403 or 404, not reach the handler
         assertThat(response.getCode()).isNotEqualTo(200);
@@ -177,7 +177,7 @@ class DataCloudSecurityFailClosedTest extends EventloopTestBase {
         );
         request.addHeader(io.activej.http.HttpHeaders.of("Authorization", "Bearer valid-jwt-token"));
 
-        HttpResponse response = runPromise(() -> filter.filter(request, req -> Promise.of(HttpResponse.ok(200))));
+        HttpResponse response = runPromise(() -> filter.filter(request, req -> Promise.of(HttpResponse.ok200().build())));
 
         // Should return 403 or 404, not reach the handler
         assertThat(response.getCode()).isNotEqualTo(200);
@@ -203,7 +203,7 @@ class DataCloudSecurityFailClosedTest extends EventloopTestBase {
         );
         request.addHeader(io.activej.http.HttpHeaders.of("Authorization", "Bearer valid-jwt-token"));
 
-        HttpResponse response = runPromise(() -> filter.filter(request, req -> Promise.of(HttpResponse.ok(200))));
+        HttpResponse response = runPromise(() -> filter.filter(request, req -> Promise.of(HttpResponse.ok200().build())));
 
         // Should reach the handler (200) if all auth/tenant checks pass
         // Note: This test verifies the filter doesn't block known routes with valid metadata

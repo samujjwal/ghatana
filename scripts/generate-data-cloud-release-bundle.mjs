@@ -152,6 +152,17 @@ export function createDataCloudReleaseBundle(root = process.cwd(), now = new Dat
 }
 
 export function writeDataCloudReleaseBundle(root = process.cwd(), bundle = createDataCloudReleaseBundle(root)) {
+  // DC-REL-003: Stop committing generated release evidence unless commit-bound
+  if (!bundle.pass) {
+    throw new Error(`Evidence validation failed with ${bundle.violations.length} violations. Evidence not written.`);
+  }
+
+  // Ensure evidence is commit-bound
+  const head = bundle.evidenceRun.commit;
+  if (!head || head === 'unknown' || !/^[a-f0-9]{40}$/i.test(head)) {
+    throw new Error(`Evidence is not commit-bound: commit=${head}. Evidence not written.`);
+  }
+
   const evidencePath = path.join(root, EVIDENCE_PATH);
   mkdirSync(path.dirname(evidencePath), { recursive: true });
   writeFileSync(evidencePath, `${JSON.stringify(bundle, null, 2)}\n`);

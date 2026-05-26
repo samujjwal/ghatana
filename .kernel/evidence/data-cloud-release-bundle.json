@@ -1,38 +1,38 @@
 {
-  "generatedAt": "2026-05-26T17:32:08.493Z",
-  "pass": true,
+  "generatedAt": "2026-05-26T18:10:43.006Z",
+  "pass": false,
   "evidenceRun": {
     "generatedBy": "scripts/generate-data-cloud-release-bundle.mjs",
     "source": "scripts/generate-data-cloud-release-bundle.mjs",
     "command": "pnpm generate:data-cloud-release-bundle",
-    "commit": "600bebfa0832716d6589d5bcae223191138563cc",
-    "sourceCommitSha": "600bebfa0832716d6589d5bcae223191138563cc",
-    "targetCommitSha": "600bebfa0832716d6589d5bcae223191138563cc",
+    "commit": "37c2c98e32d9d7577cb6a9603762cf47387fc78a",
+    "sourceCommitSha": "37c2c98e32d9d7577cb6a9603762cf47387fc78a",
+    "targetCommitSha": "37c2c98e32d9d7577cb6a9603762cf47387fc78a",
     "targetEnvironment": "staging"
   },
-  "sourceCommitSha": "600bebfa0832716d6589d5bcae223191138563cc",
-  "targetCommitSha": "600bebfa0832716d6589d5bcae223191138563cc",
+  "sourceCommitSha": "37c2c98e32d9d7577cb6a9603762cf47387fc78a",
+  "targetCommitSha": "37c2c98e32d9d7577cb6a9603762cf47387fc78a",
   "targetEnvironment": "staging",
-  "validationStatus": "validated",
-  "reviewDueAt": "2026-05-27T17:32:08.493Z",
-  "expiresAt": "2026-05-28T17:32:08.493Z",
+  "validationStatus": "failed",
+  "reviewDueAt": "2026-05-27T18:10:43.006Z",
+  "expiresAt": "2026-05-28T18:10:43.006Z",
   "summary": {
     "itemCount": 23,
     "presentItems": 23,
-    "violationCount": 0
+    "violationCount": 11
   },
   "items": {
     "activeModuleEvidence": {
       "present": true,
       "path": ".kernel/evidence/data-cloud-active-modules.json",
       "payload": {
-        "generatedAt": "2026-05-26T17:23:20.999Z",
+        "generatedAt": "2026-05-26T18:05:23.186Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/generate-data-cloud-active-modules-evidence.mjs",
           "source": "scripts/generate-data-cloud-active-modules-evidence.mjs",
           "command": "pnpm check:data-cloud-active-module-evidence",
-          "commit": "600bebfa0832716d6589d5bcae223191138563cc"
+          "commit": "37c2c98e32d9d7577cb6a9603762cf47387fc78a"
         },
         "source": {
           "settings": "config/generated/settings-gradle-includes.kts",
@@ -434,13 +434,13 @@
       "present": true,
       "path": ".kernel/evidence/action-plane-boundaries.json",
       "payload": {
-        "generatedAt": "2026-05-26T17:23:01.534Z",
+        "generatedAt": "2026-05-26T18:05:23.949Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/check-action-plane-boundaries.mjs",
           "source": "scripts/check-action-plane-boundaries.mjs",
           "command": "pnpm check:action-plane-boundaries",
-          "commit": "600bebfa0832716d6589d5bcae223191138563cc"
+          "commit": "37c2c98e32d9d7577cb6a9603762cf47387fc78a"
         },
         "scope": {
           "scannedRoots": [
@@ -489,7 +489,7 @@
           ]
         },
         "summary": {
-          "scannedFiles": 2173,
+          "scannedFiles": 2181,
           "violationCount": 0
         },
         "violations": []
@@ -499,13 +499,13 @@
       "present": true,
       "path": ".kernel/evidence/action-plane-module-inventory.json",
       "payload": {
-        "generatedAt": "2026-05-26T17:23:02.065Z",
+        "generatedAt": "2026-05-26T18:05:24.426Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/check-action-plane-module-inventory.mjs",
           "source": "scripts/check-action-plane-module-inventory.mjs",
           "command": "pnpm check:action-plane-module-inventory",
-          "commit": "600bebfa0832716d6589d5bcae223191138563cc"
+          "commit": "37c2c98e32d9d7577cb6a9603762cf47387fc78a"
         },
         "source": {
           "inventory": "products/data-cloud/docs/architecture/ACTION_PLANE_MODULE_INVENTORY.md",
@@ -918,13 +918,13 @@
       "present": true,
       "path": ".kernel/evidence/agent-capability-duplicates.json",
       "payload": {
-        "generatedAt": "2026-05-26T17:23:27.998Z",
+        "generatedAt": "2026-05-26T18:05:37.187Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/check-agent-capability-duplicates.mjs",
           "source": "scripts/check-agent-capability-duplicates.mjs",
           "command": "pnpm check:agent-capability-duplicates",
-          "commit": "600bebfa0832716d6589d5bcae223191138563cc"
+          "commit": "37c2c98e32d9d7577cb6a9603762cf47387fc78a"
         },
         "summary": {
           "scannedScopes": 15,
@@ -937,13 +937,13 @@
       "present": true,
       "path": ".kernel/evidence/agent-runtime-test-excludes.json",
       "payload": {
-        "generatedAt": "2026-05-26T17:23:28.834Z",
+        "generatedAt": "2026-05-26T18:05:38.145Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/check-agent-runtime-test-excludes.mjs",
           "source": "scripts/check-agent-runtime-test-excludes.mjs",
           "command": "pnpm check:agent-runtime-test-excludes",
-          "commit": "600bebfa0832716d6589d5bcae223191138563cc"
+          "commit": "37c2c98e32d9d7577cb6a9603762cf47387fc78a"
         },
         "summary": {
           "gradleFile": "products/data-cloud/planes/action/agent-runtime/build.gradle.kts",
@@ -956,19 +956,19 @@
       "present": true,
       "path": ".kernel/evidence/agent-usage-audit.json",
       "payload": {
-        "generatedAt": "2026-05-26T17:23:34.628Z",
+        "generatedAt": "2026-05-26T18:05:39.162Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/audit-agent-usage.mjs",
           "source": "scripts/audit-agent-usage.mjs",
           "command": "pnpm check:agent-usage-audit",
-          "commit": "600bebfa0832716d6589d5bcae223191138563cc",
-          "sourceCommitSha": "600bebfa0832716d6589d5bcae223191138563cc",
-          "targetCommitSha": "600bebfa0832716d6589d5bcae223191138563cc",
+          "commit": "37c2c98e32d9d7577cb6a9603762cf47387fc78a",
+          "sourceCommitSha": "37c2c98e32d9d7577cb6a9603762cf47387fc78a",
+          "targetCommitSha": "37c2c98e32d9d7577cb6a9603762cf47387fc78a",
           "targetEnvironment": "staging"
         },
-        "sourceCommitSha": "600bebfa0832716d6589d5bcae223191138563cc",
-        "targetCommitSha": "600bebfa0832716d6589d5bcae223191138563cc",
+        "sourceCommitSha": "37c2c98e32d9d7577cb6a9603762cf47387fc78a",
+        "targetCommitSha": "37c2c98e32d9d7577cb6a9603762cf47387fc78a",
         "targetEnvironment": "staging",
         "summary": {
           "scannedDirectories": 7,
@@ -1007,13 +1007,13 @@
       "present": true,
       "path": ".kernel/evidence/audit-completeness.json",
       "payload": {
-        "generatedAt": "2026-05-26T17:23:30.286Z",
+        "generatedAt": "2026-05-26T18:05:43.792Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/check-audit-completeness.mjs",
           "source": "scripts/check-audit-completeness.mjs",
           "command": "pnpm check:audit-completeness",
-          "commit": "600bebfa0832716d6589d5bcae223191138563cc"
+          "commit": "37c2c98e32d9d7577cb6a9603762cf47387fc78a"
         },
         "summary": {
           "requiredFileCount": 10,
@@ -1085,19 +1085,19 @@
       "present": true,
       "path": ".kernel/evidence/data-cloud-operations-readiness.json",
       "payload": {
-        "generatedAt": "2026-05-26T17:29:09.865Z",
-        "pass": true,
+        "generatedAt": "2026-05-26T18:05:45.793Z",
+        "pass": false,
         "evidenceRun": {
           "generatedBy": "scripts/check-data-cloud-operations-readiness.mjs",
           "source": "scripts/check-data-cloud-operations-readiness.mjs",
           "command": "pnpm check:data-cloud-operations-readiness",
-          "commit": "600bebfa0832716d6589d5bcae223191138563cc"
+          "commit": "37c2c98e32d9d7577cb6a9603762cf47387fc78a"
         },
         "summary": {
           "requiredFileCount": 15,
           "presentFileCount": 15,
           "readinessAreaCount": 7,
-          "violationCount": 0
+          "violationCount": 1
         },
         "readinessAreas": [
           "runtime truth",
@@ -1125,7 +1125,9 @@
           ".kernel/evidence/product-cost-budgets.json",
           ".kernel/evidence/data-cloud-release-runtime-profile.json"
         ],
-        "violations": []
+        "violations": [
+          ".kernel/evidence/data-cloud-release-runtime-profile.json: evidenceRun.commit 600bebfa0832716d6589d5bcae223191138563cc must match HEAD 37c2c98e32d9d7577cb6a9603762cf47387fc78a"
+        ]
       }
     },
     "productReleaseReadiness": {
@@ -1476,12 +1478,12 @@
       "path": ".kernel/evidence/ai-governance-behavioral-proof/ai-governance-behavioral-proof-latest.json",
       "payload": {
         "timestamp": "generated-on-demand",
-        "generatedAt": "2026-05-26T17:29:58.326Z",
+        "generatedAt": "2026-05-26T18:08:09.506Z",
         "evidenceRun": {
           "generatedBy": "scripts/check-ai-governance-behavioral-proof.mjs",
           "command": "pnpm check:ai-governance-behavioral-proof",
           "source": "scripts/check-ai-governance-behavioral-proof.mjs",
-          "commit": "600bebfa0832716d6589d5bcae223191138563cc"
+          "commit": "37c2c98e32d9d7577cb6a9603762cf47387fc78a"
         },
         "violations": [],
         "warnings": [],
@@ -2202,5 +2204,17 @@
       }
     }
   },
-  "violations": []
+  "violations": [
+    "productionReadinessTaskMapEvidence: evidenceRun.commit 600bebfa0832716d6589d5bcae223191138563cc must match HEAD 37c2c98e32d9d7577cb6a9603762cf47387fc78a",
+    "productionReadinessTaskMapEvidence: sourceCommitSha 600bebfa0832716d6589d5bcae223191138563cc must match HEAD 37c2c98e32d9d7577cb6a9603762cf47387fc78a",
+    "productionReadinessTaskMapEvidence: targetCommitSha 600bebfa0832716d6589d5bcae223191138563cc must match release target 37c2c98e32d9d7577cb6a9603762cf47387fc78a",
+    "operationsReadinessProof: pass is false",
+    "productReleaseReadiness: evidenceRun.commit 600bebfa0832716d6589d5bcae223191138563cc must match HEAD 37c2c98e32d9d7577cb6a9603762cf47387fc78a",
+    "productReleaseReadiness: sourceCommitSha 600bebfa0832716d6589d5bcae223191138563cc must match HEAD 37c2c98e32d9d7577cb6a9603762cf47387fc78a",
+    "productReleaseReadiness: targetCommitSha 600bebfa0832716d6589d5bcae223191138563cc must match release target 37c2c98e32d9d7577cb6a9603762cf47387fc78a",
+    "sdkGenerationProof: evidenceRun.commit 600bebfa0832716d6589d5bcae223191138563cc must match HEAD 37c2c98e32d9d7577cb6a9603762cf47387fc78a",
+    "sdkGenerationProof: sourceCommitSha 600bebfa0832716d6589d5bcae223191138563cc must match HEAD 37c2c98e32d9d7577cb6a9603762cf47387fc78a",
+    "sdkGenerationProof: targetCommitSha 600bebfa0832716d6589d5bcae223191138563cc must match release target 37c2c98e32d9d7577cb6a9603762cf47387fc78a",
+    "securitySbomProof: evidenceRun.commit 600bebfa0832716d6589d5bcae223191138563cc must match HEAD 37c2c98e32d9d7577cb6a9603762cf47387fc78a"
+  ]
 }

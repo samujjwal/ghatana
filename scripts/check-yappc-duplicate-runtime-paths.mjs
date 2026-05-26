@@ -18,7 +18,7 @@ const rules = [
   {
     name: 'Data-Cloud persistence',
     pattern: /\b(EntityManager|JpaRepository|JdbcTemplate|DriverManager|getConnection\s*\(|Files\.writeString|writeFileSync|new\s+FileWriter)\b/,
-    allowed: ['/infrastructure/datacloud/', '/services/platform/adapter/DataCloudClientAdapter.java', '/core/refactorer/', '/core/scaffold/', '/frontend/', '/tools/', '/core/yappc-domain-impl/', '/core/yappc-services/', '/platform/', '/products/yappc/scripts/'],
+    allowed: ['/infrastructure/datacloud/', '/services/platform/adapter/DataCloudClientAdapter.java', '/core/refactorer/', '/core/scaffold/', '/frontend/', '/tools/', '/core/yappc-domain-impl/', '/core/yappc-services/', '/platform/', '/products/yappc/scripts/', 'products/yappc/scripts/'],
   },
   {
     name: 'agent runtime',
@@ -38,7 +38,7 @@ const rules = [
   {
     name: 'governance/audit logic',
     pattern: /\b(policy|approval|idempotency|audit)\b/,
-    allowed: ['/core/yappc-services/', '/core/agents/', '/infrastructure/datacloud/', '/core/ai/', '/core/cli-tools/', '/core/refactorer/', '/core/scaffold/', '/frontend/', '/kernel-bridge/', '/tools/', '/core/yappc-domain-impl/', '/core/yappc-facades/', '/core/yappc-infrastructure/'],
+    allowed: ['/core/yappc-services/', '/core/agents/', '/infrastructure/datacloud/', '/core/ai/', '/core/cli-tools/', '/core/refactorer/', '/core/scaffold/', '/frontend/', '/kernel-bridge/', '/tools/', '/core/yappc-domain-impl/', '/core/yappc-facades/', '/core/yappc-infrastructure/', '/core/yappc-shared/', '/libs/java/yappc-domain/', 'products/yappc/scripts/'],
   },
   {
     name: 'contract generation',

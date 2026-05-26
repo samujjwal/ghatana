@@ -97,8 +97,8 @@ class DataCloudSecurityAuditRedactionTest extends EventloopTestBase {
         when(policyEngine.evaluate(any(), any(), any())).thenReturn(true);
 
         auditService = mock(AuditService.class);
-        when(auditService.emit(any(AuditEvent.class)))
-            .thenReturn(Promise.of(true));
+        when(auditService.record(any(AuditEvent.class)))
+            .thenReturn(Promise.of(null));
     }
 
     @AfterEach
@@ -131,15 +131,15 @@ class DataCloudSecurityAuditRedactionTest extends EventloopTestBase {
         request.addHeader(io.activej.http.HttpHeaders.of("Authorization", "Bearer valid-jwt-token"));
 
         runPromise(() -> filter.filter(request, req -> {
-            return Promise.of(HttpResponse.ok(200));
+            return Promise.of(HttpResponse.ok200().build());
         }));
 
         // Verify audit was called
-        verify(auditService).emit(any(AuditEvent.class));
+        verify(auditService).record(any(AuditEvent.class));
 
         // Capture the audit event
         var captor = org.mockito.ArgumentCaptor.forClass(AuditEvent.class);
-        verify(auditService).emit(captor.capture());
+        verify(auditService).record(captor.capture());
         AuditEvent auditEvent = captor.getValue();
 
         // Verify sensitive data is not in audit details
@@ -169,11 +169,11 @@ class DataCloudSecurityAuditRedactionTest extends EventloopTestBase {
         request.addHeader(io.activej.http.HttpHeaders.of("Authorization", "Bearer valid-jwt-token"));
 
         runPromise(() -> filter.filter(request, req -> {
-            return Promise.of(HttpResponse.ok(200));
+            return Promise.of(HttpResponse.ok200().build());
         }));
 
         var captor = org.mockito.ArgumentCaptor.forClass(AuditEvent.class);
-        verify(auditService).emit(captor.capture());
+        verify(auditService).record(captor.capture());
         AuditEvent auditEvent = captor.getValue();
 
         // Verify raw request body is not in audit details
@@ -233,11 +233,11 @@ class DataCloudSecurityAuditRedactionTest extends EventloopTestBase {
         request.addHeader(io.activej.http.HttpHeaders.of("Authorization", "Bearer valid-jwt-token"));
 
         runPromise(() -> filter.filter(request, req -> {
-            return Promise.of(HttpResponse.ok(200));
+            return Promise.of(HttpResponse.ok200().build());
         }));
 
         var captor = org.mockito.ArgumentCaptor.forClass(AuditEvent.class);
-        verify(auditService).emit(captor.capture());
+        verify(auditService).record(captor.capture());
         AuditEvent auditEvent = captor.getValue();
 
         // Verify principal information is present but redacted if needed
@@ -268,11 +268,11 @@ class DataCloudSecurityAuditRedactionTest extends EventloopTestBase {
         request.addHeader(io.activej.http.HttpHeaders.of("X-Sensitive-Header", "secret-value"));
 
         runPromise(() -> filter.filter(request, req -> {
-            return Promise.of(HttpResponse.ok(200));
+            return Promise.of(HttpResponse.ok200().build());
         }));
 
         var captor = org.mockito.ArgumentCaptor.forClass(AuditEvent.class);
-        verify(auditService).emit(captor.capture());
+        verify(auditService).record(captor.capture());
         AuditEvent auditEvent = captor.getValue();
 
         // Verify raw headers are not in audit details

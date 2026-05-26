@@ -96,8 +96,8 @@ public class AgentExecutorOperator extends AbstractOperator {
         log.info("Executing agent: agentId={} fromStage={} toStage={} tenantId={}",
                 agentId, fromStage, toStage, tenantId);
 
-        // Execute agent — integration point for TypedAgent.process() via YappcAgentSystem.
-        // Emits result event; concrete execution is handled asynchronously.
+        // Execute through the governed WorkflowStepOperatorAdapter rather than
+        // directly invoking TypedAgent or workflow-agent execution.
         return executeAgent(agentId, fromStage, toStage, tenantId, correlationId)
                 .map(result -> OperatorResult.of(result));
     }

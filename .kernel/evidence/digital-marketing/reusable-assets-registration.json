@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0.0",
   "productId": "digital-marketing",
-  "generatedAt": "2026-05-26T05:27:37.531Z",
-  "commitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+  "generatedAt": "2026-05-26T18:06:26.135Z",
+  "commitSha": "37c2c98e32d9d7577cb6a9603762cf47387fc78a",
   "promotionPolicy": {
     "promotionRequires": [
       "test_coverage_gte_80",
@@ -13,8 +13,8 @@
       "no_pending_blocking_issues",
       "ephemeral_adapters_blocked"
     ],
-    "promotionLockSha": "936924cf915e366f3f0c47bee266a277601b1288",
-    "lockedAt": "2026-05-26T05:27:37.531Z",
+    "promotionLockSha": "37c2c98e32d9d7577cb6a9603762cf47387fc78a",
+    "lockedAt": "2026-05-26T18:06:26.135Z",
     "promotionApprovedBy": "dmos-team-lead",
     "allAssetsLockedForPromotion": true
   },
@@ -37,8 +37,8 @@
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-26T05:27:37.531Z",
-        "lockedAtSha": "936924cf915e366f3f0c47bee266a277601b1288",
+        "lockedAt": "2026-05-26T18:06:26.135Z",
+        "lockedAtSha": "37c2c98e32d9d7577cb6a9603762cf47387fc78a",
         "promotionTarget": "shared-package",
         "approvedBy": "dmos-team-lead",
         "stagingBootstrapValidated": true,
@@ -106,8 +106,8 @@
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-26T05:27:37.531Z",
-        "lockedAtSha": "936924cf915e366f3f0c47bee266a277601b1288",
+        "lockedAt": "2026-05-26T18:06:26.135Z",
+        "lockedAtSha": "37c2c98e32d9d7577cb6a9603762cf47387fc78a",
         "promotionTarget": "shared-package",
         "approvedBy": "dmos-team-lead",
         "stagingBootstrapValidated": true,
@@ -174,8 +174,8 @@
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-26T05:27:37.531Z",
-        "lockedAtSha": "936924cf915e366f3f0c47bee266a277601b1288",
+        "lockedAt": "2026-05-26T18:06:26.135Z",
+        "lockedAtSha": "37c2c98e32d9d7577cb6a9603762cf47387fc78a",
         "promotionTarget": "shared-package",
         "approvedBy": "dmos-team-lead",
         "stagingBootstrapValidated": true,
@@ -239,8 +239,8 @@
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-26T05:27:37.531Z",
-        "lockedAtSha": "936924cf915e366f3f0c47bee266a277601b1288",
+        "lockedAt": "2026-05-26T18:06:26.135Z",
+        "lockedAtSha": "37c2c98e32d9d7577cb6a9603762cf47387fc78a",
         "promotionTarget": "shared-package",
         "approvedBy": "dmos-team-lead",
         "stagingBootstrapValidated": true,
@@ -305,8 +305,8 @@
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-26T05:27:37.531Z",
-        "lockedAtSha": "936924cf915e366f3f0c47bee266a277601b1288",
+        "lockedAt": "2026-05-26T18:06:26.135Z",
+        "lockedAtSha": "37c2c98e32d9d7577cb6a9603762cf47387fc78a",
         "promotionTarget": "shared-package",
         "approvedBy": "dmos-team-lead",
         "stagingBootstrapValidated": true,
@@ -353,16 +353,16 @@
       }
     }
   ],
-  "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
-  "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+  "sourceCommitSha": "37c2c98e32d9d7577cb6a9603762cf47387fc78a",
+  "targetCommitSha": "37c2c98e32d9d7577cb6a9603762cf47387fc78a",
   "targetEnvironment": "staging",
   "validationStatus": "validated",
   "expiresAt": "2026-08-23T00:00:00.000Z",
   "evidenceRun": {
-    "commit": "936924cf915e366f3f0c47bee266a277601b1288",
-    "generatedAt": "2026-05-26T05:27:37.531Z",
+    "commit": "37c2c98e32d9d7577cb6a9603762cf47387fc78a",
+    "generatedAt": "2026-05-26T18:06:26.135Z",
     "source": "product-family-asset-registry",
-    "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
-    "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288"
+    "sourceCommitSha": "37c2c98e32d9d7577cb6a9603762cf47387fc78a",
+    "targetCommitSha": "37c2c98e32d9d7577cb6a9603762cf47387fc78a"
   }
 }

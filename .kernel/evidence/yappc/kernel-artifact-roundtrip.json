@@ -1,11 +1,11 @@
 {
   "checkId": "YAPPC-006 kernel artifact roundtrip",
-  "generatedAt": "2026-05-26T17:50:24.396Z",
+  "generatedAt": "2026-05-26T18:18:41.009Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/check-yappc-kernel-artifact-roundtrip.mjs",
     "command": "node scripts/check-yappc-kernel-artifact-roundtrip.mjs",
-    "commit": "600bebfa0832716d6589d5bcae223191138563cc"
+    "commit": "37c2c98e32d9d7577cb6a9603762cf47387fc78a"
   },
   "summary": {
     "checkCount": 18,

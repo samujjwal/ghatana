@@ -12,7 +12,7 @@ const sources = [
   'products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/YappcDataCloudAgentRuntimeE2ETest.java',
   'products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/operators/AgentExecutorOperator.java',
   'products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/scaffold/YappcScaffoldService.java',
-  'platform/typescript/kernel-lifecycle/src/__tests__/KernelLifecycleErrors.test.ts',
+  'platform/typescript/kernel-lifecycle/src/service/__tests__/KernelLifecycleErrors.test.ts',
   'platform/typescript/artifact-compiler-ts/src/__tests__/generated-validation.test.ts',
   'platform/typescript/artifact-compiler-ts/src/__tests__/react-protected-regions.test.ts',
   'platform/typescript/artifact-compiler-ts/src/diff/roundtrip-diff.ts',

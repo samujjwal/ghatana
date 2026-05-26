@@ -1,0 +1,135 @@
+{
+  "checkId": "YAPPC-010 failure and degraded workflows",
+  "generatedAt": "2026-05-26T18:18:51.916Z",
+  "pass": true,
+  "evidenceRun": {
+    "generatedBy": "scripts/check-yappc-failure-degraded-workflows.mjs",
+    "command": "node scripts/check-yappc-failure-degraded-workflows.mjs",
+    "commit": "37c2c98e32d9d7577cb6a9603762cf47387fc78a"
+  },
+  "summary": {
+    "checkCount": 16,
+    "passedChecks": 16,
+    "violationCount": 0
+  },
+  "checks": [
+    {
+      "name": "products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/datacloud/YappcDataCloudE2ETest.java",
+      "pass": true,
+      "path": "products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/datacloud/YappcDataCloudE2ETest.java",
+      "message": "missing products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/datacloud/YappcDataCloudE2ETest.java"
+    },
+    {
+      "name": "products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/YappcDataCloudAgentRuntimeE2ETest.java",
+      "pass": true,
+      "path": "products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/YappcDataCloudAgentRuntimeE2ETest.java",
+      "message": "missing products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/YappcDataCloudAgentRuntimeE2ETest.java"
+    },
+    {
+      "name": "products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/operators/AgentExecutorOperator.java",
+      "pass": true,
+      "path": "products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/operators/AgentExecutorOperator.java",
+      "message": "missing products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/operators/AgentExecutorOperator.java"
+    },
+    {
+      "name": "products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/scaffold/YappcScaffoldService.java",
+      "pass": true,
+      "path": "products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/scaffold/YappcScaffoldService.java",
+      "message": "missing products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/scaffold/YappcScaffoldService.java"
+    },
+    {
+      "name": "platform/typescript/kernel-lifecycle/src/service/__tests__/KernelLifecycleErrors.test.ts",
+      "pass": true,
+      "path": "platform/typescript/kernel-lifecycle/src/service/__tests__/KernelLifecycleErrors.test.ts",
+      "message": "missing platform/typescript/kernel-lifecycle/src/service/__tests__/KernelLifecycleErrors.test.ts"
+    },
+    {
+      "name": "platform/typescript/artifact-compiler-ts/src/__tests__/generated-validation.test.ts",
+      "pass": true,
+      "path": "platform/typescript/artifact-compiler-ts/src/__tests__/generated-validation.test.ts",
+      "message": "missing platform/typescript/artifact-compiler-ts/src/__tests__/generated-validation.test.ts"
+    },
+    {
+      "name": "platform/typescript/artifact-compiler-ts/src/__tests__/react-protected-regions.test.ts",
+      "pass": true,
+      "path": "platform/typescript/artifact-compiler-ts/src/__tests__/react-protected-regions.test.ts",
+      "message": "missing platform/typescript/artifact-compiler-ts/src/__tests__/react-protected-regions.test.ts"
+    },
+    {
+      "name": "platform/typescript/artifact-compiler-ts/src/diff/roundtrip-diff.ts",
+      "pass": true,
+      "path": "platform/typescript/artifact-compiler-ts/src/diff/roundtrip-diff.ts",
+      "message": "missing platform/typescript/artifact-compiler-ts/src/diff/roundtrip-diff.ts"
+    },
+    {
+      "name": "scripts/check-openapi-contract-canonical.mjs",
+      "pass": true,
+      "path": "scripts/check-openapi-contract-canonical.mjs",
+      "message": "missing scripts/check-openapi-contract-canonical.mjs"
+    },
+    {
+      "name": "dataCloudUnavailable",
+      "pass": true,
+      "tokens": [
+        "data-cloud connection failed"
+      ]
+    },
+    {
+      "name": "agentRuntimeUnavailable",
+      "pass": true,
+      "tokens": [
+        "agent_system_not_initialized",
+        "agent_not_found"
+      ]
+    },
+    {
+      "name": "kernelLifecycleApiUnavailable",
+      "pass": true,
+      "tokens": [
+        "unavailable",
+        "kernel"
+      ]
+    },
+    {
+      "name": "artifactValidationFails",
+      "pass": true,
+      "tokens": [
+        "validation",
+        "fail"
+      ]
+    },
+    {
+      "name": "scaffoldGeneratorFails",
+      "pass": true,
+      "tokens": [
+        "scaffold/generate failed",
+        "scaffold/analyze failed"
+      ]
+    },
+    {
+      "name": "protectedRegionConflict",
+      "pass": true,
+      "tokens": [
+        "protected",
+        "region"
+      ]
+    },
+    {
+      "name": "contractDrift",
+      "pass": true,
+      "tokens": [
+        "contract drift"
+      ]
+    }
+  ],
+  "violations": [],
+  "scenarios": [
+    "dataCloudUnavailable",
+    "agentRuntimeUnavailable",
+    "kernelLifecycleApiUnavailable",
+    "artifactValidationFails",
+    "scaffoldGeneratorFails",
+    "protectedRegionConflict",
+    "contractDrift"
+  ]
+}

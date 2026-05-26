@@ -17,6 +17,7 @@ const requiredFiles = [
   'products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/aep/pattern/spec/PatternSpecValidator.java',
   'products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/registry/AgentEventOperatorCapabilityAdapter.java',
   'products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/YappcDataCloudAgentRuntimeE2ETest.java',
+  'products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/services/lifecycle/operators/AgentExecutorOperatorGovernedRuntimeTest.java',
 ];
 
 for (const file of requiredFiles) checker.requireFile(file);
@@ -49,6 +50,22 @@ checker.record('canonical EventOperatorCapability validates capabilityRef', read
 checker.record('canonical adapter implements EventOperatorCapability', readText(requiredFiles[7]).includes('implements EventOperatorCapability'), {
   path: requiredFiles[7],
 });
+
+const runtimeTest = readText('products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/services/lifecycle/operators/AgentExecutorOperatorGovernedRuntimeTest.java');
+for (const token of [
+  'WorkflowStepOperatorAdapter',
+  'EventOperatorCapability',
+  'capabilityRef',
+  'policy',
+  'approval',
+  'idempotencyKey',
+  'audit',
+  'outputValidation',
+  'agent_system_not_initialized',
+  'agent_not_found',
+]) {
+  checker.record(`governed runtime test proves ${token}`, runtimeTest.includes(token), { token });
+}
 
 const productionFiles = [
   ...walkFiles('products/yappc/core/agents', (file) =>

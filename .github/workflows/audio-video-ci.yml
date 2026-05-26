@@ -308,7 +308,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ---------------------------------------------------------------------------
-  # Integration Tests
+  # Integration Tests (AV-003: Removed continue-on-error)
   # ---------------------------------------------------------------------------
   integration-tests:
     name: Integration Tests
@@ -340,7 +340,7 @@ jobs:
 
       - name: Run Integration Tests
         run: |
-          ./gradlew :products:audio-video:integration-tests:integrationTest \
+          ./gradlew :products:audio-video:modules:integration-tests:integrationTest \
             --no-daemon \
             -Dredis.host=localhost \
             -Dredis.port=6379

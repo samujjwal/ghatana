@@ -104,25 +104,7 @@ class EventPlaneBoundaryTest extends EventloopTestBase {
     @DisplayName("DC-EVENT-003: Event read uses storage-plane primitive (EventLog)")
     void eventReadUsesStoragePlanePrimitive() {
         when(request.getPathParameter("offset")).thenReturn("1");
-        when(client.readEvent(anyString(), eq(1L)))
-            .thenReturn(Promise.of(Optional.of(DataCloudClient.Event.builder()
-                .type("entity.created")
-                .payload(Map.of("entityId", "ent-1"))
-                .build())));
-
-        HttpResponse response = runPromise(() -> handler.handleReadEvent(request));
-
-        assertThat(response).isNotNull();
-        // Verify it uses DataCloudClient.readEvent (storage-plane primitive)
-        verify(client).readEvent(anyString(), eq(1L));
-        verifyNoInteractionsWithAEP();
-    }
-
-    @Test
-    @DisplayName("DC-EVENT-003: Event tail uses storage-plane primitive (EventLog)")
-    void eventTailUsesStoragePlanePrimitive() {
-        when(request.getPathParameter("offset")).thenReturn("0");
-        when(client.tailEvents(anyString(), eq(0L)))
+        when(client.queryEvents(anyString(), any()))
             .thenReturn(Promise.of(List.of(
                 DataCloudClient.Event.builder()
                     .type("entity.created")
@@ -130,11 +112,31 @@ class EventPlaneBoundaryTest extends EventloopTestBase {
                     .build()
             )));
 
-        HttpResponse response = runPromise(() -> handler.handleTailEvents(request));
+        HttpResponse response = runPromise(() -> handler.handleGetEventByOffset(request));
 
         assertThat(response).isNotNull();
-        // Verify it uses DataCloudClient.tailEvents (storage-plane primitive)
-        verify(client).tailEvents(anyString(), eq(0L));
+        // Verify it uses DataCloudClient.queryEvents (storage-plane primitive)
+        verify(client).queryEvents(anyString(), any());
+        verifyNoInteractionsWithAEP();
+    }
+
+    @Test
+    @DisplayName("DC-EVENT-003: Event tail uses storage-plane primitive (EventLog)")
+    void eventTailUsesStoragePlanePrimitive() {
+        when(request.getPathParameter("offset")).thenReturn("0");
+        when(client.queryEvents(anyString(), any()))
+            .thenReturn(Promise.of(List.of(
+                DataCloudClient.Event.builder()
+                    .type("entity.created")
+                    .payload(Map.of("entityId", "ent-1"))
+                    .build()
+            )));
+
+        HttpResponse response = runPromise(() -> handler.handleQueryEvents(request));
+
+        assertThat(response).isNotNull();
+        // Verify it uses DataCloudClient.queryEvents (storage-plane primitive)
+        verify(client).queryEvents(anyString(), any());
         verifyNoInteractionsWithAEP();
     }
 
@@ -166,13 +168,15 @@ class EventPlaneBoundaryTest extends EventloopTestBase {
     @DisplayName("DC-EVENT-003: Event response does not contain AEP EventOperatorCapability")
     void eventResponseDoesNotContainAEPEventOperatorCapability() {
         when(request.getPathParameter("offset")).thenReturn("1");
-        when(client.readEvent(anyString(), eq(1L)))
-            .thenReturn(Promise.of(Optional.of(DataCloudClient.Event.builder()
-                .type("entity.created")
-                .payload(Map.of("entityId", "ent-1"))
-                .build())));
+        when(client.queryEvents(anyString(), any()))
+            .thenReturn(Promise.of(List.of(
+                DataCloudClient.Event.builder()
+                    .type("entity.created")
+                    .payload(Map.of("entityId", "ent-1"))
+                    .build()
+            )));
 
-        HttpResponse response = runPromise(() -> handler.handleReadEvent(request));
+        HttpResponse response = runPromise(() -> handler.handleGetEventByOffset(request));
 
         assertThat(response).isNotNull();
         // Verify response does not contain AEP-specific fields
@@ -218,7 +222,7 @@ class EventPlaneBoundaryTest extends EventloopTestBase {
                 .payload(Map.of("entityId", "ent-1", "entityType", "Customer"))
                 .build())));
 
-        HttpResponse response = runPromise(() -> handler.handleReadEvent(request));
+        HttpResponse response = runPromise(() -> handler.handleGetEventByOffset(request));
 
         assertThat(response).isNotNull();
         // Verify payload contains domain data, not AEP pattern structures

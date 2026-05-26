@@ -1,252 +1,497 @@
-## 1. Executive Summary
+Below is the full implementation backlog from the audit at commit `37c2c98e32d9d7577cb6a9603762cf47387fc78a`. The commit is a merge commit with only a YAPPC changelog diff, so these tasks are based on the **full snapshot**, not the diff. 
 
-I audited `samujjwal/ghatana` at commit `600bebfa0832716d6589d5bcae223191138563cc`. The commit was confirmed, and its message is “Resolve merge conflicts in evidence files by accepting remote versions.” 
+The backlog is grounded in the PHR vision, frontend IA, screen matrix, current route contracts, mobile/web implementation, Kernel module wiring, release-readiness route, YAPPC scaffold/canvas APIs, and root check scripts. The vision/IA requires a much broader PHR product surface than the currently implemented web/mobile routes.    
 
-**Bottom line:** PHR is not yet production-ready as a full product. The **backend/kernel-side PHR implementation is much more mature than the current web/mobile UI**, but there is a major gap between the documented PHR vision/IA and the implemented user-facing product.
+Legend: **P0** production blocker, **P1** required for production-grade progress, **P2** hardening, **P3** cleanup/polish.
 
-The PHR vision describes a broad Nepal-market personal health record product covering medical records, prescriptions, labs, appointment history, clinical notes, imaging, immunizations, referrals, caregiver access, telemedicine, emergency break-glass access, AI decision support, HIE integration, Nepal Directive 2081, Nepal Privacy Act 2075, HIPAA-style controls, and FHIR R4 interoperability. 
+---
 
-Current **web routing**, however, implements only a flat route set: `/dashboard`, `/records`, `/records/:recordId`, `/consents`, `/appointments`, `/labs`, `/medications`, `/emergency`, `/release-readiness`, `/audit`, and `/settings`.  The documented IA expects a much broader nested structure with `/app/patient/*`, `/app/provider/*`, `/app/caregiver/*`, `/app/admin/*`, `/app/fchv/*`, documents, OCR, voice input, insurance, claims, emergency QR, provider search, encounters, observation entry, medication request entry, and more. 
+# A. P0 Production Blockers
 
-**Kernel is partially used correctly**: `PhrKernelModule` composes many PHR services, registers lifecycle/audit/consent events, uses Kernel context, registers services, and wires backend route adapters.   But PHR is not fully Kernel-native across all lifecycle phases because UI IA, journey completeness, feature visibility, generated route/page contracts, frontend state, mobile offline policy, tests, and release evidence are still partly product-local or incomplete.
+| Priority | Area                    | What                                                                                                                                                 | Where                                                                                                                                                                  | Validation                                                                          |
+| -------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| P0       | Mobile privacy/security | Replace unencrypted AsyncStorage PHI cache with encrypted storage; current code explicitly defers encryption.                                        | `products/phr/apps/mobile/src/services/offlineStore.ts`                                                                                                                | Unit test: cache is encrypted, expires, clears on logout, clears on consent revoke. |
+| P0       | Mobile auth/privacy     | Pass session context to every mobile PHI API call: tenant, principal, role, auth/session token.                                                      | `products/phr/apps/mobile/src/App.tsx`, `products/phr/apps/mobile/src/services/phrMobileApi.ts`                                                                        | API tests assert headers on dashboard/sync/emergency calls.                         |
+| P0       | Consent/security        | Remove broad clinician/admin PHI bypass; replace with Kernel policy evaluator for consent, treatment relationship, facility scope, emergency, audit. | `products/phr/src/main/java/com/ghatana/phr/api/routes/PhrRouteSupport.java`, `PhrPatientRecordRoutes.java`, `PhrAdministrativeRoutes.java`                            | Access matrix tests for patient/caregiver/provider/admin/emergency.                 |
+| P0       | Route entitlements      | Eliminate duplicate route contract sources between web manifest and backend entitlement route.                                                       | `products/phr/apps/web/src/phrRouteContracts.ts`, `products/phr/src/main/java/com/ghatana/phr/api/routes/PhrEntitlementRoutes.java`, new Kernel product route contract | Generated web/backend entitlement artifacts must match.                             |
+| P0       | PHR IA coverage         | Create canonical machine-readable PHR use-case baseline from vision, frontend route map, screen matrix, workflows, tests.                            | New: `products/phr/config/phr-usecase-baseline.json`; docs under `products/phr/docs/**`                                                                                | Check fails if IA item lacks status: implemented/flagged/deferred/removed.          |
+| P0       | Web/mobile i18n         | Move to one i18n mechanism; remove mobile raw strings and enforce no raw user-visible text.                                                          | `products/phr/apps/web/src/i18n/**`, `products/phr/apps/mobile/src/**`, platform i18n package                                                                          | `check:i18n-conformance` plus PHR web/mobile raw-string gate.                       |
+| P0       | Release readiness       | Move release-readiness evidence reading from product-local file reader into Kernel runtime API.                                                      | `products/phr/src/main/java/com/ghatana/phr/api/routes/PhrReleaseReadinessRoutes.java`, Kernel lifecycle/readiness package                                             | PHR cockpit consumes Kernel readiness API, not `.kernel/evidence` files directly.   |
+| P0       | Emergency/break-glass   | Ensure emergency access cannot expose PHI without reason, biometric/session gate where mobile, immutable audit, review, notification.                | `PhrEmergencyRoutes.java`, `EmergencyAccessLogService.java`, `EmergencyAccessPage.tsx`, `EmergencyAccessScreen.tsx`                                                    | E2E test proves request → audit → notification → review.                            |
+| P0       | Privacy logging         | Prevent PHI/PII/secrets in logs and diagnostics, including mobile error boundary and logout/session logs.                                            | `PhrAuthRoutes.java`, mobile `App.tsx`, backend routes, observability helpers                                                                                          | Log redaction tests and static PHI logging gate.                                    |
+| P0       | Backend session model   | Replace lightweight frontend session storage with secure token/session lifecycle: refresh, expiry, logout invalidation, backend session audit.       | `PhrAuthRoutes.java`, `PhrSessionContext.tsx`, mobile auth services                                                                                                    | Auth E2E: login, restore, expire, logout, revoke.                                   |
 
-**YAPPC is not yet useful enough as a PHR accelerator.** Its own README says the implementation is partial: AI-native maturity 3/10, feature completeness 4/10, production readiness 2/10, with phases 3–7 still active/incomplete.  The YAPPC Kernel bridge exposes narrow artifact/intelligence provider ports, which is directionally correct, but it does not yet prove PHR-specific IA-to-code generation, route/page/API validation, journey visualization, or completeness detection. 
+---
 
-## 2. Repository Map
+# B. PHR Vision / IA / Product-Use-Case Baseline
 
-| Area              | Key implementation evidence                                                                                                                                     |                                       Maturity |
-| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------: |
-| PHR vision/docs   | Vision and IA define full product scope, personas, services, compliance, AI, mobile, HIE, FHIR, telemedicine, caregiver, emergency workflows.                   |           Broad but partly stale/over-claiming |
-| PHR web           | Flat React Router setup and route contract list.                                                                                                                |                               Partial UI shell |
-| PHR mobile        | React Native tab shell with dashboard, records, consents, alerts, emergency, settings; local auth state and offline cache fallback.                             |                                 Early scaffold |
-| PHR backend/API   | ActiveJ HTTP server exposes FHIR, patients, consents, clinical, emergency, admin, records, release readiness, entitlements, health.                             | Stronger than UI, still needs end-to-end proof |
-| PHR Kernel module | Composes PHR services, evidence outbox, FHIR server, HIE integration, HL7 lab integration, consent cache, service catalog.                                      |                                Good foundation |
-| Kernel platform   | Vision claims module lifecycle, capability composition, dependency resolution, plugin architecture, health, cross-product communication, boundary enforcement.  |      Mature core, incomplete PHR lifecycle fit |
-| YAPPC             | 8-phase creator lifecycle, partial implementation, Kernel delegation model, active buildout.                                                                    |                   Not ready as PHR accelerator |
+| Priority | What                                                   | Where                                                                       | Details                                                                                                 |
+| -------- | ------------------------------------------------------ | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| P0       | Build canonical PHR use-case baseline.                 | New `products/phr/config/phr-usecase-baseline.json`                         | Include persona, IA route/screen, backend API, data model, Kernel dependency, YAPPC dependency, status. |
+| P0       | Build IA-to-code traceability matrix.                  | New `products/phr/docs/04_design_and_workflows/phr_ia_code_traceability.md` | Map vision/IA items to files, APIs, tests, gaps.                                                        |
+| P0       | Add generated IA coverage evidence.                    | New `.kernel/evidence/phr/ia-coverage.json`                                 | Evidence generated from code/docs, bound to commit.                                                     |
+| P0       | Add check script for PHR IA drift.                     | New `scripts/check-phr-ia-coverage.mjs`                                     | Fails if route/screen/workflow in docs is missing from baseline.                                        |
+| P1       | Add product phase classification to every IA item.     | `phr-usecase-baseline.json`                                                 | Classify: current critical, MVP, Phase 2, hidden/flagged, removed.                                      |
+| P1       | Reconcile docs that claim “complete” with actual code. | `products/phr/docs/01-vision-plan-requirements/01-product-vision.md`        | Replace unsupported “complete” claims with evidence-based status.                                       |
+| P1       | Add doc/code mismatch report.                          | New `.kernel/evidence/phr/doc-code-mismatch.json`                           | Required by release-readiness gate.                                                                     |
+| P1       | Add route-to-screen-to-test map.                       | New `products/phr/config/phr-route-screen-test-map.json`                    | Every web/mobile route must have route test, action test, state test.                                   |
+| P1       | Add “feature visibility” matrix.                       | New `products/phr/config/phr-feature-visibility.json`                       | Controls visible/hidden/feature-flagged IA items.                                                       |
+| P2       | Add roadmap-defer decisions for Phase 2 items.         | `products/phr/docs/04_design_and_workflows/*`                               | Claims, insurance, advanced telemedicine, imaging viewer, etc.                                          |
 
-## 3. PHR Vision and IA Coverage Matrix
+---
 
-| Vision/IA area                            | Expected from vision/IA                                                                                                            | Current code status                                                                | Gap                                          |
-| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------- |
-| Patient dashboard                         | Full summary: profile, appointments, meds, observations, conditions, alerts. Screen matrix requires dashboard endpoint and tests.  | `/dashboard` exists, but uses compact dashboard data from `fetchDashboardData`.    | Partial; no full IA dashboard contract       |
-| Patient profile                           | Dedicated profile view/update.                                                                                                     | No `/profile` web route.                                                           | Missing                                      |
-| Timeline/encounters                       | Medical history timeline and encounters.                                                                                           | Backend has patient history endpoint, but no full timeline UI.                     | Partial/backend-only                         |
-| Conditions                                | Conditions list/detail.                                                                                                            | No current web route.                                                              | Missing                                      |
-| Observations/vitals/labs                  | Observations/trends with chart range, abnormal highlights.                                                                         | `/labs` exists; no trend view.                                                     | Partial                                      |
-| Medications                               | Active/history tabs, detail, filters.                                                                                              | `/medications` exists, simple list only.                                           | Partial                                      |
-| Appointments                              | List plus booking flow.                                                                                                            | `/appointments` has inputs and submit button, but no submit handler/API mutation.  | UI-only                                      |
-| Documents                                 | Documents, upload, preview, versioning.                                                                                            | Backend route group exists under `/records/*`, but no web document route.          | Backend-only/hidden                          |
-| OCR                                       | OCR review, confidence badges, FHIR draft confirmation.                                                                            | No visible web/mobile flow.                                                        | Missing                                      |
-| Voice input                               | Audio input/transcription/FHIR confirm.                                                                                            | No visible PHR route.                                                              | Missing                                      |
-| Insurance/payments/claims                 | Insurance summary, payments, claims Phase 2.                                                                                       | Backend billing service exists, but no UI IA implementation.                       | Backend-only/Phase 2 unclear                 |
-| Referrals/imaging                         | Referrals and imaging viewer.                                                                                                      | Services/routes exist, no UI pages.                                                | Backend-only                                 |
-| Sharing/access grants                     | Grant/revoke/expiry UI and access reflection.                                                                                      | `/consents` displays grants; update button has no handler.                         | Partial/UI-only                              |
-| Provider dashboard/search/patient summary | Provider route tree expected.                                                                                                      | No provider route group in current web app.                                        | Missing                                      |
-| Caregiver dependents                      | Caregiver route group expected.                                                                                                    | No caregiver route group; only role threshold access.                              | Missing                                      |
-| FCHV/community health                     | FCHV dashboard/register/patients/vitals expected.                                                                                  | No FCHV role or routes in current route contract.                                  | Missing                                      |
-| Admin audit                               | Admin audit route expected.                                                                                                        | `/audit` exists but uses simulated mock events in component.                       | Not production-ready                         |
-| Release readiness                         | Admin release readiness expected.                                                                                                  | `/release-readiness` exists and calls backend.                                     | Good direction, needs full gate proof        |
-| Mobile                                    | Login/home/records/consents/alerts/emergency/settings/offline.                                                                     | Implemented as simple tab shell.                                                   | Partial, no real auth/session/consent policy |
+# C. PHR Web App Tasks
 
-## 4. PHR End-to-End Journey Audit
+Current web routes are limited to core routes and a few feature-flag placeholders.  
 
-| Journey                         | Current status                                                                                    | Kernel involvement                                   | Key gap                                                |
-| ------------------------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------ |
-| Patient signs in                | Web login exists, but demo link and inputs are not tied to real auth in inspected web route flow. | Product-shell role context, not full Kernel auth     | Missing real auth/session bootstrap                    |
-| Patient dashboard               | Implemented as summary cards.                                                                     | Uses frontend FHIR aggregation API.                  | No `/patients/:id/dashboard` contract matching IA      |
-| Patient profile                 | Backend patient read/update exists.                                                               | PHR backend service via Kernel                       | No dedicated UI profile page                           |
-| Records list/detail             | UI exists; detail renders stored FHIR JSON.                                                       | Frontend pulls FHIR resources                        | No full timeline/category/documents model              |
-| Consent grant/revoke/check      | Backend routes exist.                                                                             | Consent service + distributed cache via Kernel       | Web only lists grants; update has no behavior          |
-| Provider access through consent | Backend patient routes call `validateAccess`.                                                     | PHR consent service                                  | No provider UI journey                                 |
-| Consent expiry blocks access    | Backend parses `expiresAt`; access validation exists via service.                                 | Kernel-backed consent service                        | Need end-to-end UI/API tests                           |
-| Appointment request             | UI form exists.                                                                                   | Backend admin appointment routes exist.              | Form not wired to create/reschedule/conflict handling  |
-| Labs/vitals                     | Simple labs list route.                                                                           | Backend clinical routes exist.                       | No observations trend/vitals IA                        |
-| Medications                     | Simple medication list route.                                                                     | Backend clinical routes exist.                       | No detail/history/prescription flow                    |
-| Emergency break-glass           | Backend access/review/pending/overdue routes exist.                                               | Kernel event/audit notification integration exists.  | Web emergency buttons not wired to request/review APIs |
-| Audit trail                     | Backend event evidence exists; web page is mock.                                                  | Kernel event evidence outbox                         | UI is simulated; no real API integration               |
-| Mobile offline                  | API fallback to offline cache exists.                                                             | Not clearly Kernel-governed                          | No explicit PHI cache policy/encryption/expiry         |
-| Release readiness               | Web calls `/release-readiness`; script gates exist.                                               | Kernel lifecycle/evidence-oriented                   | Needs route-to-runtime evidence parity                 |
+## C1. Routing, Shell, Navigation, Access
 
-## 5. Kernel-Native PHR Lifecycle Audit
+| Priority | What                                                                                                 | Where                                                       |
+| -------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| P0       | Generate `phrRouteContracts.ts` from Kernel canonical route contract instead of hand-maintaining it. | `products/phr/apps/web/src/phrRouteContracts.ts`            |
+| P0       | Remove backend/frontend route entitlement drift.                                                     | `PhrEntitlementRoutes.java`, `phrRouteContracts.ts`         |
+| P0       | Ensure feature-flagged IA routes are not discoverable unless explicitly enabled.                     | `phrRouteContracts.ts`, `PhrProductShell.tsx`               |
+| P1       | Add route lifecycle metadata: stable, preview, boundary, deprecated.                                 | `phrRouteContracts.ts`, Kernel product route schema         |
+| P1       | Add `/forbidden` and `/not-found` routes matching IA.                                                | `products/phr/apps/web/src/routes.tsx`, new pages           |
+| P1       | Add route-level breadcrumb/page title metadata.                                                      | `phrRouteContracts.ts`, `PhrProductShell.tsx`               |
+| P1       | Add route access test for every persona.                                                             | `products/phr/apps/web/src/__tests__/route-access.test.tsx` |
+| P1       | Add shell loading/error state when entitlement API fails.                                            | `PhrProductShell.tsx`                                       |
+| P2       | Add active route group consistency tests.                                                            | `RouteCapabilityNav` usage in PHR shell                     |
+| P2       | Add keyboard navigation checks for shell/sidebar/header/user menu.                                   | PHR Playwright tests                                        |
 
-| Phase                        | Current state                                                      | Gap                                                                          |
-| ---------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
-| Product definition           | PHR has kernel module, product docs, lifecycle readiness script.   | Docs and implementation disagree on maturity                                 |
-| Capability model             | PHR declares Kernel capabilities and dependencies.                 | UI routes are not generated from the full capability/IA baseline             |
-| Route/page contracts         | PHR has web `phrRouteContracts`.                                   | Contracts cover current flat routes, not full IA route tree                  |
-| API contracts                | ActiveJ routes exist.                                              | API style differs from docs’ NestJS/modular API assumptions in screen matrix |
-| Schema validation            | Frontend has Zod FHIR parsing.                                     | Shared `@phr/schemas` not clearly canonical across UI/backend                |
-| Consent/privacy              | Backend consent enforcement exists.                                | UI journey incomplete; mobile offline policy not Kernel-governed             |
-| Evidence/release readiness   | Lifecycle script enforces gates and rollback evidence.             | UI still has mock audit and action gaps                                      |
-| Observability/audit          | PHR kernel emits lifecycle/audit/consent evidence.                 | Web audit page does not consume real evidence                                |
-| Test orchestration           | Root package has many PHR/Kernel checks.                           | Critical E2E journey coverage is still incomplete                            |
-| Product generation/evolution | YAPPC bridge exists.                                               | No PHR IA-to-code generation/validation proof                                |
+## C2. Auth / Session UI
 
-## 6. PHR Production Readiness Findings
+| Priority | What                                                                                      | Where                                                                                 |
+| -------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| P0       | Add secure logout action and backend call.                                                | `LoginPage.tsx`, `PhrProductShell.tsx`, `PhrSessionContext.tsx`, `PhrAuthRoutes.java` |
+| P0       | Do not store sensitive session data in raw `sessionStorage` beyond safe session envelope. | `PhrSessionContext.tsx`                                                               |
+| P1       | Add session expiry banner and auto-redirect.                                              | `PhrSessionContext.tsx`, `PhrProductShell.tsx`                                        |
+| P1       | Add MFA/OTP state if IA/auth contract requires it.                                        | `LoginPage.tsx`, auth route                                                           |
+| P1       | Add auth loading, invalid credentials, locked account, expired session states.            | `LoginPage.tsx`                                                                       |
+| P2       | Add accessibility labels and error focus management on login form.                        | `LoginPage.tsx`                                                                       |
 
-### P0 blockers
+## C3. Patient Dashboard
 
-1. **Vision/IA-to-code mismatch is too large.** The IA documents expect a full nested patient/provider/caregiver/FCHV/admin product, while current web code implements a compact flat set.  
+| Priority | What                                                                                                                                                 | Where                                                                                         |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| P1       | Replace frontend FHIR aggregation with backend-owned dashboard endpoint.                                                                             | New `PhrDashboardRoutes.java`, `products/phr/apps/web/src/api/phrApi.ts`, `DashboardPage.tsx` |
+| P1       | Add widgets required by IA: profile summary, next appointment, active meds, recent observations, active conditions, recent documents, access alerts. | `DashboardPage.tsx`, new dashboard components                                                 |
+| P1       | Add loading/error/empty/unauthorized states using design system.                                                                                     | `DashboardPage.tsx`                                                                           |
+| P1       | Add patient/caregiver scoped dashboard variants.                                                                                                     | `DashboardPage.tsx`, route contract                                                           |
+| P2       | Add dashboard data freshness and last sync indicator.                                                                                                | `DashboardPage.tsx`, API contract                                                             |
+| P2       | Add dashboard unit/format localization.                                                                                                              | `phrI18n.ts`, locale JSON                                                                     |
 
-2. **Audit UI is mock-only.** `AuditPage` simulates audit events in `useEffect` and uses `setTimeout`; this cannot be accepted for a regulated access-history page. 
+## C4. Patient Profile
 
-3. **Critical UI actions are not wired.** Consent update and appointment submit render buttons without action handlers.  
+| Priority | What                                                             | Where                                                                       |
+| -------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| P1       | Add `/profile` route.                                            | `phrRouteContracts.ts`, `phrRouteElements.tsx`, new `pages/ProfilePage.tsx` |
+| P1       | Add backend profile get/update endpoint.                         | `PhrPatientRecordRoutes.java` or new `PhrPatientProfileRoutes.java`         |
+| P1       | Add edit mode, dirty state, validation, cancel/save.             | `ProfilePage.tsx`                                                           |
+| P1       | Add field-level permission logic for patient/caregiver/provider. | Kernel policy + ProfilePage                                                 |
+| P1       | Add audit event on profile update.                               | Backend profile route + audit event                                         |
+| P2       | Add profile i18n and a11y tests.                                 | Web tests                                                                   |
 
-4. **Mobile authentication is local UI state, not real session context.** Mobile continues after setting `isAuthenticated` locally; dashboard loads before real auth/session gating. 
+## C5. Records / Record Detail / FHIR
 
-5. **Mobile offline PHI cache lacks visible policy enforcement.** Offline fallback loads cached dashboard data when API fails, but the reviewed API layer does not show encryption, expiry, consent-scope refresh, or emergency redaction checks. 
+| Priority | What                                                                               | Where                                                 |
+| -------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| P1       | Add backend-owned records list endpoint instead of relying only on dashboard data. | `PhrPatientRecordRoutes.java`, `phrApi.ts`            |
+| P1       | Add record filters: category, date, facility, provider, resource type.             | `RecordsPage.tsx`, backend route                      |
+| P1       | Add record detail API endpoint with consent/policy check.                          | `PhrPatientRecordRoutes.java`, `RecordDetailPage.tsx` |
+| P1       | Add FHIR JSON safe viewer with redaction and copy/download policy.                 | `RecordDetailPage.tsx`                                |
+| P1       | Add invalid/missing FHIR payload state.                                            | `RecordDetailPage.tsx`                                |
+| P2       | Add record provenance panel.                                                       | `RecordDetailPage.tsx`                                |
+| P2       | Add pagination/sorting for records.                                                | `RecordsPage.tsx`                                     |
 
-6. **Provider/caregiver/FCHV/admin IA flows are mostly missing from UI.** The documented IA includes those route groups, but current route contracts only have role-threshold flat routes.  
+## C6. Timeline / Encounters / Conditions
 
-### P1 findings
+| Priority | What                                             | Where                                               |
+| -------- | ------------------------------------------------ | --------------------------------------------------- |
+| P1       | Add `/timeline` route/page.                      | New `pages/TimelinePage.tsx`, route contract        |
+| P1       | Add timeline API.                                | New `PhrTimelineRoutes.java`                        |
+| P1       | Add encounter detail route/page.                 | New `pages/EncounterDetailPage.tsx`, route contract |
+| P1       | Add `/conditions` route/page.                    | New `pages/ConditionsPage.tsx`                      |
+| P1       | Add conditions API.                              | New `PhrConditionRoutes.java`                       |
+| P1       | Add consent-aware access to timeline/conditions. | Kernel policy + routes                              |
+| P2       | Add filters, grouping, empty states.             | Timeline/Conditions pages                           |
 
-1. Backend has real PHR service composition and should remain the canonical foundation. `PhrKernelModule` wires patient records, consent, documents, appointments, medication, labs, immunization, FHIR server, HIE, HL7 lab integration, clinical notes, imaging, referrals, billing, telemedicine, caregivers, and emergency access. 
+## C7. Labs / Observations / Vitals
 
-2. Backend patient record access is stronger than UI because it checks patient self/admin or consent before read/update/search/history. 
+| Priority | What                                                     | Where                                              |
+| -------- | -------------------------------------------------------- | -------------------------------------------------- |
+| P1       | Add `/observations` route separate from `/labs`.         | `phrRouteContracts.ts`, new `ObservationsPage.tsx` |
+| P1       | Add observation trend endpoint.                          | `PhrClinicalRoutes.java`                           |
+| P1       | Add vitals/trend chart using shared chart/design system. | `ObservationsPage.tsx`, healthcare components      |
+| P1       | Add abnormal/attention state semantics from backend.     | API DTO + page                                     |
+| P2       | Add metric selector and date range.                      | `ObservationsPage.tsx`                             |
+| P2       | Add LOINC/unit validation display.                       | Backend + page                                     |
 
-3. Backend emergency routes are promising, with access, event read, patient log, pending review, overdue review, and review endpoints. 
+## C8. Medications
 
-4. Shared request context is too header-driven and role-simplified for production unless protected by upstream auth middleware/gateway. It trusts `X-Tenant-ID`, `X-Principal-ID`, and `X-Role` headers and treats only `admin` as privileged. 
+| Priority | What                                           | Where                          |
+| -------- | ---------------------------------------------- | ------------------------------ |
+| P1       | Add medication detail route/page.              | New `MedicationDetailPage.tsx` |
+| P1       | Add active/history tabs.                       | `MedicationsPage.tsx`          |
+| P1       | Add backend medication detail endpoint.        | `PhrClinicalRoutes.java`       |
+| P1       | Add adherence confidence/source metadata.      | API DTO + page                 |
+| P1       | Add interaction/allergy warning display.       | Medication service/API/page    |
+| P2       | Add refill/request action only when supported. | `MedicationsPage.tsx`          |
 
-5. PHR lifecycle readiness is present and checks gates such as consent, PII classification, audit evidence, FHIR contract validation, and tenant data sovereignty. 
+## C9. Immunizations
 
-## 7. Kernel Gap Analysis
+| Priority | What                                         | Where                                                 |
+| -------- | -------------------------------------------- | ----------------------------------------------------- |
+| P1       | Add `/immunizations` route/page.             | `phrRouteContracts.ts`, `pages/ImmunizationsPage.tsx` |
+| P1       | Add immunization list/detail API.            | `PhrClinicalRoutes.java`                              |
+| P1       | Add permanent-retention indicator and audit. | API/page                                              |
+| P2       | Add vaccine code/status filters.             | Page/API                                              |
 
-| Kernel gap                                                                          | PHR use case exposing it                                                                                       | Required Kernel hardening                                                                                          |
-| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Full IA/capability-to-route generation is missing                                   | PHR docs define far more routes than current route contracts                                                   | Kernel should provide product IA/capability contract registry that can generate/validate web/mobile route coverage |
-| Product lifecycle exists, but feature completeness is file-presence oriented        | PHR workflow checker validates files/tests/evidence but marks status as partial until focused suite executes.  | Add runtime journey proof gates, not only existence/evidence refs                                                  |
-| Auth/context enforcement is too product-local                                       | PHR route adapters use headers directly.                                                                       | Kernel security context adapter should validate signed principal/tenant/role and expose canonical `ActorContext`   |
-| Consent/privacy policy is product-service based but not a platform policy primitive | Patient record routes call PHR consent service directly.                                                       | Kernel policy engine should support declarative consent-gated route/resource guards                                |
-| Mobile offline PHI policy not Kernel-native                                         | Mobile offline fallback caches dashboard data.                                                                 | Kernel should expose offline PHI policy contract: encryption, TTL, revocation, audit, emergency redaction          |
-| Release readiness UI not fully tied to route/action journey truth                   | Release readiness exists, but several UI flows are mock/unwired                                                | Kernel release gate must include “no visible unwired PHR actions” and “no mock regulated UI” checks                |
+## C10. Appointments
 
-## 8. YAPPC Gap Analysis
+| Priority | What                                                                | Where                                                  |
+| -------- | ------------------------------------------------------------------- | ------------------------------------------------------ |
+| P1       | Replace simple appointment request with full book/request workflow. | `AppointmentsPage.tsx`, `PhrAdministrativeRoutes.java` |
+| P1       | Add provider/slot search.                                           | `AppointmentsPage.tsx`, appointment API                |
+| P1       | Add conflict/double-book handling.                                  | Backend appointment service                            |
+| P1       | Add upcoming/past tabs.                                             | `AppointmentsPage.tsx`                                 |
+| P1       | Add cancel/reschedule visibility by role/policy.                    | Page/API                                               |
+| P2       | Add appointment reminder status.                                    | API/page                                               |
 
-| YAPPC gap                                                      | PHR need exposing it                                                            | Required YAPPC hardening                                                                                              |
-| -------------------------------------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Cannot yet prove IA-to-route/page coverage                     | PHR IA has many missing screens                                                 | YAPPC should ingest PHR IA docs and current route manifests, then output missing route/page/API/test tasks            |
-| No PHR-specific generation proof                               | PHR needs patient/provider/caregiver/FCHV/admin route groups                    | Add PHR product-unit templates that generate Kernel-native route/page/API/test skeletons                              |
-| No generated journey visualization tied to code                | PHR needs full E2E journey ordering                                             | YAPPC should render journey graph from IA → routes → APIs → tests                                                     |
-| No strict generated-code validation against Kernel conventions | YAPPC README admits generation quality checks are still maturing.               | Generated artifacts must pass product-shell, design-system, route entitlement, i18n, a11y, and Kernel lifecycle gates |
-| Bridge is too narrow for full PHR acceleration                 | Bridge exposes evidence/intents, but not full product IA/generation workflows.  | Add Kernel-backed PHR ProductUnitIntent provider and IA completeness provider                                         |
+## C11. Documents / Upload / OCR
 
-## 9. Architecture Ownership Matrix
+| Priority | What                                                             | Where                                           |
+| -------- | ---------------------------------------------------------------- | ----------------------------------------------- |
+| P1       | Add `/documents` route/page.                                     | `phrRouteContracts.ts`, new `DocumentsPage.tsx` |
+| P1       | Add `/documents/upload` route/page.                              | New `DocumentUploadPage.tsx`                    |
+| P1       | Add `/documents/ocr` and OCR review route/page.                  | New `OcrReviewPage.tsx`                         |
+| P1       | Wire UI to document/imaging backend routes.                      | `PhrDocumentImagingRoutes.java`, `phrApi.ts`    |
+| P1       | Add upload progress, file validation, size/type limits.          | Upload page + backend                           |
+| P1       | Add OCR confidence badges and accept/edit/reject field workflow. | `OcrReviewPage.tsx`                             |
+| P1       | Add provenance and audit trail on upload/OCR confirm.            | Backend services                                |
+| P2       | Add document preview fallback and secure download gate.          | Documents pages                                 |
 
-| Capability                | Current owner                   | Correct owner                             | Action                                                              |
-| ------------------------- | ------------------------------- | ----------------------------------------- | ------------------------------------------------------------------- |
-| Healthcare workflows      | PHR                             | PHR                                       | Keep in PHR; complete missing IA flows                              |
-| PHR service lifecycle     | PHR + Kernel                    | Kernel orchestrates, PHR implements       | Continue Kernel module pattern                                      |
-| Route entitlements        | PHR web + product-shell         | Kernel/product-shell with PHR config      | Generate/validate from canonical IA                                 |
-| Consent enforcement       | PHR backend                     | PHR policy + Kernel guard primitive       | Keep domain rules in PHR, move enforcement hooks into Kernel policy |
-| Mobile offline PHI policy | PHR mobile                      | Kernel policy + PHR mobile implementation | Add Kernel offline PHI policy                                       |
-| Audit evidence            | PHR Kernel module + PHR UI mock | Kernel evidence + PHR real API/UI         | Replace mock AuditPage                                              |
-| Product generation        | YAPPC                           | YAPPC using Kernel                        | Add PHR generation/coverage accelerator                             |
-| Release readiness         | Kernel scripts + PHR UI         | Kernel lifecycle + PHR evidence           | Gate against journey/action completeness                            |
+## C12. Voice Input
 
-## 10. Test and Verification Review
+| Priority | What                                                                 | Where                                               |
+| -------- | -------------------------------------------------------------------- | --------------------------------------------------- |
+| P1       | Decide MVP status: implement or hide.                                | IA baseline + `phr-feature-visibility.json`         |
+| P1       | Add patient voice input route behind feature flag if not ready.      | `phrRouteContracts.ts`, `PatientVoiceInputPage.tsx` |
+| P1       | Add provider voice dictation route behind feature flag if not ready. | `ProviderVoiceDictationPage.tsx`                    |
+| P1       | Wire through shared audio-video packages, not local implementation.  | `@ghatana/audio-video-*`, PHR pages                 |
+| P2       | Add ASR/NLP provenance and FHIR draft review.                        | Backend + UI                                        |
 
-Current evidence shows a **good start** but not complete journey proof.
+## C13. Insurance / Billing / Claims / Payments
 
-The root package contains PHR lifecycle, FHIR validation, PHR workflow, Kernel lifecycle, route entitlement, YAPPC intent handoff, artifact intelligence, product-shell, design-system, and release gates.  PHR workflow coverage checks include `patient-profile`, `health-summary`, `clinical-resources`, `documents`, `consent-management`, `data-sharing-authorization`, `audit-access-history`, `fhir-r4-validation`, `tenant-data-sovereignty`, and `i18n-a11y`. 
+| Priority | What                                                           | Where                          |
+| -------- | -------------------------------------------------------------- | ------------------------------ |
+| P1       | Add `/insurance` route/page or explicitly defer.               | IA baseline, route contract    |
+| P1       | Add `/payments` route/page or defer.                           | Route contract/page            |
+| P1       | Add `/claims` route/page as Phase 2 hidden unless implemented. | Route contract/page            |
+| P1       | Align web routes with existing billing backend APIs.           | `PhrAdministrativeRoutes.java` |
+| P1       | Add patient/caregiver/provider billing access policy.          | Kernel policy                  |
+| P2       | Add receipt retrieval and claim status display.                | Billing UI/API                 |
 
-However, current UI tests are still concentrated around dashboard metrics, loading/error states, route permission denial, shell navigation, release fixture rendering, and record detail fallback.  Missing tests include real consent update/revoke UI, appointment create conflict handling, provider search, caregiver dependents, FCHV registration/vitals, audit API integration, mobile auth, mobile offline encryption/expiry/revocation, emergency break-glass full workflow, and full IA route coverage.
+## C14. Referrals / Imaging / Telemedicine
 
-## 11. Scorecard
+| Priority | What                                                                   | Where                                                                   |
+| -------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| P1       | Add `/referrals` route/page or hide/defer.                             | Route contract/page                                                     |
+| P1       | Add `/imaging` route/page or hide/defer.                               | Route contract/page                                                     |
+| P1       | Add telemedicine route visibility decision.                            | IA baseline; docs currently exclude call room until dedicated contracts |
+| P1       | Align backend referral/imaging/telemedicine routes with web/mobile UX. | `PhrAdministrativeRoutes.java`, `PhrDocumentImagingRoutes.java`         |
+| P2       | Add secure download/audit for imaging artifacts.                       | Imaging UI/API                                                          |
 
-| Area                       | Score / 5 | Rationale                                                        |
-| -------------------------- | --------: | ---------------------------------------------------------------- |
-| PHR feature completeness   |       2.0 | Backend has many services; UI misses most IA                     |
-| PHR functional correctness |       2.4 | Backend routes have useful checks; UI actions incomplete         |
-| PHR healthcare correctness |       2.7 | FHIR/consent/emergency foundations exist; full workflows missing |
-| PHR consent/privacy        |       2.8 | Backend consent checks exist; UI/mobile incomplete               |
-| PHR emergency/audit        |       2.2 | Backend promising; audit UI mock                                 |
-| PHR web UI/UX              |       1.8 | Flat partial UI, many missing routes                             |
-| PHR mobile UI/UX           |       1.6 | Early shell, local auth, basic offline                           |
-| PHR backend/API            |       3.2 | Good ActiveJ route/service composition                           |
-| PHR security               |       2.2 | Header-driven context needs stronger Kernel auth                 |
-| PHR observability          |       2.8 | Kernel evidence events exist; UI not consuming them              |
-| PHR tests                  |       2.0 | Many checks exist; E2E journey gaps remain                       |
-| PHR release readiness      |       2.8 | Lifecycle gates exist; full product proof incomplete             |
-| PHR Kernel-native usage    |       2.7 | Backend is Kernel-native; frontend/mobile/product IA are not     |
+## C15. Provider Workflows
 
-| Kernel category                     | Score / 5 |
-| ----------------------------------- | --------: |
-| Lifecycle support                   |       3.4 |
-| Plugin architecture                 |       3.2 |
-| Product-shell/design-system support |       3.0 |
-| Route/entitlement support           |       2.8 |
-| Evidence/release readiness          |       3.4 |
-| CI/test orchestration               |       3.2 |
-| Deployment/runtime lifecycle        |       2.8 |
-| Observability/governance            |       3.0 |
-| Fitness for PHR now                 |       2.7 |
+| Priority | What                                                                    | Where                            |
+| -------- | ----------------------------------------------------------------------- | -------------------------------- |
+| P1       | Replace `/provider/dashboard` placeholder with real page.               | `ProviderDashboardPage.tsx`      |
+| P1       | Replace `/provider/patients` placeholder with real patient search/list. | `ProviderPatientsPage.tsx`       |
+| P1       | Add provider patient summary route/page.                                | `ProviderPatientSummaryPage.tsx` |
+| P1       | Add encounter detail/update route/page.                                 | `EncounterDetailPage.tsx`        |
+| P1       | Add observation entry route/page.                                       | `ObservationEntryPage.tsx`       |
+| P1       | Add medication request entry route/page.                                | `MedicationRequestEntryPage.tsx` |
+| P1       | Add provider calendar route/page.                                       | `ProviderCalendarPage.tsx`       |
+| P1       | Enforce provider access through consent/treatment relationship.         | Kernel policy + backend          |
+| P2       | Add provider queue/worklist filters.                                    | Provider dashboard               |
 
-| YAPPC category                | Score / 5 |
-| ----------------------------- | --------: |
-| Ability to model PHR          |       2.2 |
-| Kernel-native generation      |       2.0 |
-| Completeness validation       |       2.0 |
-| Preview/journey visualization |       2.0 |
-| Gap surfacing                 |       2.3 |
-| Generated-code quality        |       2.0 |
-| Kernel integration            |       2.4 |
+## C16. Caregiver Workflows
 
-## 12. Production Blockers
+| Priority | What                                                         | Where                                         |
+| -------- | ------------------------------------------------------------ | --------------------------------------------- |
+| P1       | Replace `/caregiver/dependents` placeholder.                 | `CaregiverDependentsPage.tsx`                 |
+| P1       | Add dependent detail route/page.                             | `CaregiverDependentDetailPage.tsx`            |
+| P1       | Wire caregiver service/API.                                  | `CaregiverService.java`, new routes if needed |
+| P1       | Enforce delegated access and expired/revoked grant behavior. | Kernel policy + backend                       |
+| P2       | Add caregiver appointment management when granted.           | Caregiver pages                               |
 
-1. Replace mock audit UI with real audit/evidence API.
-2. Wire consent update/revoke UI to backend consent APIs.
-3. Wire appointment request/create/reschedule UI to backend appointment APIs.
-4. Add real web/mobile authentication and session bootstrap.
-5. Add Kernel-validated tenant/principal/role context instead of trusting raw headers at route adapters.
-6. Add mobile offline PHI encryption, TTL, revocation, consent refresh, and audit.
-7. Implement or hide all IA-promised but missing routes.
-8. Add provider, caregiver, FCHV, and admin route groups or explicitly defer/feature-flag them.
-9. Add end-to-end emergency break-glass UI/API/audit/review test coverage.
-10. Add IA-to-code completeness gate so docs cannot overclaim current implementation.
+## C17. FCHV / Community Health
 
-## 13. Granular File-by-File Implementation Plan
+| Priority | What                                                                 | Where                                                          |
+| -------- | -------------------------------------------------------------------- | -------------------------------------------------------------- |
+| P1       | Define FCHV role separately instead of overloading caregiver.        | `PhrAccessContext.tsx`, Kernel role model, backend role policy |
+| P1       | Replace `/fchv/dashboard` placeholder with scoped dashboard or hide. | `FchvDashboardPage.tsx`                                        |
+| P1       | Add FCHV patient registration route/page.                            | `FchvRegisterPatientPage.tsx`                                  |
+| P1       | Add FCHV patient list and vitals capture.                            | `FchvPatientsPage.tsx`, `FchvVitalsPage.tsx`                   |
+| P1       | Add offline queue semantics for FCHV mobile if in scope.             | Mobile services                                                |
+| P2       | Add low-connectivity sync/error states.                              | Web/mobile                                                     |
 
-| Priority | Area                  | File/path                                                                               | Change                                                                        | Acceptance criteria                                               | Tests                                  |
-| -------- | --------------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------- |
-| P0       | Web audit             | `products/phr/apps/web/src/pages/AuditPage.tsx`                                         | Remove simulated `mockEvents`; call real audit/evidence API                   | No mock data; filters query real endpoint                         | Add audit page API integration tests   |
-| P0       | Backend audit API     | `products/phr/src/main/java/com/ghatana/phr/api/routes/`                                | Add explicit audit route if not already exposed as queryable UI API           | UI can list access/consent/emergency audit events by patient/role | API tests for patient/admin visibility |
-| P0       | Consent UI            | `products/phr/apps/web/src/pages/ConsentPage.tsx`                                       | Add create/update/revoke modal and API calls                                  | Update/revoke changes backend state and refreshes list            | UI + API tests                         |
-| P0       | Appointment UI        | `products/phr/apps/web/src/pages/AppointmentsPage.tsx`                                  | Wire submit to appointment create/request API                                 | Submit validates input, creates request, shows success/error      | Form validation and mutation tests     |
-| P0       | Auth/session          | `products/phr/apps/web/src/pages/LoginPage.tsx`, `products/phr/apps/mobile/src/App.tsx` | Replace local/demo auth with real session bootstrap                           | Login resolves actor/tenant/role; no dashboard before auth        | Web/mobile auth tests                  |
-| P0       | Route security        | `PhrRouteSupport.java`                                                                  | Replace raw header trust with Kernel security context adapter                 | Invalid/unsigned context rejected fail-closed                     | Route security tests                   |
-| P0       | Mobile offline        | `products/phr/apps/mobile/src/services/offlineStore.*`, `phrMobileApi.ts`               | Add encryption/TTL/consent revocation semantics                               | Cached PHI expires, is scoped, and audited                        | Offline security tests                 |
-| P1       | IA route coverage     | `products/phr/apps/web/src/phrRouteContracts.ts`                                        | Add canonical route groups or feature-flag hidden placeholders for IA items   | All IA routes are COMPLETE, hidden, or explicitly deferred        | Route manifest coverage test           |
-| P1       | Provider UI           | `products/phr/apps/web/src/pages/provider/*`                                            | Add provider dashboard, patient search, patient summary                       | Provider journey works with consent                               | E2E provider access tests              |
-| P1       | Caregiver UI          | `products/phr/apps/web/src/pages/caregiver/*`                                           | Add dependents list/detail/access flow                                        | Caregiver can only access delegated dependent records             | E2E caregiver scope tests              |
-| P1       | FCHV UI               | `products/phr/apps/web/src/pages/fchv/*`                                                | Add dashboard/register/patients/vitals or flag IA as deferred                 | No visible broken IA; FCHV flow test if enabled                   | FCHV E2E tests                         |
-| P1       | Documents/OCR         | `products/phr/apps/web/src/pages/documents/*`                                           | Add documents list/upload/OCR review or feature flag                          | Upload/OCR is real or hidden                                      | Upload/OCR tests                       |
-| P1       | Emergency UI          | `EmergencyAccessPage.tsx`                                                               | Wire request/notify/review buttons to backend                                 | Access creates pending review, notifies, logs audit               | Break-glass E2E                        |
-| P1       | Kernel IA gate        | `scripts/check-phr-ia-coverage.mjs` new                                                 | Compare docs IA → route manifest → API → tests                                | Fails when IA item is visible but missing                         | Script unit test                       |
-| P1       | YAPPC PHR accelerator | `products/yappc/...`                                                                    | Add PHR ProductUnitIntent provider from IA docs                               | YAPPC reports missing PHR routes/API/tests                        | Bridge/provider tests                  |
-| P2       | i18n/mobile           | `products/phr/apps/mobile/src/**`                                                       | Replace hardcoded text with shared i18n                                       | Single i18n path for web/mobile                                   | i18n conformance                       |
-| P2       | Design system         | PHR web pages                                                                           | Replace raw Tailwind buttons/table in AuditPage with design-system components | Consistent UI                                                     | component/a11y tests                   |
-| P2       | Release readiness     | `ReleaseCockpitPage.tsx`, scripts                                                       | Add “visible unwired action” and “mock regulated UI” section                  | Release blocked if audit mock/buttons exist                       | release gate test                      |
+## C18. Admin / Audit / Release
 
-## 14. Recommended Execution Order
+| Priority | What                                                   | Where                                                    |
+| -------- | ------------------------------------------------------ | -------------------------------------------------------- |
+| P1       | Add admin dashboard route/page.                        | `AdminDashboardPage.tsx`                                 |
+| P1       | Make audit page backend-backed, not static/mock-like.  | `AuditPage.tsx`, `fetchAuditEvents`, backend audit route |
+| P1       | Add audit detail drawer/page.                          | `AuditDetailPage.tsx`                                    |
+| P1       | Add audit export with privacy policy.                  | Backend audit route + UI                                 |
+| P1       | Add release readiness drill-down per evidence section. | `ReleaseCockpitPage.tsx`, Kernel readiness API           |
+| P2       | Add environment compare for local/dev/staging/prod.    | Release cockpit                                          |
+| P2       | Add rollback drill evidence UI.                        | Release cockpit                                          |
 
-1. **Stabilize current PHR critical journeys.** Fix auth/session, dashboard data, records, consents, appointments, audit, emergency.
-2. **Close P0 unsafe UI gaps.** Remove mock audit, wire action buttons, fail-closed route context.
-3. **Create IA coverage gate.** Add script to compare PHR docs/IA to routes/pages/APIs/tests.
-4. **Feature-flag missing IA.** Hide documents/OCR/voice/provider/FCHV/caregiver/admin surfaces until implemented.
-5. **Make backend/frontend contracts converge.** Align web/mobile APIs with backend route groups and screen matrix.
-6. **Harden Kernel for PHR.** Add canonical actor context, consent policy guard primitive, offline PHI policy, IA coverage gate.
-7. **Harden YAPPC only where useful.** Add PHR IA ingestion, ProductUnitIntent, journey visualization, route/API/test gap detection.
-8. **Add full E2E tests.** Cover patient, provider, caregiver, emergency, mobile offline, release readiness.
-9. **Re-audit and score again.**
+---
 
-## 15. Open Questions / Required Decisions
+# D. PHR Mobile App Tasks
 
-1. Is the documented `/app/patient`, `/app/provider`, `/app/caregiver`, `/app/fchv`, `/app/admin` IA still canonical, or should current flat routes become the new canonical IA? - Use maintainable way
-2. Should PHR keep ActiveJ APIs while docs still describe NestJS-style modules, or should docs be corrected? - Correct docs
-3. Is FCHV in MVP or Phase 2? - Yes
-4. Are insurance/payments/claims in active scope or hidden Phase 2? - keep whatever we have and hide them behind and mark them for Phase 2
-5. Should YAPPC generate PHR route/page/API/test skeletons now, or only produce gap reports until Kernel lifecycle contracts stabilize? - wait for stabalization
-6. What is the canonical mobile offline PHI policy: encryption, TTL, emergency mode, revocation sync, audit frequency? - All and explore for industry standard and compilance requrements if there are
+Current mobile app has login, dashboard, records, consents, alerts, emergency, settings, and offline cache, but it is not production-grade for PHI/privacy/i18n.   
 
-I did not run local CI/tests in this environment; this is a static, code-grounded audit using the repository contents available at the target commit.
+| Priority | What                                                                          | Where                                                   |
+| -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------- |
+| P0       | Replace AsyncStorage PHI cache with encrypted storage adapter.                | `products/phr/apps/mobile/src/services/offlineStore.ts` |
+| P0       | Add secure session storage for `MobileSession`.                               | New `services/mobileSessionStore.ts`                    |
+| P0       | Pass session context to `fetchMobileDashboard` and `syncOfflineDashboard`.    | `App.tsx`, `phrMobileApi.ts`                            |
+| P0       | Clear offline PHI on logout, session expiry, consent revocation, role change. | `offlineStore.ts`, new session/logout flow              |
+| P0       | Add explicit logout button/action.                                            | `SettingsScreen.tsx`, `App.tsx`                         |
+| P0       | Block emergency PHI reveal until biometric success and server authorization.  | `EmergencyAccessScreen.tsx`, `biometricAuth.ts`, API    |
+| P1       | Add mobile i18n message packs.                                                | New `src/i18n/**`, update all screens                   |
+| P1       | Remove all raw strings from mobile screens.                                   | `screens/*.tsx`, `App.tsx`, services                    |
+| P1       | Add mobile accessibility labels/hints for every Pressable/Input/tab.          | `screens/*.tsx`                                         |
+| P1       | Replace wrapped pill tab bar with accessible bottom navigation.               | `App.tsx`                                               |
+| P1       | Add offline/online status banner.                                             | `App.tsx`, `SettingsScreen.tsx`                         |
+| P1       | Add stale-cache warning and last refreshed time.                              | `offlineStore.ts`, `SettingsScreen.tsx`                 |
+| P1       | Add mobile consent revoke/list actions, not read-only cards.                  | `ConsentScreen.tsx`, API                                |
+| P1       | Add mobile record detail screen.                                              | New `screens/RecordDetailScreen.tsx`                    |
+| P1       | Add mobile profile screen or settings profile section.                        | `SettingsScreen.tsx`                                    |
+| P1       | Add notification privacy redaction: no PHI in push notification body.         | `pushNotifications.ts`, backend notification service    |
+| P1       | Add mobile error boundary telemetry that redacts PHI.                         | `App.tsx`                                               |
+| P2       | Add biometric availability states: unavailable, failed, locked out, success.  | `EmergencyAccessScreen.tsx`                             |
+| P2       | Add mobile tests for loading/error/offline/success.                           | `products/phr/apps/mobile/src/__tests__/**`             |
+| P2       | Add mobile E2E/smoke flow.                                                    | Expo/Detox or React Native test setup                   |
+
+---
+
+# E. PHR Backend/API Tasks
+
+The backend has strong ActiveJ route/service coverage but must be hardened around policies, contracts, validation, tenant scope, and E2E alignment.    
+
+| Priority | What                                                                                                                             | Where                                                       |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| P0       | Introduce Kernel-backed PHI access policy evaluator.                                                                             | New Kernel policy package; PHR route adapters               |
+| P0       | Replace `PhrRouteSupport.isPrivileged` bypass with policy checks.                                                                | `PhrRouteSupport.java`, all route adapters                  |
+| P0       | Validate tenant/facility scope on every route.                                                                                   | `PhrRouteSupport.java`, route adapters                      |
+| P0       | Add request/correlation ID extraction and propagation.                                                                           | `PhrRouteSupport.java`, Kernel context/events               |
+| P0       | Add audit event on every sensitive read/write/export/emergency action.                                                           | All PHR routes/services                                     |
+| P0       | Align frontend `createConsentGrant` payload with backend expected `recipientId/scope`, not mismatched `granteeId/resourceTypes`. | `phrApi.ts`, `PhrConsentRoutes.java`                        |
+| P0       | Add mobile `/mobile/dashboard` backend route or align mobile to existing API contract.                                           | New `PhrMobileRoutes.java`, `PhrHttpServer.java`            |
+| P0       | Add backend logout/session invalidation/audit.                                                                                   | `PhrAuthRoutes.java`                                        |
+| P1       | Add dashboard route.                                                                                                             | New `PhrDashboardRoutes.java`                               |
+| P1       | Add profile-specific route and DTO.                                                                                              | New `PhrPatientProfileRoutes.java` or extend patient routes |
+| P1       | Add timeline route.                                                                                                              | New `PhrTimelineRoutes.java`                                |
+| P1       | Add conditions route.                                                                                                            | New `PhrConditionRoutes.java`                               |
+| P1       | Add observations trend route.                                                                                                    | `PhrClinicalRoutes.java`                                    |
+| P1       | Add medication detail/history route.                                                                                             | `PhrClinicalRoutes.java`                                    |
+| P1       | Add immunization route if not exposed.                                                                                           | `PhrClinicalRoutes.java`                                    |
+| P1       | Add caregiver routes.                                                                                                            | New `PhrCaregiverRoutes.java`                               |
+| P1       | Add provider search/summary/encounter routes.                                                                                    | New `PhrProviderRoutes.java`                                |
+| P1       | Add FCHV routes if in MVP.                                                                                                       | New `PhrFchvRoutes.java`                                    |
+| P1       | Add documents/OCR routes if not complete.                                                                                        | `PhrDocumentImagingRoutes.java`                             |
+| P1       | Add audit event list/detail/export route.                                                                                        | New or existing audit routes                                |
+| P1       | Add emergency access review route and notification proof.                                                                        | `PhrEmergencyRoutes.java`, services                         |
+| P1       | Add idempotency for create/update flows.                                                                                         | Consent, appointment, upload, emergency                     |
+| P1       | Add consistent error envelope.                                                                                                   | `PhrRouteSupport.java`                                      |
+| P1       | Add server-side DTO/schema validation instead of manual partial parsing.                                                         | Route adapters                                              |
+| P1       | Add FHIR validation errors with safe messages.                                                                                   | FHIR routes/server                                          |
+| P2       | Add pagination/sorting/filter contract standard.                                                                                 | All list routes                                             |
+| P2       | Add API OpenAPI/contract generation.                                                                                             | New PHR API contract package                                |
+| P2       | Add performance guardrails for large records/audit lists.                                                                        | Backend routes/services                                     |
+
+---
+
+# F. PHR Domain / Healthcare Tasks
+
+| Priority | What                                                                       | Where                                                |
+| -------- | -------------------------------------------------------------------------- | ---------------------------------------------------- |
+| P0       | Define canonical PHI/PII classification per resource and field.            | `products/phr/kernel/policy/**`, docs, Kernel policy |
+| P0       | Apply field/resource classification to logs, audit, export, offline cache. | Backend/mobile/export                                |
+| P1       | Add record provenance model across FHIR/document/OCR/voice/HIE imports.    | PHR services, schema contracts                       |
+| P1       | Add consent scope enforcement at resource/action/field level.              | `ConsentManagementService.java`, Kernel policy       |
+| P1       | Add consent expiry scheduler/cache invalidation evidence.                  | Consent service + evidence                           |
+| P1       | Add Nepal HIE import/export user journeys.                                 | HIE services/controllers + UI                        |
+| P1       | Add HL7 lab result import E2E from message → lab result → UI.              | `Hl7LabResultIntegrationService`, labs UI            |
+| P1       | Add FHIR resource validation gate by resource type.                        | FHIR server/routes                                   |
+| P1       | Add clinical decision support safety boundaries and human review.          | `ClinicalDecisionSupportService.java`, UI            |
+| P1       | Add medication interaction/allergy workflow.                               | Medication service/API/UI                            |
+| P1       | Add imaging artifact secure access/download audit.                         | Imaging service/routes/UI                            |
+| P2       | Add Nepal-specific identifiers/facility/provider validation.               | Patient/provider services                            |
+| P2       | Add retention policy evidence per resource.                                | Kernel evidence + PHR services                       |
+
+---
+
+# G. Cross-Cutting i18n, a11y, o11y, Privacy, Security
+
+## G1. i18n
+
+| Priority | What                                                      | Where                                          |
+| -------- | --------------------------------------------------------- | ---------------------------------------------- |
+| P0       | Establish one canonical PHR i18n usage path.              | Platform i18n package + `products/phr/apps/**` |
+| P0       | Convert mobile raw strings to i18n.                       | `products/phr/apps/mobile/src/**`              |
+| P1       | Convert remaining web permission/error strings to i18n.   | `routes.tsx`, pages                            |
+| P1       | Add missing Nepali translations for every web/mobile key. | locale JSON                                    |
+| P1       | Add pseudo-locale route/screen tests.                     | web/mobile tests                               |
+| P1       | Add script to fail raw user-visible strings.              | `scripts/check-phr-i18n-conformance.mjs`       |
+| P2       | Add locale switcher to web/mobile settings.               | `SettingsPage.tsx`, `SettingsScreen.tsx`       |
+
+## G2. Accessibility
+
+| Priority | What                                                            | Where                               |
+| -------- | --------------------------------------------------------------- | ----------------------------------- |
+| P1       | Add route-level WCAG AA checklist from IA.                      | `phr-usecase-baseline.json`         |
+| P1       | Add accessible error focus management in forms.                 | Login, consent, appointment, upload |
+| P1       | Add labels/hints for all buttons/inputs/tabs/mobile navigation. | Web/mobile components               |
+| P1       | Add keyboard navigation tests for web shell and data cards.     | Playwright                          |
+| P1       | Add color contrast gate for PHR semantic statuses.              | Design system + PHR CSS             |
+| P2       | Add screen reader-friendly table/list alternatives.             | Audit, records, labs                |
+
+## G3. Observability / o11y
+
+| Priority | What                                                                                | Where                                                  |
+| -------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| P0       | Add correlation ID to every web/mobile/backend request.                             | `phrApi.ts`, `phrMobileApi.ts`, `PhrRouteSupport.java` |
+| P1       | Add structured audit event for every sensitive data read.                           | Backend route adapters                                 |
+| P1       | Add frontend telemetry for critical journeys with no PHI.                           | Web app                                                |
+| P1       | Add mobile telemetry/error reporting with PHI redaction.                            | Mobile app                                             |
+| P1       | Add evidence outbox health to release readiness.                                    | `PhrKernelModule.java`, Kernel readiness               |
+| P2       | Add dashboards/metrics for consent failures, emergency access, export, mobile sync. | monitoring/evidence                                    |
+
+## G4. Privacy/Security
+
+| Priority | What                                                        | Where                                            |
+| -------- | ----------------------------------------------------------- | ------------------------------------------------ |
+| P0       | Encrypt mobile PHI cache.                                   | Mobile offline store                             |
+| P0       | Replace role-only access with policy engine.                | Kernel + PHR routes                              |
+| P0       | Add tenant/facility/principal validation everywhere.        | `PhrRouteSupport.java`                           |
+| P0       | Prevent PHI in push notifications.                          | Mobile/backend notification services             |
+| P0       | Prevent PHI in logs/errors/diagnostics.                     | Backend/mobile/web                               |
+| P1       | Add server-side consent enforcement tests for all PHI APIs. | Backend tests                                    |
+| P1       | Add emergency access review SLA/status.                     | Emergency services                               |
+| P1       | Add export/download privacy checks.                         | HIE/export/document routes                       |
+| P2       | Add security threat model doc.                              | `products/phr/docs/security/PHR_THREAT_MODEL.md` |
+
+---
+
+# H. Kernel Hardening Tasks
+
+Kernel already exposes product-shell/lifecycle/deployment/health/entitlement contracts, but PHR needs stronger canonicalization and policy support.  
+
+| Priority | What                                                                                      | Where                                                                      |
+| -------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| P0       | Add canonical product route/capability contract model.                                    | `platform/typescript/product-shell`, Kernel Java platform contract package |
+| P0       | Generate PHR web route manifest and backend entitlement payload from one Kernel contract. | New Kernel generator + PHR generated files                                 |
+| P0       | Add Kernel PHI access policy evaluator.                                                   | New `platform-kernel` policy/security package                              |
+| P0       | Add Kernel mobile PHI offline policy gate.                                                | Kernel release/security checks                                             |
+| P1       | Add Kernel release-readiness runtime API.                                                 | `platform/typescript/kernel-lifecycle` and/or Java Kernel lifecycle        |
+| P1       | Move PHR release file parsing to Kernel service.                                          | Kernel readiness service; deprecate product-local reader                   |
+| P1       | Add product IA/use-case lifecycle contract.                                               | Kernel product lifecycle schema                                            |
+| P1       | Add product use-case completeness gate.                                                   | `scripts/check-product-feature-completeness...` or new Kernel check        |
+| P1       | Add Kernel i18n/a11y product-surface gates.                                               | `scripts/check-i18n-*`, `scripts/check-a11y-*`                             |
+| P1       | Add route entitlement drift check.                                                        | `scripts/check-route-entitlement-contracts.mjs`                            |
+| P1       | Add Kernel audit/event correlation contract.                                              | Kernel event/context package                                               |
+| P1       | Add product mobile privacy release gate.                                                  | Kernel release checks                                                      |
+| P2       | Add generated docs from product route/use-case contracts.                                 | Kernel docs generator                                                      |
+| P2       | Add product readiness score from IA coverage + tests + evidence.                          | Kernel evidence/scorecard                                                  |
+| P2       | Add product lifecycle “explain/recover” for missing IA tasks.                             | Kernel lifecycle service                                                   |
+
+---
+
+# I. YAPPC Hardening Tasks
+
+YAPPC has a scaffold API and Canvas AI adapter, but it is not yet PHR-IA-aware or fully Kernel-native.  
+
+| Priority | What                                                                           | Where                                                      |
+| -------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| P0       | Add PHR IA importer.                                                           | `products/yappc/core/**`, `products/yappc/frontend/web/**` |
+| P0       | Import PHR vision/route/screen/workflow docs into product model.               | New YAPPC product model adapter                            |
+| P0       | Visualize PHR missing IA/code/test coverage on canvas.                         | YAPPC canvas UI                                            |
+| P1       | Add Kernel-native product artifact generation mode.                            | `YappcApi.java`, project/template services                 |
+| P1       | Generate PHR route contracts from IA baseline.                                 | YAPPC + Kernel generator                                   |
+| P1       | Generate PHR API contract skeletons from IA baseline.                          | YAPPC scaffold packs                                       |
+| P1       | Generate PHR web/mobile page skeletons with design-system/product-shell usage. | YAPPC templates                                            |
+| P1       | Generate E2E/API/unit test skeletons per IA use case.                          | YAPPC test templates                                       |
+| P1       | Stop silently no-oping missing canvas AI backend endpoints in production mode. | `yappc-ai-adapter.ts`                                      |
+| P1       | Show degraded/missing generator endpoints as readiness gaps.                   | YAPPC frontend                                             |
+| P1       | Add PHR product-unit pack.                                                     | `products/yappc/core/scaffold/packs/phr-*`                 |
+| P1       | Add Kernel contract dependency validation before generation.                   | YAPPC core                                                 |
+| P2       | Add web/mobile parity report generation.                                       | YAPPC product analysis                                     |
+| P2       | Add security/privacy/i18n/a11y flags in generated plans.                       | YAPPC planning model                                       |
+| P2       | Add downloadable implementation backlog artifact from YAPPC.                   | YAPPC frontend/backend                                     |
+
+---
+
+# J. Test / CI / Release Gate Tasks
+
+Root scripts already include many PHR, Kernel, YAPPC, i18n, a11y, security, lifecycle, release-readiness checks. 
+
+| Priority | What                                                                                                      | Where                                                   |
+| -------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| P0       | Add PHR IA coverage check to required gates.                                                              | `package.json`, new `scripts/check-phr-ia-coverage.mjs` |
+| P0       | Add mobile PHI encryption gate.                                                                           | new `scripts/check-phr-mobile-privacy.mjs`              |
+| P0       | Add PHI log redaction gate.                                                                               | new `scripts/check-phr-phi-log-safety.mjs`              |
+| P0       | Add consent enforcement backend matrix test.                                                              | PHR backend tests                                       |
+| P0       | Add emergency break-glass E2E test.                                                                       | PHR backend/web/mobile tests                            |
+| P1       | Add web route traversal Playwright tests for every route contract.                                        | `products/phr/apps/web/e2e/**`                          |
+| P1       | Add web action tests: login, consent grant/revoke, appointment request, audit filter, release env switch. | Web E2E                                                 |
+| P1       | Add mobile tests: login, dashboard, records, consents, alerts, emergency biometric, offline cache.        | Mobile tests                                            |
+| P1       | Add backend API tests for auth/patient/consent/appointment/emergency/audit/release/FHIR.                  | PHR backend test source                                 |
+| P1       | Add route entitlement contract test: web manifest equals backend entitlement.                             | Kernel/PHR tests                                        |
+| P1       | Add i18n pseudo-locale visual/behavior tests.                                                             | Web/mobile tests                                        |
+| P1       | Add a11y tests for web routes.                                                                            | Playwright axe or equivalent                            |
+| P1       | Add observability tests for correlation IDs.                                                              | Backend/web/mobile                                      |
+| P1       | Add release-readiness current commit/evidence freshness test.                                             | Kernel readiness tests                                  |
+| P1       | Add YAPPC PHR IA import/generate/validate roundtrip test.                                                 | YAPPC tests                                             |
+| P2       | Add performance tests for audit/records/labs.                                                             | backend/perf tests                                      |
+| P2       | Add offline low-connectivity sync tests.                                                                  | mobile/integration                                      |
+| P2       | Add HIE/FHIR integration smoke tests.                                                                     | PHR integration tests                                   |
+
+---
+
+# K. Documentation / Governance Tasks
+
+| Priority | What                                                          | Where                                                                 |
+| -------- | ------------------------------------------------------------- | --------------------------------------------------------------------- |
+| P0       | Correct docs that overstate implementation maturity.          | `products/phr/docs/01-vision-plan-requirements/01-product-vision.md`  |
+| P1       | Add “current implemented surface” doc generated from code.    | `products/phr/docs/current-state/generated-current-surface.md`        |
+| P1       | Add “PHR feature visibility and flags” doc.                   | `products/phr/docs/04_design_and_workflows/phr_feature_visibility.md` |
+| P1       | Add “Kernel-native PHR lifecycle” doc.                        | `products/phr/docs/03_architecture/phr_kernel_native_lifecycle.md`    |
+| P1       | Add privacy/security architecture doc for mobile offline PHI. | `products/phr/docs/security/phr_mobile_offline_phi.md`                |
+| P1       | Add access policy matrix doc.                                 | `products/phr/docs/security/phr_access_policy_matrix.md`              |
+| P1       | Add emergency access runbook.                                 | `products/phr/docs/runbooks/phr_emergency_access.md`                  |
+| P1       | Add consent revocation/cache invalidation runbook.            | `products/phr/docs/runbooks/phr_consent_revocation.md`                |
+| P2       | Add YAPPC-for-PHR generation workflow doc.                    | `products/yappc/docs/use-cases/phr_generation_workflow.md`            |
+| P2       | Add Kernel route entitlement canonicalization ADR.            | `docs/adr/**`                                                         |
+
+---
+
+# L. Recommended Execution Order
+
+| Phase | Goal                                           | Must complete                                                                                           |
+| ----- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| 1     | Close P0 privacy/security risks                | Mobile encrypted PHI cache, session headers, policy evaluator, no PHI logs, consent enforcement.        |
+| 2     | Create canonical IA baseline                   | `phr-usecase-baseline.json`, IA traceability, visibility matrix, doc/code mismatch evidence.            |
+| 3     | Canonicalize route/entitlements through Kernel | Remove TS/Java drift, generated route/entitlement artifacts, route tests.                               |
+| 4     | Stabilize current patient journeys             | Auth, dashboard, records, detail, consents, appointments, labs, meds, audit, settings.                  |
+| 5     | Fill missing MVP IA                            | Profile, timeline, conditions, documents/upload/OCR, caregiver dependents, provider dashboard/patients. |
+| 6     | Harden mobile                                  | i18n, a11y, offline, biometric, secure sync, record detail, consent actions.                            |
+| 7     | Harden o11y/release                            | Correlation IDs, audit/evidence trace, Kernel readiness API, release cockpit drill-down.                |
+| 8     | Harden YAPPC                                   | PHR IA import, Kernel-native artifact generation, web/mobile/API/test generation, gap visualization.    |
+| 9     | Add full tests/gates                           | Web/mobile/backend/kernel/yappc E2E and release-readiness gates.                                        |
+| 10    | Re-audit                                       | Compare IA coverage, P0 closure, scorecard movement, and production readiness.                          |

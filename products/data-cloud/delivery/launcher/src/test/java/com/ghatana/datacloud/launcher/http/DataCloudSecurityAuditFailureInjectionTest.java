@@ -115,7 +115,7 @@ class DataCloudSecurityAuditFailureInjectionTest extends EventloopTestBase {
     void criticalRouteFailsWhenAuditSinkUnavailable() {
         System.setProperty("DATACLOUD_PROFILE", "production");
 
-        when(auditService.emit(any(AuditEvent.class)))
+        when(auditService.record(any(AuditEvent.class)))
             .thenReturn(Promise.ofException(new RuntimeException("Audit sink unavailable")));
 
         filter = new DataCloudSecurityFilter(
@@ -134,7 +134,7 @@ class DataCloudSecurityAuditFailureInjectionTest extends EventloopTestBase {
 
         HttpResponse response = runPromise(() -> filter.filter(request, req -> {
             // Simulate handler that would succeed if audit didn't fail
-            return Promise.of(HttpResponse.ok(200));
+            return Promise.of(HttpResponse.ok200().build());
         }));
 
         // Should fail due to audit sink unavailability
@@ -149,7 +149,7 @@ class DataCloudSecurityAuditFailureInjectionTest extends EventloopTestBase {
     void criticalRouteFailsWhenAuditRecordThrows() {
         System.setProperty("DATACLOUD_PROFILE", "production");
 
-        when(auditService.emit(any(AuditEvent.class)))
+        when(auditService.record(any(AuditEvent.class)))
             .thenThrow(new RuntimeException("Audit record serialization failed"));
 
         filter = new DataCloudSecurityFilter(
@@ -166,7 +166,7 @@ class DataCloudSecurityAuditFailureInjectionTest extends EventloopTestBase {
         request.addHeader(io.activej.http.HttpHeaders.of("Authorization", "Bearer valid-jwt-token"));
 
         HttpResponse response = runPromise(() -> filter.filter(request, req -> {
-            return Promise.of(HttpResponse.ok(200));
+            return Promise.of(HttpResponse.ok200().build());
         }));
 
         // Should fail due to audit record throw
@@ -182,7 +182,7 @@ class DataCloudSecurityAuditFailureInjectionTest extends EventloopTestBase {
         System.setProperty("DATACLOUD_PROFILE", "production");
 
         // Simulate timeout by never completing the promise
-        when(auditService.emit(any(AuditEvent.class)))
+        when(auditService.record(any(AuditEvent.class)))
             .thenReturn(new Promise<>()); // Never completes
 
         filter = new DataCloudSecurityFilter(
@@ -201,11 +201,11 @@ class DataCloudSecurityAuditFailureInjectionTest extends EventloopTestBase {
         // Note: In a real test, we'd need to use a timeout mechanism
         // For this test, we verify the audit service is called
         HttpResponse response = runPromise(() -> filter.filter(request, req -> {
-            return Promise.of(HttpResponse.ok(200));
+            return Promise.of(HttpResponse.ok200().build());
         }));
 
         // The response may hang in real scenario; here we verify audit was attempted
-        verify(auditService).emit(any(AuditEvent.class));
+        verify(auditService).record(any(AuditEvent.class));
     }
 
     // ==================== DC-SEC-002: Audit service missing ====================
@@ -229,7 +229,7 @@ class DataCloudSecurityAuditFailureInjectionTest extends EventloopTestBase {
         request.addHeader(io.activej.http.HttpHeaders.of("Authorization", "Bearer valid-jwt-token"));
 
         HttpResponse response = runPromise(() -> filter.filter(request, req -> {
-            return Promise.of(HttpResponse.ok(200));
+            return Promise.of(HttpResponse.ok200().build());
         }));
 
         // Should fail due to missing audit service in production
@@ -256,7 +256,7 @@ class DataCloudSecurityAuditFailureInjectionTest extends EventloopTestBase {
         );
 
         HttpResponse response = runPromise(() -> filter.filter(request, req -> {
-            return Promise.of(HttpResponse.ok(200));
+            return Promise.of(HttpResponse.ok200().build());
         }));
 
         // Non-critical routes may succeed even without audit
