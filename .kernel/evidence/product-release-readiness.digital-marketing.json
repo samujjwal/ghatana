@@ -1,20 +1,20 @@
 {
-  "generatedAt": "2026-05-26T00:25:25.854Z",
+  "generatedAt": "2026-05-26T00:39:46.616Z",
   "evidenceRun": {
     "generatedBy": "scripts/check-product-release-readiness.mjs",
     "command": "pnpm check:product-release-readiness",
     "source": "scripts/check-product-release-readiness.mjs",
-    "commit": "bdcee47c1e304454e7af848be60d981b24da1151",
-    "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
-    "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+    "commit": "704c9c2dcf5d81319589da2578c6a88c92451303",
+    "sourceCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+    "targetCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
     "targetEnvironment": "staging"
   },
-  "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
-  "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+  "sourceCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+  "targetCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
   "targetEnvironment": "staging",
   "validationStatus": "validated",
-  "reviewDueAt": "2026-05-27T00:25:25.862Z",
-  "expiresAt": "2026-05-28T00:25:25.862Z",
+  "reviewDueAt": "2026-05-27T00:39:46.624Z",
+  "expiresAt": "2026-05-28T00:39:46.624Z",
   "productId": "digital-marketing",
   "releaseVerdict": "pass",
   "releaseProfiles": [

@@ -26,13 +26,21 @@ function writeJson(path, value) {
   writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
 }
 
+function currentGitSha() {
+  try {
+    return execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf-8' }).trim();
+  } catch {
+    return null;
+  }
+}
+
 function currentTargetCommit(existing) {
   return (
     process.env.TARGET_COMMIT_SHA
     ?? process.env.AUDIT_TARGET_COMMIT
+    ?? currentGitSha()
     ?? existing?.targetCommitSha
     ?? existing?.evidenceRun?.targetCommitSha
-    ?? execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf-8' }).trim()
   );
 }
 

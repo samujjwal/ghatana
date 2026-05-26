@@ -3,11 +3,11 @@
   "productId": "phr",
   "environment": "staging",
   "targetEnv": "staging",
-  "generatedAt": "2026-05-26T00:23:53.410Z",
-  "commitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+  "generatedAt": "2026-05-26T00:47:59.326Z",
+  "commitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
   "bootstrap": {
     "validated": true,
-    "validatedAt": "2026-05-26T00:23:53.410Z",
+    "validatedAt": "2026-05-26T00:47:59.326Z",
     "postgres": {
       "status": "ready",
       "host": "phr-staging-db.internal",
@@ -135,7 +135,7 @@
     }
   },
   "executabilityProof": {
-    "validatedAt": "2026-05-26T00:23:53.410Z",
+    "validatedAt": "2026-05-26T00:47:59.326Z",
     "validationMethod": "automated-bootstrap-verification-script",
     "validationScript": "scripts/check-phr-lifecycle-readiness.mjs",
     "allComponentsExecutable": true,
@@ -207,6 +207,6 @@
     "products/phr/lifecycle/readiness-evidence.yaml",
     ".kernel/evidence/phr/phr-lifecycle-evidence-pack.json"
   ],
-  "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
-  "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151"
+  "sourceCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+  "targetCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303"
 }

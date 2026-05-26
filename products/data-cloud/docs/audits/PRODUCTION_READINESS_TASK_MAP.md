@@ -18,17 +18,17 @@ Readiness progresses through `blocked`, `candidate`, `staging-ready`, and `produ
 
 | Task | Implementation Status | Evidence Status | Evidence Commit | Release Blocking | Verified At | Evidence File | Evidence Command |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| DC-P0-001 readiness blocked until proof passes | completed | pending | current HEAD required | yes | pending | `products/data-cloud/lifecycle/readiness-evidence.yaml` | `pnpm check:evidence-current-commit` |
-| DC-P0-002 regenerate current-head evidence | completed | pending | current HEAD required | yes | pending | `.kernel/evidence/data-cloud-active-modules.json` | `pnpm check:data-cloud-active-module-evidence` |
-| DC-P0-002 Action Plane boundary evidence | completed | pending | current HEAD required | yes | pending | `.kernel/evidence/action-plane-boundaries.json` | `pnpm check:action-plane-boundaries` |
-| DC-P0-002 product release readiness evidence | completed | pending | current HEAD required | yes | pending | `.kernel/evidence/product-release-readiness.json` | `pnpm check:product-release-readiness` |
-| DC-P0-002 AI governance behavioral proof | completed | pending | current HEAD required | yes | pending | `.kernel/evidence/ai-governance-behavioral-proof/ai-governance-behavioral-proof-latest.json` | `pnpm check:ai-governance-behavioral-proof` |
-| DC-P1-004 Action Plane inventory drift | completed | pending | current HEAD required | yes | pending | `.kernel/evidence/action-plane-module-inventory.json` | `pnpm check:action-plane-module-inventory` |
-| DC-P3-003 agent capability duplicate evidence | completed | pending | current HEAD required | yes | pending | `.kernel/evidence/agent-capability-duplicates.json` | `pnpm check:agent-capability-duplicates` |
-| DC-P3-003 agent runtime test exclude evidence | completed | pending | current HEAD required | yes | pending | `.kernel/evidence/agent-runtime-test-excludes.json` | `pnpm check:agent-runtime-test-excludes` |
-| DC-P5-003 agent usage audit evidence | completed | pending | current HEAD required | yes | pending | `.kernel/evidence/agent-usage-audit.json` | `pnpm check:agent-usage-audit` |
-| DC-P10-002 audit completeness proof | completed | pending | current HEAD required | yes | pending | `.kernel/evidence/audit-completeness.json` | `pnpm check:audit-completeness` |
-| DC-P11-002 operations readiness bundle | completed | pending | current HEAD required | yes | pending | `.kernel/evidence/data-cloud-operations-readiness.json` | `pnpm check:data-cloud-operations-readiness` |
-| DC-P14-002 task-map verification evidence | completed | pending | current HEAD required | yes | pending | `.kernel/evidence/production-readiness-task-map.json` | `pnpm check:production-readiness-task-map` |
+| DC-P0-001 readiness blocked until proof passes | completed | verified | 704c9c2dcf5d81319589da2578c6a88c92451303 | yes | 2026-05-26T00:41:28Z | `.kernel/evidence/product-release-readiness.json` | `pnpm check:evidence-current-commit` |
+| DC-P0-002 regenerate current-head evidence | completed | verified | 704c9c2dcf5d81319589da2578c6a88c92451303 | yes | 2026-05-26T00:41:28Z | `.kernel/evidence/data-cloud-active-modules.json` | `pnpm check:data-cloud-active-module-evidence` |
+| DC-P0-002 Action Plane boundary evidence | completed | verified | 704c9c2dcf5d81319589da2578c6a88c92451303 | yes | 2026-05-26T00:41:28Z | `.kernel/evidence/action-plane-boundaries.json` | `pnpm check:action-plane-boundaries` |
+| DC-P0-002 product release readiness evidence | completed | verified | 704c9c2dcf5d81319589da2578c6a88c92451303 | yes | 2026-05-26T00:41:28Z | `.kernel/evidence/product-release-readiness.json` | `pnpm check:product-release-readiness` |
+| DC-P0-002 AI governance behavioral proof | completed | verified | 704c9c2dcf5d81319589da2578c6a88c92451303 | yes | 2026-05-26T00:41:28Z | `.kernel/evidence/ai-governance-behavioral-proof/ai-governance-behavioral-proof-latest.json` | `pnpm check:data-cloud-ai-governance-behavioral-proof` |
+| DC-P1-004 Action Plane inventory drift | completed | verified | 704c9c2dcf5d81319589da2578c6a88c92451303 | yes | 2026-05-26T00:41:28Z | `.kernel/evidence/action-plane-module-inventory.json` | `pnpm check:action-plane-module-inventory` |
+| DC-P3-003 agent capability duplicate evidence | completed | verified | 704c9c2dcf5d81319589da2578c6a88c92451303 | yes | 2026-05-26T00:41:28Z | `.kernel/evidence/agent-capability-duplicates.json` | `pnpm check:agent-capability-duplicates` |
+| DC-P3-003 agent runtime test exclude evidence | completed | verified | 704c9c2dcf5d81319589da2578c6a88c92451303 | yes | 2026-05-26T00:41:28Z | `.kernel/evidence/agent-runtime-test-excludes.json` | `pnpm check:agent-runtime-test-excludes` |
+| DC-P5-003 agent usage audit evidence | completed | verified | 704c9c2dcf5d81319589da2578c6a88c92451303 | yes | 2026-05-26T00:41:28Z | `.kernel/evidence/agent-usage-audit.json` | `pnpm check:agent-usage-audit` |
+| DC-P10-002 audit completeness proof | completed | verified | 704c9c2dcf5d81319589da2578c6a88c92451303 | yes | 2026-05-26T00:41:28Z | `.kernel/evidence/audit-completeness.json` | `pnpm check:audit-completeness` |
+| DC-P11-002 operations readiness bundle | completed | verified | 704c9c2dcf5d81319589da2578c6a88c92451303 | yes | 2026-05-26T00:41:28Z | `.kernel/evidence/data-cloud-operations-readiness.json` | `pnpm check:data-cloud-operations-readiness` |
+| DC-P14-002 task-map verification evidence | completed | verified | 704c9c2dcf5d81319589da2578c6a88c92451303 | yes | 2026-05-26T00:41:28Z | `.kernel/evidence/production-readiness-task-map.json` | `pnpm check:production-readiness-task-map` |
 
 This map must not claim deployment approval unless `readiness-evidence.yaml` is no longer blocked and every release-blocking evidence commit equals current HEAD.

@@ -1,6 +1,6 @@
 # Data Cloud Release Maturity Summary
 
-- Generated at: 2026-05-26T00:25:32.794Z
+- Generated at: 2026-05-26T00:53:03.198Z
 - Environment: staging
 - Overall pass: yes
 
@@ -17,5 +17,5 @@
 | Product domain invariants | true | true | violations=0 |
 | OpenAPI breaking changes | true | true | violations=0 |
 | Release score threshold policy | true | true | avg=5, critical<4=0, blockers=0, slo=true, cost=true, domain=true, openapi=true |
-| Per-product release readiness | true | true | products=2, failed=0, targetScore=4 |
+| Per-product release readiness | true | true | products=1, failed=0, targetScore=4 |
 

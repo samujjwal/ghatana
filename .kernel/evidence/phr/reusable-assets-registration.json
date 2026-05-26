@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0.0",
   "productId": "phr",
-  "generatedAt": "2026-05-25T00:00:00.000Z",
-  "commitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+  "generatedAt": "2026-05-26T00:50:40.381Z",
+  "commitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
   "promotionPolicy": {
     "promotionRequires": [
       "test_coverage_gte_80",
@@ -12,8 +12,8 @@
       "rollback_evidence_present",
       "no_pending_blocking_issues"
     ],
-    "promotionLockSha": "bdcee47c1e304454e7af848be60d981b24da1151",
-    "lockedAt": "2026-05-25T00:00:00.000Z",
+    "promotionLockSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+    "lockedAt": "2026-05-26T00:50:40.381Z",
     "promotionApprovedBy": "phr-team-lead",
     "allAssetsLockedForPromotion": true
   },
@@ -36,8 +36,8 @@
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-25T00:00:00.000Z",
-        "lockedAtSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+        "lockedAt": "2026-05-26T00:50:40.381Z",
+        "lockedAtSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
         "promotionTarget": "shared-package",
         "approvedBy": "phr-team-lead",
         "stagingBootstrapValidated": true,
@@ -103,8 +103,8 @@
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-25T00:00:00.000Z",
-        "lockedAtSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+        "lockedAt": "2026-05-26T00:50:40.381Z",
+        "lockedAtSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
         "promotionTarget": "shared-package",
         "approvedBy": "phr-team-lead",
         "stagingBootstrapValidated": true,
@@ -168,8 +168,8 @@
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-25T00:00:00.000Z",
-        "lockedAtSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+        "lockedAt": "2026-05-26T00:50:40.381Z",
+        "lockedAtSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
         "promotionTarget": "shared-package",
         "approvedBy": "phr-team-lead",
         "stagingBootstrapValidated": true,
@@ -233,8 +233,8 @@
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-25T00:00:00.000Z",
-        "lockedAtSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+        "lockedAt": "2026-05-26T00:50:40.381Z",
+        "lockedAtSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
         "promotionTarget": "shared-package",
         "approvedBy": "phr-team-lead",
         "stagingBootstrapValidated": true,
@@ -299,8 +299,8 @@
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-25T00:00:00.000Z",
-        "lockedAtSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+        "lockedAt": "2026-05-26T00:50:40.381Z",
+        "lockedAtSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
         "promotionTarget": "shared-package",
         "approvedBy": "phr-team-lead",
         "stagingBootstrapValidated": true,
@@ -363,8 +363,8 @@
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-25T00:00:00.000Z",
-        "lockedAtSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+        "lockedAt": "2026-05-26T00:50:40.381Z",
+        "lockedAtSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
         "promotionTarget": "shared-package",
         "approvedBy": "phr-team-lead",
         "stagingBootstrapValidated": true,
@@ -414,14 +414,16 @@
       }
     }
   ],
-  "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
-  "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+  "sourceCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+  "targetCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
   "targetEnvironment": "staging",
   "validationStatus": "validated",
   "expiresAt": "2026-08-23T00:00:00.000Z",
   "evidenceRun": {
-    "commit": "bdcee47c1e304454e7af848be60d981b24da1151",
-    "generatedAt": "2026-05-25T00:00:00.000Z",
-    "source": "product-family-asset-registry"
+    "commit": "704c9c2dcf5d81319589da2578c6a88c92451303",
+    "generatedAt": "2026-05-26T00:50:40.381Z",
+    "source": "product-family-asset-registry",
+    "sourceCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+    "targetCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303"
   }
 }

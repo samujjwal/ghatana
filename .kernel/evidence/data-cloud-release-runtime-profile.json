@@ -1,20 +1,20 @@
 {
-  "generatedAt": "2026-05-26T00:16:17.384Z",
+  "generatedAt": "2026-05-26T00:52:44.735Z",
   "evidenceRun": {
     "generatedBy": "scripts/check-data-cloud-release-runtime-profile.mjs",
     "command": "pnpm check:data-cloud-release-runtime-profile",
     "source": "scripts/check-data-cloud-release-runtime-profile.mjs",
-    "commit": "bdcee47c1e304454e7af848be60d981b24da1151",
-    "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
-    "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+    "commit": "704c9c2dcf5d81319589da2578c6a88c92451303",
+    "sourceCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+    "targetCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
     "targetEnvironment": "staging"
   },
-  "sourceCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
-  "targetCommitSha": "bdcee47c1e304454e7af848be60d981b24da1151",
+  "sourceCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+  "targetCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
   "targetEnvironment": "staging",
   "validationStatus": "validated",
-  "reviewDueAt": "2026-05-27T00:16:17.384Z",
-  "expiresAt": "2026-05-28T00:16:17.384Z",
+  "reviewDueAt": "2026-05-27T00:52:44.735Z",
+  "expiresAt": "2026-05-28T00:52:44.735Z",
   "checks": [
     {
       "check": "Runtime dependency failure-injection executable",

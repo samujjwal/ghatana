@@ -1,10 +1,9 @@
 {
-  "generatedAt": "2026-05-26T00:25:32.794Z",
-  "sourceCommit": "bdcee47c1e304454e7af848be60d981b24da1151",
+  "generatedAt": "2026-05-26T00:53:03.198Z",
+  "sourceCommit": "704c9c2dcf5d81319589da2578c6a88c92451303",
   "sourceBranch": "main",
   "productScope": [
-    "digital-marketing",
-    "phr"
+    "data-cloud"
   ],
   "releaseEnvironment": "staging",
   "releaseGate": {
@@ -72,12 +71,12 @@
       "productCostBudgetsPass": true,
       "productDomainInvariantsPass": true,
       "openApiBreakingChangesPass": true,
-      "affectedProductCount": 2
+      "affectedProductCount": 1
     },
     "perProductReleaseReadiness": {
       "available": true,
       "pass": true,
-      "productCount": 2,
+      "productCount": 1,
       "failedProductCount": 0,
       "releaseTargetScore": 4,
       "dimensionValidation": {

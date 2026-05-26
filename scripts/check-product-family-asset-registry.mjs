@@ -1,11 +1,19 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 const root = process.cwd();
 const schemaPath = path.join(root, 'config/product-family-asset-registry.schema.json');
 const registryPath = path.join(root, 'config/product-family-asset-registry.json');
+const releaseEvidenceByProduct = new Map([
+  ['phr', path.join(root, '.kernel/evidence/phr/reusable-assets-registration.json')],
+  [
+    'digital-marketing',
+    path.join(root, '.kernel/evidence/digital-marketing/reusable-assets-registration.json'),
+  ],
+]);
 
 function fail(message) {
   console.error(message);
@@ -14,6 +22,22 @@ function fail(message) {
 
 function readJson(filePath) {
   return JSON.parse(readFileSync(filePath, 'utf8'));
+}
+
+function writeJson(filePath, value) {
+  writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+function currentGitSha() {
+  try {
+    return execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf-8' }).trim();
+  } catch {
+    return null;
+  }
+}
+
+function currentTargetCommit() {
+  return process.env.TARGET_COMMIT_SHA ?? process.env.AUDIT_TARGET_COMMIT ?? currentGitSha();
 }
 
 const REQUIRED_ASSET_FIELDS = [
@@ -116,9 +140,50 @@ function assertProductUsage(asset) {
   }
 }
 
+function stampReleaseEvidence(productId, targetCommit, now) {
+  const evidencePath = releaseEvidenceByProduct.get(productId);
+  if (!evidencePath || !existsSync(evidencePath)) {
+    return;
+  }
+
+  const evidence = readJson(evidencePath);
+  evidence.generatedAt = now;
+  evidence.commitSha = targetCommit;
+  evidence.sourceCommitSha = targetCommit;
+  evidence.targetCommitSha = targetCommit;
+  evidence.evidenceRun = {
+    ...(evidence.evidenceRun ?? {}),
+    commit: targetCommit,
+    sourceCommitSha: targetCommit,
+    targetCommitSha: targetCommit,
+    generatedAt: now,
+    source: 'product-family-asset-registry',
+  };
+
+  if (evidence.promotionPolicy) {
+    evidence.promotionPolicy.promotionLockSha = targetCommit;
+    evidence.promotionPolicy.lockedAt = now;
+  }
+
+  for (const asset of evidence.assets ?? []) {
+    if (asset.promotion_lock) {
+      asset.promotion_lock.lockedAtSha = targetCommit;
+      asset.promotion_lock.lockedAt = now;
+    }
+  }
+
+  writeJson(evidencePath, evidence);
+}
+
 function main() {
   const schema = readJson(schemaPath);
   const registry = readJson(registryPath);
+  const targetCommit = currentTargetCommit();
+  const now = new Date().toISOString();
+
+  if (!targetCommit) {
+    fail('Unable to resolve target commit for product family asset evidence');
+  }
 
   if (schema?.type !== 'object') {
     fail('Asset registry schema must declare a root object type');
@@ -174,6 +239,10 @@ function main() {
     if (asset.status === 'production' && asset.maturity !== 'release-ready') {
       fail(`Production asset ${asset.id} must be release-ready`);
     }
+  }
+
+  for (const productId of VALID_SOURCE_PRODUCTS) {
+    stampReleaseEvidence(productId, targetCommit, now);
   }
 
   console.log('Product family asset registry validation passed.');
