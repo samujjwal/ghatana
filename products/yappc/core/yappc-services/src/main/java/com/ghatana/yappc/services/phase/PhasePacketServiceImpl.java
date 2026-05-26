@@ -299,6 +299,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                     actions,
                     dashboardActions,
                     healthSignals,
+                    null,
                     Instant.now().toEpochMilli(),
                     effectiveCorrelationId
                 );
@@ -1137,6 +1138,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             String correlationId,
             String degradedReason
     ) {
+        PhasePacket.DegradedPacketDetails degradedDetails = buildDegradedPacketDetails(degradedReason);
         // Build actor context
         PhasePacket.ActorContext actor = buildActorContext(principal, Map.of());
         
@@ -1216,8 +1218,42 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             List.of(), // no actions in degraded state
             new PhasePacket.DashboardActionClassification(null, List.of("all"), List.of(), List.of()),
             healthSignals,
+            degradedDetails,
             Instant.now().toEpochMilli(),
             correlationId
+        );
+    }
+
+    private PhasePacket.DegradedPacketDetails buildDegradedPacketDetails(String degradedReason) {
+        String reason = degradedReason == null || degradedReason.isBlank()
+                ? "PHASE_PACKET_DEPENDENCY_UNAVAILABLE"
+                : degradedReason;
+        String upperReason = reason.toUpperCase();
+        if (upperReason.contains("KERNEL")) {
+            return new PhasePacket.DegradedPacketDetails(
+                    "KERNEL",
+                    reason,
+                    "kernel_lifecycle_truth",
+                    "Restore Kernel lifecycle truth ingestion and retry phase packet retrieval.",
+                    List.of("kernel-health", "phase-readiness", "phase-actions", "runtime-observe")
+            );
+        }
+        if (upperReason.contains("AEP") || upperReason.contains("EVIDENCE") || upperReason.contains("GOVERNANCE")
+                || upperReason.contains("POLICY")) {
+            return new PhasePacket.DegradedPacketDetails(
+                    "AEP",
+                    reason,
+                    "aep_evidence_and_policy",
+                    "Restore AEP evidence or governance policy access before allowing lifecycle advancement.",
+                    List.of("evidence", "governance", "phase-actions", "safe-advance")
+            );
+        }
+        return new PhasePacket.DegradedPacketDetails(
+                "DATA_CLOUD",
+                reason,
+                "projects",
+                "Restore Data Cloud project state access and retry phase packet retrieval.",
+                List.of("phase-readiness", "phase-actions", "artifact-status", "activity-feed")
         );
     }
 

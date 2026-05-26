@@ -71,7 +71,7 @@ describe('LoginPage', () => {
     renderLoginPage();
 
     const inputs = screen.getAllByRole('textbox');
-    fireEvent.change(inputs[0], { target: { value: 'NP-12345' } });
+    fireEvent.change(inputs[0]!, { target: { value: 'NP-12345' } });
     const passwordInput = document.querySelector('input[type="password"]') as HTMLInputElement;
     fireEvent.change(passwordInput, { target: { value: 'secret123' } });
 
@@ -87,7 +87,7 @@ describe('LoginPage', () => {
     renderLoginPage();
 
     const inputs = screen.getAllByRole('textbox');
-    fireEvent.change(inputs[0], { target: { value: 'NP-99999' } });
+    fireEvent.change(inputs[0]!, { target: { value: 'NP-99999' } });
     const passwordInput = document.querySelector('input[type="password"]') as HTMLInputElement;
     fireEvent.change(passwordInput, { target: { value: 'wrong' } });
 

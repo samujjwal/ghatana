@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { fetchNotifications } from '../api/phrApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
+import type { PhrMessageKey } from '../i18n/phrI18n';
 import type { NotificationSummary } from '../types';
 
 function notificationTypeLabel(type: NotificationSummary['type']): string {
-  const keyMap: Record<NotificationSummary['type'], string> = {
+  const keyMap: Record<NotificationSummary['type'], PhrMessageKey> = {
     consent_expiry: 'notifications.type.consent_expiry',
     appointment_reminder: 'notifications.type.appointment_reminder',
     lab_result: 'notifications.type.lab_result',

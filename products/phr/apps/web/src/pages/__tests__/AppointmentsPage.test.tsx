@@ -60,7 +60,7 @@ describe('AppointmentsPage', () => {
     fireEvent.change(specialtyInput, { target: { value: 'General Medicine' } });
     // Find date input by label text
     const inputs = document.querySelectorAll('input[type="date"]');
-    fireEvent.change(inputs[0], { target: { value: '2027-03-15' } });
+    fireEvent.change(inputs[0]!, { target: { value: '2027-03-15' } });
 
     fireEvent.click(screen.getByText('appointments.submit'));
 
@@ -80,7 +80,7 @@ describe('AppointmentsPage', () => {
     const specialtyInput = screen.getByRole('textbox', { name: /appointments.specialty.label/i });
     fireEvent.change(specialtyInput, { target: { value: 'Cardiology' } });
     const inputs = document.querySelectorAll('input[type="date"]');
-    fireEvent.change(inputs[0], { target: { value: '2027-04-01' } });
+    fireEvent.change(inputs[0]!, { target: { value: '2027-04-01' } });
 
     fireEvent.click(screen.getByText('appointments.submit'));
 
@@ -96,7 +96,7 @@ describe('AppointmentsPage', () => {
     const specialtyInput = screen.getByRole('textbox', { name: /appointments.specialty.label/i });
     fireEvent.change(specialtyInput, { target: { value: 'ENT' } });
     const inputs = document.querySelectorAll('input[type="date"]');
-    fireEvent.change(inputs[0], { target: { value: '2027-05-01' } });
+    fireEvent.change(inputs[0]!, { target: { value: '2027-05-01' } });
 
     fireEvent.click(screen.getByText('appointments.submit'));
 

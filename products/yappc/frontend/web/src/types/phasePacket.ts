@@ -220,6 +220,17 @@ export interface HealthSignals {
   readonly runtime: RuntimeHealth;
 }
 
+/**
+ * Dependency-specific details for a degraded packet.
+ */
+export interface DegradedPacketDetails {
+  readonly dependency: string;
+  readonly reason: string;
+  readonly truthSource: string;
+  readonly recoveryAction: string;
+  readonly impactedFeatures: readonly string[];
+}
+
 // ============================================================================
 // Main Packet Type
 // ============================================================================
@@ -264,6 +275,7 @@ export interface PhaseCockpitPacket {
   
   // Health signals
   readonly healthSignals: HealthSignals;
+  readonly degradedDetails?: DegradedPacketDetails;
   
   // Metadata
   readonly timestamp: number;

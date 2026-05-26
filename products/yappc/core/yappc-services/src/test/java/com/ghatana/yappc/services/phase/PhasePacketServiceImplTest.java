@@ -224,6 +224,11 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
         // Degraded packet should not allow advancement
         assertThat(packet.readiness()).isNotNull();
         assertThat(packet.readiness().canAdvance()).isFalse();
+        assertThat(packet.degradedDetails()).isNotNull();
+        assertThat(packet.degradedDetails().dependency()).isEqualTo("DATA_CLOUD");
+        assertThat(packet.degradedDetails().truthSource()).isEqualTo("projects");
+        assertThat(packet.degradedDetails().recoveryAction()).contains("Restore Data Cloud project state access");
+        assertThat(packet.degradedDetails().impactedFeatures()).contains("phase-actions", "artifact-status");
     }
 
     @Test
@@ -238,6 +243,9 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
         assertThat(packet).isNotNull();
         assertThat(packet.blockers()).isNotEmpty();
         assertThat(packet.readiness().canAdvance()).isFalse();
+        assertThat(packet.degradedDetails()).isNotNull();
+        assertThat(packet.degradedDetails().reason()).isEqualTo("PROJECT_STATE_QUERY_FAILED");
+        assertThat(packet.degradedDetails().dependency()).isEqualTo("DATA_CLOUD");
     }
 
     @Test

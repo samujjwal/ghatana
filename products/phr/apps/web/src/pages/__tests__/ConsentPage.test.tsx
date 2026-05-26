@@ -69,10 +69,10 @@ describe('ConsentPage', () => {
     fireEvent.click(screen.getByText('consents.grantNew'));
 
     const inputs = screen.getAllByRole('textbox');
-    fireEvent.change(inputs[0], { target: { value: 'grantee-42' } });
-    fireEvent.change(inputs[1], { target: { value: 'Treatment' } });
-    fireEvent.change(inputs[2], { target: { value: 'Patient,Observation' } });
-    fireEvent.change(inputs[3], { target: { value: '2027-12-31' } });
+    fireEvent.change(inputs[0]!, { target: { value: 'grantee-42' } });
+    fireEvent.change(inputs[1]!, { target: { value: 'Treatment' } });
+    fireEvent.change(inputs[2]!, { target: { value: 'Patient,Observation' } });
+    fireEvent.change(inputs[3]!, { target: { value: '2027-12-31' } });
 
     fireEvent.click(screen.getByText('consents.grant.submit'));
 
@@ -95,10 +95,10 @@ describe('ConsentPage', () => {
 
     fireEvent.click(screen.getByText('consents.grantNew'));
     const inputs = screen.getAllByRole('textbox');
-    fireEvent.change(inputs[0], { target: { value: 'g1' } });
-    fireEvent.change(inputs[1], { target: { value: 'Tx' } });
-    fireEvent.change(inputs[2], { target: { value: 'Patient' } });
-    fireEvent.change(inputs[3], { target: { value: '2027-01-01' } });
+    fireEvent.change(inputs[0]!, { target: { value: 'g1' } });
+    fireEvent.change(inputs[1]!, { target: { value: 'Tx' } });
+    fireEvent.change(inputs[2]!, { target: { value: 'Patient' } });
+    fireEvent.change(inputs[3]!, { target: { value: '2027-01-01' } });
 
     fireEvent.click(screen.getByText('consents.grant.submit'));
 

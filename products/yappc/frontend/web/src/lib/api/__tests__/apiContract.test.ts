@@ -320,9 +320,18 @@ describe('API Client Structure', () => {
   });
 
   it('should have no duplicate exports in clients', () => {
-    // This test would check for duplicate exports across client files
-    // For now, placeholder
-    expect(true).toBe(true);
+    const generatedIndexPath = path.join(
+      repoRoot,
+      'products/yappc/frontend/web/src/clients/generated/api/index.ts'
+    );
+    const exportLines = fs
+      .readFileSync(generatedIndexPath, 'utf8')
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.startsWith('export '));
+    const duplicateExports = exportLines.filter((line, index) => exportLines.indexOf(line) !== index);
+
+    expect(duplicateExports).toEqual([]);
   });
 });
 
@@ -373,5 +382,31 @@ describe('Phase cockpit generated client parity', () => {
 
     expect(hookSource).toContain("import { LifecycleService } from '../clients/generated/api'");
     expect(hookSource).toContain('LifecycleService.getPhasePacket(');
+  });
+
+  it('keeps degraded packet details in OpenAPI and generated frontend contracts', () => {
+    const openApiSource = fs.readFileSync(openApiPath, 'utf8');
+    const domainTypeSource = fs.readFileSync(
+      path.join(repoRoot, 'products/yappc/frontend/web/src/types/phasePacket.ts'),
+      'utf8'
+    );
+    const generatedPacketSource = fs.readFileSync(
+      path.join(repoRoot, 'products/yappc/frontend/web/src/clients/generated/api/models/PhaseCockpitPacket.ts'),
+      'utf8'
+    );
+    const generatedDetailsSource = fs.readFileSync(
+      path.join(repoRoot, 'products/yappc/frontend/web/src/clients/generated/api/models/DegradedPacketDetails.ts'),
+      'utf8'
+    );
+
+    expect(openApiSource).toContain('DegradedPacketDetails:');
+    expect(openApiSource).toContain('truthSource:');
+    expect(openApiSource).toContain('recoveryAction:');
+    expect(domainTypeSource).toContain('export interface DegradedPacketDetails');
+    expect(domainTypeSource).toContain('readonly degradedDetails?: DegradedPacketDetails');
+    expect(generatedPacketSource).toContain("import type { DegradedPacketDetails } from './DegradedPacketDetails'");
+    expect(generatedPacketSource).toContain('degradedDetails?: DegradedPacketDetails');
+    expect(generatedDetailsSource).toContain("DATA_CLOUD = 'DATA_CLOUD'");
+    expect(generatedDetailsSource).toContain("KERNEL = 'KERNEL'");
   });
 });

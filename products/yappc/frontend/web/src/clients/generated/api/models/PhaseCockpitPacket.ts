@@ -7,6 +7,7 @@ import type { ActorContext } from './ActorContext';
 import type { CapabilityModel } from './CapabilityModel';
 import type { CompletedArtifact } from './CompletedArtifact';
 import type { DashboardActionClassification } from './DashboardActionClassification';
+import type { DegradedPacketDetails } from './DegradedPacketDetails';
 import type { GovernanceRecord } from './GovernanceRecord';
 import type { HealthSignals } from './HealthSignals';
 import type { PhaseAction } from './PhaseAction';
@@ -38,6 +39,7 @@ export type PhaseCockpitPacket = {
     availableActions: Array<PhaseAction>;
     dashboardActions: DashboardActionClassification;
     healthSignals: HealthSignals;
+    degradedDetails?: DegradedPacketDetails;
     timestamp: number;
     correlationId?: string;
 };

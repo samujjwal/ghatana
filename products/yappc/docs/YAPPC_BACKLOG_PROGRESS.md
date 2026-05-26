@@ -24,6 +24,8 @@ This file tracks the consolidated YAPPC-only backlog from the `797819d9ee4e5e027
 | YAPPC-P0-016 | Complete | `YappcArtifactRepository` now exposes canonical completed artifact metadata; `PhasePacketServiceImpl` maps real artifact ID/type/version/actor/timestamp/evidence instead of synthesizing from storage versions. |
 | YAPPC-P0-017 | Complete | Required artifact completion now compares explicit canonical artifact IDs/types only; storage-version-only records do not complete required artifacts. |
 | YAPPC-P0-018 | Complete | Repository-layer tenant enforcement tests prove Project, Task, PhaseState, and AgentState repositories reject missing/default tenant context before Data Cloud access. |
+| YAPPC-P0-021 | Complete | `PhasePacketContractTest` serializes the real backend `PhasePacket` contract and verifies degraded details, health, correlation, and completed artifact provenance fields mirrored by frontend contract tests. |
+| YAPPC-P0-022 | Complete | Degraded packets now include dependency, reason, truth source, recovery action, and impacted features through `PhasePacket.DegradedPacketDetails`, OpenAPI, and generated frontend models. |
 
 ## Verified Commands
 
@@ -38,12 +40,20 @@ This file tracks the consolidated YAPPC-only backlog from the `797819d9ee4e5e027
 | Phase gate lifecycle matrix | `./gradlew :products:yappc:core:yappc-services:test --tests "com.ghatana.yappc.services.phase.PhasePacketServiceImplTest"` | Passed |
 | Canonical completed artifacts | `./gradlew :products:yappc:core:yappc-services:test --tests "com.ghatana.yappc.services.phase.PhasePacketServiceImplTest" --tests "com.ghatana.yappc.storage.YappcArtifactRepositoryTest"` and `pnpm -C products/yappc/frontend/web type-check` | Passed |
 | Data Cloud tenant enforcement | `./gradlew :products:yappc:infrastructure:datacloud:test --tests "com.ghatana.yappc.infrastructure.datacloud.repository.YappcDataCloudRepositoryTenantEnforcementTest"` | Passed |
+| Phase packet contract/degraded details | `./gradlew :products:yappc:core:yappc-services:test --tests "com.ghatana.yappc.api.PhasePacketContractTest" --tests "com.ghatana.yappc.services.phase.PhasePacketServiceImplTest" --tests "com.ghatana.yappc.api.YappcHttpServerAuthTest"`, `pnpm exec vitest run src/lib/api/__tests__/apiContract.test.ts`, and `pnpm -C products/yappc/frontend/web type-check` | Passed |
+
+## Partial Evidence
+
+| ID | Current evidence | Remaining gap |
+| --- | --- | --- |
+| YAPPC-P0-019 | `RouteAuthorizationRegistryParityTest` verifies the phase packet and dashboard action registry entries; Gradle `validateRouteManifest` still passes. | Full manifest/OpenAPI strictness is not complete because `validateRouteManifest` still reports orphaned OpenAPI routes as warnings. |
+| YAPPC-P0-020 | Frontend `apiContract.test.ts` verifies phase cockpit generated `LifecycleService` methods map to manifest/OpenAPI method, path, auth, scopes, and `usePhasePacket` uses the generated client. | Needs expansion from critical phase cockpit methods to every generated frontend method. |
 
 ## In Progress
 
 | ID range | Current status |
 | --- | --- |
-| YAPPC-P0-004, YAPPC-P0-009, YAPPC-P0-019 through YAPPC-P0-025 | Not yet complete in this pass. Next focus is route/client parity gates, API Kernel handoff, and platform run writer. |
+| YAPPC-P0-004, YAPPC-P0-009, YAPPC-P0-019, YAPPC-P0-020, YAPPC-P0-023 through YAPPC-P0-025 | Not yet complete in this pass. Next focus is route/client parity gates, API Kernel handoff, production no-fake-data checks, CI execution proof, and platform run writer. |
 
 ## Not Started
 

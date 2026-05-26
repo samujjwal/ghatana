@@ -58,6 +58,7 @@ export type { CreateSprintRequest } from './models/CreateSprintRequest';
 export type { CreateWorkspaceRequest } from './models/CreateWorkspaceRequest';
 export type { DashboardActionClassification } from './models/DashboardActionClassification';
 export type { DashboardActionRequest } from './models/DashboardActionRequest';
+export { DegradedPacketDetails } from './models/DegradedPacketDetails';
 export type { DeleteMyDataResponse } from './models/DeleteMyDataResponse';
 export type { DeriveShapeRequest } from './models/DeriveShapeRequest';
 export { DevSecOpsItem } from './models/DevSecOpsItem';

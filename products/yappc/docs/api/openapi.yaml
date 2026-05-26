@@ -5676,11 +5676,31 @@ components:
           $ref: "#/components/schemas/DashboardActionClassification"
         healthSignals:
           $ref: "#/components/schemas/HealthSignals"
+        degradedDetails:
+          $ref: "#/components/schemas/DegradedPacketDetails"
         timestamp:
           type: integer
           format: int64
         correlationId:
           type: string
+
+    DegradedPacketDetails:
+      type: object
+      required: [dependency, reason, truthSource, recoveryAction, impactedFeatures]
+      properties:
+        dependency:
+          type: string
+          enum: [DATA_CLOUD, AEP, KERNEL]
+        reason:
+          type: string
+        truthSource:
+          type: string
+        recoveryAction:
+          type: string
+        impactedFeatures:
+          type: array
+          items:
+            type: string
 
     ActorContext:
       type: object

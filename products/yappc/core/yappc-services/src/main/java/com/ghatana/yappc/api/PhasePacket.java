@@ -4,6 +4,7 @@
  */
 package com.ghatana.yappc.api;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
@@ -36,6 +37,7 @@ import java.util.Set;
  * @doc.layer api
  * @doc.pattern Contract
  */
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public final class PhasePacket {
 
     // Context fields
@@ -71,6 +73,7 @@ public final class PhasePacket {
     
     // Health signals
     private final HealthSignals healthSignals;
+    private final DegradedPacketDetails degradedDetails;
     
     // Metadata
     private final long timestamp;
@@ -99,6 +102,7 @@ public final class PhasePacket {
             @NotNull List<PhaseAction> availableActions,
             @NotNull DashboardActionClassification dashboardActions,
             @NotNull HealthSignals healthSignals,
+            DegradedPacketDetails degradedDetails,
             long timestamp,
             String correlationId
     ) {
@@ -124,6 +128,7 @@ public final class PhasePacket {
         this.availableActions = availableActions;
         this.dashboardActions = dashboardActions;
         this.healthSignals = healthSignals;
+        this.degradedDetails = degradedDetails;
         this.timestamp = timestamp;
         this.correlationId = correlationId;
     }
@@ -151,6 +156,7 @@ public final class PhasePacket {
     public List<PhaseAction> availableActions() { return availableActions; }
     public DashboardActionClassification dashboardActions() { return dashboardActions; }
     public HealthSignals healthSignals() { return healthSignals; }
+    public DegradedPacketDetails degradedDetails() { return degradedDetails; }
     public long timestamp() { return timestamp; }
     public String correlationId() { return correlationId; }
 
@@ -317,6 +323,17 @@ public final class PhasePacket {
             PreviewHealth preview,
             GenerationHealth generation,
             RuntimeHealth runtime
+    ) {}
+
+    /**
+     * Dependency-specific details for a degraded phase packet.
+     */
+    public record DegradedPacketDetails(
+            String dependency,
+            String reason,
+            String truthSource,
+            String recoveryAction,
+            List<String> impactedFeatures
     ) {}
 
     /**

@@ -96,6 +96,7 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
                     List.of(),
                     null,
                     null,
+                    null,
                     Instant.now().toEpochMilli(),
                     correlationId
                 )

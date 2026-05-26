@@ -201,6 +201,10 @@ export interface TimelineEvent {
   type: 'visit' | 'lab' | 'immunization' | 'medication' | 'consent' | 'document';
   title: string;
   summary: string;
+  /** ISO datetime of the event; preferred field for display. */
+  occurredAt: string;
+  /** Short description or additional context for the event. */
+  description?: string;
   resourceId?: string;
 }
 
@@ -229,6 +233,8 @@ export interface ObservationSummary {
   unit?: string;
   status: 'normal' | 'abnormal' | 'pending';
   recordedAt: string;
+  /** ISO date of observation; aliases `recordedAt` for wire response compatibility. */
+  effectiveDate: string;
   loincCode?: string;
 }
 
@@ -238,9 +244,14 @@ export interface ImmunizationSummary {
   id: string;
   vaccine: string;
   date: string;
+  /** ISO date of vaccine administration; aliases `date` for wire response compatibility. */
+  occurrenceDate: string;
   dose?: string;
+  /** Vaccine lot number. */
+  lotNumber?: string;
   site?: string;
   cvxCode?: string;
+  status?: string;
 }
 
 // ─── Documents ────────────────────────────────────────────────────────────────
@@ -268,6 +279,8 @@ export interface OcrReviewDocument {
   id: string;
   title: string;
   ocrText: string;
+  /** OCR-extracted raw text; aliases `ocrText` for wire response compatibility. */
+  extractedText: string;
   correctedText?: string;
   confidence: number;
   status: 'pending_review' | 'confirmed' | 'rejected';
@@ -293,6 +306,12 @@ export interface PatientRosterEntry {
   lastVisit?: string;
   condition?: string;
   alertCount: number;
+  /** Patient age in years. */
+  age?: number;
+  /** Current clinical status. */
+  status?: string;
+  /** ISO datetime of next scheduled appointment. */
+  nextAppointment?: string;
 }
 
 // ─── Caregiver ────────────────────────────────────────────────────────────────

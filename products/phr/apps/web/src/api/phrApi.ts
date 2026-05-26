@@ -781,18 +781,13 @@ export async function fetchOcrDocument(docId: string): Promise<OcrReviewDocument
 
 export async function confirmOcrDocument(
   docId: string,
-  correctedText: string,
-  context: { tenantId: string; principalId: string },
 ): Promise<OcrReviewDocument> {
   const response = await fetch(`${API_BASE_URL}/documents/${encodeURIComponent(docId)}/ocr/confirm`, {
     method: 'POST',
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
-      'X-Tenant-Id': context.tenantId,
-      'X-Principal-Id': context.principalId,
     },
-    body: JSON.stringify({ correctedText }),
   });
   if (!response.ok) {
     throw new PhrApiError(`OCR confirmation failed: ${response.status}`, response.status, 'OCR');
@@ -816,15 +811,9 @@ export async function fetchNotifications(principalId: string): Promise<Notificat
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
-export async function fetchProviderPatients(
-  context: { tenantId: string; principalId: string },
-): Promise<PatientRosterEntry[]> {
+export async function fetchProviderPatients(): Promise<PatientRosterEntry[]> {
   const response = await fetch(`${API_BASE_URL}/provider/patients`, {
-    headers: {
-      Accept: 'application/json',
-      'X-Tenant-Id': context.tenantId,
-      'X-Principal-Id': context.principalId,
-    },
+    headers: { Accept: 'application/json' },
   });
   if (!response.ok) {
     throw new PhrApiError(`Failed to load patient roster: ${response.status}`, response.status, 'Provider');
