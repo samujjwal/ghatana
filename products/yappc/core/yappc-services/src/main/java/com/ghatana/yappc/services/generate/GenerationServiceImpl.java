@@ -13,6 +13,8 @@ import com.ghatana.yappc.common.AiQualityTelemetry;
 import com.ghatana.yappc.common.ServiceObservability;
 import com.ghatana.yappc.domain.generate.*;
 import com.ghatana.yappc.domain.intent.IntentInput;
+import com.ghatana.yappc.domain.shape.ShapeSpec;
+import com.ghatana.yappc.domain.validate.LifecycleValidationResult;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
@@ -41,6 +43,7 @@ public class GenerationServiceImpl implements GenerationService {
     private final GenerationRunRepository generationRunRepository;
     private final ObjectMapper objectMapper;
     private final AiHealthProvider aiHealthProvider;
+    private final GenerationAssuranceService assuranceService;
 
     public GenerationServiceImpl(
             CompletionService aiService,
@@ -58,16 +61,34 @@ public class GenerationServiceImpl implements GenerationService {
             @NotNull GenerationRunRepository generationRunRepository,
             @NotNull ObjectMapper objectMapper,
             @NotNull AiHealthProvider aiHealthProvider) {
+        this(aiService, auditLogger, metrics, generationRunRepository, objectMapper, aiHealthProvider, new GenerationAssuranceService());
+    }
+
+    public GenerationServiceImpl(
+            CompletionService aiService,
+            AuditLogger auditLogger,
+            MetricsCollector metrics,
+            @NotNull GenerationRunRepository generationRunRepository,
+            @NotNull ObjectMapper objectMapper,
+            @NotNull AiHealthProvider aiHealthProvider,
+            @NotNull GenerationAssuranceService assuranceService) {
         this.aiService = aiService;
         this.auditLogger = auditLogger;
         this.metrics = metrics;
         this.generationRunRepository = generationRunRepository;
         this.objectMapper = objectMapper;
         this.aiHealthProvider = aiHealthProvider;
+        this.assuranceService = assuranceService;
     }
 
     @Override
     public Promise<GeneratedArtifacts> generate(ValidatedSpec spec, GenerationContext context) {
+        List<String> shapeReadinessBlockers = validateShapeReadiness(spec);
+        if (!shapeReadinessBlockers.isEmpty()) {
+            return Promise.ofException(new IllegalStateException(
+                    "Shape is not ready for generation: " + String.join("; ", shapeReadinessBlockers)));
+        }
+
         long startTime = System.currentTimeMillis();
         String runId = UUID.randomUUID().toString();
         Instant createdAt = Instant.now();
@@ -95,6 +116,7 @@ public class GenerationServiceImpl implements GenerationService {
 
         return generationRunRepository.save(generationRun)
             .then(() -> generateArtifactsWithAI(spec))
+            .map(artifacts -> applyAssurance(spec, artifacts))
             .then(artifacts -> {
                 long duration = System.currentTimeMillis() - startTime;
                 Map<String, String> tags = ServiceObservability.tenantTag(spec.shapeSpec().tenantId());
@@ -133,6 +155,65 @@ public class GenerationServiceImpl implements GenerationService {
             .whenException(() -> {
                 log.error("Generation failed");
             });
+    }
+
+    private List<String> validateShapeReadiness(ValidatedSpec spec) {
+        List<String> blockers = new ArrayList<>();
+        if (spec == null) {
+            return List.of("validated spec is required");
+        }
+
+        ShapeSpec shape = spec.shapeSpec();
+        if (shape == null) {
+            blockers.add("shape spec is required");
+        } else {
+            if (shape.id() == null || shape.id().isBlank()) {
+                blockers.add("shape id is required");
+            }
+            if (shape.tenantId() == null || shape.tenantId().isBlank()) {
+                blockers.add("shape tenant is required");
+            }
+            if (shape.domainModel() == null) {
+                blockers.add("shape domain model is required");
+            }
+        }
+
+        LifecycleValidationResult validation = spec.validationResult();
+        if (validation == null) {
+            blockers.add("shape validation result is required");
+        } else {
+            if (!validation.passed()) {
+                blockers.add("shape validation must pass");
+            }
+            if (validation.hasBlockingIssues()) {
+                blockers.add("shape validation has blocking issues");
+            }
+        }
+        return blockers;
+    }
+
+    private GeneratedArtifacts applyAssurance(ValidatedSpec spec, GeneratedArtifacts artifacts) {
+        GenerationAssuranceService.GenerationAssuranceReport report = assuranceService.assure(spec, artifacts);
+        Map<String, String> assuranceMetadata = new java.util.LinkedHashMap<>(
+                artifacts.metadata() == null ? Map.of() : artifacts.metadata());
+        assuranceMetadata.put("assurance_passed", String.valueOf(report.passed()));
+        assuranceMetadata.put("assurance_checks_passed", report.passedCheckIds());
+        assuranceMetadata.put("assurance_checks_failed", report.failedCheckIds());
+        if (!report.passed()) {
+            metrics.incrementCounter(
+                    "yappc.generate.assurance.failed",
+                    Map.of("checks_failed", report.failedCheckIds()));
+            throw new IllegalStateException("Generate assurance failed: " + report.failedCheckIds());
+        }
+        metrics.incrementCounter("yappc.generate.assurance.passed", Map.of("checks", report.passedCheckIds()));
+        return GeneratedArtifacts.builder()
+                .id(artifacts.id())
+                .specRef(artifacts.specRef())
+                .artifacts(artifacts.artifacts())
+                .generatedAt(artifacts.generatedAt())
+                .generatorVersion(artifacts.generatorVersion())
+                .metadata(assuranceMetadata)
+                .build();
     }
 
     @Override

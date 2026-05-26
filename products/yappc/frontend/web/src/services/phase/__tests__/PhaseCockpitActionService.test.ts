@@ -36,6 +36,7 @@ vi.mock('@/lib/api/client', () => ({
       status: vi.fn(),
     },
     run: {
+      retry: vi.fn(),
       rollback: vi.fn(),
       promote: vi.fn(),
     },
@@ -301,6 +302,28 @@ describe('PhaseCockpitActionService', () => {
   });
 
   describe('executeRunPostAction', () => {
+    it('returns a retry result with the audit id', async () => {
+      vi.mocked(yappcApi.run.retry).mockResolvedValue({ id: 'run-42-retry', status: 'SUCCESS' });
+
+      const result = await executeRunPostAction({
+        projectId: 'proj-1',
+        runId: 'run-42',
+        action: 'retry',
+      });
+
+      expect(yappcApi.run.retry).toHaveBeenCalledWith({
+        failedRunId: 'run-42',
+        runSpec: expect.objectContaining({
+          id: 'run-42-retry',
+          config: { retryOf: 'run-42' },
+        }),
+      });
+      expect(result.kind).toBe('run-workflow');
+      expect(result.runId).toBe('run-42-retry');
+      expect(result.status).toBe('SUCCESS');
+      expect(result.auditEventId).toBe('audit-123');
+    });
+
     it('returns a rollback result with the audit id', async () => {
       vi.mocked(yappcApi.run.rollback).mockResolvedValue({ status: 'ROLLBACK_IN_PROGRESS' });
 

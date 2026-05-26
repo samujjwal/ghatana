@@ -7,6 +7,7 @@ package com.ghatana.yappc.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.yappc.services.dashboard.DashboardActionService;
+import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -47,54 +48,60 @@ public final class DashboardActionController {
     }
 
     public Promise<HttpResponse> getDashboardActions(HttpRequest request) {
+        if (request.getMethod() == HttpMethod.GET) {
+            DashboardActionRequest req = new DashboardActionRequest(
+                    null,
+                    request.getQueryParameter("workspaceId"),
+                    request.getQueryParameter("correlationId")
+            );
+            return getDashboardActions(request, req);
+        }
         return request.loadBody()
             .then(body -> {
                 try {
                     DashboardActionRequest req = objectMapper.readValue(body.getArray(), DashboardActionRequest.class);
-
-                    // Validate required fields
-                    if (req.workspaceId() == null || req.workspaceId().isBlank()) {
-                        return Promise.of(badRequest400("workspaceId is required"));
-                    }
-
-                    // Extract principal for authorization context
-                    Principal principal = request.getAttachment(Principal.class);
-                    if (principal == null) {
-                        return Promise.of(HttpResponse.ofCode(401)
-                            .withJson("{\"error\":\"Unauthenticated\"}")
-                            .build());
-                    }
-
-                    // Validate tenant scope
-                    if (req.tenantId() != null && !req.tenantId().equals(principal.getTenantId())) {
-                        log.warn("Tenant scope mismatch: principalTenant={}, requestTenant={}",
-                            principal.getTenantId(), req.tenantId());
-                        return Promise.of(HttpResponse.ofCode(403)
-                            .withJson("{\"error\":\"Forbidden: tenant scope mismatch\"}")
-                            .build());
-                    }
-
-                    // Build dashboard actions
-                    return dashboardActionService.buildDashboardActions(
-                        req.workspaceId(),
-                        principal,
-                        req.correlationId()
-                    )
-                    .map(actions -> {
-                        try {
-                            return ok200Json(objectMapper.writeValueAsString(actions));
-                        } catch (Exception e) {
-                            log.error("Error serializing dashboard actions", e);
-                            return error500("Internal server error");
-                        }
-                    });
-
+                    return getDashboardActions(request, req);
                 } catch (Exception e) {
                     log.error("Error processing dashboard actions request", e);
                     return Promise.of(badRequest400("Invalid request format"));
                 }
             })
             .whenException(e -> log.error("Dashboard actions request failed", e));
+    }
+
+    private Promise<HttpResponse> getDashboardActions(HttpRequest request, DashboardActionRequest req) {
+        if (req.workspaceId() == null || req.workspaceId().isBlank()) {
+            return Promise.of(badRequest400("workspaceId is required"));
+        }
+
+        Principal principal = request.getAttachment(Principal.class);
+        if (principal == null) {
+            return Promise.of(HttpResponse.ofCode(401)
+                .withJson("{\"error\":\"Unauthenticated\"}")
+                .build());
+        }
+
+        if (req.tenantId() != null && !req.tenantId().equals(principal.getTenantId())) {
+            log.warn("Tenant scope mismatch: principalTenant={}, requestTenant={}",
+                principal.getTenantId(), req.tenantId());
+            return Promise.of(HttpResponse.ofCode(403)
+                .withJson("{\"error\":\"Forbidden: tenant scope mismatch\"}")
+                .build());
+        }
+
+        return dashboardActionService.buildDashboardActions(
+            req.workspaceId(),
+            principal,
+            req.correlationId()
+        )
+        .map(actions -> {
+            try {
+                return ok200Json(objectMapper.writeValueAsString(actions));
+            } catch (Exception e) {
+                log.error("Error serializing dashboard actions", e);
+                return error500("Internal server error");
+            }
+        });
     }
 
     public Promise<HttpResponse> getProjectDashboardActions(HttpRequest request) {

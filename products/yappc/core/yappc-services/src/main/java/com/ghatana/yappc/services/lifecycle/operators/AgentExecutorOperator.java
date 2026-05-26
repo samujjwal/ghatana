@@ -6,15 +6,18 @@ package com.ghatana.yappc.services.lifecycle.operators;
 
 import com.ghatana.platform.domain.event.Event;
 import com.ghatana.platform.domain.event.GEvent;
+import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.platform.types.identity.OperatorId;
 import com.ghatana.platform.workflow.operator.AbstractOperator;
 import com.ghatana.platform.workflow.operator.OperatorResult;
 import com.ghatana.platform.workflow.operator.OperatorType;
+import com.ghatana.yappc.infrastructure.datacloud.repository.AgentStateRepository;
 import com.ghatana.yappc.agent.WorkflowStep;
 import com.ghatana.yappc.agent.WorkflowStepOperatorAdapter;
 import com.ghatana.yappc.agent.YappcAgentSystem;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +25,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -61,6 +65,8 @@ public class AgentExecutorOperator extends AbstractOperator {
 
     @NotNull
     private final YappcAgentSystem yappcAgentSystem;
+    @Nullable
+    private final AgentStateRepository agentStateRepository;
 
     /**
      * Creates an {@code AgentExecutorOperator} wired to a {@link YappcAgentSystem}.
@@ -68,6 +74,19 @@ public class AgentExecutorOperator extends AbstractOperator {
      * @param yappcAgentSystem fully initialised YAPPC agent system (required)
      */
     public AgentExecutorOperator(@NotNull YappcAgentSystem yappcAgentSystem) {
+        this(yappcAgentSystem, null);
+    }
+
+    /**
+     * Creates an {@code AgentExecutorOperator} wired to a {@link YappcAgentSystem}
+     * and durable agent execution state repository.
+     *
+     * @param yappcAgentSystem fully initialised YAPPC agent system (required)
+     * @param agentStateRepository optional durable state repository
+     */
+    public AgentExecutorOperator(
+            @NotNull YappcAgentSystem yappcAgentSystem,
+            @Nullable AgentStateRepository agentStateRepository) {
         super(
             OperatorId.of("yappc", "stream", "agent-executor", "1.0.0"),
             OperatorType.STREAM,
@@ -77,6 +96,7 @@ public class AgentExecutorOperator extends AbstractOperator {
             null
         );
         this.yappcAgentSystem = Objects.requireNonNull(yappcAgentSystem, "yappcAgentSystem");
+        this.agentStateRepository = agentStateRepository;
     }
 
     @Override
@@ -118,6 +138,23 @@ public class AgentExecutorOperator extends AbstractOperator {
 
         String resultCorrelationId = correlationId != null ? correlationId : UUID.randomUUID().toString();
         String effectiveTenant     = tenantId != null ? tenantId : "";
+
+        return createExecution(agentId, fromStage, toStage, effectiveTenant, resultCorrelationId)
+                .then(executionId -> markRunning(effectiveTenant, executionId)
+                        .then(() -> executeAgentCore(agentId, fromStage, toStage, effectiveTenant, resultCorrelationId)
+                                .then(
+                                        event -> markTerminal(effectiveTenant, executionId, event).map(ignored -> event),
+                                        ex -> markFailed(effectiveTenant, executionId, ex)
+                                                .map(ignored -> buildResultEvent(effectiveTenant, agentId, "error",
+                                                        fromStage, toStage, resultCorrelationId,
+                                                        Map.of("_error", ex.getMessage() != null
+                                                                ? ex.getMessage()
+                                                                : ex.getClass().getSimpleName()))))));
+    }
+
+    private Promise<Event> executeAgentCore(
+            String agentId, String fromStage, String toStage,
+            String effectiveTenant, String resultCorrelationId) {
 
         if (!yappcAgentSystem.isInitialized()) {
             log.error("[AgentExecutor] YappcAgentSystem is not yet initialized. "
@@ -194,6 +231,79 @@ public class AgentExecutorOperator extends AbstractOperator {
                     ex -> Promise.of(buildResultEvent(effectiveTenant, agentId, "error",
                             fromStage, toStage, resultCorrelationId,
                             Map.of("_error", ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName()))));
+    }
+
+    private Promise<Optional<UUID>> createExecution(
+            String agentId,
+            String fromStage,
+            String toStage,
+            String tenantId,
+            String correlationId) {
+        if (agentStateRepository == null) {
+            return Promise.of(Optional.empty());
+        }
+        Map<String, Object> input = Map.of(
+                "agentId", agentId,
+                "fromStage", Objects.toString(fromStage, ""),
+                "toStage", Objects.toString(toStage, ""),
+                "tenantId", tenantId,
+                "correlationId", correlationId);
+        return withTenant(tenantId, () -> agentStateRepository
+                .create(agentId, extractPhase(agentId), null, input.toString())
+                .map(Optional::of));
+    }
+
+    private Promise<Void> markRunning(String tenantId, Optional<UUID> executionId) {
+        if (agentStateRepository == null || executionId.isEmpty()) {
+            return Promise.complete();
+        }
+        return withTenant(tenantId, () -> agentStateRepository.markRunning(executionId.get()));
+    }
+
+    private Promise<Void> markTerminal(String tenantId, Optional<UUID> executionId, Event event) {
+        if (agentStateRepository == null || executionId.isEmpty()) {
+            return Promise.complete();
+        }
+        String status = payloadStr(event, "status");
+        if ("success".equals(status)) {
+            return withTenant(tenantId, () -> agentStateRepository.markSucceeded(
+                    executionId.get(),
+                    Map.of(
+                            "status", "success",
+                            "agentId", Objects.toString(event.getPayload("agentId"), ""),
+                            "correlationId", Objects.toString(event.getPayload("correlationId"), "")
+                    ).toString()));
+        }
+        return withTenant(tenantId, () -> agentStateRepository.markFailed(
+                executionId.get(),
+                Objects.toString(event.getPayload("_error"), "agent execution failed")));
+    }
+
+    private Promise<Void> markFailed(String tenantId, Optional<UUID> executionId, Throwable ex) {
+        if (agentStateRepository == null || executionId.isEmpty()) {
+            return Promise.complete();
+        }
+        String message = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
+        return withTenant(tenantId, () -> agentStateRepository.markFailed(executionId.get(), message));
+    }
+
+    private static <T> Promise<T> withTenant(String tenantId, java.util.function.Supplier<Promise<T>> supplier) {
+        String priorTenant = null;
+        try {
+            priorTenant = TenantContext.getCurrentTenantId();
+        } catch (RuntimeException ignored) {
+            // The dispatch event tenant is the canonical context for agent execution tracking.
+        }
+        TenantContext.setCurrentTenantId(tenantId);
+        try {
+            return supplier.get();
+        } finally {
+            if (priorTenant == null) {
+                TenantContext.clear();
+            } else {
+                TenantContext.setCurrentTenantId(priorTenant);
+            }
+        }
     }
 
     private static Event buildResultEvent(

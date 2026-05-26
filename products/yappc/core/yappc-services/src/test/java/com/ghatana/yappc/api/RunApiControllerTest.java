@@ -102,6 +102,46 @@ class RunApiControllerTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("retry delegates failed run id and run spec")
+    void retryDelegatesFailedRunScope() throws Exception {
+        HttpResponse response = runPromise(() -> controller.retry(post(
+            "/api/v1/yappc/run/retry",
+            Map.of(
+                "failedRunId", "failed-run-1",
+                "runSpec", Map.of("id", "retry-run-1", "environment", "staging")
+            )
+        )));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(runService.retryCallCount()).isEqualTo(1);
+        assertThat(runService.lastFailedRunId()).isEqualTo("failed-run-1");
+        assertThat(runService.lastRunSpec().id()).isEqualTo("retry-run-1");
+        assertThat(auditLogger.events()).hasSize(1);
+        assertThat(auditLogger.events().get(0))
+            .containsEntry("type", "run.retry.request")
+            .containsEntry("outcome", "succeeded")
+            .containsEntry("runId", "failed-run-1")
+            .containsEntry("environment", "staging");
+    }
+
+    @Test
+    @DisplayName("retry requires failed run id and run spec")
+    void retryRequiresFailedRunScope() throws Exception {
+        HttpResponse response = runPromise(() -> controller.retry(post(
+            "/api/v1/yappc/run/retry",
+            Map.of("failedRunId", "failed-run-1")
+        )));
+
+        assertThat(response.getCode()).isEqualTo(400);
+        assertThat(runService.retryCallCount()).isEqualTo(0);
+        assertThat(auditLogger.events()).hasSize(1);
+        assertThat(auditLogger.events().get(0))
+            .containsEntry("type", "run.retry.request")
+            .containsEntry("outcome", "rejected")
+            .containsEntry("runId", "failed-run-1");
+    }
+
+    @Test
     @DisplayName("run with observation uses default observation config when omitted")
     void runWithObservationUsesDefaultConfig() throws Exception {
         HttpResponse response = runPromise(() -> controller.executeRunWithObservation(post(
@@ -201,10 +241,13 @@ class RunApiControllerTest extends EventloopTestBase {
     private static final class InMemoryRunService implements RunService {
         private int rollbackCallCount;
         private int promoteCallCount;
+        private int retryCallCount;
         private int executeWithObservationCallCount;
         private String lastDeploymentId;
+        private String lastFailedRunId;
         private String lastTargetVersion;
         private String lastTargetEnvironment;
+        private RunSpec lastRunSpec;
         private ObservationConfig lastObservationConfig;
 
         int rollbackCallCount() {
@@ -215,12 +258,24 @@ class RunApiControllerTest extends EventloopTestBase {
             return promoteCallCount;
         }
 
+        int retryCallCount() {
+            return retryCallCount;
+        }
+
         int executeWithObservationCallCount() {
             return executeWithObservationCallCount;
         }
 
         String lastDeploymentId() {
             return lastDeploymentId;
+        }
+
+        String lastFailedRunId() {
+            return lastFailedRunId;
+        }
+
+        RunSpec lastRunSpec() {
+            return lastRunSpec;
         }
 
         String lastTargetVersion() {
@@ -244,6 +299,14 @@ class RunApiControllerTest extends EventloopTestBase {
         public Promise<RunResult> executeWithObservation(RunSpec spec, ObservationConfig config) {
             executeWithObservationCallCount++;
             lastObservationConfig = config;
+            return Promise.of(result(spec.id(), RunStatus.SUCCESS));
+        }
+
+        @Override
+        public Promise<RunResult> retry(String failedRunId, RunSpec spec) {
+            retryCallCount++;
+            lastFailedRunId = failedRunId;
+            lastRunSpec = spec;
             return Promise.of(result(spec.id(), RunStatus.SUCCESS));
         }
 

@@ -246,6 +246,42 @@ public class JpaAudioFileRepository implements AudioFileRepository {
     }
 
     @Override
+    public boolean updateStatus(String tenantId, UUID id, AudioFileEntity.ProcessingStatus status, String reason) {
+        Objects.requireNonNull(tenantId, "tenantId cannot be null");
+        Objects.requireNonNull(id, "id cannot be null");
+        Objects.requireNonNull(status, "status cannot be null");
+
+        var tx = entityManager.getTransaction();
+        boolean began = false;
+        try {
+            if (!tx.isActive()) {
+                tx.begin();
+                began = true;
+            }
+
+            AudioFileEntity entity = entityManager.find(AudioFileEntity.class, id);
+            if (entity != null && entity.getTenantId().equals(tenantId)) {
+                entity.setStatus(status);
+                entity.setUpdatedAt(Instant.now());
+                if (reason != null) {
+                    entity.setFailureReason(reason);
+                }
+                entityManager.merge(entity);
+                if (began) tx.commit();
+                LOG.debug("AudioFile status updated: tenantId={}, id={}, status={}", tenantId, id, status);
+                return true;
+            }
+
+            if (began) tx.commit();
+            return false;
+        } catch (Exception e) {
+            if (began && tx.isActive()) tx.rollback();
+            LOG.error("Failed to update AudioFile status: tenantId={}, id={}, status={}", tenantId, id, status, e);
+            throw new RuntimeException("Failed to update AudioFile status: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
     public List<AudioFileEntity> findAllByTenantIdIncludingDeleted(String tenantId) {
         Objects.requireNonNull(tenantId, "tenantId cannot be null");
 
@@ -259,5 +295,10 @@ public class JpaAudioFileRepository implements AudioFileRepository {
             LOG.error("Failed to find all AudioFiles including deleted: tenantId={}", tenantId, e);
             throw new RuntimeException("Failed to find all AudioFiles: " + e.getMessage(), e);
         }
+    }
+
+    @Override
+    public jakarta.persistence.EntityManager getEntityManager() {
+        return entityManager;
     }
 }

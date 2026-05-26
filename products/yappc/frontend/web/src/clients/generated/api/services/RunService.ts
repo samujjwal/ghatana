@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { PromoteRequest } from '../models/PromoteRequest';
+import type { RetryRunRequest } from '../models/RetryRunRequest';
 import type { RollbackRequest } from '../models/RollbackRequest';
 import type { RunRequest } from '../models/RunRequest';
 import type { RunWithObservationRequest } from '../models/RunWithObservationRequest';
@@ -67,6 +68,36 @@ export class RunService {
             mediaType: 'application/json',
             errors: {
                 400: `Bad request — invalid or missing parameters`,
+            },
+        });
+    }
+    /**
+     * Retry a failed run with a new run specification
+     * @param xTenantId
+     * @param xWorkspaceId
+     * @param xProjectId
+     * @param requestBody
+     * @returns any Retry result
+     * @throws ApiError
+     */
+    public static retryRun(
+        xTenantId: string,
+        xWorkspaceId: string,
+        xProjectId: string,
+        requestBody: RetryRunRequest,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/yappc/run/retry',
+            headers: {
+                'X-Tenant-ID': xTenantId,
+                'X-Workspace-ID': xWorkspaceId,
+                'X-Project-ID': xProjectId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Bad request â€” invalid or missing parameters`,
             },
         });
     }

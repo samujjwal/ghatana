@@ -416,6 +416,7 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                 // ── Run phase (Phase 4) ───────────────────────────────────
                 .with(POST, "/api/v1/yappc/run/execute",            runController::executeRun)
                 .with(POST, "/api/v1/yappc/run/execute-with-observation", runController::executeRunWithObservation)
+                .with(POST, "/api/v1/yappc/run/retry",               runController::retry)
                 .with(POST, "/api/v1/yappc/run/rollback",            runController::rollback)
                 .with(POST, "/api/v1/yappc/run/promote",             runController::promote)
 

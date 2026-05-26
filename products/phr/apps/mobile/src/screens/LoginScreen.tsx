@@ -1,6 +1,7 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { MobileSession } from '../types';
+import { t } from '../i18n/phrMobileI18n';
 
 interface LoginScreenProps {
   onSuccess: (session: MobileSession) => void;
@@ -16,11 +17,11 @@ export function LoginScreen({ onSuccess, onLoginError, loginFn }: LoginScreenPro
 
   const handleSubmit = React.useCallback(async (): Promise<void> => {
     if (!nationalId.trim()) {
-      setError('National ID is required.');
+      setError(t('login.nationalIdRequired'));
       return;
     }
     if (!password) {
-      setError('Password is required.');
+      setError(t('login.passwordRequired'));
       return;
     }
     setError(null);
@@ -29,7 +30,7 @@ export function LoginScreen({ onSuccess, onLoginError, loginFn }: LoginScreenPro
       const session = await loginFn(nationalId.trim(), password);
       onSuccess(session);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Login failed. Please try again.';
+      const message = err instanceof Error ? err.message : t('login.failed');
       setError(message);
       onLoginError(message);
     } finally {
@@ -39,11 +40,11 @@ export function LoginScreen({ onSuccess, onLoginError, loginFn }: LoginScreenPro
 
   return (
     <View style={styles.container}>
-      <Text style={styles.eyebrow}>PHR Nepal</Text>
-      <Text style={styles.title}>Secure mobile record access</Text>
+      <Text style={styles.eyebrow}>{t('login.title')}</Text>
+      <Text style={styles.title}>{t('login.subtitle')}</Text>
       <TextInput
-        accessibilityLabel="National ID"
-        placeholder="National ID or MRN"
+        accessibilityLabel={t('login.nationalIdLabel')}
+        placeholder={t('login.nationalIdPlaceholder')}
         autoCapitalize="none"
         autoCorrect={false}
         keyboardType="default"
@@ -53,8 +54,8 @@ export function LoginScreen({ onSuccess, onLoginError, loginFn }: LoginScreenPro
         editable={!loading}
       />
       <TextInput
-        accessibilityLabel="Password"
-        placeholder="Password"
+        accessibilityLabel={t('login.passwordLabel')}
+        placeholder={t('login.passwordPlaceholder')}
         secureTextEntry
         style={styles.input}
         value={password}
@@ -72,7 +73,7 @@ export function LoginScreen({ onSuccess, onLoginError, loginFn }: LoginScreenPro
       >
         {loading
           ? <ActivityIndicator color="#fff" />
-          : <Text style={styles.buttonText}>Sign in</Text>
+          : <Text style={styles.buttonText}>{t('login.signIn')}</Text>
         }
       </Pressable>
     </View>

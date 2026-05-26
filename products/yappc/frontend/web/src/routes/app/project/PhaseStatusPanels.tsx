@@ -9,10 +9,13 @@ import type {
   PhaseActivityEvent,
   PhaseTransitionPreviewSnapshot,
 } from '../../../services/phase';
+import type { AgentGovernanceHealth, PreviewHealth } from '../../../types/phasePacket';
 
 interface PhaseStatusPanelsProps {
   phase: MountedPhase;
   preview: PhaseTransitionPreviewSnapshot | null;
+  previewHealth?: PreviewHealth;
+  agentGovernance?: AgentGovernanceHealth;
   blockers: Blocker[];
   activity: PhaseActivityEvent[];
 }
@@ -189,7 +192,114 @@ function StatusPanel({ testId, title, content }: { testId: string; title: string
   );
 }
 
-export function PhaseStatusPanels({ phase, preview, blockers, activity }: PhaseStatusPanelsProps): React.ReactNode {
+function PreviewSecurityPanel({ previewHealth }: { readonly previewHealth?: PreviewHealth }) {
+  const security = previewHealth?.security;
+  if (!security) {
+    return null;
+  }
+
+  const missingScopes = security.tokenScopes.filter((scope) => scope.required && !scope.granted);
+  return (
+    <Card
+      variant="outlined"
+      data-testid="preview-security-status"
+      className={security.safe ? 'border-success-border bg-success-bg/20' : 'border-destructive-border bg-destructive-bg/30'}
+    >
+      <CardContent className="p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Preview security</p>
+            <p className="mt-2 text-sm text-fg">
+              Trust: <span data-testid="preview-security-trust">{security.trustLevel}</span>
+            </p>
+          </div>
+          <Badge variant={security.safe ? 'success' : 'destructive'} data-testid="preview-security-safe">
+            {security.safe ? 'Safe' : 'Unsafe'}
+          </Badge>
+        </div>
+        {security.expiresAt ? (
+          <p className="mt-2 text-xs text-fg-muted" data-testid="preview-security-expiration">
+            Token expires: <time dateTime={security.expiresAt}>{new Date(security.expiresAt).toLocaleString()}</time>
+          </p>
+        ) : null}
+        {missingScopes.length > 0 ? (
+          <p className="mt-2 text-sm text-destructive" data-testid="preview-security-missing-scopes">
+            Missing required scopes: {missingScopes.map((scope) => scope.name).join(', ')}
+          </p>
+        ) : null}
+        {security.issues.length > 0 ? (
+          <div className="mt-3 space-y-1">
+            {security.issues.map((issue) => (
+              <p key={issue} className="text-sm text-destructive" data-testid="preview-security-issue">
+                {issue}
+              </p>
+            ))}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function AgentGovernancePanel({ agentGovernance }: { readonly agentGovernance?: AgentGovernanceHealth }) {
+  if (!agentGovernance) {
+    return null;
+  }
+
+  return (
+    <Card
+      variant="outlined"
+      data-testid="agent-governance-health"
+      className={agentGovernance.isHealthy ? 'border-success-border bg-success-bg/20' : 'border-warning-border bg-warning-bg/20'}
+    >
+      <CardContent className="p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Agent governance</p>
+            <p className="mt-2 text-sm text-fg">
+              State: <span data-testid="agent-governance-state">{agentGovernance.governanceState}</span>
+            </p>
+            <p className="mt-1 text-sm text-fg-muted" data-testid="agent-learning-level">
+              Learning: {agentGovernance.learningLevel}
+            </p>
+          </div>
+          <Badge variant={agentGovernance.isHealthy ? 'success' : 'destructive'} data-testid="agent-governance-status">
+            {agentGovernance.status}
+          </Badge>
+        </div>
+        {agentGovernance.evidenceIds.length > 0 ? (
+          <div className="mt-3 space-y-1" data-testid="agent-learning-evidence">
+            {agentGovernance.evidenceIds.map((evidenceId) => (
+              <p key={evidenceId} className="text-xs text-fg-muted">
+                Evidence: {evidenceId}
+              </p>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-fg-muted">No agent learning evidence has been linked yet.</p>
+        )}
+        {agentGovernance.issues.length > 0 ? (
+          <div className="mt-3 space-y-1">
+            {agentGovernance.issues.map((issue) => (
+              <p key={issue} className="text-sm text-warning-color" data-testid="agent-governance-issue">
+                {issue}
+              </p>
+            ))}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+export function PhaseStatusPanels({
+  phase,
+  preview,
+  previewHealth,
+  agentGovernance,
+  blockers,
+  activity,
+}: PhaseStatusPanelsProps): React.ReactNode {
   if (phase === 'intent') {
     const readinessValue = preview?.readiness;
 
@@ -391,34 +501,37 @@ export function PhaseStatusPanels({ phase, preview, blockers, activity }: PhaseS
     const requiredCapabilities = preview?.requiredArtifacts ?? [];
 
     return (
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card variant="outlined" data-testid="capability-gates">
-          <CardContent className="p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Capability gates</p>
-            {requiredCapabilities.length > 0 ? (
-              <div className="mt-3 space-y-2">
-                {requiredCapabilities.map((item) => (
-                  <div key={item} data-testid="required-capability" className="text-sm text-fg">
-                    {item}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-3 text-sm text-fg-muted" data-testid="required-capability-empty">
-                No additional capability gates are currently reported for this run transition.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-        <StatusPanel
-          testId="run-plan-panel"
-          title="Run plan"
-          content={
-            <span data-testid="pipeline-readiness">
-              {preview?.canAdvance ? 'Ready with operator review' : 'Not ready until blockers are cleared'}
-            </span>
-          }
-        />
+      <div className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card variant="outlined" data-testid="capability-gates">
+            <CardContent className="p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Capability gates</p>
+              {requiredCapabilities.length > 0 ? (
+                <div className="mt-3 space-y-2">
+                  {requiredCapabilities.map((item) => (
+                    <div key={item} data-testid="required-capability" className="text-sm text-fg">
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-fg-muted" data-testid="required-capability-empty">
+                  No additional capability gates are currently reported for this run transition.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+          <StatusPanel
+            testId="run-plan-panel"
+            title="Run plan"
+            content={
+              <span data-testid="pipeline-readiness">
+                {preview?.canAdvance ? 'Ready with operator review' : 'Not ready until blockers are cleared'}
+              </span>
+            }
+          />
+        </div>
+        <PreviewSecurityPanel previewHealth={previewHealth} />
       </div>
     );
   }
@@ -548,6 +661,8 @@ export function PhaseStatusPanels({ phase, preview, blockers, activity }: PhaseS
             </div>
           </CardContent>
         </Card>
+        <PreviewSecurityPanel previewHealth={previewHealth} />
+        <AgentGovernancePanel agentGovernance={agentGovernance} />
         {recentEvents.length > 0 && (
           <Card variant="outlined" data-testid="observe-signal-timeline">
             <CardContent className="p-4">
@@ -593,6 +708,7 @@ export function PhaseStatusPanels({ phase, preview, blockers, activity }: PhaseS
           title="Reusable patterns"
           content="Promote stable learnings into repeatable delivery patterns once they have enough backing evidence."
         />
+        <AgentGovernancePanel agentGovernance={agentGovernance} />
       </div>
     );
   }

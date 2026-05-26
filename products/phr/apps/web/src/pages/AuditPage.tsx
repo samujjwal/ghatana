@@ -125,7 +125,7 @@ export function AuditPage(): React.ReactElement {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {Object.entries(event.details).map(([key, value]) => (
+                    {Object.entries(event.details ?? {}).map(([key, value]) => (
                       <div key={key}>
                         {key}: {value}
                       </div>

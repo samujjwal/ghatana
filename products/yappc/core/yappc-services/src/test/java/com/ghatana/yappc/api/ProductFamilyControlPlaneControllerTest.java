@@ -240,10 +240,31 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
         Map<String, Object> history = historyCaptor.getValue();
         assertThat(history)
                 .containsEntry("asset_id", "phr-consent-module")
+                .containsEntry("previous_state", "candidate")
                 .containsEntry("promotion_state", "hardened")
+                .containsEntry("rollback_target_state", "candidate")
+                .containsEntry("reversible", true)
                 .containsEntry("actor_id", "asset-admin")
                 .containsEntry("correlation_id", "corr-asset-1")
                 .containsEntry("version", 3);
+    }
+
+    @Test
+    @DisplayName("asset promotion rejects viewer role without mutating Data Cloud")
+    void promoteAssetRejectsViewerRole() throws Exception {
+        HttpRequest request = postPromotionAs(
+                "phr-consent-module",
+                Map.of("targetState", "hardened", "reason", "viewer cannot promote"),
+                "asset-viewer",
+                List.of("viewer"));
+
+        HttpResponse response = runPromise(() -> controller().promoteAsset(request));
+
+        assertThat(response.getCode()).isEqualTo(403);
+        String body = response.getBody().asString(StandardCharsets.UTF_8);
+        assertThat(body).contains("product-family asset promotion requires project write authorization");
+        verify(dataCloudClient, never()).findById(anyString(), anyString(), anyString());
+        verify(dataCloudClient, never()).save(eq(TENANT_ID), anyString(), org.mockito.ArgumentMatchers.<Map<String, Object>>any());
     }
 
     @Test
@@ -446,11 +467,15 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
     }
 
     private HttpRequest postPromotion(String assetId, Object body) throws Exception {
+        return postPromotionAs(assetId, body, "asset-admin", List.of("admin"));
+    }
+
+    private HttpRequest postPromotionAs(String assetId, Object body, String actorId, List<String> roles) throws Exception {
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/product-family/assets/" + assetId + "/promotions")
                 .withHeader(HttpHeaders.of("X-Correlation-ID"), "corr-asset-1")
                 .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(body)))
                 .build();
-        request.attach(Principal.class, new Principal("asset-admin", List.of("admin"), TENANT_ID));
+        request.attach(Principal.class, new Principal(actorId, roles, TENANT_ID));
         putPathParameter(request, "assetId", assetId);
         return request;
     }

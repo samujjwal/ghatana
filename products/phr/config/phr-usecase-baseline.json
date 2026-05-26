@@ -1,0 +1,183 @@
+{
+  "$schema": "../../config/domain-invariants.schema.json",
+  "product": "phr",
+  "version": "1.0.0",
+  "lastUpdated": "2026-05-02",
+  "description": "Canonical PHR use-case baseline: maps personas, IA routes/screens, backend APIs, and implementation status.",
+  "usecases": [
+    {
+      "id": "uc-patient-dashboard",
+      "persona": "patient",
+      "screen": "Dashboard",
+      "iaRoute": "/dashboard",
+      "webRoute": "/dashboard",
+      "mobileScreen": "dashboard",
+      "backendApis": [
+        "GET /fhir/Patient/current",
+        "GET /fhir/Observation",
+        "GET /fhir/MedicationRequest",
+        "GET /fhir/Consent",
+        "GET /fhir/Appointment"
+      ],
+      "offlineSupport": true,
+      "status": "implemented",
+      "notes": "Web and mobile both serve dashboard data. Mobile uses encrypted offline cache."
+    },
+    {
+      "id": "uc-patient-records",
+      "persona": "patient",
+      "screen": "RecordsPage",
+      "iaRoute": "/records",
+      "webRoute": "/records",
+      "mobileScreen": "records",
+      "backendApis": [
+        "GET /patients/:patientId",
+        "GET /patients/:patientId/history",
+        "GET /clinical/labs?patientId=:id",
+        "GET /clinical/medications?patientId=:id",
+        "GET /clinical/immunizations?patientId=:id"
+      ],
+      "offlineSupport": false,
+      "status": "implemented"
+    },
+    {
+      "id": "uc-patient-consent-management",
+      "persona": "patient",
+      "screen": "ConsentPage",
+      "iaRoute": "/consents",
+      "webRoute": "/consents",
+      "mobileScreen": "consents",
+      "backendApis": [
+        "GET /consents?patientId=:id",
+        "POST /consents/grants",
+        "POST /consents/grants/:grantId/revoke",
+        "GET /consents/check"
+      ],
+      "offlineSupport": false,
+      "status": "implemented",
+      "notes": "Payload uses recipientId + scope.resourceTypes (aligned with backend)"
+    },
+    {
+      "id": "uc-patient-alerts",
+      "persona": "patient",
+      "screen": "AlertsPage",
+      "iaRoute": "/alerts",
+      "webRoute": "/alerts",
+      "mobileScreen": "alerts",
+      "backendApis": [
+        "GET /notifications?principalId=:id"
+      ],
+      "offlineSupport": false,
+      "status": "implemented"
+    },
+    {
+      "id": "uc-patient-emergency-access",
+      "persona": "patient",
+      "screen": "EmergencyAccessPage / EmergencyAccessScreen",
+      "iaRoute": "/emergency",
+      "webRoute": "/emergency",
+      "mobileScreen": "emergency",
+      "backendApis": [
+        "POST /emergency/access"
+      ],
+      "offlineSupport": false,
+      "status": "implemented",
+      "notes": "Mobile requires documented reason + biometric gate before PHI is shown"
+    },
+    {
+      "id": "uc-patient-settings",
+      "persona": "patient",
+      "screen": "SettingsPage / SettingsScreen",
+      "iaRoute": "/settings",
+      "webRoute": "/settings",
+      "mobileScreen": "settings",
+      "backendApis": [
+        "POST /auth/logout",
+        "PUT /profile",
+        "POST /fhir/Patient/current/$export"
+      ],
+      "offlineSupport": false,
+      "status": "implemented"
+    },
+    {
+      "id": "uc-provider-dashboard",
+      "persona": "provider",
+      "screen": "ProviderDashboardPage",
+      "iaRoute": "/provider/dashboard",
+      "webRoute": "/provider",
+      "mobileScreen": null,
+      "backendApis": [
+        "GET /provider/patients"
+      ],
+      "offlineSupport": false,
+      "status": "implemented"
+    },
+    {
+      "id": "uc-admin-emergency-review",
+      "persona": "admin",
+      "screen": "EmergencyReviewPage",
+      "iaRoute": "/admin/emergency",
+      "webRoute": "/admin/emergency",
+      "mobileScreen": null,
+      "backendApis": [
+        "GET /emergency/reviews/pending",
+        "POST /emergency/reviews/:eventId"
+      ],
+      "offlineSupport": false,
+      "status": "implemented"
+    },
+    {
+      "id": "uc-admin-release-readiness",
+      "persona": "admin",
+      "screen": "ReleaseCockpitPage",
+      "iaRoute": "/admin/release",
+      "webRoute": "/admin/release",
+      "mobileScreen": null,
+      "backendApis": [
+        "GET /release-readiness"
+      ],
+      "offlineSupport": false,
+      "status": "implemented"
+    },
+    {
+      "id": "uc-caregiver-access",
+      "persona": "caregiver",
+      "screen": "CaregiverDashboardPage",
+      "iaRoute": "/caregiver",
+      "webRoute": "/caregiver",
+      "mobileScreen": null,
+      "backendApis": [
+        "GET /caregiver/dependents"
+      ],
+      "offlineSupport": false,
+      "status": "implemented"
+    },
+    {
+      "id": "uc-fchv-dashboard",
+      "persona": "fchv",
+      "screen": "FchvDashboardPage",
+      "iaRoute": "/fchv",
+      "webRoute": "/fchv",
+      "mobileScreen": null,
+      "backendApis": [
+        "GET /fchv/dashboard"
+      ],
+      "offlineSupport": false,
+      "status": "implemented"
+    },
+    {
+      "id": "uc-mobile-dashboard",
+      "persona": "patient",
+      "screen": "MobileDashboard",
+      "iaRoute": "/mobile/dashboard",
+      "webRoute": null,
+      "mobileScreen": "dashboard",
+      "backendApis": [
+        "GET /mobile/dashboard"
+      ],
+      "offlineSupport": true,
+      "status": "implemented",
+      "notes": "Dedicated mobile endpoint with session-header auth (X-Tenant-Id, X-Principal-Id, X-Role)"
+    }
+  ]
+}

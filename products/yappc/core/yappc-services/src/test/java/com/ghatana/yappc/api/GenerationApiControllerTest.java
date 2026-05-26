@@ -84,6 +84,59 @@ class GenerationApiControllerTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("generate ProductUnitIntent returns validated Kernel handoff payload")
+    void generateProductUnitIntentReturnsValidatedKernelPayload() throws Exception {
+        Map<String, Object> handoffRequest = Map.of(
+                "tenantId", "tenant-1",
+                "workspaceId", "workspace-1",
+                "projectId", "project-1",
+                "projectName", "Project One",
+                "surfaces", List.of("web", "backend-api"),
+                "runtimeProvider", "ghatana-file-registry",
+                "lifecycleProfile", "standard-web-api-product",
+                "correlationId", "corr-1");
+
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/generate/product-unit-intent")
+                .withBody(ByteBuf.wrapForReading(JsonMapper.toJson(handoffRequest).getBytes(StandardCharsets.UTF_8)))
+                .build();
+        request.attach(Principal.class, new Principal("user-1", List.of("builder"), "tenant-1"));
+
+        HttpResponse response = runPromise(() -> controller.generateProductUnitIntent(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        String json = response.getBody().asString(StandardCharsets.UTF_8);
+        assertThat(json).contains("\"valid\" : true");
+        assertThat(json).contains("\"intentType\" : \"create\"");
+        assertThat(json).contains("\"projectId\" : \"project-1\"");
+        assertThat(json).contains("\"registryProvider\" : \"ghatana-file-registry\"");
+        assertThat(auditLogger.events()).extracting(event -> event.get("type"))
+                .contains("generation.product-unit-intent.request");
+    }
+
+    @Test
+    @DisplayName("generate ProductUnitIntent rejects invalid Kernel contract values")
+    void generateProductUnitIntentRejectsInvalidKernelPayload() throws Exception {
+        Map<String, Object> handoffRequest = Map.of(
+                "tenantId", "tenant-1",
+                "workspaceId", "workspace-1",
+                "projectId", "project-1",
+                "projectName", "Project One",
+                "surfaces", List.of("not-a-surface"));
+
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/generate/product-unit-intent")
+                .withBody(ByteBuf.wrapForReading(JsonMapper.toJson(handoffRequest).getBytes(StandardCharsets.UTF_8)))
+                .build();
+        request.attach(Principal.class, new Principal("user-1", List.of("builder"), "tenant-1"));
+
+        HttpResponse response = runPromise(() -> controller.generateProductUnitIntent(request));
+
+        assertThat(response.getCode()).isEqualTo(400);
+        assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("Unknown ProductUnit surface");
+        assertThat(auditLogger.events()).extracting(event -> event.get("outcome"))
+                .contains("rejected");
+    }
+
+    @Test
     @DisplayName("regenerate with diff requires validatedSpec and existingArtifacts envelope")
     void regenerateWithDiffUsesExplicitEnvelope() throws Exception {
         ValidatedSpec validSpec = ValidatedSpec.of(

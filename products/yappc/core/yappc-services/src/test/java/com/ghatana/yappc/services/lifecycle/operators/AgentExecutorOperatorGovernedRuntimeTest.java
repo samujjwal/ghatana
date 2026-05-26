@@ -2,7 +2,11 @@ package com.ghatana.yappc.services.lifecycle.operators;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.ghatana.agent.framework.api.AgentContext;
@@ -14,6 +18,7 @@ import com.ghatana.platform.domain.event.Event;
 import com.ghatana.platform.domain.event.GEvent;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.platform.workflow.operator.OperatorResult;
+import com.ghatana.yappc.infrastructure.datacloud.repository.AgentStateRepository;
 import com.ghatana.yappc.agent.StepContext;
 import com.ghatana.yappc.agent.StepContract;
 import com.ghatana.yappc.agent.StepRequest;
@@ -26,6 +31,7 @@ import io.activej.promise.Promise;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
@@ -37,6 +43,70 @@ class AgentExecutorOperatorGovernedRuntimeTest extends EventloopTestBase {
     private static final String TENANT_ID = "tenant-1";
     private static final String RUN_ID = "run-001";
     private static final String STEP_NAME = "architecture.intake";
+
+    @Test
+    @DisplayName("persists agent execution state transitions through AgentStateRepository")
+    void persistsAgentExecutionStateTransitions() {
+        AgentRegistry platformRegistry = mock(AgentRegistry.class);
+        when(platformRegistry.register(any(), any())).thenReturn(Promise.complete());
+        YappcAgentRegistryAdapter registry = new YappcAgentRegistryAdapter(platformRegistry);
+        CapturingAgent agent = new CapturingAgent(MemoryStore.noOp());
+        runPromise(() -> registry.register(agent));
+
+        YappcAgentSystem agentSystem = YappcAgentSystem.builder()
+                .eventloop(eventloop())
+                .memoryStore(MemoryStore.noOp())
+                .aiRuntimeMode(YappcAgentSystem.AiRuntimeMode.STUB)
+                .aepEventPublisher((eventType, tenantId, payload) -> Promise.complete())
+                .sdlcRegistry(registry)
+                .build();
+        runPromise(agentSystem::initialize);
+
+        UUID executionId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        AgentStateRepository stateRepository = mock(AgentStateRepository.class);
+        when(stateRepository.create(eq(STEP_NAME), eq("architecture"), isNull(), any()))
+                .thenReturn(Promise.of(executionId));
+        when(stateRepository.markRunning(executionId)).thenReturn(Promise.complete());
+        when(stateRepository.markSucceeded(eq(executionId), any())).thenReturn(Promise.complete());
+
+        AgentExecutorOperator operator = new AgentExecutorOperator(agentSystem, stateRepository);
+
+        OperatorResult result = runPromise(() -> operator.process(dispatchEvent(STEP_NAME)));
+
+        assertThat(result.isSuccess()).isTrue();
+        var inOrder = inOrder(stateRepository);
+        inOrder.verify(stateRepository).create(eq(STEP_NAME), eq("architecture"), isNull(), any());
+        inOrder.verify(stateRepository).markRunning(executionId);
+        inOrder.verify(stateRepository).markSucceeded(eq(executionId), any());
+    }
+
+    @Test
+    @DisplayName("marks agent execution failed when runtime emits error result")
+    void marksAgentExecutionFailedWhenRuntimeEmitsError() {
+        YappcAgentSystem agentSystem = YappcAgentSystem.builder()
+                .eventloop(eventloop())
+                .memoryStore(MemoryStore.noOp())
+                .aiRuntimeMode(YappcAgentSystem.AiRuntimeMode.STUB)
+                .aepEventPublisher((eventType, tenantId, payload) -> Promise.complete())
+                .sdlcRegistry(new YappcAgentRegistryAdapter(mock(AgentRegistry.class)))
+                .build();
+
+        UUID executionId = UUID.fromString("22222222-2222-2222-2222-222222222222");
+        AgentStateRepository stateRepository = mock(AgentStateRepository.class);
+        when(stateRepository.create(eq(STEP_NAME), eq("architecture"), isNull(), any()))
+                .thenReturn(Promise.of(executionId));
+        when(stateRepository.markRunning(executionId)).thenReturn(Promise.complete());
+        when(stateRepository.markFailed(eq(executionId), any())).thenReturn(Promise.complete());
+
+        AgentExecutorOperator operator = new AgentExecutorOperator(agentSystem, stateRepository);
+
+        OperatorResult result = runPromise(() -> operator.process(dispatchEvent(STEP_NAME)));
+
+        assertThat(result.isSuccess()).isTrue();
+        Event output = result.getOutputEvents().get(0);
+        assertThat(output.getPayload("status")).isEqualTo("error");
+        verify(stateRepository).markFailed(eq(executionId), eq("agent_system_not_initialized"));
+    }
 
     @Test
     @DisplayName("dispatches registered YAPPC agent through governed WorkflowStepOperatorAdapter")

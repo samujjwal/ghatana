@@ -648,6 +648,58 @@ class AgentEventOperatorCapabilityAdapterTest extends EventloopTestBase {
             .containsEntry("success", 1L);
     }
 
+    @Test
+    @DisplayName("PENDING_APPROVAL status maps to non-success result with approval evidence")
+    void pendingApprovalMapsToNonSuccessResult() {
+        TestAgent pendingAgent = new TestAgent("pending-approval-agent", 0.5, Map.of()) {
+            @Override
+            public @NotNull Promise<AgentResult<Map<String, Object>>> process(
+                    @NotNull AgentContext ctx,
+                    @NotNull Map<String, Object> input) {
+                return Promise.of(AgentResult.<Map<String, Object>>builder()
+                    .output(Map.of("agentId", descriptor.getAgentId(), "pendingAction", "create-incident"))
+                    .confidence(0.5)
+                    .status(com.ghatana.agent.AgentResultStatus.PENDING_APPROVAL)
+                    .agentId(descriptor.getAgentId())
+                    .explanation("Action requires human approval before execution")
+                    .processingTime(Duration.ofMillis(10))
+                    .metrics(Map.of("requiresApproval", true))
+                    .build());
+            }
+        };
+
+        AgentEventOperatorCapabilityAdapter adapter = adapter(
+            pendingAgent,
+            "schema://agent/input",
+            policy("model"),
+            memoryStore());
+
+        EventOperatorResult<Map<String, Object>> result = runPromise(() -> adapter.process(
+            eventContext(Map.of("request", "approval-required")),
+            runtimeContext()));
+
+        // TEST-P1-006: Verify pending approval is not reported as success
+        assertThat(result.success()).isFalse();
+        assertThat(result.errors()).isNotEmpty();
+        assertThat(result.errors().get(0)).contains("requires approval");
+
+        // Verify evidence includes approval status
+        assertThat(result.evidence())
+            .containsEntry("approvalStatus", "PENDING_APPROVAL")
+            .containsEntry("agentRef", "agents/pending-approval-agent@1.0.0")
+            .containsEntry("tenantId", "tenant-a")
+            .containsEntry("traceId", "trace-1")
+            .containsEntry("correlationId", "corr-1");
+
+        // Verify metrics track pending approval separately from success
+        assertThat(adapter.getMetrics())
+            .containsEntry("invocations", 1L)
+            .containsEntry("success", 0L)
+            .containsEntry("pendingApproval", 1L)
+            .containsEntry("denied", 1L) // pending approval counts as denied for metrics
+            .containsEntry("lastOutcome", "pending_approval");
+    }
+
     private static AgentEventOperatorCapabilityAdapter adapter(
             TestAgent agent,
             String inputSchema,

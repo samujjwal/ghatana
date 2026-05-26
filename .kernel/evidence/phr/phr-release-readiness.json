@@ -1,0 +1,57 @@
+{
+  "validationStatus": "passed",
+  "targetCommitSha": "test-evidence-commit-001",
+  "expiresAt": "2027-12-31T00:00:00Z",
+  "generatedAt": "2025-06-01T00:00:00Z",
+  "checkedAt": "2025-06-01T00:00:00Z",
+  "releaseReadiness": {
+    "status": "ready",
+    "gates": []
+  },
+  "evidenceRun": {
+    "commit": "test-evidence-commit-001",
+    "runId": "ci-test-run-001",
+    "triggeredAt": "2025-06-01T00:00:00Z"
+  },
+  "evidenceCategories": {
+    "fhir": {
+      "status": "passed",
+      "compliance": {
+        "fhirVersion": "R4",
+        "resourcesSupported": [
+          "Patient",
+          "Observation",
+          "MedicationRequest",
+          "Immunization",
+          "DocumentReference",
+          "DiagnosticReport",
+          "ImagingStudy",
+          "ServiceRequest"
+        ],
+        "validationPassed": true
+      }
+    },
+    "cache": {
+      "status": "passed",
+      "description": "Consent cache warm-up and invalidation proof",
+      "testedAt": "2025-06-01T00:00:00Z"
+    },
+    "rollback": {
+      "status": "passed",
+      "description": "Rollback smoke test passed",
+      "testedAt": "2025-06-01T00:00:00Z"
+    },
+    "deployment": {
+      "status": "passed",
+      "environments": {
+        "staging": {
+          "status": "passed",
+          "deployedAt": "2025-06-01T00:00:00Z"
+        },
+        "production": {
+          "status": "pending"
+        }
+      }
+    }
+  }
+}

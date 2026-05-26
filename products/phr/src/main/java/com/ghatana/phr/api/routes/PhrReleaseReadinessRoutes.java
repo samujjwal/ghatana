@@ -70,7 +70,7 @@ public final class PhrReleaseReadinessRoutes {
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
-        if (!PhrRouteSupport.isPrivileged(context)) {
+        if (!PhrRouteSupport.canPerformAdminOperation(context)) {
             return PhrRouteSupport.errorResponse(403, "PHR_RELEASE_READINESS_FORBIDDEN",
                 "Release readiness evidence requires an admin principal");
         }

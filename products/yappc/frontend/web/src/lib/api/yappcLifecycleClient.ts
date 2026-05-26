@@ -299,7 +299,20 @@ export interface RunPromoteRequest {
   readonly targetEnvironment: string;
 }
 
+export interface RetryRunRequest {
+  readonly failedRunId: string;
+  readonly runSpec: {
+    readonly id: string;
+    readonly artifactsRef?: string;
+    readonly environment?: string;
+    readonly tasks?: ReadonlyArray<Record<string, unknown>>;
+    readonly config?: Record<string, string>;
+  };
+}
+
 export const run = {
+  retry: (body: RetryRunRequest) =>
+    postPossiblyEmpty<RetryRunRequest, RunOperationResponse>('/api/v1/yappc/run/retry', body, 'run.retry'),
   rollback: (body: RunRollbackRequest) =>
     postPossiblyEmpty<RunRollbackRequest, RunOperationResponse>('/api/v1/yappc/run/rollback', body, 'run.rollback'),
   promote: (body: RunPromoteRequest) =>

@@ -109,9 +109,32 @@ public class IntentApiController {
      */
     public Promise<HttpResponse> getIntent(HttpRequest request) {
         String intentId = request.getPathParameter("id");
+        String tenantId = request.getQueryParameter("tenantId");
+        String workspaceId = request.getQueryParameter("workspaceId");
+        String projectId = request.getQueryParameter("projectId");
 
         log.info("Retrieving intent: {}", intentId);
 
+        if (hasText(tenantId) && hasText(workspaceId) && hasText(projectId)) {
+            return intentService.findLatest(tenantId, workspaceId, projectId, intentId)
+                    .then(recordOpt -> {
+                        if (recordOpt.isPresent()) {
+                            try {
+                                return Promise.of(ok200Json(JsonMapper.toJson(recordOpt.get().spec())));
+                            } catch (JsonProcessingException e) {
+                                log.error("Error serializing persisted intent", e);
+                                return Promise.of(error500("Internal server error"));
+                            }
+                        }
+                        return getLegacyArtifactIntent(intentId);
+                    })
+                    .whenException(e -> log.error("Error retrieving persisted intent: {}", intentId, e));
+        }
+
+        return getLegacyArtifactIntent(intentId);
+    }
+
+    private Promise<HttpResponse> getLegacyArtifactIntent(String intentId) {
         // Extract productId and version from intentId (format: productId:version)
         String[] parts = intentId.split(":");
         if (parts.length != 2) {
@@ -132,5 +155,9 @@ public class IntentApiController {
                     }
                 })
                 .whenException(e -> log.error("Error retrieving intent: {}", intentId, e));
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 }

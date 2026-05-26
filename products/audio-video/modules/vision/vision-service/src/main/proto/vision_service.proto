@@ -165,6 +165,7 @@ message StatusResponse {
   string model_name = 2;
   int64 total_requests = 3;
   double avg_processing_time_ms = 4;
+  string degraded_reason = 5;
 }
 
 message HealthCheckRequest {}

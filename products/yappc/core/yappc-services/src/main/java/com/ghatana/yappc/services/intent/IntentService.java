@@ -5,6 +5,9 @@ import com.ghatana.yappc.domain.intent.IntentInput;
 import com.ghatana.yappc.domain.intent.IntentSpec;
 import io.activej.promise.Promise;
 
+import java.util.List;
+import java.util.Optional;
+
 /**
  * @doc.type interface
  * @doc.purpose Captures product intent with AI-assisted parsing
@@ -27,6 +30,40 @@ public interface IntentService {
      * @return Promise of analysis result
      */
     Promise<IntentAnalysis> analyze(IntentSpec spec);
+
+    /**
+     * Finds the latest persisted version of an intent.
+     *
+     * @param tenantId tenant identifier
+     * @param workspaceId workspace identifier
+     * @param projectId project identifier
+     * @param intentId canonical intent identifier
+     * @return latest persisted version if one exists
+     */
+    default Promise<Optional<IntentVersionRecord>> findLatest(
+            String tenantId,
+            String workspaceId,
+            String projectId,
+            String intentId) {
+        return Promise.of(Optional.empty());
+    }
+
+    /**
+     * Lists persisted versions of an intent.
+     *
+     * @param tenantId tenant identifier
+     * @param workspaceId workspace identifier
+     * @param projectId project identifier
+     * @param intentId canonical intent identifier
+     * @return version history ordered newest first
+     */
+    default Promise<List<IntentVersionRecord>> history(
+            String tenantId,
+            String workspaceId,
+            String projectId,
+            String intentId) {
+        return Promise.of(List.of());
+    }
 
     /**
      * Returns the total number of persisted intent entities.

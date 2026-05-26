@@ -109,7 +109,14 @@ class KernelActionRecommendationServiceTest extends EventloopTestBase {
                   "gates": {
                     "failedCount": 2,
                     "gates": [
-                      {"id": "build-gate", "status": "failed", "reason": "Build failed"}
+                      {
+                        "id": "build-gate",
+                        "status": "failed",
+                        "reason": "Build failed",
+                        "owner": "platform-runtime",
+                        "evidence": "evidence-build-1",
+                        "nextAction": "Repair build script and retry validation"
+                      }
                     ]
                   }
                 }
@@ -122,6 +129,14 @@ class KernelActionRecommendationServiceTest extends EventloopTestBase {
 
         assertThat(recommendations)
                 .anyMatch(r -> "critical".equals(r.severity()));
+        assertThat(recommendations)
+                .filteredOn(r -> "review_gates".equals(r.actionType()))
+                .anySatisfy(r -> {
+                    assertThat(r.owner()).isEqualTo("platform-runtime");
+                    assertThat(r.reason()).isEqualTo("Build failed");
+                    assertThat(r.evidenceId()).isEqualTo("evidence-build-1");
+                    assertThat(r.nextAction()).isEqualTo("Repair build script and retry validation");
+                });
     }
 
     @Test
@@ -177,5 +192,9 @@ class KernelActionRecommendationServiceTest extends EventloopTestBase {
         assertThat(rec.title()).isEqualTo("Build failed");
         assertThat(rec.description()).isEqualTo("Fix build errors");
         assertThat(rec.actionType()).isEqualTo("review_gates");
+        assertThat(rec.owner()).isEmpty();
+        assertThat(rec.reason()).isEmpty();
+        assertThat(rec.evidenceId()).isEmpty();
+        assertThat(rec.nextAction()).isEmpty();
     }
 }

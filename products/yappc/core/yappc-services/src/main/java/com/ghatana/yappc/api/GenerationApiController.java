@@ -12,7 +12,9 @@ import com.ghatana.yappc.domain.generate.GeneratedArtifacts;
 import com.ghatana.yappc.domain.generate.GenerationReviewAction;
 import com.ghatana.yappc.domain.generate.GenerationReviewRequest;
 import com.ghatana.yappc.domain.generate.ValidatedSpec;
+import com.ghatana.yappc.kernel.ProductUnitIntentExporter;
 import com.ghatana.yappc.services.generate.GenerationService;
+import com.ghatana.yappc.services.kernel.KernelProductUnitHandoffService;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
 import io.activej.http.HttpHeaderValue;
 import io.activej.http.HttpHeaders;
@@ -46,15 +48,25 @@ public class GenerationApiController {
     private final YappcArtifactRepository artifactRepository;
     private final RateLimiter generationRateLimiter;
     private final AuditLogger auditLogger;
+    private final KernelProductUnitHandoffService kernelHandoffService;
 
     // P1-10: Removed no-op default - controller now requires real AuditLogger from DI
     public GenerationApiController(
             GenerationService generationService,
             YappcArtifactRepository artifactRepository,
             AuditLogger auditLogger) {
+        this(generationService, artifactRepository, auditLogger, new KernelProductUnitHandoffService());
+    }
+
+    public GenerationApiController(
+            GenerationService generationService,
+            YappcArtifactRepository artifactRepository,
+            AuditLogger auditLogger,
+            KernelProductUnitHandoffService kernelHandoffService) {
         this.generationService = generationService;
         this.artifactRepository = artifactRepository;
         this.auditLogger = auditLogger;
+        this.kernelHandoffService = kernelHandoffService;
         this.generationRateLimiter = DefaultRateLimiter.create(
             RateLimiterConfig.builder()
                 .maxRequestsPerMinute(Integer.parseInt(System.getenv().getOrDefault("YAPPC_GENERATE_RATE_LIMIT_MAX", String.valueOf(GENERATION_RATE_LIMIT))))
@@ -62,6 +74,57 @@ public class GenerationApiController {
                 .windowDuration(Duration.ofMinutes(1))
                 .build()
         );
+    }
+
+    /**
+     * POST /api/v1/yappc/generate/product-unit-intent
+     * Generates a Kernel ProductUnitIntent from saved generate/shape state supplied by the backend request.
+     *
+     * @param request HTTP request with Kernel handoff fields
+     * @return Promise of HTTP response with validated ProductUnitIntent
+     */
+    public Promise<HttpResponse> generateProductUnitIntent(HttpRequest request) {
+        HttpResponse throttled = rateLimitResponseIfNeeded(request, "generate-product-unit-intent");
+        if (throttled != null) {
+            return auditThenRespond(
+                    request,
+                    "generation.product-unit-intent.request",
+                    "throttled",
+                    null,
+                    null,
+                    Map.of("route", "generate-product-unit-intent"),
+                    throttled);
+        }
+
+        return request.loadBody()
+                .then(body -> {
+                    try {
+                        KernelProductUnitHandoffService.HandoffRequest handoffRequest =
+                                JsonMapper.fromJson(body.asString(UTF_8), KernelProductUnitHandoffService.HandoffRequest.class);
+                        KernelProductUnitHandoffService.HandoffResult result = kernelHandoffService.generate(handoffRequest);
+                        return auditThenRespond(
+                                request,
+                                "generation.product-unit-intent.request",
+                                "succeeded",
+                                null,
+                                null,
+                                Map.of(
+                                        "route", "generate-product-unit-intent",
+                                        "intentId", result.intentId(),
+                                        "projectId", handoffRequest.projectId()),
+                                ok200Json(JsonMapper.toJson(result)));
+                    } catch (JsonProcessingException | ProductUnitIntentExporter.ExportException | IllegalArgumentException e) {
+                        log.error("Error generating ProductUnitIntent", e);
+                        return auditThenRespond(
+                                request,
+                                "generation.product-unit-intent.request",
+                                "rejected",
+                                null,
+                                null,
+                                Map.of("route", "generate-product-unit-intent", "reason", safeErrorMessage(e)),
+                                badRequest400(safeErrorMessage(e)));
+                    }
+                });
     }
 
     /**
@@ -513,6 +576,12 @@ public class GenerationApiController {
             }
         }
         return "";
+    }
+
+    private String safeErrorMessage(Exception e) {
+        return e.getMessage() == null || e.getMessage().isBlank()
+                ? "Invalid ProductUnitIntent handoff request"
+                : e.getMessage();
     }
 
     private ReviewDecisionBody parseReviewDecisionBody(String json) throws JsonProcessingException {

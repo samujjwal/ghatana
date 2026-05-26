@@ -143,7 +143,7 @@ public final class KernelHealthSnapshotService {
                 inferOverallStatus(healthSnapshot, lifecycleResult),
                 extractCurrentPhase(lifecycleResult),
                 extractLastRunTimestamp(lifecycleResult),
-                extractGateFailureCount(lifecycleData),
+                extractGateFailureCount(lifecycleData, lifecycleResult),
                 extractDeploymentStatus(deployment),
                 healthSnapshot,
                 lifecycleResult,
@@ -215,9 +215,15 @@ public final class KernelHealthSnapshotService {
         return timestamp != null ? timestamp.toString() : Instant.now().toString();
     }
 
-    private int extractGateFailureCount(Map<String, Object> lifecycleData) {
+    private int extractGateFailureCount(Map<String, Object> lifecycleData, Map<String, Object> lifecycleResult) {
         @SuppressWarnings("unchecked")
         Map<String, Object> gates = (Map<String, Object>) lifecycleData.get("gates");
+
+        if (gates == null && lifecycleResult != null) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> lifecycleGates = (Map<String, Object>) lifecycleResult.get("gates");
+            gates = lifecycleGates;
+        }
 
         if (gates == null) {
             return 0;

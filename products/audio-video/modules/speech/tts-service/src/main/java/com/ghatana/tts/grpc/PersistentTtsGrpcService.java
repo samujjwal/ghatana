@@ -1,5 +1,6 @@
 package com.ghatana.tts.grpc;
 
+import com.ghatana.audio.video.common.security.JwtServerInterceptor;
 import com.ghatana.audio.video.infrastructure.persistence.service.AudioFileService;
 import com.ghatana.media.AudioVideoLibrary;
 import com.ghatana.tts.core.grpc.proto.*;
@@ -132,12 +133,12 @@ public class PersistentTtsGrpcService extends TTSServiceGrpc.TTSServiceImplBase 
     }
 
     private String getTenantId() {
-        String tenantId = MDC.get("tenantId");
+        String tenantId = JwtServerInterceptor.CTX_TENANT.get();
         return tenantId != null && !tenantId.isBlank() ? tenantId : null;
     }
 
     private String getUserId() {
-        return MDC.get("userId");
+        return JwtServerInterceptor.CTX_SUBJECT.get();
     }
 
     private String cid() {

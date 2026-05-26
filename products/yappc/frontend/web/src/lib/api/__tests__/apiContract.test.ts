@@ -410,3 +410,73 @@ describe('Phase cockpit generated client parity', () => {
     expect(generatedDetailsSource).toContain("KERNEL = 'KERNEL'");
   });
 });
+
+describe('Generate Kernel ProductUnitIntent client parity', () => {
+  it('matches manifest, OpenAPI, and generated GenerateService method', () => {
+    const manifest = parseStructuredRouteManifest(fs.readFileSync(routeManifestPath, 'utf8'));
+    const openApi = parseOpenApiOperations(fs.readFileSync(openApiPath, 'utf8'));
+    const generateServicePath = path.join(
+      repoRoot,
+      'products/yappc/frontend/web/src/clients/generated/api/services/GenerateService.ts'
+    );
+    const generated = parseGeneratedServiceOperations(fs.readFileSync(generateServicePath, 'utf8'));
+
+    const manifestRoute = manifest.get('generateProductUnitIntent');
+    const openApiOperation = openApi.get('generateProductUnitIntent');
+    const generatedOperation = generated.get('generateProductUnitIntent');
+
+    expect(manifestRoute, 'generateProductUnitIntent manifest route').toBeDefined();
+    expect(openApiOperation, 'generateProductUnitIntent OpenAPI operation').toBeDefined();
+    expect(generatedOperation, 'generateProductUnitIntent generated client method').toBeDefined();
+    expect(openApiOperation).toMatchObject({
+      method: manifestRoute?.method,
+      path: manifestRoute?.path,
+    });
+    expect(generatedOperation).toMatchObject({
+      method: manifestRoute?.method,
+      path: manifestRoute?.path,
+    });
+    expect(manifestRoute?.auth).toBe('required');
+    expect(manifestRoute?.scopes).toEqual(['project:write']);
+    expect(manifestRoute?.owner).toBe('yappc-services');
+  });
+});
+
+describe('YAPPC generated client coverage', () => {
+  it('represents every yappc-services manifest operation with matching method and path', () => {
+    const manifest = parseStructuredRouteManifest(fs.readFileSync(routeManifestPath, 'utf8'));
+    const generatedServicesDir = path.join(
+      repoRoot,
+      'products/yappc/frontend/web/src/clients/generated/api/services'
+    );
+    const generated = new Map<string, Pick<RouteContract, 'method' | 'path' | 'operationId'>>();
+
+    for (const fileName of fs.readdirSync(generatedServicesDir).filter(name => name.endsWith('.ts'))) {
+      const operations = parseGeneratedServiceOperations(
+        fs.readFileSync(path.join(generatedServicesDir, fileName), 'utf8')
+      );
+      for (const [operationId, operation] of operations) {
+        generated.set(operationId, operation);
+      }
+    }
+
+    const missing: string[] = [];
+    const mismatched: string[] = [];
+    for (const route of manifest.values()) {
+      if (route.owner !== 'yappc-services') continue;
+      const generatedOperation = generated.get(route.operationId);
+      if (!generatedOperation) {
+        missing.push(route.operationId);
+        continue;
+      }
+      if (generatedOperation.method !== route.method || generatedOperation.path !== route.path) {
+        mismatched.push(
+          `${route.operationId}: generated ${generatedOperation.method} ${generatedOperation.path}, manifest ${route.method} ${route.path}`
+        );
+      }
+    }
+
+    expect(missing).toEqual([]);
+    expect(mismatched).toEqual([]);
+  });
+});

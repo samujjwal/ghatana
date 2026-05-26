@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.List;
 import java.util.Map;
@@ -35,12 +36,16 @@ class IntentServiceTest extends EventloopTestBase {
     private AuditLogger auditLogger;
     private MetricsCollector metrics;
     private IntentService service;
+    private IntentRepository intentRepository;
+    private IntentEvidenceService intentEvidenceService;
 
     @BeforeEach
     void setUp() { 
         aiService = mock(CompletionService.class); 
         auditLogger = mock(AuditLogger.class); 
         metrics = mock(MetricsCollector.class); 
+        intentRepository = mock(IntentRepository.class);
+        intentEvidenceService = mock(IntentEvidenceService.class);
         when(auditLogger.log(anyMap())).thenReturn(Promise.complete()); 
         service = new IntentServiceImpl(aiService, auditLogger, metrics); 
     }
@@ -143,6 +148,49 @@ class IntentServiceTest extends EventloopTestBase {
             assertEquals("tenant-A", spec1.tenantId()); 
             assertEquals("tenant-B", spec2.tenantId()); 
         }
+
+        @Test
+        @DisplayName("persists captured intent when repository is configured")
+        void shouldPersistCapturedIntent() {
+            stubAiSuccess("Product: Task Manager\nDescription: Team collaboration tool");
+            when(intentEvidenceService.recordCapture(any(IntentInput.class), any(IntentSpec.class)))
+                    .thenReturn(Promise.of("evidence-intent-1"));
+            when(intentRepository.saveVersion(any(IntentSpec.class), any(IntentPersistenceContext.class)))
+                    .thenAnswer(invocation -> Promise.of(new IntentVersionRecord(
+                            "project-123:intent-123:v1",
+                            "tenant-123",
+                            "workspace-123",
+                            "project-123",
+                            invocation.getArgument(0, IntentSpec.class).id(),
+                            1,
+                            invocation.getArgument(0, IntentSpec.class),
+                            "user-123",
+                            java.time.Instant.now(),
+                            null,
+                            List.of("evidence-intent-1"),
+                            Map.of())));
+            service = new IntentServiceImpl(aiService, auditLogger, metrics, intentRepository, intentEvidenceService);
+
+            IntentSpec result = runPromise(() -> service.capture(IntentInput.builder()
+                    .rawText("Build a task management app for teams")
+                    .tenantId("tenant-123")
+                    .workspaceId("workspace-123")
+                    .projectId("project-123")
+                    .userId("user-123")
+                    .build()));
+
+            assertNotNull(result);
+            ArgumentCaptor<IntentPersistenceContext> contextCaptor =
+                    ArgumentCaptor.forClass(IntentPersistenceContext.class);
+            verify(intentRepository).saveVersion(eq(result), contextCaptor.capture());
+            IntentPersistenceContext context = contextCaptor.getValue();
+            assertEquals("tenant-123", context.tenantId());
+            assertEquals("workspace-123", context.workspaceId());
+            assertEquals("project-123", context.projectId());
+            assertEquals("user-123", context.actorId());
+            assertEquals(List.of("evidence-intent-1"), context.evidenceIds());
+            verify(intentEvidenceService).recordCapture(any(IntentInput.class), eq(result));
+        }
     }
 
     @Nested
@@ -196,6 +244,47 @@ class IntentServiceTest extends EventloopTestBase {
             assertNotNull(result); 
             assertEquals("intent-123", result.intentId()); 
             verify(metrics).incrementCounter(eq("yappc.ai.intent.analyze.fallback"), anyMap());
+        }
+
+        @Test
+        @DisplayName("records prompt, model, evidence, and confidence grounding for analysis")
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        void shouldRecordAiGroundingForAnalysis() {
+            when(aiService.complete(any(CompletionRequest.class)))
+                    .thenReturn(Promise.of(CompletionResult.builder()
+                            .text("Feasibility: High")
+                            .modelUsed("gpt-4")
+                            .tokensUsed(42)
+                            .finishReason("stop")
+                            .build()));
+            when(intentEvidenceService.recordAnalysis(any(IntentSpec.class), any(IntentAnalysis.class), anyMap()))
+                    .thenReturn(Promise.of("evidence-analysis-1"));
+            service = new IntentServiceImpl(aiService, auditLogger, metrics, intentRepository, intentEvidenceService);
+
+            IntentAnalysis result = runPromise(() -> service.analyze(IntentSpec.builder()
+                    .id("intent-123")
+                    .productName("Task Manager")
+                    .description("Team collaboration tool")
+                    .tenantId("tenant-123")
+                    .metadata(Map.of(
+                            "workspaceId", "workspace-123",
+                            "projectId", "project-123",
+                            "userId", "user-123"))
+                    .build()));
+
+            assertNotNull(result);
+            ArgumentCaptor<Map<String, Object>> metadataCaptor =
+                    ArgumentCaptor.forClass((Class) Map.class);
+            verify(intentEvidenceService).recordAnalysis(any(IntentSpec.class), eq(result), metadataCaptor.capture());
+            Map<String, Object> metadata = metadataCaptor.getValue();
+            assertEquals("intent.analyze", metadata.get("promptKey"));
+            assertEquals("v1", metadata.get("promptVersion"));
+            assertEquals("baseline", metadata.get("promptVariant"));
+            assertEquals("gpt-4", metadata.get("modelUsed"));
+            assertEquals("stop", metadata.get("finishReason"));
+            assertEquals(42, metadata.get("tokensUsed"));
+            assertNotNull(metadata.get("promptHash"));
+            assertNotNull(metadata.get("confidence"));
         }
     }
 }

@@ -60,6 +60,7 @@ dependencies {
     // AI and scaffold (absorbed from services-lifecycle)
     implementation(project(":products:yappc:core:ai"))
     implementation(project(":products:yappc:core:scaffold:core"))
+    implementation(project(":products:yappc:core:scaffold:api"))
     implementation(project(":platform-kernel:kernel-plugin"))
 
     // ActiveJ for async + HTTP

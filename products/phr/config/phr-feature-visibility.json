@@ -1,0 +1,113 @@
+{
+  "$schema": "../../config/domain-invariants.schema.json",
+  "product": "phr",
+  "version": "1.0.0",
+  "lastUpdated": "2026-05-02",
+  "description": "Controls which IA items are visible, hidden, or feature-flagged per persona.",
+  "featureFlags": {
+    "ENABLE_MOBILE_OFFLINE_PHI": {
+      "default": true,
+      "description": "Enable AES-256-GCM encrypted offline cache for mobile dashboard PHI"
+    },
+    "ENABLE_EMERGENCY_ACCESS": {
+      "default": true,
+      "description": "Enable break-glass emergency access flow with biometric gate (mobile) and reason gate (web)"
+    },
+    "ENABLE_FCHV_ROUTES": {
+      "default": true,
+      "description": "Enable FCHV community health volunteer routes and dashboard"
+    },
+    "ENABLE_CAREGIVER_DELEGATED_ACCESS": {
+      "default": true,
+      "description": "Enable caregiver delegated access to dependents list"
+    },
+    "ENABLE_AUDIT_LOG": {
+      "default": true,
+      "description": "Enable audit event trail page for patients and admins"
+    },
+    "ENABLE_HIE_EXPORT": {
+      "default": true,
+      "description": "Enable Health Information Exchange FHIR bundle export from Settings"
+    },
+    "ENABLE_PUSH_NOTIFICATIONS": {
+      "default": true,
+      "description": "Enable push notification registration and PHI redaction handler on mobile"
+    },
+    "ENABLE_BIOMETRIC_AUTH": {
+      "default": true,
+      "description": "Enable biometric (FaceID/TouchID/Fingerprint) authentication on mobile"
+    }
+  },
+  "visibilityRules": [
+    {
+      "iaItem": "tabs.emergency",
+      "personas": ["patient"],
+      "visibility": "visible",
+      "featureFlag": "ENABLE_EMERGENCY_ACCESS"
+    },
+    {
+      "iaItem": "tabs.home",
+      "personas": ["patient", "provider", "caregiver", "fchv", "admin"],
+      "visibility": "visible"
+    },
+    {
+      "iaItem": "tabs.records",
+      "personas": ["patient", "provider"],
+      "visibility": "visible"
+    },
+    {
+      "iaItem": "tabs.consents",
+      "personas": ["patient"],
+      "visibility": "visible"
+    },
+    {
+      "iaItem": "tabs.alerts",
+      "personas": ["patient", "provider"],
+      "visibility": "visible"
+    },
+    {
+      "iaItem": "tabs.settings",
+      "personas": ["patient", "provider", "caregiver", "fchv"],
+      "visibility": "visible"
+    },
+    {
+      "iaItem": "admin.releaseReadiness",
+      "personas": ["admin"],
+      "visibility": "visible"
+    },
+    {
+      "iaItem": "admin.emergencyReview",
+      "personas": ["admin"],
+      "visibility": "visible"
+    },
+    {
+      "iaItem": "admin.auditLog",
+      "personas": ["admin"],
+      "visibility": "visible",
+      "featureFlag": "ENABLE_AUDIT_LOG"
+    },
+    {
+      "iaItem": "provider.patientRoster",
+      "personas": ["provider"],
+      "visibility": "visible"
+    },
+    {
+      "iaItem": "caregiver.dependents",
+      "personas": ["caregiver"],
+      "visibility": "visible",
+      "featureFlag": "ENABLE_CAREGIVER_DELEGATED_ACCESS"
+    },
+    {
+      "iaItem": "fchv.dashboard",
+      "personas": ["fchv"],
+      "visibility": "visible",
+      "featureFlag": "ENABLE_FCHV_ROUTES"
+    },
+    {
+      "iaItem": "settings.hieExport",
+      "personas": ["patient"],
+      "visibility": "visible",
+      "featureFlag": "ENABLE_HIE_EXPORT"
+    }
+  ]
+}

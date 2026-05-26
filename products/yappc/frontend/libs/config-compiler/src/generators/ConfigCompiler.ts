@@ -11,6 +11,8 @@ import type {
   CompilerOptions,
   CompilationResult,
   ValidationResult,
+  GeneratedArtifact,
+  CompilationWarning,
 } from '../types';
 import {
   PageConfigSchema,
@@ -20,6 +22,10 @@ import {
 } from 'yappc-config-schema';
 import { CodeGenerator } from './CodeGenerator';
 import { CanvasGenerator } from './CanvasGenerator';
+import {
+  generateConfigArtifact,
+  validateGeneratedProjectConfigArtifacts,
+} from '../utils/artifactGenerator';
 
 /**
  * Config Compiler implementation
@@ -30,6 +36,14 @@ export class ConfigCompiler implements Compiler {
 
   private codeGenerator = new CodeGenerator();
   private canvasGenerator = new CanvasGenerator();
+
+  protected createSourceConfigArtifact(config: PageConfig): GeneratedArtifact {
+    return generateConfigArtifact(
+      config.id,
+      JSON.stringify(config, null, 2),
+      { configKind: 'page' },
+    );
+  }
 
   /**
    * Compile config to artifacts
@@ -64,12 +78,8 @@ export class ConfigCompiler implements Compiler {
     // Actual compilation logic
     const compilationId = `compilation-${Date.now()}`;
     const startedAt = new Date();
-    const artifacts: any[] = [];
-    const warnings: Array<{
-      code: string;
-      message: string;
-      severity: 'warning';
-    }> = [];
+    const artifacts: GeneratedArtifact[] = [];
+    const warnings: CompilationWarning[] = [];
 
     const cfg = config as Record<string, unknown>;
 
@@ -85,7 +95,6 @@ export class ConfigCompiler implements Compiler {
         warnings.push({
           code: 'CODE_GEN_WARNING',
           message: error instanceof Error ? error.message : String(error),
-          severity: 'warning' as const,
         });
       }
 
@@ -101,8 +110,33 @@ export class ConfigCompiler implements Compiler {
         warnings.push({
           code: 'CANVAS_GEN_WARNING',
           message: error instanceof Error ? error.message : String(error),
-          severity: 'warning' as const,
         });
+      }
+
+      artifacts.push(this.createSourceConfigArtifact(config as PageConfig));
+      const generatedConfigValidation = validateGeneratedProjectConfigArtifacts(artifacts);
+      if (!generatedConfigValidation.valid) {
+        return {
+          success: false,
+          context: {
+            compilationId,
+            sourceConfig: config,
+            options,
+            startedAt,
+            errors: generatedConfigValidation.errors.map((msg) => ({
+              code: 'GENERATED_CONFIG_VALIDATION_ERROR',
+              message: msg,
+              severity: 'error' as const,
+            })),
+            warnings,
+            artifacts,
+            metadata: {
+              artifactCount: artifacts.length,
+              artifactTypes: [...new Set(artifacts.map((artifact) => artifact.type))],
+            },
+          },
+          artifacts: [],
+        };
       }
     }
 
@@ -114,11 +148,11 @@ export class ConfigCompiler implements Compiler {
         options,
         startedAt,
         errors: [],
-        warnings: warnings as any,
+        warnings,
         artifacts,
         metadata: {
           artifactCount: artifacts.length,
-          artifactTypes: [...new Set(artifacts.map((a) => a.type))],
+          artifactTypes: [...new Set(artifacts.map((artifact) => artifact.type))],
         },
       },
       artifacts,

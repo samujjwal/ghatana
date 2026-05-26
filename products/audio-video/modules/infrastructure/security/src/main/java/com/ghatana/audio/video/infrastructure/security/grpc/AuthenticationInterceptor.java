@@ -18,7 +18,12 @@ import java.util.Set;
  * @doc.purpose gRPC interceptor for JWT authentication using platform security
  * @doc.layer infrastructure
  * @doc.pattern Interceptor
+ * @deprecated Use {@link com.ghatana.audio.video.common.security.JwtServerInterceptor} instead.
+ *             This interceptor is deprecated due to default tenant fallback behavior
+ *             that is unsafe for production. All Audio-Video services should use the
+ *             canonical JwtServerInterceptor which enforces tenant claims without fallback.
  */
+@Deprecated(since = "2026-05-26", forRemoval = true)
 public class AuthenticationInterceptor implements ServerInterceptor {
     
     private static final Logger LOG = LoggerFactory.getLogger(AuthenticationInterceptor.class);
@@ -129,7 +134,9 @@ public class AuthenticationInterceptor implements ServerInterceptor {
         if (tenantId != null && !tenantId.isBlank()) {
             return tenantId;
         }
-        return System.getenv().getOrDefault("DEFAULT_TENANT_ID", "default");
+        // Production-safe: no default tenant fallback
+        // Tenant must be explicitly provided in the JWT claim or X-Tenant-ID header
+        return null;
     }
     
     /**

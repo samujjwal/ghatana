@@ -153,6 +153,72 @@ class ValidationServiceTest extends EventloopTestBase {
                     anyLong(), 
                     any(Map.class)); 
         }
+
+        @Test
+        @DisplayName("should pass validation for supported runtime selection")
+        void shouldPassSupportedRuntimeSelection() {
+            ShapeSpec spec = shapeSpecWithMetadata(Map.of(
+                    "language", "typescript",
+                    "framework", "react",
+                    "runtime", "vite",
+                    "surface", "web"));
+
+            LifecycleValidationResult result = runPromise(() -> service.validate(spec));
+
+            assertNotNull(result);
+            assertTrue(result.issues().stream()
+                    .noneMatch(issue -> issue.category().equals("runtime") && issue.blocking()));
+        }
+
+        @Test
+        @DisplayName("should block unsupported runtime selection")
+        void shouldBlockUnsupportedRuntimeSelection() {
+            ShapeSpec spec = shapeSpecWithMetadata(Map.of(
+                    "language", "typescript",
+                    "framework", "react",
+                    "runtime", "deno",
+                    "surface", "web"));
+
+            LifecycleValidationResult result = runPromise(() -> service.validate(spec));
+
+            assertNotNull(result);
+            assertFalse(result.passed());
+            assertTrue(result.issues().stream()
+                    .anyMatch(issue -> issue.id().equals("runtime-005") && issue.blocking()));
+        }
+
+        @Test
+        @DisplayName("should block unsupported framework selection")
+        void shouldBlockUnsupportedFrameworkSelection() {
+            ShapeSpec spec = shapeSpecWithMetadata(Map.of(
+                    "language", "typescript",
+                    "framework", "spring-boot",
+                    "runtime", "vite"));
+
+            LifecycleValidationResult result = runPromise(() -> service.validate(spec));
+
+            assertNotNull(result);
+            assertFalse(result.passed());
+            assertTrue(result.issues().stream()
+                    .anyMatch(issue -> issue.id().equals("runtime-003") && issue.blocking()));
+        }
+
+        @Test
+        @DisplayName("should block unsupported Kernel surface selection")
+        void shouldBlockUnsupportedSurfaceSelection() {
+            ShapeSpec spec = shapeSpecWithMetadata(Map.of(
+                    "language", "typescript",
+                    "framework", "react",
+                    "runtime", "vite",
+                    "surface", "hologram"));
+
+            LifecycleValidationResult result = runPromise(() -> service.validate(spec));
+
+            assertNotNull(result);
+            assertFalse(result.passed());
+            assertTrue(result.issues().stream()
+                    .anyMatch(issue -> issue.id().equals("runtime-006") && issue.blocking()));
+        }
     }
 
     @Nested
@@ -342,6 +408,29 @@ class ValidationServiceTest extends EventloopTestBase {
                 .workflows(List.of()) 
                 .integrations(List.of()) 
                 .build(); 
+    }
+
+    private ShapeSpec shapeSpecWithMetadata(Map<String, String> metadata) {
+        return ShapeSpec.builder()
+                .id("shape-" + System.nanoTime())
+                .tenantId("tenant-runtime")
+                .intentRef("intent-" + System.nanoTime())
+                .domainModel(DomainModel.builder()
+                        .entities(List.of(
+                                EntitySpec.builder()
+                                        .name("Entity1")
+                                        .description("Test entity")
+                                        .fields(List.of())
+                                        .behaviors(List.of())
+                                        .build()
+                        ))
+                        .relationships(List.of())
+                        .boundedContexts(List.of())
+                        .build())
+                .workflows(List.of())
+                .integrations(List.of())
+                .metadata(metadata)
+                .build();
     }
 
     // ─── Mock Helper ───────────────────────────────────────────────────────

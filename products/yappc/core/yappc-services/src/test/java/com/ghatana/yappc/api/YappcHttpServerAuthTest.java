@@ -130,7 +130,24 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
                 PageArtifactResourceScopeAuthorizer.allowAll()
             ),
             new PreviewSessionApiController(new com.fasterxml.jackson.databind.ObjectMapper(), "test-preview-secret"),
-            phasePacketController
+            phasePacketController,
+            new CapabilityController(authorizationService),
+            new DashboardActionController(new ObjectMapper(), mock(com.ghatana.yappc.services.dashboard.DashboardActionService.class)),
+            new AdminObservabilityController(new ObjectMapper()),
+            new AdminFeatureFlagController(mock(com.ghatana.datacloud.DataCloudClient.class), new ObjectMapper()),
+            new AdminAbTestingController(
+                mock(com.ghatana.datacloud.DataCloudClient.class),
+                new ObjectMapper(),
+                new com.ghatana.yappc.ai.abtesting.ABTestingEvaluationService(),
+                new com.ghatana.yappc.ai.PromptLifecycleService(
+                    new com.ghatana.yappc.ai.PromptTemplateRegistry(),
+                    event -> Promise.complete()
+                )
+            ),
+            new ProductFamilyControlPlaneController(
+                mock(com.ghatana.datacloud.DataCloudClient.class),
+                new ObjectMapper()
+            )
         );
     }
 

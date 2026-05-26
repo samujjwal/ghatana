@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, Package, Link as LinkIcon } from 'lucide-react';
 
-interface Artifact {
+export interface KernelArtifactHealth {
   id: string;
   type: 'docker-image' | 'jar' | 'npm-package' | 'helm-chart' | 'other';
   surface: string;
@@ -25,7 +25,7 @@ interface Artifact {
 
 interface ArtifactHealthPanelProps {
   productUnitId: string;
-  artifacts: Artifact[];
+  artifacts: KernelArtifactHealth[];
 }
 
 export const ArtifactHealthPanel: React.FC<ArtifactHealthPanelProps> = ({

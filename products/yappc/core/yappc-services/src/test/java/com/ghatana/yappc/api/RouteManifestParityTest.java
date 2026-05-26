@@ -84,18 +84,59 @@ class RouteManifestParityTest {
         List<ManifestRoute> manifestRoutes = loadManifestRoutesForServer("yappc-services");
         String generatedServices = readAllTextUnder(resolveRepoFile("products/yappc/frontend/web/src/clients/generated/api/services"));
 
-        int representedOperations = 0;
+        List<String> missingOperations = new ArrayList<>();
         for (ManifestRoute route : manifestRoutes) {
-            // Generated method names are camelCase operation IDs in most cases.
-            if (generatedServices.contains("public static " + route.operationId + "(")) {
-                representedOperations++;
+            if (!generatedServices.contains("public static " + route.operationId + "(")) {
+                missingOperations.add(route.method + " " + route.path + " (" + route.operationId + ")");
             }
         }
 
-        assertThat(representedOperations)
-            .as("At least core manifest operations should be represented in generated frontend services")
-            .isGreaterThan(25);
+        assertThat(missingOperations)
+            .as("Every yappc-services manifest operation should be represented in generated frontend services")
+            .isEmpty();
     }
+
+    @Test
+    void generatedRoutesShouldMatchAuthorizationRegistryMetadata() {
+        RouteAuthorizationRegistry authorizationRegistry = new RouteAuthorizationRegistry(mock(YappcAuthorizationService.class));
+
+        for (RouteEntry route : GeneratedRouteRegistry.getManifest().getRoutesForServer("yappc-services")) {
+            RouteAuthorizationRegistry.RouteDefinition definition =
+                    authorizationRegistry.getRouteDefinition(HttpMethod.valueOf(route.method()), route.path());
+
+            assertThat(definition)
+                    .as("Authorization registry should contain generated route %s %s", route.method(), route.path())
+                    .isNotNull();
+            assertThat(definition.action()).isEqualTo(route.operationId());
+            assertThat(definition.auditEventType()).isEqualTo(route.auditEventType());
+            assertThat(definition.authMode()).isEqualTo(route.auth());
+            assertThat(definition.privacyClassification()).isEqualTo(mapPrivacyClassification(route.privacyClassification()));
+        }
+    }
+
+    @Test
+    void manifestRoutesShouldHaveBackendHandlerRegistrations() throws IOException {
+        List<ManifestRoute> manifestRoutes = loadManifestRoutesForServer("yappc-services");
+        String backendRouteSources = Files.readString(resolveRepoFile(
+                "products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/api/YappcHttpServer.java"))
+                + "\n"
+                + Files.readString(resolveRepoFile(
+                "products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/YappcLifecycleService.java"));
+
+        List<String> missingHandlers = new ArrayList<>();
+        for (ManifestRoute route : manifestRoutes) {
+            String activeJPath = route.path.replaceAll("\\{([^}]+)}", ":$1");
+            if (!backendRouteSources.contains("\"" + route.path + "\"")
+                    && !backendRouteSources.contains("\"" + activeJPath + "\"")) {
+                missingHandlers.add(route.method + " " + route.path + " (" + route.operationId + ")");
+            }
+        }
+
+        assertThat(missingHandlers)
+            .as("Every yappc-services manifest route should have a backend handler registration")
+            .isEmpty();
+    }
+
 
     private List<ManifestRoute> loadManifestRoutesForServer(String serverKey) throws IOException {
         List<String> lines = Files.readAllLines(resolveRepoFile("products/yappc/docs/api/route-manifest.yaml"));
@@ -182,6 +223,16 @@ class RouteManifestParityTest {
             current = current.getParent();
         }
         throw new IllegalStateException("Could not resolve repo file: " + relativePath);
+    }
+
+    private RouteAuthorizationRegistry.PrivacyClassification mapPrivacyClassification(
+            com.ghatana.yappc.governance.route.PrivacyClassification privacy) {
+        return switch (privacy) {
+            case PUBLIC -> RouteAuthorizationRegistry.PrivacyClassification.PUBLIC;
+            case INTERNAL -> RouteAuthorizationRegistry.PrivacyClassification.INTERNAL;
+            case CONFIDENTIAL -> RouteAuthorizationRegistry.PrivacyClassification.CONFIDENTIAL;
+            case RESTRICTED -> RouteAuthorizationRegistry.PrivacyClassification.RESTRICTED;
+        };
     }
 
     private record ManifestRoute(String method, String path, String operationId) {}

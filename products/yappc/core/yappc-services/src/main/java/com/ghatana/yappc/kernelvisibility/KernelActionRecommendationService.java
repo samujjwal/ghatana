@@ -143,11 +143,16 @@ public final class KernelActionRecommendationService {
 
         // Gate failure recommendations
         if (healthView.gateFailureCount() > 0) {
+            Map<String, Object> failedGate = firstFailedGate(healthView);
             recommendations.add(new ActionRecommendation(
                     "critical",
                     String.format("%d gate(s) failed", healthView.gateFailureCount()),
                     "Review failed gates and address blocking criteria",
-                    "review_gates"
+                    "review_gates",
+                    stringValue(failedGate.get("owner"), "Lifecycle owner"),
+                    stringValue(failedGate.get("reason"), "Gate failure requires remediation"),
+                    stringValue(failedGate.get("evidence"), stringValue(failedGate.get("evidenceId"), "kernel-gate-failure")),
+                    stringValue(failedGate.get("nextAction"), "Open gate details and resolve the blocking criteria")
             ));
         }
 
@@ -158,7 +163,11 @@ public final class KernelActionRecommendationService {
                         "critical",
                         "Deployment failed",
                         "Check deployment logs and fix configuration or environment issues",
-                        "fix_deployment"
+                        "fix_deployment",
+                        "Runtime owner",
+                        "Deployment health is failed",
+                        evidenceFromDeployment(healthView.deployment()),
+                        "Review deployment logs, fix the failed check, then retry deployment"
                 ));
                 break;
             case "not_deployed":
@@ -174,6 +183,38 @@ public final class KernelActionRecommendationService {
         }
 
         return recommendations;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> firstFailedGate(KernelHealthSnapshotService.ProductUnitHealthView healthView) {
+        Object gatesObject = healthView.lifecycleResult().get("gates");
+        if (!(gatesObject instanceof Map<?, ?> gates)) {
+            return Map.of();
+        }
+        Object gateListObject = gates.get("gates");
+        if (!(gateListObject instanceof List<?> gateList)) {
+            return Map.of();
+        }
+        for (Object gateObject : gateList) {
+            if (gateObject instanceof Map<?, ?> gate) {
+                Object status = gate.get("status");
+                if ("failed".equals(status) || "blocked".equals(status)) {
+                    return (Map<String, Object>) gate;
+                }
+            }
+        }
+        return Map.of();
+    }
+
+    private String evidenceFromDeployment(Map<String, Object> deployment) {
+        if (deployment == null) {
+            return "kernel-deployment-health";
+        }
+        return stringValue(deployment.get("evidence"), stringValue(deployment.get("evidenceId"), "kernel-deployment-health"));
+    }
+
+    private String stringValue(Object value, String fallback) {
+        return value instanceof String text && !text.isBlank() ? text : fallback;
     }
 
     private GateFailureExplanation generateGateExplanation(KernelHealthSnapshotService.ProductUnitHealthView healthView, String gateId) {
@@ -221,18 +262,42 @@ public final class KernelActionRecommendationService {
         private final String title;
         private final String description;
         private final String actionType;
+        private final String owner;
+        private final String reason;
+        private final String evidenceId;
+        private final String nextAction;
 
         public ActionRecommendation(String severity, String title, String description, String actionType) {
+            this(severity, title, description, actionType, "", "", "", "");
+        }
+
+        public ActionRecommendation(
+                String severity,
+                String title,
+                String description,
+                String actionType,
+                String owner,
+                String reason,
+                String evidenceId,
+                String nextAction) {
             this.severity = severity;
             this.title = title;
             this.description = description;
             this.actionType = actionType;
+            this.owner = owner;
+            this.reason = reason;
+            this.evidenceId = evidenceId;
+            this.nextAction = nextAction;
         }
 
         public String severity() { return severity; }
         public String title() { return title; }
         public String description() { return description; }
         public String actionType() { return actionType; }
+        public String owner() { return owner; }
+        public String reason() { return reason; }
+        public String evidenceId() { return evidenceId; }
+        public String nextAction() { return nextAction; }
     }
 
     /**

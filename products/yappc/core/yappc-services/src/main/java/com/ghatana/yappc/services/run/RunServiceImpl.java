@@ -1,9 +1,11 @@
 package com.ghatana.yappc.services.run;
 
 import com.ghatana.audit.AuditLogger;
+import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.yappc.common.ServiceObservability;
 import com.ghatana.yappc.domain.run.*;
+import com.ghatana.yappc.services.learn.LearningEvidenceService;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import org.slf4j.Logger;
@@ -30,14 +32,37 @@ public class RunServiceImpl implements RunService {
     private final AuditLogger auditLogger;
     private final MetricsCollector metrics;
     private final CiCdPort ciCdAdapter;
+    private final LearningEvidenceService learningEvidenceService;
+    private final boolean persistLearningEvidence;
 
     public RunServiceImpl(
             AuditLogger auditLogger,
             MetricsCollector metrics,
             CiCdPort ciCdAdapter) {
+        this(auditLogger, metrics, ciCdAdapter, LearningEvidenceService.noop(), false);
+    }
+
+    public RunServiceImpl(
+            AuditLogger auditLogger,
+            MetricsCollector metrics,
+            CiCdPort ciCdAdapter,
+            LearningEvidenceService learningEvidenceService) {
+        this(auditLogger, metrics, ciCdAdapter, learningEvidenceService, true);
+    }
+
+    private RunServiceImpl(
+            AuditLogger auditLogger,
+            MetricsCollector metrics,
+            CiCdPort ciCdAdapter,
+            LearningEvidenceService learningEvidenceService,
+            boolean persistLearningEvidence) {
         this.auditLogger = auditLogger;
         this.metrics = metrics;
         this.ciCdAdapter = ciCdAdapter != null ? ciCdAdapter : new NoOpCiCdAdapter();
+        this.learningEvidenceService = learningEvidenceService == null
+                ? LearningEvidenceService.noop()
+                : learningEvidenceService;
+        this.persistLearningEvidence = persistLearningEvidence;
     }
 
     @Override
@@ -75,6 +100,7 @@ public class RunServiceImpl implements RunService {
                     ServiceObservability.incrementSuccess(metrics, "yappc.run.execute", tags);
 
                     return auditLogger.log(ServiceObservability.auditEvent("run.execute", spec, result))
+                            .then(v -> recordFailedRunLearningEvidence(spec, result))
                             .map(v -> result);
                 })
                 .whenException(e -> {
@@ -84,6 +110,49 @@ public class RunServiceImpl implements RunService {
                         "yappc.run.execute",
                         e,
                         Map.of("environment", spec.environment()));
+                });
+    }
+
+    @Override
+    public Promise<RunResult> retry(String failedRunId, RunSpec spec) {
+        if (failedRunId == null || failedRunId.isBlank()) {
+            return Promise.ofException(new IllegalArgumentException("failedRunId is required"));
+        }
+        if (spec == null || spec.id() == null || spec.id().isBlank()) {
+            return Promise.ofException(new IllegalArgumentException("RunSpec.id is required"));
+        }
+
+        long startTime = System.currentTimeMillis();
+        return executeWithObservation(spec, ObservationConfig.defaultConfig())
+                .then(result -> {
+                    long duration = System.currentTimeMillis() - startTime;
+                    RunResult retryResult = RunResult.builder()
+                            .id(result.id())
+                            .runSpecRef(result.runSpecRef())
+                            .status(result.status())
+                            .taskResults(result.taskResults())
+                            .startedAt(result.startedAt())
+                            .completedAt(result.completedAt())
+                            .metadata(mergeMetadata(result.metadata(), Map.of(
+                                    "retry_of", failedRunId,
+                                    "retry_run_spec", spec.id()
+                            )))
+                            .build();
+                    Map<String, String> tags = Map.of("environment", spec.environment(), "status", result.status().name());
+                    metrics.recordTimer("yappc.run.retry", duration, tags);
+                    ServiceObservability.incrementSuccess(metrics, "yappc.run.retry", tags);
+                    return auditLogger.log(ServiceObservability.auditEvent("run.retry",
+                                    Map.of("failedRunId", failedRunId, "runSpecId", spec.id()),
+                                    retryResult))
+                            .map(v -> retryResult);
+                })
+                .whenException(e -> {
+                    log.error("Run retry failed", e);
+                    ServiceObservability.incrementFailure(
+                            metrics,
+                            "yappc.run.retry",
+                            e,
+                            Map.of("failedRunId", failedRunId));
                 });
     }
 
@@ -395,6 +464,63 @@ public class RunServiceImpl implements RunService {
             return Boolean.parseBoolean(value);
         }
         return false;
+    }
+
+    private Map<String, String> mergeMetadata(Map<String, String> metadata, Map<String, String> additions) {
+        java.util.LinkedHashMap<String, String> merged = new java.util.LinkedHashMap<>();
+        if (metadata != null) {
+            merged.putAll(metadata);
+        }
+        merged.putAll(additions);
+        return Map.copyOf(merged);
+    }
+
+    private Promise<String> recordFailedRunLearningEvidence(RunSpec spec, RunResult result) {
+        if (!persistLearningEvidence || result.status() != RunStatus.FAILED) {
+            return Promise.of("learning-evidence-not-required");
+        }
+        LearningEvidenceService.EvidenceContext context = new LearningEvidenceService.EvidenceContext(
+                resolveTenantId(spec),
+                requiredConfig(spec, "workspaceId"),
+                requiredConfig(spec, "projectId"),
+                result.id(),
+                configValue(spec, "correlationId"),
+                Map.of(
+                        "runSpecId", spec.id(),
+                        "artifactsRef", spec.artifactsRef() == null ? "" : spec.artifactsRef(),
+                        "environment", spec.environment() == null ? "" : spec.environment()
+                )
+        );
+        return learningEvidenceService.recordRunOutcome(context, result);
+    }
+
+    private String resolveTenantId(RunSpec spec) {
+        String tenantId = configValue(spec, "tenantId");
+        if (tenantId == null || tenantId.isBlank()) {
+            tenantId = TenantContext.getCurrentTenantId();
+        }
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new IllegalArgumentException("RunSpec.config.tenantId is required for failed run learning evidence");
+        }
+        if ("default-tenant".equals(tenantId)) {
+            throw new IllegalArgumentException("default-tenant is not allowed for failed run learning evidence");
+        }
+        return tenantId;
+    }
+
+    private String requiredConfig(RunSpec spec, String key) {
+        String value = configValue(spec, key);
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException("RunSpec.config." + key + " is required for failed run learning evidence");
+        }
+        return value;
+    }
+
+    private String configValue(RunSpec spec, String key) {
+        if (spec == null || spec.config() == null) {
+            return null;
+        }
+        return spec.config().get(key);
     }
 
     private String safeTaskName(RunTask task) {

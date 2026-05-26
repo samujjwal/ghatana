@@ -91,7 +91,10 @@ public final class PhrFchvRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        if (!context.canAccessPatientRecordForRole()) {
+        boolean canRead = PhrRouteSupport.hasClinicalRole(context)
+            || "caregiver".equals(context.role())
+            || "fchv".equals(context.role());
+        if (!canRead) {
             return PhrRouteSupport.errorResponse(403, "RECORD_ACCESS_DENIED",
                 "Patient record access requires caregiver, clinician, or admin role",
                 context.correlationId());

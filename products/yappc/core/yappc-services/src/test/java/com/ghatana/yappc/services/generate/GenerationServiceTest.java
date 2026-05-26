@@ -19,6 +19,7 @@ import com.ghatana.yappc.domain.shape.DomainModel;
 import com.ghatana.yappc.domain.shape.EntitySpec;
 import com.ghatana.yappc.domain.shape.ShapeSpec;
 import com.ghatana.yappc.domain.validate.LifecycleValidationResult;
+import com.ghatana.yappc.domain.validate.ValidationIssue;
 import io.activej.promise.Promise;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
@@ -75,8 +76,45 @@ class GenerationServiceTest extends EventloopTestBase {
 
     private ValidatedSpec specWithoutEntities() { 
         return ValidatedSpec.of( 
-                ShapeSpec.builder().id("shape-123").tenantId("tenant-1").build(),
+                ShapeSpec.builder()
+                        .id("shape-123")
+                        .tenantId("tenant-1")
+                        .domainModel(DomainModel.builder()
+                                .entities(List.of())
+                                .relationships(List.of())
+                                .boundedContexts(List.of())
+                                .build())
+                        .build(),
                 LifecycleValidationResult.builder().build()); 
+    }
+
+    private ValidatedSpec incompleteSpecWithoutDomainModel() {
+        return ValidatedSpec.of(
+                ShapeSpec.builder().id("shape-incomplete").tenantId("tenant-1").build(),
+                LifecycleValidationResult.builder().build());
+    }
+
+    private ValidatedSpec blockedValidationSpec() {
+        return ValidatedSpec.of(
+                ShapeSpec.builder()
+                        .id("shape-blocked")
+                        .tenantId("tenant-1")
+                        .domainModel(DomainModel.builder()
+                                .entities(List.of())
+                                .relationships(List.of())
+                                .boundedContexts(List.of())
+                                .build())
+                        .build(),
+                LifecycleValidationResult.builder()
+                        .passed(false)
+                        .issues(List.of(ValidationIssue.builder()
+                                .id("shape-required")
+                                .severity("error")
+                                .category("shape")
+                                .message("Shape is incomplete")
+                                .blocking(true)
+                                .build()))
+                        .build());
     }
 
     private ValidatedSpec specWithEntities(List<EntitySpec> entities) {
@@ -119,6 +157,28 @@ class GenerationServiceTest extends EventloopTestBase {
 
     @Test
     @DisplayName("generate: spec with entities → entity code generation called per entity")
+    void shouldBlockGenerationWhenShapeIncomplete() {
+        Exception error = assertThrows(Exception.class,
+                () -> runPromise(() -> service.generate(incompleteSpecWithoutDomainModel(), defaultContext())));
+
+        assertThat(error.getMessage()).contains("Shape is not ready for generation");
+        verify(generationRunRepository, never()).save(any(GenerationRun.class));
+        verify(aiService, never()).complete(any(CompletionRequest.class));
+    }
+
+    @Test
+    @DisplayName("generate: blocking validation result is blocked before run creation")
+    void shouldBlockGenerationWhenValidationFailed() {
+        Exception error = assertThrows(Exception.class,
+                () -> runPromise(() -> service.generate(blockedValidationSpec(), defaultContext())));
+
+        assertThat(error.getMessage()).contains("shape validation must pass");
+        verify(generationRunRepository, never()).save(any(GenerationRun.class));
+        verify(aiService, never()).complete(any(CompletionRequest.class));
+    }
+
+    @Test
+    @DisplayName("generate: spec with entities -> entity code generation called per entity")
     void shouldGenerateEntityCodeForEachEntity() {
         EntitySpec entity1 = EntitySpec.builder().name("User").description("User entity").build();
         EntitySpec entity2 = EntitySpec.builder().name("Order").description("Order entity").build();
@@ -205,6 +265,38 @@ class GenerationServiceTest extends EventloopTestBase {
 
         assertThat(result.metadata()).isNotNull();
         assertThat(result.metadata()).containsKey("validation_passed");
+        assertThat(result.metadata()).containsEntry("assurance_passed", "true");
+        assertThat(result.metadata().get("assurance_checks_passed")).contains("compile", "security", "a11y");
+    }
+
+    @Test
+    @DisplayName("generate: assurance failure blocks completed run and audit")
+    void shouldBlockGenerationWhenAssuranceFails() {
+        GenerationAssuranceService failingAssurance = new GenerationAssuranceService() {
+            @Override
+            public GenerationAssuranceReport assure(ValidatedSpec spec, GeneratedArtifacts artifacts) {
+                return new GenerationAssuranceReport(
+                        false,
+                        List.of(new GenerationAssuranceCheck(
+                                "security",
+                                false,
+                                List.of("unsafe generated path"))));
+            }
+        };
+        service = new GenerationServiceImpl(
+                aiService,
+                auditLogger,
+                metrics,
+                generationRunRepository,
+                objectMapper,
+                aiHealthProvider,
+                failingAssurance);
+
+        Exception error = assertThrows(Exception.class,
+                () -> runPromise(() -> service.generate(specWithoutEntities(), defaultContext())));
+
+        assertThat(error.getMessage()).contains("Generate assurance failed");
+        verify(auditLogger, never()).log(any(Map.class));
     }
 
     // ---------------------------------------------------------------------------

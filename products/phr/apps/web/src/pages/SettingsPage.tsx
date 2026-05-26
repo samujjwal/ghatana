@@ -1,14 +1,33 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
-import { exportPatientBundle } from '../api/phrApi';
+import { exportPatientBundle, logoutSession } from '../api/phrApi';
+import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 
 export function SettingsPage(): React.ReactElement {
   const [syncStatus, setSyncStatus] = React.useState<string>(t('settings.sync.initial'));
+  const [logoutPending, setLogoutPending] = React.useState<boolean>(false);
+  const { session, clearSession } = usePhrSession();
+  const navigate = useNavigate();
 
   const onSync = async (): Promise<void> => {
     const response = await exportPatientBundle();
     setSyncStatus(response);
+  };
+
+  const onLogout = async (): Promise<void> => {
+    setLogoutPending(true);
+    try {
+      if (session) {
+        await logoutSession({ tenantId: session.tenantId, principalId: session.principalId });
+      }
+    } catch {
+      // Server-side logout failure must not block local session cleanup.
+    } finally {
+      clearSession();
+      navigate('/login', { replace: true });
+    }
   };
 
   return (
@@ -30,6 +49,19 @@ export function SettingsPage(): React.ReactElement {
             <Button className="primary-cta" onClick={() => void onSync()}>{t('settings.hie.prepare')}</Button>
             <code className="code-inline">{syncStatus}</code>
           </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader title={t('settings.logout.title')} subheader={t('settings.logout.subheader')} />
+        <CardContent>
+          <Button
+            className="destructive-cta"
+            onClick={() => void onLogout()}
+            disabled={logoutPending}
+            aria-label={t('settings.logout.button')}
+          >
+            {t('settings.logout.button')}
+          </Button>
         </CardContent>
       </Card>
     </div>

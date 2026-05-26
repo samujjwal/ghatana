@@ -13,14 +13,16 @@ public record IntentInput(
     String format,
     Map<String, Object> structuredData,
     String tenantId,
-    String userId
+    String userId,
+    String workspaceId,
+    String projectId
 ) {
     public static IntentInput of(String rawText) {
-        return new IntentInput(rawText, "text", Map.of(), null, null);
+        return new IntentInput(rawText, "text", Map.of(), null, null, null, null);
     }
 
     public static IntentInput of(String rawText, String tenantId) {
-        return new IntentInput(rawText, "text", Map.of(), tenantId, null);
+        return new IntentInput(rawText, "text", Map.of(), tenantId, null, null, null);
     }
 
     public static Builder builder() {
@@ -33,6 +35,8 @@ public record IntentInput(
         private Map<String, Object> structuredData = Map.of();
         private String tenantId;
         private String userId;
+        private String workspaceId;
+        private String projectId;
 
         public Builder rawText(String rawText) {
             this.rawText = rawText;
@@ -59,8 +63,18 @@ public record IntentInput(
             return this;
         }
 
+        public Builder workspaceId(String workspaceId) {
+            this.workspaceId = workspaceId;
+            return this;
+        }
+
+        public Builder projectId(String projectId) {
+            this.projectId = projectId;
+            return this;
+        }
+
         public IntentInput build() {
-            return new IntentInput(rawText, format, structuredData, tenantId, userId);
+            return new IntentInput(rawText, format, structuredData, tenantId, userId, workspaceId, projectId);
         }
     }
 }

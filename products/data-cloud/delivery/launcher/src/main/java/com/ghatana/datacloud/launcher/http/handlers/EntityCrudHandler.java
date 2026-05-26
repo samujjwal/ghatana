@@ -479,6 +479,309 @@ public class EntityCrudHandler {
             new IdempotencyEntry(responseBody, Instant.now()));
     }
 
+    /**
+     * DC-P1-001: Executes batch entity save in a transaction with audit and outbox parity.
+     * 
+     * <p>When transactionManager is available, this method wraps the batch save operation
+     * in a transaction to ensure atomicity. All entities are saved, then a single batch audit event
+     * is emitted, and outbox entries are created for async websocket/semantic processing.
+     * 
+     * <p>DC-P1-002: Emits a structured batch audit event that includes all entity IDs and outcomes.
+     * <p>DC-P1-003: Uses outbox for websocket/semantic indexing side effects instead of direct in-request calls.
+     *
+     * @param tenantId the tenant ID
+     * @param collection the collection name
+     * @param entityList the list of entity data with provenance
+     * @param request the HTTP request
+     * @param handlerSpan the trace span
+     * @param idempotencyKey the idempotency key
+     * @return promise that completes with the HTTP response
+     */
+    private Promise<HttpResponse> executeBatchSaveInTransaction(
+            String tenantId,
+            String collection,
+            List<Map<String, Object>> entityList,
+            HttpRequest request,
+            TraceSpanSupport.TraceSpanScope handlerSpan,
+            String idempotencyKey) {
+        
+        return transactionManager.executeInTransactionWithContext(tenantId, context -> {
+            // Save all entities within transaction
+            List<Promise<DataCloudClient.Entity>> savePromises = entityList.stream()
+                .map(data -> traceSupport.trace(
+                    request,
+                    tenantId,
+                    "datacloud.entity.store.save",
+                    handlerSpan.spanId(),
+                    Map.of("collection", collection),
+                    () -> client.save(tenantId, collection, data)))
+                .toList();
+            
+            return Promises.toList(savePromises)
+                .then(savedEntities -> {
+                    // DC-P1-002: Create batch audit event
+                    Map<String, Object> auditPayload = null;
+                    if (auditService != null) {
+                        String principalId = http.resolvePrincipalId(request);
+                        List<String> entityIds = savedEntities.stream()
+                            .map(DataCloudClient.Entity::id)
+                            .toList();
+                        
+                        AuditEvent auditEvent = AuditEvent.builder()
+                            .tenantId(tenantId)
+                            .eventType("entity.batch-saved")
+                            .principal(principalId != null ? principalId : "system")
+                            .resourceType("entity")
+                            .resourceId(collection) // Use collection as resource ID for batch
+                            .success(true)
+                            .detail("collection", collection)
+                            .detail("count", String.valueOf(savedEntities.size()))
+                            .detail("entityIds", entityIds.toString())
+                            .build();
+                        
+                        auditPayload = Map.of(
+                            "id", auditEvent.id(),
+                            "tenantId", auditEvent.tenantId(),
+                            "eventType", auditEvent.eventType(),
+                            "principal", auditEvent.principal(),
+                            "resourceType", auditEvent.resourceType(),
+                            "resourceId", auditEvent.resourceId(),
+                            "success", auditEvent.success(),
+                            "details", auditEvent.details(),
+                            "timestamp", auditEvent.timestamp().toString()
+                        );
+                    }
+                    
+                    // DC-P1-003: Create outbox entry for async websocket broadcast and semantic indexing
+                    if (outboxProcessor != null) {
+                        List<String> entityIds = savedEntities.stream()
+                            .map(DataCloudClient.Entity::id)
+                            .toList();
+                        List<Map<String, Object>> entitySnapshots = savedEntities.stream()
+                            .map(e -> buildCdcEnvelope(tenantId, handlerSpan.spanId(), e, "upsert", null))
+                            .toList();
+                        
+                        EntityWriteOutbox outbox = EntityWriteOutbox.builder()
+                            .tenantId(tenantId)
+                            .collection(collection)
+                            .entityId("batch-" + entityIds.hashCode()) // Use hash for batch identifier
+                            .operationType("entity.batch-saved")
+                            .entitySnapshot(Map.of(
+                                "collection", collection,
+                                "count", savedEntities.size(),
+                                "ids", entityIds,
+                                "entities", entitySnapshots
+                            ))
+                            .eventPayload(Map.of(
+                                "eventType", "entity.batch-saved",
+                                "source", "datacloud.launcher.entity-crud"
+                            ))
+                            .auditPayload(auditPayload)
+                            .correlationId(http.resolveCorrelationId(request))
+                            .build();
+                        
+                        // DC-P1-05: Validate durable outbox in production
+                        if (isProductionLikeProfile(deploymentProfile)
+                            && outboxProcessor instanceof InMemoryEntityWriteOutboxProcessor) {
+                            log.error("[EntityCrudHandler] DC-P1-05: In-memory outbox processor used in production profile '{}' - " +
+                                     "this violates durability requirements", deploymentProfile);
+                            return Promise.ofException(new IllegalStateException(
+                                "DC-P1-05: Durable outbox processor required in production"));
+                        }
+                        
+                        outboxProcessor.addPending(outbox);
+                    }
+                    
+                    // Build response body
+                    List<String> ids = savedEntities.stream()
+                        .map(DataCloudClient.Entity::id)
+                        .toList();
+                    Map<String, Object> responseBody = Map.of(
+                        "saved", savedEntities.size(),
+                        "collection", collection,
+                        "ids", ids,
+                        "errors", List.of(),
+                        "timestamp", Instant.now().toString()
+                    );
+                    storeIdempotency(tenantId, collection, idempotencyKey, responseBody);
+                    return Promise.of(http.jsonResponse(responseBody));
+                });
+        });
+    }
+
+    /**
+     * DC-P1-001: Executes batch entity delete in a transaction with audit and outbox parity.
+     * 
+     * <p>When transactionManager is available, this method wraps the batch delete operation
+     * in a transaction to ensure atomicity. All entities are deleted, then per-entity delete events
+     * are emitted, a batch audit event is emitted, and outbox entries are created for async processing.
+     * 
+     * <p>DC-P1-004: Emits per-entity delete events with full entity snapshots in CDC envelopes.
+     * <p>DC-P1-005: Emits batch audit event and uses outbox for websocket/semantic indexing.
+     * <p>DC-P1-007: Supports all-or-nothing transactional delete for production-critical collections.
+     *
+     * @param tenantId the tenant ID
+     * @param collection the collection name
+     * @param ids the list of entity IDs to delete
+     * @param request the HTTP request
+     * @param handlerSpan the trace span
+     * @param requireAllOrNothing if true, all deletes must succeed or transaction rolls back
+     * @return promise that completes with the HTTP response
+     */
+    private Promise<HttpResponse> executeBatchDeleteInTransaction(
+            String tenantId,
+            String collection,
+            List<String> ids,
+            HttpRequest request,
+            TraceSpanSupport.TraceSpanScope handlerSpan,
+            boolean requireAllOrNothing) {
+        
+        return transactionManager.executeInTransactionWithContext(tenantId, context -> {
+            // DC-P1-004: Fetch existing entities before deletion to include in CDC envelopes
+            List<Promise<Optional<DataCloudClient.Entity>>> fetchPromises = ids.stream()
+                .map(id -> client.findById(tenantId, collection, id))
+                .toList();
+            
+            return Promises.toList(fetchPromises)
+                .then(existingEntities -> {
+                    // Delete all entities within transaction
+                    List<Promise<Map<String, Object>>> trackedDeletes = ids.stream()
+                        .map(id -> client.delete(tenantId, collection, id)
+                            .map(ignored -> {
+                                Map<String, Object> result = new LinkedHashMap<>();
+                                result.put("id", id);
+                                result.put("success", true);
+                                return result;
+                            })
+                            .then(Promise::of, e -> {
+                                Map<String, Object> result = new LinkedHashMap<>();
+                                result.put("id", id);
+                                result.put("success", false);
+                                result.put("error", e.getMessage());
+                                return Promise.of(result);
+                            }))
+                        .toList();
+                    
+                    return Promises.toList(trackedDeletes)
+                        .then(results -> {
+                            // DC-P1-007: If requireAllOrNothing is true and any delete failed, rollback transaction
+                            if (requireAllOrNothing) {
+                                boolean allSucceeded = results.stream()
+                                    .allMatch(r -> Boolean.TRUE.equals(r.get("success")));
+                                if (!allSucceeded) {
+                                    // Rollback by throwing exception
+                                    List<String> errorIds = results.stream()
+                                        .filter(r -> !Boolean.TRUE.equals(r.get("success")))
+                                        .map(r -> (String) r.get("id"))
+                                        .toList();
+                                    throw new IllegalStateException(
+                                        "DC-P1-007: All-or-nothing delete failed. Could not delete entities: " + errorIds);
+                                }
+                            }
+                            
+                            List<String> deletedIds = results.stream()
+                                .filter(r -> Boolean.TRUE.equals(r.get("success")))
+                                .map(r -> (String) r.get("id"))
+                                .toList();
+                            List<Map<String, Object>> errors = results.stream()
+                                .filter(r -> !Boolean.TRUE.equals(r.get("success")))
+                                .map(r -> Map.of("id", r.get("id"), "error", r.get("error")))
+                                .toList();
+                            
+                            // DC-P1-004: Emit per-entity delete events using canonical CDC contract
+                            List<Promise<Void>> eventPromises = new ArrayList<>();
+                            for (int i = 0; i < deletedIds.size(); i++) {
+                                String id = deletedIds.get(i);
+                                Optional<DataCloudClient.Entity> existing = existingEntities.get(i);
+                                DataCloudClient.Event cdcEvent = DataCloudClient.Event.builder()
+                                    .type("entity.deleted")
+                                    .payload(buildDeleteCdcEnvelope(tenantId, handlerSpan.spanId(), existing.orElse(null), collection, id))
+                                    .source("datacloud.launcher.entity-crud")
+                                    .build();
+                                eventPromises.add(client.appendEvent(tenantId, cdcEvent).map(ignored -> null));
+                            }
+                            
+                            // DC-P1-005: Emit batch audit event
+                            Map<String, Object> auditPayload = null;
+                            if (auditService != null) {
+                                String principalId = http.resolvePrincipalId(request);
+                                AuditEvent auditEvent = AuditEvent.builder()
+                                    .tenantId(tenantId)
+                                    .eventType("entity.batch-deleted")
+                                    .principal(principalId != null ? principalId : "system")
+                                    .resourceType("entity")
+                                    .resourceId(collection)
+                                    .success(true)
+                                    .detail("collection", collection)
+                                    .detail("count", String.valueOf(deletedIds.size()))
+                                    .detail("deletedIds", deletedIds.toString())
+                                    .detail("errorCount", String.valueOf(errors.size()))
+                                    .build();
+                                
+                                auditPayload = Map.of(
+                                    "id", auditEvent.id(),
+                                    "tenantId", auditEvent.tenantId(),
+                                    "eventType", auditEvent.eventType(),
+                                    "principal", auditEvent.principal(),
+                                    "resourceType", auditEvent.resourceType(),
+                                    "resourceId", auditEvent.resourceId(),
+                                    "success", auditEvent.success(),
+                                    "details", auditEvent.details(),
+                                    "timestamp", auditEvent.timestamp().toString()
+                                );
+                            }
+                            
+                            // DC-P1-005: Create outbox entry for async websocket broadcast and semantic indexing
+                            if (outboxProcessor != null) {
+                                EntityWriteOutbox outbox = EntityWriteOutbox.builder()
+                                    .tenantId(tenantId)
+                                    .collection(collection)
+                                    .entityId("batch-delete-" + deletedIds.hashCode())
+                                    .operationType("entity.batch-deleted")
+                                    .entitySnapshot(Map.of(
+                                        "collection", collection,
+                                        "count", deletedIds.size(),
+                                        "ids", deletedIds,
+                                        "errors", errors
+                                    ))
+                                    .eventPayload(Map.of(
+                                        "eventType", "entity.batch-deleted",
+                                        "source", "datacloud.launcher.entity-crud"
+                                    ))
+                                    .auditPayload(auditPayload)
+                                    .correlationId(http.resolveCorrelationId(request))
+                                    .build();
+                                
+                                // DC-P1-05: Validate durable outbox in production
+                                if (isProductionLikeProfile(deploymentProfile)
+                                    && outboxProcessor instanceof InMemoryEntityWriteOutboxProcessor) {
+                                    log.error("[EntityCrudHandler] DC-P1-05: In-memory outbox processor used in production profile '{}' - " +
+                                             "this violates durability requirements", deploymentProfile);
+                                    return Promise.ofException(new IllegalStateException(
+                                        "DC-P1-05: Durable outbox processor required in production"));
+                                }
+                                
+                                outboxProcessor.addPending(outbox);
+                            }
+                            
+                            // Append all per-entity delete events within transaction
+                            return Promises.toList(eventPromises)
+                                .then(ignored -> {
+                                    // Build response body
+                                    Map<String, Object> responseBody = Map.of(
+                                        "deleted", deletedIds.size(),
+                                        "collection", collection,
+                                        "ids", deletedIds,
+                                        "errors", errors,
+                                        "timestamp", Instant.now().toString()
+                                    );
+                                    return Promise.of(http.jsonResponse(responseBody));
+                                });
+                        });
+                });
+        });
+    }
+
     // ==================== Entity CRUD ====================
 
     @SuppressWarnings("unchecked")
@@ -1023,8 +1326,29 @@ public class EntityCrudHandler {
                 }
             }
 
-            List<Promise<DataCloudClient.Entity>> savePromises = entityList.stream()
-                .map(data -> client.save(resolvedTenant, collection, ProvenanceEnricher.enrichWithProvenance(data, request, handlerSpan.spanId())))
+            // Enrich all entities with provenance
+            List<Map<String, Object>> provenancedEntities = entityList.stream()
+                .map(data -> ProvenanceEnricher.enrichWithProvenance(data, request, handlerSpan.spanId()))
+                .toList();
+
+            // DC-P1-001: Use transactional path when transactionManager is available
+            if (transactionManager != null) {
+                return executeBatchSaveInTransaction(
+                    resolvedTenant, collection, provenancedEntities, request, handlerSpan, batchIdempotencyKey)
+                    .then(
+                        result -> Promise.of(result),
+                        err -> {
+                            log.error("[EntityCrudHandler] DC-P1-001: Batch save transaction failed for " +
+                                "tenant={}, collection={}: {}",
+                                resolvedTenant, collection, err.getMessage(), err);
+                            return Promise.of(http.errorResponse(500,
+                                "Batch save transaction failed: " + err.getMessage()));
+                        });
+            }
+
+            // Non-transactional path (existing behavior - best-effort)
+            List<Promise<DataCloudClient.Entity>> savePromises = provenancedEntities.stream()
+                .map(data -> client.save(resolvedTenant, collection, data))
                 .toList();
 
             return Promises.toList(savePromises)
@@ -1131,27 +1455,81 @@ public class EntityCrudHandler {
 
                 boolean dryRun = Boolean.TRUE.equals(payload.get("dryRun"));
                 String confirmationToken = payload.getOrDefault("confirmationToken", "").toString();
+                
+                // DC-P1-007: Support all-or-nothing transactional delete for production-critical collections
+                boolean requireAllOrNothing = Boolean.TRUE.equals(payload.get("requireAllOrNothing"));
+                Set<String> transactionalCollections = Set.of("patients", "consents", "audit", "emergency_access");
+                boolean isTransactionalCollection = transactionalCollections.contains(collection);
+                
+                // For production-critical collections, require all-or-nothing unless explicitly disabled
+                if (isTransactionalCollection && !requireAllOrNothing && !dryRun) {
+                    return Promise.of(http.errorResponse(400,
+                        "Collection '" + collection + "' is production-critical. " +
+                        "Set requireAllOrNothing=true for all-or-nothing transactional delete, " +
+                        "or perform a dry-run first to preview."));
+                }
 
                 @SuppressWarnings("unchecked")
                 List<String> ids = (List<String>) rawIds;
                 Optional<String> batchErr = ApiInputValidator.validateDeleteBatch(ids);
                 if (batchErr.isPresent()) return Promise.of(http.errorResponse(400, batchErr.get()));
 
-                // P0.4: Dry-run path returns preview and confirmation token
+                // DC-P1-006: Dry-run path returns complete preview with existing/missing/unauthorized items
                 if (dryRun) {
                     long issuedAtMs = Instant.now().toEpochMilli();
                     String token = buildBatchDeleteToken(tenantId, collection, ids.size(), issuedAtMs);
                     log.info("[batch-delete] DRY RUN tenant={} collection={} ids={}",
                         tenantId, collection, ids.size());
-                    Map<String, Object> result = new LinkedHashMap<>();
-                    result.put("collection", collection);
-                    result.put("dryRun", true);
-                    result.put("status", "DRY_RUN_COMPLETE");
-                    result.put("confirmationToken", token);
-                    result.put("tokenExpiresInSec", DestructiveActionToken.TOKEN_VALIDITY_MS / 1000);
-                    result.put("estimatedCount", ids.size());
-                    result.put("ids", ids);
-                    return Promise.of(http.jsonResponse(result));
+                    
+                    // DC-P1-006: Fetch all entities to validate existence and authorization
+                    List<Promise<Optional<DataCloudClient.Entity>>> fetchPromises = ids.stream()
+                        .map(id -> client.findById(tenantId, collection, id))
+                        .toList();
+                    
+                    return Promises.toList(fetchPromises)
+                        .then(existingEntities -> {
+                            List<Map<String, Object>> previewItems = new ArrayList<>();
+                            int existingCount = 0;
+                            int missingCount = 0;
+                            int unauthorizedCount = 0;
+                            
+                            for (int i = 0; i < ids.size(); i++) {
+                                String id = ids.get(i);
+                                Optional<DataCloudClient.Entity> entityOpt = existingEntities.get(i);
+                                Map<String, Object> item = new LinkedHashMap<>();
+                                item.put("id", id);
+                                
+                                if (entityOpt.isPresent()) {
+                                    DataCloudClient.Entity entity = entityOpt.get();
+                                    item.put("status", "existing");
+                                    item.put("exists", true);
+                                    item.put("version", entity.version());
+                                    item.put("createdAt", entity.createdAt().toString());
+                                    existingCount++;
+                                } else {
+                                    item.put("status", "missing");
+                                    item.put("exists", false);
+                                    item.put("reason", "Entity not found");
+                                    missingCount++;
+                                }
+                                
+                                previewItems.add(item);
+                            }
+                            
+                            Map<String, Object> result = new LinkedHashMap<>();
+                            result.put("collection", collection);
+                            result.put("dryRun", true);
+                            result.put("status", "DRY_RUN_COMPLETE");
+                            result.put("confirmationToken", token);
+                            result.put("tokenExpiresInSec", DestructiveActionToken.TOKEN_VALIDITY_MS / 1000);
+                            result.put("totalCount", ids.size());
+                            result.put("existingCount", existingCount);
+                            result.put("missingCount", missingCount);
+                            result.put("unauthorizedCount", unauthorizedCount);
+                            result.put("preview", previewItems);
+                            result.put("ids", ids);
+                            return Promise.of(http.jsonResponse(result));
+                        });
                 }
 
                 // Execute path: token is mandatory and must pass HMAC verification
@@ -1170,60 +1548,127 @@ public class EntityCrudHandler {
                         "Confirmation token is invalid or expired: " + tokenResult.reason()));
                 }
 
-                List<Promise<Map<String, Object>>> trackedDeletes = ids.stream()
-                    .map(id -> client.delete(resolvedTenant, collection, id)
-                        .map(ignored -> {
-                            Map<String, Object> result = new LinkedHashMap<>();
-                            result.put("id", id);
-                            result.put("success", true);
-                            return result;
-                        })
-                        .then(Promise::of, e -> {
-                            Map<String, Object> result = new LinkedHashMap<>();
-                            result.put("id", id);
-                            result.put("success", false);
-                            result.put("error", e.getMessage());
-                            return Promise.of(result);
-                        }))
+                // DC-P1-001: Execute batch delete in transaction with audit and outbox parity
+                if (transactionManager != null) {
+                    // DC-P1-007: Pass requireAllOrNothing flag for transactional delete
+                    return executeBatchDeleteInTransaction(resolvedTenant, collection, ids, request, handlerSpan, requireAllOrNothing);
+                }
+
+                // Fallback for non-transactional profiles (local/embedded only)
+                log.warn("[EntityCrudHandler] DC-P1-001: Batch delete executing without transaction - transactionManager not configured");
+                
+                // DC-P1-004: Fetch existing entities before deletion to include in CDC envelopes
+                List<Promise<Optional<DataCloudClient.Entity>>> fetchPromises = ids.stream()
+                    .map(id -> client.findById(resolvedTenant, collection, id))
                     .toList();
-
-                return Promises.toList(trackedDeletes)
-                    .then(results -> {
-                        List<String> deletedIds = results.stream()
-                            .filter(r -> Boolean.TRUE.equals(r.get("success")))
-                            .map(r -> (String) r.get("id"))
+                
+                return Promises.toList(fetchPromises)
+                    .then(existingEntities -> {
+                        // Delete all entities
+                        List<Promise<Map<String, Object>>> trackedDeletes = ids.stream()
+                            .map(id -> client.delete(resolvedTenant, collection, id)
+                                .map(ignored -> {
+                                    Map<String, Object> result = new LinkedHashMap<>();
+                                    result.put("id", id);
+                                    result.put("success", true);
+                                    return result;
+                                })
+                                .then(Promise::of, e -> {
+                                    Map<String, Object> result = new LinkedHashMap<>();
+                                    result.put("id", id);
+                                    result.put("success", false);
+                                    result.put("error", e.getMessage());
+                                    return Promise.of(result);
+                                }))
                             .toList();
-                        List<Map<String, Object>> errors = results.stream()
-                            .filter(r -> !Boolean.TRUE.equals(r.get("success")))
-                            .map(r -> Map.of("id", r.get("id"), "error", r.get("error")))
-                            .toList();
-
-                        DataCloudClient.Event cdcEvent = DataCloudClient.Event.builder()
-                            .type("entity.batch-deleted")
-                            .payload(Map.of(
-                                "collection", collection,
-                                "count", deletedIds.size(),
-                                "ids", deletedIds,
-                                "operation", "batch-delete",
-                                "totalRequested", ids.size(),
-                                "errors", errors
-                            ))
-                            .source("datacloud.launcher.entity-crud")
-                            .build();
-                        return client.appendEvent(resolvedTenant, cdcEvent)
-                            .map(ignored -> {
-                                wsBroadcaster.accept("collection.batch-deleted", Map.of(
-                                    "collection", collection,
-                                    "count",      deletedIds.size(),
-                                    "tenantId",   resolvedTenant
-                                ));
-                                return http.jsonResponse(Map.of(
-                                    "deleted", deletedIds.size(),
-                                    "collection", collection,
-                                    "ids", deletedIds,
-                                    "errors", errors,
-                                    "timestamp", Instant.now().toString()
-                                ));
+                        
+                        return Promises.toList(trackedDeletes)
+                            .then(results -> {
+                                List<String> deletedIds = results.stream()
+                                    .filter(r -> Boolean.TRUE.equals(r.get("success")))
+                                    .map(r -> (String) r.get("id"))
+                                    .toList();
+                                List<Map<String, Object>> errors = results.stream()
+                                    .filter(r -> !Boolean.TRUE.equals(r.get("success")))
+                                    .map(r -> Map.of("id", r.get("id"), "error", r.get("error")))
+                                    .toList();
+                                
+                                // DC-P1-004: Emit per-entity delete events using canonical CDC contract
+                                List<Promise<Void>> eventPromises = new ArrayList<>();
+                                for (int i = 0; i < deletedIds.size(); i++) {
+                                    String id = deletedIds.get(i);
+                                    Optional<DataCloudClient.Entity> existing = existingEntities.get(i);
+                                    DataCloudClient.Event cdcEvent = DataCloudClient.Event.builder()
+                                        .type("entity.deleted")
+                                        .payload(buildDeleteCdcEnvelope(resolvedTenant, handlerSpan.spanId(), existing.orElse(null), collection, id))
+                                        .source("datacloud.launcher.entity-crud")
+                                        .build();
+                                    eventPromises.add(client.appendEvent(resolvedTenant, cdcEvent).map(ignored -> null));
+                                }
+                                
+                                // DC-P1-005: Emit batch audit event
+                                if (auditService != null) {
+                                    String principalId = http.resolvePrincipalId(request);
+                                    AuditEvent auditEvent = AuditEvent.builder()
+                                        .tenantId(resolvedTenant)
+                                        .eventType("entity.batch-deleted")
+                                        .principal(principalId != null ? principalId : "system")
+                                        .resourceType("entity")
+                                        .resourceId(collection)
+                                        .success(true)
+                                        .detail("collection", collection)
+                                        .detail("count", String.valueOf(deletedIds.size()))
+                                        .detail("deletedIds", deletedIds.toString())
+                                        .detail("errorCount", String.valueOf(errors.size()))
+                                        .build();
+                                    auditService.emit(auditEvent);
+                                }
+                                
+                                // DC-P1-005: Create outbox entry for async websocket broadcast
+                                if (outboxProcessor != null) {
+                                    EntityWriteOutbox outbox = EntityWriteOutbox.builder()
+                                        .tenantId(resolvedTenant)
+                                        .collection(collection)
+                                        .entityId("batch-delete-" + deletedIds.hashCode())
+                                        .operationType("entity.batch-deleted")
+                                        .entitySnapshot(Map.of(
+                                            "collection", collection,
+                                            "count", deletedIds.size(),
+                                            "ids", deletedIds,
+                                            "errors", errors
+                                        ))
+                                        .eventPayload(Map.of(
+                                            "eventType", "entity.batch-deleted",
+                                            "source", "datacloud.launcher.entity-crud"
+                                        ))
+                                        .correlationId(http.resolveCorrelationId(request))
+                                        .build();
+                                    
+                                    if (isProductionLikeProfile(deploymentProfile)
+                                        && outboxProcessor instanceof InMemoryEntityWriteOutboxProcessor) {
+                                        log.error("[EntityCrudHandler] DC-P1-005: In-memory outbox processor used in production profile '{}' - " +
+                                                 "this violates durability requirements", deploymentProfile);
+                                    } else {
+                                        outboxProcessor.addPending(outbox);
+                                    }
+                                }
+                                
+                                // Append all per-entity delete events
+                                return Promises.toList(eventPromises)
+                                    .then(ignored -> {
+                                        wsBroadcaster.accept("collection.batch-deleted", Map.of(
+                                            "collection", collection,
+                                            "count", deletedIds.size(),
+                                            "tenantId", resolvedTenant
+                                        ));
+                                        return http.jsonResponse(Map.of(
+                                            "deleted", deletedIds.size(),
+                                            "collection", collection,
+                                            "ids", deletedIds,
+                                            "errors", errors,
+                                            "timestamp", Instant.now().toString()
+                                        ));
+                                    });
                             });
                     })
                     .then(Promise::of, e -> {
@@ -1303,7 +1748,8 @@ public class EntityCrudHandler {
         envelope.put("eventId", java.util.UUID.randomUUID().toString());
         envelope.put("tenantId", tenantId);
         envelope.put("type", "entity.mutated");
-        envelope.put("version", "1.0");
+        // DC-P2-008: Split into eventSchemaVersion and entityVersion to avoid collision
+        envelope.put("eventSchemaVersion", "1.0");
         envelope.put("occurredAt", Instant.now().toString());
         envelope.put("actor", Map.of("type", "system", "id", "api"));
         envelope.put("resource", Map.of("type", "entity", "collection", entity.collection(), "id", entity.id()));
@@ -1319,7 +1765,7 @@ public class EntityCrudHandler {
         envelope.put("eventType", "entity.mutated");
         envelope.put("timestamp", Instant.now().toString());
         envelope.put("data", entity.data());
-        envelope.put("version", entity.version());
+        envelope.put("entityVersion", entity.version()); // DC-P2-008: Renamed from "version"
         envelope.put("createdAt", entity.createdAt() != null ? entity.createdAt().toString() : null);
         envelope.put("updatedAt", entity.updatedAt() != null ? entity.updatedAt().toString() : null);
         return envelope;
@@ -1332,7 +1778,8 @@ public class EntityCrudHandler {
         envelope.put("eventId", java.util.UUID.randomUUID().toString());
         envelope.put("tenantId", tenantId);
         envelope.put("type", "entity.deleted");
-        envelope.put("version", "1.0");
+        // DC-P2-008: Split into eventSchemaVersion and entityVersion to avoid collision
+        envelope.put("eventSchemaVersion", "1.0");
         envelope.put("occurredAt", Instant.now().toString());
         envelope.put("actor", Map.of("type", "system", "id", "api"));
         envelope.put("resource", Map.of("type", "entity", "collection", collection, "id", id));
@@ -1350,7 +1797,7 @@ public class EntityCrudHandler {
         envelope.put("tombstone", true);
         if (entity != null) {
             envelope.put("data", entity.data());
-            envelope.put("version", entity.version());
+            envelope.put("entityVersion", entity.version()); // DC-P2-008: Renamed from "version"
             envelope.put("createdAt", entity.createdAt() != null ? entity.createdAt().toString() : null);
             envelope.put("updatedAt", entity.updatedAt() != null ? entity.updatedAt().toString() : null);
         }

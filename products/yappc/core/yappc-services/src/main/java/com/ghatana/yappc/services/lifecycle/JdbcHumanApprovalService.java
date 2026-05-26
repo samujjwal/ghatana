@@ -102,7 +102,30 @@ public class JdbcHumanApprovalService extends HumanApprovalService {
             ApprovalNotificationService notificationService,
             ApprovalRiskScorer riskScorer,
             ApprovalAuditLogger auditLogger) {
-        super(publisher, notificationService, riskScorer, auditLogger);
+        this(publisher, dataSource, objectMapper, notificationService, riskScorer, auditLogger,
+                ApprovalDecisionOutcomeService.noop());
+    }
+
+    /**
+     * Full constructor with notification, risk-scoring, audit, and decision outcome support.
+     *
+     * @param publisher              AEP event publisher (forwarded to parent)
+     * @param dataSource             YAPPC PostgreSQL data source
+     * @param objectMapper           Jackson mapper for JSONB serialization of {@link ApprovalRequest.ApprovalContext}
+     * @param notificationService    optional notification broadcaster; may be null
+     * @param riskScorer             optional AI risk scorer; may be null
+     * @param auditLogger            optional compliance audit logger; may be null
+     * @param decisionOutcomeService learning/evolve decision side-effect service
+     */
+    public JdbcHumanApprovalService(
+            AepEventPublisher publisher,
+            DataSource dataSource,
+            ObjectMapper objectMapper,
+            ApprovalNotificationService notificationService,
+            ApprovalRiskScorer riskScorer,
+            ApprovalAuditLogger auditLogger,
+            ApprovalDecisionOutcomeService decisionOutcomeService) {
+        super(publisher, notificationService, riskScorer, auditLogger, decisionOutcomeService);
         this.dataSource = Objects.requireNonNull(dataSource, "dataSource");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
     }

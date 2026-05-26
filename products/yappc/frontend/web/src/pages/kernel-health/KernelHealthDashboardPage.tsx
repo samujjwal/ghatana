@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { useParams } from 'react-router';
+import { Link, useParams } from 'react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/Button';
@@ -17,10 +17,10 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertCircle, CheckCircle, Clock, RefreshCw } from 'lucide-react';
 
 import { LifecycleTimelinePanel, type LifecycleRunSummary } from './LifecycleTimelinePanel';
-import { GateHealthPanel } from './GateHealthPanel';
-import { ArtifactHealthPanel } from './ArtifactHealthPanel';
+import { GateHealthPanel, type GateEvaluation } from './GateHealthPanel';
+import { ArtifactHealthPanel, type KernelArtifactHealth } from './ArtifactHealthPanel';
 import { DeploymentHealthPanel, type Deployment, type HealthCheck } from './DeploymentHealthPanel';
-import { AgentGovernanceHealthPanel } from './AgentGovernanceHealthPanel';
+import { AgentGovernanceHealthPanel, type AgentGovernance } from './AgentGovernanceHealthPanel';
 import {
   PreviewSecurityHealthPanel,
   type PreviewSecurity,
@@ -28,6 +28,7 @@ import {
 } from './PreviewSecurityHealthPanel';
 import { RecommendedActionsPanel } from './RecommendedActionsPanel';
 import {
+  useKernelProductUnitList,
   useKernelProductUnitHealth,
   useKernelLifecycleTimeline,
   useKernelRecommendedActions,
@@ -40,6 +41,36 @@ const toStringOr = (value: unknown, fallback: string): string =>
 
 const toBooleanOr = (value: unknown, fallback: boolean): boolean =>
   typeof value === 'boolean' ? value : fallback;
+
+const toNumberOr = (value: unknown, fallback: number): number =>
+  typeof value === 'number' ? value : fallback;
+
+const toRecord = (value: unknown): JsonRecord =>
+  typeof value === 'object' && value !== null ? (value as JsonRecord) : {};
+
+const toArray = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);
+
+const firstNestedArray = (records: JsonRecord[], keys: string[]): unknown[] => {
+  for (const record of records) {
+    for (const key of keys) {
+      const directValue = record[key];
+      if (Array.isArray(directValue)) {
+        return directValue;
+      }
+    }
+
+    for (const value of Object.values(record)) {
+      const nested = toRecord(value);
+      for (const key of keys) {
+        const nestedValue = nested[key];
+        if (Array.isArray(nestedValue)) {
+          return nestedValue;
+        }
+      }
+    }
+  }
+  return [];
+};
 
 const toLifecycleStatus = (value: unknown): LifecycleRunSummary['status'] => {
   switch (value) {
@@ -132,6 +163,76 @@ const normalizeRuns = (runs: unknown): LifecycleRunSummary[] => {
   });
 };
 
+const toGateStatus = (value: unknown): GateEvaluation['status'] => {
+  switch (value) {
+    case 'passed':
+    case 'failed':
+    case 'blocked':
+    case 'skipped':
+      return value;
+    default:
+      return 'skipped';
+  }
+};
+
+const normalizeGates = (healthSnapshot: JsonRecord, lifecycleResult: JsonRecord): GateEvaluation[] =>
+  firstNestedArray([healthSnapshot, lifecycleResult], ['gates', 'gateEvaluations', 'evaluations']).map(
+    (gate, index) => {
+      const record = toRecord(gate);
+      return {
+        id: toStringOr(record.id, `gate-${index + 1}`),
+        name: toStringOr(record.name, `Gate ${index + 1}`),
+        phase: toStringOr(record.phase, 'unknown'),
+        status: toGateStatus(record.status),
+        required: toBooleanOr(record.required, true),
+        criteria: toArray(record.criteria).filter((criterion): criterion is string => typeof criterion === 'string'),
+        reason: typeof record.reason === 'string' ? record.reason : undefined,
+        evidence: typeof record.evidence === 'string' ? record.evidence : undefined,
+      };
+    }
+  );
+
+const toArtifactType = (value: unknown): KernelArtifactHealth['type'] => {
+  switch (value) {
+    case 'docker-image':
+    case 'jar':
+    case 'npm-package':
+    case 'helm-chart':
+    case 'other':
+      return value;
+    default:
+      return 'other';
+  }
+};
+
+const toArtifactHealth = (value: unknown): KernelArtifactHealth['healthCheckStatus'] => {
+  switch (value) {
+    case 'healthy':
+    case 'unhealthy':
+    case 'unknown':
+      return value;
+    default:
+      return 'unknown';
+  }
+};
+
+const normalizeArtifacts = (healthSnapshot: JsonRecord, lifecycleResult: JsonRecord): KernelArtifactHealth[] =>
+  firstNestedArray([healthSnapshot, lifecycleResult], ['artifacts', 'artifactHealth']).map((artifact, index) => {
+    const record = toRecord(artifact);
+    return {
+      id: toStringOr(record.id, `artifact-${index + 1}`),
+      type: toArtifactType(record.type),
+      surface: toStringOr(record.surface, 'unknown'),
+      path: toStringOr(record.path, 'unknown'),
+      fingerprint: toStringOr(record.fingerprint, 'unknown'),
+      producedBy: toStringOr(record.producedBy, 'unknown'),
+      producedAt: toStringOr(record.producedAt, ''),
+      deploymentLink: typeof record.deploymentLink === 'string' ? record.deploymentLink : undefined,
+      healthCheckStatus: toArtifactHealth(record.healthCheckStatus),
+      lastVerified: typeof record.lastVerified === 'string' ? record.lastVerified : undefined,
+    };
+  });
+
 const normalizeDeployment = (deployment: unknown, productUnitId: string): Deployment => {
   const record =
     typeof deployment === 'object' && deployment !== null ? (deployment as JsonRecord) : {};
@@ -156,6 +257,57 @@ const normalizeDeployment = (deployment: unknown, productUnitId: string): Deploy
   };
 };
 
+const toLearningLevel = (value: unknown): AgentGovernance['learningLevel'] => {
+  switch (value) {
+    case 'L0':
+    case 'L1':
+    case 'L2':
+    case 'L3':
+      return value;
+    default:
+      return 'L0';
+  }
+};
+
+const toGovernanceState = (value: unknown): AgentGovernance['governanceState'] => {
+  switch (value) {
+    case 'ready':
+    case 'requires_approval':
+    case 'requires_verification':
+    case 'obsolete':
+    case 'quarantined':
+      return value;
+    default:
+      return 'requires_verification';
+  }
+};
+
+const normalizeAgents = (healthSnapshot: JsonRecord): AgentGovernance[] =>
+  firstNestedArray([healthSnapshot], ['agentGovernance', 'agents']).map((agent, index) => {
+    const record = toRecord(agent);
+    const learningEvidence = toRecord(record.learningEvidence);
+    const promotionQueue = toRecord(record.promotionQueue);
+    return {
+      agentId: toStringOr(record.agentId, `agent-${index + 1}`),
+      agentName: toStringOr(record.agentName, `Agent ${index + 1}`),
+      learningLevel: toLearningLevel(record.learningLevel),
+      governanceState: toGovernanceState(record.governanceState),
+      learningEvidence: {
+        semanticFacts: toNumberOr(learningEvidence.semanticFacts, 0),
+        negativeKnowledge: toNumberOr(learningEvidence.negativeKnowledge, 0),
+        episodicCaptures: toNumberOr(learningEvidence.episodicCaptures, 0),
+      },
+      policyBlocks: toArray(record.policyBlocks).filter((block): block is string => typeof block === 'string'),
+      promotionQueue:
+        Object.keys(promotionQueue).length > 0
+          ? {
+              position: toNumberOr(promotionQueue.position, 0),
+              estimatedTime: toStringOr(promotionQueue.estimatedTime, 'unknown'),
+            }
+          : null,
+    };
+  });
+
 const toTokenScope = (input: unknown, index: number): TokenScope => {
   const record = typeof input === 'object' && input !== null ? (input as JsonRecord) : {};
   return {
@@ -167,7 +319,9 @@ const toTokenScope = (input: unknown, index: number): TokenScope => {
 };
 
 const normalizePreviewSecurity = (snapshot: unknown, productUnitId: string): PreviewSecurity => {
-  const record = typeof snapshot === 'object' && snapshot !== null ? (snapshot as JsonRecord) : {};
+  const snapshotRecord = toRecord(snapshot);
+  const nested = toRecord(snapshotRecord.previewSecurity);
+  const record = Object.keys(nested).length > 0 ? nested : snapshotRecord;
   return {
     previewTokenId: toStringOr(record.previewTokenId, `${productUnitId}-preview-token`),
     tokenScope: Array.isArray(record.tokenScope)
@@ -191,6 +345,13 @@ export const KernelHealthDashboardPage: React.FC = () => {
   const activeProductUnitId = selectedProductUnit ?? undefined;
 
   const {
+    data: productUnits = [],
+    isLoading: listLoading,
+    isError: listError,
+    refetch: refetchProductUnits,
+  } = useKernelProductUnitList();
+
+  const {
     data: healthView,
     isLoading: healthLoading,
     isError: healthError,
@@ -209,9 +370,15 @@ export const KernelHealthDashboardPage: React.FC = () => {
     refetch: refetchRecs,
   } = useKernelRecommendedActions(activeProductUnitId);
 
-  const loading = healthLoading || timelineLoading || recsLoading;
-  const error = healthError ? 'Failed to load Kernel health data' : null;
+  const loading = healthLoading || timelineLoading || recsLoading || (!selectedProductUnit && listLoading);
+  const error =
+    healthError || listError ? 'Failed to load Kernel health data' : null;
   const timelineRuns = normalizeRuns(timeline?.runs);
+  const healthSnapshot = toRecord(healthView?.healthSnapshot);
+  const lifecycleResult = toRecord(healthView?.lifecycleResult);
+  const gates = normalizeGates(healthSnapshot, lifecycleResult);
+  const artifacts = normalizeArtifacts(healthSnapshot, lifecycleResult);
+  const agents = normalizeAgents(healthSnapshot);
   const deployment = healthView
     ? normalizeDeployment(healthView.deployment, healthView.productUnitId)
     : null;
@@ -220,6 +387,7 @@ export const KernelHealthDashboardPage: React.FC = () => {
     : null;
 
   const handleRefresh = () => {
+    void refetchProductUnits();
     void refetchHealth();
     void refetchTimeline();
     void refetchRecs();
@@ -348,14 +516,14 @@ export const KernelHealthDashboardPage: React.FC = () => {
             <TabsContent value="gates">
               <GateHealthPanel
                 productUnitId={healthView.productUnitId}
-                gates={[]}
+                gates={gates}
               />
             </TabsContent>
 
             <TabsContent value="artifacts">
               <ArtifactHealthPanel
                 productUnitId={healthView.productUnitId}
-                artifacts={[]}
+                artifacts={artifacts}
               />
             </TabsContent>
 
@@ -369,7 +537,7 @@ export const KernelHealthDashboardPage: React.FC = () => {
             <TabsContent value="governance">
               <AgentGovernanceHealthPanel
                 productUnitId={healthView.productUnitId}
-                agents={[]}
+                agents={agents}
               />
             </TabsContent>
 
@@ -386,13 +554,40 @@ export const KernelHealthDashboardPage: React.FC = () => {
       )}
 
       {!selectedProductUnit && (
-        <Card>
-          <CardContent className="flex items-center justify-center h-64">
-            <p className="text-muted-foreground">
-              Select a ProductUnit to view health details
-            </p>
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          {productUnits.length === 0 ? (
+            <Card>
+              <CardContent className="flex items-center justify-center h-64">
+                <p className="text-muted-foreground">
+                  Select a ProductUnit to view health details
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {productUnits.map((productUnit) => (
+                <Link
+                  key={productUnit.productUnitId}
+                  to={`/app/kernel-health/products/${encodeURIComponent(productUnit.productUnitId)}`}
+                  className="block rounded-lg border p-4 transition-colors hover:bg-muted"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-semibold">{productUnit.productUnitId}</p>
+                      <p className="text-sm text-muted-foreground">{productUnit.currentPhase}</p>
+                    </div>
+                    <Badge variant={getStatusBadgeVariant(productUnit.overallStatus)}>
+                      {productUnit.overallStatus}
+                    </Badge>
+                  </div>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Last run {new Date(productUnit.lastRunTimestamp).toLocaleString()}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

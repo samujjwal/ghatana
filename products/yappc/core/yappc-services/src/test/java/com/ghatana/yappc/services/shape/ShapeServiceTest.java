@@ -5,6 +5,7 @@ import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.yappc.domain.artifact.ArtifactGraphResponse;
 import com.ghatana.yappc.domain.intent.IntentSpec;
 import com.ghatana.yappc.domain.shape.ShapeSpec;
 import com.ghatana.yappc.domain.shape.SystemModel;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.List;
 import java.util.Map;
@@ -34,6 +36,8 @@ class ShapeServiceTest extends EventloopTestBase {
     private CompletionService aiService;
     private AuditLogger auditLogger;
     private MetricsCollector metrics;
+    private ShapeRepository shapeRepository;
+    private ShapeArtifactGraphLineageService lineageService;
     private ShapeService service;
 
     @BeforeEach
@@ -41,6 +45,8 @@ class ShapeServiceTest extends EventloopTestBase {
         aiService = mock(CompletionService.class); 
         auditLogger = mock(AuditLogger.class); 
         metrics = mock(MetricsCollector.class); 
+        shapeRepository = mock(ShapeRepository.class);
+        lineageService = mock(ShapeArtifactGraphLineageService.class);
         when(auditLogger.log(anyMap())).thenReturn(Promise.complete()); 
         service = new ShapeServiceImpl(aiService, auditLogger, metrics); 
     }
@@ -66,6 +72,11 @@ class ShapeServiceTest extends EventloopTestBase {
                 .goals(List.of()) 
                 .personas(List.of()) 
                 .constraints(List.of()) 
+                .metadata(Map.of(
+                        "workspaceId", "workspace-123",
+                        "projectId", "project-123",
+                        "userId", "user-123",
+                        "evidenceIds", "evidence-intent-1"))
                 .tenantId(tenantId) 
                 .build(); 
     }
@@ -146,6 +157,68 @@ class ShapeServiceTest extends EventloopTestBase {
             assertNotEquals(s1.id(), s2.id()); 
             assertEquals("tenant-A", s1.tenantId()); 
             assertEquals("tenant-B", s2.tenantId()); 
+        }
+
+        @Test
+        @DisplayName("persists derived shape with intent lineage when repository is configured")
+        void shouldPersistDerivedShape() {
+            stubAiSuccess("{\"architecture\": {}, \"domainModel\": {}}");
+            when(shapeRepository.saveShape(any(ShapeSpec.class), any(ShapePersistenceContext.class)))
+                    .thenAnswer(invocation -> Promise.of(new ShapeVersionRecord(
+                            "project-123:shape-123:v1",
+                            "tenant-123",
+                            "workspace-123",
+                            "project-123",
+                            invocation.getArgument(0, ShapeSpec.class).id(),
+                            1,
+                            invocation.getArgument(0, ShapeSpec.class),
+                            null,
+                            "user-123",
+                            java.time.Instant.now(),
+                            "intent-123",
+                            List.of("evidence-intent-1"),
+                            Map.of())));
+            service = new ShapeServiceImpl(aiService, auditLogger, metrics, shapeRepository);
+
+            ShapeSpec result = runPromise(() -> service.derive(intent("tenant-123")));
+
+            assertEquals("workspace-123", result.metadata().get("workspaceId"));
+            ArgumentCaptor<ShapePersistenceContext> contextCaptor =
+                    ArgumentCaptor.forClass(ShapePersistenceContext.class);
+            verify(shapeRepository).saveShape(eq(result), contextCaptor.capture());
+            ShapePersistenceContext context = contextCaptor.getValue();
+            assertEquals("workspace-123", context.workspaceId());
+            assertEquals("project-123", context.projectId());
+            assertEquals("intent-123", context.sourceIntentId());
+            assertEquals(List.of("evidence-intent-1"), context.intentEvidenceIds());
+        }
+
+        @Test
+        @DisplayName("records shape artifact graph lineage after persistence")
+        void shouldRecordShapeArtifactGraphLineage() {
+            stubAiSuccess("{\"architecture\": {}, \"domainModel\": {}}");
+            when(shapeRepository.saveShape(any(ShapeSpec.class), any(ShapePersistenceContext.class)))
+                    .thenAnswer(invocation -> Promise.of(new ShapeVersionRecord(
+                            "project-123:shape-123:v1",
+                            "tenant-123",
+                            "workspace-123",
+                            "project-123",
+                            invocation.getArgument(0, ShapeSpec.class).id(),
+                            1,
+                            invocation.getArgument(0, ShapeSpec.class),
+                            null,
+                            "user-123",
+                            java.time.Instant.now(),
+                            "intent-123",
+                            List.of("evidence-intent-1"),
+                            Map.of())));
+            when(lineageService.recordShapeLineage(any(ShapeSpec.class)))
+                    .thenReturn(Promise.of(new ArtifactGraphResponse(true, "ingest", Map.of(), "ok")));
+            service = new ShapeServiceImpl(aiService, auditLogger, metrics, shapeRepository, lineageService);
+
+            ShapeSpec result = runPromise(() -> service.derive(intent("tenant-123")));
+
+            verify(lineageService).recordShapeLineage(eq(result));
         }
     }
 

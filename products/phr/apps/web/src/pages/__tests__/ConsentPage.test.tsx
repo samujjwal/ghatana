@@ -72,16 +72,18 @@ describe('ConsentPage', () => {
     fireEvent.change(inputs[0]!, { target: { value: 'grantee-42' } });
     fireEvent.change(inputs[1]!, { target: { value: 'Treatment' } });
     fireEvent.change(inputs[2]!, { target: { value: 'Patient,Observation' } });
-    fireEvent.change(inputs[3]!, { target: { value: '2027-12-31' } });
+    fireEvent.change(screen.getByLabelText('consents.grant.expiresAt'), { target: { value: '2027-12-31' } });
 
     fireEvent.click(screen.getByText('consents.grant.submit'));
 
     await waitFor(() => expect(mockCreate).toHaveBeenCalledOnce());
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        granteeId: 'grantee-42',
+        recipientId: 'grantee-42',
         purpose: 'Treatment',
-        resourceTypes: ['Patient', 'Observation'],
+        scope: expect.objectContaining({
+          resourceTypes: ['Patient', 'Observation'],
+        }),
       }),
       expect.any(Object),
     );
@@ -98,7 +100,7 @@ describe('ConsentPage', () => {
     fireEvent.change(inputs[0]!, { target: { value: 'g1' } });
     fireEvent.change(inputs[1]!, { target: { value: 'Tx' } });
     fireEvent.change(inputs[2]!, { target: { value: 'Patient' } });
-    fireEvent.change(inputs[3]!, { target: { value: '2027-01-01' } });
+    fireEvent.change(screen.getByLabelText('consents.grant.expiresAt'), { target: { value: '2027-01-01' } });
 
     fireEvent.click(screen.getByText('consents.grant.submit'));
 

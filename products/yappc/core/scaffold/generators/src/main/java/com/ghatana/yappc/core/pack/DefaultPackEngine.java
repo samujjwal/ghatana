@@ -22,7 +22,9 @@ import com.ghatana.yappc.core.template.TemplateEngine;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
@@ -87,10 +89,15 @@ public class DefaultPackEngine implements PackEngine {
         List<String> generatedFiles = new ArrayList<>();
         List<String> errors = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
+        List<String> createdFiles = new ArrayList<>();
+        List<String> updatedFiles = new ArrayList<>();
+        List<String> unchangedFiles = new ArrayList<>();
+        List<String> backupFiles = new ArrayList<>();
         int filesGenerated = 0;
 
         try {
             Files.createDirectories(outputPath);
+            Path outputRoot = outputPath.toAbsolutePath().normalize();
 
             PackMetadata metadata = pack.getMetadata();
             Map<String, PackMetadata.TemplateFile> templates = metadata.templates();
@@ -101,13 +108,18 @@ public class DefaultPackEngine implements PackEngine {
                     PackMetadata.TemplateFile templateSpec = entry.getValue();
 
                     try {
-                        boolean generated =
+                        TemplateGenerationOutcome outcome =
                                 generateTemplateFile(
-                                        pack, templateName, templateSpec, outputPath, variables);
-                        if (generated) {
+                                        pack, templateName, templateSpec, outputRoot, variables);
+                        if (outcome.written()) {
                             filesGenerated++;
-                            generatedFiles.add(templateSpec.target());
                         }
+                        generatedFiles.add(outcome.relativePath());
+                        createdFiles.addAll(outcome.createdFiles());
+                        updatedFiles.addAll(outcome.updatedFiles());
+                        unchangedFiles.addAll(outcome.unchangedFiles());
+                        backupFiles.addAll(outcome.backupFiles());
+                        warnings.addAll(outcome.warnings());
                     } catch (Exception e) {
                         String error =
                                 String.format(
@@ -133,7 +145,17 @@ public class DefaultPackEngine implements PackEngine {
                     errors,
                     warnings,
                     summary,
-                    Map.of("pack", pack.getName()));
+                    Map.of(
+                            "pack",
+                            pack.getName(),
+                            "createdFiles",
+                            createdFiles,
+                            "updatedFiles",
+                            updatedFiles,
+                            "unchangedFiles",
+                            unchangedFiles,
+                            "backupFiles",
+                            backupFiles));
 
         } catch (IOException e) {
             throw new PackException("Failed to generate from pack: " + e.getMessage(), e);
@@ -254,18 +276,18 @@ public class DefaultPackEngine implements PackEngine {
 
     /**
  * Generate a single template file. */
-    private boolean generateTemplateFile(
+    private TemplateGenerationOutcome generateTemplateFile(
             Pack pack,
             String templateName,
             PackMetadata.TemplateFile spec,
-            Path outputPath,
+            Path outputRoot,
             Map<String, Object> variables)
             throws Exception {
 
         // Check condition if specified
         if (spec.condition() != null && !evaluateCondition(spec.condition(), variables)) {
             log.debug("Skipping template {} due to condition: {}", templateName, spec.condition());
-            return false;
+            return TemplateGenerationOutcome.skipped(spec.target());
         }
 
         String templateContent = pack.getTemplateContent(templateName);
@@ -277,14 +299,18 @@ public class DefaultPackEngine implements PackEngine {
         String rendered = templateEngine.render(templateContent, variables);
 
         // Determine output file path
-        Path outputFile = outputPath.resolve(spec.target());
+        Path outputFile = outputRoot.resolve(spec.target()).normalize();
+        if (!outputFile.startsWith(outputRoot)) {
+            throw new PackException("Template target escapes output directory: " + spec.target());
+        }
+        String relativePath = formatRelativePath(outputRoot.relativize(outputFile));
 
         // Handle merge strategy
         PackMetadata.TemplateFile.MergeStrategy merge = spec.merge();
         if (merge == PackMetadata.TemplateFile.MergeStrategy.SKIP_IF_EXISTS
                 && Files.exists(outputFile)) {
             log.debug("Skipping existing file: {}", outputFile);
-            return false;
+            return TemplateGenerationOutcome.unchanged(relativePath);
         }
 
         // Create parent directories
@@ -292,18 +318,52 @@ public class DefaultPackEngine implements PackEngine {
 
         // Write file
         if (merge == PackMetadata.TemplateFile.MergeStrategy.APPEND && Files.exists(outputFile)) {
+            String existing = Files.readString(outputFile);
+            if (existing.contains(rendered)) {
+                return TemplateGenerationOutcome.unchanged(
+                        relativePath,
+                        "Skipped append for unchanged generated content: " + relativePath);
+            }
+            Path backup = backupExistingFile(outputRoot, outputFile);
             Files.writeString(outputFile, "\n" + rendered, StandardOpenOption.APPEND);
+            return TemplateGenerationOutcome.updated(relativePath, formatRelativePath(outputRoot.relativize(backup)));
+        } else if (Files.exists(outputFile)) {
+            String existing = Files.readString(outputFile);
+            if (existing.equals(rendered)) {
+                return TemplateGenerationOutcome.unchanged(relativePath);
+            }
+            Path backup = backupExistingFile(outputRoot, outputFile);
+            Files.writeString(outputFile, rendered);
+            setExecutableIfRequested(spec, outputFile);
+            log.debug("Updated file with backup: {}", outputFile);
+            return TemplateGenerationOutcome.updated(relativePath, formatRelativePath(outputRoot.relativize(backup)));
         } else {
             Files.writeString(outputFile, rendered);
         }
 
-        // Set executable if specified
+        setExecutableIfRequested(spec, outputFile);
+
+        log.debug("Generated file: {}", outputFile);
+        return TemplateGenerationOutcome.created(relativePath);
+    }
+
+    private void setExecutableIfRequested(PackMetadata.TemplateFile spec, Path outputFile) {
         if (Boolean.TRUE.equals(spec.executable())) {
             outputFile.toFile().setExecutable(true);
         }
+    }
 
-        log.debug("Generated file: {}", outputFile);
-        return true;
+    private Path backupExistingFile(Path outputRoot, Path outputFile) throws IOException {
+        String timestamp = Instant.now().toString().replace(":", "-").replace(".", "-");
+        Path relativePath = outputRoot.relativize(outputFile);
+        Path backupFile = outputRoot.resolve(".yappc").resolve("backups").resolve(timestamp).resolve(relativePath);
+        Files.createDirectories(backupFile.getParent());
+        Files.copy(outputFile, backupFile, StandardCopyOption.COPY_ATTRIBUTES);
+        return backupFile;
+    }
+
+    private String formatRelativePath(Path relativePath) {
+        return relativePath.toString().replace('\\', '/');
     }
 
     /**
@@ -341,6 +401,46 @@ public class DefaultPackEngine implements PackEngine {
                 log.info("Executing {} hook: {}", hookType, command);
                 // Hook execution implementation would go here
             }
+        }
+    }
+
+    private record TemplateGenerationOutcome(
+            String relativePath,
+            boolean written,
+            List<String> createdFiles,
+            List<String> updatedFiles,
+            List<String> unchangedFiles,
+            List<String> backupFiles,
+            List<String> warnings) {
+
+        private static TemplateGenerationOutcome created(String relativePath) {
+            return new TemplateGenerationOutcome(
+                    relativePath, true, List.of(relativePath), List.of(), List.of(), List.of(), List.of());
+        }
+
+        private static TemplateGenerationOutcome updated(String relativePath, String backupPath) {
+            return new TemplateGenerationOutcome(
+                    relativePath, true, List.of(), List.of(relativePath), List.of(), List.of(backupPath), List.of());
+        }
+
+        private static TemplateGenerationOutcome unchanged(String relativePath) {
+            return unchanged(relativePath, null);
+        }
+
+        private static TemplateGenerationOutcome unchanged(String relativePath, String warning) {
+            return new TemplateGenerationOutcome(
+                    relativePath,
+                    false,
+                    List.of(),
+                    List.of(),
+                    List.of(relativePath),
+                    List.of(),
+                    warning == null ? List.of() : List.of(warning));
+        }
+
+        private static TemplateGenerationOutcome skipped(String relativePath) {
+            return new TemplateGenerationOutcome(
+                    relativePath, false, List.of(), List.of(), List.of(), List.of(), List.of());
         }
     }
 }

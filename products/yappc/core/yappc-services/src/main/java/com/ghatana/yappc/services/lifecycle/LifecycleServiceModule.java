@@ -24,7 +24,14 @@ import com.ghatana.yappc.api.EvolveApiController;
 import com.ghatana.yappc.api.LifecycleApiController;
 import com.ghatana.yappc.api.LifecycleExecutionRepository;
 import com.ghatana.yappc.api.GenerationRunRepository;
+import com.ghatana.yappc.api.AdminAbTestingController;
+import com.ghatana.yappc.api.AdminObservabilityController;
+import com.ghatana.yappc.api.AdminFeatureFlagController;
 import com.ghatana.yappc.api.ProductFamilyControlPlaneController;
+import com.ghatana.yappc.ai.PromptLifecycleService;
+import com.ghatana.yappc.ai.PromptTemplateRegistry;
+import com.ghatana.yappc.ai.abtesting.ABTestingEvaluationService;
+import com.ghatana.yappc.infrastructure.datacloud.repository.AgentStateRepository;
 import com.ghatana.yappc.services.security.JwtAuthController;
 import com.ghatana.yappc.services.security.LifecycleLoginController;
 import com.ghatana.yappc.services.security.YappcEnvironmentConfig;
@@ -32,19 +39,31 @@ import com.ghatana.yappc.services.ai.AiServiceModule;
 import com.ghatana.yappc.services.capability.CapabilityEvaluationService;
 import com.ghatana.yappc.services.evolve.EvolutionService;
 import com.ghatana.yappc.services.evolve.EvolutionServiceImpl;
+import com.ghatana.yappc.services.evolve.ArtifactGraphEvolutionImpactAnalysisService;
 import com.ghatana.yappc.services.evolve.DataCloudEvolutionPlanRepository;
 import com.ghatana.yappc.services.evolve.DataCloudEvolutionExecutionHandoffService;
 import com.ghatana.yappc.services.evolve.EvolutionExecutionHandoffDispatcher;
 import com.ghatana.yappc.services.evolve.EvolutionExecutionHandoffSchedulerService;
+import com.ghatana.yappc.services.evolve.EvolutionImpactAnalysisService;
+import com.ghatana.yappc.services.evolve.EvolutionKernelUpdateService;
+import com.ghatana.yappc.services.evolve.KernelProductUnitEvolutionUpdateService;
 import com.ghatana.yappc.services.evolve.EvolutionLifecycleExecutionDispatcher;
 import com.ghatana.yappc.services.evolve.LifecycleApiExecutionDispatcher;
 import com.ghatana.yappc.services.generate.GenerationService;
+import com.ghatana.yappc.services.generate.GenerationAssuranceService;
 import com.ghatana.yappc.services.generate.GenerationServiceImpl;
+import com.ghatana.yappc.services.kernel.KernelProductUnitHandoffService;
 import com.ghatana.yappc.services.intent.IntentService;
 import com.ghatana.yappc.services.intent.IntentServiceImpl;
+import com.ghatana.yappc.services.intent.DataCloudIntentRepository;
+import com.ghatana.yappc.services.intent.IntentRepository;
+import com.ghatana.yappc.services.intent.IntentEvidenceService;
+import com.ghatana.yappc.services.intent.PlatformIntentEvidenceService;
 import com.ghatana.yappc.services.learn.LearningService;
 import com.ghatana.yappc.services.learn.LearningServiceImpl;
 import com.ghatana.yappc.services.learn.DataCloudLearningEvidenceRepository;
+import com.ghatana.yappc.services.learn.LearningEvidenceService;
+import com.ghatana.yappc.services.learn.LearningEvidenceServiceImpl;
 import com.ghatana.yappc.services.observe.ObserveService;
 import com.ghatana.yappc.services.observe.ObserveServiceImpl;
 import com.ghatana.yappc.services.run.CiCdPort;
@@ -52,7 +71,10 @@ import com.ghatana.yappc.services.run.GitHubActionsCiCdAdapter;
 import com.ghatana.yappc.services.run.RunService;
 import com.ghatana.yappc.services.run.RunServiceImpl;
 import com.ghatana.yappc.services.shape.ShapeService;
+import com.ghatana.yappc.services.shape.ShapeArtifactGraphLineageService;
 import com.ghatana.yappc.services.shape.ShapeServiceImpl;
+import com.ghatana.yappc.services.shape.DataCloudShapeRepository;
+import com.ghatana.yappc.services.shape.ShapeRepository;
 import com.ghatana.yappc.services.validate.ValidationService;
 import com.ghatana.yappc.services.validate.ValidationServiceImpl;
 import com.ghatana.yappc.storage.ArtifactGraphRepository;
@@ -200,26 +222,57 @@ public class LifecycleServiceModule extends AbstractModule {
 
     // ========== Phase 1: Intent ==========
 
+    /** Provides durable Data Cloud-backed intent persistence. */
+    @Provides
+    IntentRepository intentRepository(DataCloudClient dataCloudClient) {
+        logger.info("Creating DataCloudIntentRepository");
+        return new DataCloudIntentRepository(dataCloudClient);
+    }
+
+    /** Provides platform evidence emission for intent lifecycle operations. */
+    @Provides
+    IntentEvidenceService intentEvidenceService(PlatformIntegrationClient platformIntegrationClient) {
+        logger.info("Creating PlatformIntentEvidenceService");
+        return new PlatformIntentEvidenceService(platformIntegrationClient);
+    }
+
     /** Provides IntentService for AI-assisted intent capture and analysis. */
     @Provides
     IntentService intentService(
             CompletionService aiService,
             AuditLogger auditLogger,
-            MetricsCollector metrics) {
+            MetricsCollector metrics,
+            IntentRepository intentRepository,
+            IntentEvidenceService intentEvidenceService) {
         logger.info("Creating IntentService");
-        return new IntentServiceImpl(aiService, auditLogger, metrics);
+        return new IntentServiceImpl(aiService, auditLogger, metrics, intentRepository, intentEvidenceService);
     }
 
     // ========== Phase 2: Shape ==========
+
+    /** Provides durable Data Cloud-backed shape artifact persistence. */
+    @Provides
+    ShapeRepository shapeRepository(DataCloudClient dataCloudClient) {
+        logger.info("Creating DataCloudShapeRepository");
+        return new DataCloudShapeRepository(dataCloudClient);
+    }
 
     /** Provides ShapeService for architecture and domain modeling. */
     @Provides
     ShapeService shapeService(
             CompletionService aiService,
             AuditLogger auditLogger,
-            MetricsCollector metrics) {
+            MetricsCollector metrics,
+            ShapeRepository shapeRepository,
+            ShapeArtifactGraphLineageService shapeArtifactGraphLineageService) {
         logger.info("Creating ShapeService");
-        return new ShapeServiceImpl(aiService, auditLogger, metrics);
+        return new ShapeServiceImpl(aiService, auditLogger, metrics, shapeRepository, shapeArtifactGraphLineageService);
+    }
+
+    /** Provides Shape artifact graph lineage publisher. */
+    @Provides
+    ShapeArtifactGraphLineageService shapeArtifactGraphLineageService(ArtifactGraphService artifactGraphService) {
+        return new ShapeArtifactGraphLineageService(artifactGraphService);
     }
 
     // ========== Phase 3: Generate ==========
@@ -231,9 +284,23 @@ public class LifecycleServiceModule extends AbstractModule {
             AuditLogger auditLogger,
             MetricsCollector metrics,
             GenerationRunRepository generationRunRepository,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            GenerationAssuranceService generationAssuranceService) {
         logger.info("Creating GenerationService");
-        return new GenerationServiceImpl(aiService, auditLogger, metrics, generationRunRepository, objectMapper);
+        return new GenerationServiceImpl(
+                aiService,
+                auditLogger,
+                metrics,
+                generationRunRepository,
+                objectMapper,
+                com.ghatana.yappc.services.generate.AiHealthProvider.alwaysHealthy(),
+                generationAssuranceService);
+    }
+
+    /** Provides Generate assurance checks. */
+    @Provides
+    GenerationAssuranceService generationAssuranceService() {
+        return new GenerationAssuranceService();
     }
 
     // ========== Phase 4: Run ==========
@@ -249,9 +316,10 @@ public class LifecycleServiceModule extends AbstractModule {
     RunService runService(
             AuditLogger auditLogger,
             MetricsCollector metrics,
-            CiCdPort ciCdPort) {
+            CiCdPort ciCdPort,
+            LearningEvidenceService learningEvidenceService) {
         logger.info("Creating RunService");
-        return new RunServiceImpl(auditLogger, metrics, ciCdPort);
+        return new RunServiceImpl(auditLogger, metrics, ciCdPort, learningEvidenceService);
     }
 
     // ========== Phase 5: Observe ==========
@@ -273,14 +341,36 @@ public class LifecycleServiceModule extends AbstractModule {
             CompletionService aiService,
             AuditLogger auditLogger,
             MetricsCollector metrics,
-            DataCloudClient dataCloudClient) {
+            DataCloudClient dataCloudClient,
+            EvolutionImpactAnalysisService impactAnalysisService,
+            EvolutionKernelUpdateService kernelUpdateService) {
         logger.info("Creating EvolutionService");
         return new EvolutionServiceImpl(
                 aiService,
                 auditLogger,
                 metrics,
             new DataCloudEvolutionPlanRepository(dataCloudClient),
-            new DataCloudEvolutionExecutionHandoffService(dataCloudClient));
+            new DataCloudEvolutionExecutionHandoffService(dataCloudClient),
+            impactAnalysisService,
+            kernelUpdateService);
+        }
+
+        @Provides
+        EvolutionImpactAnalysisService evolutionImpactAnalysisService(ArtifactGraphRepository artifactGraphRepository) {
+        logger.info("Creating EvolutionImpactAnalysisService");
+        return new ArtifactGraphEvolutionImpactAnalysisService(artifactGraphRepository);
+        }
+
+        @Provides
+        EvolutionKernelUpdateService evolutionKernelUpdateService(KernelProductUnitHandoffService handoffService) {
+        logger.info("Creating EvolutionKernelUpdateService");
+        return new KernelProductUnitEvolutionUpdateService(handoffService);
+        }
+
+        @Provides
+        KernelProductUnitHandoffService kernelProductUnitHandoffService() {
+        logger.info("Creating KernelProductUnitHandoffService");
+        return new KernelProductUnitHandoffService();
         }
 
         @Provides
@@ -335,6 +425,13 @@ public class LifecycleServiceModule extends AbstractModule {
                 auditLogger,
                 metrics,
                 new DataCloudLearningEvidenceRepository(dataCloudClient));
+    }
+
+    /** Provides lifecycle outcome evidence for Learn phase feedback loops. */
+    @Provides
+    LearningEvidenceService learningEvidenceService(DataCloudClient dataCloudClient) {
+        logger.info("Creating LearningEvidenceService");
+        return new LearningEvidenceServiceImpl(new DataCloudLearningEvidenceRepository(dataCloudClient));
     }
 
     // ========== Phase 8: Validate ==========
@@ -633,6 +730,56 @@ public class LifecycleServiceModule extends AbstractModule {
             ObjectMapper objectMapper) {
         logger.info("Creating ProductFamilyControlPlaneController");
         return new ProductFamilyControlPlaneController(dataCloudClient, objectMapper);
+    }
+
+    /** Provides admin release-gate observability APIs. */
+    @Provides
+    AdminObservabilityController adminObservabilityController(ObjectMapper objectMapper) {
+        logger.info("Creating AdminObservabilityController");
+        return new AdminObservabilityController(
+                objectMapper,
+                Path.of("."),
+                Executors.newVirtualThreadPerTaskExecutor());
+    }
+
+    /** Provides admin tenant feature-flag APIs. */
+    @Provides
+    AdminFeatureFlagController adminFeatureFlagController(DataCloudClient dataCloudClient, ObjectMapper objectMapper) {
+        logger.info("Creating AdminFeatureFlagController");
+        return new AdminFeatureFlagController(dataCloudClient, objectMapper);
+    }
+
+    /** Provides admin prompt/model A/B experiment APIs. */
+    @Provides
+    AdminAbTestingController adminAbTestingController(
+            DataCloudClient dataCloudClient,
+            ObjectMapper objectMapper,
+            ABTestingEvaluationService abTestingEvaluationService,
+            PromptLifecycleService promptLifecycleService) {
+        logger.info("Creating AdminAbTestingController");
+        return new AdminAbTestingController(
+                dataCloudClient,
+                objectMapper,
+                abTestingEvaluationService,
+                promptLifecycleService);
+    }
+
+    /** Provides the prompt/model A/B evaluation engine. */
+    @Provides
+    ABTestingEvaluationService abTestingEvaluationService() {
+        return new ABTestingEvaluationService();
+    }
+
+    /** Provides the prompt template registry used by prompt lifecycle operations. */
+    @Provides
+    PromptTemplateRegistry promptTemplateRegistry() {
+        return new PromptTemplateRegistry();
+    }
+
+    /** Provides the audited prompt lifecycle service. */
+    @Provides
+    PromptLifecycleService promptLifecycleService(PromptTemplateRegistry registry, AuditLogger auditLogger) {
+        return new PromptLifecycleService(registry, auditLogger);
     }
 
     // ========== Artifact Compiler (YAPPC-ArtifactCompiler) ==========
@@ -1361,15 +1508,24 @@ public class LifecycleServiceModule extends AbstractModule {
      * Integrates {@link ApprovalNotificationService} and {@link ApprovalRiskScorer}.
      */
     @Provides
+    ApprovalDecisionOutcomeService approvalDecisionOutcomeService(
+            LearningEvidenceService learningEvidenceService,
+            EvolutionService evolutionService) {
+        logger.info("Creating ApprovalDecisionOutcomeService (learning evidence + evolve decision bridge)");
+        return new ApprovalDecisionOutcomeService(learningEvidenceService, evolutionService);
+    }
+
+    @Provides
     HumanApprovalService humanApprovalService(
             AepEventPublisher publisher,
             DataSource dataSource,
             ApprovalNotificationService notificationService,
             ApprovalRiskScorer riskScorer,
-            ApprovalAuditLogger approvalAuditLogger) {
-        logger.info("Creating JdbcHumanApprovalService (durable approval persistence + notifications + risk scoring + audit)");
+            ApprovalAuditLogger approvalAuditLogger,
+            ApprovalDecisionOutcomeService decisionOutcomeService) {
+        logger.info("Creating JdbcHumanApprovalService (durable approval persistence + notifications + risk scoring + audit + decision outcomes)");
         return new JdbcHumanApprovalService(publisher, dataSource, new ObjectMapper(),
-                notificationService, riskScorer, approvalAuditLogger);
+                notificationService, riskScorer, approvalAuditLogger, decisionOutcomeService);
     }
 
     // ========== Lifecycle Pipeline Operators (7.1) ==========
@@ -1540,9 +1696,17 @@ public class LifecycleServiceModule extends AbstractModule {
      * @doc.gaa.lifecycle act
      */
     @Provides
-    AgentExecutorOperator agentExecutorOperator(YappcAgentSystem yappcAgentSystem) {
-        logger.info("Creating AgentExecutorOperator (YAPPC-Ph6) — wired to YappcAgentSystem");
-        return new AgentExecutorOperator(yappcAgentSystem);
+    AgentStateRepository agentStateRepository(DataCloudClient dataCloudClient) {
+        logger.info("Creating AgentStateRepository for durable YAPPC agent execution state");
+        return new AgentStateRepository(dataCloudClient);
+    }
+
+    @Provides
+    AgentExecutorOperator agentExecutorOperator(
+            YappcAgentSystem yappcAgentSystem,
+            AgentStateRepository agentStateRepository) {
+        logger.info("Creating AgentExecutorOperator (YAPPC-Ph6) — wired to YappcAgentSystem + AgentStateRepository");
+        return new AgentExecutorOperator(yappcAgentSystem, agentStateRepository);
     }
 
     /**

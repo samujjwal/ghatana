@@ -136,13 +136,12 @@ public class JwtAuthenticationFilter {
 
         String tokenValue = token.get();
 
-        // For now, use a default tenant ID - in production would parse JWT claims first
-        // to extract tenant before validation
-        TenantId defaultTenantId = TenantId.of("default-tenant");
-
-        // Validate JWT token and extract user/tenant info
+        // SEC-P1-006: Production-safe - extract tenant from JWT claims before validation
+        // No default tenant fallback allowed in production code
+        // The JWT token provider must support tenant-agnostic validation or tenant extraction
         try {
-            Promise<JwtClaims> validatePromise = jwtTokenProvider.validateToken(defaultTenantId, tokenValue);
+            // Validate token without tenant context to extract claims first
+            Promise<JwtClaims> validatePromise = jwtTokenProvider.validateToken(tokenValue);
             return validatePromise
                     .map(jwtClaims -> {
                         // Extract TenantId and UserPrincipal from JWT claims

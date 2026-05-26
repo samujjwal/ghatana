@@ -79,6 +79,8 @@ tags:
     description: Automated refactoring job management
   - name: product-family
     description: YAPPC product-family release readiness, reusable assets, doc-truth, and Kernel visibility
+  - name: admin
+    description: YAPPC administrative control-plane and observability surfaces
 
 # ─────────────────────────────────────────────────────────────────────────────
 paths:
@@ -346,6 +348,287 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "503":
           description: Data Cloud read model unavailable
+
+  /api/admin/observability/release-gates:
+    get:
+      tags: [admin]
+      summary: List admin release-gate observability evidence
+      operationId: listAdminObservabilityReleaseGates
+      responses:
+        "200":
+          description: Release-gate evidence summary for SLO, cost, domain, and OpenAPI gates
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, items]
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy, degraded, down]
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, label, category, status, evidenceHref, refreshedAt, summary]
+                      properties:
+                        id:
+                          type: string
+                        label:
+                          type: string
+                        category:
+                          type: string
+                          enum: [SLO, Cost, Domain, API]
+                        status:
+                          type: string
+                          enum: [healthy, degraded, down]
+                        evidenceHref:
+                          type: string
+                        refreshedAt:
+                          type: string
+                        summary:
+                          type: string
+                        source:
+                          type: string
+                        evidence:
+                          type: object
+                          additionalProperties: true
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          description: Release-gate evidence unavailable
+
+  /api/admin/feature-flags:
+    get:
+      tags: [admin]
+      summary: List tenant feature flags
+      operationId: listAdminFeatureFlags
+      parameters:
+        - name: tenantId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tenant feature flags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          description: Feature flag service unavailable
+
+  /api/admin/feature-flags/{flagKey}:
+    put:
+      tags: [admin]
+      summary: Set tenant feature flag
+      operationId: setAdminFeatureFlag
+      parameters:
+        - name: flagKey
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled, reason]
+              properties:
+                enabled:
+                  type: boolean
+                reason:
+                  type: string
+                tenantId:
+                  type: string
+                description:
+                  type: string
+                rolloutPercentage:
+                  type: integer
+                  minimum: 0
+                  maximum: 100
+      responses:
+        "200":
+          description: Updated feature flag
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          description: Feature flag service unavailable
+
+  /api/admin/feature-flags/{flagKey}/audit:
+    get:
+      tags: [admin]
+      summary: List tenant feature flag audit log
+      operationId: listAdminFeatureFlagAudit
+      parameters:
+        - name: flagKey
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tenantId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Feature flag audit entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          description: Feature flag service unavailable
+
+  /api/admin/ab-experiments:
+    get:
+      tags: [admin]
+      summary: List prompt/model A/B experiments
+      operationId: listAdminAbExperiments
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [running, completed, paused]
+      responses:
+        "200":
+          description: A/B experiment list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                  total:
+                    type: integer
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          description: A/B testing service unavailable
+    post:
+      tags: [admin]
+      summary: Create prompt/model A/B experiment
+      operationId: createAdminAbExperiment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [experimentName, promptName]
+              properties:
+                experimentName:
+                  type: string
+                description:
+                  type: string
+                promptName:
+                  type: string
+                promptVersion:
+                  type: string
+                variantA:
+                  type: string
+                variantB:
+                  type: string
+      responses:
+        "200":
+          description: Created A/B experiment
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          description: A/B testing service unavailable
+
+  /api/admin/ab-experiments/{experimentId}/promote:
+    post:
+      tags: [admin]
+      summary: Promote A/B experiment winner
+      operationId: promoteAdminAbExperimentWinner
+      parameters:
+        - name: experimentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [variantId, reason]
+              properties:
+                variantId:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        "200":
+          description: Promoted A/B experiment with winner, evaluation, and rollback metadata
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          description: A/B testing service unavailable
+
+  /api/admin/ab-experiments/{experimentId}/pause:
+    post:
+      tags: [admin]
+      summary: Pause A/B experiment
+      operationId: pauseAdminAbExperiment
+      parameters:
+        - name: experimentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paused A/B experiment
+          content:
+            application/json:
+              schema:
+                type: object
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          description: A/B testing service unavailable
 
   /api/v1/yappc/product-family/assets/{assetId}/promotions:
     post:
@@ -1342,6 +1625,43 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RegenerateDiffResponse"
+
+  /api/v1/yappc/generate/product-unit-intent:
+    post:
+      tags: [generate]
+      summary: Generate Kernel ProductUnitIntent from saved generate state
+      operationId: generateProductUnitIntent
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KernelProductUnitIntentRequest"
+      responses:
+        "200":
+          description: Kernel ProductUnitIntent generated and validated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KernelProductUnitIntentResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /api/v1/yappc/generate/runs/{runId}/apply:
     post:
@@ -3301,6 +3621,39 @@ paths:
       responses:
         "200":
           description: Run result with observations
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/yappc/run/retry:
+    post:
+      tags: [run]
+      summary: Retry a failed run with a new run specification
+      operationId: retryRun
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RetryRunRequest"
+      responses:
+        "200":
+          description: Retry result
         "400":
           $ref: "#/components/responses/BadRequest"
 
@@ -5945,6 +6298,8 @@ components:
           $ref: "#/components/schemas/GenerationHealth"
         runtime:
           $ref: "#/components/schemas/RuntimeHealth"
+        agentGovernance:
+          $ref: "#/components/schemas/AgentGovernanceHealth"
 
     PreviewHealth:
       type: object
@@ -5958,6 +6313,44 @@ components:
           type: array
           items:
             type: string
+        security:
+          $ref: "#/components/schemas/PreviewSecurity"
+
+    PreviewSecurity:
+      type: object
+      required: [trustLevel, tokenScopes, expired, safe, issues]
+      properties:
+        trustLevel:
+          type: string
+        tokenScopes:
+          type: array
+          items:
+            $ref: "#/components/schemas/PreviewTokenScope"
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        expired:
+          type: boolean
+        safe:
+          type: boolean
+        issues:
+          type: array
+          items:
+            type: string
+
+    PreviewTokenScope:
+      type: object
+      required: [id, name, required, granted]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        required:
+          type: boolean
+        granted:
+          type: boolean
 
     GenerationHealth:
       type: object
@@ -5986,6 +6379,27 @@ components:
         lastDeployedAt:
           type: string
           format: date-time
+        issues:
+          type: array
+          items:
+            type: string
+
+    AgentGovernanceHealth:
+      type: object
+      required: [isHealthy, status, governanceState, learningLevel, evidenceIds, issues]
+      properties:
+        isHealthy:
+          type: boolean
+        status:
+          type: string
+        governanceState:
+          type: string
+        learningLevel:
+          type: string
+        evidenceIds:
+          type: array
+          items:
+            type: string
         issues:
           type: array
           items:
@@ -6810,6 +7224,54 @@ components:
         diff:
           type: string
           description: Description of changes to apply
+
+    KernelProductUnitIntentRequest:
+      type: object
+      required: [tenantId, workspaceId, projectId, projectName, surfaces]
+      properties:
+        tenantId:
+          type: string
+        workspaceId:
+          type: string
+        projectId:
+          type: string
+        projectName:
+          type: string
+        surfaces:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        runtimeProvider:
+          type: string
+          default: ghatana-file-registry
+        lifecycleProfile:
+          type: string
+          default: standard-web-api-product
+        sourcePhase:
+          type: string
+          default: generate
+        metadata:
+          type: object
+        correlationId:
+          type: string
+
+    KernelProductUnitIntentResponse:
+      type: object
+      required: [intentId, productUnitIntent, valid, validationErrors]
+      properties:
+        intentId:
+          type: string
+        productUnitIntent:
+          type: object
+        valid:
+          type: boolean
+        validationErrors:
+          type: array
+          items:
+            type: string
+        correlationId:
+          type: string
 
     GenerateArtifactProvenance:
       type: object
@@ -7924,6 +8386,32 @@ components:
           type: string
         targetEnvironment:
           type: string
+
+    RetryRunRequest:
+      type: object
+      required: [failedRunId, runSpec]
+      properties:
+        failedRunId:
+          type: string
+        runSpec:
+          type: object
+          required: [id]
+          properties:
+            id:
+              type: string
+            artifactsRef:
+              type: string
+            tasks:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            environment:
+              type: string
+            config:
+              type: object
+              additionalProperties:
+                type: string
 
     RunWithObservationRequest:
       type: object

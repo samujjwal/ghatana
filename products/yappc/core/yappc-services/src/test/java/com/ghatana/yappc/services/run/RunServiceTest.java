@@ -6,6 +6,7 @@ import com.ghatana.yappc.domain.run.RunResult;
 import com.ghatana.yappc.domain.run.RunSpec;
 import com.ghatana.yappc.domain.run.RunStatus;
 import com.ghatana.yappc.domain.run.RunTask;
+import com.ghatana.yappc.services.learn.LearningEvidenceService;
 import io.activej.promise.Promise;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +44,7 @@ class RunServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("execute: empty task list → SUCCESS status and metadata contains environment")
+    @DisplayName("execute: empty task list â†’ SUCCESS status and metadata contains environment")
     void shouldExecuteRunSpecWithNoTasks() { 
         RunSpec spec = RunSpec.builder() 
                 .id("run-123")
@@ -67,7 +68,7 @@ class RunServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("execute: build task type with no-op adapter → task result has NOT_READY status")
+    @DisplayName("execute: build task type with no-op adapter â†’ task result has NOT_READY status")
     void shouldExecuteBuildTaskWithNoOpAdapter() { 
         RunTask buildTask = RunTask.builder() 
                 .id("task-build-1")
@@ -92,7 +93,7 @@ class RunServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("execute: test task type with no-op adapter → task result has NOT_READY status")
+    @DisplayName("execute: test task type with no-op adapter â†’ task result has NOT_READY status")
     void shouldExecuteTestTaskWithNoOpAdapter() { 
         RunTask testTask = RunTask.builder() 
                 .id("task-test-1")
@@ -116,7 +117,7 @@ class RunServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("execute: deploy task type with no-op adapter → task result has NOT_READY status")
+    @DisplayName("execute: deploy task type with no-op adapter â†’ task result has NOT_READY status")
     void shouldExecuteDeployTaskWithNoOpAdapter() { 
         RunTask deployTask = RunTask.builder() 
                 .id("task-deploy-1")
@@ -140,7 +141,7 @@ class RunServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("execute: unknown task type → overall status is FAILED")
+    @DisplayName("execute: unknown task type â†’ overall status is FAILED")
     void shouldFailForUnknownTaskType() { 
         RunTask unknownTask = RunTask.builder() 
                 .id("task-unknown")
@@ -165,7 +166,7 @@ class RunServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("execute: mix of succeed and fail tasks → overall status is FAILED")
+    @DisplayName("execute: mix of succeed and fail tasks â†’ overall status is FAILED")
     void shouldReportFailedWhenAnyTaskFails() { 
         RunTask buildTask = RunTask.builder() 
                 .id("task-build")
@@ -216,7 +217,28 @@ class RunServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("execute: migrate task type with no-op adapter → task result has NOT_READY status")
+    @DisplayName("retry: executes the run spec and records failed run lineage")
+    void shouldRetryFailedRunWithLineageMetadata() {
+        RunSpec spec = RunSpec.builder()
+                .id("run-retry-1")
+                .artifactsRef("artifacts-1")
+                .environment("staging")
+                .tasks(List.of())
+                .config(Map.of())
+                .build();
+
+        RunResult result = runPromise(() -> service.retry("failed-run-1", spec));
+
+        assertThat(result.status()).isEqualTo(RunStatus.SUCCESS);
+        assertThat(result.runSpecRef()).isEqualTo("run-retry-1");
+        assertThat(result.metadata())
+                .containsEntry("retry_of", "failed-run-1")
+                .containsEntry("retry_run_spec", "run-retry-1");
+        verify(auditLogger, times(2)).log(any(Map.class));
+    }
+
+    @Test
+    @DisplayName("execute: migrate task type with no-op adapter â†’ task result has NOT_READY status")
     void shouldExecuteMigrateTaskWithNoOpAdapter() { 
         RunTask migrateTask = RunTask.builder() 
                 .id("task-migrate-1")
@@ -240,7 +262,7 @@ class RunServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("execute: null spec id → exception propagated")
+    @DisplayName("execute: null spec id â†’ exception propagated")
     void shouldFailForNullSpecId() { 
         RunSpec spec = RunSpec.builder() 
                 .id(null) 
@@ -259,7 +281,7 @@ class RunServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("execute: blank spec id → exception propagated")
+    @DisplayName("execute: blank spec id â†’ exception propagated")
     void shouldFailForBlankSpecId() { 
         RunSpec spec = RunSpec.builder() 
                 .id("")
@@ -278,7 +300,7 @@ class RunServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("execute: task with shouldFail: true config → FAILED status")
+    @DisplayName("execute: task with shouldFail: true config â†’ FAILED status")
     void shouldFailForInjectedFailure() { 
         RunTask buildTask = RunTask.builder() 
                 .id("task-build-1")
@@ -303,7 +325,50 @@ class RunServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("execute: with real adapter injection → adapter is used and returns meaningful results")
+    @DisplayName("execute: failed run records learning evidence with tenant and project provenance")
+    void shouldRecordLearningEvidenceForFailedRun() {
+        LearningEvidenceService learningEvidenceService = mock(LearningEvidenceService.class);
+        when(learningEvidenceService.recordRunOutcome(any(LearningEvidenceService.EvidenceContext.class), any(RunResult.class)))
+                .thenReturn(Promise.of("learn-run-evidence-1"));
+        RunService evidenceBackedService = new RunServiceImpl(
+                auditLogger,
+                metrics,
+                new NoOpCiCdAdapter(),
+                learningEvidenceService);
+        RunTask buildTask = RunTask.builder()
+                .id("task-build-1")
+                .type("build")
+                .name("Build")
+                .config(Map.of("shouldFail", true))
+                .build();
+        RunSpec spec = RunSpec.builder()
+                .id("run-fail")
+                .artifactsRef("artifacts-1")
+                .environment("ci")
+                .tasks(List.of(buildTask))
+                .config(Map.of(
+                        "tenantId", "tenant-123",
+                        "workspaceId", "workspace-123",
+                        "projectId", "project-123",
+                        "correlationId", "corr-123"))
+                .build();
+
+        RunResult result = runPromise(() -> evidenceBackedService.execute(spec));
+
+        assertThat(result.status()).isEqualTo(RunStatus.FAILED);
+        verify(learningEvidenceService).recordRunOutcome(
+                argThat(context ->
+                        context.tenantId().equals("tenant-123")
+                                && context.workspaceId().equals("workspace-123")
+                                && context.projectId().equals("project-123")
+                                && context.subjectId().equals(result.id())
+                                && context.correlationId().equals("corr-123")
+                                && context.metadata().get("runSpecId").equals("run-fail")),
+                eq(result));
+    }
+
+    @Test
+    @DisplayName("execute: with real adapter injection -> adapter is used and returns meaningful results")
     void shouldUseRealAdapterWhenInjected() { 
         // Create a mock real adapter that returns SUCCESS
         CiCdPort mockAdapter = mock(CiCdPort.class); 

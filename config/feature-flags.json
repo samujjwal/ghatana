@@ -1,0 +1,164 @@
+{
+  "version": "1.0.0",
+  "description": "Feature flags for incomplete or partial features across products. REG-P2-006: Any partial feature must be hidden or marked degraded until complete.",
+  "flags": {
+    "audio-video": {
+      "stt": {
+        "enabled": true,
+        "status": "production",
+        "gates": ["media-privacy", "content-safety", "artifact-retention", "stt-model-validation"]
+      },
+      "tts": {
+        "enabled": true,
+        "status": "production",
+        "gates": ["media-privacy", "content-safety", "artifact-retention", "tts-model-validation"]
+      },
+      "vision": {
+        "enabled": true,
+        "status": "production",
+        "gates": ["media-privacy", "content-safety", "artifact-retention", "vision-model-validation"]
+      },
+      "multimodal": {
+        "enabled": true,
+        "status": "production",
+        "gates": ["media-privacy", "content-safety", "artifact-retention", "multimodal-model-validation"]
+      },
+      "real-time-streaming": {
+        "enabled": false,
+        "status": "degraded",
+        "reason": "Real-time streaming capability is not yet implemented",
+        "gates": ["media-privacy", "content-safety", "artifact-retention"]
+      }
+    },
+    "yappc": {
+      "scaffold": {
+        "enabled": true,
+        "status": "production",
+        "gates": ["product-unit-intent-export", "artifact-intelligence-boundary"]
+      },
+      "agents": {
+        "enabled": true,
+        "status": "production",
+        "gates": ["agent-runtime-validation", "agent-policy-enforcement"]
+      },
+      "knowledge-graph": {
+        "enabled": false,
+        "status": "degraded",
+        "reason": "Knowledge graph integration is partial and not production-ready",
+        "gates": ["knowledge-graph-validation", "data-access-controls"]
+      },
+      "refactorer": {
+        "enabled": false,
+        "status": "degraded",
+        "reason": "Refactorer engine is experimental and not production-ready",
+        "gates": ["refactorer-safety-validation", "code-quality-gates"]
+      }
+    },
+    "data-cloud": {
+      "entity-crud": {
+        "enabled": true,
+        "status": "production",
+        "gates": ["audit-evidence", "transactional-persistence", "tenant-isolation"]
+      },
+      "batch-operations": {
+        "enabled": true,
+        "status": "production",
+        "gates": ["audit-evidence", "transactional-persistence", "dry-run-validation"]
+      },
+      "import-export": {
+        "enabled": true,
+        "status": "production",
+        "gates": ["audit-evidence", "data-validation", "tenant-isolation"]
+      },
+      "query-optimization": {
+        "enabled": false,
+        "status": "degraded",
+        "reason": "Advanced query optimization is not yet implemented",
+        "gates": ["query-performance-validation", "resource-usage-controls"]
+      },
+      "data-lake": {
+        "enabled": false,
+        "status": "degraded",
+        "reason": "Data lake integration is partial and not production-ready",
+        "gates": ["data-lake-validation", "storage-compliance"]
+      }
+    },
+    "phr": {
+      "patient-records": {
+        "enabled": true,
+        "status": "production",
+        "gates": ["consent", "pii-classification", "audit-evidence"]
+      },
+      "ocr": {
+        "enabled": true,
+        "status": "production",
+        "gates": ["consent", "pii-classification", "audit-evidence", "ocr-validation"]
+      },
+      "provider-dashboard": {
+        "enabled": true,
+        "status": "production",
+        "gates": ["consent", "pii-classification", "audit-evidence", "provider-auth"]
+      },
+      "fhir-integration": {
+        "enabled": false,
+        "status": "degraded",
+        "reason": "FHIR R4 integration is partial and not production-ready",
+        "gates": ["fhir-validation", "interoperability-compliance"]
+      }
+    },
+    "aura": {
+      "recommendations": {
+        "enabled": false,
+        "status": "degraded",
+        "reason": "Aura is a demo product and not production-ready",
+        "gates": ["recommendation-safety", "explainability-evidence", "demo-scope-review"]
+      }
+    },
+    "software-org": {
+      "org-management": {
+        "enabled": false,
+        "status": "degraded",
+        "reason": "Software-Org is a demo product and not production-ready",
+        "gates": ["org-model-governance", "integration-contract-readiness", "demo-scope-review"]
+      }
+    },
+    "virtual-org": {
+      "virtual-management": {
+        "enabled": false,
+        "status": "degraded",
+        "reason": "Virtual-Org is a demo product and not production-ready",
+        "gates": ["org-model-governance", "integration-contract-readiness", "demo-scope-review"]
+      }
+    },
+    "dcmaar": {
+      "threat-detection": {
+        "enabled": false,
+        "status": "degraded",
+        "reason": "DCMAAR lifecycle is blocked pending threat-model and Guardian policy evidence",
+        "gates": ["threat-model", "guardian-policy", "security-review"]
+      }
+    },
+    "tutorputor": {
+      "content-generation": {
+        "enabled": false,
+        "status": "degraded",
+        "reason": "Tutorputor lifecycle is partial and not production-ready",
+        "gates": ["content-safety", "learner-data-privacy", "model-output-evaluation"]
+      }
+    }
+  },
+  "globalPolicies": {
+    "degradedBehavior": {
+      "mode": "hidden",
+      "description": "Degraded features are hidden from production UI and API by default"
+    },
+    "productionGateCheck": {
+      "enabled": true,
+      "description": "All gates must pass before a feature can be marked as production"
+    },
+    "auditTrail": {
+      "enabled": true,
+      "description": "All feature flag changes are audited"
+    }
+  }
+}

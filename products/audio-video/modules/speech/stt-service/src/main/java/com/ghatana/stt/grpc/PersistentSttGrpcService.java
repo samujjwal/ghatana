@@ -1,11 +1,13 @@
 package com.ghatana.stt.grpc;
 
+import com.ghatana.audio.video.common.security.JwtServerInterceptor;
 import com.ghatana.audio.video.infrastructure.persistence.service.AudioFileService;
 import com.ghatana.audio.video.infrastructure.persistence.service.TranscriptionService;
 import com.ghatana.media.AudioVideoLibrary;
 import com.ghatana.media.common.AudioFormat;
 import com.ghatana.stt.core.grpc.proto.*;
 import com.ghatana.stt.service.PersistentSttService;
+import io.grpc.Context;
 import io.grpc.stub.StreamObserver;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -65,13 +67,13 @@ public class PersistentSttGrpcService extends STTServiceGrpc.STTServiceImplBase 
             }
 
             int sampleRate = request.getSampleRate() > 0 ? request.getSampleRate() : 16000;
-            String fileName = "audio.pcm";
+            String fileName = "audio.wav";
             String language = request.getLanguage();
 
             // Perform transcription with persistence
             persistentSttService.transcribeAndPersist(
                 tenantId, userId, audioBytes, fileName,
-                AudioFormat.PCM, language, sampleRate
+                AudioFormat.WAV, language, sampleRate
             ).whenResult(result -> {
                 responseObserver.onNext(TranscribeResponse.newBuilder()
                     .setText(result.text())
@@ -98,12 +100,12 @@ public class PersistentSttGrpcService extends STTServiceGrpc.STTServiceImplBase 
     }
 
     private String getTenantId() {
-        String tenantId = MDC.get("tenantId");
+        String tenantId = JwtServerInterceptor.CTX_TENANT.get();
         return tenantId != null && !tenantId.isBlank() ? tenantId : null;
     }
 
     private String getUserId() {
-        return MDC.get("userId");
+        return JwtServerInterceptor.CTX_SUBJECT.get();
     }
 
     private String cid() {

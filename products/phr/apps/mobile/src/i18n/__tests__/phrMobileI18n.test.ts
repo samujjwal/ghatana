@@ -1,7 +1,6 @@
 /**
  * Tests for phrMobileI18n — verifies key resolution, parameter substitution, and locale switching.
  */
-import { describe, it, expect, beforeEach } from '@jest/globals';
 import { t, setLocale, getLocale } from '../../i18n/phrMobileI18n';
 
 describe('phrMobileI18n', () => {
@@ -54,5 +53,34 @@ describe('phrMobileI18n', () => {
     setLocale('fr');
     expect(getLocale()).toBe('en');
     expect(t('tabs.home')).toBe('Home');
+  });
+
+  it('resolves login.nationalIdLabel in English', () => {
+    expect(t('login.nationalIdLabel')).toBe('National ID');
+  });
+
+  it('resolves login.nationalIdPlaceholder in English', () => {
+    expect(t('login.nationalIdPlaceholder')).toBe('National ID or MRN');
+  });
+
+  it('resolves login.nationalIdRequired validation message', () => {
+    expect(t('login.nationalIdRequired')).toBe('National ID is required.');
+  });
+
+  it('resolves login.passwordRequired validation message', () => {
+    expect(t('login.passwordRequired')).toBe('Password is required.');
+  });
+
+  it('resolves login.failed error message', () => {
+    expect(t('login.failed')).toBe('Login failed. Please try again.');
+  });
+
+  it('resolves login keys in Nepali locale', () => {
+    setLocale('ne');
+    const label = t('login.nationalIdLabel');
+    expect(typeof label).toBe('string');
+    expect(label.length).toBeGreaterThan(0);
+    // Must differ from the English string
+    expect(label).not.toBe('National ID');
   });
 });

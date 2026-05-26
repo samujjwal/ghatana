@@ -109,9 +109,32 @@ public class ShapeApiController {
      */
     public Promise<HttpResponse> getShape(HttpRequest request) {
         String shapeId = request.getPathParameter("id");
+        String tenantId = request.getQueryParameter("tenantId");
+        String workspaceId = request.getQueryParameter("workspaceId");
+        String projectId = request.getQueryParameter("projectId");
 
         log.info("Retrieving shape: {}", shapeId);
 
+        if (hasText(tenantId) && hasText(workspaceId) && hasText(projectId)) {
+            return shapeService.findLatest(tenantId, workspaceId, projectId, shapeId)
+                    .then(recordOpt -> {
+                        if (recordOpt.isPresent()) {
+                            try {
+                                return Promise.of(ok200Json(JsonMapper.toJson(recordOpt.get().shape())));
+                            } catch (JsonProcessingException e) {
+                                log.error("Error serializing persisted shape", e);
+                                return Promise.of(error500("Internal server error"));
+                            }
+                        }
+                        return getLegacyArtifactShape(shapeId);
+                    })
+                    .whenException(e -> log.error("Error retrieving persisted shape: {}", shapeId, e));
+        }
+
+        return getLegacyArtifactShape(shapeId);
+    }
+
+    private Promise<HttpResponse> getLegacyArtifactShape(String shapeId) {
         String[] parts = shapeId.split(":");
         if (parts.length != 2) {
             return Promise.of(badRequest400("{\"error\": \"Invalid shape ID format. Expected: productId:version\"}"));
@@ -131,5 +154,9 @@ public class ShapeApiController {
                     }
                 })
                 .whenException(e -> log.error("Error retrieving shape: {}", shapeId, e));
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 }

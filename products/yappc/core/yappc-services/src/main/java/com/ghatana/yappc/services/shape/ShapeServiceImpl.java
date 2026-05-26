@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -31,14 +32,35 @@ public class ShapeServiceImpl implements ShapeService {
     private final CompletionService aiService;
     private final AuditLogger auditLogger;
     private final MetricsCollector metrics;
+    private final ShapeRepository shapeRepository;
+    private final ShapeArtifactGraphLineageService lineageService;
 
     public ShapeServiceImpl(
             CompletionService aiService,
             AuditLogger auditLogger,
             MetricsCollector metrics) {
+        this(aiService, auditLogger, metrics, null, null);
+    }
+
+    public ShapeServiceImpl(
+            CompletionService aiService,
+            AuditLogger auditLogger,
+            MetricsCollector metrics,
+            ShapeRepository shapeRepository) {
+        this(aiService, auditLogger, metrics, shapeRepository, null);
+    }
+
+    public ShapeServiceImpl(
+            CompletionService aiService,
+            AuditLogger auditLogger,
+            MetricsCollector metrics,
+            ShapeRepository shapeRepository,
+            ShapeArtifactGraphLineageService lineageService) {
         this.aiService = aiService;
         this.auditLogger = auditLogger;
         this.metrics = metrics;
+        this.shapeRepository = shapeRepository;
+        this.lineageService = lineageService;
     }
 
     @Override
@@ -47,13 +69,16 @@ public class ShapeServiceImpl implements ShapeService {
 
         return deriveShapeWithAI(intent)
                 .then(spec -> {
+                    ShapeSpec contextualSpec = withIntentContext(spec, intent);
                     long duration = System.currentTimeMillis() - startTime;
                     Map<String, String> tags = ServiceObservability.tenantTag(intent.tenantId());
                     metrics.recordTimer("yappc.shape.derive", duration, tags);
                     ServiceObservability.incrementSuccess(metrics, "yappc.shape.derive", tags);
 
-                    return auditLogger.log(ServiceObservability.auditEvent("shape.derive", intent, spec))
-                            .map(v -> spec);
+                    return auditLogger.log(ServiceObservability.auditEvent("shape.derive", intent, contextualSpec))
+                            .then(v -> persistShape(intent, contextualSpec))
+                            .then(v -> persistShapeLineage(contextualSpec))
+                            .map(v -> contextualSpec);
                 })
                 .whenException(e -> {
                     log.error("Failed to derive shape", e);
@@ -77,6 +102,7 @@ public class ShapeServiceImpl implements ShapeService {
                     ServiceObservability.incrementSuccess(metrics, "yappc.shape.generateModel", tags);
 
                     return auditLogger.log(ServiceObservability.auditEvent("shape.generateModel", spec, model))
+                            .then(v -> persistSystemModel(model))
                             .map(v -> model);
                 })
                 .whenException(e -> {
@@ -87,6 +113,100 @@ public class ShapeServiceImpl implements ShapeService {
                         e,
                         ServiceObservability.tenantTag(spec.tenantId()));
                 });
+    }
+
+    @Override
+    public Promise<Optional<ShapeVersionRecord>> findLatest(
+            String tenantId,
+            String workspaceId,
+            String projectId,
+            String shapeId) {
+        if (shapeRepository == null) {
+            return Promise.of(Optional.empty());
+        }
+        return shapeRepository.findLatest(tenantId, workspaceId, projectId, shapeId);
+    }
+
+    private Promise<ShapeVersionRecord> persistShape(IntentSpec intent, ShapeSpec shape) {
+        if (shapeRepository == null) {
+            return Promise.of(null);
+        }
+        ShapePersistenceContext context = new ShapePersistenceContext(
+                intent.tenantId(),
+                intent.metadata().get("workspaceId"),
+                intent.metadata().get("projectId"),
+                intent.metadata().get("userId"),
+                intent.id(),
+                stringListMetadata(intent.metadata().get("evidenceIds")),
+                Map.of("source", "shape.derive"));
+        return shapeRepository.saveShape(shape, context);
+    }
+
+    private Promise<?> persistShapeLineage(ShapeSpec shape) {
+        if (lineageService == null) {
+            return Promise.of(null);
+        }
+        return lineageService.recordShapeLineage(shape);
+    }
+
+    private static ShapeSpec withIntentContext(ShapeSpec shape, IntentSpec intent) {
+        Map<String, String> metadata = new java.util.LinkedHashMap<>(shape.metadata());
+        copyMetadata(intent.metadata(), metadata, "workspaceId");
+        copyMetadata(intent.metadata(), metadata, "projectId");
+        copyMetadata(intent.metadata(), metadata, "userId");
+        copyMetadata(intent.metadata(), metadata, "evidenceIds", "intentEvidenceIds");
+        return ShapeSpec.builder()
+                .id(shape.id())
+                .intentRef(shape.intentRef())
+                .domainModel(shape.domainModel())
+                .workflows(shape.workflows())
+                .integrations(shape.integrations())
+                .architecture(shape.architecture())
+                .metadata(metadata)
+                .createdAt(shape.createdAt())
+                .tenantId(shape.tenantId())
+                .build();
+    }
+
+    private static void copyMetadata(Map<String, String> source, Map<String, String> target, String key) {
+        copyMetadata(source, target, key, key);
+    }
+
+    private static void copyMetadata(
+            Map<String, String> source,
+            Map<String, String> target,
+            String sourceKey,
+            String targetKey) {
+        String value = source.get(sourceKey);
+        if (value != null && !value.isBlank()) {
+            target.put(targetKey, value);
+        }
+    }
+
+    private Promise<ShapeVersionRecord> persistSystemModel(SystemModel model) {
+        if (shapeRepository == null) {
+            return Promise.of(null);
+        }
+        ShapeSpec shape = model.shape();
+        ShapePersistenceContext context = new ShapePersistenceContext(
+                shape.tenantId(),
+                shape.metadata().get("workspaceId"),
+                shape.metadata().get("projectId"),
+                shape.metadata().get("userId"),
+                shape.intentRef(),
+                stringListMetadata(shape.metadata().get("intentEvidenceIds")),
+                Map.of("source", "shape.generateModel"));
+        return shapeRepository.saveSystemModel(model, context);
+    }
+
+    private static List<String> stringListMetadata(String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        return java.util.Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(item -> !item.isBlank())
+                .toList();
     }
 
     private Promise<ShapeSpec> deriveShapeWithAI(IntentSpec intent) {

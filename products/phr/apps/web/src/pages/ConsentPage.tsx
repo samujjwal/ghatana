@@ -13,14 +13,14 @@ const consentBadgeTone: Record<ConsentGrant['status'], ConsentBadgeTone> = {
 };
 
 interface GrantFormState {
-  granteeId: string;
+  recipientId: string;
   purpose: string;
   resourceTypes: string;
   expiresAt: string;
 }
 
 const EMPTY_GRANT_FORM: GrantFormState = {
-  granteeId: '',
+  recipientId: '',
   purpose: '',
   resourceTypes: '',
   expiresAt: '',
@@ -93,17 +93,19 @@ export function ConsentPage(): React.ReactElement {
     event.preventDefault();
     dispatch({ type: 'set_error', message: null });
 
-    const { granteeId, purpose, resourceTypes, expiresAt } = state.form;
-    if (!granteeId.trim() || !purpose.trim() || !resourceTypes.trim() || !expiresAt.trim()) {
+    const { recipientId, purpose, resourceTypes, expiresAt } = state.form;
+    if (!recipientId.trim() || !purpose.trim() || !resourceTypes.trim() || !expiresAt.trim()) {
       dispatch({ type: 'set_error', message: t('validation.required', { field: 'All fields' }) });
       return;
     }
 
     const request: ConsentGrantRequest = {
       patientId: 'current',
-      granteeId: granteeId.trim(),
+      recipientId: recipientId.trim(),
       purpose: purpose.trim(),
-      resourceTypes: resourceTypes.split(',').map((s) => s.trim()).filter(Boolean),
+      scope: {
+        resourceTypes: resourceTypes.split(',').map((s) => s.trim()).filter(Boolean),
+      },
       expiresAt: expiresAt.trim(),
     };
 
@@ -182,11 +184,11 @@ export function ConsentPage(): React.ReactElement {
             <form onSubmit={(e) => void handleGrantSubmit(e)} className="stack gap-md mt-4">
               <h3 className="font-semibold">{t('consents.grant.title')}</h3>
               <Input
-                aria-label={t('consents.grant.granteeId')}
-                placeholder={t('consents.grant.granteeId.placeholder')}
-                value={state.form.granteeId}
+                aria-label={t('consents.grant.recipientId')}
+                placeholder={t('consents.grant.recipientId.placeholder')}
+                value={state.form.recipientId}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  dispatch({ type: 'set_field', field: 'granteeId', value: e.target.value })
+                  dispatch({ type: 'set_field', field: 'recipientId', value: e.target.value })
                 }
                 required
               />

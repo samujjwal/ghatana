@@ -74,7 +74,7 @@ public final class PhrAuditRoutes {
 
         // Patient-scoped enforcement: non-privileged principals may only query their own data.
         String effectiveEntityId;
-        if (PhrRouteSupport.isPrivileged(context)) {
+        if (PhrRouteSupport.hasClinicalRole(context)) {
             effectiveEntityId = patientIdParam; // may be null → full-tenant query
         } else {
             effectiveEntityId = context.principalId(); // always scoped to self

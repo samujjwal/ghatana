@@ -218,7 +218,7 @@ public final class PhrPatientRecordRoutes {
     }
 
     private static boolean mayAccessPatient(PhrRouteSupport.PhrRequestContext context, String patientId) {
-        return context.principalId().equals(patientId) || PhrRouteSupport.isPrivileged(context);
+        return context.principalId().equals(patientId) || PhrRouteSupport.hasClinicalRole(context);
     }
 
     private static PatientRecordService.Patient parsePatient(String json, String pathPatientId) {

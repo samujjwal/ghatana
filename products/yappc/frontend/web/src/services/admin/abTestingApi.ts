@@ -20,8 +20,8 @@ const importMetaEnv = import.meta as ImportMeta & {
 };
 
 const API_BASE_URL = importMetaEnv.env?.DEV
-  ? `${importMetaEnv.env.VITE_API_ORIGIN ?? 'http://localhost:7002'}/api/v1`
-  : '/api/v1';
+  ? (importMetaEnv.env.VITE_API_ORIGIN ?? 'http://localhost:7002')
+  : '';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -101,7 +101,7 @@ async function handleErrorResponse(response: Response): Promise<never> {
 export async function listExperiments(
   status?: ExperimentStatus
 ): Promise<ExperimentListResponse> {
-  const url = new URL(`${API_BASE_URL}/admin/ab-experiments`, window.location.origin);
+  const url = new URL(`${API_BASE_URL}/api/admin/ab-experiments`, window.location.origin);
   if (status) {
     url.searchParams.set('status', status);
   }
@@ -117,7 +117,7 @@ export async function listExperiments(
 export async function createExperiment(
   req: CreateVariantRequest
 ): Promise<Experiment> {
-  const response = await fetch(`${API_BASE_URL}/admin/ab-experiments`, {
+  const response = await fetch(`${API_BASE_URL}/api/admin/ab-experiments`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -137,7 +137,7 @@ export async function promoteWinner(
   reason: string
 ): Promise<void> {
   const response = await fetch(
-    `${API_BASE_URL}/admin/ab-experiments/${encodeURIComponent(experimentId)}/promote`,
+    `${API_BASE_URL}/api/admin/ab-experiments/${encodeURIComponent(experimentId)}/promote`,
     {
       method: 'POST',
       headers: {
@@ -154,7 +154,7 @@ export async function promoteWinner(
 
 export async function pauseExperiment(experimentId: string): Promise<void> {
   const response = await fetch(
-    `${API_BASE_URL}/admin/ab-experiments/${encodeURIComponent(experimentId)}/pause`,
+    `${API_BASE_URL}/api/admin/ab-experiments/${encodeURIComponent(experimentId)}/pause`,
     { method: 'POST', headers: { Accept: 'application/json' } }
   );
   if (!response.ok) {

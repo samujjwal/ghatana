@@ -7,6 +7,31 @@
 
 import type { ArtifactExtractor } from './types';
 import type { ArtifactRecord } from '../inventory/types';
+import {
+  EXTRACTOR_ID as TS_COMPONENT_EXTRACTOR_ID,
+  EXTRACTOR_VERSION as TS_COMPONENT_EXTRACTOR_VERSION,
+  extractComponentArtifact,
+} from './typescript/component-extractor';
+import {
+  EXTRACTOR_ID as PAGE_EXTRACTOR_ID,
+  EXTRACTOR_VERSION as PAGE_EXTRACTOR_VERSION,
+  extractPageArtifact,
+} from './typescript/page-extractor';
+import {
+  EXTRACTOR_ID as STATE_EXTRACTOR_ID,
+  EXTRACTOR_VERSION as STATE_EXTRACTOR_VERSION,
+  extractStateStoreArtifact,
+} from './typescript/state-extractor';
+import {
+  EXTRACTOR_ID as CSF_EXTRACTOR_ID,
+  EXTRACTOR_VERSION as CSF_EXTRACTOR_VERSION,
+  extractStorybookCsf,
+} from './storybook/csf-extractor';
+import {
+  EXTRACTOR_ID as PRISMA_EXTRACTOR_ID,
+  EXTRACTOR_VERSION as PRISMA_EXTRACTOR_VERSION,
+  extractPrismaSchemaArtifact,
+} from './prisma/schema-extractor';
 
 // ============================================================================
 // Extractor Registry
@@ -139,6 +164,83 @@ export const defaultExtractorRegistry = new ExtractorRegistry();
 // Canonical Extractor Registration
 // ============================================================================
 
+function isEligibleForExtractor(record: ArtifactRecord, extractorId: string): boolean {
+  return record.extractorEligibility.some(
+    eligibility => eligibility.extractorId === extractorId && eligibility.eligible,
+  );
+}
+
+export function createCanonicalExtractors(): readonly ArtifactExtractor[] {
+  return [
+    {
+      identity: {
+        id: TS_COMPONENT_EXTRACTOR_ID,
+        version: TS_COMPONENT_EXTRACTOR_VERSION,
+        supportedKinds: ['component-implementation', 'story-example'],
+        supportedLanguages: ['tsx', 'jsx'],
+        supportedFrameworks: ['react', 'nextjs'],
+      },
+      canExtract(record: ArtifactRecord): boolean {
+        return isEligibleForExtractor(record, TS_COMPONENT_EXTRACTOR_ID)
+          && (record.language === 'tsx' || record.language === 'jsx');
+      },
+      extract: extractComponentArtifact,
+    },
+    {
+      identity: {
+        id: PAGE_EXTRACTOR_ID,
+        version: PAGE_EXTRACTOR_VERSION,
+        supportedKinds: ['page-route'],
+        supportedLanguages: ['typescript', 'tsx', 'javascript', 'jsx'],
+        supportedFrameworks: ['react', 'nextjs'],
+      },
+      canExtract(record: ArtifactRecord): boolean {
+        return isEligibleForExtractor(record, PAGE_EXTRACTOR_ID);
+      },
+      extract: extractPageArtifact,
+    },
+    {
+      identity: {
+        id: STATE_EXTRACTOR_ID,
+        version: STATE_EXTRACTOR_VERSION,
+        supportedKinds: ['state-management'],
+        supportedLanguages: ['typescript', 'tsx', 'javascript', 'jsx'],
+        supportedFrameworks: ['react', 'nextjs', 'none', 'unknown'],
+      },
+      canExtract(record: ArtifactRecord): boolean {
+        return isEligibleForExtractor(record, STATE_EXTRACTOR_ID);
+      },
+      extract: extractStateStoreArtifact,
+    },
+    {
+      identity: {
+        id: CSF_EXTRACTOR_ID,
+        version: CSF_EXTRACTOR_VERSION,
+        supportedKinds: ['story-example'],
+        supportedLanguages: ['typescript', 'tsx', 'javascript', 'jsx'],
+        supportedFrameworks: ['storybook', 'react'],
+      },
+      canExtract(record: ArtifactRecord): boolean {
+        return isEligibleForExtractor(record, CSF_EXTRACTOR_ID);
+      },
+      extract: extractStorybookCsf,
+    },
+    {
+      identity: {
+        id: PRISMA_EXTRACTOR_ID,
+        version: PRISMA_EXTRACTOR_VERSION,
+        supportedKinds: ['db-schema-migration'],
+        supportedLanguages: ['prisma'],
+        supportedFrameworks: ['prisma'],
+      },
+      canExtract(record: ArtifactRecord): boolean {
+        return isEligibleForExtractor(record, PRISMA_EXTRACTOR_ID);
+      },
+      extract: extractPrismaSchemaArtifact,
+    },
+  ];
+}
+
 /**
  * Register all canonical extractors with the given registry.
  * This function registers the production-ready extractors for:
@@ -152,57 +254,10 @@ export const defaultExtractorRegistry = new ExtractorRegistry();
  * @returns The same registry instance for chaining
  */
 export function registerCanonicalExtractors(registry: ExtractorRegistry = defaultExtractorRegistry): ExtractorRegistry {
-  // Lazy import extractors to avoid circular dependencies
-  const {
-    extractComponentArtifact,
-  } = require('./typescript/component-extractor');
-  const {
-    extractPageArtifact,
-  } = require('./typescript/page-extractor');
-  const {
-    extractStateStoreArtifact,
-  } = require('./typescript/state-extractor');
-  const {
-    extractStorybookCsf,
-  } = require('./storybook/csf-extractor');
-  const {
-    extractPrismaSchemaArtifact,
-  } = require('./prisma/schema-extractor');
-
-  // Register TypeScript component extractor
-  try {
-    registry.register(extractComponentArtifact());
-  } catch (error) {
-    // Log but don't fail if one extractor fails to register
-    console.warn(`Failed to register TypeScript component extractor: ${error}`);
-  }
-
-  // Register page/route extractor
-  try {
-    registry.register(extractPageArtifact());
-  } catch (error) {
-    console.warn(`Failed to register page/route extractor: ${error}`);
-  }
-
-  // Register state management extractor
-  try {
-    registry.register(extractStateStoreArtifact());
-  } catch (error) {
-    console.warn(`Failed to register state management extractor: ${error}`);
-  }
-
-  // Register Storybook CSF extractor
-  try {
-    registry.register(extractStorybookCsf());
-  } catch (error) {
-    console.warn(`Failed to register Storybook CSF extractor: ${error}`);
-  }
-
-  // Register Prisma schema extractor
-  try {
-    registry.register(extractPrismaSchemaArtifact());
-  } catch (error) {
-    console.warn(`Failed to register Prisma schema extractor: ${error}`);
+  for (const extractor of createCanonicalExtractors()) {
+    if (!registry.has(extractor.identity.id)) {
+      registry.register(extractor);
+    }
   }
 
   return registry;

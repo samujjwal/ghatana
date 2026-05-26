@@ -595,6 +595,55 @@ class GovernedDispatchIntegrationTest extends EventloopTestBase {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("correlationId is required");
         }
+
+        @Test
+        @DisplayName("governed adapter maps PENDING_APPROVAL to non-success result")
+        void governedAdapter_mapsPendingApprovalToNonSuccess() {
+            // Given - create agent that returns PENDING_APPROVAL
+            PendingApprovalAgent agent = new PendingApprovalAgent("approval-agent");
+
+            // Given - create governed adapter with side-effecting profile
+            AgentEventOperatorCapabilityAdapter adapter = new AgentEventOperatorCapabilityAdapter(
+                agent,
+                "agents/approval-agent@1.0.0",
+                AgentCapabilityRole.AGENT_ACTION,
+                "schema://agent/input",
+                "schema://agent/output",
+                AgentSideEffectProfile.SIDE_EFFECTING,
+                policy("model"),
+                Map.of("allowedTools", List.of("tool-1"), "allowedActions", List.of("action-1")),
+                policy("memory"),
+                policy("retrieval"),
+                policy("guardrail"),
+                policy("replay"),
+                policy("uncertainty"),
+                policy("human-review"),
+                policy("observability"),
+                memoryStore);
+
+            // When - process through adapter
+            EventOperatorResult<Map<String, Object>> result = runPromise(() -> adapter.process(
+                eventContext(Map.of("request", "approval-needed")),
+                runtimeContext()));
+
+            // Then - result is not successful
+            assertThat(result.success()).isFalse();
+
+            // Then - error message indicates approval required
+            assertThat(result.errors()).isNotEmpty();
+            assertThat(result.errors()).anyMatch(error -> 
+                error.contains("approval") || error.contains("pending"));
+
+            // Then - evidence contains approval status
+            assertThat(result.evidence()).containsKey("approvalStatus");
+            assertThat(result.evidence().get("approvalStatus")).isEqualTo("PENDING_APPROVAL");
+
+            // Then - evidence contains full context for audit
+            assertThat(result.evidence()).containsKey("agentRef");
+            assertThat(result.evidence()).containsKey("tenantId");
+            assertThat(result.evidence()).containsKey("traceId");
+            assertThat(result.evidence()).containsKey("correlationId");
+        }
     }
 
     // Helper methods
@@ -680,6 +729,58 @@ class GovernedDispatchIntegrationTest extends EventloopTestBase {
                     "request", input.get("request")))
                 .confidence(0.85)
                 .status(AgentResultStatus.SUCCESS)
+                .agentId(descriptor.getAgentId())
+                .processingTime(Duration.ofMillis(1))
+                .build());
+        }
+    }
+
+    private static final class PendingApprovalAgent implements TypedAgent<Map<String, Object>, Map<String, Object>> {
+        private final AgentDescriptor descriptor;
+
+        PendingApprovalAgent(String agentId) {
+            this.descriptor = AgentDescriptor.builder()
+                .agentId(agentId)
+                .name("Pending Approval Agent")
+                .namespace("test")
+                .type(AgentType.PROBABILISTIC)
+                .build();
+        }
+
+        @Override
+        public AgentDescriptor descriptor() {
+            return descriptor;
+        }
+
+        @Override
+        public Promise<Void> initialize(AgentConfig config) {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> shutdown() {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<com.ghatana.platform.health.HealthStatus> healthCheck() {
+            return Promise.of(com.ghatana.platform.health.HealthStatus.healthy("ok"));
+        }
+
+        @Override
+        public Promise<AgentResult<Map<String, Object>>> process(
+                AgentContext ctx,
+                Map<String, Object> input) {
+            return Promise.of(AgentResult.<Map<String, Object>>builder()
+                .output(Map.of(
+                    "agentId", descriptor.getAgentId(),
+                    "tenantId", ctx.getTenantId(),
+                    "traceId", ctx.getTraceId(),
+                    "correlationId", ctx.getMetadata().get("correlationId"),
+                    "request", input.get("request")))
+                .confidence(0.85)
+                .status(AgentResultStatus.PENDING_APPROVAL)
+                .explanation("Agent execution requires approval")
                 .agentId(descriptor.getAgentId())
                 .processingTime(Duration.ofMillis(1))
                 .build());

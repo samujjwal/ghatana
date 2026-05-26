@@ -30,6 +30,15 @@ public interface RunService {
     Promise<RunResult> executeWithObservation(RunSpec spec, ObservationConfig config);
 
     /**
+     * Retries a failed run using the provided run specification.
+     *
+     * @param failedRunId ID of the failed run being retried
+     * @param spec The run specification to execute
+     * @return Promise of retry run result
+     */
+    Promise<RunResult> retry(String failedRunId, RunSpec spec);
+
+    /**
      * Rolls back a deployment to a previous version.
      *
      * @param deploymentId ID of the deployment to rollback

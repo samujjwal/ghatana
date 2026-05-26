@@ -110,6 +110,50 @@ public final class GeneratedRouteRegistry {
             PrivacyClassification.CONFIDENTIAL
         ));
         MANIFEST.addRoute("yappc-services", new RouteEntry(
+            "GET",
+            "/api/admin/observability/release-gates",
+            AuthMode.REQUIRED,
+            Set.of("admin"),
+            "yappc-services",
+            Boundary.YAPPC,
+            "listAdminObservabilityReleaseGates",
+            "ADMIN_OBSERVABILITY_RELEASE_GATES_READ",
+            PrivacyClassification.CONFIDENTIAL
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
+            "GET",
+            "/api/admin/feature-flags",
+            AuthMode.REQUIRED,
+            Set.of("admin"),
+            "yappc-services",
+            Boundary.YAPPC,
+            "listAdminFeatureFlags",
+            "ADMIN_FEATURE_FLAGS_LIST",
+            PrivacyClassification.CONFIDENTIAL
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
+            "PUT",
+            "/api/admin/feature-flags/{flagKey}",
+            AuthMode.REQUIRED,
+            Set.of("admin"),
+            "yappc-services",
+            Boundary.YAPPC,
+            "setAdminFeatureFlag",
+            "ADMIN_FEATURE_FLAG_SET",
+            PrivacyClassification.RESTRICTED
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
+            "GET",
+            "/api/admin/feature-flags/{flagKey}/audit",
+            AuthMode.REQUIRED,
+            Set.of("admin"),
+            "yappc-services",
+            Boundary.YAPPC,
+            "listAdminFeatureFlagAudit",
+            "ADMIN_FEATURE_FLAG_AUDIT_LIST",
+            PrivacyClassification.CONFIDENTIAL
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/intent/capture",
             AuthMode.REQUIRED,
@@ -221,6 +265,17 @@ public final class GeneratedRouteRegistry {
         ));
         MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
+            "/api/v1/yappc/generate/product-unit-intent",
+            AuthMode.REQUIRED,
+            Set.of("project:write"),
+            "yappc-services",
+            Boundary.YAPPC,
+            "generateProductUnitIntent",
+            "GENERATE_PRODUCT_UNIT_INTENT",
+            PrivacyClassification.CONFIDENTIAL
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
+            "POST",
             "/api/v1/yappc/generate/diff",
             AuthMode.REQUIRED,
             Set.of("project:read"),
@@ -262,6 +317,17 @@ public final class GeneratedRouteRegistry {
             "runWithObservation",
             "RUN_WITH_OBSERVATION",
             PrivacyClassification.CONFIDENTIAL
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
+            "POST",
+            "/api/v1/yappc/run/retry",
+            AuthMode.REQUIRED,
+            Set.of("project:write"),
+            "yappc-services",
+            Boundary.YAPPC,
+            "retryRun",
+            "RUN_RETRY",
+            PrivacyClassification.RESTRICTED
         ));
         MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",

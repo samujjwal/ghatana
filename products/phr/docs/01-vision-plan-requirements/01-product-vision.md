@@ -7,7 +7,7 @@
 | **Product Name** | PHR Nepal — Personal Health Records |
 | **Version** | 1.0.0 |
 | **Group** | com.ghatana.products |
-| **Status** | Alpha — Core Implementation Complete |
+| **Status** | Alpha — Partial Implementation (see Section 5 for implemented surface) |
 | **Stack** | Java 21 + ActiveJ · React 19 + Tailwind CSS · React Native (Expo planned) |
 | **Owner** | @ghatana/phr-team |
 
@@ -57,25 +57,27 @@
 
 ## 5. Goals
 
-### Primary Goals (Observed Implementation)
+### Primary Goals (Implemented Surface — Evidence-Based)
+
+> **Note**: The following table reflects what is verifiably present in source code. Many web routes exist as stubs or partial implementations. Mobile app screens are in-progress. Kernel policy integration is in-progress.
 
 | Goal | Evidence | Status |
 |------|----------|--------|
-| Patient record management with FHIR R4 | `PhrCapabilities.PATIENT_RECORDS`, `PatientRecordService.java` | ✅ Complete |
-| Consent lifecycle management | `ConsentManagementService.java`, Nepal Directive 2081 compliance | ✅ Complete |
-| FHIR R4 transformation engine | `FhirR4TransformationEngine.java` | ✅ Complete |
-| Clinical document management | `DocumentService.java`, OCR support | ✅ Complete |
-| Medication tracking | `MedicationService.java` | ✅ Complete |
-| Appointment scheduling | `AppointmentService.java` | ✅ Complete |
-| Privacy/security compliance | `PHRSecurityManagerImpl`, `PHRPrivacyManagerImpl` | ✅ Complete |
-| AI/ML clinical decision support | Lab anomaly, medication interaction, readmission agents | ✅ Complete |
+| Patient record management with FHIR R4 | `PhrCapabilities.PATIENT_RECORDS`, `PatientRecordService.java` | Partial — backend service exists; web/mobile routes incomplete |
+| Consent lifecycle management | `ConsentManagementService.java`, Nepal Directive 2081 compliance | Partial — service exists; UI consent workflow partially complete |
+| FHIR R4 transformation engine | `FhirR4TransformationEngine.java` | Partial — engine exists; E2E consumer integration not complete |
+| Clinical document management | `DocumentService.java`, OCR support | Partial — backend service exists; upload/OCR UI partially complete |
+| Medication tracking | `MedicationService.java` | Partial — backend exists; mobile not implemented |
+| Appointment scheduling | `AppointmentService.java` | Partial — backend exists; full booking workflow incomplete |
+| Privacy/security compliance | `PHRSecurityManagerImpl`, `PHRPrivacyManagerImpl` | Partial — framework in place; Kernel policy evaluator integration pending |
+| AI/ML clinical decision support | Lab anomaly, medication interaction, readmission agents | Partial — agents defined; integration with request lifecycle incomplete |
 
 ### Secondary Goals (Implementation Status)
 
 | Goal | Evidence | Status |
 |------|----------|--------|
 | FHIR Server Endpoint | Listed as "Planned" in README | ❌ Not Implemented |
-| Mobile App (React Native) | Listed as "Planned" | ❌ Not Started |
+| Mobile App (React Native) | Basic screens exist; full session/offline/i18n/a11y incomplete | 🔶 In Progress |
 | Nepal HIE Integration | Listed as "Planned" | ❌ Not Started |
 
 ---

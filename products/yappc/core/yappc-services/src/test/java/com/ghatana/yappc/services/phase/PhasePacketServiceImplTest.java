@@ -1,10 +1,12 @@
 package com.ghatana.yappc.services.phase;
 
+import com.ghatana.core.runtime.PreviewRuntimeService;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.governance.PolicyEngine;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.ghatana.yappc.api.AdminFeatureFlagController;
 import com.ghatana.yappc.api.PhasePacket;
 import com.ghatana.yappc.domain.PhaseType;
 import com.ghatana.yappc.services.capability.CapabilityEvaluationService;
@@ -33,6 +35,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -115,6 +118,8 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
                 .thenReturn(Promise.of(List.of()));
         lenient().when(platformRunStatusService.findLatest(anyString(), anyString(), anyString(), anyString()))
                 .thenReturn(Promise.of(Optional.empty()));
+        lenient().when(dataCloudClient.query(eq(TENANT_ID), eq(AdminFeatureFlagController.FLAG_COLLECTION), any()))
+                .thenReturn(Promise.of(List.of()));
     }
 
     // ─── Happy path ────────────────────────────────────────────────────────────
@@ -140,6 +145,35 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
 
         assertThat(packet).isNotNull();
         assertThat(packet.capabilities()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("Happy path: packet surfaces agent governance health and learning evidence")
+    void happyPath_buildPhasePacket_includesAgentGovernanceHealth() {
+        when(dataCloudClient.findById(anyString(), anyString(), anyString()))
+                .thenReturn(Promise.of(Optional.of(
+                        DataCloudClient.Entity.of(PROJECT_ID, "projects",
+                                Map.of(
+                                        "name", "Test Project",
+                                        "tier", "PRO",
+                                        "status", "active",
+                                        "agentGovernance", Map.of(
+                                                "healthy", true,
+                                                "status", "healthy",
+                                                "governanceState", "policy-approved",
+                                                "learningLevel", "evidence-backed",
+                                                "evidenceIds", List.of("learn-run-1", "learn-approval-1"),
+                                                "issues", List.of()
+                                        ))))));
+
+        PhasePacket packet = runPromise(() ->
+                service.buildPhasePacket("LEARN", PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+        assertThat(packet.healthSignals().agentGovernance().isHealthy()).isTrue();
+        assertThat(packet.healthSignals().agentGovernance().governanceState()).isEqualTo("policy-approved");
+        assertThat(packet.healthSignals().agentGovernance().learningLevel()).isEqualTo("evidence-backed");
+        assertThat(packet.healthSignals().agentGovernance().evidenceIds())
+                .containsExactly("learn-run-1", "learn-approval-1");
     }
 
     @Test
@@ -322,6 +356,86 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("Unsafe preview security blocks Run readiness and exposes token scope details")
+    void unsafePreviewSecurityBlocksRunReadiness() {
+        when(dataCloudClient.findById(anyString(), anyString(), anyString()))
+                .thenReturn(Promise.of(Optional.of(
+                        DataCloudClient.Entity.of(PROJECT_ID, "projects",
+                                Map.of(
+                                        "name", "Test Project",
+                                        "tier", "PRO",
+                                        "status", "active",
+                                        "previewSecurity", Map.of(
+                                                "trustLevel", "untrusted",
+                                                "expiresAt", "2026-12-31T20:00:00Z",
+                                                "tokenScopes", List.of(
+                                                        Map.of(
+                                                                "id", "preview:read",
+                                                                "name", "Preview read",
+                                                                "required", true,
+                                                                "granted", true),
+                                                        Map.of(
+                                                                "id", "preview:inspect",
+                                                                "name", "Preview inspect",
+                                                                "required", true,
+                                                                "granted", false)),
+                                                "scopeMismatches", List.of("preview:inspect missing")))))));
+
+        PreviewRuntimeService healthyPreviewRuntime = new PreviewRuntimeService() {
+            @Override
+            public PreviewHealthStatus getHealth(String previewId) {
+                return new PreviewHealthStatus(true, "healthy", List.of(), Instant.now(), previewId);
+            }
+
+            @Override
+            public GenerationHealthStatus getGenerationHealth(String generationId) {
+                return new GenerationHealthStatus(true, "healthy", generationId, List.of(), Instant.now(), null);
+            }
+
+            @Override
+            public RuntimeHealthStatus getRuntimeHealth(String runtimeId) {
+                return new RuntimeHealthStatus(true, "healthy", runtimeId, List.of(), Instant.now(), null);
+            }
+        };
+        PhasePacketServiceImpl previewSecurityService = new PhasePacketServiceImpl(
+                dataCloudClient,
+                artifactRepository,
+                phaseGateValidator,
+                policyEngine,
+                capabilityEvaluationService,
+                transitionConfigLoader,
+                platformIntegrationClient,
+                metrics,
+                auditService,
+                healthyPreviewRuntime,
+                platformRunStatusService,
+                null
+        );
+
+        PhasePacket packet = runPromise(() ->
+                previewSecurityService.buildPhasePacket("RUN", PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+        PhasePacket.PreviewHealth preview = packet.healthSignals().preview();
+        assertThat(preview.isHealthy()).isFalse();
+        assertThat(preview.status()).isEqualTo("unsafe");
+        assertThat(preview.security().safe()).isFalse();
+        assertThat(preview.security().trustLevel()).isEqualTo("untrusted");
+        assertThat(preview.security().expired()).isFalse();
+        assertThat(preview.security().issues())
+                .contains("Preview trust level is untrusted", "Scope mismatch: preview:inspect missing");
+        assertThat(preview.security().tokenScopes())
+                .anySatisfy(scope -> {
+                    assertThat(scope.id()).isEqualTo("preview:inspect");
+                    assertThat(scope.name()).isEqualTo("Preview inspect");
+                    assertThat(scope.required()).isTrue();
+                    assertThat(scope.granted()).isFalse();
+                });
+        assertThat(packet.readiness().canAdvance()).isFalse();
+        assertThat(packet.readiness().missingPrerequisites())
+                .contains("Healthy preview, generation, and runtime signals");
+    }
+
+    @Test
     @DisplayName("Happy path: packet includes latest platform run status when available")
     void happyPath_platformRunStatusPresentWhenResolved() {
         PhasePacket.PlatformRunStatus runStatus = new PhasePacket.PlatformRunStatus(
@@ -391,11 +505,15 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
                                         "tier", "ENTERPRISE",
                                         "enabledPhaseFlags", List.of("custom.phase.flag"),
                                         "status", "active")))));
+        when(dataCloudClient.query(eq(TENANT_ID), eq(AdminFeatureFlagController.FLAG_COLLECTION), any()))
+                .thenReturn(Promise.of(List.of(
+                        DataCloudClient.Entity.of("tenant-flag-1", AdminFeatureFlagController.FLAG_COLLECTION,
+                                Map.of("key", "tenant.admin.flag", "enabled", true)))));
 
         PhasePacket packet = runPromise(() ->
                 service.buildPhasePacket(PHASE, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
 
-        assertThat(packet.enabledPhaseFlags()).contains("custom.phase.flag", "phase.report.export");
+        assertThat(packet.enabledPhaseFlags()).contains("custom.phase.flag", "tenant.admin.flag", "phase.report.export");
     }
 
     @Test

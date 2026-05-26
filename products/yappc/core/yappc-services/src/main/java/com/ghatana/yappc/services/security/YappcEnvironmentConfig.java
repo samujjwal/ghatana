@@ -93,6 +93,9 @@ public final class YappcEnvironmentConfig {
     /** JWT secret environment variable for token signing. */
     public static final String JWT_SECRET_ENV = "YAPPC_JWT_SECRET";
 
+    /** Kernel lifecycle truth source selector. */
+    public static final String KERNEL_LIFECYCLE_TRUTH_SOURCE_ENV = "YAPPC_KERNEL_LIFECYCLE_TRUTH_SOURCE";
+
     private YappcEnvironmentConfig() {}
 
     /**
@@ -119,6 +122,7 @@ public final class YappcEnvironmentConfig {
         validateDatabase(env, errors);
         validateTenantId(env, errors);
         validateJwtSecret(env, errors);
+        validateKernelLifecycleTruthSource(env, errors);
 
         if (!errors.isEmpty()) {
             String message = "YAPPC environment configuration is invalid:\n  - " +
@@ -145,6 +149,7 @@ public final class YappcEnvironmentConfig {
         validateDatabase(env, errors);
         validateTenantId(env, errors);
         validateJwtSecret(env, errors);
+        validateKernelLifecycleTruthSource(env, errors);
         return new ValidationResult(errors);
     }
 
@@ -280,6 +285,35 @@ public final class YappcEnvironmentConfig {
                         "in production mode (YAPPC_PROFILE=" + profile + "). " +
                         "Placeholder or short secrets are not allowed.");
             }
+        }
+    }
+
+    private static void validateKernelLifecycleTruthSource(Map<String, String> env, List<String> errors) {
+        String configuredSource = env.getOrDefault(KERNEL_LIFECYCLE_TRUTH_SOURCE_ENV, "").trim().toLowerCase();
+        if (configuredSource.isBlank()) {
+            if (isProductionProfile(env)) {
+                errors.add(KERNEL_LIFECYCLE_TRUTH_SOURCE_ENV
+                        + " must be set to data-cloud or event-cloud in production mode");
+            }
+            return;
+        }
+
+        if ("local".equals(configuredSource)
+                || "local-filesystem".equals(configuredSource)
+                || "filesystem".equals(configuredSource)
+                || "mock".equals(configuredSource)
+                || "fake".equals(configuredSource)
+                || "demo".equals(configuredSource)) {
+            errors.add(KERNEL_LIFECYCLE_TRUTH_SOURCE_ENV + "=" + configuredSource
+                    + " is dev/test-only and cannot be selected for lifecycle truth");
+            return;
+        }
+
+        if (isProductionProfile(env)
+                && !"data-cloud".equals(configuredSource)
+                && !"event-cloud".equals(configuredSource)) {
+            errors.add(KERNEL_LIFECYCLE_TRUTH_SOURCE_ENV
+                    + " must be data-cloud or event-cloud in production mode, but was " + configuredSource);
         }
     }
 

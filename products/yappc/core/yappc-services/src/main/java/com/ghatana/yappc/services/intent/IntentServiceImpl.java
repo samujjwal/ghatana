@@ -15,7 +15,12 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @doc.type class
@@ -31,12 +36,31 @@ public class IntentServiceImpl implements IntentService {
     private final AuditLogger auditLogger;
     private final MetricsCollector metrics;
     private final PromptTemplateRegistry promptRegistry;
+    private final IntentRepository intentRepository;
+    private final IntentEvidenceService intentEvidenceService;
 
     public IntentServiceImpl(
             CompletionService aiService,
             AuditLogger auditLogger,
             MetricsCollector metrics) {
-        this(aiService, auditLogger, metrics, createDefaultPromptRegistry());
+        this(aiService, auditLogger, metrics, createDefaultPromptRegistry(), null);
+    }
+
+    public IntentServiceImpl(
+            CompletionService aiService,
+            AuditLogger auditLogger,
+            MetricsCollector metrics,
+            IntentRepository intentRepository) {
+        this(aiService, auditLogger, metrics, createDefaultPromptRegistry(), intentRepository, null);
+    }
+
+    public IntentServiceImpl(
+            CompletionService aiService,
+            AuditLogger auditLogger,
+            MetricsCollector metrics,
+            IntentRepository intentRepository,
+            IntentEvidenceService intentEvidenceService) {
+        this(aiService, auditLogger, metrics, createDefaultPromptRegistry(), intentRepository, intentEvidenceService);
     }
 
     IntentServiceImpl(
@@ -44,10 +68,31 @@ public class IntentServiceImpl implements IntentService {
             AuditLogger auditLogger,
             MetricsCollector metrics,
             PromptTemplateRegistry promptRegistry) {
+        this(aiService, auditLogger, metrics, promptRegistry, null);
+    }
+
+    IntentServiceImpl(
+            CompletionService aiService,
+            AuditLogger auditLogger,
+            MetricsCollector metrics,
+            PromptTemplateRegistry promptRegistry,
+            IntentRepository intentRepository) {
+        this(aiService, auditLogger, metrics, promptRegistry, intentRepository, null);
+    }
+
+    IntentServiceImpl(
+            CompletionService aiService,
+            AuditLogger auditLogger,
+            MetricsCollector metrics,
+            PromptTemplateRegistry promptRegistry,
+            IntentRepository intentRepository,
+            IntentEvidenceService intentEvidenceService) {
         this.aiService = aiService;
         this.auditLogger = auditLogger;
         this.metrics = metrics;
         this.promptRegistry = promptRegistry;
+        this.intentRepository = intentRepository;
+        this.intentEvidenceService = intentEvidenceService;
     }
 
     @Override
@@ -62,6 +107,8 @@ public class IntentServiceImpl implements IntentService {
                     ServiceObservability.incrementSuccess(metrics, "yappc.intent.capture", tags);
 
                     return auditLogger.log(ServiceObservability.auditEvent("intent.capture", input, spec))
+                            .then(v -> recordCaptureEvidence(input, spec))
+                            .then(evidenceId -> persistCapturedIntent(input, spec, evidenceId))
                             .map(v -> spec);
                 })
                 .whenException(e -> {
@@ -79,13 +126,15 @@ public class IntentServiceImpl implements IntentService {
         long startTime = System.currentTimeMillis();
 
         return analyzeIntentWithAI(spec)
-                .then(analysis -> {
+                .then(enrichedAnalysis -> {
+                    IntentAnalysis analysis = enrichedAnalysis.analysis();
                     long duration = System.currentTimeMillis() - startTime;
                     Map<String, String> tags = ServiceObservability.tenantTag(spec.tenantId());
                     metrics.recordTimer("yappc.intent.analyze", duration, tags);
                     ServiceObservability.incrementSuccess(metrics, "yappc.intent.analyze", tags);
 
                     return auditLogger.log(ServiceObservability.auditEvent("intent.analyze", spec, analysis))
+                            .then(v -> recordAnalysisEvidence(spec, analysis, enrichedAnalysis.grounding().asMap()))
                             .map(v -> analysis);
                 })
                 .whenException(e -> {
@@ -96,6 +145,72 @@ public class IntentServiceImpl implements IntentService {
                         e,
                         ServiceObservability.tenantTag(spec.tenantId()));
                 });
+    }
+
+    @Override
+    public Promise<Optional<IntentVersionRecord>> findLatest(
+            String tenantId,
+            String workspaceId,
+            String projectId,
+            String intentId) {
+        if (intentRepository == null) {
+            return Promise.of(Optional.empty());
+        }
+        return intentRepository.findLatest(tenantId, workspaceId, projectId, intentId);
+    }
+
+    @Override
+    public Promise<List<IntentVersionRecord>> history(
+            String tenantId,
+            String workspaceId,
+            String projectId,
+            String intentId) {
+        if (intentRepository == null) {
+            return Promise.of(List.of());
+        }
+        return intentRepository.history(tenantId, workspaceId, projectId, intentId);
+    }
+
+    @Override
+    public Promise<Long> count() {
+        if (intentRepository == null) {
+            return Promise.of(0L);
+        }
+        return Promise.ofException(new IllegalStateException(
+                "Intent count requires a tenant-scoped repository call; use IntentRepository.count(tenantId)."));
+    }
+
+    private Promise<String> recordCaptureEvidence(IntentInput input, IntentSpec spec) {
+        if (intentEvidenceService == null) {
+            return Promise.of(null);
+        }
+        return intentEvidenceService.recordCapture(input, spec);
+    }
+
+    private Promise<String> recordAnalysisEvidence(
+            IntentSpec spec,
+            IntentAnalysis analysis,
+            Map<String, Object> groundingMetadata) {
+        if (intentEvidenceService == null) {
+            return Promise.of(null);
+        }
+        return intentEvidenceService.recordAnalysis(spec, analysis, groundingMetadata);
+    }
+
+    private Promise<IntentVersionRecord> persistCapturedIntent(IntentInput input, IntentSpec spec, String evidenceId) {
+        if (intentRepository == null) {
+            return Promise.of(null);
+        }
+        List<String> evidenceIds = evidenceId == null || evidenceId.isBlank() ? List.of() : List.of(evidenceId);
+        IntentPersistenceContext context = new IntentPersistenceContext(
+                input.tenantId(),
+                input.workspaceId(),
+                input.projectId(),
+                input.userId(),
+                null,
+                evidenceIds,
+                Map.of("source", "intent.capture"));
+        return intentRepository.saveVersion(spec, context);
     }
 
     private Promise<IntentSpec> parseIntentWithAI(IntentInput input) {
@@ -119,12 +234,12 @@ public class IntentServiceImpl implements IntentService {
                 });
     }
 
-    private Promise<IntentAnalysis> analyzeIntentWithAI(IntentSpec spec) {
-        String prompt = buildIntentAnalysisPrompt(spec);
+    private Promise<AnalyzedIntent> analyzeIntentWithAI(IntentSpec spec) {
+        PromptBuildResult prompt = buildIntentAnalysisPrompt(spec);
         Map<String, String> tags = ServiceObservability.tenantTag(spec.tenantId());
 
         return aiService.complete(CompletionRequest.builder()
-                .prompt(prompt)
+                .prompt(prompt.prompt())
                 .temperature(0.2)
                 .maxTokens(1500)
                 .build())
@@ -132,11 +247,15 @@ public class IntentServiceImpl implements IntentService {
                     if (e != null) {
                         AiQualityTelemetry.recordFallback(metrics, "yappc.ai.intent.analyze", e, tags);
                         log.warn("Intent analysis AI failed, using fallback parser", e);
-                        return Promise.of(StructuredOutputParser.parseIntentAnalysis("", spec.id()));
+                        IntentAnalysis fallback = StructuredOutputParser.parseIntentAnalysis("", spec.id());
+                        return Promise.of(new AnalyzedIntent(fallback, AiGroundingMetadata.fallback(prompt, e)));
                     }
 
                     AiQualityTelemetry.recordCompletion(metrics, "yappc.ai.intent.analyze", result, tags);
-                    return Promise.of(parseAnalysisFromAIResponse(result, spec));
+                    IntentAnalysis analysis = parseAnalysisFromAIResponse(result, spec);
+                    return Promise.of(new AnalyzedIntent(
+                            analysis,
+                            AiGroundingMetadata.success(prompt, result, confidence(analysis))));
                 });
     }
 
@@ -168,7 +287,7 @@ public class IntentServiceImpl implements IntentService {
         return template.replace("${rawText}", input.rawText());
     }
 
-    private String buildIntentAnalysisPrompt(IntentSpec spec) {
+    private PromptBuildResult buildIntentAnalysisPrompt(IntentSpec spec) {
         String tenantId = spec.tenantId() != null ? spec.tenantId() : "default";
         PromptTemplateVersion selected = promptRegistry
                 .selectForExperiment("intent.analyze", "v1", tenantId, "intent.analyze.default")
@@ -195,10 +314,16 @@ public class IntentServiceImpl implements IntentService {
             """;
 
         String template = selected == null ? fallbackTemplate : selected.template();
-        return template
+        String prompt = template
                 .replace("${productName}", spec.productName())
                 .replace("${description}", spec.description())
                 .replace("${goals}", spec.goals().stream().map(GoalSpec::description).toList().toString());
+        return new PromptBuildResult(
+                prompt,
+                selected == null ? "intent.analyze" : selected.key(),
+                selected == null ? "fallback" : selected.version(),
+                selected == null ? "fallback" : selected.variant(),
+                sha256(prompt));
     }
 
     private static PromptTemplateRegistry createDefaultPromptRegistry() {
@@ -276,6 +401,96 @@ public class IntentServiceImpl implements IntentService {
 
     private IntentAnalysis parseAnalysisFromAIResponse(CompletionResult result, IntentSpec spec) {
         return StructuredOutputParser.parseIntentAnalysis(result.text(), spec.id());
+    }
+
+    private static double confidence(IntentAnalysis analysis) {
+        if (analysis == null || analysis.scores() == null || analysis.scores().isEmpty()) {
+            return analysis != null && analysis.feasible() ? 0.75 : 0.45;
+        }
+        return analysis.scores().values().stream()
+                .mapToDouble(Double::doubleValue)
+                .average()
+                .orElse(analysis.feasible() ? 0.75 : 0.45);
+    }
+
+    private static String sha256(String value) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder builder = new StringBuilder(hash.length * 2);
+            for (byte b : hash) {
+                builder.append(String.format("%02x", b));
+            }
+            return builder.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 digest is unavailable", e);
+        }
+    }
+
+    private record PromptBuildResult(
+            String prompt,
+            String promptKey,
+            String promptVersion,
+            String promptVariant,
+            String promptHash
+    ) {
+    }
+
+    private record AiGroundingMetadata(
+            String promptKey,
+            String promptVersion,
+            String promptVariant,
+            String promptHash,
+            String modelUsed,
+            String finishReason,
+            int tokensUsed,
+            double confidence,
+            String errorType
+    ) {
+        static AiGroundingMetadata success(
+                PromptBuildResult prompt,
+                CompletionResult result,
+                double confidence) {
+            return new AiGroundingMetadata(
+                    prompt.promptKey(),
+                    prompt.promptVersion(),
+                    prompt.promptVariant(),
+                    prompt.promptHash(),
+                    result.model(),
+                    result.getFinishReason(),
+                    result.getTokensUsed(),
+                    confidence,
+                    "");
+        }
+
+        static AiGroundingMetadata fallback(PromptBuildResult prompt, Throwable error) {
+            return new AiGroundingMetadata(
+                    prompt.promptKey(),
+                    prompt.promptVersion(),
+                    prompt.promptVariant(),
+                    prompt.promptHash(),
+                    "fallback-parser",
+                    "ai_error",
+                    0,
+                    0.35,
+                    error.getClass().getSimpleName());
+        }
+
+        Map<String, Object> asMap() {
+            return Map.of(
+                    "promptKey", promptKey,
+                    "promptVersion", promptVersion,
+                    "promptVariant", promptVariant,
+                    "promptHash", promptHash,
+                    "modelUsed", modelUsed == null ? "" : modelUsed,
+                    "finishReason", finishReason == null ? "" : finishReason,
+                    "tokensUsed", tokensUsed,
+                    "confidence", confidence,
+                    "errorType", errorType == null ? "" : errorType);
+        }
+    }
+
+    private record AnalyzedIntent(IntentAnalysis analysis, AiGroundingMetadata grounding) {
     }
 
 }

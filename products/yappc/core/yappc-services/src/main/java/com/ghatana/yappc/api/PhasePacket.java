@@ -322,8 +322,29 @@ public final class PhasePacket {
     public record HealthSignals(
             PreviewHealth preview,
             GenerationHealth generation,
-            RuntimeHealth runtime
-    ) {}
+            RuntimeHealth runtime,
+            AgentGovernanceHealth agentGovernance
+    ) {
+        public HealthSignals(PreviewHealth preview, GenerationHealth generation, RuntimeHealth runtime) {
+            this(preview, generation, runtime, AgentGovernanceHealth.unknown());
+        }
+    }
+
+    /**
+     * Agent governance and learning evidence health status.
+     */
+    public record AgentGovernanceHealth(
+            boolean isHealthy,
+            String status,
+            String governanceState,
+            String learningLevel,
+            List<String> evidenceIds,
+            List<String> issues
+    ) {
+        public static AgentGovernanceHealth unknown() {
+            return new AgentGovernanceHealth(false, "unknown", "unknown", "none", List.of(), List.of());
+        }
+    }
 
     /**
      * Dependency-specific details for a degraded phase packet.
@@ -342,7 +363,38 @@ public final class PhasePacket {
     public record PreviewHealth(
             boolean isHealthy,
             String status,
+            List<String> issues,
+            PreviewSecurity security
+    ) {
+        public PreviewHealth(boolean isHealthy, String status, List<String> issues) {
+            this(isHealthy, status, issues, PreviewSecurity.safeDefault());
+        }
+    }
+
+    /**
+     * Preview token/trust security status.
+     */
+    public record PreviewSecurity(
+            String trustLevel,
+            List<TokenScope> tokenScopes,
+            String expiresAt,
+            boolean expired,
+            boolean safe,
             List<String> issues
+    ) {
+        public static PreviewSecurity safeDefault() {
+            return new PreviewSecurity("trusted", List.of(), null, false, true, List.of());
+        }
+    }
+
+    /**
+     * Preview token scope grant status.
+     */
+    public record TokenScope(
+            String id,
+            String name,
+            boolean required,
+            boolean granted
     ) {}
 
     /**

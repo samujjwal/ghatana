@@ -287,7 +287,8 @@ public final class PhrDocumentImagingRoutes {
     }
 
     private Promise<Boolean> requireAccess(PhrRouteSupport.PhrRequestContext context, String patientId, String resourceType) {
-        if (context.principalId().equals(patientId) || PhrRouteSupport.isPrivileged(context)) {
+        if (context.principalId().equals(patientId) || PhrRouteSupport.canPerformAdminOperation(context)) {
+            // Patient accessing their own data, or admin performing a system operation.
             return Promise.of(true);
         }
         return consentService.validateAccess(patientId, context.principalId(), resourceType)

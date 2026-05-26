@@ -1,1475 +1,189 @@
-Below is the full implementation todo list from the `600bebfa0832716d6589d5bcae223191138563cc` audit. I separated **YAPPC** into its own independent section as requested.
-
-The biggest release blocker is still evidence integrity: the committed Data-Cloud release bundle at this commit targets `936924cf...`, not `600bebfa...`, so release evidence cannot prove this commit.  Data-Cloud also still classifies `delivery:api-contract-tests` and `integration-tests` as advisory/compile-gated instead of release-blocking. 
-
-# 0. P0 Release Evidence and Gate Integrity
-
-## DC-REL-001 — Regenerate target-commit release evidence
-
-**Severity:** P0
-**Where:**
-
-```text
-.kernel/evidence/data-cloud-release-bundle.json
-.kernel/evidence/product-release-readiness.json
-.kernel/evidence/data-cloud-active-modules.json
-.kernel/evidence/action-plane-boundaries.json
-.kernel/evidence/action-plane-module-inventory.json
-.kernel/evidence/production-readiness-task-map.json
-.kernel/evidence/agent-capability-duplicates.json
-.kernel/evidence/agent-runtime-test-excludes.json
-.kernel/evidence/agent-usage-audit.json
-.kernel/evidence/data-cloud-operations-readiness.json
-.kernel/evidence/ai-governance-behavioral-proof/ai-governance-behavioral-proof-latest.json
-.github/workflows/data-cloud-ci.yml
-scripts/check-evidence-current-commit.mjs
-scripts/check-evidence-run-metadata.mjs
-scripts/generate-data-cloud-release-bundle.mjs
-```
-
-**What to do:**
-
-Regenerate all evidence at `600bebfa0832716d6589d5bcae223191138563cc`. Every evidence payload must bind to the audited commit through:
-
-```text
-commit
-sourceCommitSha
-targetCommitSha
-```
-
-The release bundle currently targets `936924cf...`, so it is stale for `600bebfa...`. 
-
-**Tests / gates:**
-
-```bash
-pnpm check:evidence-current-commit
-pnpm check:evidence-run-metadata
-pnpm generate:data-cloud-release-bundle
-pnpm check:data-cloud-release-gate
-pnpm check:product-release-readiness
-```
-
-**Acceptance criteria:**
-
-All evidence files either:
-
-1. have commit metadata equal to `600bebfa0832716d6589d5bcae223191138563cc`, or
-2. are explicitly excluded from release evidence and not referenced by release gates.
-
----
-
-## DC-REL-002 — Make evidence-current-commit validate every nested bundle item
-
-**Severity:** P0
-**Where:**
-
-```text
-scripts/check-evidence-current-commit.mjs
-scripts/generate-data-cloud-release-bundle.mjs
-scripts/__tests__/check-evidence-current-commit.test.mjs
-scripts/__tests__/generate-data-cloud-release-bundle.test.mjs
-```
-
-**What to do:**
-
-Do not validate only the top-level bundle. Recursively validate nested payloads under:
-
-```text
-items.activeModuleEvidence.payload.evidenceRun.commit
-items.actionPlaneBoundaryEvidence.payload.evidenceRun.commit
-items.actionPlaneInventoryEvidence.payload.evidenceRun.commit
-items.productionReadinessTaskMapEvidence.payload.evidenceRun.commit
-items.agentCapabilityDuplicateEvidence.payload.evidenceRun.commit
-items.agentRuntimeTestExcludeEvidence.payload.evidenceRun.commit
-items.agentUsageAuditEvidence.payload.evidenceRun.commit/sourceCommitSha/targetCommitSha
-items.productReleaseReadiness.payload.evidenceRun.commit/sourceCommitSha/targetCommitSha
-items.aiGovernanceProof.payload.evidenceRun.commit
-```
-
-**Tests / gates:**
-
-Add a fixture where one nested evidence item has a stale commit while the top-level bundle is current. The check must fail.
-
-**Acceptance criteria:**
-
-A stale nested evidence item cannot pass release.
-
----
-
-## DC-REL-003 — Stop committing generated release evidence unless commit-bound
-
-**Severity:** P1
-**Where:**
-
-```text
-.kernel/evidence/**
-release-evidence/**
-.gitignore
-.github/workflows/data-cloud-ci.yml
-scripts/generate-data-cloud-release-bundle.mjs
-```
-
-**What to do:**
-
-Choose one canonical model:
-
-```text
-Option A: committed evidence is allowed only when generated for the current commit.
-Option B: release evidence is CI artifact only and is not committed.
-```
-
-Given repeated stale evidence conflicts, Option B is safer.
-
-**Tests / gates:**
-
-Add a cleanup/check script:
-
-```text
-scripts/check-committed-evidence-freshness.mjs
-```
-
-**Acceptance criteria:**
-
-Merge is blocked if committed evidence references a different commit.
-
----
-
-# 1. Data-Cloud Core Feature Completeness
-
-## DC-E2E-001 — Promote Data-Cloud API contract tests to release-blocking
-
-**Severity:** P1
-**Where:**
-
-```text
-products/data-cloud/delivery/api-contract-tests
-scripts/list-data-cloud-active-modules.mjs
-scripts/generate-data-cloud-active-modules-evidence.mjs
-scripts/__tests__/list-data-cloud-active-modules.test.mjs
-scripts/__tests__/generate-data-cloud-active-modules-evidence.test.mjs
-.github/workflows/data-cloud-ci.yml
-package.json
-```
-
-**What to do:**
-
-`delivery:api-contract-tests` is currently advisory with no `releaseCheckTask`. Make it release-blocking or add an equivalent release-blocking API contract task. 
-
-**Tests / gates:**
-
-```bash
-./gradlew :products:data-cloud:delivery:api-contract-tests:check
-pnpm check:data-cloud-release-gate
-```
-
-**Acceptance criteria:**
-
-A runtime route/contract mismatch fails the release gate.
-
----
-
-## DC-E2E-002 — Promote Data-Cloud integration tests to release-blocking
-
-**Severity:** P1
-**Where:**
-
-```text
-products/data-cloud/integration-tests
-scripts/list-data-cloud-active-modules.mjs
-scripts/generate-data-cloud-active-modules-evidence.mjs
-.github/workflows/data-cloud-ci.yml
-package.json
-```
-
-**What to do:**
-
-`products:data-cloud:integration-tests` is currently advisory with `releaseCheckTask: null`. Make the integration suite release-blocking for Data-Cloud release. 
-
-**Tests / gates:**
-
-```bash
-./gradlew :products:data-cloud:integration-tests:check
-pnpm check:data-cloud-runbook-smoke
-pnpm check:data-cloud-release-gate
-```
-
-**Acceptance criteria:**
-
-Core Data-Cloud release cannot pass without integration tests.
-
----
-
-## DC-DATA-001 — Add complete entity lifecycle E2E test
-
-**Severity:** P1
-**Where:**
-
-```text
-products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/EntityCrudHandler.java
-products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/handlers/
-products/data-cloud/integration-tests/src/test/java/
-```
-
-**What to do:**
-
-Add a real-path E2E covering:
-
-```text
-POST /entities/{collection}
-→ schema validation
-→ tenant resolution
-→ entity persistence
-→ event append
-→ audit/outbox
-→ GET entity
-→ query with sort/filter/page
-→ DELETE entity
-→ delete event append
-```
-
-The handler already validates tenant/collection/payload, supports schema validation, transaction/outbox/audit hooks, idempotency, event append, query filtering/sorting, and delete CDC append.   
-
-**Tests / gates:**
-
-```text
-EntityLifecycleE2ETest.java
-EntityEventAuditIdempotencyGoldenTest.java
-TenantIsolationTest.java
-```
-
-**Acceptance criteria:**
-
-Journey A is proven by a release-blocking integration test.
-
----
-
-## DC-DATA-002 — Add batch-delete confirmation token regression test
-
-**Severity:** P1
-**Where:**
-
-```text
-products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/EntityCrudHandler.java
-products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/handlers/
-```
-
-**What to do:**
-
-The token flow is now fixed in code: both token creation and validation include tenant, collection, count, and timestamp.  Add tests so it cannot regress.
-
-**Tests to add:**
-
-```text
-BatchDeleteConfirmationTokenTest
-- dryRunReturnsValidToken
-- executeAcceptsDryRunToken
-- executeRejectsWrongTenant
-- executeRejectsWrongCollection
-- executeRejectsWrongCount
-- executeRejectsExpiredToken
-- executeRejectsTamperedToken
-```
-
-**Acceptance criteria:**
-
-Dry-run → execute works, but tampered scope fails.
-
----
-
-## DC-DATA-003 — Make batch save/delete transaction semantics explicit and production-safe
-
-**Severity:** P1
-**Where:**
-
-```text
-EntityCrudHandler.java
-products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/handlers/
-products/data-cloud/docs/operations/RUNBOOK.md
-products/data-cloud/contracts/openapi/data-cloud.yaml
-```
-
-**What to do:**
-
-Batch save/delete currently documents best-effort per-item semantics. That may be acceptable, but production behavior must be explicitly represented in the API contract and tests.
-
-Add clear contract fields:
-
-```text
-atomic: false
-partialSuccessAllowed: true
-errors[]
-successfulIds[]
-failedIds[]
-operationId
-correlationId
-```
-
-**Tests:**
-
-```text
-BatchEntityPartialFailureContractTest
-BatchEntityNoSilentLossTest
-```
-
-**Acceptance criteria:**
-
-Partial success is explicit and auditable, not accidental.
-
----
-
-## DC-DATA-004 — Add real transaction failure rollback test
-
-**Severity:** P1
-**Where:**
-
-```text
-EntityCrudHandler.java
-products/data-cloud/spi/TransactionManager
-products/data-cloud/spi/EntityWriteOutboxProcessor
-products/data-cloud/delivery/launcher/src/test/java/
-```
-
-**What to do:**
-
-Test failures at each step:
-
-```text
-entity save succeeds, event append fails
-entity save succeeds, audit payload creation fails
-entity save succeeds, outbox add fails
-transaction manager throws
-```
-
-**Acceptance criteria:**
-
-No partial/corrupt state; response is correct; failure is logged/observed/audited where required.
-
----
-
-## DC-DATA-005 — Add cross-tenant negative E2E tests for entity/query/event paths
-
-**Severity:** P1
-**Where:**
-
-```text
-products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/TenantIsolationTest.java
-products/data-cloud/integration-tests/src/test/java/
-DataCloudSecurityFilter.java
-EntityCrudHandler.java
-```
-
-**What to do:**
-
-Security filter source rejects tenant mismatch, missing tenant, insufficient access, and missing metadata in production-like profiles.   Add full E2E tests:
-
-```text
-tenant A creates entity
-tenant B attempts read
-tenant B attempts query
-tenant B attempts delete
-tenant B attempts event replay
-tenant B gets denied
-no data appears in response/log/metric/event
-denial is audited
-```
-
-**Acceptance criteria:**
-
-Tenant B cannot infer tenant A’s data existence.
-
----
-
-## DC-DATA-006 — Make update/archive first-class if exposed
-
-**Severity:** P2
-**Where:**
-
-```text
-EntityCrudHandler.java
-DataCloudRouterBuilder.java
-products/data-cloud/contracts/openapi/data-cloud.yaml
-products/data-cloud/delivery/sdk
-products/data-cloud/delivery/ui
-```
-
-**What to do:**
-
-The prompt requires create/read/update/delete/archive. If update/archive are exposed through routes, contracts, SDK, or UI, verify full implementation. If not exposed, mark them explicitly as not supported or feature-flagged.
-
-**Tests:**
-
-```text
-EntityUpdateContractTest
-EntityArchiveContractTest
-```
-
-**Acceptance criteria:**
-
-No route/SDK/UI advertises update/archive without backend implementation.
-
----
-
-# 2. Data-Cloud Security, Governance, Audit, and Runtime Truth
-
-## DC-SEC-001 — Add route metadata fail-closed E2E test
-
-**Severity:** P1
-**Where:**
-
-```text
-DataCloudSecurityFilter.java
-RouteSecurityRegistry.java
-products/data-cloud/delivery/launcher/src/test/java/
-```
-
-**What to do:**
-
-Source rejects missing route metadata in production-like profiles.  Add a test that registers a route without metadata and verifies production/staging/sovereign requests fail closed.
-
-**Acceptance criteria:**
-
-Unknown production route never reaches handler.
-
----
-
-## DC-SEC-002 — Add blocking audit failure injection tests for CRITICAL routes
-
-**Severity:** P1
-**Where:**
-
-```text
-DataCloudSecurityFilter.java
-products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/audit/
-products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/
-```
-
-**What to do:**
-
-The filter uses blocking audit for critical production routes and should fail if audit persistence fails.  Add tests for:
-
-```text
-audit sink unavailable
-audit record throws
-audit timeout
-audit service missing
-```
-
-**Acceptance criteria:**
-
-Critical route does not complete if required audit cannot persist.
-
----
-
-## DC-SEC-003 — Add audit redaction/privacy tests
-
-**Severity:** P1
-**Where:**
-
-```text
-DataCloudSecurityFilter.java
-EventLogAuditService.java
-EntityCrudHandler.java
-products/data-cloud/planes/governance/core
-products/data-cloud/delivery/launcher/src/test/java/
-```
-
-**What to do:**
-
-Verify sensitive data is not leaked through:
-
-```text
-audit details
-logs
-error responses
-metrics
-trace attributes
-CDC events
-```
-
-**Acceptance criteria:**
-
-PII/secrets are redacted or omitted across audit/log/trace/error surfaces.
-
----
-
-## DC-OPS-001 — Regenerate operations readiness proof at target commit
-
-**Severity:** P1
-**Where:**
-
-```text
-.kernel/evidence/data-cloud-operations-readiness.json
-products/data-cloud/planes/operations/config/src/main/java/com/ghatana/datacloud/config/
-products/data-cloud/planes/operations/config/src/test/java/com/ghatana/datacloud/config/
-scripts/check-data-cloud-operations-readiness.mjs
-```
-
-**What to do:**
-
-The operations readiness proof inside the bundle is stale for `936924...`.  Regenerate at target commit and add stricter validation for:
-
-```text
-runtime truth
-health checks
-dependency degraded state
-backup/restore
-SLO budget
-cost budget
-alerting
-k8s/Helm render inputs
-```
-
-**Acceptance criteria:**
-
-Operations readiness proof is target-commit-bound and behavior-backed.
-
----
-
-## DC-OPS-002 — Add dependency failure/degraded E2E tests
-
-**Severity:** P1
-**Where:**
-
-```text
-products/data-cloud/planes/operations/config
-products/data-cloud/integration-tests
-scripts/check-runtime-dependency-failure-injection.mjs
-scripts/check-runtime-failure-injection.mjs
-```
-
-**What to do:**
-
-Test failure of:
-
-```text
-entity store
-event store
-audit sink
-policy engine
-semantic index
-agent runtime
-```
-
-**Acceptance criteria:**
-
-Runtime truth reports degraded/unavailable correctly; API response is correct; no silent data loss.
-
----
-
-# 3. Data-Cloud Event Plane and EventCloud/AEP Bridge
-
-## DC-EVENT-001 — Add append/read/tail/replay/checkpoint E2E
-
-**Severity:** P1
-**Where:**
-
-```text
-products/data-cloud/planes/event/core
-products/data-cloud/planes/event/store
-products/data-cloud/planes/action/event-bridge
-products/data-cloud/integration-tests
-products/data-cloud/contracts/openapi/data-cloud.yaml
-products/data-cloud/contracts/openapi/aep.yaml
-```
-
-**What to do:**
-
-Add complete Event Plane tests:
-
-```text
-append event
-read event
-tail stream
-replay stream
-checkpoint offset
-retry after failure
-DLQ on poison event
-tenant isolation
-```
-
-**Acceptance criteria:**
-
-Journey B can start from a real Data-Cloud event and reach AEP bridge behavior.
-
----
-
-## DC-EVENT-002 — Add event ordering/idempotency tests
-
-**Severity:** P1
-**Where:**
-
-```text
-products/data-cloud/planes/event/store
-products/data-cloud/planes/action/event-bridge
-products/data-cloud/integration-tests
-```
-
-**What to do:**
-
-Verify:
-
-```text
-same idempotency key does not duplicate event
-ordering is deterministic per tenant/stream
-checkpoint resumes from correct offset
-late events follow configured policy
-```
-
-**Acceptance criteria:**
-
-No duplicate/skip/reorder under retry.
-
----
-
-## DC-EVENT-003 — Separate Data-Cloud EventLog from AEP EventCloud semantics in tests
-
-**Severity:** P2
-**Where:**
-
-```text
-products/data-cloud/planes/event/**
-products/data-cloud/planes/action/event-bridge/**
-scripts/check-action-plane-boundaries.mjs
-```
-
-**What to do:**
-
-Boundary evidence claims non-action Data-Cloud planes must not expose AEP-owned semantics such as EventCloud, PatternSpec, EventOperator, EventOperatorCapability, CEP, pattern promotion, or lifecycle semantics.  Add behavioral tests proving Data-Cloud EventLog remains storage-plane primitive while AEP owns pattern semantics.
-
-**Acceptance criteria:**
-
-No PatternSpec/CEP behavior is reachable from Data-Cloud Event Plane APIs.
-
----
-
-# 4. AEP / Action Plane
-
-## AEP-001 — Add PatternSpec full lifecycle transition E2E
-
-**Severity:** P1
-**Where:**
-
-```text
-products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/aep/pattern/spec/PatternSpecValidator.java
-products/data-cloud/planes/action/operator-contracts/src/test/java/com/ghatana/aep/pattern/spec/
-products/data-cloud/planes/action/registry
-products/data-cloud/planes/action/orchestrator
-products/data-cloud/planes/action/engine
-```
-
-**What to do:**
-
-Lifecycle states are now validated, including `candidate`, `approved`, `degraded`, `retired`, and `rollback`.  Add full E2E transition coverage:
-
-```text
-draft → candidate
-candidate → shadow
-shadow → recommended
-recommended → approved
-approved → active
-active → predictive
-active → degraded
-degraded → rollback
-active → retired
-```
-
-**Acceptance criteria:**
-
-Illegal transition fails; legal transition emits audit/evidence.
-
----
-
-## AEP-002 — Add production PatternSpec compile validation tests
-
-**Severity:** P1
-**Where:**
-
-```text
-PatternSpecCompiler.java
-PatternSpecValidator.java
-products/data-cloud/planes/action/operator-contracts/src/test/java/com/ghatana/aep/pattern/spec/
-```
-
-**What to do:**
-
-Compiler now passes `commitSha`, `environment`, and capability registry into validator.  Add tests proving compile fails in production when missing:
-
-```text
-commit SHA binding
-evidencePolicy
-evidenceStore
-approved evidence store scheme
-capabilityRef
-toolPolicy for side-effecting capability
-outputSchema
-replayPolicy
-```
-
-**Acceptance criteria:**
-
-Production compile cannot bypass production validator.
-
----
-
-## AEP-003 — Add PatternSpec execution/replay E2E
-
-**Severity:** P1
-**Where:**
-
-```text
-products/data-cloud/planes/action/engine
-products/data-cloud/planes/action/central-runtime
-products/data-cloud/planes/action/orchestrator
-products/data-cloud/planes/action/event-bridge
-products/data-cloud/integration-tests
-```
-
-**What to do:**
-
-Add real runtime tests:
-
-```text
-compile PatternSpec
-attach event stream
-match pattern
-execute runtime DAG
-emit derived event
-record trace/metric/audit
-replay same event stream
-verify deterministic decision path
-```
-
-**Acceptance criteria:**
-
-PatternSpec is not only parsed/compiled; it actually runs end to end.
-
----
-
-## AEP-004 — Add side-effect governance E2E
-
-**Severity:** P1
-**Where:**
-
-```text
-products/data-cloud/planes/action/security
-products/data-cloud/planes/action/compliance
-products/data-cloud/planes/action/orchestrator
-products/data-cloud/planes/action/agent-runtime
-```
-
-**What to do:**
-
-Test side-effecting action operators:
-
-```text
-requires tool policy
-requires approval policy
-requires idempotency
-requires audit
-requires rollback/compensation metadata
-denied path is auditable
-approved path executes once
-```
-
-**Acceptance criteria:**
-
-No side-effecting capability can execute without governance proof.
-
----
-
-## AEP-005 — Remove or isolate temporary compatibility modules
-
-**Severity:** P2
-**Where:**
-
-```text
-products/data-cloud/planes/action
-products/data-cloud/planes/action/server
-products/data-cloud/planes/action/kernel-bridge
-products/data-cloud/extensions/kernel-bridge
-products/data-cloud/docs/architecture/ACTION_PLANE_MODULE_INVENTORY.md
-```
-
-**What to do:**
-
-The action root, server, and kernel-bridge are marked temporary/migration-only in the inventory.  Create explicit migration tasks:
-
-```text
-action root → aggregator only or removed
-action/server → delivery/api or AEP-owned server
-action/kernel-bridge → extensions/kernel-bridge
-```
-
-**Acceptance criteria:**
-
-No temporary compatibility module remains release-blocking indefinitely without an expiry task.
-
----
-
-# 5. Agents
-
-## AGENT-001 — Tighten agent usage audit exception registry
-
-**Severity:** P1
-**Where:**
-
-```text
-scripts/audit-agent-usage.mjs
-products/data-cloud/planes/action/agent-runtime/docs/AGENT_USAGE_EXCEPTIONS.md
-.kernel/evidence/agent-usage-audit.json
-```
-
-**What to do:**
-
-The current audit allows broad production-looking patterns such as:
-
-```text
-AgentCapabilityExecutionFactory
-AgentEventOperatorCapabilityAdapter
-GovernedAgentDispatcher
-AgentDispatchPipeline
-AgentActionOperator
-```
-
-These may be valid, but broad exceptions can hide bypasses.  Convert exceptions into exact file/symbol allowlist entries with justification.
-
-**Acceptance criteria:**
-
-A new direct `TypedAgent` production invocation fails the audit unless explicitly reviewed.
-
----
-
-## AGENT-002 — Add governed dispatch E2E test
-
-**Severity:** P1
-**Where:**
-
-```text
-products/data-cloud/planes/action/agent-runtime
-products/data-cloud/planes/action/orchestrator
-products/data-cloud/planes/action/security
-products/data-cloud/planes/action/compliance
-products/data-cloud/integration-tests
-```
-
-**What to do:**
-
-Test:
-
-```text
-pattern match
-→ capabilityRef lookup
-→ EventOperatorCapability invocation
-→ GovernedAgentDispatcher policy check
-→ side-effect allowed/denied
-→ audit/evidence persisted
-```
-
-The adapter already requires policy maps, durable memory unless explicitly allowed, tenant match, trace ID, correlation ID, side-effect controls, and evidence fields.  
-
-**Acceptance criteria:**
-
-Agent action cannot bypass governed capability runtime.
-
----
-
-## AGENT-003 — Add agent denial/failure tests
-
-**Severity:** P1
-**Where:**
-
-```text
-AgentEventOperatorCapabilityAdapter.java
-products/data-cloud/planes/action/agent-runtime/src/test/java/
-```
-
-**What to do:**
-
-Add tests for:
-
-```text
-tenant mismatch
-missing traceId
-missing correlationId
-NoOpMemoryStore not explicitly allowed
-SIDE_EFFECTING without allowedTools
-SIDE_EFFECTING without approvalPolicy
-SIDE_EFFECTING without audit policy
-SIDE_EFFECTING without idempotencyRequired
-agent timeout
-agent failed
-agent pending approval
-```
-
-**Acceptance criteria:**
-
-Every denial path increments metrics and returns auditable evidence/error.
-
----
-
-## AGENT-004 — Add replay-safety tests for agent actions
-
-**Severity:** P1
-**Where:**
-
-```text
-products/data-cloud/planes/action/agent-runtime
-products/data-cloud/planes/action/orchestrator
-products/data-cloud/planes/action/engine
-```
-
-**What to do:**
-
-Test replay behavior for:
-
-```text
-pure agent capability
-retrieval capability
-side-effecting capability
-non-replayable capability
-idempotent replay
-```
-
-**Acceptance criteria:**
-
-Replay either reproduces the same decision path or records explicit non-replayable evidence.
-
----
-
-# 6. Audio-Video
-
-## AV-001 — Add Vision and Multimodal to CI build/test matrix
-
-**Severity:** P1
-**Where:**
-
-```text
-.github/workflows/audio-video-ci.yml
-products/audio-video/modules/vision/vision-service
-products/audio-video/modules/intelligence/multimodal-service
-```
-
-**What to do:**
-
-The generated registry includes Vision and Multimodal modules, but Audio-Video CI builds/tests STT and TTS only.   Add jobs:
-
-```text
-build-vision
-test-vision
-build-multimodal
-test-multimodal
-docker vision-service
-docker multimodal-service
-deploy vision-service
-deploy multimodal-service
-```
-
-**Acceptance criteria:**
-
-Vision and Multimodal cannot regress silently.
-
----
-
-## AV-002 — Fix Audio-Video integration test Gradle path
-
-**Severity:** P1
-**Where:**
-
-```text
-.github/workflows/audio-video-ci.yml
-products/audio-video/modules/integration-tests
-```
-
-**What to do:**
-
-The workflow runs:
-
-```text
-:products:audio-video:speech-to-text:libs:stt-core-java:integrationTest
-```
-
-But generated registry modules use:
-
-```text
-:products:audio-video:modules:integration-tests
-:products:audio-video:modules:speech:stt-service
-:products:audio-video:modules:speech:tts-service
-```
-
-Fix the integration test path. 
-
-**Acceptance criteria:**
-
-The CI integration test task maps to an actual included Gradle module.
-
----
-
-## AV-003 — Remove `continue-on-error` from Audio-Video integration tests
-
-**Severity:** P1
-**Where:**
-
-```text
-.github/workflows/audio-video-ci.yml
-```
-
-**What to do:**
-
-Audio-Video integration tests currently use `continue-on-error: true`.  Remove it.
-
-**Acceptance criteria:**
-
-Audio-Video integration failure blocks CI/release.
-
----
-
-## AV-004 — Add STT functional completeness tests
-
-**Severity:** P1
-**Where:**
-
-```text
-products/audio-video/modules/speech/stt-service
-products/audio-video/modules/integration-tests
-products/audio-video/libs/common
-```
-
-**What to test:**
-
-```text
-audio input validation
-supported format validation
-unsupported format rejection
-language selection
-transcription execution path
-confidence metadata
-tenant/security enforcement
-persistence metadata
-event/audit emission
-timeout/cancellation
-provider failure/degraded behavior
-```
-
-**Acceptance criteria:**
-
-STT is proven as a production service, not just compiled/tested.
-
----
-
-## AV-005 — Add TTS functional completeness tests
-
-**Severity:** P1
-**Where:**
-
-```text
-products/audio-video/modules/speech/tts-service
-products/audio-video/modules/integration-tests
-products/audio-video/libs/common
-```
-
-**What to test:**
-
-```text
-text validation
-voice/model selection
-synthesis execution
-output format
-cache behavior
-streaming/batch behavior if exposed
-tenant/security enforcement
-persistence metadata
-event/audit emission
-timeout/cancellation
-provider failure/degraded behavior
-```
-
-**Acceptance criteria:**
-
-TTS is production-proven end to end.
-
----
-
-## AV-006 — Add Vision service functional completeness tests
-
-**Severity:** P1
-**Where:**
-
-```text
-products/audio-video/modules/vision/vision-service
-products/audio-video/modules/integration-tests
-products/audio-video/libs/common
-```
-
-**What to test:**
-
-```text
-image/video validation
-supported formats
-object/text/scene extraction if claimed
-confidence metadata
-provider abstraction
-tenant/security enforcement
-persistence metadata
-event/audit emission
-failure/degraded behavior
-```
-
-**Acceptance criteria:**
-
-Vision service is not a registered-but-unproven module.
-
----
-
-## AV-007 — Add Multimodal service functional completeness tests
-
-**Severity:** P1
-**Where:**
-
-```text
-products/audio-video/modules/intelligence/multimodal-service
-products/audio-video/modules/integration-tests
-products/audio-video/libs/common
-```
-
-**What to test:**
-
-```text
-audio + video + text composition
-routing to STT/TTS/Vision
-result aggregation
-provider fallback
-tenant/security enforcement
-persistence/event emission
-Data-Cloud integration if claimed
-AEP consumption if claimed
-agent explain/review/action if claimed
-```
-
-**Acceptance criteria:**
-
-Multimodal flow is production-proven.
-
----
-
-## AV-008 — Add Audio-Video → Data-Cloud → AEP integration journey
-
-**Severity:** P1
-**Where:**
-
-```text
-products/audio-video/modules/integration-tests
-products/data-cloud/integration-tests
-products/data-cloud/planes/action/event-bridge
-products/data-cloud/planes/event/store
-```
-
-**What to do:**
-
-Add cross-product test:
-
-```text
-audio/video input received
-→ service processes
-→ result persisted or emitted
-→ Data-Cloud stores metadata/evidence
-→ AEP consumes event
-→ agent review/explanation path is available if configured
-```
-
-**Acceptance criteria:**
-
-Journey D is proven by release-blocking tests.
-
----
-
-# 7. Shared Platform and Kernel Work
-
-## KERNEL-001 — Ensure platform shared libs are not product-specific
-
-**Severity:** P2
-**Where:**
-
-```text
-platform/java/core
-platform/java/domain
-platform/java/runtime
-platform/java/observability
-platform/java/security
-platform/java/audit
-platform/java/messaging
-platform/java/ai-integration
-platform/java/data-governance
-platform/java/tool-runtime
-platform/contracts
-scripts/check-platform-product-boundaries.mjs
-scripts/check-domain-boundaries.mjs
-```
-
-**What to do:**
-
-Audit and enforce that product-specific Data-Cloud/AEP/YAPPC/Audio-Video logic does not leak into platform libs.
-
-**Acceptance criteria:**
-
-Boundary check fails on product-specific imports/strings/config in generic platform modules.
-
----
-
-## KERNEL-002 — Add shared observability conformance tests for product journeys
-
-**Severity:** P2
-**Where:**
-
-```text
-platform/java/observability
-scripts/check-observability-conformance.mjs
-products/data-cloud/**
-products/audio-video/**
-products/yappc/**
-```
-
-**What to do:**
-
-For every core journey, require:
-
-```text
-correlationId
-traceId
-tenantId where safe
-span names
-metrics
-failure/degraded metrics
-audit correlation
-```
-
-**Acceptance criteria:**
-
-No core route/action/job lacks trace/metric/audit correlation.
-
----
-
-## KERNEL-003 — Add shared test fixture authenticity gate
-
-**Severity:** P2
-**Where:**
-
-```text
-platform/java/testing
-scripts/check-test-authenticity.mjs
-products/**/src/test/**
-```
-
-**What to do:**
-
-Detect tests that only assert mocks/fixtures and never execute production wiring.
-
-**Acceptance criteria:**
-
-A feature cannot be marked complete if only mock-only tests exist.
-
----
-
-## KERNEL-004 — Add cross-product release profile matrix
-
-**Severity:** P2
-**Where:**
-
-```text
-config/product-lifecycle-profiles.json
-config/toolchain-adapter-registry.json
-scripts/check-product-ci-matrices.mjs
-scripts/check-release-profile-local-targets.mjs
-```
-
-**What to do:**
-
-Ensure every product/provider in the registry has:
-
-```text
-build
-test
-validate
-package
-integration
-release evidence
-rollback/recovery if deployable
-```
-
-**Acceptance criteria:**
-
-Data-Cloud, Audio-Video, YAPPC, and Kernel bridges have consistent release profile coverage.
-
----
-
-
-
-# 9. Cross-Product End-to-End Journeys
-
-## XPROD-001 — Add Data-Cloud → AEP → Agent action E2E
-
-**Severity:** P1
-**Where:**
-
-```text
-products/data-cloud/integration-tests
-products/data-cloud/planes/event/store
-products/data-cloud/planes/action/event-bridge
-products/data-cloud/planes/action/engine
-products/data-cloud/planes/action/agent-runtime
-```
-
-**What to do:**
-
-Test:
-
-```text
-Data-Cloud event appended
-→ AEP bridge tails event
-→ PatternSpec matches
-→ capabilityRef resolves
-→ agent capability executes or is denied
-→ audit/evidence/trace persists
-```
-
-**Acceptance criteria:**
-
-Journey B/C is release-gated.
-
----
-
-## XPROD-002 — Add Audio-Video → Data-Cloud → AEP → Agent E2E
-
-**Severity:** P1
-**Where:**
-
-```text
-products/audio-video/modules/integration-tests
-products/data-cloud/integration-tests
-products/data-cloud/planes/action/event-bridge
-products/data-cloud/planes/action/agent-runtime
-```
-
-**What to do:**
-
-Test:
-
-```text
-audio/video input
-→ STT/Vision/Multimodal result
-→ Data-Cloud metadata/evidence
-→ event append
-→ AEP pattern match
-→ agent review/explain/action
-```
-
-**Acceptance criteria:**
-
-Audio-Video is proven as part of the product suite, not isolated modules.
-
----
-
-## XPROD-003 — Add YAPPC → Kernel → Data-Cloud → Agent E2E
-
-**Severity:** P1
-**Where:**
-
-```text
-products/yappc/integration
-products/yappc/kernel-bridge
-platform-kernel/**
-products/data-cloud/extensions/kernel-bridge
-products/data-cloud/planes/action/agent-runtime
-```
-
-**What to do:**
-
-Test:
-
-```text
-YAPPC receives product intent
-→ Kernel creates lifecycle plan
-→ YAPPC generates artifact
-→ Data-Cloud persists evidence
-→ agent reviews artifact
-→ validation/roundtrip passes
-```
-
-**Acceptance criteria:**
-
-YAPPC, Kernel, Data-Cloud, and Agents work together end to end.
-
----
-
-# 10. Documentation and Tracking Tasks
-
-## DOC-001 — Create production-readiness task map for this audit
-
-**Severity:** P2
-**Where:**
-
-```text
-products/data-cloud/docs/audits/
-products/yappc/docs/audits/
-products/audio-video/docs/audits/
-.kernel/evidence/
-```
-
-**What to do:**
-
-Create one task map per product:
-
-```text
-DATA_CLOUD_FEATURE_COMPLETENESS_TASK_MAP.md
-AEP_ACTION_PLANE_FEATURE_COMPLETENESS_TASK_MAP.md
-AUDIO_VIDEO_FEATURE_COMPLETENESS_TASK_MAP.md
-YAPPC_FEATURE_COMPLETENESS_TASK_MAP.md
-```
-
-**Acceptance criteria:**
-
-Each task has owner, path, status, test, acceptance criteria, and release gate.
-
----
-
-## DOC-002 — Add feature completeness matrix per product
-
-**Severity:** P2
-**Where:**
-
-```text
-products/data-cloud/docs/
-products/audio-video/docs/
-products/yappc/docs/
-```
-
-**What to do:**
-
-For each product, document:
-
-```text
-feature
-entrypoint
-implementation path
-contract
-tests
-status
-gaps
-release gate
-```
-
-**Acceptance criteria:**
-
-No feature is tracked only in chat/audit output.
-
----
-
-# Recommended Execution Order
-
-1. `DC-REL-001`, `DC-REL-002`, `DC-REL-003`
-2. `DC-E2E-001`, `DC-E2E-002`
-3. `DC-DATA-001`, `DC-DATA-002`, `DC-DATA-004`, `DC-DATA-005`
-4. `AEP-001`, `AEP-002`, `AEP-003`, `AEP-004`
-5. `AGENT-001`, `AGENT-002`, `AGENT-003`, `AGENT-004`
-6. `AV-001`, `AV-002`, `AV-003`, then AV functional tests
-8. Cross-product E2E journeys
-9. Documentation/task-map cleanup
+Below is the expanded implementation TODO list for `samujjwal/ghatana` at commit `659a6bcbbccbf7044c6b0aa93346623f7387d571`, focused on **feature completeness, correctness, E2E behavior, and production-grade quality**.
+
+Severity:
+
+```text
+P0 = blocks production or breaks core E2E journey
+P1 = major feature incomplete, unsafe, or not production-grade
+P2 = important correctness/completeness/test gap
+P3 = cleanup, consistency, maintainability, or polish
+```
+
+# A. Audio-Video — P0/P1 production blockers
+
+| ID        | Severity | What                                                                                                                                                                                             | Where                                                                                                                                                                                                                                                                                                                                                                                   | Required change                                                                                                                                                                                      | Acceptance criteria                                                                                                                                                                                                           |
+| --------- | -------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AV-P0-001 |       P0 | Fix broken tenant/user propagation in persistent STT gRPC path. `PersistentSttGrpcService` reads tenant/user from `MDC`, but the common JWT interceptor stores subject/tenant in gRPC `Context`. | `products/audio-video/modules/speech/stt-service/src/main/java/com/ghatana/stt/grpc/PersistentSttGrpcService.java`; `products/audio-video/libs/common/src/main/java/com/ghatana/audio/video/common/security/JwtServerInterceptor.java`                                                                                                                                                  | Read tenant from `JwtServerInterceptor.CTX_TENANT` and user from `JwtServerInterceptor.CTX_SUBJECT`, or introduce one canonical `AudioVideoRequestContext`. Do not use `MDC` as the source of truth. | Authenticated STT request reaches persistence with correct tenant/user; missing tenant claim fails closed; cross-tenant request is denied. Current STT reads tenant from `MDC`, while JWT writes tenant into gRPC context.    |
+| AV-P0-002 |       P0 | Fix broken tenant/user propagation in persistent TTS gRPC path.                                                                                                                                  | `products/audio-video/modules/speech/tts-service/src/main/java/com/ghatana/tts/grpc/PersistentTtsGrpcService.java`; `products/audio-video/libs/common/src/main/java/com/ghatana/audio/video/common/security/JwtServerInterceptor.java`                                                                                                                                                  | Same as STT: resolve tenant/user from canonical gRPC context, not `MDC`. Ensure stream and non-stream synthesize paths behave identically.                                                           | Authenticated TTS synthesize and stream-synthesize calls work with canonical tenant/user context; missing tenant fails closed. Current TTS also reads tenant from `MDC`.                                                      |
+| AV-P1-003 |       P1 | Remove conflicting Audio-Video auth/tenant paths. There is a common JWT interceptor and a separate `AuthenticationInterceptor` with default-tenant fallback.                                     | `products/audio-video/modules/infrastructure/security/src/main/java/com/ghatana/audio/video/infrastructure/security/grpc/AuthenticationInterceptor.java`; `products/audio-video/libs/common/src/main/java/com/ghatana/audio/video/common/security/JwtServerInterceptor.java`; `products/audio-video/libs/common/src/main/java/com/ghatana/audio/video/common/GrpcInterceptorChain.java` | Choose one canonical auth/tenant model. Remove or deprecate `AuthenticationInterceptor` if not used. Delete `DEFAULT_TENANT_ID`/`default` fallback from production paths.                            | No Audio-Video gRPC request can execute with default tenant in production. Tenant must come from authenticated token/context. Current `AuthenticationInterceptor` falls back to `DEFAULT_TENANT_ID` or `"default"`.           |
+| AV-P1-004 |       P1 | Implement STT failed-status persistence. Current `updateAudioFileStatus` is a no-op placeholder.                                                                                                 | `products/audio-video/modules/speech/stt-service/src/main/java/com/ghatana/stt/service/PersistentSttService.java`; `products/audio-video/modules/infrastructure/persistence/**`                                                                                                                                                                                                         | Add `AudioFileService.updateStatus(tenantId, audioFileId, status, reason?)`. Use it on transcription failure, cancellation, and timeout.                                                             | Failed transcription marks persisted audio file as `FAILED`; status is queryable; retry/status UI/service can rely on it. Current method explicitly says production implementation is missing.                                |
+| AV-P1-005 |       P1 | Add transactional STT persistence semantics. Audio metadata is saved before transcription; if transcription persistence fails, audio state can remain inconsistent.                              | `PersistentSttService.java`; `AudioFileService`; `TranscriptionService`; persistence transaction support                                                                                                                                                                                                                                                                                | Wrap audio-file metadata, transcription result, status transition, audit/event emission in a transaction or durable workflow.                                                                        | Either all STT outputs persist consistently, or failure status/evidence is persisted with retry metadata.                                                                                                                     |
+| AV-P1-006 |       P1 | Validate STT input format and metadata fully. Current persistent path always constructs `AudioData` as PCM regardless of request format.                                                         | `PersistentSttService.performTranscription`; `PersistentSttGrpcService.transcribe`; `stt_service.proto`                                                                                                                                                                                                                                                                                 | Respect request format, channels, bit depth, duration, sample rate, language. Reject unsupported combinations before processing.                                                                     | Unsupported file/codec returns `INVALID_ARGUMENT`; valid WAV/PCM/MP3, if claimed, maps correctly to engine input. Current STT always uses `AudioFormat.PCM`.                                                                  |
+| AV-P1-007 |       P1 | Add STT audit/event emission.                                                                                                                                                                    | `PersistentSttService`; `products/audio-video/modules/infrastructure/messaging`; shared audit library                                                                                                                                                                                                                                                                                   | Emit audit events for upload, transcription started/completed/failed, and access/query/delete. Optionally emit Data-Cloud/AEP event if configured.                                                   | Each STT mutation has tenant-safe audit event and correlation ID.                                                                                                                                                             |
+| AV-P1-008 |       P1 | Add STT timeout/cancellation/degraded handling.                                                                                                                                                  | `PersistentSttService`; `PersistentSttGrpcService`; resilience interceptors                                                                                                                                                                                                                                                                                                             | Bound processing time, surface cancellation, update status, emit metric/audit, and do not leave stuck `PROCESSING` files.                                                                            | Timeout test persists failed/degraded status and returns deterministic error.                                                                                                                                                 |
+| AV-P1-009 |       P1 | Fix TTS persistence completeness. TTS persists generated audio metadata but does not show audit/event emission, cache behavior, tenant-scoped authorization, or failure status semantics.        | `products/audio-video/modules/speech/tts-service/src/main/java/com/ghatana/tts/service/PersistentTtsService.java`; cache/messaging/security modules                                                                                                                                                                                                                                     | Add audit, optional event emission, tenant-scoped cache keys, failure status persistence, and provider/model metadata.                                                                               | TTS E2E proves text → synthesis → persisted artifact → audit → tenant-safe retrieval.                                                                                                                                         |
+| AV-P1-010 |       P1 | Fix TTS duration calculation. Current duration is approximate from `fileSize / (sampleRate * 2.0)` and ignores channels/bit depth/codec.                                                         | `PersistentTtsService.persistAudioFile`                                                                                                                                                                                                                                                                                                                                                 | Use actual `AudioData` duration when available, or compute from sample rate, channels, sample width, and format correctly.                                                                           | Metadata duration matches generated audio. Current approximate calculation is in `PersistentTtsService`.                                                                                                                      |
+| AV-P1-011 |       P1 | Add TTS input policy and safety constraints.                                                                                                                                                     | `PersistentTtsGrpcService`; `PersistentTtsService`; content-safety gate                                                                                                                                                                                                                                                                                                                 | Validate text length, language, voice, SSML if supported, unsafe content policy, tenant entitlement, model availability.                                                                             | Unsafe or unsupported synthesis request is denied with audit event.                                                                                                                                                           |
+| AV-P1-012 |       P1 | Complete Vision production behavior. Vision service processes image bytes but does not show tenant context, persistence, audit, or Data-Cloud/AEP event integration.                             | `products/audio-video/modules/vision/vision-service/src/main/java/com/ghatana/audio/video/vision/grpc/VisionGrpcService.java`; persistence/messaging/audit modules                                                                                                                                                                                                                      | Add tenant/user context, persist input/result metadata, emit audit events, and optionally emit Data-Cloud/AEP events.                                                                                | Vision E2E proves image/video → result → persisted metadata → audit/event. Vision currently exposes detection/analyze/classify but processes request directly through detector/metrics.                                       |
+| AV-P1-013 |       P1 | Add Vision request-size, file-type, and model-entitlement validation.                                                                                                                            | `VisionGrpcService`; `InputValidationServerInterceptor`; `vision-service.proto`                                                                                                                                                                                                                                                                                                         | Validate max bytes, supported image/video formats, max detections, class filters, tenant/model entitlement.                                                                                          | Invalid image, oversized payload, unsupported format, and unavailable model fail deterministically.                                                                                                                           |
+| AV-P1-014 |       P1 | Add Vision degraded/model-missing behavior. Current constructor throws runtime exception if model initialization fails.                                                                          | `VisionGrpcService` constructor; `VisionGrpcServer`; model registry                                                                                                                                                                                                                                                                                                                     | Represent model unavailable as degraded readiness; fail requests cleanly; expose model load status.                                                                                                  | Health reports degraded/unready when model missing; service does not crash without controlled startup policy. Current initialization throws if model load fails.                                                              |
+| AV-P1-015 |       P1 | Complete multimodal E2E orchestration.                                                                                                                                                           | `products/audio-video/modules/intelligence/multimodal-service/**`                                                                                                                                                                                                                                                                                                                       | Wire multimodal service to STT/TTS/Vision through canonical tenant/security/context and aggregate persisted evidence.                                                                                | Audio + video + text request produces tenant-scoped multimodal result with per-modality evidence and audit.                                                                                                                   |
+| AV-P1-016 |       P1 | Enable Audio-Video lifecycle/CI readiness before treating it as production shared service. Registry says backend surface is implemented, but CI is disabled and lifecycle execution is false.    | `config/canonical-product-registry.json`; `.github/workflows/audio-video-ci.yml`; `products/audio-video/kernel-product.yaml` if added                                                                                                                                                                                                                                                   | Define executable surfaces, manifest/lifecycle profile, CI gates, build/test/security checks, and media-retention gates.                                                                             | Audio-Video CI enabled; build/test/security/integration gates pass. Current registry says `ci.enabled: false` and lifecycle disabled.                                                                                         |
+
+# B. PHR — feature completeness and security/tenant fixes
+
+| ID         | Severity | What                                                                                                                          | Where                                                                                          | Required change                                                                                                                                                                                     | Acceptance criteria                                                                                                                                                     |
+| ---------- | -------: | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PHR-P1-001 |       P1 | Restore tenant/principal/role propagation for OCR confirmation.                                                               | `products/phr/apps/web/src/api/phrApi.ts`; `products/phr/apps/web/src/pages/OcrReviewPage.tsx` | Change `confirmOcrDocument(docId)` to accept context `{tenantId, principalId, role, correlationId?}` and send required headers.                                                                     | OCR confirm cannot execute without authenticated context. Current confirm sends no tenant/principal headers.                                                            |
+| PHR-P1-002 |       P1 | Complete OCR “review and correct” workflow. Current page displays extracted text as read-only `<pre>` and only confirms.      | `OcrReviewPage.tsx`; `phrApi.ts`; backend OCR confirm handler                                  | Replace `<pre>` with editable text area; initialize with `extractedText`; submit `correctedText`; preserve original text and corrected text in audit/evidence.                                      | User edits OCR text, clicks confirm, backend receives corrected text, audit records reviewer and diff. Current page only shows `<pre>` and calls confirm without body.  |
+| PHR-P1-003 |       P1 | Restore tenant/principal/role propagation for provider patient roster.                                                        | `phrApi.ts`; `ProviderDashboardPage.tsx`                                                       | Make `fetchProviderPatients(context)` require session context and send `X-Tenant-Id`, `X-Principal-Id`, `X-Role`.                                                                                   | Clinician sees only assigned patients for tenant; missing/incorrect tenant fails. Current provider API sends only `Accept`.                                             |
+| PHR-P1-004 |       P1 | Ensure all PHR read APIs use consistent authenticated context. Some APIs pass context; others rely on path IDs or no headers. | `phrApi.ts` all `fetch*` methods                                                               | Standardize all API calls on a single helper that injects session headers. Avoid per-method drift.                                                                                                  | Every PHR API request either intentionally public or carries tenant/principal/role/correlation headers.                                                                 |
+| PHR-P1-005 |       P1 | Add backend route/API parity checks for web-exposed PHR routes.                                                               | `products/phr/**`; `products/phr/apps/web/src/api/phrApi.ts`; PHR backend routes               | Create contract tests for `/auth/login`, `/profile`, `/documents`, `/documents/{id}/ocr`, `/provider/patients`, `/caregiver/dependents`, `/fchv/dashboard`, consent, emergency, audit, appointment. | Every web API method has backend handler + tenant/security test.                                                                                                        |
+| PHR-P1-006 |       P1 | Add provider dashboard authorization negative tests.                                                                          | `ProviderDashboardPage.test.tsx`; backend provider route tests                                 | Test patient user cannot access provider roster; clinician with wrong tenant cannot access other tenant; admin behavior explicit.                                                                   | Role/tenant rules enforced server-side and reflected in UI error state.                                                                                                 |
+| PHR-P1-007 |       P1 | Add OCR authorization negative tests.                                                                                         | `OcrReviewPage.test.tsx`; OCR backend tests                                                    | Test wrong patient/tenant cannot fetch or confirm OCR; confirm requires reviewer identity.                                                                                                          | Wrong principal gets 403; no corrected data leaks.                                                                                                                      |
+| PHR-P1-008 |       P1 | Add OCR audit/evidence trail.                                                                                                 | OCR backend service; audit module; `OcrReviewPage`                                             | Record original extracted text hash, corrected text hash, reviewer, timestamp, tenant, document ID, confidence, and correction status.                                                              | Audit trail exists for every OCR confirmation.                                                                                                                          |
+| PHR-P2-009 |       P2 | Remove raw visible text from provider dashboard.                                                                              | `ProviderDashboardPage.tsx`                                                                    | Move `"Age"` and `"Next"` labels and status display mapping to i18n keys.                                                                                                                           | i18n conformance detects no raw labels; English/Nepali both work. Current raw text appears in provider dashboard.                                                       |
+| PHR-P2-010 |       P2 | Avoid browser-locale-only date formatting for healthcare UI.                                                                  | `ProviderDashboardPage.tsx`; shared date formatter                                             | Use canonical localized date formatter with timezone and i18n.                                                                                                                                      | Dates render consistently across locales/timezones.                                                                                                                     |
+| PHR-P2-011 |       P2 | Standardize PHR API error mapping.                                                                                            | `phrApi.ts`; UI pages                                                                          | Map 401/403/404/422/500 to typed UI states; avoid raw exception messages leaking backend detail.                                                                                                    | UI shows safe localized messages and logs detailed error only to telemetry.                                                                                             |
+| PHR-P2-012 |       P2 | Replace per-call header duplication with central request client.                                                              | `phrApi.ts`                                                                                    | Introduce `phrFetch(path, {method, body, session, expectedSchema})` with auth/context headers, JSON parse, zod validation, error handling.                                                          | All API methods use one client; no method forgets tenant/principal.                                                                                                     |
+| PHR-P2-013 |       P2 | Strengthen session storage security.                                                                                          | `PhrSessionContext.tsx`                                                                        | Consider httpOnly cookie or short-lived in-memory token/session design; avoid storing sensitive session material in sessionStorage if token added later.                                            | Security review confirms no sensitive token in JS storage. Current session persists in sessionStorage.                                                                  |
+| PHR-P2-014 |       P2 | Add FHIR contract validation for all transformed resources.                                                                   | `phrApi.ts`; schema packs; backend tests                                                       | Validate FHIR Patient, Observation, MedicationRequest, Consent, Appointment, Immunization, Document where used.                                                                                     | Invalid FHIR payload fails fast with clear error; UI does not silently accept malformed data.                                                                           |
+| PHR-P2-015 |       P2 | Add PHR E2E journey tests.                                                                                                    | `products/phr/apps/web/e2e/**`; backend integration tests                                      | Cover login → dashboard → profile → documents/OCR → consent grant/revoke → emergency access → provider roster.                                                                                      | Full patient and clinician journeys pass against real backend.                                                                                                          |
+
+# C. Data-Cloud — feature completeness and correctness
+
+| ID        | Severity | What                                                                                                                                                   | Where                                                                                                                     | Required change                                                                                                                                     | Acceptance criteria                                                                                                                                                       |
+| --------- | -------: | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DC-P1-001 |       P1 | Make batch save production-grade. Current batch save is best-effort and not transactionally equivalent to single-save.                                 | `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/EntityCrudHandler.java` | Either implement transaction/outbox/audit parity for the whole batch or explicitly define per-item partial semantics with durable evidence.         | Batch save either fully rolls back on failure or returns/audits per-item success/failure deterministically. Current docs say storage failures do not roll back siblings.  |
+| DC-P1-002 |       P1 | Add batch-save audit parity.                                                                                                                           | `EntityCrudHandler.handleBatchSaveEntities`; `EventLogAuditService`; audit tests                                          | Emit audit event for batch operation and per-entity mutation, or a structured batch audit that includes all entity IDs and outcomes.                | Audit proves who saved which entities, tenant, collection, count, IDs, failures, correlation ID.                                                                          |
+| DC-P1-003 |       P1 | Add batch-save outbox parity.                                                                                                                          | `EntityCrudHandler`; `EntityWriteOutboxProcessor`                                                                         | Use outbox for websocket/semantic indexing side effects instead of direct in-request best-effort behavior.                                          | Semantic indexing/websocket failure does not corrupt main write and is retryable.                                                                                         |
+| DC-P1-004 |       P1 | Fix batch-delete CDC contract mismatch. Docs say each deleted entity triggers its own CDC `entity.deleted`, but code emits one `entity.batch-deleted`. | `EntityCrudHandler.handleBatchDeleteEntities`                                                                             | Emit per-entity delete CDC events, or update contract and consumers to accept batch envelope.                                                       | Replay/AEP/SDK tests prove expected delete event behavior. Current implementation appends one batch event.                                                                |
+| DC-P1-005 |       P1 | Add batch-delete audit/outbox/idempotency parity.                                                                                                      | `EntityCrudHandler.handleBatchDeleteEntities`                                                                             | Add idempotency key handling, audit record, and outbox side-effects for actual delete execution.                                                    | Retried batch delete is safe; audit includes dry-run token and execution result.                                                                                          |
+| DC-P1-006 |       P1 | Make batch-delete dry-run preview complete.                                                                                                            | `EntityCrudHandler.handleBatchDeleteEntities`                                                                             | Dry-run should validate target IDs exist and return preview with existing/missing/unauthorized items, not just count/ids.                           | User can review exactly what will be deleted before executing.                                                                                                            |
+| DC-P1-007 |       P1 | Add transactional delete option for destructive operations.                                                                                            | `EntityCrudHandler`; transaction manager                                                                                  | For production-critical collections, support all-or-nothing batch delete or explicitly require best-effort feature flag.                            | Critical collections cannot be partially deleted without explicit configuration.                                                                                          |
+| DC-P2-008 |       P2 | Fix CDC envelope field collision. `buildCdcEnvelope` sets `"version"` as `"1.0"` and later overwrites it with entity version.                          | `EntityCrudHandler.buildCdcEnvelope`                                                                                      | Split into `eventSchemaVersion` and `entityVersion`. Preserve backward-compatible aliases only if required.                                         | Contract test asserts both event schema and entity version are present. Current code writes `version` twice.                                                              |
+| DC-P2-009 |       P2 | Add actor/principal correctness in CDC envelopes.                                                                                                      | `buildCdcEnvelope`; `buildDeleteCdcEnvelope`                                                                              | Use resolved principal from request, not fixed `{type: system, id: api}` except for system jobs.                                                    | CDC event actor matches authenticated user/service.                                                                                                                       |
+| DC-P2-010 |       P2 | Improve query filter parsing. Current split on `:` loses values containing colons and lacks field allowlist.                                           | `EntityCrudHandler.parseFilters`                                                                                          | Support escaped/encoded values or structured filter JSON. Validate field names and operators against schema.                                        | Filtering works for timestamp/URL-like values and rejects unsafe fields. Current parser splits by `:`.                                                                    |
+| DC-P2-011 |       P2 | Validate sort fields.                                                                                                                                  | `EntityCrudHandler.parseSorts`                                                                                            | Add allowed sortable fields per collection/schema; reject invalid direction and unsafe field names.                                                 | Invalid sort returns 400; deterministic tie-breaker remains.                                                                                                              |
+| DC-P2-012 |       P2 | Make non-transactional entity save path explicit.                                                                                                      | `EntityCrudHandler.handleSaveEntity`; runtime profile validator                                                           | In production-like profiles, reject startup if transaction manager/outbox/audit missing. Ensure handler cannot silently use non-transactional path. | Production startup fails without transaction manager/outbox/audit. Code has validation method; verify it is invoked in composition.                                       |
+| DC-P2-013 |       P2 | Enforce audit write behavior for entity mutations, not just audit payload creation.                                                                    | `executeSaveInTransaction`; `EventLogAuditService`; outbox processor                                                      | Ensure audit event is persisted through audit service/outbox, not only built into a payload map.                                                    | Audit sink contains mutation event after save/delete/batch operations.                                                                                                    |
+| DC-P2-014 |       P2 | Add full entity lifecycle E2E test.                                                                                                                    | `products/data-cloud/integration-tests/**`                                                                                | Test create → read → query → update → delete → replay/audit with tenant isolation.                                                                  | One E2E proves Journey A with real storage and audit/event paths.                                                                                                         |
+| DC-P2-015 |       P2 | Add cross-tenant negative tests for entity, event, batch, and query APIs.                                                                              | Data-Cloud integration tests                                                                                              | Tenant B cannot read/query/delete Tenant A data; logs/errors/events do not leak.                                                                    | Negative tests cover all CRUD + batch + event paths.                                                                                                                      |
+
+# D. AEP / Action Plane / PatternSpec
+
+| ID         | Severity | What                                                                            | Where                                                                                                                                                  | Required change                                                                                                                    | Acceptance criteria                                                                                                                                   |
+| ---------- | -------: | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AEP-P1-001 |       P1 | Add legal lifecycle transition graph, not just state-name validation.           | `products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/aep/pattern/spec/PatternSpecValidator.java`; lifecycle service/runtime | Define allowed transitions: draft → candidate → shadow → recommended → approved → active/predictive → degraded → retired/rollback. | Illegal transition fails; all required transitions tested. Validator now includes state names, but transition correctness still needs runtime rules.  |
+| AEP-P1-002 |       P1 | Add PatternSpec promotion governance runtime.                                   | Action Plane registry/orchestrator modules                                                                                                             | Promotion to active/predictive must require approval policy, evidence store, commit binding, owner, risk, rollback, audit policy.  | Shadow/recommended pattern cannot become active without governance proof.                                                                             |
+| AEP-P1-003 |       P1 | Add rollback runtime behavior.                                                  | Action Plane registry/orchestrator/engine                                                                                                              | Persist previous active pattern, rollback decision, reason, approver, trace, replay evidence.                                      | Active pattern rollback restores prior version and emits audit/event.                                                                                 |
+| AEP-P1-004 |       P1 | Add degraded-state behavior.                                                    | Action Plane runtime/operations                                                                                                                        | Define how degraded patterns behave: disabled, advisory-only, fallback, or require review.                                         | Degraded pattern never executes unsafe side effects.                                                                                                  |
+| AEP-P1-005 |       P1 | Ensure compiler production-context APIs are used by runtime callers.            | All call sites of `PatternSpecCompiler.compile(...)` and `compileTyped(...)`                                                                           | Replace legacy calls with production-context overloads when runtime profile is production/staging/sovereign.                       | Search/test proves production path always passes commit SHA, environment, registry. Compiler now supports context overloads.                          |
+| AEP-P1-006 |       P1 | Complete capabilityRef resolution E2E.                                          | `PatternSpecCompiler`; capability registry; agent runtime tests                                                                                        | Validate missing capability, wrong kind, role mismatch, schema mismatch, side-effect policy.                                       | E2E PatternSpec with agent capability executes or fails deterministically.                                                                            |
+| AEP-P2-007 |       P2 | Add PatternSpec golden test coverage for all operators.                         | `operator-contracts/src/test/**`                                                                                                                       | Cover AND, OR, SEQ, NOT, WITHIN, TIMES, REPEAT, WINDOW, ABSENCE, FILTER, AGENT_* operators.                                        | Every operator has valid and invalid fixtures.                                                                                                        |
+| AEP-P2-008 |       P2 | Add deterministic replay proof.                                                 | Action Plane engine/orchestrator/event-bridge tests                                                                                                    | Replay same events/patterns and assert same matches/decisions/evidence.                                                            | Replay is deterministic or explicitly marked non-replayable with reason.                                                                              |
+| AEP-P2-009 |       P2 | Add DLQ/late-event/watermark proof.                                             | `event-bridge`, `engine`, `central-runtime`                                                                                                            | Implement/test late events, partial match state, checkpoint, DLQ, retry.                                                           | EventCloud/Data-Cloud bridge does not lose events.                                                                                                    |
+| AEP-P2-010 |       P2 | Add AEP/Data-Cloud boundary enforcement for runtime behavior, not just imports. | Boundary tests + integration tests                                                                                                                     | Ensure Data-Cloud Event Plane remains storage primitive and PatternSpec semantics stay in AEP/Action Plane.                        | Integration test fails if non-action Data-Cloud route exposes AEP lifecycle semantics.                                                                |
+
+# E. Agents / EventOperatorCapability
+
+| ID           | Severity | What                                                                                                                                                       | Where                                                                                                                               | Required change                                                                                                          | Acceptance criteria                                                                                                                 |
+| ------------ | -------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| AGENT-P1-001 |       P1 | Fix pending approval result semantics. `recordOutcome` tracks `PENDING_APPROVAL`, but `mapAgentResult` returns success for anything except failed/timeout. | `products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/registry/AgentEventOperatorCapabilityAdapter.java` | Map `PENDING_APPROVAL` to explicit pending/denied non-success result. No side-effect completion should occur.            | Side-effecting agent with approval required returns pending, not success. Current code returns success after non-failed statuses.   |
+| AGENT-P1-002 |       P1 | Add governed-dispatch E2E for side-effecting agents.                                                                                                       | `agent-runtime`, `orchestrator`, `operator-contracts`, tool-runtime tests                                                           | Trigger PatternSpec → capabilityRef → governed dispatch → approval required → deny/approve → audit.                      | No direct tool/action execution before approval.                                                                                    |
+| AGENT-P1-003 |       P1 | Enforce replay policy for non-idempotent tools.                                                                                                            | `AgentEventOperatorCapabilityAdapter`; tool-runtime                                                                                 | Side-effecting tools must require idempotency key or be marked non-replayable with compensation.                         | Replay of side-effecting capability is safe or denied.                                                                              |
+| AGENT-P1-004 |       P1 | Persist agent execution evidence.                                                                                                                          | `agent-runtime`; observability/audit modules                                                                                        | Store agentRef, capabilityId, traceId, correlationId, tenantId, policy decisions, output hash, evidence IDs.             | Agent usage audit can reconstruct decision path. Adapter already builds evidence map; persistence path must be proven.              |
+| AGENT-P2-005 |       P2 | Remove temporary UnifiedOperator bridge or feature-flag it.                                                                                                | `AgentEventOperatorCapabilityAdapter.process(Event event)`                                                                          | Migrate callers to `process(EventContext, OperatorRuntimeContext)` or isolate legacy bridge behind compatibility module. | No production caller uses temporary bridge after migration deadline. Code marks bridge temporary.                                   |
+| AGENT-P2-006 |       P2 | Add memory policy enforcement tests.                                                                                                                       | `AgentEventOperatorCapabilityAdapter`; memory store tests                                                                           | Prove no-op memory store is rejected unless explicitly allowed; tenant-scoped retrieval enforced.                        | Memory access cannot cross tenant.                                                                                                  |
+| AGENT-P2-007 |       P2 | Add capability duplicate/role/version runtime tests.                                                                                                       | agent registry/catalog modules                                                                                                      | Validate duplicate capability ID, role mismatch, version mismatch, retired capability.                                   | Registry blocks duplicates and incompatible versions.                                                                               |
+| AGENT-P2-008 |       P2 | Add denial-path metrics and audit.                                                                                                                         | agent runtime observability                                                                                                         | Emit metrics/audit for denied, pending approval, failed, timeout, degraded.                                              | Dashboard/ops can distinguish pending vs denied vs failed.                                                                          |
+
+# F. YAPPC / Kernel / Data-Cloud integration
+
+| ID           | Severity | What                                                                                                                                                                              | Where                                                                                            | Required change                                                                                                           | Acceptance criteria                                                                                   |
+| ------------ | -------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| YAPPC-P1-001 |       P1 | Close YAPPC readiness blockers. Registry marks YAPPC lifecycle readiness as blocked.                                                                                              | `config/canonical-product-registry.json`; `products/yappc/**`; `products/yappc/kernel-bridge/**` | Implement product-unit-intent export, artifact-intelligence boundary, creator/kernel lifecycle separation, and contracts. | Registry blockers removed only after executable tests pass. Current blockers are listed in registry.  |
+| YAPPC-P1-002 |       P1 | Add YAPPC manifest/conformance. Registry marks manifest, observability, security, dataAccess, bridge, agentDefinitions, masteryBindings, evaluationPacks, runtimeModule as false. | `products/yappc/domain-pack-manifest.yaml` or equivalent; YAPPC modules; registry                | Add or intentionally gate each conformance area.                                                                          | Conformance false is either fixed or feature-flagged as non-production.                               |
+| YAPPC-P1-003 |       P1 | Prove YAPPC uses Data-Cloud canonical contracts instead of duplicate persistence/event/governance.                                                                                | `products/yappc/infrastructure/datacloud/**`; `products/data-cloud/contracts/**`                 | Use generated SDK/contracts; block direct duplicate storage/event logic.                                                  | Integration test proves YAPPC artifact/project state flows through Data-Cloud where intended.         |
+| YAPPC-P1-004 |       P1 | Prove YAPPC agents use governed runtime.                                                                                                                                          | `products/yappc/core/agents/**`; Data-Cloud agent runtime bridge                                 | Route YAPPC agents through `EventOperatorCapability`/governed dispatch for side-effecting behavior.                       | Direct YAPPC agent action bypass fails tests.                                                         |
+| YAPPC-P1-005 |       P1 | Add YAPPC E2E product-generation workflow.                                                                                                                                        | `products/yappc/integration/**`; frontend/backend tests                                          | Cover prompt/product intent → plan → artifact generation → validation → Data-Cloud evidence → Kernel lifecycle handoff.   | E2E proves complete YAPPC product workflow.                                                           |
+| YAPPC-P2-006 |       P2 | Add generated contract drift checks.                                                                                                                                              | YAPPC contract generation; Kernel bridge; Data-Cloud contracts                                   | Validate generated artifacts/SDKs match runtime route/API.                                                                | Drift check fails when generated contract differs from runtime.                                       |
+| YAPPC-P2-007 |       P2 | Add YAPPC UI route/action completeness audit.                                                                                                                                     | `products/yappc/frontend/**`                                                                     | Every UI action must map to backend/API/Kernel/Data-Cloud action or be feature-flagged.                                   | UI no longer exposes dead actions.                                                                    |
+
+# G. Product registry / lifecycle / CI consistency
+
+| ID         | Severity | What                                                                                                                        | Where                                                                            | Required change                                                                                                           | Acceptance criteria                                                                       |
+| ---------- | -------: | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| REG-P1-001 |       P1 | Do not mark implemented surfaces as production-ready when lifecycle/conformance is blocked.                                 | `config/canonical-product-registry.json`                                         | Add explicit `implementationStatus` vs `productionReadinessStatus`; surface cards/UI must show partial/blocked correctly. | Active products cannot appear production-ready when registry says blocked/disabled.       |
+| REG-P1-002 |       P1 | Enable Audio-Video CI or mark as non-production.                                                                            | `config/canonical-product-registry.json`; `.github/workflows/audio-video-ci.yml` | Either set CI enabled with real gates or mark service as experimental/feature-flagged.                                    | Shared service release cannot proceed without CI gates. Current Audio-Video CI disabled.  |
+| REG-P1-003 |       P1 | Align YAPPC implemented surfaces with blocked lifecycle status.                                                             | `canonical-product-registry.json`; YAPPC UI/platform                             | Product discovery/runtime UI should show YAPPC as blocked/partial until gates pass.                                       | No runtime treats YAPPC as complete provider while readiness is blocked.                  |
+| REG-P2-004 |       P2 | Add registry rule: active product with implemented backend/web must have contract/security/o11y/dataAccess status explicit. | registry validation scripts                                                      | Validation fails on ambiguous active implemented products.                                                                | No product has “implemented” surface with missing conformance rationale.                  |
+| REG-P2-005 |       P2 | Add capability-to-module mapping for Audio-Video.                                                                           | `products/audio-video/**`; registry                                              | Map STT/TTS/Vision/Multimodal capabilities to modules, routes/protos, tests, gates.                                       | Feature completeness matrix can be generated from registry.                               |
+| REG-P2-006 |       P2 | Add feature flags for incomplete shared-service features.                                                                   | Audio-Video/YAPPC/Data-Cloud configs                                             | Any partial feature must be hidden or marked degraded until complete.                                                     | No incomplete feature is exposed as production-ready.                                     |
+
+# H. Shared platform / Kernel / cross-product infrastructure
+
+| ID            | Severity | What                                                                    | Where                                                                                                | Required change                                                                                                     | Acceptance criteria                                                                      |
+| ------------- | -------: | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| KERNEL-P1-001 |       P1 | Add product-to-platform E2E proof for YAPPC → Kernel → Data-Cloud.      | `platform-kernel/**`; `products/yappc/kernel-bridge`; `products/data-cloud/extensions/kernel-bridge` | Test product intent/artifact action through Kernel bridge, Data-Cloud persistence/evidence, and runtime validation. | One E2E proves Kernel is used during product workflow, not integrated later.             |
+| KERNEL-P1-002 |       P1 | Enforce no duplicate product lifecycle runtimes.                        | Kernel lifecycle scripts/tests; product modules                                                      | Products must use Kernel lifecycle where required; no duplicate lifecycle execution code in products.               | Boundary test fails on duplicate lifecycle orchestrators.                                |
+| KERNEL-P2-003 |       P2 | Add cross-product contract broker tests for Audio-Video and Data-Cloud. | `integration-tests:cross-service-workflow`; Audio-Video modules                                      | Add tests for Audio-Video emitting persisted evidence/event consumable by Data-Cloud/AEP.                           | Audio/video → Data-Cloud/AEP journey works.                                              |
+| KERNEL-P2-004 |       P2 | Add runtime truth integration for Audio-Video/YAPPC.                    | `platform-kernel:kernel-core`; product runtime truth providers                                       | Product status must expose live/degraded/unavailable with dependency health.                                        | Runtime truth shows model missing, auth missing, DB unavailable, Data-Cloud unavailable. |
+| KERNEL-P2-005 |       P2 | Add product capability matrix generator.                                | scripts + registry                                                                                   | Generate matrix of product → feature → API → service → persistence → tests → gates.                                 | Missing feature/test/gate becomes visible automatically.                                 |
+| KERNEL-P2-006 |       P2 | Add “no demo/mock production path” gate across active products.         | `scripts/check-production-stubs.mjs`; allowlist                                                      | Expand stub detection to Audio-Video, YAPPC, PHR, Data-Cloud.                                                       | Production placeholder like STT `updateAudioFileStatus` fails gate.                      |
+
+# I. Observability, audit, security, privacy
+
+| ID         | Severity | What                                                                 | Where                                                               | Required change                                                                               | Acceptance criteria                                                  |
+| ---------- | -------: | -------------------------------------------------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| OBS-P1-001 |       P1 | Add audit parity for all mutating Data-Cloud entity operations.      | Data-Cloud handlers/services                                        | Single save/delete, batch save/delete, import/export, lifecycle actions must emit audit.      | Audit coverage test enumerates all mutating routes.                  |
+| OBS-P1-002 |       P1 | Add Audio-Video audit events.                                        | STT/TTS/Vision/Multimodal services                                  | Audit upload/process/access/delete, tenant, user, media artifact, model, confidence, status.  | Every media operation has audit ID.                                  |
+| OBS-P1-003 |       P1 | Add PHR audit coverage for OCR/provider access.                      | PHR backend; `OcrReviewPage`; provider routes                       | Record OCR review/confirm and provider roster access.                                         | Audit page can show these events.                                    |
+| OBS-P2-004 |       P2 | Add trace/correlation propagation from UI/API to backend and events. | PHR API client; Data-Cloud handlers; Audio-Video gRPC metadata      | Generate/pass correlation ID through frontend → backend → event/audit/log/metric.             | Logs/events/audit can be joined by correlation ID.                   |
+| OBS-P2-005 |       P2 | Add structured error taxonomy.                                       | All products                                                        | Standardize validation, auth, tenant, policy, dependency, timeout, degraded, internal errors. | UI and ops can distinguish error classes.                            |
+| SEC-P1-006 |       P1 | Remove default tenant fallback from production code.                 | Audio-Video `AuthenticationInterceptor`; any other product fallback | Default tenant only allowed in local/test profile and clearly gated.                          | Production startup/test fails if default tenant fallback is enabled. |
+| SEC-P1-007 |       P1 | Add tenant-safe logging checks.                                      | Data-Cloud, PHR, Audio-Video, YAPPC                                 | Ensure logs do not contain PII/media payloads/extracted OCR text/raw tokens.                  | Log-redaction test passes.                                           |
+| SEC-P2-008 |       P2 | Add media privacy/retention enforcement.                             | Audio-Video storage/persistence                                     | Define retention, deletion, legal hold, export, and redaction for audio/video artifacts.      | Delete/retention tests remove media and derived metadata correctly.  |
+| SEC-P2-009 |       P2 | Add PHR OCR privacy controls.                                        | PHR documents/OCR backend                                           | OCR text is treated as sensitive PHI; encrypt at rest, redact logs, audit access.             | OCR content never appears in logs/error messages.                    |
+
+# J. Testing and release gates — not evidence generation, but real feature-proof gates
+
+| ID          | Severity | What                                                          | Where                                                                               | Required change                                                                                  | Acceptance criteria                                                    |
+| ----------- | -------: | ------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| TEST-P0-001 |       P0 | Add real Audio-Video STT/TTS authenticated integration tests. | `products/audio-video/modules/integration-tests/**`; STT/TTS tests                  | Start gRPC with JWT interceptor and persistence; send valid JWT with tenant; assert persistence. | Test fails with current MDC/context mismatch; passes after fix.        |
+| TEST-P1-002 |       P1 | Add Vision production integration test.                       | `vision-service/src/test/**`; `modules/integration-tests/**`                        | Use tenant context, model stub/fixture, persistence, audit assertions.                           | Vision E2E proves object detection/classify/analyze with tenant/audit. |
+| TEST-P1-003 |       P1 | Add PHR OCR E2E test.                                         | `products/phr/apps/web/src/pages/OcrReviewPage.test.tsx`; backend integration tests | Load OCR doc, edit text, confirm, assert request body and headers.                               | Fails if corrected text or headers are missing.                        |
+| TEST-P1-004 |       P1 | Add PHR provider roster auth/tenant E2E test.                 | `ProviderDashboardPage.test.tsx`; backend route tests                               | Test clinician context, patient denial, cross-tenant denial.                                     | Provider roster cannot be loaded without correct context.              |
+| TEST-P1-005 |       P1 | Add Data-Cloud batch save/delete integration tests.           | `products/data-cloud/integration-tests/**`                                          | Cover batch success, partial failure, idempotent retry, CDC, audit, tenant isolation.            | Batch semantics are proven and documented.                             |
+| TEST-P1-006 |       P1 | Add agent approval E2E test.                                  | `agent-runtime` tests; orchestrator tests                                           | Side-effecting capability returns pending approval and does not execute tool.                    | Pending approval is not reported as success.                           |
+| TEST-P1-007 |       P1 | Add PatternSpec lifecycle transition E2E tests.               | `operator-contracts`, `central-runtime`, `registry` tests                           | Validate all legal/illegal transitions and rollback.                                             | Required lifecycle is fully covered.                                   |
+| TEST-P1-008 |       P1 | Promote Audio-Video integration tests into CI.                | `.github/workflows/audio-video-ci.yml`; root scripts                                | Run STT/TTS/Vision/Multimodal tests in CI.                                                       | Audio-Video cannot regress silently.                                   |
+| TEST-P1-009 |       P1 | Add YAPPC ↔ Data-Cloud ↔ Kernel E2E tests.                    | `products/yappc/integration/**`; `integration-tests:cross-service-workflow`         | Product intent → artifact → validation → Data-Cloud evidence → Kernel lifecycle.                 | YAPPC readiness blockers can be removed only when this passes.         |
+| TEST-P2-010 |       P2 | Add raw-text/i18n gate for PHR pages.                         | `scripts/check-i18n-maturity.mjs`; PHR tests                                        | Detect raw labels like Age/Next and status text.                                                 | PHR pages use i18n keys.                                               |
+| TEST-P2-011 |       P2 | Add schema/contract parity test for PHR API client.           | `phrApi.ts`; generated backend contracts                                            | Verify every client function maps to backend route and response schema.                          | Missing backend route or missing context header fails.                 |
+| TEST-P2-012 |       P2 | Add product-feature completeness generated report.            | scripts/registry                                                                    | Generate from registry + routes + tests: feature, implementation, E2E, gate.                     | No product can claim complete without feature matrix.                  |
+
+# K. Cleanup / maintainability / consistency
+
+| ID           | Severity | What                                                   | Where                                                                                | Required change                                                                              | Acceptance criteria                                     |
+| ------------ | -------: | ------------------------------------------------------ | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| CLEAN-P2-001 |       P2 | Remove temporary or expired compatibility bridges.     | `AgentEventOperatorCapabilityAdapter.process(Event)`; Action Plane temporary modules | Migrate callers or explicitly isolate compatibility modules.                                 | No temporary bridge is used in production runtime.      |
+| CLEAN-P2-002 |       P2 | Normalize naming and header casing.                    | PHR API client; Audio-Video gRPC metadata; Data-Cloud HTTP                           | Standardize `X-Tenant-Id`, `X-Principal-Id`, `X-Role`, gRPC metadata equivalents.            | Header/metadata casing handled consistently.            |
+| CLEAN-P2-003 |       P2 | Centralize PHR API client logic.                       | `phrApi.ts`                                                                          | Avoid hand-written fetch logic per feature; centralize request, context, validation, errors. | No feature accidentally omits tenant/principal headers. |
+| CLEAN-P2-004 |       P2 | Centralize Audio-Video request context.                | `libs/common`; STT/TTS/Vision/Multimodal                                             | One `AudioVideoRequestContext` sourced from JWT/gRPC context.                                | All services use same context object.                   |
+| CLEAN-P2-005 |       P2 | Centralize Data-Cloud mutation workflow.               | Data-Cloud handlers/services                                                         | Reuse one mutation pipeline for validation → transaction → event → audit → outbox.           | Single/batch create/delete share correctness behavior.  |
+| CLEAN-P3-006 |       P3 | Replace approximate/hardcoded metadata defaults.       | Audio-Video STT/TTS/Vision                                                           | Avoid default model/format/duration/language when actual metadata exists.                    | Metadata reflects real media and provider output.       |
+| CLEAN-P3-007 |       P3 | Improve user-facing loading/error/success consistency. | PHR, Data-Cloud UI, YAPPC UI                                                         | Use shared design-system states and i18n messages.                                           | UI states are visually and behaviorally consistent.     |
+| CLEAN-P3-008 |       P3 | Add documentation only after implementation.           | Product docs/readiness docs                                                          | Update docs to reflect actual behavior, especially partial/best-effort semantics.            | Docs do not claim unsupported production guarantees.    |
+
+# Implementation order
+
+1. **Audio-Video tenant/context and STT/TTS integration tests**: AV-P0-001, AV-P0-002, TEST-P0-001.
+2. **PHR context regressions**: PHR-P1-001, PHR-P1-002, PHR-P1-003.
+3. **Data-Cloud batch parity**: DC-P1-001 through DC-P1-005.
+4. **Agent pending approval semantics**: AGENT-P1-001 and TEST-P1-006.
+5. **Vision production completeness**: AV-P1-012 through AV-P1-014.
+6. **YAPPC and Audio-Video lifecycle/conformance**: YAPPC-P1-001 through YAPPC-P1-005, AV-P1-016, REG-P1-002.
+7. **Cross-cutting observability/security/i18n/testing gates**: OBS/SEC/TEST/CLEAN tasks.
+
+This list intentionally expands beyond the prior P0/P1 audit findings so the implementation path closes feature completeness, E2E correctness, tenant/privacy/security, observability, and production-code-quality gaps together.

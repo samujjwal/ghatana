@@ -265,6 +265,78 @@ yappc-services:
     operationId: getProductFamilyKernelTimeline
     auditEventType: PRODUCT_FAMILY_KERNEL_TIMELINE_READ
     privacyClassification: CONFIDENTIAL
+  - method: GET
+    path: /api/admin/observability/release-gates
+    auth: required
+    scopes: [admin]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: listAdminObservabilityReleaseGates
+    auditEventType: ADMIN_OBSERVABILITY_RELEASE_GATES_READ
+    privacyClassification: CONFIDENTIAL
+  - method: GET
+    path: /api/admin/feature-flags
+    auth: required
+    scopes: [admin]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: listAdminFeatureFlags
+    auditEventType: ADMIN_FEATURE_FLAGS_LIST
+    privacyClassification: CONFIDENTIAL
+  - method: PUT
+    path: /api/admin/feature-flags/{flagKey}
+    auth: required
+    scopes: [admin]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: setAdminFeatureFlag
+    auditEventType: ADMIN_FEATURE_FLAG_SET
+    privacyClassification: RESTRICTED
+  - method: GET
+    path: /api/admin/feature-flags/{flagKey}/audit
+    auth: required
+    scopes: [admin]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: listAdminFeatureFlagAudit
+    auditEventType: ADMIN_FEATURE_FLAG_AUDIT_LIST
+    privacyClassification: CONFIDENTIAL
+  - method: GET
+    path: /api/admin/ab-experiments
+    auth: required
+    scopes: [admin]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: listAdminAbExperiments
+    auditEventType: ADMIN_AB_EXPERIMENTS_LIST
+    privacyClassification: CONFIDENTIAL
+  - method: POST
+    path: /api/admin/ab-experiments
+    auth: required
+    scopes: [admin]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: createAdminAbExperiment
+    auditEventType: ADMIN_AB_EXPERIMENT_CREATED
+    privacyClassification: RESTRICTED
+  - method: POST
+    path: /api/admin/ab-experiments/{experimentId}/promote
+    auth: required
+    scopes: [admin]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: promoteAdminAbExperimentWinner
+    auditEventType: ADMIN_AB_EXPERIMENT_WINNER_PROMOTED
+    privacyClassification: RESTRICTED
+  - method: POST
+    path: /api/admin/ab-experiments/{experimentId}/pause
+    auth: required
+    scopes: [admin]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: pauseAdminAbExperiment
+    auditEventType: ADMIN_AB_EXPERIMENT_PAUSED
+    privacyClassification: RESTRICTED
   - method: POST
     path: /api/v1/yappc/intent/capture
     auth: required
@@ -356,6 +428,15 @@ yappc-services:
     auditEventType: GENERATE_ARTIFACTS
     privacyClassification: CONFIDENTIAL
   - method: POST
+    path: /api/v1/yappc/generate/product-unit-intent
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: generateProductUnitIntent
+    auditEventType: GENERATE_PRODUCT_UNIT_INTENT
+    privacyClassification: CONFIDENTIAL
+  - method: POST
     path: /api/v1/yappc/generate/diff
     auth: required
     scopes: [project:read]
@@ -391,6 +472,15 @@ yappc-services:
     operationId: runWithObservation
     auditEventType: RUN_WITH_OBSERVATION
     privacyClassification: CONFIDENTIAL
+  - method: POST
+    path: /api/v1/yappc/run/retry
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: retryRun
+    auditEventType: RUN_RETRY
+    privacyClassification: RESTRICTED
   - method: POST
     path: /api/v1/yappc/run/rollback
     auth: required

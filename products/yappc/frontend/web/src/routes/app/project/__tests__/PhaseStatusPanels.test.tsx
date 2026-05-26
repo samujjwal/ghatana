@@ -268,4 +268,90 @@ describe('PhaseStatusPanels', () => {
     expect(screen.getByTestId('preview-load-latency')).toHaveTextContent('842ms');
     expect(screen.getAllByTestId('preview-user-action')[0]).toHaveTextContent('operator-1');
   });
+
+  it('surfaces preview security status in run and observe phases', () => {
+    const previewHealth = {
+      isHealthy: false,
+      status: 'unsafe',
+      issues: ['Preview trust level is untrusted'],
+      security: {
+        trustLevel: 'untrusted',
+        tokenScopes: [
+          { id: 'preview:read', name: 'Preview read', required: true, granted: true },
+          { id: 'preview:inspect', name: 'Preview inspect', required: true, granted: false },
+        ],
+        expiresAt: '2026-05-04T11:00:00.000Z',
+        expired: false,
+        safe: false,
+        issues: ['Preview trust level is untrusted', '1 required preview token scope(s) are not granted'],
+      },
+    };
+
+    const { rerender } = render(
+      <PhaseStatusPanels
+        phase="run"
+        preview={null}
+        previewHealth={previewHealth}
+        blockers={[]}
+        activity={[]}
+      />,
+    );
+
+    expect(screen.getByTestId('preview-security-status')).toBeInTheDocument();
+    expect(screen.getByTestId('preview-security-safe')).toHaveTextContent('Unsafe');
+    expect(screen.getByTestId('preview-security-trust')).toHaveTextContent('untrusted');
+    expect(screen.getByTestId('preview-security-missing-scopes')).toHaveTextContent('Preview inspect');
+
+    rerender(
+      <PhaseStatusPanels
+        phase="observe"
+        preview={null}
+        previewHealth={previewHealth}
+        blockers={[]}
+        activity={[]}
+      />,
+    );
+
+    expect(screen.getByTestId('preview-security-status')).toBeInTheDocument();
+    expect(screen.getAllByTestId('preview-security-issue')[0]).toHaveTextContent('Preview trust level is untrusted');
+  });
+
+  it('surfaces agent governance status and learning evidence in observe and learn phases', () => {
+    const agentGovernance = {
+      isHealthy: true,
+      status: 'healthy',
+      governanceState: 'policy-approved',
+      learningLevel: 'evidence-backed',
+      evidenceIds: ['learn-run-1', 'learn-approval-1'],
+      issues: [],
+    };
+
+    const { rerender } = render(
+      <PhaseStatusPanels
+        phase="observe"
+        preview={null}
+        agentGovernance={agentGovernance}
+        blockers={[]}
+        activity={[]}
+      />,
+    );
+
+    expect(screen.getByTestId('agent-governance-health')).toBeInTheDocument();
+    expect(screen.getByTestId('agent-governance-state')).toHaveTextContent('policy-approved');
+    expect(screen.getByTestId('agent-learning-level')).toHaveTextContent('evidence-backed');
+    expect(screen.getByTestId('agent-learning-evidence')).toHaveTextContent('learn-run-1');
+
+    rerender(
+      <PhaseStatusPanels
+        phase="learn"
+        preview={null}
+        agentGovernance={agentGovernance}
+        blockers={[]}
+        activity={[]}
+      />,
+    );
+
+    expect(screen.getByTestId('agent-governance-status')).toHaveTextContent('healthy');
+    expect(screen.getByTestId('agent-learning-evidence')).toHaveTextContent('learn-approval-1');
+  });
 });

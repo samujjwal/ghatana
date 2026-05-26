@@ -6,6 +6,7 @@
  */
 
 import { en } from '../locales/en';
+import type { LocaleShape } from '../locales/en';
 import { ne } from '../locales/ne';
 
 type LocaleDict = typeof en;
@@ -17,7 +18,7 @@ type DotPath<T, Prefix extends string = ''> = {
 
 export type I18nKey = DotPath<LocaleDict>;
 
-const locales: Record<string, LocaleDict> = { en, ne };
+const locales: Record<string, LocaleShape> = { en, ne };
 
 let activeLocale: string = 'en';
 

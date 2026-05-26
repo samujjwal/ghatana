@@ -144,6 +144,10 @@ env:
     value: "INFO"
   - name: NODE_ENV
     value: production
+  - name: YAPPC_PROFILE
+    value: production
+  - name: YAPPC_KERNEL_LIFECYCLE_TRUTH_SOURCE
+    value: data-cloud
   - name: JAVA_OPTS
     value: "-Xmx1G -Xms512M -XX:+UseG1GC"
 

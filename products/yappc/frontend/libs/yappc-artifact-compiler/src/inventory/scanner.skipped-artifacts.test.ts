@@ -33,7 +33,15 @@ describe('scanRepository skippedArtifacts', () => {
     await writeFile(join(rootPath, 'ignored', 'secret.ts'), 'export const secret = true;\n');
     await writeFile(join(rootPath, 'logs', 'app.log'), 'line one\n');
     await writeFile(join(rootPath, 'src', 'large.ts'), 'x'.repeat(2048));
-    await symlink(join(rootPath, 'src', 'keep.ts'), join(rootPath, 'src', 'linked.ts'));
+    let symlinkCreated = true;
+    try {
+      await symlink(join(rootPath, 'src', 'keep.ts'), join(rootPath, 'src', 'linked.ts'));
+    } catch (error: unknown) {
+      if (!(error instanceof Error) || !error.message.includes('EPERM')) {
+        throw error;
+      }
+      symlinkCreated = false;
+    }
 
     const inventory = await scanRepository({
       rootPath,
@@ -46,28 +54,31 @@ describe('scanRepository skippedArtifacts', () => {
 
     expect(inventory.artifacts.map(artifact => artifact.relativePath)).toContain('src/keep.ts');
 
-    expect(inventory.skippedArtifacts).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          relativePath: 'ignored',
-          source: 'gitignore',
-        }),
-        expect.objectContaining({
-          relativePath: 'logs/app.log',
-          source: 'excludeGlobs',
-          matchedPattern: '**/*.log',
-        }),
-        expect.objectContaining({
-          relativePath: 'src/large.ts',
-          source: 'maxFileSize',
-          sizeBytes: 2048,
-        }),
-        expect.objectContaining({
-          relativePath: 'src/linked.ts',
-          source: 'symlink',
-        }),
-      ]),
-    );
-    expect(inventory.summary.ignoredFiles).toBeGreaterThanOrEqual(4);
+    const expectedSkippedArtifacts = [
+      expect.objectContaining({
+        relativePath: 'ignored',
+        source: 'gitignore',
+      }),
+      expect.objectContaining({
+        relativePath: 'logs/app.log',
+        source: 'excludeGlobs',
+        matchedPattern: '**/*.log',
+      }),
+      expect.objectContaining({
+        relativePath: 'src/large.ts',
+        source: 'maxFileSize',
+        sizeBytes: 2048,
+      }),
+    ];
+
+    if (symlinkCreated) {
+      expectedSkippedArtifacts.push(expect.objectContaining({
+        relativePath: 'src/linked.ts',
+        source: 'symlink',
+      }));
+    }
+
+    expect(inventory.skippedArtifacts).toEqual(expect.arrayContaining(expectedSkippedArtifacts));
+    expect(inventory.summary.ignoredFiles).toBeGreaterThanOrEqual(symlinkCreated ? 4 : 3);
   });
 });

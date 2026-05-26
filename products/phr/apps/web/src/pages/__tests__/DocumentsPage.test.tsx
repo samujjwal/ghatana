@@ -15,7 +15,7 @@ vi.mock('../../i18n/phrI18n', () => ({
 }));
 
 vi.mock('../../auth/PhrSessionContext', () => ({
-  usePhrSession: () => ({ principalId: 'patient-42', tenantId: 't1', role: 'patient', token: 'tok' }),
+  usePhrSession: () => ({ session: { principalId: 'patient-42', tenantId: 't1', role: 'patient' as const, name: 'Test Patient', expiresAt: new Date(Date.now() + 3_600_000).toISOString() }, isAuthenticated: true, setSession: vi.fn(), clearSession: vi.fn() }),
 }));
 
 import { fetchDocuments } from '../../api/phrApi';

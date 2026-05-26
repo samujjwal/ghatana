@@ -258,6 +258,8 @@ data:
   YAPPC_AGENT_COUNT: "27"
   YAPPC_PHASE_COUNT: "4"
   YAPPC_MODE: "production"
+  YAPPC_PROFILE: "production"
+  YAPPC_KERNEL_LIFECYCLE_TRUTH_SOURCE: "data-cloud"
   JAVA_OPTS: "-Xmx2G -Xms1G -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
   METRICS_ENABLED: "true"
   PROMETHEUS_PORT: "9090"

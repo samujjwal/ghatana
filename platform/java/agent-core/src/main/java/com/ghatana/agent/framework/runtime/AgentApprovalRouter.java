@@ -10,6 +10,7 @@ import com.ghatana.agent.framework.governance.ActionIntent;
 import com.ghatana.agent.framework.governance.PolicyDecision;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +40,7 @@ public final class AgentApprovalRouter<O> {
 
     private final PolicyEvaluator policyEvaluator;
     private final ApprovalRequestHandler<O> approvalHandler;
+    private final ApprovalResumeHandler<O> resumeHandler;
 
     /**
      * Evaluates a policy decision for an action intent.
@@ -58,11 +60,31 @@ public final class AgentApprovalRouter<O> {
                 @NotNull AgentResult<O> pendingResult);
     }
 
+    /**
+     * Handles resuming agent execution after approval is granted.
+     */
+    @FunctionalInterface
+    public interface ApprovalResumeHandler<O> {
+        @NotNull Promise<AgentResult<O>> resumeAfterApproval(
+                @NotNull String requestId,
+                @NotNull ApprovalDecision decision,
+                @NotNull String reviewerId,
+                @NotNull String reviewerNote);
+    }
+
     public AgentApprovalRouter(
             @NotNull PolicyEvaluator policyEvaluator,
             @NotNull ApprovalRequestHandler<O> approvalHandler) {
+        this(policyEvaluator, approvalHandler, null);
+    }
+
+    public AgentApprovalRouter(
+            @NotNull PolicyEvaluator policyEvaluator,
+            @NotNull ApprovalRequestHandler<O> approvalHandler,
+            @Nullable ApprovalResumeHandler<O> resumeHandler) {
         this.policyEvaluator = Objects.requireNonNull(policyEvaluator);
         this.approvalHandler = Objects.requireNonNull(approvalHandler);
+        this.resumeHandler = resumeHandler;
     }
 
     /**
@@ -156,5 +178,40 @@ public final class AgentApprovalRouter<O> {
         return "Criticality: %s, Reversibility: %s, Policies: %s"
                 .formatted(intent.criticality(), intent.reversibilityClass(),
                         String.join(", ", decision.policyRefsApplied()));
+    }
+
+    /**
+     * Resumes agent execution after an approval decision is made.
+     *
+     * <p>AGENTS-P1-001: Provides a mechanism to resume agent execution when
+     * a pending approval is granted or rejected. This enables the full approval
+     * lifecycle: request → pending → decision → resume.
+     *
+     * @param requestId the approval request ID
+     * @param decision the approval decision (APPROVED or REJECTED)
+     * @param reviewerId the ID of the reviewer who made the decision
+     * @param reviewerNote optional notes from the reviewer
+     * @return promise completing with the resumed agent result
+     */
+    @NotNull
+    public Promise<AgentResult<O>> resumeAfterApproval(
+            @NotNull String requestId,
+            @NotNull ApprovalDecision decision,
+            @NotNull String reviewerId,
+            @NotNull String reviewerNote) {
+        
+        if (resumeHandler == null) {
+            log.warn("AgentApprovalRouter: resumeAfterApproval called but no resumeHandler configured");
+            return Promise.of(AgentResult.<O>builder()
+                    .confidence(0.0)
+                    .status(AgentResultStatus.FAILED)
+                    .explanation("Approval resume handler not configured")
+                    .build());
+        }
+
+        log.info("AgentApprovalRouter: resuming after approval decision={} requestId={} reviewerId={}",
+                decision, requestId, reviewerId);
+
+        return resumeHandler.resumeAfterApproval(requestId, decision, reviewerId, reviewerNote);
     }
 }

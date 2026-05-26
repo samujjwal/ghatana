@@ -4,12 +4,14 @@ import { ThemeProvider } from '@ghatana/theme';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PhrAccessProvider } from '../auth/PhrAccessContext';
+import { PhrSessionProvider } from '../auth/PhrSessionContext';
 import type { PhrRole } from '../auth/PhrAccessContext';
 import type { DashboardData } from '../types';
 import { PHR_ROLE_ORDER, phrRouteContracts } from '../routeManifest';
 import { attachPhrRouteElement } from '../phrRouteElements';
 import { AppShell } from '../layout/AppShell';
 import { DashboardPage } from '../pages/DashboardPage';
+import { ForbiddenPage } from '../pages/ForbiddenPage';
 import { RecordDetailPage } from '../pages/RecordDetailPage';
 import { ReleaseCockpitPage } from '../pages/ReleaseCockpitPage';
 import { ProtectedPhrRoute } from '../routes';
@@ -196,12 +198,25 @@ function renderDashboardPage(): void {
   );
 }
 
+const testSession = {
+  principalId: 'principal-test',
+  tenantId: 'tenant-test',
+  role: 'patient' as const,
+  name: 'Test User',
+  expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+};
+
+function setTestSession(): void {
+  window.sessionStorage.setItem('phr.session', JSON.stringify(testSession));
+}
+
 describe('PHR web app', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(fetchDashboardData).mockResolvedValue(dashboardFixture);
     mockEntitlementFetch();
     window.localStorage.clear();
+    window.sessionStorage.clear();
     window.history.pushState({}, '', '/');
   });
 
@@ -249,6 +264,7 @@ describe('PHR web app', () => {
 
   it('renders a FHIR record detail fallback for unknown records when patient role grants access', async () => {
     window.localStorage.setItem('phr.currentRole', 'patient');
+    setTestSession();
     const caregiverRoute = {
       path: '/records/:recordId',
       label: 'Record detail',
@@ -258,16 +274,18 @@ describe('PHR web app', () => {
 
     render(
       <ThemeProvider>
-        <PhrAccessProvider>
-          <MemoryRouter initialEntries={['/records/record-missing-001']}>
-            <Routes>
-              <Route
-                path="/records/:recordId"
-                element={<ProtectedPhrRoute route={caregiverRoute} />}
-              />
-            </Routes>
-          </MemoryRouter>
-        </PhrAccessProvider>
+        <PhrSessionProvider>
+          <PhrAccessProvider>
+            <MemoryRouter initialEntries={['/records/record-missing-001']}>
+              <Routes>
+                <Route
+                  path="/records/:recordId"
+                  element={<ProtectedPhrRoute route={caregiverRoute} />}
+                />
+              </Routes>
+            </MemoryRouter>
+          </PhrAccessProvider>
+        </PhrSessionProvider>
       </ThemeProvider>,
     );
 
@@ -279,6 +297,7 @@ describe('PHR web app', () => {
 
   it('denies direct URL access to caregiver routes for patient sessions', async () => {
     window.localStorage.setItem('phr.currentRole', 'patient');
+    setTestSession();
     const recordDetailRoute = {
       path: '/labs',
       label: 'Labs',
@@ -288,22 +307,24 @@ describe('PHR web app', () => {
 
     render(
       <ThemeProvider>
-        <PhrAccessProvider>
-          <MemoryRouter initialEntries={['/labs']}>
-            <Routes>
-              <Route
-                path="/labs"
-                element={<ProtectedPhrRoute route={recordDetailRoute} />}
-              />
-            </Routes>
-          </MemoryRouter>
-        </PhrAccessProvider>
+        <PhrSessionProvider>
+          <PhrAccessProvider>
+            <MemoryRouter initialEntries={['/labs']}>
+              <Routes>
+                <Route
+                  path="/labs"
+                  element={<ProtectedPhrRoute route={recordDetailRoute} />}
+                />
+                <Route path="/forbidden" element={<ForbiddenPage />} />
+              </Routes>
+            </MemoryRouter>
+          </PhrAccessProvider>
+        </PhrSessionProvider>
       </ThemeProvider>,
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Permission denied')).toBeInTheDocument();
-      expect(screen.getByText(/not available for the current persona/i)).toBeInTheDocument();
+      expect(screen.getByText('Access denied')).toBeInTheDocument();
     });
   });
 
@@ -384,25 +405,28 @@ describe('PHR web app', () => {
 
   it('rejects direct URL access to clinician routes for patient persona', async () => {
     window.localStorage.setItem('phr.currentRole', 'patient');
+    setTestSession();
     const emergencyRouteContract = phrRouteContracts.find((route) => route.path === '/emergency');
     const emergencyRoute = emergencyRouteContract ? attachPhrRouteElement(emergencyRouteContract) : undefined;
     expect(emergencyRoute).toBeDefined();
 
     render(
       <ThemeProvider>
-        <PhrAccessProvider>
-          <MemoryRouter initialEntries={['/emergency']}>
-            <Routes>
-              <Route path="/emergency" element={<ProtectedPhrRoute route={emergencyRoute!} />} />
-            </Routes>
-          </MemoryRouter>
-        </PhrAccessProvider>
+        <PhrSessionProvider>
+          <PhrAccessProvider>
+            <MemoryRouter initialEntries={['/emergency']}>
+              <Routes>
+                <Route path="/emergency" element={<ProtectedPhrRoute route={emergencyRoute!} />} />
+                <Route path="/forbidden" element={<ForbiddenPage />} />
+              </Routes>
+            </MemoryRouter>
+          </PhrAccessProvider>
+        </PhrSessionProvider>
       </ThemeProvider>,
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Permission denied')).toBeInTheDocument();
-      expect(screen.getByText(/not available for the current persona/i)).toBeInTheDocument();
+      expect(screen.getByText('Access denied')).toBeInTheDocument();
     });
   });
 }); 

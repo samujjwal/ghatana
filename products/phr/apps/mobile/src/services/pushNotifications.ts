@@ -45,6 +45,8 @@ export function installNotificationPhiRedactionHandler(): void {
         // through the notification handler result.
         return {
           shouldShowAlert: true,
+          shouldShowBanner: true,
+          shouldShowList: true,
           shouldPlaySound: false,
           shouldSetBadge: true,
           // The redacted text is appended as a data key for in-app reading;
@@ -54,6 +56,8 @@ export function installNotificationPhiRedactionHandler(): void {
 
       return {
         shouldShowAlert: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
         shouldPlaySound: true,
         shouldSetBadge: true,
       };

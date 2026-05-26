@@ -112,4 +112,76 @@ public class AudioFileService {
         return Promise.ofBlocking(dbExecutor, () -> repository.countByTenantId(tenantId))
             .whenException(e -> LOG.error("Failed to count AudioFiles: tenantId={}", tenantId, e));
     }
+
+    /**
+     * AV-P1-004: Update audio file status.
+     *
+     * @param tenantId the tenant ID
+     * @param id the audio file ID
+     * @param status the new processing status
+     * @param reason optional reason for status change (for FAILED status)
+     * @return promise completing when status is updated
+     */
+    public Promise<Boolean> updateStatus(String tenantId, UUID id, 
+                                          AudioFileEntity.ProcessingStatus status, 
+                                          String reason) {
+        return Promise.ofBlocking(dbExecutor, () -> repository.updateStatus(tenantId, id, status, reason))
+            .whenResult(updated -> LOG.debug("AudioFile status updated: tenantId={}, id={}, status={}, reason={}", 
+                tenantId, id, status, reason))
+            .whenException(e -> LOG.error("Failed to update AudioFile status: tenantId={}, id={}, status={}", 
+                tenantId, id, status, e));
+    }
+
+    /**
+     * AV-P1-005: Transactional save of audio file with transcription.
+     * Both entities are saved in a single transaction to ensure atomicity.
+     *
+     * @param tenantId the tenant ID
+     * @param audioFile the audio file entity
+     * @param transcription the transcription entity (optional)
+     * @return promise completing with the saved audio file
+     */
+    public Promise<AudioFileEntity> saveWithTranscription(String tenantId, 
+                                                          AudioFileEntity audioFile,
+                                                          com.ghatana.audio.video.infrastructure.persistence.entity.TranscriptionEntity transcription) {
+        return Promise.ofBlocking(dbExecutor, () -> {
+            var tx = repository.getEntityManager().getTransaction();
+            boolean began = false;
+            try {
+                if (!tx.isActive()) {
+                    tx.begin();
+                    began = true;
+                }
+
+                // Save audio file
+                AudioFileEntity savedAudioFile = repository.save(tenantId, audioFile);
+
+                // Save transcription if provided
+                if (transcription != null) {
+                    transcription.setAudioFileId(savedAudioFile.getId());
+                    // Use the same EntityManager for transcription save
+                    jakarta.persistence.EntityManager em = repository.getEntityManager();
+                    if (transcription.getId() == null) {
+                        em.persist(transcription);
+                    } else {
+                        em.merge(transcription);
+                    }
+                }
+
+                if (began) {
+                    tx.commit();
+                }
+
+                LOG.debug("AudioFile and transcription saved atomically: tenantId={}, audioId={}, transcriptionId={}", 
+                    tenantId, savedAudioFile.getId(), transcription != null ? transcription.getId() : "none");
+                return savedAudioFile;
+            } catch (Exception e) {
+                if (began && tx.isActive()) {
+                    tx.rollback();
+                }
+                LOG.error("Failed to save audio file with transcription atomically: tenantId={}", tenantId, e);
+                throw new RuntimeException("Failed to save audio file with transcription: " + e.getMessage(), e);
+            }
+        });
+    }
 }

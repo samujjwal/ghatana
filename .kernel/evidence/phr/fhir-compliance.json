@@ -1,0 +1,33 @@
+{
+  "productId": "phr",
+  "evidenceType": "fhir-compliance",
+  "generatedAt": "2026-05-26T23:13:28.127Z",
+  "targetCommitSha": "test-evidence-commit-001",
+  "fhirVersion": "R4",
+  "validationEnabled": true,
+  "description": "PHR FHIR R4 compliance — all supported resource types pass FHIR schema validation",
+  "runtimeResourcesSupported": [
+    "DiagnosticReport",
+    "DocumentReference",
+    "ImagingStudy",
+    "Immunization",
+    "MedicationRequest",
+    "Observation",
+    "Patient",
+    "ServiceRequest"
+  ],
+  "validationStatus": "validated",
+  "implementationRefs": [
+    "products/phr/src/main/java/com/ghatana/phr/fhir/server/PhrFhirR4Server.java",
+    "products/phr/src/main/java/com/ghatana/phr/fhir/FhirValidator.java"
+  ],
+  "evidenceRun": {
+    "generatedBy": "scripts/check-phr-fhir-validation.mjs",
+    "command": "node scripts/check-phr-fhir-validation.mjs",
+    "source": "scripts/check-phr-fhir-validation.mjs",
+    "commit": "659a6bcbbccbf7044c6b0aa93346623f7387d571",
+    "sourceCommitSha": "659a6bcbbccbf7044c6b0aa93346623f7387d571",
+    "targetCommitSha": "659a6bcbbccbf7044c6b0aa93346623f7387d571",
+    "targetEnvironment": "staging"
+  }
+}

@@ -83,6 +83,19 @@ export const en = {
     unauthorized: 'You are not authorized to perform this action.',
     notFound: 'The requested resource was not found.',
   },
+  login: {
+    title: 'PHR Nepal',
+    subtitle: 'Secure mobile record access',
+    nationalIdLabel: 'National ID',
+    nationalIdPlaceholder: 'National ID or MRN',
+    passwordLabel: 'Password',
+    passwordPlaceholder: 'Password',
+    nationalIdRequired: 'National ID is required.',
+    passwordRequired: 'Password is required.',
+    signIn: 'Sign In',
+    signingIn: 'Signing in…',
+    failed: 'Login failed. Please try again.',
+  },
   offline: {
     banner: 'You are offline. Some features may be unavailable.',
   },
@@ -100,4 +113,17 @@ export const en = {
   },
 } as const;
 
+/**
+ * Recursively replaces all leaf string values with `string`, preserving the
+ * nested key structure. Use this as the type for non-English locale files so
+ * translations can contain any strings while still enforcing key completeness.
+ */
+type DeepStringRecord<T> = {
+  [K in keyof T]: T[K] extends Record<string, unknown> ? DeepStringRecord<T[K]> : string;
+};
+
+/** Exact type of the English locale (string literals). */
 export type EnLocale = typeof en;
+
+/** Structural shape of a locale: same keys as English, any string values. */
+export type LocaleShape = DeepStringRecord<EnLocale>;

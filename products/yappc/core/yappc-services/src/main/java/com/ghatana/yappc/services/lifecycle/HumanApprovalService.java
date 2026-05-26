@@ -60,6 +60,7 @@ public class HumanApprovalService {
     private final ApprovalNotificationService notificationService;
     private final ApprovalRiskScorer riskScorer;
     private final ApprovalAuditLogger auditLogger;
+    private final ApprovalDecisionOutcomeService decisionOutcomeService;
 
     /**
      * @param publisher           AEP event publisher for request / decision events
@@ -72,10 +73,27 @@ public class HumanApprovalService {
             ApprovalNotificationService notificationService,
             ApprovalRiskScorer riskScorer,
             ApprovalAuditLogger auditLogger) {
+        this(publisher, notificationService, riskScorer, auditLogger, ApprovalDecisionOutcomeService.noop());
+    }
+
+    /**
+     * @param publisher              AEP event publisher for request / decision events
+     * @param notificationService    notification broadcaster; may be null (disabled)
+     * @param riskScorer             AI risk scorer for approval routing; may be null (disabled)
+     * @param auditLogger            compliance audit logger; may be null (disabled)
+     * @param decisionOutcomeService learning/evolve decision side-effect service
+     */
+    public HumanApprovalService(
+            AepEventPublisher publisher,
+            ApprovalNotificationService notificationService,
+            ApprovalRiskScorer riskScorer,
+            ApprovalAuditLogger auditLogger,
+            ApprovalDecisionOutcomeService decisionOutcomeService) {
         this.publisher            = Objects.requireNonNull(publisher, "publisher must not be null");
         this.notificationService  = notificationService;
         this.riskScorer           = riskScorer;
         this.auditLogger          = auditLogger;
+        this.decisionOutcomeService = Objects.requireNonNull(decisionOutcomeService, "decisionOutcomeService");
     }
 
     /**
@@ -189,7 +207,7 @@ public class HumanApprovalService {
                 if (e != null) log.warn("[tenant={}] Audit-approved failed id={}: {}", tenantId, requestId, e.getMessage());
             });
         }
-        return Promise.of(updated);
+        return decisionOutcomeService.recordDecision(updated).map(ignored -> updated);
     }
 
     /**
@@ -220,7 +238,7 @@ public class HumanApprovalService {
                 if (e != null) log.warn("[tenant={}] Audit-rejected failed id={}: {}", tenantId, requestId, e.getMessage());
             });
         }
-        return Promise.of(updated);
+        return decisionOutcomeService.recordDecision(updated).map(ignored -> updated);
     }
 
     /**
@@ -333,20 +351,30 @@ public class HumanApprovalService {
         var m = new java.util.LinkedHashMap<String, Object>();
         m.put("requestId",          req.id());
         m.put("projectId",          req.projectId());
-        m.put("requestingAgentId",  req.requestingAgentId());
+        putIfPresent(m, "requestingAgentId", req.requestingAgentId());
         m.put("approvalType",       req.approvalType().name());
         m.put("status",             req.status().name());
         m.put("tenantId",           req.tenantId());
         m.put("createdAt",          req.createdAt().toString());
-        m.put("decidedAt",          req.decidedAt() != null ? req.decidedAt().toString() : null);
-        m.put("decidedBy",          req.decidedBy());
+        putIfPresent(m, "decidedAt", req.decidedAt() != null ? req.decidedAt().toString() : null);
+        putIfPresent(m, "decidedBy", req.decidedBy());
         if (req.context() != null) {
-            m.put("fromPhase",       req.context().fromPhase());
-            m.put("toPhase",         req.context().toPhase());
-            m.put("blockReason",     req.context().blockReason());
+            putIfPresent(m, "fromPhase", req.context().fromPhase());
+            putIfPresent(m, "toPhase", req.context().toPhase());
+            putIfPresent(m, "blockReason", req.context().blockReason());
             m.put("unmetCriteria",   req.context().unmetCriteria());
             m.put("missingArtifacts",req.context().missingArtifacts());
+            putIfPresent(m, "workflowId", req.context().workflowId());
+            putIfPresent(m, "planId", req.context().planId());
+            putIfPresent(m, "priorPlanId", req.context().priorPlanId());
+            putIfPresent(m, "evolutionProposalId", req.context().evolutionProposalId());
         }
         return m;
+    }
+
+    private static void putIfPresent(Map<String, Object> payload, String key, Object value) {
+        if (value != null) {
+            payload.put(key, value);
+        }
     }
 }

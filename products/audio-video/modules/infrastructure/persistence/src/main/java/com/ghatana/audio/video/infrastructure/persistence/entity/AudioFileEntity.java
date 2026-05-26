@@ -101,6 +101,10 @@ public class AudioFileEntity implements Serializable {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
+    // AV-P1-004: Failure reason for FAILED status
+    @Column(name = "failure_reason", length = 1024)
+    private String failureReason;
+
     public enum ProcessingStatus {
         PENDING, PROCESSING, COMPLETED, FAILED, ARCHIVED
     }
@@ -179,4 +183,8 @@ public class AudioFileEntity implements Serializable {
 
     public Instant getDeletedAt() { return deletedAt; }
     public void setDeletedAt(Instant deletedAt) { this.deletedAt = deletedAt; }
+
+    // AV-P1-004: Failure reason getter/setter
+    public String getFailureReason() { return failureReason; }
+    public void setFailureReason(String failureReason) { this.failureReason = failureReason; }
 }

@@ -46,6 +46,10 @@ spec:
               protocol: TCP
 
           env:
+            - name: YAPPC_PROFILE
+              value: "production"
+            - name: YAPPC_KERNEL_LIFECYCLE_TRUTH_SOURCE
+              value: "data-cloud"
             - name: YAPPC_LIFECYCLE_PORT
               value: "8082"
             - name: YAPPC_ENCRYPTION_KEY

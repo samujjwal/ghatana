@@ -273,9 +273,9 @@ export default defineConfig({
       ),
       'yappc-auth/rbac': path.resolve(
         __dirname,
-        '../libs/yappc-auth/dist/auth/rbac/index.js'
+        '../libs/yappc-auth/src/auth/rbac/index.ts'
       ),
-      'yappc-auth': path.resolve(__dirname, '../libs/yappc-auth/dist'),
+      'yappc-auth': path.resolve(__dirname, '../libs/yappc-auth/src/index.ts'),
       'yappc-chat': path.resolve(__dirname, '../libs/yappc-chat/src'),
       'yappc-collab': path.resolve(__dirname, '../libs/collab/src'),
       'yappc-initialization-ui': path.resolve(__dirname, '../libs/yappc-initialization-ui/src'),
@@ -296,6 +296,14 @@ export default defineConfig({
       '@ghatana/platform-utils': path.resolve(
         __dirname,
         '../../../../platform/typescript/platform-utils/src/index.ts'
+      ),
+      '@ghatana/api': path.resolve(
+        __dirname,
+        '../../../../platform/typescript/api/src/index.ts'
+      ),
+      '@ghatana/api/middleware': path.resolve(
+        __dirname,
+        '../../../../platform/typescript/api/src/middleware/index.ts'
       ),
       '@ghatana/i18n': path.resolve(
         __dirname,

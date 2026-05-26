@@ -550,6 +550,8 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     <PhaseStatusPanels
       phase={phase}
       preview={preview}
+      previewHealth={packet.healthSignals.preview}
+      agentGovernance={packet.healthSignals.agentGovernance}
       blockers={blockers}
       activity={activity}
     />
@@ -723,6 +725,18 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
                 {t('phaseCockpit.runPost.description')}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  tone="warning"
+                  size="small"
+                  className="border-warning-border bg-warning-bg text-warning-color"
+                  data-testid="run-retry"
+                  disabled={isRunPostActionPending}
+                  onClick={() => handleRunPostAction('retry')}
+                >
+                  {t('phaseCockpit.runPost.retry')}
+                </Button>
                 <Button
                   type="button"
                   variant="outline"

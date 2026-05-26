@@ -6,6 +6,8 @@ import type { GenerateArtifactsRequest } from '../models/GenerateArtifactsReques
 import type { GenerateArtifactsResponse } from '../models/GenerateArtifactsResponse';
 import type { GenerateReviewDecisionRequest } from '../models/GenerateReviewDecisionRequest';
 import type { GenerateReviewDecisionResponse } from '../models/GenerateReviewDecisionResponse';
+import type { KernelProductUnitIntentRequest } from '../models/KernelProductUnitIntentRequest';
+import type { KernelProductUnitIntentResponse } from '../models/KernelProductUnitIntentResponse';
 import type { RegenerateDiffRequest } from '../models/RegenerateDiffRequest';
 import type { RegenerateDiffResponse } from '../models/RegenerateDiffResponse';
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -67,6 +69,36 @@ export class GenerateService {
             },
             body: requestBody,
             mediaType: 'application/json',
+        });
+    }
+    /**
+     * Generate Kernel ProductUnitIntent from saved project state
+     * @param xTenantId
+     * @param xWorkspaceId
+     * @param xProjectId
+     * @param requestBody
+     * @returns KernelProductUnitIntentResponse Kernel ProductUnitIntent generated and validated
+     * @throws ApiError
+     */
+    public static generateProductUnitIntent(
+        xTenantId: string,
+        xWorkspaceId: string,
+        xProjectId: string,
+        requestBody: KernelProductUnitIntentRequest,
+    ): CancelablePromise<KernelProductUnitIntentResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/yappc/generate/product-unit-intent',
+            headers: {
+                'X-Tenant-ID': xTenantId,
+                'X-Workspace-ID': xWorkspaceId,
+                'X-Project-ID': xProjectId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Bad request â€” invalid or missing parameters`,
+            },
         });
     }
     /**

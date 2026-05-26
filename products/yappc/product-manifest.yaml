@@ -1,0 +1,184 @@
+# YAPPC Product Manifest
+# Platform-provider product for AI-powered code analysis and refactoring
+
+schemaVersion: "1.0.0"
+id: yappc
+version: "1.0.0"
+product: yappc
+kind: platform-provider
+domain: platform-tooling
+kernelCapabilitiesConsumed:
+  - product-unit-intent
+  - artifact-intelligence
+  - lifecycle-planning
+  - lifecycle-execution
+  - artifact-validation
+policyActions:
+  - scaffold
+  - refactor
+  - analyze
+  - generate
+policyResources:
+  - yappc:codebase
+  - yappc:architecture
+  - yappc:dependencies
+policies:
+  actions:
+    - scaffold
+    - refactor
+    - analyze
+    - generate
+  resources:
+    - yappc:codebase
+    - yappc:architecture
+    - yappc:dependencies
+pluginsConsumed:
+  - plugin-audit-trail
+  - plugin-compliance
+bridgesConsumed:
+  - data-cloud-kernel-bridge
+domainPacksProvided:
+  - yappc-scaffolding-domain
+  - yappc-refactoring-domain
+uiSurfaces:
+  - web
+  - cli
+runtimeServices:
+  - api-server
+  - agent-runtime
+  - knowledge-graph
+surfaces:
+  ui:
+    - web
+    - cli
+  runtime:
+    - api-server
+    - agent-runtime
+    - knowledge-graph
+dataSensitivity: internal-platform
+capabilities:
+  - id: yappc.code-scaffolding
+    name: "Code Scaffolding"
+    type: GENERATION
+    description: "Generate project scaffolds, module templates, and boilerplate code"
+    metadata:
+      languages: java,typescript,python,go
+      frameworks: spring,react,next,express
+
+  - id: yappc.code-refactoring
+    name: "Code Refactoring"
+    type: TRANSFORMATION
+    description: "AI-powered code refactoring with safety guarantees and audit trails"
+    metadata:
+      refactoring_types: extract-method,rename-variable,introduce-constant
+      safety: rollback-supported
+
+  - id: yappc.architecture-analysis
+    name: "Architecture Analysis"
+    type: ANALYSIS
+    description: "Analyze code architecture, detect patterns, and suggest improvements"
+    metadata:
+      analysis_types: dependency,coupling,complexity,security
+
+  - id: yappc.agent-workflow
+    name: "Agent Workflow"
+    type: WORKFLOW
+    description: "Multi-agent workflow orchestration for complex refactoring tasks"
+    metadata:
+      agent_types: code-specialist,delivery-specialist,testing-specialist,architecture-specialist
+
+  - id: yappc.knowledge-graph
+    name: "Knowledge Graph"
+    type: DATA_MANAGEMENT
+    description: "Code knowledge graph for semantic search and context-aware generation"
+    metadata:
+      graph_type: code-dependency,semantic-relationships
+
+extensions:
+  - id: yappc.spring-boot-scaffold
+    name: "Spring Boot Scaffold Extension"
+    description: "Spring Boot project scaffolding extension"
+    target_capability: yappc.code-scaffolding
+
+  - id: yappc.react-scaffold
+    name: "React Scaffold Extension"
+    description: "React application scaffolding extension"
+    target_capability: yappc.code-scaffolding
+
+  - id: yappc.security-analysis
+    name: "Security Analysis Extension"
+    description: "Security vulnerability detection and remediation extension"
+    target_capability: yappc.architecture-analysis
+
+modules:
+  - name: yappc-api
+    description: "YAPPC REST API and control plane"
+  - name: yappc-domain-impl
+    description: "YAPPC domain model implementation"
+  - name: yappc-facades
+    description: "YAPPC facade layer for external access"
+  - name: yappc-infrastructure
+    description: "YAPPC infrastructure adapters"
+  - name: yappc-services
+    description: "YAPPC business logic services"
+  - name: yappc-shared
+    description: "YAPPC shared utilities and constants"
+  - name: scaffold
+    description: "Code scaffolding engine"
+  - name: scaffold-api
+    description: "Scaffolding API definitions"
+  - name: scaffold-core
+    description: "Scaffolding core engine"
+  - name: scaffold-templates
+    description: "Scaffolding template repository"
+  - name: scaffold-engine
+    description: "Scaffolding template engine"
+  - name: scaffold-generators
+    description: "Code generators for various languages"
+  - name: ai
+    description: "AI integration layer"
+  - name: agents-runtime
+    description: "Agent runtime and execution engine"
+  - name: agents-workflow
+    description: "Agent workflow orchestration"
+  - name: agents-common
+    description: "Common agent utilities"
+  - name: agents-code-specialists
+    description: "Code analysis and refactoring agents"
+  - name: agents-delivery-specialists
+    description: "Build and deployment agents"
+  - name: agents-testing-specialists
+    description: "Test generation and validation agents"
+  - name: agents-architecture-specialists
+    description: "Architecture analysis agents"
+  - name: cli-tools
+    description: "Command-line interface tools"
+  - name: knowledge-graph
+    description: "Code knowledge graph implementation"
+  - name: refactorer-api
+    description: "Refactoring API"
+  - name: refactorer-engine
+    description: "Refactoring engine"
+  - name: infrastructure-datacloud
+    description: "Data-Cloud integration"
+  - name: kernel-bridge
+    description: "Kernel bridge for product-unit-intent export"
+
+deployment:
+  type: platform-provider
+  dependencies:
+    - platform:java:kernel
+    - platform:java:security
+    - platform:java:audit
+    - platform:java:observability
+    - platform:java:database
+    - platform:java:agent-core
+    - platform:java:ai-integration
+
+metadata:
+  created: "2026-03-19"
+  author: "Ghatana YAPPC Team"
+  documentation: "products/yappc/README.md"
+  productName: "YAPPC Product"
+  description: "Yet Another Platform for Platform Composition — AI-powered code analysis and refactoring platform"
+  type: platform-provider

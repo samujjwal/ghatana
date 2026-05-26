@@ -104,7 +104,7 @@ public final class PhrEmergencyRoutes {
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
-        if (!context.principalId().equals(patientId) && !PhrRouteSupport.isPrivileged(context)) {
+        if (!context.principalId().equals(patientId) && !PhrRouteSupport.hasClinicalRole(context)) {
             return PhrRouteSupport.errorResponse(403, "EMERGENCY_LOG_DENIED", "Patient emergency log is not visible to this principal");
         }
         return emergencyAccessLogService.getPatientEmergencyLog(patientId)
@@ -124,7 +124,7 @@ public final class PhrEmergencyRoutes {
         } catch (RuntimeException ex) {
             return PhrRouteSupport.errorResponse(400, "INVALID_PENDING_REVIEW_QUERY", ex.getMessage());
         }
-        if (!PhrRouteSupport.isPrivileged(context)) {
+        if (!PhrRouteSupport.canPerformAdminOperation(context)) {
             return PhrRouteSupport.errorResponse(403, "REVIEWER_REQUIRED", "Only administrators can list emergency reviews");
         }
         return emergencyAccessLogService.getPendingReviews(limit)
@@ -140,7 +140,7 @@ public final class PhrEmergencyRoutes {
         } catch (RuntimeException ex) {
             return PhrRouteSupport.errorResponse(400, "INVALID_OVERDUE_REVIEW_QUERY", ex.getMessage());
         }
-        if (!PhrRouteSupport.isPrivileged(context)) {
+        if (!PhrRouteSupport.canPerformAdminOperation(context)) {
             return PhrRouteSupport.errorResponse(403, "REVIEWER_REQUIRED", "Only administrators can list overdue emergency reviews");
         }
         return emergencyAccessLogService.getOverdueReviews(limit)
@@ -154,7 +154,7 @@ public final class PhrEmergencyRoutes {
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
-        if (!PhrRouteSupport.isPrivileged(context)) {
+        if (!PhrRouteSupport.canPerformAdminOperation(context)) {
             return PhrRouteSupport.errorResponse(403, "REVIEWER_REQUIRED", "Only administrators can review emergency access");
         }
 
@@ -178,7 +178,7 @@ public final class PhrEmergencyRoutes {
     private static boolean canReadEvent(
             PhrRouteSupport.PhrRequestContext context,
             EmergencyAccessLogService.EmergencyAccessEvent event) {
-        return PhrRouteSupport.isPrivileged(context)
+        return PhrRouteSupport.hasClinicalRole(context)
             || context.principalId().equals(event.patientId())
             || context.principalId().equals(event.accessorId());
     }
@@ -190,7 +190,7 @@ public final class PhrEmergencyRoutes {
             JsonNode node = PhrRouteSupport.JSON.readTree(json);
             String patientId = requiredText(node, "patientId");
             String accessorId = text(node, "accessorId", context.principalId());
-            if (!context.principalId().equals(accessorId) && !PhrRouteSupport.isPrivileged(context)) {
+            if (!context.principalId().equals(accessorId)) {
                 throw new IllegalArgumentException("accessorId must match X-Principal-ID");
             }
             return new EmergencyAccessLogService.EmergencyAccessEvent(

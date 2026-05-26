@@ -3,6 +3,9 @@ package com.ghatana.phr.application.audit;
 import com.ghatana.phr.application.patient.PatientOperationContext;
 import io.activej.promise.Promise;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +24,7 @@ import java.util.concurrent.ConcurrentMap;
 public class AccessAuditServiceImpl implements AccessAuditService {
 
     private final ConcurrentMap<String, List<AccessEvent>> accessLogs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, OcrAuditTrail> ocrAuditTrails = new ConcurrentHashMap<>();
 
     @Override
     public Promise<AccessLog> getAccessLog(PatientOperationContext ctx, String patientId) {
@@ -93,5 +97,128 @@ public class AccessAuditServiceImpl implements AccessAuditService {
         );
         
         return Promise.of(report);
+    }
+
+    // PHR-P1-008: OCR audit/evidence trail implementation
+
+    @Override
+    public Promise<Void> recordOcrExtraction(
+            PatientOperationContext ctx,
+            String documentId,
+            String extractedText,
+            float confidence) {
+        String textHash = hashText(extractedText);
+        OcrExtractionEvent extraction = new OcrExtractionEvent(
+            "OCR-EXT-" + UUID.randomUUID().toString().substring(0, 8),
+            Instant.now().toString(),
+            textHash,
+            confidence,
+            "en", // Default language, would be parameterized in real implementation
+            "1.0"  // Engine version
+        );
+        
+        // Store or update OCR audit trail
+        OcrAuditTrail existing = ocrAuditTrails.get(documentId);
+        if (existing == null) {
+            OcrAuditTrail trail = new OcrAuditTrail(
+                documentId,
+                ctx.patientId(),
+                extraction,
+                null, // No confirmation yet
+                Instant.now().toString()
+            );
+            ocrAuditTrails.put(documentId, trail);
+        } else {
+            // Update extraction event
+            OcrAuditTrail updated = new OcrAuditTrail(
+                documentId,
+                existing.patientId(),
+                extraction,
+                existing.confirmation(),
+                existing.createdAt()
+            );
+            ocrAuditTrails.put(documentId, updated);
+        }
+        
+        return Promise.of(null);
+    }
+
+    @Override
+    public Promise<Void> recordOcrConfirmation(
+            PatientOperationContext ctx,
+            String documentId,
+            String originalHash,
+            String correctedHash,
+            String reviewerId) {
+        boolean hasChanges = !originalHash.equals(correctedHash);
+        OcrConfirmationEvent confirmation = new OcrConfirmationEvent(
+            "OCR-CONF-" + UUID.randomUUID().toString().substring(0, 8),
+            Instant.now().toString(),
+            originalHash,
+            correctedHash,
+            reviewerId,
+            ctx.role(),
+            hasChanges
+        );
+        
+        // Update OCR audit trail with confirmation
+        OcrAuditTrail existing = ocrAuditTrails.get(documentId);
+        if (existing != null) {
+            OcrAuditTrail updated = new OcrAuditTrail(
+                documentId,
+                existing.patientId(),
+                existing.extraction(),
+                confirmation,
+                existing.createdAt()
+            );
+            ocrAuditTrails.put(documentId, updated);
+        } else {
+            // Create trail with confirmation only (extraction not recorded)
+            OcrAuditTrail trail = new OcrAuditTrail(
+                documentId,
+                ctx.patientId(),
+                null, // No extraction event
+                confirmation,
+                Instant.now().toString()
+            );
+            ocrAuditTrails.put(documentId, trail);
+        }
+        
+        return Promise.of(null);
+    }
+
+    @Override
+    public Promise<OcrAuditTrail> getOcrAuditTrail(PatientOperationContext ctx, String documentId) {
+        OcrAuditTrail trail = ocrAuditTrails.get(documentId);
+        if (trail == null) {
+            return Promise.of(new OcrAuditTrail(
+                documentId,
+                ctx.patientId(),
+                null,
+                null,
+                Instant.now().toString()
+            ));
+        }
+        return Promise.of(trail);
+    }
+
+    // Helper method for text hashing
+    private String hashText(String text) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(text.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            // Fallback to simple hash if SHA-256 not available
+            return String.valueOf(text.hashCode());
+        }
     }
 }

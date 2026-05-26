@@ -20,6 +20,9 @@ dependencies {
     // Multi-tenancy
     implementation(project(":platform:java:governance"))
 
+    // Platform audit (AuditService, AuditEvent)
+    implementation(project(":platform:java:audit"))
+
     // Persistence integration
     implementation(project(":products:audio-video:modules:infrastructure:persistence"))
 

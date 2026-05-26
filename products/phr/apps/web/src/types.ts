@@ -109,9 +109,14 @@ export interface AuditEventsPage {
 
 export interface ConsentGrantRequest {
   patientId: string;
-  granteeId: string;
+  recipientId: string;
   purpose: string;
-  resourceTypes: string[];
+  scope: {
+    resourceTypes: string[];
+    allDocuments?: boolean;
+    specificDocumentIds?: string[];
+    actions?: string[];
+  };
   expiresAt: string;
 }
 

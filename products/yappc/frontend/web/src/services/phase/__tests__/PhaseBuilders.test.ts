@@ -488,11 +488,23 @@ describe('phase services', () => {
     }
   });
 
-  it('records run rollback and promote through the canonical backend contract and hands off observe locally', async () => {
+  it('records run retry, rollback, and promote through the canonical backend contract and hands off observe locally', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
 
     fetchMock
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ id: 'audit-retry-1', timestamp: '2026-05-07T12:00:00.000Z' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ id: 'retry-1', runSpecRef: 'workflow-run-1-retry', status: 'SUCCESS' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      )
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({ id: 'audit-rollback-1', timestamp: '2026-05-07T12:00:00.000Z' }),
@@ -524,6 +536,11 @@ describe('phase services', () => {
         ),
       );
 
+    const retry = await executeRunPostAction({
+      projectId: 'proj-42',
+      runId: 'workflow-run-1',
+      action: 'retry',
+    });
     const rollback = await executeRunPostAction({
       projectId: 'proj-42',
       runId: 'workflow-run-1',
@@ -541,12 +558,30 @@ describe('phase services', () => {
       action: 'observe',
     });
 
+    expect(retry.message).toContain('retry requested');
     expect(rollback.message).toContain('rollback requested');
     expect(promote.message).toContain('promotion requested');
     expect(observe).toMatchObject({
       kind: 'navigate',
       status: 'OBSERVATION_HANDOFF',
     });
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/yappc/run/retry',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          failedRunId: 'workflow-run-1',
+          runSpec: {
+            id: 'workflow-run-1-retry',
+            environment: 'staging',
+            tasks: [],
+            config: {
+              retryOf: 'workflow-run-1',
+            },
+          },
+        }),
+      }),
+    );
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/v1/yappc/run/rollback',
       expect.objectContaining({

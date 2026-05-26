@@ -87,6 +87,9 @@ public final class AgentEventOperatorCapabilityAdapter
     private final AtomicLong failureCount = new AtomicLong();
     private final AtomicLong timeoutCount = new AtomicLong();
     private final AtomicLong deniedCount = new AtomicLong();
+    private final AtomicLong pendingApprovalCount = new AtomicLong();
+    private final AtomicLong guardrailDeniedCount = new AtomicLong();
+    private final AtomicLong policyDeniedCount = new AtomicLong();
     private final AtomicLong totalLatencyNanos = new AtomicLong();
     private volatile OperatorState state = OperatorState.CREATED;
     private volatile OperatorConfig config = OperatorConfig.empty();
@@ -273,6 +276,7 @@ public final class AgentEventOperatorCapabilityAdapter
     }
 
     @Override
+    @Deprecated
     public Promise<OperatorResult> process(Event event) {
         // GHATANA-4321: temporary UnifiedOperator bridge; remove by 2026-06-30
         // after callers use process(EventContext, OperatorRuntimeContext).
@@ -341,6 +345,9 @@ public final class AgentEventOperatorCapabilityAdapter
             Map.entry("failure", failureCount.get()),
             Map.entry("timeout", timeoutCount.get()),
             Map.entry("denied", deniedCount.get()),
+            Map.entry("pendingApproval", pendingApprovalCount.get()),
+            Map.entry("guardrailDenied", guardrailDeniedCount.get()),
+            Map.entry("policyDenied", policyDeniedCount.get()),
             Map.entry("latencyNanosTotal", totalNanos),
             Map.entry("latencyNanosAverage", invocations == 0 ? 0 : totalNanos / invocations),
             Map.entry("lastOutcome", lastOutcome),
@@ -373,9 +380,34 @@ public final class AgentEventOperatorCapabilityAdapter
             EventContext<Map<String, Object>> input,
             OperatorRuntimeContext ctx,
             long latencyNanos) {
+        // AGENT-P1-001: Map PENDING_APPROVAL to explicit non-success result
         if (result.getStatus() == AgentResultStatus.FAILED
                 || result.getStatus() == AgentResultStatus.TIMEOUT) {
             return EventOperatorResult.failure(List.of(nonBlank(result.getExplanation(), "Agent execution failed")));
+        }
+        if (result.getStatus() == AgentResultStatus.PENDING_APPROVAL) {
+            pendingApprovalCount.incrementAndGet();
+            Map<String, Object> evidence = new LinkedHashMap<>();
+            evidence.put("agentRef", agentRef);
+            evidence.put("capabilityId", capabilityId.value());
+            evidence.put("operatorId", operatorId.toString());
+            evidence.put("tenantId", ctx.tenantId());
+            evidence.put("traceId", ctx.traceId().orElseThrow());
+            evidence.put("correlationId", ctx.correlationId().orElseThrow());
+            evidence.put("latencyNanos", latencyNanos);
+            evidence.put("agentConfidence", result.getConfidence());
+            evidence.put("agentEvidence", result.getEvidence());
+            evidence.put("sideEffectProfile", descriptor.sideEffectProfile().name());
+            evidence.put("auditPolicy", observabilityPolicy.getOrDefault("auditPolicy", Map.of()));
+            evidence.put("idempotencyRequired", Boolean.TRUE.equals(replayPolicy.get("idempotencyRequired")));
+            evidence.put("approvalStatus", "PENDING_APPROVAL");
+            return new EventOperatorResult<>(
+                false,
+                Optional.empty(),
+                List.of(),
+                mapUncertainty(input.uncertainty(), result),
+                evidence,
+                List.of(nonBlank(result.getExplanation(), "Agent execution requires approval")));
         }
         Map<String, Object> evidence = new LinkedHashMap<>();
         evidence.put("agentRef", agentRef);
@@ -456,6 +488,7 @@ public final class AgentEventOperatorCapabilityAdapter
             return;
         }
         if (result.getStatus() == AgentResultStatus.PENDING_APPROVAL) {
+            pendingApprovalCount.incrementAndGet();
             deniedCount.incrementAndGet();
             lastOutcome = "pending_approval";
             return;
@@ -531,6 +564,15 @@ public final class AgentEventOperatorCapabilityAdapter
         if (!Boolean.TRUE.equals(replayPolicy.get("idempotencyRequired"))) {
             throw new IllegalArgumentException("SIDE_EFFECTING capability requires replayPolicy.idempotencyRequired");
         }
+        // AGENT-P1-003: Validate compensation policy if idempotency is not guaranteed
+        String compensationPolicy = String.valueOf(replayPolicy.getOrDefault("compensationPolicy", "none"));
+        if (!compensationPolicy.equals("none") && !compensationPolicy.equals("rollback") && !compensationPolicy.equals("compensating-transaction")) {
+            throw new IllegalArgumentException("replayPolicy.compensationPolicy must be one of: none, rollback, compensating-transaction");
+        }
+        // AGENT-P1-003: If compensation is required, validate compensation strategy
+        if (!compensationPolicy.equals("none") && !hasPolicy(replayPolicy, "compensationStrategy")) {
+            throw new IllegalArgumentException("replayPolicy.compensationStrategy is required when compensationPolicy is not none");
+        }
     }
 
     private static void requireDurableMemoryStore(MemoryStore memoryStore, Map<String, Object> memoryPolicy) {
@@ -600,4 +642,5 @@ public final class AgentEventOperatorCapabilityAdapter
     private static String sanitize(@NotNull String value) {
         return value.toLowerCase().replaceAll("[^a-z0-9-]+", "-").replaceAll("^-+|-+$", "");
     }
+
 }

@@ -119,7 +119,7 @@ class PhrCaregiverRoutesTest extends EventloopTestBase {
 
     private static HttpRequest contextRequest(
             HttpMethod method, String path, String tenantId, String principalId, String role) {
-        return HttpRequest.of(method, "http://localhost" + path)
+        return HttpRequest.builder(method, "http://localhost" + path)
             .withHeader(HttpHeaders.of("X-Tenant-ID"), tenantId)
             .withHeader(HttpHeaders.of("X-Principal-ID"), principalId)
             .withHeader(HttpHeaders.of("X-Role"), role)

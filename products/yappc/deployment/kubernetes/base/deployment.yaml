@@ -78,6 +78,10 @@ spec:
               protocol: TCP
 
           env:
+            - name: YAPPC_PROFILE
+              value: "production"
+            - name: YAPPC_KERNEL_LIFECYCLE_TRUTH_SOURCE
+              value: "data-cloud"
             # Database
             - name: DATABASE_URL
               valueFrom:

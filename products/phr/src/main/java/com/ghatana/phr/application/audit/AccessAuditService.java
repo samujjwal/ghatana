@@ -52,6 +52,51 @@ public interface AccessAuditService {
      */
     Promise<AuditReport> generateAuditReport(PatientOperationContext ctx, String patientId);
 
+    // PHR-P1-008: OCR audit/evidence trail methods
+
+    /**
+     * Record OCR extraction event.
+     *
+     * @param ctx            operation context
+     * @param documentId     document ID
+     * @param extractedText  extracted text
+     * @param confidence     OCR confidence score
+     * @return promise of completion
+     */
+    Promise<Void> recordOcrExtraction(
+        PatientOperationContext ctx,
+        String documentId,
+        String extractedText,
+        float confidence
+    );
+
+    /**
+     * Record OCR confirmation event.
+     *
+     * @param ctx            operation context
+     * @param documentId     document ID
+     * @param originalHash   hash of original extracted text
+     * @param correctedHash  hash of corrected text
+     * @param reviewerId     reviewer principal ID
+     * @return promise of completion
+     */
+    Promise<Void> recordOcrConfirmation(
+        PatientOperationContext ctx,
+        String documentId,
+        String originalHash,
+        String correctedHash,
+        String reviewerId
+    );
+
+    /**
+     * Get OCR audit trail for a document.
+     *
+     * @param ctx        operation context
+     * @param documentId document ID
+     * @return OCR audit trail
+     */
+    Promise<OcrAuditTrail> getOcrAuditTrail(PatientOperationContext ctx, String documentId);
+
     // ── Response types ─────────────────────────────────────────────────────────
 
     record AccessLog(
@@ -98,5 +143,34 @@ public interface AccessAuditService {
         Map<String, Object> summary,
         List<AccessEvent> events,
         List<AccessAnomaly> anomalies
+    ) {}
+
+    // PHR-P1-008: OCR audit/evidence types
+
+    record OcrAuditTrail(
+        String documentId,
+        String patientId,
+        OcrExtractionEvent extraction,
+        OcrConfirmationEvent confirmation,
+        String createdAt
+    ) {}
+
+    record OcrExtractionEvent(
+        String eventId,
+        String timestamp,
+        String extractedTextHash,
+        float confidence,
+        String language,
+        String engineVersion
+    ) {}
+
+    record OcrConfirmationEvent(
+        String eventId,
+        String timestamp,
+        String originalTextHash,
+        String correctedTextHash,
+        String reviewerId,
+        String reviewerRole,
+        boolean hasChanges
     ) {}
 }

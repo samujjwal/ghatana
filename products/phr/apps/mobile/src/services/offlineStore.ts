@@ -6,14 +6,14 @@
  *   the cache window expires (default 8 hours to match a clinical shift).
  * - The envelope includes a schemaVersion field so future migrations can
  *   detect and discard incompatible payloads.
- * - Encryption at rest: this file is the canonical location for adding
- *   react-native-encrypted-storage once it is provisioned in the build.
- *   Until then, TTL expiry is the primary PHI protection mechanism.
+ * - Encryption at rest: PHI is encrypted via AES-256-GCM using the
+ *   `phiEncryptedStorage` adapter. The key is held in the OS keychain
+ *   via expo-secure-store; AsyncStorage holds ciphertext only.
  *   Consent revocation must call `clearDashboardOffline()` directly.
  *
  * NEVER call `AsyncStorage.setItem` with PHI outside this module.
  */
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { phiGet, phiRemove, phiSet } from './phiEncryptedStorage';
 import type { MobileDashboard } from '../types';
 
 const DASHBOARD_KEY = 'phr-mobile-dashboard';
@@ -39,7 +39,7 @@ export async function saveDashboardOffline(
     ttlMs,
     data: dashboard,
   };
-  await AsyncStorage.setItem(DASHBOARD_KEY, JSON.stringify(envelope));
+  await phiSet(DASHBOARD_KEY, JSON.stringify(envelope));
 }
 
 /**
@@ -48,7 +48,7 @@ export async function saveDashboardOffline(
  * Callers must not use a `null` result to serve stale PHI.
  */
 export async function loadDashboardOffline(): Promise<MobileDashboard | null> {
-  const raw = await AsyncStorage.getItem(DASHBOARD_KEY);
+  const raw = await phiGet(DASHBOARD_KEY);
   if (!raw) return null;
 
   let envelope: DashboardCacheEnvelope;
@@ -81,5 +81,5 @@ export async function loadDashboardOffline(): Promise<MobileDashboard | null> {
  * Must be called on consent revocation or session termination.
  */
 export async function clearDashboardOffline(): Promise<void> {
-  await AsyncStorage.removeItem(DASHBOARD_KEY);
+  await phiRemove(DASHBOARD_KEY);
 }

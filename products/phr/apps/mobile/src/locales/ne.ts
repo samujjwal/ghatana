@@ -3,9 +3,9 @@
  *
  * All values are Devanagari translations. Keys must match the English locale exactly.
  */
-import type { EnLocale } from './en';
+import type { LocaleShape } from './en';
 
-export const ne: EnLocale = {
+export const ne: LocaleShape = {
   tabs: {
     home: 'गृह',
     records: 'अभिलेख',
@@ -86,6 +86,19 @@ export const ne: EnLocale = {
     session: 'तपाईंको सत्र समाप्त भयो। पुनः साइन इन गर्नुहोस्।',
     unauthorized: 'यो कार्य गर्न तपाईंलाई अनुमति छैन।',
     notFound: 'अनुरोध गरिएको स्रोत फेला परेन।',
+  },
+  login: {
+    title: 'PHR नेपाल',
+    subtitle: 'सुरक्षित मोबाइल रेकर्ड पहुँच',
+    nationalIdLabel: 'राष्ट्रिय परिचयपत्र',
+    nationalIdPlaceholder: 'राष्ट्रिय परिचयपत्र वा MRN',
+    passwordLabel: 'पासवर्ड',
+    passwordPlaceholder: 'पासवर्ड',
+    nationalIdRequired: 'राष्ट्रिय परिचयपत्र आवश्यक छ।',
+    passwordRequired: 'पासवर्ड आवश्यक छ।',
+    signIn: 'साइन इन गर्नुहोस्',
+    signingIn: 'साइन इन हुँदैछ…',
+    failed: 'लगइन असफल। पुनः प्रयास गर्नुहोस्।',
   },
   offline: {
     banner: 'तपाईं अफलाइन हुनुहुन्छ। केही सुविधाहरू उपलब्ध नहोलान।',

@@ -424,6 +424,12 @@ class LifecycleApiControllerTest extends EventloopTestBase {
         }
 
         @Override
+        public Promise<RunResult> retry(String failedRunId, RunSpec spec) {
+            executeCallCount++;
+            return Promise.of(executeResult);
+        }
+
+        @Override
         public Promise<RunResult> rollback(String deploymentId, String targetVersion) {
             return Promise.of(executeResult);
         }

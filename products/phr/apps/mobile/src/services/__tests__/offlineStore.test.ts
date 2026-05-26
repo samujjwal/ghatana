@@ -4,8 +4,6 @@
  * These tests exercise the real production module (no object-literal assertions).
  */
 
-import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
-
 // Must be mocked before importing the module under test.
 jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(() => Promise.resolve()),

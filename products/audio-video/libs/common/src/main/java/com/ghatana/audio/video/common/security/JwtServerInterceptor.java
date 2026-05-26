@@ -70,6 +70,10 @@ public class JwtServerInterceptor implements ServerInterceptor {
     public JwtServerInterceptor() {
         this.tokenValidator = fromAuthGatewayClient(AuthGatewayClient.getInstance());
         String secret = System.getenv("AV_JWT_SECRET");
+        // Fallback to System.getProperty for testing purposes
+        if (secret == null || secret.isBlank()) {
+            secret = System.getProperty("AV_JWT_SECRET");
+        }
         if (secret == null || secret.isBlank()) {
             throw new IllegalStateException(
                     "AV_JWT_SECRET is not set. The Audio-Video JWT interceptor requires a " +

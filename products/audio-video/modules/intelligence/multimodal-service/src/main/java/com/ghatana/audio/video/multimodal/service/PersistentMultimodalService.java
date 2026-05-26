@@ -11,14 +11,18 @@ import com.ghatana.media.common.ColorSpace;
 import com.ghatana.media.stt.api.SttEngine;
 import com.ghatana.media.stt.api.TranscriptionResult;
 import com.ghatana.media.vision.api.VisionEngine;
+import com.ghatana.platform.audit.AuditEvent;
+import com.ghatana.platform.audit.AuditService;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -42,6 +46,7 @@ public class PersistentMultimodalService {
     private final SttEngine sttEngine;
     private final VisionEngine visionEngine;
     private final Timer fuseTimer;
+    private final AuditService auditService;
 
     /**
      * Convenience constructor — engines not yet wired; audio and visual processing will
@@ -51,7 +56,7 @@ public class PersistentMultimodalService {
             AudioFileService audioFileService,
             TranscriptionService transcriptionService,
             MeterRegistry meterRegistry) {
-        this(audioFileService, transcriptionService, null, null, meterRegistry);
+        this(audioFileService, transcriptionService, null, null, meterRegistry, null);
     }
 
     public PersistentMultimodalService(
@@ -60,10 +65,21 @@ public class PersistentMultimodalService {
             SttEngine sttEngine,
             VisionEngine visionEngine,
             MeterRegistry meterRegistry) {
+        this(audioFileService, transcriptionService, sttEngine, visionEngine, meterRegistry, null);
+    }
+
+    public PersistentMultimodalService(
+            AudioFileService audioFileService,
+            TranscriptionService transcriptionService,
+            SttEngine sttEngine,
+            VisionEngine visionEngine,
+            MeterRegistry meterRegistry,
+            @Nullable AuditService auditService) {
         this.audioFileService = Objects.requireNonNull(audioFileService, "audioFileService cannot be null");
         this.transcriptionService = Objects.requireNonNull(transcriptionService, "transcriptionService cannot be null");
         this.sttEngine = sttEngine;   // nullable — checked at call time
         this.visionEngine = visionEngine; // nullable — checked at call time
+        this.auditService = auditService;
         this.fuseTimer = Timer.builder("multimodal.persistent.fuse")
             .description("Multimodal fusion latency with persistence")
             .register(meterRegistry);
@@ -118,6 +134,13 @@ public class PersistentMultimodalService {
                             tenantId, mediaFile.getId(),
                             transcription.isPresent(), visualAnalysis.hasDetections(), elapsedMs);
 
+                        // OBS-P1-002: Emit audit event for successful multimodal processing
+                        emitMultimodalAudit(tenantId, userId.toString(), "multimodal.fuse", "SUCCESS",
+                            Map.of("mediaFileId", mediaFile.getId().toString(),
+                                   "hasAudio", String.valueOf(transcription.isPresent()),
+                                   "hasVisual", String.valueOf(visualAnalysis.hasDetections()),
+                                   "processingTimeMs", String.valueOf(elapsedMs)));
+
                         return new MultimodalResult(
                             mediaFile.getId(),
                             transcription.map(TranscriptionEntity::getText).orElse(null),
@@ -129,6 +152,10 @@ public class PersistentMultimodalService {
             })
             .whenException(e -> {
                 LOG.error("[tenant={}] Multimodal processing failed: {}", tenantId, e.getMessage(), e);
+                
+                // OBS-P1-002: Emit audit event for multimodal processing failure
+                emitMultimodalAudit(tenantId, userId.toString(), "multimodal.fuse", "FAILED",
+                    Map.of("error", e.getMessage()));
             });
     }
 
@@ -295,4 +322,38 @@ public class PersistentMultimodalService {
         float relevance,
         Instant createdAt
     ) {}
+
+    /**
+     * OBS-P1-002: Emit audit event for multimodal operations.
+     *
+     * @param tenantId the tenant ID
+     * @param userId the user ID
+     * @param operation the operation type
+     * @param status the operation status
+     * @param details additional details
+     */
+    private void emitMultimodalAudit(String tenantId, String userId, String operation,
+                                      String status, Map<String, String> details) {
+        if (auditService == null) {
+            return; // Audit service not configured
+        }
+        
+        try {
+            AuditEvent event = AuditEvent.builder()
+                .tenantId(tenantId != null ? tenantId : "unknown")
+                .eventType(operation)
+                .principal(userId != null ? userId : "system")
+                .resourceType("multimodal")
+                .resourceId("multimodal-operation")
+                .success("SUCCESS".equals(status))
+                .detail("status", status)
+                .detail("operation", operation)
+                .details(Map.copyOf(details))
+                .build();
+            
+            auditService.record(event);
+        } catch (Exception e) {
+            LOG.warn("Failed to emit audit event for multimodal operation {}: {}", operation, e.getMessage());
+        }
+    }
 }

@@ -111,9 +111,21 @@ final class ApprovalHttpHandlers {
                 List<String> missingArtifacts = contextMap.containsKey("missingArtifacts")
                         ? (List<String>) contextMap.get("missingArtifacts")
                         : List.of();
+                String workflowId = (String) contextMap.get("workflowId");
+                String planId = (String) contextMap.get("planId");
+                String priorPlanId = (String) contextMap.get("priorPlanId");
+                String evolutionProposalId = (String) contextMap.get("evolutionProposalId");
 
                 ApprovalRequest.ApprovalContext context = new ApprovalRequest.ApprovalContext(
-                        fromPhase, toPhase, blockReason, unmetCriteria, missingArtifacts);
+                        fromPhase,
+                        toPhase,
+                        blockReason,
+                        unmetCriteria,
+                        missingArtifacts,
+                        workflowId,
+                        planId,
+                        priorPlanId,
+                        evolutionProposalId);
 
                 return humanApprovalService.requestApproval(
                         tenantId, projectId, requestingAgentId, approvalType, context)

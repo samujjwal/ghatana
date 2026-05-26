@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react';
 
-interface GateEvaluation {
+export interface GateEvaluation {
   id: string;
   name: string;
   phase: string;

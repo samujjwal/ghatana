@@ -8,7 +8,7 @@
  * @doc.layer frontend
  * @doc.pattern Context
  */
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { PhrSession } from '../types';
 
 interface PhrSessionContextValue {
@@ -59,6 +59,20 @@ export function PhrSessionProvider({ children }: { children: React.ReactNode }):
       // Silently ignore storage errors.
     }
   }, []);
+
+  // Auto-expire the session if the expiry timestamp is reached during active use.
+  useEffect(() => {
+    if (!session) return;
+    const msUntilExpiry = new Date(session.expiresAt).getTime() - Date.now();
+    if (msUntilExpiry <= 0) {
+      clearSession();
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      clearSession();
+    }, msUntilExpiry);
+    return () => { window.clearTimeout(timer); };
+  }, [session, clearSession]);
 
   const value = useMemo<PhrSessionContextValue>(
     () => ({ session, setSession, clearSession, isAuthenticated: session !== null }),

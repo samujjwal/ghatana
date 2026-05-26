@@ -16,6 +16,10 @@ export interface ActionRecommendation {
   title: string;
   description: string;
   actionType: string;
+  owner?: string;
+  reason?: string;
+  evidenceId?: string;
+  nextAction?: string;
 }
 
 interface RecommendedActionsPanelProps {
@@ -114,6 +118,34 @@ export const RecommendedActionsPanel: React.FC<RecommendedActionsPanelProps> = (
                       <ArrowRight className="h-3 w-3" />
                       <span>Action: {rec.actionType}</span>
                     </div>
+                  )}
+                  {(rec.owner || rec.reason || rec.evidenceId || rec.nextAction) && (
+                    <dl className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
+                      {rec.owner && (
+                        <div>
+                          <dt className="font-medium text-foreground">Owner</dt>
+                          <dd>{rec.owner}</dd>
+                        </div>
+                      )}
+                      {rec.reason && (
+                        <div>
+                          <dt className="font-medium text-foreground">Reason</dt>
+                          <dd>{rec.reason}</dd>
+                        </div>
+                      )}
+                      {rec.evidenceId && (
+                        <div>
+                          <dt className="font-medium text-foreground">Evidence</dt>
+                          <dd>{rec.evidenceId}</dd>
+                        </div>
+                      )}
+                      {rec.nextAction && (
+                        <div>
+                          <dt className="font-medium text-foreground">Next action</dt>
+                          <dd>{rec.nextAction}</dd>
+                        </div>
+                      )}
+                    </dl>
                   )}
                 </div>
               </div>

@@ -8,10 +8,15 @@ import { ProfilePage } from '../ProfilePage';
 
 vi.mock('../../api/phrApi', () => ({
   fetchPatientProfile: vi.fn(),
+  updatePatientProfile: vi.fn(),
 }));
 
 vi.mock('../../i18n/phrI18n', () => ({
   t: (key: string) => key,
+}));
+
+vi.mock('../../auth/PhrSessionContext', () => ({
+  usePhrSession: () => ({ session: { principalId: 'patient-42', tenantId: 't1', role: 'patient' as const, name: 'Test Patient', expiresAt: new Date(Date.now() + 3_600_000).toISOString() }, isAuthenticated: true, setSession: vi.fn(), clearSession: vi.fn() }),
 }));
 
 import { fetchPatientProfile } from '../../api/phrApi';
@@ -37,14 +42,14 @@ describe('ProfilePage', () => {
   it('shows loading indicator while fetching', () => {
     mockFetch.mockReturnValue(new Promise(() => {})); // never resolves
     render(<ProfilePage />);
-    expect(screen.getByText(/route\.profile\.loading/)).toBeTruthy();
+    expect(screen.getByText(/profile\.loading/)).toBeTruthy();
   });
 
   it('shows error message when fetch fails', async () => {
     mockFetch.mockRejectedValue(new Error('network'));
     render(<ProfilePage />);
     await waitFor(() =>
-      expect(screen.getByText(/route\.profile\.error/)).toBeTruthy()
+      expect(screen.getByText(/profile\.error/)).toBeTruthy()
     );
   });
 

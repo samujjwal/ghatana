@@ -48,6 +48,12 @@ public final class DataCloudEvolutionPlanRepository implements EvolutionPlanRepo
         document.put("approvalState", proposal.approvalState());
         document.put("hasConstraints", proposal.constraints() != null);
         document.put("provenance", proposal.provenance());
+        document.put("sourceInsightsRef", proposal.metadata().getOrDefault("sourceInsightsRef", proposal.insights().id()));
+        document.put("sourceObservationRef", proposal.metadata().getOrDefault("sourceObservationRef", proposal.insights().observationRef()));
+        document.put("sourceLearningEvidenceIds", proposal.metadata().getOrDefault("sourceLearningEvidenceIds", java.util.List.of()));
+        document.put("impactAnalysis", proposal.metadata().getOrDefault("impactAnalysis", Map.of()));
+        document.put("kernelUpdateRequest", proposal.metadata().getOrDefault("kernelUpdateRequest", Map.of()));
+        document.put("kernelProductUnitIntent", proposal.metadata().getOrDefault("kernelProductUnitIntent", Map.of()));
         document.put("metadata", proposal.metadata());
         document.put("createdAt", proposal.createdAt().toString());
 

@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, Shield, Brain, AlertTriangle, TrendingUp } from 'lucide-react';
 
-interface AgentGovernance {
+export interface AgentGovernance {
   agentId: string;
   agentName: string;
   learningLevel: 'L0' | 'L1' | 'L2' | 'L3';

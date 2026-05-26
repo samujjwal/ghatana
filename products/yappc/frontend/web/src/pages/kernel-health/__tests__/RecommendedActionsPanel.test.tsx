@@ -31,6 +31,10 @@ describe('RecommendedActionsPanel', () => {
       title: 'Gate verification failed',
       description: 'The security gate failed during deployment phase.',
       actionType: 'fix-gate',
+      owner: 'platform-runtime',
+      reason: 'Security policy denied the deployment gate.',
+      evidenceId: 'evidence-gate-1',
+      nextAction: 'Resolve the policy denial and retry validation.',
     };
 
     const warningRec: ActionRecommendation = {
@@ -56,6 +60,24 @@ describe('RecommendedActionsPanel', () => {
       );
       expect(screen.getByText('Gate verification failed')).toBeInTheDocument();
       expect(screen.getByText('The security gate failed during deployment phase.')).toBeInTheDocument();
+    });
+
+    it('renders owner reason evidence and next action for remediation', () => {
+      render(
+        <RecommendedActionsPanel
+          productUnitId={productUnitId}
+          recommendations={[criticalRec]}
+        />
+      );
+
+      expect(screen.getByText('Owner')).toBeInTheDocument();
+      expect(screen.getByText('platform-runtime')).toBeInTheDocument();
+      expect(screen.getByText('Reason')).toBeInTheDocument();
+      expect(screen.getByText('Security policy denied the deployment gate.')).toBeInTheDocument();
+      expect(screen.getByText('Evidence')).toBeInTheDocument();
+      expect(screen.getByText('evidence-gate-1')).toBeInTheDocument();
+      expect(screen.getByText('Next action')).toBeInTheDocument();
+      expect(screen.getByText('Resolve the policy denial and retry validation.')).toBeInTheDocument();
     });
 
     it('renders severity badge for each recommendation', () => {

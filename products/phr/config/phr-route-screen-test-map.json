@@ -1,0 +1,184 @@
+{
+  "$schema": "../../config/domain-invariants.schema.json",
+  "product": "phr",
+  "version": "1.0.0",
+  "lastUpdated": "2026-05-02",
+  "description": "Maps every web/mobile route and screen to route tests, action tests, and state tests.",
+  "routes": [
+    {
+      "id": "web-root",
+      "platform": "web",
+      "path": "/",
+      "screen": "App (redirect)",
+      "routeTests": ["src/App.test.tsx"],
+      "actionTests": [],
+      "stateTests": []
+    },
+    {
+      "id": "web-login",
+      "platform": "web",
+      "path": "/login",
+      "screen": "LoginPage",
+      "routeTests": ["src/pages/__tests__/LoginPage.test.tsx"],
+      "actionTests": ["src/pages/__tests__/LoginPage.test.tsx"],
+      "stateTests": []
+    },
+    {
+      "id": "web-dashboard",
+      "platform": "web",
+      "path": "/dashboard",
+      "screen": "DashboardPage",
+      "routeTests": ["src/pages/__tests__/DashboardPage.test.tsx"],
+      "actionTests": [],
+      "stateTests": []
+    },
+    {
+      "id": "web-records",
+      "platform": "web",
+      "path": "/records",
+      "screen": "RecordsPage",
+      "routeTests": ["src/pages/__tests__/RecordsPage.test.tsx"],
+      "actionTests": [],
+      "stateTests": []
+    },
+    {
+      "id": "web-consents",
+      "platform": "web",
+      "path": "/consents",
+      "screen": "ConsentPage",
+      "routeTests": ["src/pages/__tests__/ConsentPage.test.tsx"],
+      "actionTests": ["src/pages/__tests__/ConsentPage.test.tsx"],
+      "stateTests": []
+    },
+    {
+      "id": "web-alerts",
+      "platform": "web",
+      "path": "/alerts",
+      "screen": "AlertsPage",
+      "routeTests": ["src/pages/__tests__/AlertsPage.test.tsx"],
+      "actionTests": [],
+      "stateTests": []
+    },
+    {
+      "id": "web-emergency",
+      "platform": "web",
+      "path": "/emergency",
+      "screen": "EmergencyAccessPage",
+      "routeTests": ["src/pages/__tests__/EmergencyAccessPage.test.tsx"],
+      "actionTests": ["src/pages/__tests__/EmergencyAccessPage.test.tsx"],
+      "stateTests": []
+    },
+    {
+      "id": "web-settings",
+      "platform": "web",
+      "path": "/settings",
+      "screen": "SettingsPage",
+      "routeTests": ["src/pages/__tests__/SettingsPage.test.tsx"],
+      "actionTests": ["src/pages/__tests__/SettingsPage.test.tsx"],
+      "stateTests": []
+    },
+    {
+      "id": "web-provider",
+      "platform": "web",
+      "path": "/provider",
+      "screen": "ProviderDashboardPage",
+      "routeTests": ["src/pages/__tests__/ProviderDashboardPage.test.tsx"],
+      "actionTests": [],
+      "stateTests": []
+    },
+    {
+      "id": "web-caregiver",
+      "platform": "web",
+      "path": "/caregiver",
+      "screen": "CaregiverDashboardPage",
+      "routeTests": ["src/pages/__tests__/CaregiverDashboardPage.test.tsx"],
+      "actionTests": [],
+      "stateTests": []
+    },
+    {
+      "id": "web-fchv",
+      "platform": "web",
+      "path": "/fchv",
+      "screen": "FchvDashboardPage",
+      "routeTests": ["src/pages/__tests__/FchvDashboardPage.test.tsx"],
+      "actionTests": [],
+      "stateTests": []
+    },
+    {
+      "id": "web-admin-emergency",
+      "platform": "web",
+      "path": "/admin/emergency",
+      "screen": "EmergencyReviewPage",
+      "routeTests": ["src/pages/__tests__/EmergencyReviewPage.test.tsx"],
+      "actionTests": ["src/pages/__tests__/EmergencyReviewPage.test.tsx"],
+      "stateTests": []
+    },
+    {
+      "id": "web-admin-release",
+      "platform": "web",
+      "path": "/admin/release",
+      "screen": "ReleaseCockpitPage",
+      "routeTests": ["src/pages/__tests__/ReleaseCockpitPage.test.tsx"],
+      "actionTests": [],
+      "stateTests": []
+    },
+    {
+      "id": "mobile-root",
+      "platform": "mobile",
+      "path": null,
+      "screen": "App (root)",
+      "routeTests": ["src/__tests__/App.test.tsx"],
+      "actionTests": [],
+      "stateTests": []
+    },
+    {
+      "id": "mobile-dashboard",
+      "platform": "mobile",
+      "path": null,
+      "screen": "MobileDashboard (tab: home)",
+      "routeTests": ["src/screens/__tests__/MobileDashboard.test.tsx"],
+      "actionTests": [],
+      "stateTests": []
+    },
+    {
+      "id": "mobile-emergency",
+      "platform": "mobile",
+      "path": null,
+      "screen": "EmergencyAccessScreen",
+      "routeTests": ["src/screens/__tests__/EmergencyAccessScreen.test.tsx"],
+      "actionTests": ["src/screens/__tests__/EmergencyAccessScreen.test.tsx"],
+      "stateTests": []
+    },
+    {
+      "id": "mobile-settings",
+      "platform": "mobile",
+      "path": null,
+      "screen": "SettingsScreen",
+      "routeTests": ["src/screens/__tests__/SettingsScreen.test.tsx"],
+      "actionTests": [],
+      "stateTests": []
+    }
+  ],
+  "apiTests": [
+    {
+      "api": "phrApi.ts",
+      "testFile": "src/api/__tests__/phrApi.test.ts",
+      "coverage": "unit"
+    },
+    {
+      "api": "PhrConsentRoutes.java",
+      "testFile": "src/test/java/com/ghatana/phr/api/routes/PhrConsentRoutesTest.java",
+      "coverage": "unit"
+    },
+    {
+      "api": "PhrMobileRoutes.java",
+      "testFile": "src/test/java/com/ghatana/phr/api/routes/PhrMobileRoutesTest.java",
+      "coverage": "unit"
+    },
+    {
+      "api": "PhrEmergencyRoutes.java",
+      "testFile": "src/test/java/com/ghatana/phr/api/routes/PhrEmergencyRoutesTest.java",
+      "coverage": "unit"
+    }
+  ]
+}

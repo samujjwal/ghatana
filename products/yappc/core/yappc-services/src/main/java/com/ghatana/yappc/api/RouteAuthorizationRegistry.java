@@ -184,8 +184,8 @@ public final class RouteAuthorizationRegistry {
                 String permission = mapScopeToPermission(route.scopes());
                 ResourceScope resourceScope = mapScopeToResourceScope(route.scopes());
                 String action = route.operationId();
-                String auditEventType = "yappc." + route.operationId();
-                PrivacyClassification privacy = mapDefaultPrivacy(route.auth());
+                String auditEventType = route.auditEventType();
+                PrivacyClassification privacy = mapPrivacyClassification(route.privacyClassification());
                 AuthMode authMode = route.auth();
                 
                 registerRoute(method, route.path(), action, permission, resourceScope, auditEventType, privacy, authMode);
@@ -256,11 +256,16 @@ public final class RouteAuthorizationRegistry {
     /**
      * Maps auth mode to default privacy classification.
      */
-    private PrivacyClassification mapDefaultPrivacy(AuthMode auth) {
-        return switch (auth) {
+    private PrivacyClassification mapPrivacyClassification(
+            com.ghatana.yappc.governance.route.PrivacyClassification privacy) {
+        if (privacy == null) {
+            return PrivacyClassification.INTERNAL;
+        }
+        return switch (privacy) {
             case PUBLIC -> PrivacyClassification.PUBLIC;
-            case REQUIRED -> PrivacyClassification.INTERNAL;
-            case OPTIONAL -> PrivacyClassification.INTERNAL;
+            case INTERNAL -> PrivacyClassification.INTERNAL;
+            case CONFIDENTIAL -> PrivacyClassification.CONFIDENTIAL;
+            case RESTRICTED -> PrivacyClassification.RESTRICTED;
         };
     }
 

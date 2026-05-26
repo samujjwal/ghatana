@@ -55,7 +55,6 @@ describe('AppointmentsPage', () => {
     await waitFor(() => expect(screen.queryByText(/appointments.loading/)).toBeNull());
 
     const specialtyInput = screen.getByRole('textbox', { name: /appointments.specialty.label/i });
-    const dateInput = screen.getByDisplayValue('') as HTMLInputElement;
 
     fireEvent.change(specialtyInput, { target: { value: 'General Medicine' } });
     // Find date input by label text

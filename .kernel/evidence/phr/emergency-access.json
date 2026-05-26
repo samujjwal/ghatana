@@ -1,0 +1,30 @@
+{
+  "productId": "phr",
+  "evidenceType": "emergency-access-audit",
+  "generatedAt": "2025-06-01T00:00:00Z",
+  "targetCommitSha": "test-evidence-commit-001",
+  "auditTrailEnabled": true,
+  "reviewWorkflowEnabled": true,
+  "description": "Emergency access is fully audit-logged and requires post-hoc review",
+  "auditTrail": {
+    "provider": "PhrAuditService",
+    "storage": "append-only",
+    "events": [
+      "EMERGENCY_ACCESS_GRANTED",
+      "EMERGENCY_ACCESS_DENIED",
+      "EMERGENCY_ACCESS_REVOKED",
+      "EMERGENCY_ACCESS_REVIEWED"
+    ],
+    "retentionDays": 2555
+  },
+  "reviewWorkflow": {
+    "requiredWithin": "PT72H",
+    "approverRoles": ["PROVIDER_ADMIN", "PHR_ADMIN"],
+    "escalationEnabled": true,
+    "notificationsEnabled": true
+  },
+  "implementationRefs": [
+    "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrEmergencyRoutes.java",
+    "products/phr/apps/web/src/pages/EmergencyAccessPage.tsx"
+  ]
+}

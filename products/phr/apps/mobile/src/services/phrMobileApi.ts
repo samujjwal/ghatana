@@ -1,5 +1,5 @@
 import type { MobileDashboard, MobileSession } from '../types';
-import { loadDashboardOffline, saveDashboardOffline } from './offlineStore';
+import { clearDashboardOffline, loadDashboardOffline, saveDashboardOffline } from './offlineStore';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_PHR_API_URL ?? process.env.PHR_API_URL ?? '';
 const DASHBOARD_PATH = '/mobile/dashboard';
@@ -71,13 +71,19 @@ function assertMobileDashboard(value: unknown): MobileDashboard {
   return value as unknown as MobileDashboard;
 }
 
-async function fetchDashboardFromApi(): Promise<MobileDashboard> {
+async function fetchDashboardFromApi(session: MobileSession): Promise<MobileDashboard> {
   if (!API_BASE_URL) {
     throw new Error('PHR mobile API base URL is not configured.');
   }
 
   const response = await fetch(`${API_BASE_URL}${DASHBOARD_PATH}`, {
-    headers: { Accept: 'application/json' },
+    headers: {
+      Accept: 'application/json',
+      'X-Tenant-Id': session.tenantId,
+      'X-Principal-Id': session.principalId,
+      'X-Role': session.role,
+      'X-Correlation-ID': crypto.randomUUID(),
+    },
   });
   if (!response.ok) {
     throw new Error(`PHR mobile dashboard request failed with status ${response.status}.`);
@@ -86,9 +92,9 @@ async function fetchDashboardFromApi(): Promise<MobileDashboard> {
   return assertMobileDashboard(await response.json());
 }
 
-export async function fetchMobileDashboard(): Promise<MobileDashboard> {
+export async function fetchMobileDashboard(session: MobileSession): Promise<MobileDashboard> {
   try {
-    const dashboard = await fetchDashboardFromApi();
+    const dashboard = await fetchDashboardFromApi(session);
     await saveDashboardOffline(dashboard);
     return dashboard;
   } catch (error) {
@@ -101,10 +107,41 @@ export async function fetchMobileDashboard(): Promise<MobileDashboard> {
   }
 }
 
-export async function syncOfflineDashboard(): Promise<string> {
-  const dashboard = await fetchDashboardFromApi();
+export async function syncOfflineDashboard(session: MobileSession): Promise<string> {
+  const dashboard = await fetchDashboardFromApi(session);
   await saveDashboardOffline(dashboard);
   return 'Offline cache refreshed';
+}
+
+/**
+ * Invalidates the server-side session and clears all local PHI caches.
+ * Must be called on explicit logout, session expiry, and consent revocation.
+ *
+ * @param session  the session to invalidate
+ */
+export async function logoutMobile(session: MobileSession): Promise<void> {
+  if (!API_BASE_URL) {
+    // Even if API is not configured, clear local PHI.
+    await clearDashboardOffline();
+    return;
+  }
+  // Best-effort server notification; failure must not block local cleanup.
+  try {
+    await fetch(`${API_BASE_URL}/auth/logout`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-Tenant-Id': session.tenantId,
+        'X-Principal-Id': session.principalId,
+        'X-Role': session.role,
+        'X-Correlation-ID': crypto.randomUUID(),
+      },
+    });
+  } catch {
+    // Network failure — continue with local cleanup.
+  }
+  await clearDashboardOffline();
 }
 
 // ─── Auth ──────────────────────────────────────────────────────────────────

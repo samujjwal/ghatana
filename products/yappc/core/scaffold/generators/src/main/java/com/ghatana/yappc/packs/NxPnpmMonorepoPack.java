@@ -24,6 +24,26 @@ final class NxPnpmMonorepoPack implements PackTemplate {
     }
 
     @Override
+    public List<String> supportedSurfaces() {
+        return List.of("web");
+    }
+
+    @Override
+    public List<String> compatibleLanguages() {
+        return List.of("typescript");
+    }
+
+    @Override
+    public List<String> compatibleFrameworks() {
+        return List.of("react", "nextjs", "vite");
+    }
+
+    @Override
+    public List<String> compatibleBuildSystems() {
+        return List.of("nx", "pnpm");
+    }
+
+    @Override
     public List<ScaffoldFile> render(WorkspaceSpec spec) {
         String name = spec.getName();
         return List.of(

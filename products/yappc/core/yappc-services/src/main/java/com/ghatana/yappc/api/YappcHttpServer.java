@@ -42,7 +42,13 @@ public class YappcHttpServer extends HttpServerLauncher {
             ArtifactPatchController artifactPatchController,
             PageArtifactController pageArtifactController,
             PreviewSessionApiController previewSessionApiController,
-            PhasePacketController phasePacketController) {
+            PhasePacketController phasePacketController,
+            CapabilityController capabilityController,
+            DashboardActionController dashboardActionController,
+            AdminObservabilityController adminObservabilityController,
+            AdminFeatureFlagController adminFeatureFlagController,
+            AdminAbTestingController adminAbTestingController,
+            ProductFamilyControlPlaneController productFamilyControlPlaneController) {
 
         ApiVersionPolicy versionPolicy = new ApiVersionPolicy();
 
@@ -68,6 +74,7 @@ public class YappcHttpServer extends HttpServerLauncher {
 
                 // Generation endpoints
                 .with(HttpMethod.POST, "/api/v1/yappc/generate", secureVersioned(authenticationFilter, routeAuthorizationFilter, generationController::generateArtifacts, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/generate/product-unit-intent", secureVersioned(authenticationFilter, routeAuthorizationFilter, generationController::generateProductUnitIntent, versionPolicy))
                 .with(HttpMethod.POST, "/api/v1/yappc/generate/diff", secureVersioned(authenticationFilter, routeAuthorizationFilter, generationController::regenerateWithDiff, versionPolicy))
                 .with(HttpMethod.POST, "/api/v1/yappc/generate/runs/:runId/apply", secureVersioned(authenticationFilter, routeAuthorizationFilter, generationController::applyReviewDecision, versionPolicy))
                 .with(HttpMethod.POST, "/api/v1/yappc/generate/runs/:runId/reject", secureVersioned(authenticationFilter, routeAuthorizationFilter, generationController::rejectReviewDecision, versionPolicy))
@@ -77,6 +84,7 @@ public class YappcHttpServer extends HttpServerLauncher {
                 // Run endpoints
                 .with(HttpMethod.POST, "/api/v1/yappc/run", secureVersioned(authenticationFilter, routeAuthorizationFilter, runController::executeRun, versionPolicy))
                 .with(HttpMethod.POST, "/api/v1/yappc/run/with-observation", secureVersioned(authenticationFilter, routeAuthorizationFilter, runController::executeRunWithObservation, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/run/retry", secureVersioned(authenticationFilter, routeAuthorizationFilter, runController::retry, versionPolicy))
                 .with(HttpMethod.POST, "/api/v1/yappc/run/rollback", secureVersioned(authenticationFilter, routeAuthorizationFilter, runController::rollback, versionPolicy))
                 .with(HttpMethod.POST, "/api/v1/yappc/run/promote", secureVersioned(authenticationFilter, routeAuthorizationFilter, runController::promote, versionPolicy))
 
@@ -129,6 +137,30 @@ public class YappcHttpServer extends HttpServerLauncher {
                           "phases": ["intent", "shape", "validate", "generate", "run", "observe", "learn", "evolve"]
                         }
                         """).build())))
+
+                // Product-family control plane
+                .with(HttpMethod.GET, "/api/v1/yappc/product-family/releases/:productKey", secureVersioned(authenticationFilter, routeAuthorizationFilter, productFamilyControlPlaneController::getReleaseReadiness, versionPolicy))
+                .with(HttpMethod.GET, "/api/v1/yappc/product-family/assets", secureVersioned(authenticationFilter, routeAuthorizationFilter, productFamilyControlPlaneController::listAssets, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/product-family/assets/:assetId/promotions", secureVersioned(authenticationFilter, routeAuthorizationFilter, productFamilyControlPlaneController::promoteAsset, versionPolicy))
+                .with(HttpMethod.GET, "/api/v1/yappc/product-family/doc-truth", secureVersioned(authenticationFilter, routeAuthorizationFilter, productFamilyControlPlaneController::listDocTruthWarnings, versionPolicy))
+                .with(HttpMethod.GET, "/api/v1/yappc/product-family/reuse-recommendations/:targetProduct", secureVersioned(authenticationFilter, routeAuthorizationFilter, productFamilyControlPlaneController::listGuidedReuse, versionPolicy))
+                .with(HttpMethod.GET, "/api/v1/yappc/product-family/kernel-timeline/:productUnitId", secureVersioned(authenticationFilter, routeAuthorizationFilter, productFamilyControlPlaneController::getKernelTimeline, versionPolicy))
+
+                // Admin observability
+                .with(HttpMethod.GET, "/api/admin/observability/release-gates", secureVersioned(authenticationFilter, routeAuthorizationFilter, adminObservabilityController::listReleaseGates, versionPolicy))
+                .with(HttpMethod.GET, "/api/admin/feature-flags", secureVersioned(authenticationFilter, routeAuthorizationFilter, adminFeatureFlagController::listFlags, versionPolicy))
+                .with(HttpMethod.PUT, "/api/admin/feature-flags/:flagKey", secureVersioned(authenticationFilter, routeAuthorizationFilter, adminFeatureFlagController::setFlag, versionPolicy))
+                .with(HttpMethod.GET, "/api/admin/feature-flags/:flagKey/audit", secureVersioned(authenticationFilter, routeAuthorizationFilter, adminFeatureFlagController::listAudit, versionPolicy))
+                .with(HttpMethod.GET, "/api/admin/ab-experiments", secureVersioned(authenticationFilter, routeAuthorizationFilter, adminAbTestingController::listExperiments, versionPolicy))
+                .with(HttpMethod.POST, "/api/admin/ab-experiments", secureVersioned(authenticationFilter, routeAuthorizationFilter, adminAbTestingController::createExperiment, versionPolicy))
+                .with(HttpMethod.POST, "/api/admin/ab-experiments/:experimentId/promote", secureVersioned(authenticationFilter, routeAuthorizationFilter, adminAbTestingController::promoteWinner, versionPolicy))
+                .with(HttpMethod.POST, "/api/admin/ab-experiments/:experimentId/pause", secureVersioned(authenticationFilter, routeAuthorizationFilter, adminAbTestingController::pauseExperiment, versionPolicy))
+
+                // Capabilities and dashboard actions
+                .with(HttpMethod.GET, "/api/v1/capabilities", secureVersioned(authenticationFilter, routeAuthorizationFilter, capabilityController::getCapabilities, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/capabilities", secureVersioned(authenticationFilter, routeAuthorizationFilter, capabilityController::getCapabilities, versionPolicy))
+                .with(HttpMethod.GET, "/api/v1/dashboard/actions", secureVersioned(authenticationFilter, routeAuthorizationFilter, dashboardActionController::getDashboardActions, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/dashboard/actions", secureVersioned(authenticationFilter, routeAuthorizationFilter, dashboardActionController::getDashboardActions, versionPolicy))
 
                 // Page Artifact routes (use route authorization filter)
                 .with(HttpMethod.PUT, "/api/v1/page-artifacts/:artifactId/document", request ->

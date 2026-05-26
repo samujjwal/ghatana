@@ -26,6 +26,9 @@ dependencies {
     // Platform observability (MetricsCollector, TracingManager)
     implementation(project(":platform:java:observability"))
 
+    // Platform audit (AuditService, AuditEvent)
+    implementation(project(":platform:java:audit"))
+
     // Persistence layer
     implementation(project(":products:audio-video:modules:infrastructure:persistence"))
 

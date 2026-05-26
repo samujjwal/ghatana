@@ -1,0 +1,21 @@
+{
+  "productId": "phr",
+  "evidenceType": "kernel-context-wiring",
+  "generatedAt": "2025-06-01T00:00:00Z",
+  "targetCommitSha": "test-evidence-commit-001",
+  "distributedCachePort": {
+    "status": "ready",
+    "provider": "RedisDistributedCacheAdapter",
+    "wirings": [
+      "PhrConsentCacheService",
+      "PhrSessionCacheService"
+    ],
+    "registeredInKernelContext": true,
+    "module": "platform:java:database"
+  },
+  "description": "KernelContext provides DistributedCachePort wired to Redis for PHR consent and session caching",
+  "implementationRefs": [
+    "products/phr/src/main/java/com/ghatana/phr/kernel/",
+    "products/phr/src/test/java/com/ghatana/phr/kernel/PhrKernelModuleTest.java"
+  ]
+}

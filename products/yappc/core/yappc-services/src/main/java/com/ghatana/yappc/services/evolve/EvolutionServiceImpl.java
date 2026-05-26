@@ -12,6 +12,7 @@ import com.ghatana.yappc.domain.evolve.EvolutionPlan;
 import com.ghatana.yappc.domain.evolve.EvolutionTask;
 import com.ghatana.yappc.domain.intent.ConstraintSpec;
 import com.ghatana.yappc.domain.learn.Insights;
+import com.ghatana.yappc.domain.learn.Pattern;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -38,6 +40,8 @@ public class EvolutionServiceImpl implements EvolutionService {
     private final MetricsCollector metrics;
     private final EvolutionPlanRepository planRepository;
     private final EvolutionExecutionHandoffService executionHandoffService;
+    private final EvolutionImpactAnalysisService impactAnalysisService;
+    private final EvolutionKernelUpdateService kernelUpdateService;
     private final boolean persistPlan;
     private static final List<String> APPROVED_EXECUTION_PHASES = List.of("validate", "generate", "run");
 
@@ -51,6 +55,8 @@ public class EvolutionServiceImpl implements EvolutionService {
             metrics,
             EvolutionPlanRepository.noop(),
             EvolutionExecutionHandoffService.noop(),
+            EvolutionImpactAnalysisService.unavailable(),
+            EvolutionKernelUpdateService.unavailable(),
             false
         );
     }
@@ -60,7 +66,15 @@ public class EvolutionServiceImpl implements EvolutionService {
             AuditLogger auditLogger,
             MetricsCollector metrics,
             EvolutionPlanRepository planRepository) {
-        this(aiService, auditLogger, metrics, planRepository, EvolutionExecutionHandoffService.noop(), true);
+        this(
+                aiService,
+                auditLogger,
+                metrics,
+                planRepository,
+                EvolutionExecutionHandoffService.noop(),
+                EvolutionImpactAnalysisService.unavailable(),
+                EvolutionKernelUpdateService.unavailable(),
+                true);
     }
 
     public EvolutionServiceImpl(
@@ -69,7 +83,52 @@ public class EvolutionServiceImpl implements EvolutionService {
             MetricsCollector metrics,
             EvolutionPlanRepository planRepository,
             EvolutionExecutionHandoffService executionHandoffService) {
-        this(aiService, auditLogger, metrics, planRepository, executionHandoffService, true);
+        this(
+                aiService,
+                auditLogger,
+                metrics,
+                planRepository,
+                executionHandoffService,
+                EvolutionImpactAnalysisService.unavailable(),
+                EvolutionKernelUpdateService.unavailable(),
+                true);
+    }
+
+    public EvolutionServiceImpl(
+            CompletionService aiService,
+            AuditLogger auditLogger,
+            MetricsCollector metrics,
+            EvolutionPlanRepository planRepository,
+            EvolutionExecutionHandoffService executionHandoffService,
+            EvolutionImpactAnalysisService impactAnalysisService) {
+        this(
+                aiService,
+                auditLogger,
+                metrics,
+                planRepository,
+                executionHandoffService,
+                impactAnalysisService,
+                EvolutionKernelUpdateService.unavailable(),
+                true);
+    }
+
+    public EvolutionServiceImpl(
+            CompletionService aiService,
+            AuditLogger auditLogger,
+            MetricsCollector metrics,
+            EvolutionPlanRepository planRepository,
+            EvolutionExecutionHandoffService executionHandoffService,
+            EvolutionImpactAnalysisService impactAnalysisService,
+            EvolutionKernelUpdateService kernelUpdateService) {
+        this(
+                aiService,
+                auditLogger,
+                metrics,
+                planRepository,
+                executionHandoffService,
+                impactAnalysisService,
+                kernelUpdateService,
+                true);
     }
 
     private EvolutionServiceImpl(
@@ -78,12 +137,16 @@ public class EvolutionServiceImpl implements EvolutionService {
             MetricsCollector metrics,
             EvolutionPlanRepository planRepository,
             EvolutionExecutionHandoffService executionHandoffService,
+            EvolutionImpactAnalysisService impactAnalysisService,
+            EvolutionKernelUpdateService kernelUpdateService,
             boolean persistPlan) {
         this.aiService = aiService;
         this.auditLogger = auditLogger;
         this.metrics = metrics;
         this.planRepository = planRepository;
         this.executionHandoffService = executionHandoffService;
+        this.impactAnalysisService = impactAnalysisService;
+        this.kernelUpdateService = kernelUpdateService;
         this.persistPlan = persistPlan;
     }
 
@@ -105,8 +168,16 @@ public class EvolutionServiceImpl implements EvolutionService {
 
                     return auditLogger.log(ServiceObservability.auditEvent("evolve.propose", insights, plan))
                             .then(v -> persistPlan
-                                    ? planRepository.save(buildEvolutionProposal(insights, plan, constraints))
-                                            .map(ignored -> plan)
+                                    ? analyzeImpact(insights, plan)
+                                            .then(impact -> prepareKernelUpdate(insights, plan, impact)
+                                                    .then(kernelUpdate -> planRepository.save(
+                                                                    buildEvolutionProposal(
+                                                                            insights,
+                                                                            plan,
+                                                                            constraints,
+                                                                            impact,
+                                                                            kernelUpdate))
+                                                            .map(ignored -> plan)))
                                     : Promise.of(plan));
                 })
                 .whenException(e -> {
@@ -271,9 +342,21 @@ public class EvolutionServiceImpl implements EvolutionService {
     private EvolutionPlanRepository.EvolutionProposal buildEvolutionProposal(
             Insights insights,
             EvolutionPlan plan,
-            ConstraintSpec constraints) {
+            ConstraintSpec constraints,
+            EvolutionImpactAnalysis impactAnalysis,
+            EvolutionKernelUpdateService.EvolutionKernelUpdate kernelUpdate) {
         String tenantId = resolveTenantId();
         String projectId = extractProjectRef(insights.observationRef());
+        List<String> learningEvidenceIds = extractLearningEvidenceIds(insights);
+        String productUnitIntentRef = kernelUpdate.productUnitIntentRef() == null
+                || kernelUpdate.productUnitIntentRef().isBlank()
+                ? plan.newIntentRef()
+                : kernelUpdate.productUnitIntentRef();
+        List<String> provenance = new ArrayList<>();
+        provenance.add(insights.id());
+        provenance.add(stableRef(insights.observationRef(), "observation-unavailable"));
+        provenance.addAll(learningEvidenceIds);
+        provenance.add(plan.id());
         return new EvolutionPlanRepository.EvolutionProposal(
                 "evolve-" + plan.id(),
                 tenantId,
@@ -282,15 +365,59 @@ public class EvolutionServiceImpl implements EvolutionService {
                 plan,
                 constraints,
                 "PENDING_APPROVAL",
-                plan.newIntentRef(),
-                List.of(insights.id(), stableRef(insights.observationRef(), "observation-unavailable"), plan.id()),
+                productUnitIntentRef,
+                List.copyOf(provenance),
                 Map.of(
                         "taskCount", plan.tasks() == null ? 0 : plan.tasks().size(),
                         "requiresApproval", true,
-                        "source", plan.metadata() == null ? "unknown" : plan.metadata().getOrDefault("source", "unknown")
+                        "source", plan.metadata() == null ? "unknown" : plan.metadata().getOrDefault("source", "unknown"),
+                        "sourceInsightsRef", insights.id(),
+                        "sourceObservationRef", stableRef(insights.observationRef(), "observation-unavailable"),
+                        "sourceLearningEvidenceIds", learningEvidenceIds,
+                        "impactAnalysis", impactAnalysis.toMetadata(),
+                        "kernelUpdateRequest", kernelUpdate.metadata(),
+                        "kernelProductUnitIntent", kernelUpdate.productUnitIntent()
                 ),
                 Instant.now()
         );
+    }
+
+    private Promise<EvolutionImpactAnalysis> analyzeImpact(Insights insights, EvolutionPlan plan) {
+        String tenantId = resolveTenantId();
+        String projectId = extractProjectRef(insights.observationRef());
+        String workspaceId = extractWorkspaceRef(insights.observationRef(), projectId);
+        return impactAnalysisService.analyze(new EvolutionImpactAnalysisService.ImpactAnalysisRequest(
+                tenantId,
+                workspaceId,
+                projectId,
+                insights,
+                plan));
+    }
+
+    private Promise<EvolutionKernelUpdateService.EvolutionKernelUpdate> prepareKernelUpdate(
+            Insights insights,
+            EvolutionPlan plan,
+            EvolutionImpactAnalysis impactAnalysis) {
+        String tenantId = resolveTenantId();
+        String projectId = extractProjectRef(insights.observationRef());
+        return kernelUpdateService.prepareUpdate(new EvolutionKernelUpdateService.EvolutionKernelUpdateRequest(
+                tenantId,
+                projectId,
+                plan,
+                impactAnalysis));
+    }
+
+    private static List<String> extractLearningEvidenceIds(Insights insights) {
+        if (insights.patterns() == null) {
+            return List.of();
+        }
+        return insights.patterns().stream()
+                .map(Pattern::evidence)
+                .filter(Objects::nonNull)
+                .flatMap(List::stream)
+                .filter(value -> value != null && !value.isBlank())
+                .distinct()
+                .toList();
     }
 
     private static String resolveTenantId() {
@@ -310,11 +437,29 @@ public class EvolutionServiceImpl implements EvolutionService {
 
     private static String extractProjectRef(String observationRef) {
         String stable = stableRef(observationRef, "project-unavailable");
+        if (stable.contains("/")) {
+            String afterWorkspace = stable.substring(stable.indexOf('/') + 1);
+            int separator = afterWorkspace.indexOf(':');
+            return separator > 0 ? afterWorkspace.substring(0, separator) : afterWorkspace;
+        }
         int separator = stable.indexOf(':');
         if (separator > 0) {
             return stable.substring(0, separator);
         }
         return stable;
+    }
+
+    private static String extractWorkspaceRef(String observationRef, String projectId) {
+        String stable = stableRef(observationRef, "");
+        if (stable.contains("/")) {
+            String workspace = stable.substring(0, stable.indexOf('/'));
+            return workspace.isBlank() ? "workspace-unavailable" : workspace;
+        }
+        String[] parts = stable.split(":");
+        if (parts.length >= 3 && !parts[0].equals(projectId)) {
+            return parts[0];
+        }
+        return "workspace-unavailable";
     }
 
     private static String stableRef(String value, String fallback) {

@@ -106,6 +106,9 @@ jobs:
           ./gradlew :products:yappc:validateOpenApi \
             --no-daemon --stacktrace
 
+      - name: Check production truth sources
+        run: node products/yappc/scripts/check-production-truth-sources.mjs
+
   # ─────────────────────────────────────────────
   # OpenAPI Parity Check
   # ─────────────────────────────────────────────
@@ -451,6 +454,52 @@ jobs:
   # ─────────────────────────────────────────────
   # Code Quality (Checkstyle, PMD, SpotBugs)
   # ─────────────────────────────────────────────
+  a11y:
+    name: Accessibility Readiness
+    needs: frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        run: corepack enable && corepack prepare pnpm@10.33.0 --activate
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        working-directory: products/yappc/frontend
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Build frontend for a11y
+        working-directory: products/yappc/frontend
+        run: pnpm build:web
+
+      - name: Run accessibility release tests
+        working-directory: products/yappc/frontend
+        run: pnpm release:accessibility
+        env:
+          CI: true
+
+      - name: Upload accessibility evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yappc-a11y-readiness
+          path: |
+            products/yappc/frontend/playwright-report/
+            products/yappc/frontend/test-results/
+          retention-days: 14
+
   quality:
     name: Code Quality
     needs: [backend, frontend]
@@ -655,7 +704,7 @@ jobs:
   # ─────────────────────────────────────────────
   cleanup:
     name: Cleanup
-    needs: [backend, frontend, e2e, quality, contract-tests, docker]
+    needs: [backend, frontend, e2e, a11y, quality, contract-tests, docker]
     runs-on: ubuntu-latest
     if: always()
     timeout-minutes: 5
@@ -681,6 +730,7 @@ jobs:
       - backend
       - frontend
       - e2e
+      - a11y
       - quality
       - contract-tests
       - docker
@@ -722,6 +772,12 @@ jobs:
           name: yappc-e2e-results
           path: artifacts/e2e-results
 
+      - name: Download accessibility readiness
+        uses: actions/download-artifact@v4
+        with:
+          name: yappc-a11y-readiness
+          path: artifacts/a11y-readiness
+
       - name: Download startup diagnostics
         uses: actions/download-artifact@v4
         with:
@@ -743,6 +799,7 @@ jobs:
       - name: Generate release evidence bundle
         run: |
           bash products/yappc/scripts/generate-release-evidence.sh products/yappc/build/release-evidence artifacts
+          node products/yappc/scripts/generate-ci-execution-proof.mjs products/yappc/build/release-evidence artifacts
 
       - name: Upload release evidence bundle
         uses: actions/upload-artifact@v4

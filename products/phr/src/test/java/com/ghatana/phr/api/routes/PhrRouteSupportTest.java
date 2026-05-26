@@ -158,6 +158,7 @@ class PhrRouteSupportTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     @DisplayName("isPrivileged returns true for clinician and admin (deprecated bridge)")
     void isPrivilegedForAdminAndClinician() {
         for (String role : new String[]{"admin", "clinician"}) {
@@ -167,6 +168,7 @@ class PhrRouteSupportTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     @DisplayName("isPrivileged returns false for patient and caregiver (deprecated bridge)")
     void isNotPrivilegedForPatientAndCaregiver() {
         for (String role : new String[]{"patient", "caregiver"}) {
@@ -188,14 +190,14 @@ class PhrRouteSupportTest {
     private static HttpRequest requestWithCorrelation(
             String tenantId, String principalId, String role, String correlationId) {
         HttpRequest request = mock(HttpRequest.class);
+        // ActiveJ normalises header names to lower-case, so HttpHeaders.of("X-Tenant-ID") and
+        // HttpHeaders.of("X-Tenant-Id") resolve to the same HttpHeader key. Stubbing both forms
+        // causes the second stub (null) to overwrite the first. Stub only the primary form;
+        // firstHeader() will match it regardless of which capitalisation it uses to look up.
         when(request.getHeader(HttpHeaders.of("X-Tenant-ID"))).thenReturn(tenantId);
-        when(request.getHeader(HttpHeaders.of("X-Tenant-Id"))).thenReturn(null);
         when(request.getHeader(HttpHeaders.of("X-Principal-ID"))).thenReturn(principalId);
-        when(request.getHeader(HttpHeaders.of("X-Principal-Id"))).thenReturn(null);
         when(request.getHeader(HttpHeaders.of("X-Role"))).thenReturn(role);
         when(request.getHeader(HttpHeaders.of("X-Correlation-ID"))).thenReturn(correlationId);
-        when(request.getHeader(HttpHeaders.of("X-Correlation-Id"))).thenReturn(null);
-        when(request.getHeader(HttpHeaders.of("X-Request-ID"))).thenReturn(null);
         return request;
     }
 }

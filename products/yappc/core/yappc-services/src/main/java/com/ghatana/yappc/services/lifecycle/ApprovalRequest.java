@@ -79,6 +79,7 @@ public record ApprovalRequest(
      * @param workflowId       workflow ID associated with this gate (may be {@code null})
      * @param planId           current AI plan ID at the time of the gate (may be {@code null})
      * @param priorPlanId      plan ID superseded by this approval decision (may be {@code null})
+     * @param evolutionProposalId evolution proposal ID controlled by this approval (may be {@code null})
      */
     public record ApprovalContext(
             String fromPhase,
@@ -88,7 +89,8 @@ public record ApprovalRequest(
             List<String> missingArtifacts,
             String workflowId,
             String planId,
-            String priorPlanId
+            String priorPlanId,
+            String evolutionProposalId
     ) {
         public ApprovalContext {
             unmetCriteria    = unmetCriteria    != null ? List.copyOf(unmetCriteria)    : List.of();
@@ -106,7 +108,23 @@ public record ApprovalRequest(
                 String blockReason,
                 List<String> unmetCriteria,
                 List<String> missingArtifacts) {
-            this(fromPhase, toPhase, blockReason, unmetCriteria, missingArtifacts, null, null, null);
+            this(fromPhase, toPhase, blockReason, unmetCriteria, missingArtifacts, null, null, null, null);
+        }
+
+        /**
+         * Convenience constructor for callers that have workflow / plan context but
+         * no explicit evolution proposal binding.
+         */
+        public ApprovalContext(
+                String fromPhase,
+                String toPhase,
+                String blockReason,
+                List<String> unmetCriteria,
+                List<String> missingArtifacts,
+                String workflowId,
+                String planId,
+                String priorPlanId) {
+            this(fromPhase, toPhase, blockReason, unmetCriteria, missingArtifacts, workflowId, planId, priorPlanId, null);
         }
     }
 

@@ -25,8 +25,31 @@ import java.util.Set;
  * - Enforces evidence persistence configuration
  * - Validates commit SHA binding for production truth
  * - Checks environment-specific lifecycle constraints
+ * 
+ * <p><b>AEP-P1-001: Lifecycle Transition Graph</b><br>
+ * - Validates legal lifecycle state transitions
+ * - Enforces transition graph: draft → candidate → shadow → recommended → approved → active/predictive → degraded → retired/rollback
  */
 public final class PatternSpecValidator {
+
+    // AEP-P1-001: Legal lifecycle state transitions
+    private static final Map<String, Set<String>> LIFECYCLE_TRANSITIONS = Map.of(
+        "draft", Set.of("candidate", "retired"),
+        "candidate", Set.of("shadow", "retired", "draft"),
+        "shadow", Set.of("recommended", "retired", "candidate"),
+        "recommended", Set.of("approved", "retired", "shadow"),
+        "approved", Set.of("active", "predictive", "retired", "recommended"),
+        "active", Set.of("degraded", "retired", "rollback", "approved"),
+        "predictive", Set.of("degraded", "retired", "rollback", "approved"),
+        "degraded", Set.of("active", "predictive", "retired", "rollback"),
+        "rollback", Set.of("active", "predictive", "retired"),
+        "retired", Set.of() // Terminal state - no transitions allowed
+    );
+
+    private static final Set<String> VALID_LIFECYCLE_STATES = Set.of(
+        "draft", "candidate", "shadow", "recommended", "approved",
+        "active", "predictive", "degraded", "rollback", "retired"
+    );
 
     private static final Set<OperatorKind> AGENT_OPERATORS = EnumSet.of(
         OperatorKind.AGENT_PREDICATE,
@@ -315,11 +338,121 @@ public final class PatternSpecValidator {
 
         if (isBlank(lifecycleMap.get("state"))) {
             errors.add("lifecycle.state is required");
-        } else if ("production".equals(environment)) {
-            // DC-P5-003: Validate lifecycle.state is a valid transition target
+        } else {
             String state = String.valueOf(lifecycleMap.get("state"));
-            if (!isValidLifecycleState(state)) {
-                errors.add("lifecycle.state '" + state + "' is not a valid production state");
+            // AEP-P1-001: Validate lifecycle.state is a valid state
+            if (!VALID_LIFECYCLE_STATES.contains(state.toLowerCase())) {
+                errors.add("lifecycle.state '" + state + "' is not a valid lifecycle state. Valid states: " + VALID_LIFECYCLE_STATES);
+            }
+            
+            // AEP-P1-001: Validate lifecycle transition if previous state is provided
+            String previousState = isBlank(lifecycleMap.get("previousState")) ? null : String.valueOf(lifecycleMap.get("previousState"));
+            if (previousState != null && !previousState.equals(state)) {
+                if (!isValidLifecycleTransition(previousState, state)) {
+                    errors.add("lifecycle.state transition from '" + previousState + "' to '" + state + "' is not allowed. Valid transitions from " + previousState + ": " + LIFECYCLE_TRANSITIONS.getOrDefault(previousState.toLowerCase(), Set.of()));
+                }
+            }
+            
+            // AEP-P1-002: Validate promotion to active/predictive requires governance proof
+            if ("production".equals(environment) && (state.equalsIgnoreCase("active") || state.equalsIgnoreCase("predictive"))) {
+                if (previousState != null && !previousState.equalsIgnoreCase(state)) {
+                    // This is a promotion - validate governance requirements
+                    Object governance = lifecycleMap.get("governance");
+                    if (!(governance instanceof Map<?, ?> governanceMap)) {
+                        errors.add("lifecycle.governance is required for promotion to " + state + " in production");
+                    } else {
+                        // AEP-P1-002: Promotion requires approval policy
+                        if (isBlank(governanceMap.get("approvalPolicy")) && isBlank(governanceMap.get("reviewPolicy"))) {
+                            errors.add("lifecycle.governance.approvalPolicy or governance.reviewPolicy is required for promotion to " + state + " in production");
+                        }
+                        // AEP-P1-002: Promotion requires evidence store
+                        if (isBlank(governanceMap.get("evidenceStore"))) {
+                            errors.add("lifecycle.governance.evidenceStore is required for promotion to " + state + " in production");
+                        }
+                        // AEP-P1-002: Promotion requires commit binding
+                        if (isBlank(governanceMap.get("commitSha"))) {
+                            errors.add("lifecycle.governance.commitSha is required for promotion to " + state + " in production");
+                        }
+                        // AEP-P1-002: Promotion requires owner
+                        if (isBlank(governanceMap.get("owner"))) {
+                            errors.add("lifecycle.governance.owner is required for promotion to " + state + " in production");
+                        }
+                        // AEP-P1-002: Promotion requires risk level
+                        if (isBlank(governanceMap.get("riskLevel"))) {
+                            errors.add("lifecycle.governance.riskLevel is required for promotion to " + state + " in production");
+                        }
+                        // AEP-P1-002: Promotion requires rollback policy
+                        if (isBlank(governanceMap.get("rollbackPolicy"))) {
+                            errors.add("lifecycle.governance.rollbackPolicy is required for promotion to " + state + " in production");
+                        }
+                        // AEP-P1-002: Promotion requires audit policy
+                        if (isBlank(governanceMap.get("auditPolicy"))) {
+                            errors.add("lifecycle.governance.auditPolicy is required for promotion to " + state + " in production");
+                        }
+                    }
+                }
+            }
+            
+            // AEP-P1-003: Validate rollback state requires previous active/predictive state and rollback decision
+            if (state.equalsIgnoreCase("rollback")) {
+                if (previousState == null || (!previousState.equalsIgnoreCase("active") && !previousState.equalsIgnoreCase("predictive"))) {
+                    errors.add("lifecycle.state rollback requires previousState to be active or predictive");
+                }
+                Object governance = lifecycleMap.get("governance");
+                if (!(governance instanceof Map<?, ?> governanceMap)) {
+                    errors.add("lifecycle.governance is required for rollback state");
+                } else {
+                    // AEP-P1-003: Rollback requires rollback decision
+                    if (isBlank(governanceMap.get("rollbackDecision"))) {
+                        errors.add("lifecycle.governance.rollbackDecision is required for rollback state");
+                    }
+                    // AEP-P1-003: Rollback requires rollback reason
+                    if (isBlank(governanceMap.get("rollbackReason"))) {
+                        errors.add("lifecycle.governance.rollbackReason is required for rollback state");
+                    }
+                    // AEP-P1-003: Rollback requires approver
+                    if (isBlank(governanceMap.get("rollbackApprover"))) {
+                        errors.add("lifecycle.governance.rollbackApprover is required for rollback state");
+                    }
+                    // AEP-P1-003: Rollback requires previous version reference
+                    if (isBlank(governanceMap.get("previousVersion"))) {
+                        errors.add("lifecycle.governance.previousVersion is required for rollback state");
+                    }
+                }
+            }
+            
+            // AEP-P1-004: Validate degraded state behavior
+            if (state.equalsIgnoreCase("degraded")) {
+                if (previousState == null || (!previousState.equalsIgnoreCase("active") && !previousState.equalsIgnoreCase("predictive"))) {
+                    errors.add("lifecycle.state degraded requires previousState to be active or predictive");
+                }
+                Object semantics = lifecycleMap.get("degradedBehavior");
+                if (semantics == null) {
+                    errors.add("lifecycle.degradedBehavior is required for degraded state");
+                } else if (!(semantics instanceof Map<?, ?> behaviorMap)) {
+                    errors.add("lifecycle.degradedBehavior must be an object");
+                } else {
+                    // AEP-P1-004: Degraded behavior must specify mode
+                    String mode = isBlank(behaviorMap.get("mode")) ? null : String.valueOf(behaviorMap.get("mode"));
+                    if (mode == null || (!mode.equalsIgnoreCase("disabled") && !mode.equalsIgnoreCase("advisory-only") && !mode.equalsIgnoreCase("fallback") && !mode.equalsIgnoreCase("require-review"))) {
+                        errors.add("lifecycle.degradedBehavior.mode must be one of: disabled, advisory-only, fallback, require-review");
+                    }
+                    // AEP-P1-004: Advisory-only and fallback modes require review policy
+                    if (mode != null && (mode.equalsIgnoreCase("advisory-only") || mode.equalsIgnoreCase("fallback") || mode.equalsIgnoreCase("require-review"))) {
+                        if (isBlank(behaviorMap.get("reviewPolicy"))) {
+                            errors.add("lifecycle.degradedBehavior.reviewPolicy is required for mode " + mode);
+                        }
+                    }
+                    // AEP-P1-004: Degraded patterns must not execute unsafe side effects
+                    if (isBlank(behaviorMap.get("sideEffectPolicy"))) {
+                        errors.add("lifecycle.degradedBehavior.sideEffectPolicy is required for degraded state");
+                    } else {
+                        String sideEffectPolicy = String.valueOf(behaviorMap.get("sideEffectPolicy"));
+                        if (!sideEffectPolicy.equalsIgnoreCase("none") && !sideEffectPolicy.equalsIgnoreCase("read-only") && !sideEffectPolicy.equalsIgnoreCase("safe-operations")) {
+                            errors.add("lifecycle.degradedBehavior.sideEffectPolicy must be one of: none, read-only, safe-operations");
+                        }
+                    }
+                }
             }
         }
 
@@ -340,13 +473,12 @@ public final class PatternSpecValidator {
         }
     }
 
-    private static boolean isValidLifecycleState(String state) {
-        String normalized = state.toLowerCase();
-        // AEP-LIFECYCLE-001: Complete lifecycle state validation including all required states
-        return normalized.equals("active") || normalized.equals("draft") || normalized.equals("disabled")
-            || normalized.equals("shadow") || normalized.equals("recommended") || normalized.equals("predictive")
-            || normalized.equals("candidate") || normalized.equals("approved") || normalized.equals("degraded")
-            || normalized.equals("retired") || normalized.equals("rollback");
+    // AEP-P1-001: Validate lifecycle transition is legal
+    private static boolean isValidLifecycleTransition(String fromState, String toState) {
+        String from = fromState.toLowerCase();
+        String to = toState.toLowerCase();
+        Set<String> allowedTransitions = LIFECYCLE_TRANSITIONS.getOrDefault(from, Set.of());
+        return allowedTransitions.contains(to);
     }
 
     private static boolean isApprovedEvidenceStore(String evidenceStore) {

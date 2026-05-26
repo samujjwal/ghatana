@@ -189,6 +189,29 @@ export interface PreviewHealth {
   readonly isHealthy: boolean;
   readonly status: string;
   readonly issues: readonly string[];
+  readonly security?: PreviewSecurity;
+}
+
+/**
+ * Preview token scope grant status.
+ */
+export interface PreviewTokenScope {
+  readonly id: string;
+  readonly name: string;
+  readonly required: boolean;
+  readonly granted: boolean;
+}
+
+/**
+ * Preview token/trust security status.
+ */
+export interface PreviewSecurity {
+  readonly trustLevel: string;
+  readonly tokenScopes: readonly PreviewTokenScope[];
+  readonly expiresAt?: string | null;
+  readonly expired: boolean;
+  readonly safe: boolean;
+  readonly issues: readonly string[];
 }
 
 /**
@@ -212,12 +235,25 @@ export interface RuntimeHealth {
 }
 
 /**
+ * Agent governance and learning evidence health status.
+ */
+export interface AgentGovernanceHealth {
+  readonly isHealthy: boolean;
+  readonly status: string;
+  readonly governanceState: string;
+  readonly learningLevel: string;
+  readonly evidenceIds: readonly string[];
+  readonly issues: readonly string[];
+}
+
+/**
  * Health signals for preview/generation/runtime.
  */
 export interface HealthSignals {
   readonly preview: PreviewHealth;
   readonly generation: GenerationHealth;
   readonly runtime: RuntimeHealth;
+  readonly agentGovernance?: AgentGovernanceHealth;
 }
 
 /**

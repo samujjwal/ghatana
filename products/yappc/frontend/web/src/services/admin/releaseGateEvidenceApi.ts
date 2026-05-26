@@ -59,6 +59,14 @@ async function readErrorResponse(response: Response, fallbackMessage: string): P
   try {
     const text = await response.text();
     if (text.trim().length > 0) {
+      try {
+        const parsed = JSON.parse(text) as unknown;
+        if (isRecord(parsed)) {
+          return stringValue(parsed.message) ?? stringValue(parsed.error) ?? text;
+        }
+      } catch {
+        // Non-JSON error bodies are returned as-is below.
+      }
       return text;
     }
   } catch {

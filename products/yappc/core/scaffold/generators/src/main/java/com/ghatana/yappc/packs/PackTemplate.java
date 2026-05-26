@@ -16,4 +16,28 @@ public interface PackTemplate {
     String id();
 
     List<ScaffoldFile> render(WorkspaceSpec spec);
+
+    default String schemaVersion() {
+        return "pack-v1";
+    }
+
+    default String version() {
+        return "1.0.0";
+    }
+
+    default List<String> supportedSurfaces() {
+        return List.of();
+    }
+
+    default List<String> compatibleLanguages() {
+        return List.of();
+    }
+
+    default List<String> compatibleFrameworks() {
+        return List.of();
+    }
+
+    default List<String> compatibleBuildSystems() {
+        return List.of();
+    }
 }

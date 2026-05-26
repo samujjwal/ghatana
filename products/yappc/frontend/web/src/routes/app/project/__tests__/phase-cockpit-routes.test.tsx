@@ -359,7 +359,7 @@ describe('phase cockpit routes', () => {
     expect(screen.getByTestId('primary-next-action')).toBeInTheDocument();
 
     expect(screen.getByTestId('advanced-tools-description')).toHaveTextContent(
-      'Use this when you need direct canvas edits after reviewing shape readiness and blockers.',
+      'Use this when direct canvas edits are needed after reviewing shape readiness and blockers.',
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Open canvas editing workspace' }));
@@ -757,6 +757,7 @@ describe('phase cockpit routes', () => {
     await waitFor(() => expectFetchCalledWithPath('/api/v1/workflows/yappc-run/start'));
     expect(await screen.findByTestId('phase-action-result')).toHaveTextContent('workflow-run-1');
     expect(await screen.findByTestId('run-post-actions')).toBeInTheDocument();
+    expect(screen.getByTestId('run-retry')).not.toBeDisabled();
     expect(screen.getByTestId('run-rollback')).not.toBeDisabled();
     expect(screen.getByTestId('run-promote')).not.toBeDisabled();
     expect(screen.getByTestId('run-observe-handoff')).not.toBeDisabled();

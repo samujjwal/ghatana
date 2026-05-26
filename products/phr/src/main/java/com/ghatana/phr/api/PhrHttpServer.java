@@ -15,6 +15,7 @@ import com.ghatana.phr.api.routes.PhrDocumentImagingRoutes;
 import com.ghatana.phr.api.routes.PhrEntitlementRoutes;
 import com.ghatana.phr.api.routes.PhrEmergencyRoutes;
 import com.ghatana.phr.api.routes.PhrFchvRoutes;
+import com.ghatana.phr.api.routes.PhrMobileRoutes;
 import com.ghatana.phr.api.routes.PhrFhirRoutes;
 import com.ghatana.phr.api.routes.PhrHealthRoutes;
 import com.ghatana.phr.api.routes.PhrPatientRecordRoutes;
@@ -70,6 +71,7 @@ import java.util.Objects;
  *   GET    /release-readiness                           — Admin release readiness runtime truth
  *   GET    /health                                      — Liveness probe
  *   GET    /ready                                       — Readiness probe
+ *   GET    /mobile/dashboard                            — Mobile patient dashboard (session-header auth)
  * </pre>
  *
  * <p>Register the servlet returned by {@link #getServlet()} into the product-level router.
@@ -102,6 +104,7 @@ public final class PhrHttpServer implements KernelLifecycleAware {
     private final PhrProviderRoutes providerRoutes;
     private final PhrCaregiverRoutes caregiverRoutes;
     private final PhrFchvRoutes fchvRoutes;
+    private final PhrMobileRoutes mobileRoutes;
     private volatile boolean started = false;
 
     /**
@@ -113,7 +116,7 @@ public final class PhrHttpServer implements KernelLifecycleAware {
      * @param healthRoutes         the health check route handlers; must not be null
      */
     public PhrHttpServer(Eventloop eventloop, PhrFhirRoutes fhirRoutes, PhrEntitlementRoutes entitlementRoutes, PhrHealthRoutes healthRoutes) {
-        this(eventloop, fhirRoutes, null, null, null, null, null, null, null, entitlementRoutes, healthRoutes);
+        this(eventloop, fhirRoutes, null, null, null, null, null, null, null, entitlementRoutes, healthRoutes, null, null, null, null, null, null);
     }
 
     /**
@@ -166,7 +169,7 @@ public final class PhrHttpServer implements KernelLifecycleAware {
             PhrHealthRoutes healthRoutes) {
         this(eventloop, fhirRoutes, patientRecordRoutes, consentRoutes, clinicalRoutes,
             emergencyRoutes, administrativeRoutes, documentImagingRoutes, releaseReadinessRoutes,
-            entitlementRoutes, healthRoutes, null, null);
+            entitlementRoutes, healthRoutes, null, null, null, null, null, null);
     }
 
     public PhrHttpServer(
@@ -185,7 +188,7 @@ public final class PhrHttpServer implements KernelLifecycleAware {
             PhrAuthRoutes authRoutes) {
         this(eventloop, fhirRoutes, patientRecordRoutes, consentRoutes, clinicalRoutes,
             emergencyRoutes, administrativeRoutes, documentImagingRoutes, releaseReadinessRoutes,
-            entitlementRoutes, healthRoutes, auditRoutes, authRoutes, null, null, null);
+            entitlementRoutes, healthRoutes, auditRoutes, authRoutes, null, null, null, null);
     }
 
     /**
@@ -212,6 +215,37 @@ public final class PhrHttpServer implements KernelLifecycleAware {
             PhrProviderRoutes providerRoutes,
             PhrCaregiverRoutes caregiverRoutes,
             PhrFchvRoutes fchvRoutes) {
+        this(eventloop, fhirRoutes, patientRecordRoutes, consentRoutes, clinicalRoutes,
+            emergencyRoutes, administrativeRoutes, documentImagingRoutes, releaseReadinessRoutes,
+            entitlementRoutes, healthRoutes, auditRoutes, authRoutes, providerRoutes, caregiverRoutes, fchvRoutes, null);
+    }
+
+    /**
+     * Full constructor including role-specific route adapters and mobile routes.
+     *
+     * @param providerRoutes   provider dashboard and patient roster routes; may be null
+     * @param caregiverRoutes  caregiver delegated-access routes; may be null
+     * @param fchvRoutes       FCHV community health volunteer routes; may be null
+     * @param mobileRoutes     mobile dashboard routes; may be null
+     */
+    public PhrHttpServer(
+            Eventloop eventloop,
+            PhrFhirRoutes fhirRoutes,
+            PhrPatientRecordRoutes patientRecordRoutes,
+            PhrConsentRoutes consentRoutes,
+            PhrClinicalRoutes clinicalRoutes,
+            PhrEmergencyRoutes emergencyRoutes,
+            PhrAdministrativeRoutes administrativeRoutes,
+            PhrDocumentImagingRoutes documentImagingRoutes,
+            PhrReleaseReadinessRoutes releaseReadinessRoutes,
+            PhrEntitlementRoutes entitlementRoutes,
+            PhrHealthRoutes healthRoutes,
+            PhrAuditRoutes auditRoutes,
+            PhrAuthRoutes authRoutes,
+            PhrProviderRoutes providerRoutes,
+            PhrCaregiverRoutes caregiverRoutes,
+            PhrFchvRoutes fchvRoutes,
+            PhrMobileRoutes mobileRoutes) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop cannot be null");
         this.fhirRoutes = Objects.requireNonNull(fhirRoutes, "fhirRoutes cannot be null");
         this.patientRecordRoutes = patientRecordRoutes;
@@ -228,6 +262,7 @@ public final class PhrHttpServer implements KernelLifecycleAware {
         this.providerRoutes = providerRoutes;
         this.caregiverRoutes = caregiverRoutes;
         this.fchvRoutes = fchvRoutes;
+        this.mobileRoutes = mobileRoutes;
     }
 
     // -------------------------------------------------------------------------
@@ -316,6 +351,9 @@ public final class PhrHttpServer implements KernelLifecycleAware {
         }
         if (fchvRoutes != null) {
             builder.with("/fchv/*", fchvRoutes.getServlet());
+        }
+        if (mobileRoutes != null) {
+            builder.with("/mobile/*", mobileRoutes.getServlet());
         }
         return builder
             .with("/route-entitlements", entitlementRoutes.getServlet())

@@ -9,6 +9,7 @@ import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.governance.PolicyEngine;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.governance.security.Principal;
+import com.ghatana.yappc.api.AdminFeatureFlagController;
 import com.ghatana.yappc.api.PhasePacket;
 import com.ghatana.yappc.api.PlatformEvidence;
 import com.ghatana.yappc.services.capability.CapabilityEvaluationService;
@@ -359,7 +360,18 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                     state.putIfAbsent("tier", "PRO");
                     state.putIfAbsent("status", "active");
                     state.putIfAbsent("createdAt", Instant.now().toString());
-                    return Promise.of(Map.copyOf(state));
+                    return queryEnabledTenantFeatureFlags(tenantId)
+                            .map(tenantFlags -> {
+                                if (!tenantFlags.isEmpty()) {
+                                    LinkedHashSet<String> merged = new LinkedHashSet<>();
+                                    addFlagValues(merged, state.get("enabledPhaseFlags"));
+                                    addFlagValues(merged, state.get("featureFlags"));
+                                    addFlagValues(merged, tenantFlags);
+                                    state.put("featureFlags", List.copyOf(merged));
+                                    state.put("featureFlagsSource", "yappc_feature_flags");
+                                }
+                                return Map.copyOf(state);
+                            });
                 });
         } catch (Exception e) {
             log.error("Unexpected error in queryProjectState", e);
@@ -580,6 +592,28 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                             "reason", e.getClass().getSimpleName()),
                     "evidence-query-failed:" + e.getClass().getSimpleName()));
         }
+    }
+
+    private Promise<List<String>> queryEnabledTenantFeatureFlags(String tenantId) {
+        DataCloudClient.Query query = DataCloudClient.Query.builder()
+                .filter(DataCloudClient.Filter.eq("enabled", true))
+                .limit(500)
+                .build();
+        return dataCloudClient.query(tenantId, AdminFeatureFlagController.FLAG_COLLECTION, query)
+                .map(records -> records.stream()
+                        .map(record -> record.data().get("key"))
+                        .filter(String.class::isInstance)
+                        .map(String.class::cast)
+                        .filter(flag -> !flag.isBlank())
+                        .distinct()
+                        .toList())
+                .then((flags, error) -> {
+                    if (error == null) {
+                        return Promise.of(flags);
+                    }
+                    log.error("DataCloud query failed for tenant feature flags: tenantId={}", tenantId, error);
+                    return Promise.of(List.of());
+                });
     }
 
     /**
@@ -1044,12 +1078,16 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             PreviewRuntimeService.PreviewHealthStatus previewHealth = previewRuntimeService.getHealth(previewId);
             PreviewRuntimeService.GenerationHealthStatus generationHealth = previewRuntimeService.getGenerationHealth(generationId);
             PreviewRuntimeService.RuntimeHealthStatus runtimeHealth = previewRuntimeService.getRuntimeHealth(runtimeId);
+            PhasePacket.PreviewSecurity previewSecurity = buildPreviewSecurity(projectState);
+            List<String> previewIssues = new java.util.ArrayList<>(previewHealth.issues());
+            previewIssues.addAll(previewSecurity.issues());
 
             return new PhasePacket.HealthSignals(
                 new PhasePacket.PreviewHealth(
-                    previewHealth.healthy(),
-                    previewHealth.status(),
-                    previewHealth.issues()
+                    previewHealth.healthy() && previewSecurity.safe(),
+                    previewSecurity.safe() ? previewHealth.status() : "unsafe",
+                    List.copyOf(previewIssues),
+                    previewSecurity
                 ),
                 new PhasePacket.GenerationHealth(
                     generationHealth.healthy(),
@@ -1062,7 +1100,8 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                     runtimeHealth.status(),
                     runtimeHealth.runtimeId(),
                     runtimeHealth.issues()
-                )
+                ),
+                buildAgentGovernanceHealth(projectState)
             );
 
         } catch (Exception e) {
@@ -1070,17 +1109,151 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             return new PhasePacket.HealthSignals(
                 new PhasePacket.PreviewHealth(false, "error", List.of("Health check failed")),
                 new PhasePacket.GenerationHealth(false, "error", null, List.of("Health check failed")),
-                new PhasePacket.RuntimeHealth(false, "error", null, List.of("Health check failed"))
+                new PhasePacket.RuntimeHealth(false, "error", null, List.of("Health check failed")),
+                new PhasePacket.AgentGovernanceHealth(
+                        false,
+                        "error",
+                        "unknown",
+                        "none",
+                        List.of(),
+                        List.of("Health check failed"))
             );
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private PhasePacket.AgentGovernanceHealth buildAgentGovernanceHealth(Map<String, Object> projectState) {
+        Object rawGovernance = projectState.get("agentGovernance");
+        if (!(rawGovernance instanceof Map<?, ?> governance)) {
+            return PhasePacket.AgentGovernanceHealth.unknown();
+        }
+
+        String status = stringValue(governance.get("status")).orElse("unknown");
+        String governanceState = stringValue(governance.get("governanceState")).orElse(status);
+        String learningLevel = stringValue(governance.get("learningLevel")).orElse("none");
+        List<String> evidenceIds = stringList(governance.get("evidenceIds"));
+        if (evidenceIds.isEmpty()) {
+            evidenceIds = stringList(governance.get("learningEvidenceIds"));
+        }
+        List<String> issues = stringList(governance.get("issues"));
+        boolean isHealthy = Boolean.TRUE.equals(governance.get("healthy"))
+                || ("healthy".equalsIgnoreCase(status) && issues.isEmpty());
+        return new PhasePacket.AgentGovernanceHealth(
+                isHealthy,
+                status,
+                governanceState,
+                learningLevel,
+                evidenceIds,
+                issues);
+    }
+
+    @SuppressWarnings("unchecked")
+    private PhasePacket.PreviewSecurity buildPreviewSecurity(Map<String, Object> projectState) {
+        Object rawSecurity = projectState.get("previewSecurity");
+        if (!(rawSecurity instanceof Map<?, ?> raw)) {
+            return PhasePacket.PreviewSecurity.safeDefault();
+        }
+
+        Object rawTrustLevel = raw.get("trustLevel");
+        String trustLevel = rawTrustLevel instanceof String value && !value.isBlank()
+                ? value.toLowerCase(java.util.Locale.ROOT)
+                : "trusted";
+        String expiresAt = raw.get("expiresAt") instanceof String value && !value.isBlank() ? value : null;
+        boolean expired = Boolean.TRUE.equals(raw.get("expired")) || isExpired(expiresAt);
+        List<PhasePacket.TokenScope> tokenScopes = new java.util.ArrayList<>();
+        Object scopesObject = raw.get("tokenScopes");
+        if (scopesObject == null) {
+            scopesObject = raw.get("tokenScope");
+        }
+        if (scopesObject instanceof List<?> scopes) {
+            for (Object scopeObject : scopes) {
+                if (scopeObject instanceof Map<?, ?> scope) {
+                    Object rawId = scope.get("id");
+                    String id = rawId instanceof String value && !value.isBlank() ? value : "preview-scope";
+                    Object rawName = scope.get("name");
+                    String name = rawName instanceof String value && !value.isBlank() ? value : id;
+                    boolean required = Boolean.TRUE.equals(scope.get("required"));
+                    boolean granted = Boolean.TRUE.equals(scope.get("granted"));
+                    tokenScopes.add(new PhasePacket.TokenScope(id, name, required, granted));
+                }
+            }
+        }
+
+        List<String> issues = new java.util.ArrayList<>();
+        Object rawIssues = raw.get("issues");
+        if (rawIssues instanceof List<?> issueList) {
+            issueList.stream()
+                    .filter(String.class::isInstance)
+                    .map(String.class::cast)
+                    .filter(issue -> !issue.isBlank())
+                    .forEach(issues::add);
+        }
+        Object rawMismatches = raw.get("scopeMismatches");
+        if (rawMismatches instanceof List<?> mismatches) {
+            mismatches.stream()
+                    .filter(String.class::isInstance)
+                    .map(String.class::cast)
+                    .filter(issue -> !issue.isBlank())
+                    .forEach(issue -> issues.add("Scope mismatch: " + issue));
+        }
+
+        long missingRequiredScopes = tokenScopes.stream()
+                .filter(scope -> scope.required() && !scope.granted())
+                .count();
+        if (missingRequiredScopes > 0) {
+            issues.add(missingRequiredScopes + " required preview token scope(s) are not granted");
+        }
+        if (expired) {
+            issues.add("Preview token is expired");
+        }
+        if ("untrusted".equals(trustLevel)) {
+            issues.add("Preview trust level is untrusted");
+        }
+
+        boolean explicitSafe = raw.get("safe") instanceof Boolean value ? value : true;
+        boolean safe = explicitSafe && !"untrusted".equals(trustLevel) && !expired && missingRequiredScopes == 0 && issues.isEmpty();
+        return new PhasePacket.PreviewSecurity(
+                trustLevel,
+                List.copyOf(tokenScopes),
+                expiresAt,
+                expired,
+                safe,
+                List.copyOf(issues)
+        );
+    }
+
+    private boolean isExpired(String expiresAt) {
+        if (expiresAt == null || expiresAt.isBlank()) {
+            return false;
+        }
+        try {
+            return Instant.parse(expiresAt).isBefore(Instant.now());
+        } catch (Exception ignored) {
+            return true;
         }
     }
 
     private Optional<String> stringState(Map<String, Object> projectState, String key) {
         Object value = projectState.get(key);
+        return stringValue(value);
+    }
+
+    private Optional<String> stringValue(Object value) {
         if (value instanceof String text && !text.isBlank()) {
             return Optional.of(text);
         }
         return Optional.empty();
+    }
+
+    private List<String> stringList(Object value) {
+        if (!(value instanceof List<?> list)) {
+            return List.of();
+        }
+        return list.stream()
+                .filter(String.class::isInstance)
+                .map(String.class::cast)
+                .filter(text -> !text.isBlank())
+                .toList();
     }
 
     /**

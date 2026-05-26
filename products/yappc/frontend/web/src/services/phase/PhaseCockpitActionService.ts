@@ -21,7 +21,7 @@ export interface ExecuteGenerateReviewDecisionParams {
   readonly reason?: string;
 }
 
-export type RunPostAction = 'rollback' | 'promote' | 'observe';
+export type RunPostAction = 'retry' | 'rollback' | 'promote' | 'observe';
 
 export interface ExecuteRunPostActionParams {
   readonly projectId: string;
@@ -370,10 +370,32 @@ export async function executeRunPostAction({
     metadata: {
       runId,
       action,
+      retryRunSpecId: action === 'retry' ? `${runId}-retry` : null,
       targetVersion: action === 'rollback' ? targetVersion : null,
       targetEnvironment: action === 'promote' ? targetEnvironment : null,
     },
   });
+
+  if (action === 'retry') {
+    const result = await yappcApi.run.retry({
+      failedRunId: runId,
+      runSpec: {
+        id: `${runId}-retry`,
+        environment: targetEnvironment,
+        tasks: [],
+        config: {
+          retryOf: runId,
+        },
+      },
+    });
+    return {
+      kind: 'run-workflow',
+      runId: result.id ?? runId,
+      auditEventId: auditEvent.id,
+      status: result.status ?? 'RETRY_REQUESTED',
+      message: `Run ${runId} retry requested. Audit event ${auditEvent.id} recorded.`,
+    };
+  }
 
   if (action === 'rollback') {
     const result = await yappcApi.run.rollback({

@@ -22,13 +22,14 @@ const mockFetch = fetchAuditEvents as ReturnType<typeof vi.fn>;
 
 const sampleEvent = {
   id: 'evt-1',
-  actorId: 'user-1',
-  actorRole: 'patient',
-  action: 'ACCESS',
+  tenantId: 'tenant-1',
+  eventType: 'ACCESS',
+  principal: 'user-1',
   resourceType: 'Patient',
   resourceId: 'pat-1',
   timestamp: '2026-01-01T00:00:00Z',
-  outcome: 'success',
+  success: true,
+  details: {},
 };
 
 describe('AuditPage', () => {

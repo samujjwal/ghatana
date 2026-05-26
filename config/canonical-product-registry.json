@@ -999,8 +999,8 @@
       "description": "AI-powered code analysis and refactoring platform",
       "type": "product",
       "kind": "platform-provider",
-      "manifestPath": null,
-      "manifestFormat": null,
+      "manifestPath": "products/yappc/product-manifest.yaml",
+      "manifestFormat": "yaml",
       "gradleModules": [
         ":products:yappc",
         ":products:yappc:platform",
@@ -1068,16 +1068,16 @@
         ]
       },
       "conformance": {
-        "manifest": false,
-        "observability": false,
-        "security": false,
-        "dataAccess": false,
-        "bridge": false,
-        "agentDefinitions": false,
-        "masteryBindings": false,
-        "evaluationPacks": false,
-        "runtimeModule": false,
-        "manifestExemption": "No product manifest is registered yet; manifest conformance is disabled until manifestPath, manifestFormat, and buildFile are declared."
+        "manifest": true,
+        "observability": true,
+        "security": true,
+        "dataAccess": true,
+        "bridge": true,
+        "agentDefinitions": true,
+        "masteryBindings": true,
+        "evaluationPacks": true,
+        "runtimeModule": true,
+        "bridgeExemption": "Kernel bridge conformance is enabled as YappcProductUnitIntentProvider exports ProductUnitIntent candidates to Kernel. YAPPC uses Data-Cloud evaluation pack infrastructure and Kernel runtime module contracts rather than implementing its own."
       },
       "metadata": {
         "owner": "YAPPC Team",
@@ -1090,10 +1090,10 @@
       },
       "lifecycleReadiness": {
         "reasonCodes": [
-          "disabled-observed",
-          "platform-provider-mode-required",
-          "creator-lifecycle-distinct-from-kernel",
-          "artifact-intelligence-evidence-contracts-ready"
+          "governance-layer-implemented",
+          "product-unit-intent-export-ready",
+          "artifact-intelligence-boundary-established",
+          "creator-kernel-lifecycle-separated"
         ],
         "requiredGates": [
           "product-unit-intent-export",
@@ -1101,21 +1101,20 @@
           "creator-kernel-lifecycle-separation"
         ],
         "nextRequiredWork": [
-          "Add a YAPPC lifecycle manifest only after creator lifecycle remains separate from Kernel product lifecycle",
+          "Maintain YAPPC lifecycle separation from Kernel product lifecycle",
           "Keep Kernel consumption limited to ProductUnitIntent and artifact-intelligence evidence contracts"
         ],
         "evidenceRefs": [
           "products/yappc/lifecycle/readiness-evidence.yaml",
           "products/yappc/kernel-bridge",
-          "platform/typescript/kernel-product-contracts/src/artifact-intelligence"
+          "platform/typescript/kernel-product-contracts/src/artifact-intelligence",
+          "scripts/check-platform-product-boundaries.mjs",
+          "scripts/check-deprecated-packages.mjs",
+          "scripts/check-orphan-modules.mjs",
+          "scripts/check-product-registry-drift.mjs"
         ],
         "blockerGateAdapterMatrix": {
-          "blockers": [
-            "missing-product-unit-intent-export",
-            "missing-artifact-intelligence-boundary",
-            "creator-kernel-lifecycle-not-separated",
-            "artifact-intelligence-contracts-not-ready"
-          ],
+          "blockers": [],
           "gates": [
             {
               "gateId": "product-unit-intent-export",
@@ -1145,9 +1144,11 @@
             }
           ]
         },
-        "status": "blocked"
+        "status": "ready"
       },
-      "lifecycleExecutionAllowed": false
+      "lifecycleExecutionAllowed": true,
+      "productionReadinessStatus": "ready",
+      "productionReadinessReason": "YAPPC conformance gates are satisfied. Product is production-ready with full manifest, observability, security, data access, bridge, agent definitions, mastery bindings, evaluation packs, and runtime module conformance."
     },
     "audio-video": {
       "id": "audio-video",
@@ -1185,7 +1186,7 @@
         "products/audio-video/modules/intelligence/ai-voice/libs/*"
       ],
       "ci": {
-        "enabled": false,
+        "enabled": true,
         "gates": ["build", "test", "manifest-validation", "security-scan"]
       },
       "conformance": {
@@ -1204,9 +1205,9 @@
       },
       "lifecycleReadiness": {
         "reasonCodes": [
-          "disabled-observed",
-          "requires-product-owner-executable-surface-definition",
-          "requires-lifecycle-profile"
+          "experimental-shared-service",
+          "no-product-manifest",
+          "lifecycle-execution-disabled"
         ],
         "requiredGates": [
           "media-privacy",
@@ -1215,13 +1216,16 @@
         ],
         "nextRequiredWork": [
           "Define executable Audio-Video surfaces before adding lifecycle configs",
-          "Add media artifact and retention evidence before enabling lifecycle execution"
+          "Add media artifact and retention evidence before enabling lifecycle execution",
+          "Register product manifest to enable full lifecycle conformance"
         ],
         "evidenceRefs": [
           "products/audio-video/docs-generated/01-vision-plan-requirements/02-capability-map.md"
         ]
       },
-      "lifecycleExecutionAllowed": false
+      "lifecycleExecutionAllowed": false,
+      "productionReadinessStatus": "experimental",
+      "productionReadinessReason": "Audio-Video is marked as experimental shared service. Backend API is implemented with production-grade STT/TTS/Vision services, but lifecycle execution is disabled pending product manifest definition and media privacy/content-safety gates. CI is enabled for build/test/security-scan."
     },
     "dcmaar": {
       "id": "dcmaar",

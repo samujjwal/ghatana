@@ -47,7 +47,7 @@ class RouteAuthorizationRegistryParityTest {
                 "getPhasePacket",
                 Permission.PROJECT_READ,
                 RouteAuthorizationRegistry.ResourceScope.PROJECT,
-                RouteAuthorizationRegistry.PrivacyClassification.INTERNAL
+                RouteAuthorizationRegistry.PrivacyClassification.CONFIDENTIAL
         );
         assertRoute(
                 HttpMethod.POST,
@@ -55,7 +55,7 @@ class RouteAuthorizationRegistryParityTest {
                 "requestPhasePacket",
                 Permission.PROJECT_READ,
                 RouteAuthorizationRegistry.ResourceScope.PROJECT,
-                RouteAuthorizationRegistry.PrivacyClassification.INTERNAL
+                RouteAuthorizationRegistry.PrivacyClassification.CONFIDENTIAL
         );
     }
 
@@ -68,7 +68,7 @@ class RouteAuthorizationRegistryParityTest {
                 "getDashboardActions",
                 Permission.WORKSPACE_READ,
                 RouteAuthorizationRegistry.ResourceScope.WORKSPACE,
-                RouteAuthorizationRegistry.PrivacyClassification.INTERNAL
+                RouteAuthorizationRegistry.PrivacyClassification.CONFIDENTIAL
         );
         assertRoute(
                 HttpMethod.POST,
@@ -76,7 +76,7 @@ class RouteAuthorizationRegistryParityTest {
                 "requestDashboardActions",
                 Permission.WORKSPACE_READ,
                 RouteAuthorizationRegistry.ResourceScope.WORKSPACE,
-                RouteAuthorizationRegistry.PrivacyClassification.INTERNAL
+                RouteAuthorizationRegistry.PrivacyClassification.CONFIDENTIAL
         );
     }
 

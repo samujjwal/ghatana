@@ -119,7 +119,9 @@ EXPOSE 8082 8081 3000
 # Default environment
 ENV JAVA_OPTS="-Xmx2G -Xms512M" \
     LOG_LEVEL=INFO \
-    NODE_ENV=production
+    NODE_ENV=production \
+    YAPPC_PROFILE=production \
+    YAPPC_KERNEL_LIFECYCLE_TRUTH_SOURCE=data-cloud
 
 # Startup script
 ENTRYPOINT ["sh", "-c"]

@@ -5,6 +5,8 @@ import com.ghatana.yappc.domain.shape.ShapeSpec;
 import com.ghatana.yappc.domain.shape.SystemModel;
 import io.activej.promise.Promise;
 
+import java.util.Optional;
+
 /**
  * @doc.type interface
  * @doc.purpose Transforms intent into structured design artifacts
@@ -27,6 +29,23 @@ public interface ShapeService {
      * @return Promise of SystemModel
      */
     Promise<SystemModel> generateModel(ShapeSpec spec);
+
+    /**
+     * Finds the latest persisted shape version.
+     *
+     * @param tenantId tenant identifier
+     * @param workspaceId workspace identifier
+     * @param projectId project identifier
+     * @param shapeId shape identifier
+     * @return latest persisted shape if present
+     */
+    default Promise<Optional<ShapeVersionRecord>> findLatest(
+            String tenantId,
+            String workspaceId,
+            String projectId,
+            String shapeId) {
+        return Promise.of(Optional.empty());
+    }
 
     /**
      * Returns the total number of persisted shape entities.

@@ -1006,6 +1006,7 @@
   "phaseCockpit.generateReview.rollback": "Roll back",
   "phaseCockpit.runPost.title": "Post-run controls",
   "phaseCockpit.runPost.description": "Promote a healthy run, roll back an unsafe deployment, or hand off the run to Observe for live signal review.",
+  "phaseCockpit.runPost.retry": "Retry",
   "phaseCockpit.runPost.rollback": "Roll back",
   "phaseCockpit.runPost.promote": "Promote",
   "phaseCockpit.runPost.observe": "Hand off to Observe",

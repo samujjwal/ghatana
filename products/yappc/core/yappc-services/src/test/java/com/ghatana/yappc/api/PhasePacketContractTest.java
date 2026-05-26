@@ -66,7 +66,14 @@ class PhasePacketContractTest {
                 new PhasePacket.HealthSignals(
                         new PhasePacket.PreviewHealth(false, "degraded", List.of("Data Cloud service unavailable")),
                         new PhasePacket.GenerationHealth(false, "degraded", null, List.of("Data Cloud service unavailable")),
-                        new PhasePacket.RuntimeHealth(false, "degraded", null, List.of("Data Cloud service unavailable"))
+                        new PhasePacket.RuntimeHealth(false, "degraded", null, List.of("Data Cloud service unavailable")),
+                        new PhasePacket.AgentGovernanceHealth(
+                                true,
+                                "healthy",
+                                "policy-approved",
+                                "evidence-backed",
+                                List.of("learn-run-1"),
+                                List.of())
                 ),
                 new PhasePacket.DegradedPacketDetails(
                         "DATA_CLOUD",
@@ -89,5 +96,7 @@ class PhasePacketContractTest {
         assertThat(json.at("/completedArtifacts/0/evidenceId").asText()).isEqualTo("evidence-1");
         assertThat(json.at("/correlationId").asText()).isEqualTo("corr-1");
         assertThat(json.at("/healthSignals/runtime/status").asText()).isEqualTo("degraded");
+        assertThat(json.at("/healthSignals/agentGovernance/governanceState").asText()).isEqualTo("policy-approved");
+        assertThat(json.at("/healthSignals/agentGovernance/evidenceIds/0").asText()).isEqualTo("learn-run-1");
     }
 }

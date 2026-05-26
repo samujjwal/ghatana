@@ -1,0 +1,71 @@
+{
+  "productId": "phr",
+  "evidenceType": "data-cloud-collections",
+  "generatedAt": "2025-06-01T00:00:00Z",
+  "targetCommitSha": "test-evidence-commit-001",
+  "collections": [
+    {
+      "name": "phr_patient_records",
+      "rlsEnabled": true,
+      "rlsPolicy": "tenant_patient_isolation",
+      "description": "Core patient health records with tenant-scoped RLS"
+    },
+    {
+      "name": "phr_observations",
+      "rlsEnabled": true,
+      "rlsPolicy": "tenant_patient_isolation",
+      "description": "Clinical observations (vitals, lab results) with tenant-scoped RLS"
+    },
+    {
+      "name": "phr_medications",
+      "rlsEnabled": true,
+      "rlsPolicy": "tenant_patient_isolation",
+      "description": "Medication records with tenant-scoped RLS"
+    },
+    {
+      "name": "phr_conditions",
+      "rlsEnabled": true,
+      "rlsPolicy": "tenant_patient_isolation",
+      "description": "Patient conditions/diagnoses with tenant-scoped RLS"
+    },
+    {
+      "name": "phr_documents",
+      "rlsEnabled": true,
+      "rlsPolicy": "tenant_patient_isolation",
+      "description": "Clinical documents with tenant-scoped RLS"
+    },
+    {
+      "name": "phr_appointments",
+      "rlsEnabled": true,
+      "rlsPolicy": "tenant_patient_isolation",
+      "description": "Patient appointments with tenant-scoped RLS"
+    },
+    {
+      "name": "phr_immunizations",
+      "rlsEnabled": true,
+      "rlsPolicy": "tenant_patient_isolation",
+      "description": "Immunization records with tenant-scoped RLS"
+    },
+    {
+      "name": "phr_consent_records",
+      "rlsEnabled": true,
+      "rlsPolicy": "tenant_patient_isolation",
+      "description": "Patient consent directives with tenant-scoped RLS"
+    },
+    {
+      "name": "phr_audit_logs",
+      "rlsEnabled": true,
+      "rlsPolicy": "tenant_isolation",
+      "description": "PHI access audit logs with tenant-scoped RLS (append-only)"
+    },
+    {
+      "name": "phr_fhir_resources",
+      "rlsEnabled": true,
+      "rlsPolicy": "tenant_patient_isolation",
+      "description": "FHIR R4 resource store with tenant-scoped RLS"
+    }
+  ],
+  "implementationRefs": [
+    "products/phr/src/main/java/com/ghatana/phr/repository/"
+  ]
+}

@@ -10,27 +10,43 @@ import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.security.rbac.InMemoryRolePermissionRegistry;
 import com.ghatana.platform.security.rbac.RolePermissionRegistry;
 import com.ghatana.platform.security.rbac.SyncAuthorizationService;
+import com.ghatana.yappc.ai.PromptLifecycleService;
+import com.ghatana.yappc.ai.PromptTemplateRegistry;
+import com.ghatana.yappc.ai.abtesting.ABTestingEvaluationService;
 import com.ghatana.yappc.services.capability.CapabilityEvaluationService;
 import com.ghatana.yappc.services.evolve.EvolutionService;
 import com.ghatana.yappc.services.evolve.EvolutionServiceImpl;
+import com.ghatana.yappc.services.evolve.ArtifactGraphEvolutionImpactAnalysisService;
 import com.ghatana.yappc.services.evolve.DataCloudEvolutionPlanRepository;
 import com.ghatana.yappc.services.evolve.DataCloudEvolutionExecutionHandoffService;
 import com.ghatana.yappc.services.evolve.EvolutionExecutionHandoffDispatcher;
 import com.ghatana.yappc.services.evolve.EvolutionExecutionHandoffSchedulerService;
+import com.ghatana.yappc.services.evolve.EvolutionImpactAnalysisService;
+import com.ghatana.yappc.services.evolve.EvolutionKernelUpdateService;
+import com.ghatana.yappc.services.evolve.KernelProductUnitEvolutionUpdateService;
 import com.ghatana.yappc.services.evolve.EvolutionLifecycleExecutionDispatcher;
 import com.ghatana.yappc.services.evolve.LifecycleApiExecutionDispatcher;
 import com.ghatana.yappc.services.generate.GenerationService;
+import com.ghatana.yappc.services.generate.GenerationAssuranceService;
 import com.ghatana.yappc.services.generate.GenerationServiceImpl;
 import com.ghatana.yappc.services.intent.IntentService;
 import com.ghatana.yappc.services.intent.IntentServiceImpl;
+import com.ghatana.yappc.services.intent.DataCloudIntentRepository;
+import com.ghatana.yappc.services.intent.IntentRepository;
+import com.ghatana.yappc.services.intent.IntentEvidenceService;
+import com.ghatana.yappc.services.intent.PlatformIntentEvidenceService;
+import com.ghatana.yappc.services.kernel.KernelProductUnitHandoffService;
 import com.ghatana.yappc.services.learn.LearningService;
 import com.ghatana.yappc.services.learn.LearningServiceImpl;
 import com.ghatana.yappc.services.learn.DataCloudLearningEvidenceRepository;
+import com.ghatana.yappc.services.learn.LearningEvidenceService;
+import com.ghatana.yappc.services.learn.LearningEvidenceServiceImpl;
 import com.ghatana.yappc.services.lifecycle.JdbcAuditLogger;
 import com.ghatana.yappc.services.lifecycle.TransitionConfigLoader;
 import com.ghatana.yappc.services.lifecycle.gate.PhaseGateValidator;
 import com.ghatana.yappc.services.platform.PlatformIntegrationClient;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
+import com.ghatana.yappc.storage.ArtifactGraphRepository;
 import com.ghatana.yappc.services.metrics.BusinessMetrics;
 import com.ghatana.yappc.services.observe.ObserveService;
 import com.ghatana.yappc.services.observe.ObserveServiceImpl;
@@ -44,6 +60,8 @@ import com.ghatana.yappc.services.run.RunService;
 import com.ghatana.yappc.services.run.RunServiceImpl;
 import com.ghatana.yappc.services.shape.ShapeService;
 import com.ghatana.yappc.services.shape.ShapeServiceImpl;
+import com.ghatana.yappc.services.shape.DataCloudShapeRepository;
+import com.ghatana.yappc.services.shape.ShapeRepository;
 import com.ghatana.yappc.services.validate.ValidationService;
 import com.ghatana.yappc.services.validate.ValidationServiceImpl;
 import io.activej.eventloop.Eventloop;
@@ -55,6 +73,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.sql.DataSource;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executors;
 
 /**
  * @doc.type class
@@ -65,19 +84,37 @@ import java.util.Set;
 public class YappcApiModule extends AbstractModule {
 
     @Provides
+    IntentRepository intentRepository(DataCloudClient dataCloudClient) {
+        return new DataCloudIntentRepository(dataCloudClient);
+    }
+
+    @Provides
+    IntentEvidenceService intentEvidenceService(PlatformIntegrationClient platformIntegrationClient) {
+        return new PlatformIntentEvidenceService(platformIntegrationClient);
+    }
+
+    @Provides
     IntentService intentService(
             CompletionService aiService,
             AuditLogger auditLogger,
-            MetricsCollector metrics) {
-        return new IntentServiceImpl(aiService, auditLogger, metrics);
+            MetricsCollector metrics,
+            IntentRepository intentRepository,
+            IntentEvidenceService intentEvidenceService) {
+        return new IntentServiceImpl(aiService, auditLogger, metrics, intentRepository, intentEvidenceService);
+    }
+
+    @Provides
+    ShapeRepository shapeRepository(DataCloudClient dataCloudClient) {
+        return new DataCloudShapeRepository(dataCloudClient);
     }
 
     @Provides
     ShapeService shapeService(
             CompletionService aiService,
             AuditLogger auditLogger,
-            MetricsCollector metrics) {
-        return new ShapeServiceImpl(aiService, auditLogger, metrics);
+            MetricsCollector metrics,
+            ShapeRepository shapeRepository) {
+        return new ShapeServiceImpl(aiService, auditLogger, metrics, shapeRepository);
     }
 
     @Provides
@@ -94,8 +131,21 @@ public class YappcApiModule extends AbstractModule {
             AuditLogger auditLogger,
             MetricsCollector metrics,
             GenerationRunRepository generationRunRepository,
-            ObjectMapper objectMapper) {
-        return new GenerationServiceImpl(aiService, auditLogger, metrics, generationRunRepository, objectMapper);
+            ObjectMapper objectMapper,
+            GenerationAssuranceService generationAssuranceService) {
+        return new GenerationServiceImpl(
+                aiService,
+                auditLogger,
+                metrics,
+                generationRunRepository,
+                objectMapper,
+                com.ghatana.yappc.services.generate.AiHealthProvider.alwaysHealthy(),
+                generationAssuranceService);
+    }
+
+    @Provides
+    GenerationAssuranceService generationAssuranceService() {
+        return new GenerationAssuranceService();
     }
 
     @Provides
@@ -107,8 +157,9 @@ public class YappcApiModule extends AbstractModule {
     RunService runService(
             AuditLogger auditLogger,
             MetricsCollector metrics,
-            CiCdPort ciCdPort) {
-        return new RunServiceImpl(auditLogger, metrics, ciCdPort);
+            CiCdPort ciCdPort,
+            LearningEvidenceService learningEvidenceService) {
+        return new RunServiceImpl(auditLogger, metrics, ciCdPort, learningEvidenceService);
     }
 
     @Provides
@@ -132,17 +183,41 @@ public class YappcApiModule extends AbstractModule {
     }
 
     @Provides
+    LearningEvidenceService learningEvidenceService(DataCloudClient dataCloudClient) {
+        return new LearningEvidenceServiceImpl(new DataCloudLearningEvidenceRepository(dataCloudClient));
+    }
+
+    @Provides
     EvolutionService evolutionService(
             CompletionService aiService,
             AuditLogger auditLogger,
             MetricsCollector metrics,
-            DataCloudClient dataCloudClient) {
+            DataCloudClient dataCloudClient,
+            EvolutionImpactAnalysisService impactAnalysisService,
+            EvolutionKernelUpdateService kernelUpdateService) {
         return new EvolutionServiceImpl(
                 aiService,
                 auditLogger,
                 metrics,
             new DataCloudEvolutionPlanRepository(dataCloudClient),
-            new DataCloudEvolutionExecutionHandoffService(dataCloudClient));
+            new DataCloudEvolutionExecutionHandoffService(dataCloudClient),
+            impactAnalysisService,
+            kernelUpdateService);
+    }
+
+    @Provides
+    EvolutionImpactAnalysisService evolutionImpactAnalysisService(ArtifactGraphRepository artifactGraphRepository) {
+        return new ArtifactGraphEvolutionImpactAnalysisService(artifactGraphRepository);
+    }
+
+    @Provides
+    EvolutionKernelUpdateService evolutionKernelUpdateService(KernelProductUnitHandoffService handoffService) {
+        return new KernelProductUnitEvolutionUpdateService(handoffService);
+    }
+
+    @Provides
+    KernelProductUnitHandoffService kernelProductUnitHandoffService() {
+        return new KernelProductUnitHandoffService();
     }
 
             @Provides
@@ -255,7 +330,8 @@ public class YappcApiModule extends AbstractModule {
             "lifecycle:execute",
             "preview:create",
             "generation:execute",
-            "generation:review"
+            "generation:review",
+            "admin:system"
         ));
         
         // DEVELOPER: Standard development access
@@ -308,6 +384,48 @@ public class YappcApiModule extends AbstractModule {
             previewSecurityPolicy,
             isProduction
         );
+    }
+
+    @Provides
+    AdminObservabilityController adminObservabilityController(ObjectMapper objectMapper) {
+        return new AdminObservabilityController(
+            objectMapper,
+            java.nio.file.Path.of("."),
+            Executors.newVirtualThreadPerTaskExecutor()
+        );
+    }
+
+    @Provides
+    AdminFeatureFlagController adminFeatureFlagController(DataCloudClient dataCloudClient, ObjectMapper objectMapper) {
+        return new AdminFeatureFlagController(dataCloudClient, objectMapper);
+    }
+
+    @Provides
+    AdminAbTestingController adminAbTestingController(
+            DataCloudClient dataCloudClient,
+            ObjectMapper objectMapper,
+            ABTestingEvaluationService abTestingEvaluationService,
+            PromptLifecycleService promptLifecycleService) {
+        return new AdminAbTestingController(
+                dataCloudClient,
+                objectMapper,
+                abTestingEvaluationService,
+                promptLifecycleService);
+    }
+
+    @Provides
+    ABTestingEvaluationService abTestingEvaluationService() {
+        return new ABTestingEvaluationService();
+    }
+
+    @Provides
+    PromptTemplateRegistry promptTemplateRegistry() {
+        return new PromptTemplateRegistry();
+    }
+
+    @Provides
+    PromptLifecycleService promptLifecycleService(PromptTemplateRegistry registry, AuditLogger auditLogger) {
+        return new PromptLifecycleService(registry, auditLogger);
     }
 
     @Provides

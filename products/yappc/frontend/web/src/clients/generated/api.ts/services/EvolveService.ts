@@ -68,4 +68,52 @@ export class EvolveService {
             },
         });
     }
+    /**
+     * Approve an evolution proposal
+     * @param proposalId
+     * @param requestBody
+     * @returns any Evolution proposal approved
+     * @throws ApiError
+     */
+    public static approveEvolutionProposal(
+        proposalId: string,
+        requestBody: Record<string, any>,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/yappc/evolve/{proposalId}/approve',
+            path: {
+                'proposalId': proposalId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Bad request â€” invalid or missing parameters`,
+            },
+        });
+    }
+    /**
+     * Reject an evolution proposal
+     * @param proposalId
+     * @param requestBody
+     * @returns any Evolution proposal rejected
+     * @throws ApiError
+     */
+    public static rejectEvolutionProposal(
+        proposalId: string,
+        requestBody: Record<string, any>,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/yappc/evolve/{proposalId}/reject',
+            path: {
+                'proposalId': proposalId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Bad request â€” invalid or missing parameters`,
+            },
+        });
+    }
 }

@@ -8,6 +8,7 @@ import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.yappc.domain.evolve.EvolutionPlan;
 import com.ghatana.yappc.domain.learn.Insights;
+import com.ghatana.yappc.domain.learn.Pattern;
 import io.activej.promise.Promise;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.Test;
@@ -138,6 +139,7 @@ class EvolutionServiceTest extends EventloopTestBase {
         AuditLogger auditLogger = mock(AuditLogger.class);
         MetricsCollector metrics = mock(MetricsCollector.class);
         EvolutionPlanRepository repository = mock(EvolutionPlanRepository.class);
+        EvolutionImpactAnalysisService impactAnalysisService = mock(EvolutionImpactAnalysisService.class);
 
         when(aiService.complete(any(CompletionRequest.class)))
                 .thenReturn(Promise.of(CompletionResult.builder()
@@ -147,14 +149,36 @@ class EvolutionServiceTest extends EventloopTestBase {
         when(auditLogger.log(any(Map.class))).thenReturn(Promise.complete());
         when(repository.save(any(EvolutionPlanRepository.EvolutionProposal.class)))
                 .thenReturn(Promise.complete());
+        when(impactAnalysisService.analyze(any(EvolutionImpactAnalysisService.ImpactAnalysisRequest.class)))
+                .thenReturn(Promise.of(new EvolutionImpactAnalysis(
+                        "READY",
+                        "artifact-graph",
+                        List.of("web"),
+                        List.of("checkout"),
+                        List.of("checkout validation"),
+                        List.of("preview"),
+                        List.of("node-checkout"),
+                        List.of())));
 
         TenantContext.setCurrentTenantId("tenant-alpha");
         runBlocking(() -> TenantContext.setCurrentTenantId("tenant-alpha"));
-        EvolutionService service = new EvolutionServiceImpl(aiService, auditLogger, metrics, repository);
+        EvolutionService service = new EvolutionServiceImpl(
+                aiService,
+                auditLogger,
+                metrics,
+                repository,
+                EvolutionExecutionHandoffService.noop(),
+                impactAnalysisService);
         Insights insights = Insights.builder()
                 .id("insights-123")
                 .observationRef("project-123:obs-456")
-                .patterns(List.of())
+                .patterns(List.of(Pattern.builder()
+                        .id("pattern-1")
+                        .type("run-failure")
+                        .description("Repeated failed run")
+                        .confidence(0.91)
+                        .evidence(List.of("learn-run-1", "learn-approval-1"))
+                        .build()))
                 .anomalies(List.of())
                 .recommendations(List.of())
                 .build();
@@ -170,7 +194,19 @@ class EvolutionServiceTest extends EventloopTestBase {
                             && proposal.projectId().equals("project-123")
                             && proposal.approvalState().equals("PENDING_APPROVAL")
                             && proposal.productUnitIntentRef().equals(result.newIntentRef())
-                            && proposal.provenance().contains("insights-123")));
+                            && proposal.provenance().contains("insights-123")
+                            && proposal.provenance().contains("project-123:obs-456")
+                            && proposal.provenance().contains("learn-run-1")
+                            && proposal.metadata().get("sourceObservationRef").equals("project-123:obs-456")
+                            && proposal.metadata().get("sourceLearningEvidenceIds").equals(List.of("learn-run-1", "learn-approval-1"))
+                            && ((Map<String, Object>) proposal.metadata().get("impactAnalysis")).get("status").equals("READY")
+                            && ((List<String>) ((Map<String, Object>) proposal.metadata().get("impactAnalysis"))
+                                    .get("affectedModules")).contains("checkout")));
+            verify(impactAnalysisService).analyze(argThat(request ->
+                    request.tenantId().equals("tenant-alpha")
+                            && request.projectId().equals("project-123")
+                            && request.workspaceId().equals("workspace-unavailable")
+                            && request.insights().id().equals("insights-123")));
         } finally {
             TenantContext.clear();
             runBlocking(TenantContext::clear);

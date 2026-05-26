@@ -161,6 +161,67 @@ public class RunApiController {
             .whenException(e -> log.error("Run execute-with-observation request failed", e));
     }
 
+    public Promise<HttpResponse> retry(HttpRequest request) {
+        return request.loadBody()
+            .then(body -> {
+                String json = body.asString(UTF_8);
+                try {
+                    RetryRunRequest payload = JsonMapper.fromJson(json, RetryRunRequest.class);
+                    if (payload == null || isBlank(payload.failedRunId()) || payload.runSpec() == null) {
+                        return auditThenRespond(
+                            request,
+                            "run.retry.request",
+                            "rejected",
+                            payload == null ? null : payload.failedRunId(),
+                            null,
+                            Map.of("route", "run-retry", "reason", "failedRunId and runSpec are required"),
+                            badRequest400("failedRunId and runSpec are required")
+                        );
+                    }
+                    if (isBlank(payload.runSpec().id())) {
+                        return auditThenRespond(
+                            request,
+                            "run.retry.request",
+                            "rejected",
+                            payload.failedRunId(),
+                            safeValue(payload.runSpec().environment()),
+                            Map.of("route", "run-retry", "reason", "runSpec.id is required"),
+                            badRequest400("runSpec.id is required")
+                        );
+                    }
+
+                    return runService.retry(payload.failedRunId(), payload.runSpec())
+                        .then(result -> auditThenRespond(
+                            request,
+                            "run.retry.request",
+                            "succeeded",
+                            payload.failedRunId(),
+                            payload.runSpec().environment(),
+                            Map.of(
+                                "route", "run-retry",
+                                "failedRunId", payload.failedRunId(),
+                                "runSpecId", payload.runSpec().id(),
+                                "environment", safeValue(payload.runSpec().environment()),
+                                "status", result.status().name()
+                            ),
+                            toJsonResponse(result)
+                        ));
+                } catch (JsonProcessingException e) {
+                    log.error("Invalid retry request", e);
+                    return auditThenRespond(
+                        request,
+                        "run.retry.request",
+                        "rejected",
+                        null,
+                        null,
+                        Map.of("route", "run-retry", "reason", "Invalid JSON format"),
+                        badRequest400("Invalid JSON format")
+                    );
+                }
+            })
+            .whenException(e -> log.error("Retry request failed", e));
+    }
+
     public Promise<HttpResponse> rollback(HttpRequest request) {
         return request.loadBody()
             .then(body -> {
@@ -338,6 +399,9 @@ public class RunApiController {
     }
 
     private record PromoteRequest(String deploymentId, String targetEnvironment) {
+    }
+
+    private record RetryRunRequest(String failedRunId, RunSpec runSpec) {
     }
 
     private record RunWithObservationRequest(RunSpec runSpec, ObservationConfig observationConfig) {

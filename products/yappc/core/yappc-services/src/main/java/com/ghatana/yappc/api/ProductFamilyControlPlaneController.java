@@ -545,6 +545,16 @@ public final class ProductFamilyControlPlaneController {
         }
         String actorId = principal != null && principal.getName() != null ? principal.getName() : "system";
         String correlationId = correlationId(request);
+        if (!canPromoteProductFamilyAsset(principal)) {
+            log.warn("Denied product-family asset promotion: actor={} tenantId={} assetId={} correlationId={}",
+                    actorId,
+                    tenantId,
+                    assetId,
+                    correlationId);
+            return Promise.of(HttpResponse.ofCode(403)
+                    .withJson("{\"error\":\"product-family asset promotion requires project write authorization\"}")
+                    .build());
+        }
 
         return request.loadBody().then(body -> {
             try {
@@ -590,7 +600,15 @@ public final class ProductFamilyControlPlaneController {
 
                             Instant now = Instant.now();
                             Map<String, Object> updatedAsset = promotedAsset(found.get().id(), assetId, current, payload, targetState, actorId, correlationId, now);
-                            Map<String, Object> history = promotionHistory(assetId, updatedAsset, payload, targetState, actorId, correlationId, now);
+                            Map<String, Object> history = promotionHistory(
+                                    assetId,
+                                    updatedAsset,
+                                    payload,
+                                    currentState,
+                                    targetState,
+                                    actorId,
+                                    correlationId,
+                                    now);
                             return dataCloudClient.save(tenantId, ASSET_COLLECTION, updatedAsset)
                                     .then(saved -> dataCloudClient.save(tenantId, "product_family_asset_history", history)
                                             .map(ignored -> Map.of(
@@ -605,6 +623,15 @@ public final class ProductFamilyControlPlaneController {
                         .build());
             }
         }).then((response, error) -> errorResponse(response, error, "asset promotion", tenantId, assetId));
+    }
+
+    private boolean canPromoteProductFamilyAsset(Principal principal) {
+        if (principal == null || principal.getRoles() == null) {
+            return false;
+        }
+        return principal.getRoles().stream()
+                .map(role -> role == null ? "" : role.trim().toLowerCase(java.util.Locale.ROOT))
+                .anyMatch(role -> List.of("owner", "admin", "lead", "developer").contains(role));
     }
 
     private Promise<Optional<DataCloudClient.Entity>> findAsset(String tenantId, String assetId) {
@@ -655,24 +682,30 @@ public final class ProductFamilyControlPlaneController {
             String assetId,
             Map<String, Object> updatedAsset,
             AssetPromotionRequest payload,
+            String previousState,
             String targetState,
             String actorId,
             String correlationId,
             Instant now) {
-        return Map.of(
-                "id", UUID.randomUUID().toString(),
-                "asset_id", assetId,
-                "tenant_id", value(updatedAsset, "tenant_id", ""),
-                "version", value(updatedAsset, "version", 1),
-                "promotion_state", targetState,
-                "actor_id", actorId,
-                "correlation_id", correlationId,
-                "payload", Map.of(
+        String rollbackTargetState = previousState == null ? "unknown" : previousState;
+        Map<String, Object> history = new LinkedHashMap<>();
+        history.put("id", UUID.randomUUID().toString());
+        history.put("asset_id", assetId);
+        history.put("tenant_id", value(updatedAsset, "tenant_id", ""));
+        history.put("version", value(updatedAsset, "version", 1));
+        history.put("previous_state", rollbackTargetState);
+        history.put("promotion_state", targetState);
+        history.put("rollback_target_state", rollbackTargetState);
+        history.put("reversible", !"unknown".equals(rollbackTargetState));
+        history.put("actor_id", actorId);
+        history.put("correlation_id", correlationId);
+        history.put("payload", Map.of(
                         "targetState", targetState,
                         "promotionTarget", payload.promotionTarget() == null ? "" : payload.promotionTarget(),
                         "reason", payload.reason() == null ? "" : payload.reason(),
-                        "evidenceRefs", payload.evidenceRefs() == null ? List.of() : payload.evidenceRefs()),
-                "occurred_at", now.toString());
+                        "evidenceRefs", payload.evidenceRefs() == null ? List.of() : payload.evidenceRefs()));
+        history.put("occurred_at", now.toString());
+        return history;
     }
 
     private int nextVersion(Map<String, Object> asset) {

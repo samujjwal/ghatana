@@ -49,6 +49,10 @@ const ActionRecommendationSchema = z.object({
   title: z.string(),
   description: z.string(),
   actionType: z.string(),
+  owner: z.string().optional(),
+  reason: z.string().optional(),
+  evidenceId: z.string().optional(),
+  nextAction: z.string().optional(),
 });
 
 const ProductUnitListSchema = z.array(ProductUnitHealthSummarySchema);
