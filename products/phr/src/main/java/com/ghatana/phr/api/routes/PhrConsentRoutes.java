@@ -1,7 +1,6 @@
 package com.ghatana.phr.api.routes;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.ghatana.phr.api.dto.CreateConsentGrantRequest;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
@@ -81,37 +80,15 @@ public final class PhrConsentRoutes {
             String idempotencyKey) {
         return request.loadBody()
             .then(body -> {
-                CreateConsentGrantRequest dto;
+                ConsentManagementService.ConsentGrant grant;
                 try {
-                    dto = PhrRouteSupport.parseAndValidate(
-                        body.getString(StandardCharsets.UTF_8),
-                        CreateConsentGrantRequest.class,
-                        "CreateConsentGrantRequest");
+                    grant = parseGrant(body.getString(StandardCharsets.UTF_8), idempotencyKey);
                 } catch (IllegalArgumentException ex) {
                     return PhrRouteSupport.errorResponse(400, "INVALID_CONSENT_GRANT", ex.getMessage());
                 }
-                if (!mayManagePatientConsent(context, dto.getPatientId())) {
+                if (!mayManagePatientConsent(context, grant.getPatientId())) {
                     return PhrRouteSupport.errorResponse(403, "CONSENT_OWNER_REQUIRED", "Only the patient or an admin can create consent grants");
                 }
-                // Convert DTO to domain model
-                ConsentManagementService.ConsentScope scope = new ConsentManagementService.ConsentScope(
-                    dto.getScope().getResourceTypes(),
-                    dto.getScope().isAllDocuments(),
-                    dto.getScope().getSpecificDocumentIds(),
-                    dto.getScope().getActions(),
-                    dto.getScope().getFieldLevelAccess()
-                );
-                ConsentManagementService.ConsentGrant grant = new ConsentManagementService.ConsentGrant(
-                    null,
-                    dto.getPatientId(),
-                    dto.getRecipientId(),
-                    scope,
-                    "ACTIVE",
-                    null,
-                    Instant.parse(dto.getExpiresAt()),
-                    null,
-                    idempotencyKey
-                );
                 return consentService.createGrant(grant)
                     .then(created -> PhrRouteSupport.jsonResponse(201, created));
             });

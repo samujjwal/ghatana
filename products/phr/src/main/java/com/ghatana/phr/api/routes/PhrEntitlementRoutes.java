@@ -37,7 +37,8 @@ public final class PhrEntitlementRoutes {
     private static final Logger LOG = LoggerFactory.getLogger(PhrEntitlementRoutes.class);
     private static final String CONTENT_JSON = "application/json";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final Path ROUTE_CONTRACT_PATH = Path.of("products/phr/config/phr-route-contract.json");
+    private static final Path ROUTE_CONTRACT_REPO_PATH = Path.of("products/phr/config/phr-route-contract.json");
+    private static final Path ROUTE_CONTRACT_MODULE_PATH = Path.of("config/phr-route-contract.json");
 
     private final Eventloop eventloop;
     private final RouteEntitlementEvaluator routeEntitlementEvaluator;
@@ -61,14 +62,17 @@ public final class PhrEntitlementRoutes {
      */
     private void loadRouteContract() {
         try {
-            if (!Files.exists(ROUTE_CONTRACT_PATH)) {
-                LOG.warn("Route contract file not found at {}, using fallback", ROUTE_CONTRACT_PATH);
+            Path routeContractPath = resolveRouteContractPath();
+            if (!Files.exists(routeContractPath)) {
+                LOG.warn("Route contract file not found at {} or {}, using fallback",
+                    ROUTE_CONTRACT_REPO_PATH,
+                    ROUTE_CONTRACT_MODULE_PATH);
                 this.roleOrder = phrRoleOrder();
                 this.cachedRoutes = phrRoutesFor("*", this.roleOrder);
                 return;
             }
 
-            String json = Files.readString(ROUTE_CONTRACT_PATH);
+            String json = Files.readString(routeContractPath);
             JsonNode root = OBJECT_MAPPER.readTree(json);
 
             // Load role order
@@ -140,12 +144,19 @@ public final class PhrEntitlementRoutes {
             }
             this.cachedRoutes = loadedRoutes;
             
-            LOG.info("Loaded {} routes from contract file {}", loadedRoutes.size(), ROUTE_CONTRACT_PATH);
+            LOG.info("Loaded {} routes from contract file {}", loadedRoutes.size(), routeContractPath);
         } catch (Exception ex) {
-            LOG.error("Failed to load route contract from {}, using fallback", ROUTE_CONTRACT_PATH, ex);
+            LOG.error("Failed to load route contract, using fallback", ex);
             this.roleOrder = phrRoleOrder();
             this.cachedRoutes = phrRoutesFor("*", this.roleOrder);
         }
+    }
+
+    private static Path resolveRouteContractPath() {
+        if (Files.exists(ROUTE_CONTRACT_REPO_PATH)) {
+            return ROUTE_CONTRACT_REPO_PATH;
+        }
+        return ROUTE_CONTRACT_MODULE_PATH;
     }
 
     /**

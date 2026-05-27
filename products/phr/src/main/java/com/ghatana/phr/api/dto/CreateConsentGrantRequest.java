@@ -35,6 +35,9 @@ public class CreateConsentGrantRequest {
     @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$", message = "expiresAt must be ISO-8601 format")
     private String expiresAt;
 
+    @Pattern(regexp = "^(ACTIVE|REVOKED|EXPIRED)$", message = "status must be ACTIVE, REVOKED, or EXPIRED")
+    private String status;
+
     public String getPatientId() {
         return patientId;
     }
@@ -67,6 +70,14 @@ public class CreateConsentGrantRequest {
         this.expiresAt = expiresAt;
     }
 
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
     /**
      * DTO for consent scope with resource, action, and field-level access.
      */
@@ -78,7 +89,7 @@ public class CreateConsentGrantRequest {
 
         private Set<@Pattern(regexp = "^[a-zA-Z0-9\\-]{8,64}$", message = "documentId must be 8-64 alphanumeric characters") String> specificDocumentIds;
 
-        private Set<@Pattern(regexp = "^(READ|WRITE)$", message = "action must be READ or WRITE") String> actions;
+        private Set<@Pattern(regexp = "^(?i)(READ|WRITE)$", message = "action must be READ or WRITE") String> actions;
 
         private Map<String, Set<@Pattern(regexp = "^[a-z0-9_]+$", message = "field name must be lowercase alphanumeric") String>> fieldLevelAccess;
 

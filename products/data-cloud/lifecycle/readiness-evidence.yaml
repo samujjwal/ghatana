@@ -16,8 +16,8 @@ promotion:
     approvedAt: 2026-05-26T00:00:00Z
     approvedBy: data-cloud-release-gate
   evidenceBundle: .kernel/evidence/data-cloud-release-bundle.json
-  sourceCommit: 6f1692bdd665ecb6cd4e4c0086fa29fdc0ccb6f8
-  targetCommit: 6f1692bdd665ecb6cd4e4c0086fa29fdc0ccb6f8
+  sourceCommit: 9e370000b856df0a93f05731a452972c368f083b
+  targetCommit: 9e370000b856df0a93f05731a452972c368f083b
 providerMode:
   requiresPlatformProviderMode: true
   bootstrapSeparationRequired: true
