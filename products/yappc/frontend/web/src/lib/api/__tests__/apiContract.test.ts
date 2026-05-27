@@ -443,6 +443,45 @@ describe('Phase cockpit generated client parity', () => {
     expect(openApiSource).toContain('Caller-supplied retry key for idempotent primary phase action execution');
     expect(generatedAdvanceSource).toContain('idempotencyKey?: string');
   });
+
+  it('keeps backend-provided phase readiness prediction fields in OpenAPI and generated frontend contracts', () => {
+    const openApiSource = fs.readFileSync(openApiPath, 'utf8');
+    const domainTypeSource = fs.readFileSync(
+      path.join(repoRoot, 'products/yappc/frontend/web/src/types/phasePacket.ts'),
+      'utf8'
+    );
+    const generatedReadinessSource = fs.readFileSync(
+      path.join(repoRoot, 'products/yappc/frontend/web/src/clients/generated/api/models/PhaseReadiness.ts'),
+      'utf8'
+    );
+
+    expect(openApiSource).toContain('estimatedReadyIn:');
+    expect(openApiSource).toContain('estimatedReadyInHours:');
+    expect(openApiSource).toContain('predictionConfidence:');
+    expect(domainTypeSource).toContain('readonly estimatedReadyIn?: string | null');
+    expect(domainTypeSource).toContain('readonly predictionConfidence?: number | null');
+    expect(generatedReadinessSource).toContain('estimatedReadyIn?: string | null');
+    expect(generatedReadinessSource).toContain('predictionConfidence?: number | null');
+  });
+
+  it('keeps traceable phase activity fields in OpenAPI and generated frontend contracts', () => {
+    const openApiSource = fs.readFileSync(openApiPath, 'utf8');
+    const domainTypeSource = fs.readFileSync(
+      path.join(repoRoot, 'products/yappc/frontend/web/src/types/phasePacket.ts'),
+      'utf8'
+    );
+    const generatedActivitySource = fs.readFileSync(
+      path.join(repoRoot, 'products/yappc/frontend/web/src/clients/generated/api/models/ActivityFeedEntry.ts'),
+      'utf8'
+    );
+
+    expect(openApiSource).toContain('eventType:');
+    expect(openApiSource).toContain('correlationId:');
+    expect(domainTypeSource).toContain('readonly correlationId?: string | null');
+    expect(generatedActivitySource).toContain('success: boolean | null');
+    expect(generatedActivitySource).toContain('outcome: string');
+    expect(generatedActivitySource).toContain('correlationId?: string | null');
+  });
 });
 
 describe('Generate Kernel ProductUnitIntent client parity', () => {

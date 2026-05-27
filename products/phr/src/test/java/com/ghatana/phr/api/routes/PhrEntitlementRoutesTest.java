@@ -100,14 +100,42 @@ class PhrEntitlementRoutesTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("200 — missing headers defaults to anonymous patient entitlements")
-    void missingHeadersDefaultsToAnonymous() throws Exception {
-        HttpRequest request = HttpRequest.get("http://localhost/").build();
+    @DisplayName("400 — missing X-Principal-Id header returns error")
+    void missingPrincipalIdReturnsError() throws Exception {
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/")
+            .withHeader(HttpHeaders.of("X-Tenant-Id"), "t1")
+            .withHeader(HttpHeaders.of("X-Role"), "patient")
+            .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
-        // Entitlement route is lenient on missing context — returns anonymous entitlements
-        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getCode()).isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("400 — missing X-Tenant-Id header returns error")
+    void missingTenantIdReturnsError() throws Exception {
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/")
+            .withHeader(HttpHeaders.of("X-Principal-Id"), "patient-1")
+            .withHeader(HttpHeaders.of("X-Role"), "patient")
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("400 — missing X-Role header returns error")
+    void missingRoleReturnsError() throws Exception {
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/")
+            .withHeader(HttpHeaders.of("X-Tenant-Id"), "t1")
+            .withHeader(HttpHeaders.of("X-Principal-Id"), "patient-1")
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(400);
     }
 
     @Test

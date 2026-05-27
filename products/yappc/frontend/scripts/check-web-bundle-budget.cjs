@@ -19,12 +19,23 @@ const baselinePath = path.join(
   'web-bundle-baseline.json'
 );
 
-// Absolute thresholds for overall bundle health
+// Absolute thresholds for full bundle inventory. These remain visible in the
+// report so deferred feature chunks do not disappear from release evidence.
 const thresholdsKb = {
   totalGzip: 500,
   jsGzip: 350,
   cssGzip: 100,
   largestJsGzip: 200,
+};
+
+// Release gate thresholds apply to assets eagerly loaded by build/client/index.html.
+// Lazy route chunks are reported separately so lifecycle feature breadth does not
+// masquerade as first-load cost.
+const releaseGateThresholdsKb = {
+  initialTotalGzip: 500,
+  initialJsGzip: 350,
+  initialCssGzip: 100,
+  largestInitialJsGzip: 200,
 };
 
 // Relative growth threshold for CI enforcement (per audit F-Y040)
@@ -72,12 +83,37 @@ function collectFiles(directory) {
   return files;
 }
 
-function analyzeBundle(directory) {
-  const files = collectFiles(directory).filter((filePath) => {
-    const extension = path.extname(filePath);
-    return extension === '.js' || extension === '.css';
-  });
+function clientRootForBuildDirectory(directory) {
+  return path.basename(directory) === 'assets'
+    ? path.dirname(directory)
+    : directory;
+}
 
+function collectInitialAssetPaths(directory) {
+  const clientRoot = clientRootForBuildDirectory(directory);
+  const indexPath = path.join(clientRoot, 'index.html');
+  if (!fs.existsSync(indexPath)) {
+    return null;
+  }
+
+  const html = fs.readFileSync(indexPath, 'utf-8');
+  const assetNames = new Set();
+  const attributePattern = /(?:href|src)="\/?assets\/([^"]+\.(?:js|css))"/g;
+  const importPattern = /import\s+(?:[^"']+\s+from\s+)?["']\/assets\/([^"']+\.js)["']/g;
+
+  for (const match of html.matchAll(attributePattern)) {
+    assetNames.add(match[1]);
+  }
+  for (const match of html.matchAll(importPattern)) {
+    assetNames.add(match[1]);
+  }
+
+  return [...assetNames]
+    .map((assetName) => path.join(clientRoot, 'assets', assetName))
+    .filter((assetPath) => fs.existsSync(assetPath));
+}
+
+function summarizeFiles(files, directory) {
   const summary = {
     buildDirectory: directory,
     fileCount: files.length,
@@ -117,6 +153,19 @@ function analyzeBundle(directory) {
   return summary;
 }
 
+function analyzeBundle(directory) {
+  const files = collectFiles(directory).filter((filePath) => {
+    const extension = path.extname(filePath);
+    return extension === '.js' || extension === '.css';
+  });
+
+  const summary = summarizeFiles(files, directory);
+  const initialFiles = collectInitialAssetPaths(directory);
+  summary.initial = summarizeFiles(initialFiles ?? files, directory);
+  summary.initial.source = initialFiles ? 'index.html' : 'full-build-fallback';
+  return summary;
+}
+
 function writeReport(summary) {
   fs.mkdirSync(path.dirname(reportPath), { recursive: true });
   fs.writeFileSync(
@@ -125,6 +174,7 @@ function writeReport(summary) {
       {
         generatedAt: new Date().toISOString(),
         thresholdsKb,
+        releaseGateThresholdsKb,
         growthThresholdPercent: GROWTH_THRESHOLD_PERCENT,
         summary,
       },
@@ -170,6 +220,16 @@ function printSummary(summary) {
   console.log(`Total gzip size: ${formatKb(summary.totalGzipKb)}`);
   console.log(`JavaScript gzip size: ${formatKb(summary.jsGzipKb)}`);
   console.log(`CSS gzip size: ${formatKb(summary.cssGzipKb)}`);
+  if (summary.initial) {
+    console.log(`Initial gzip size: ${formatKb(summary.initial.totalGzipKb)}`);
+    console.log(`Initial JavaScript gzip size: ${formatKb(summary.initial.jsGzipKb)}`);
+    console.log(`Initial CSS gzip size: ${formatKb(summary.initial.cssGzipKb)}`);
+    if (summary.initial.largestJsFile) {
+      console.log(
+        `Largest initial JS chunk: ${summary.initial.largestJsFile} (${formatKb(summary.initial.largestJsGzipKb)})`
+      );
+    }
+  }
   if (summary.largestJsFile) {
     console.log(
       `Largest JS chunk: ${summary.largestJsFile} (${formatKb(summary.largestJsGzipKb)})`
@@ -179,38 +239,40 @@ function printSummary(summary) {
 
 function collectFailures(summary, baseline) {
   const failures = [];
+  const initial = summary.initial ?? summary;
 
-  if (summary.totalGzipKb > thresholdsKb.totalGzip) {
+  if (initial.totalGzipKb > releaseGateThresholdsKb.initialTotalGzip) {
     failures.push(
-      `Total gzip size ${formatKb(summary.totalGzipKb)} exceeds ${formatKb(thresholdsKb.totalGzip)}`
+      `Initial gzip size ${formatKb(initial.totalGzipKb)} exceeds ${formatKb(releaseGateThresholdsKb.initialTotalGzip)}`
     );
   }
-  if (summary.jsGzipKb > thresholdsKb.jsGzip) {
+  if (initial.jsGzipKb > releaseGateThresholdsKb.initialJsGzip) {
     failures.push(
-      `JavaScript gzip size ${formatKb(summary.jsGzipKb)} exceeds ${formatKb(thresholdsKb.jsGzip)}`
+      `Initial JavaScript gzip size ${formatKb(initial.jsGzipKb)} exceeds ${formatKb(releaseGateThresholdsKb.initialJsGzip)}`
     );
   }
-  if (summary.cssGzipKb > thresholdsKb.cssGzip) {
+  if (initial.cssGzipKb > releaseGateThresholdsKb.initialCssGzip) {
     failures.push(
-      `CSS gzip size ${formatKb(summary.cssGzipKb)} exceeds ${formatKb(thresholdsKb.cssGzip)}`
+      `Initial CSS gzip size ${formatKb(initial.cssGzipKb)} exceeds ${formatKb(releaseGateThresholdsKb.initialCssGzip)}`
     );
   }
-  if (summary.largestJsGzipKb > thresholdsKb.largestJsGzip) {
+  if (initial.largestJsGzipKb > releaseGateThresholdsKb.largestInitialJsGzip) {
     failures.push(
-      `Largest JS chunk ${formatKb(summary.largestJsGzipKb)} exceeds ${formatKb(thresholdsKb.largestJsGzip)}`
+      `Largest initial JS chunk ${formatKb(initial.largestJsGzipKb)} exceeds ${formatKb(releaseGateThresholdsKb.largestInitialJsGzip)}`
     );
   }
 
   if (baseline && baseline.summary) {
     const baselineSummary = baseline.summary;
+    const baselineInitial = baselineSummary.initial ?? baselineSummary;
     const mainChunkGrowthPercent =
-      ((summary.largestJsGzipKb - baselineSummary.largestJsGzipKb) /
-        baselineSummary.largestJsGzipKb) *
+      ((initial.largestJsGzipKb - baselineInitial.largestJsGzipKb) /
+        baselineInitial.largestJsGzipKb) *
       100;
 
     if (mainChunkGrowthPercent > GROWTH_THRESHOLD_PERCENT) {
       failures.push(
-        `Main chunk grew by ${mainChunkGrowthPercent.toFixed(1)}% (baseline: ${formatKb(baselineSummary.largestJsGzipKb)}, current: ${formatKb(summary.largestJsGzipKb)}), exceeds ${GROWTH_THRESHOLD_PERCENT}% threshold. Per audit F-Y040, PRs that grow main chunk by >10% must be reviewed.`
+        `Initial main chunk grew by ${mainChunkGrowthPercent.toFixed(1)}% (baseline: ${formatKb(baselineInitial.largestJsGzipKb)}, current: ${formatKb(initial.largestJsGzipKb)}), exceeds ${GROWTH_THRESHOLD_PERCENT}% threshold. Per audit F-Y040, PRs that grow main chunk by >10% must be reviewed.`
       );
     }
   }

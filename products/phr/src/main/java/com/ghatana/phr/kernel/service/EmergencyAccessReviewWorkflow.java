@@ -84,6 +84,20 @@ public class EmergencyAccessReviewWorkflow {
             .map($ -> completedCase);
     }
 
+    /**
+     * Notifies the patient of emergency access to their records.
+     *
+     * <p>This is a policy gate requirement: patients must be notified when their
+     * records are accessed via emergency break-glass.</p>
+     *
+     * @param event the emergency access event
+     * @return Promise completing when notification is sent
+     */
+    public Promise<Void> notifyPatient(EmergencyAccessEvent event) {
+        EmergencyAccessReviewCase reviewCase = toReviewCase(event);
+        return notificationSender.notifyPatient(reviewCase, event);
+    }
+
     private EmergencyAccessReviewCase toReviewCase(EmergencyAccessEvent event) {
         Instant initiatedAt = event.accessedAt();
         Instant complianceDeadline = initiatedAt.plus(COMPLIANCE_NOTIFICATION_DEADLINE);

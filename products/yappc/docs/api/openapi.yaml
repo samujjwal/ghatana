@@ -6226,6 +6226,16 @@ components:
           format: double
         isDegraded:
           type: boolean
+        estimatedReadyIn:
+          type: string
+          nullable: true
+        estimatedReadyInHours:
+          type: integer
+          nullable: true
+        predictionConfidence:
+          type: number
+          format: double
+          nullable: true
 
     RequiredArtifact:
       type: object
@@ -6265,7 +6275,7 @@ components:
 
     ActivityFeedEntry:
       type: object
-      required: [id, type, action, summary, actor, timestamp, severity]
+      required: [id, type, action, summary, actor, timestamp, severity, eventType, success, outcome]
       properties:
         id:
           type: string
@@ -6283,6 +6293,16 @@ components:
         severity:
           type: string
           enum: [INFO, WARNING, ERROR]
+        eventType:
+          type: string
+        success:
+          type: boolean
+          nullable: true
+        outcome:
+          type: string
+        correlationId:
+          type: string
+          nullable: true
 
     PhaseEvidence:
       type: object

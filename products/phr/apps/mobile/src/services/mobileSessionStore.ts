@@ -17,6 +17,8 @@
  */
 
 import * as SecureStore from 'expo-secure-store';
+import { phiClearAll } from './phiEncryptedStorage';
+import { clearDashboardOffline } from './offlineStore';
 import type { MobileSession } from '../types';
 
 const SESSION_KEY = 'phr-mobile-session-v1';
@@ -36,9 +38,10 @@ export async function saveMobileSession(session: MobileSession): Promise<void> {
  * Loads the persisted mobile session. Returns `null` when absent or expired.
  * Expired sessions are removed from the keychain proactively.
  *
+ * @param currentSession Optional current in-memory session to detect role/persona changes
  * @returns the live session or null
  */
-export async function loadMobileSession(): Promise<MobileSession | null> {
+export async function loadMobileSession(currentSession?: MobileSession | null): Promise<MobileSession | null> {
   const raw = await SecureStore.getItemAsync(SESSION_KEY);
   if (!raw) return null;
 
@@ -56,13 +59,24 @@ export async function loadMobileSession(): Promise<MobileSession | null> {
     return null;
   }
 
+  // Detect role/persona changes and clear PHI cache if changed
+  if (currentSession && (currentSession.role !== session.role || currentSession.principalId !== session.principalId)) {
+    // Role or principal changed - clear encrypted PHI cache to prevent unauthorized access
+    await phiClearAll();
+    await clearDashboardOffline();
+  }
+
   return session;
 }
 
 /**
  * Removes the mobile session from the OS keychain.
  * Must be called on logout, consent revocation, session expiry, and role/persona change.
+ * Also clears encrypted PHI cache to ensure no PHI persists after session termination.
  */
 export async function clearMobileSession(): Promise<void> {
   await SecureStore.deleteItemAsync(SESSION_KEY);
+  // Clear encrypted PHI cache on session expiry, logout, or role/persona change
+  await phiClearAll();
+  await clearDashboardOffline();
 }

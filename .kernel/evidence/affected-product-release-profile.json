@@ -1,0 +1,74 @@
+{
+  "generatedAt": "2026-05-27T06:05:54.396Z",
+  "affectedProducts": [
+    "phr"
+  ],
+  "strictTargetCoverage": [
+    {
+      "productId": "data-cloud",
+      "kind": "platform-provider",
+      "lifecycleStatus": "unknown",
+      "active": true,
+      "ciEnabled": true
+    },
+    {
+      "productId": "digital-marketing",
+      "kind": "business-product",
+      "lifecycleStatus": "enabled",
+      "active": true,
+      "ciEnabled": true
+    },
+    {
+      "productId": "finance",
+      "kind": "business-product",
+      "lifecycleStatus": "planned",
+      "active": true,
+      "ciEnabled": true
+    },
+    {
+      "productId": "flashit",
+      "kind": "business-product",
+      "lifecycleStatus": "planned",
+      "active": true,
+      "ciEnabled": true
+    },
+    {
+      "productId": "phr",
+      "kind": "business-product",
+      "lifecycleStatus": "enabled",
+      "active": true,
+      "ciEnabled": true
+    },
+    {
+      "productId": "yappc",
+      "kind": "platform-provider",
+      "lifecycleStatus": "unknown",
+      "active": true,
+      "ciEnabled": true
+    }
+  ],
+  "perProductCoverage": [
+    {
+      "productId": "phr",
+      "requiredScripts": [
+        "build:phr",
+        "test:phr"
+      ],
+      "optionalCore": [
+        "validate:phr",
+        "package:phr"
+      ],
+      "hasAtLeastOneReleaseCore": true,
+      "hasWebSurface": true,
+      "hasBackendSurface": true,
+      "deploymentTargets": [
+        "compose-local",
+        "dev",
+        "staging",
+        "prod"
+      ],
+      "hasFoundationUsageProfile": true
+    }
+  ],
+  "violations": []
+}

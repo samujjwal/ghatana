@@ -42,7 +42,7 @@ export function LabsPage(): React.ReactElement {
               <p className="empty">No lab results found</p>
             ) : (
               labs.map((lab) => (
-                <div key={lab.id} className="data-card">
+                <Link key={lab.id} className="data-card" to={`/labs/${lab.id}`}>
                   <div>
                     <strong>{lab.name}</strong>
                     <p className="muted">{formatPhrDate(lab.effectiveDate)}</p>
@@ -51,7 +51,7 @@ export function LabsPage(): React.ReactElement {
                     <span className={`pill ${lab.status === 'abnormal' ? 'warning' : ''}`}>{lab.status}</span>
                     <strong>{lab.value}{lab.unit && <span className="muted"> {lab.unit}</span>}</strong>
                   </div>
-                </div>
+                </Link>
               ))
             )}
           </div>

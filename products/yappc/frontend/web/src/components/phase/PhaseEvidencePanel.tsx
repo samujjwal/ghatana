@@ -11,6 +11,9 @@
  */
 
 import React from 'react';
+import { FileSearch } from 'lucide-react';
+
+import { EmptyState } from '../common/EmptyState';
 
 export interface EvidenceItem {
   id: string;
@@ -56,11 +59,13 @@ export const PhaseEvidencePanel: React.FC<PhaseEvidencePanelProps> = ({
   if (evidence.length === 0) {
     return (
       <div className={`phase-evidence-panel ${className}`}>
-        <div className="bg-surface-muted dark:bg-surface/50 border border-border dark:border-border rounded-lg p-4 text-center">
-          <p className="text-fg-muted dark:text-fg-muted text-sm">
-            No evidence available
-          </p>
-        </div>
+        <EmptyState
+          variant="compact"
+          className="rounded-lg border border-border bg-surface-muted dark:bg-surface/50"
+          icon={<FileSearch className="h-full w-full" aria-hidden="true" />}
+          title="No evidence available"
+          description="Evidence will appear here after validation, generation, run, or learning signals are recorded."
+        />
       </div>
     );
   }

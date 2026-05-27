@@ -1,0 +1,61 @@
+{
+  "generatedAt": "2026-05-27T05:43:54.003Z",
+  "pass": true,
+  "evidenceRun": {
+    "generatedBy": "scripts/check-action-plane-boundaries.mjs",
+    "source": "scripts/check-action-plane-boundaries.mjs",
+    "command": "pnpm check:action-plane-boundaries",
+    "commit": "e47a1f4ad7eeacf7c82e8c44a20c984c8afdff74"
+  },
+  "scope": {
+    "scannedRoots": [
+      "products/data-cloud/planes",
+      "products/data-cloud/delivery",
+      "products/data-cloud/extensions",
+      "products/data-cloud/contracts"
+    ],
+    "excludedRoots": [
+      "products/data-cloud/planes/action"
+    ],
+    "rule": "Non-action Data Cloud planes, delivery, extensions, and contracts must not import AEP internals or depend on Action Plane modules.",
+    "semanticRule": "Non-action Data Cloud planes, delivery, extensions, and contracts must not expose AEP-owned EventCloud, PatternSpec/EPL, EventOperator, EventOperatorCapability runtime, CEP, adaptive event runtime, pattern promotion, recommended/predictive pattern, or Pattern lifecycle semantics.",
+    "publicAepPackageAllowlist": [
+      "com.ghatana.aep.api",
+      "com.ghatana.aep.client",
+      "com.ghatana.aep.event.spi",
+      "com.ghatana.aep.model",
+      "com.ghatana.aep.sdk"
+    ],
+    "allowlists": [
+      {
+        "id": "delivery-runtime-composition-allowlist",
+        "allowedPath": "products/data-cloud/delivery/runtime-composition",
+        "allowlist": [
+          "delivery/runtime-composition may compose planes",
+          "Runtime composition across planes is allowed"
+        ]
+      },
+      {
+        "id": "extensions-kernel-bridge-allowlist",
+        "allowedPath": "products/data-cloud/extensions/kernel-bridge",
+        "allowlist": [
+          "extensions/kernel-bridge may use public contracts/SPI",
+          "Kernel bridge may depend on public contracts"
+        ]
+      },
+      {
+        "id": "contracts-no-implementation-dependency",
+        "allowedPath": "products/data-cloud/contracts",
+        "allowlist": [
+          "contracts must not import runtime implementation",
+          "Contracts must remain pure"
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "scannedFiles": 2181,
+    "violationCount": 0
+  },
+  "violations": []
+}

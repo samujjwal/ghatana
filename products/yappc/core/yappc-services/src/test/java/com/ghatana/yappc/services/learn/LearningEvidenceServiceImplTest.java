@@ -134,4 +134,43 @@ class LearningEvidenceServiceImplTest extends EventloopTestBase {
         assertThat(saved.get().metadata()).containsEntry("approvalRequestId", "approval-123");
         assertThat(saved.get().metadata()).containsEntry("evolutionProposalId", "proposal-123");
     }
+
+    @Test
+    @DisplayName("redacts prompt input and generated content from learning evidence metadata")
+    void redactsSensitiveLearningEvidenceMetadata() {
+        AtomicReference<LearningEvidenceRepository.LearningEvidence> saved = new AtomicReference<>();
+        LearningEvidenceRepository repository = evidence -> {
+            saved.set(evidence);
+            return Promise.complete();
+        };
+        LearningEvidenceService service = new LearningEvidenceServiceImpl(repository);
+        LearningEvidenceService.EvidenceContext context = new LearningEvidenceService.EvidenceContext(
+                "tenant-123",
+                "workspace-123",
+                "project-123",
+                "subject-123",
+                "corr-123",
+                Map.of(
+                        "prompt", "Build a regulated payments app for a named customer",
+                        "input", "customer transcript with private requirements",
+                        "generatedContent", "export const secret = 'value';",
+                        "inputTokens", 84,
+                        "evidenceIds", List.of("evidence-source-1")));
+
+        LifecycleValidationResult validation = LifecycleValidationResult.builder()
+                .passed(true)
+                .issues(List.of())
+                .build();
+
+        runPromise(() -> service.recordValidationOutcome(context, validation));
+
+        assertThat(saved.get().metadata())
+                .containsEntry("prompt", "[REDACTED]")
+                .containsEntry("input", "[REDACTED]")
+                .containsEntry("generatedContent", "[REDACTED]")
+                .containsEntry("inputTokens", 84);
+        assertThat(saved.get().provenance()).contains("evidence-source-1");
+        assertThat(saved.get().metadata().toString())
+                .doesNotContain("regulated payments", "customer transcript", "export const secret");
+    }
 }

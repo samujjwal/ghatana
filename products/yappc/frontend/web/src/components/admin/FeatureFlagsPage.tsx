@@ -14,7 +14,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  AlertCircle,
   Check,
   ChevronDown,
   ChevronUp,
@@ -45,6 +44,8 @@ import { currentWorkspaceIdAtom } from '../../state/atoms/workspaceAtom';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
+import { LoadingState } from '../common/LoadingState';
+import { ErrorState, errorCorrelationId } from '../common/ErrorState';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -185,9 +186,8 @@ const AuditDrawer: React.FC<AuditDrawerProps> = ({ tenantId, flagKey, onClose })
         </Button>
       </Box>
       {isLoading && (
-        <Box className="flex items-center gap-2 text-text-secondary">
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-          <Typography className="text-sm">Loading…</Typography>
+        <Box className="py-3">
+          <LoadingState message="Loading audit entries..." size="sm" />
         </Box>
       )}
       {!isLoading && entries.length === 0 && (
@@ -390,17 +390,26 @@ export const FeatureFlagsPage: React.FC<FeatureFlagsPageProps> = ({ className })
 
         {/* Loading state */}
         {isLoading && (
-          <Box className="flex items-center gap-2 text-text-secondary py-8 justify-center">
-            <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-            <Typography>Loading flags…</Typography>
+          <Box className="py-8">
+            <LoadingState
+              message="Loading feature flags..."
+              size="md"
+              className="justify-center text-text-secondary"
+            />
           </Box>
         )}
 
         {/* Error state */}
         {error instanceof Error && (
-          <Box className="flex items-center gap-2 text-destructive dark:text-destructive py-4" role="alert">
-            <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-            <Typography className="text-sm">{error.message}</Typography>
+          <Box className="py-4">
+            <ErrorState
+              title="Feature flags unavailable"
+              message={error.message}
+              correlationId={errorCorrelationId(error)}
+              onRetry={() => void refetch()}
+              variant="banner"
+              size="sm"
+            />
           </Box>
         )}
 

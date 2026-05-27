@@ -1,6 +1,7 @@
 package com.ghatana.phr.api.routes;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.ghatana.kernel.observability.AuditTrailService;
 import com.ghatana.kernel.security.KernelSecurityManager;
 import com.ghatana.phr.model.PHRUser;
 import com.ghatana.phr.repository.UserRepository;
@@ -49,6 +50,7 @@ public final class PhrAuthRoutes {
     private final Eventloop eventloop;
     private final KernelSecurityManager securityManager;
     private final UserRepository userRepository;
+    private final AuditTrailService auditTrailService;
 
     /**
      * Creates auth routes.
@@ -56,11 +58,13 @@ public final class PhrAuthRoutes {
      * @param eventloop        the ActiveJ event loop; must not be null
      * @param securityManager  the kernel security manager for credential validation; must not be null
      * @param userRepository   the user repository for session population; must not be null
+     * @param auditTrailService the audit trail service for recording auth events; may be null
      */
-    public PhrAuthRoutes(Eventloop eventloop, KernelSecurityManager securityManager, UserRepository userRepository) {
+    public PhrAuthRoutes(Eventloop eventloop, KernelSecurityManager securityManager, UserRepository userRepository, AuditTrailService auditTrailService) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.securityManager = Objects.requireNonNull(securityManager, "securityManager must not be null");
         this.userRepository = Objects.requireNonNull(userRepository, "userRepository must not be null");
+        this.auditTrailService = auditTrailService;
     }
 
     /**
@@ -71,6 +75,7 @@ public final class PhrAuthRoutes {
     public AsyncServlet getServlet() {
         return RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/login", this::handleLogin)
+            .with(HttpMethod.POST, "/sign-in", this::handleLogin) // Alias for /login for IA compatibility
             .with(HttpMethod.POST, "/logout", this::handleLogout)
             .with(HttpMethod.GET, "/me", this::handleMe)
             .build();
@@ -102,6 +107,21 @@ public final class PhrAuthRoutes {
                 }
 
                 if (!result.isValid()) {
+                    // Record failed login attempt for audit
+                    if (auditTrailService != null) {
+                        AuditTrailService.AuditTrailEvent failedEvent = AuditTrailService.AuditTrailEvent.builder()
+                            .withEventType("AUTH_LOGIN_FAILED")
+                            .withEntityId(nationalId)
+                            .withEntityType("USER")
+                            .withAction("LOGIN_ATTEMPT")
+                            .withActorId(nationalId)
+                            .withTenantId("default-tenant")
+                            .withOutcome("FAILURE")
+                            .withDetails(Map.of("reason", "INVALID_CREDENTIALS"))
+                            .withTimestamp(Instant.now())
+                            .build();
+                        auditTrailService.recordAuditEvent(failedEvent);
+                    }
                     return PhrRouteSupport.errorResponse(401, "INVALID_CREDENTIALS", "Invalid national ID or password");
                 }
 
@@ -125,6 +145,22 @@ public final class PhrAuthRoutes {
                 session.put("name", name);
                 session.put("expiresAt", expiresAt);
 
+                // Record successful login for audit
+                if (auditTrailService != null) {
+                    AuditTrailService.AuditTrailEvent successEvent = AuditTrailService.AuditTrailEvent.builder()
+                        .withEventType("AUTH_LOGIN_SUCCESS")
+                        .withEntityId(user.getUserId())
+                        .withEntityType("USER")
+                        .withAction("LOGIN")
+                        .withActorId(user.getUserId())
+                        .withTenantId(tenantId)
+                        .withOutcome("SUCCESS")
+                        .withDetails(Map.of("role", role, "sessionExpiresAt", expiresAt))
+                        .withTimestamp(Instant.now())
+                        .build();
+                    auditTrailService.recordAuditEvent(successEvent);
+                }
+
                 return PhrRouteSupport.jsonResponse(200, session);
             });
     }
@@ -134,7 +170,25 @@ public final class PhrAuthRoutes {
         // We log the event and return 204. The X-Principal-ID header is used for
         // audit purposes; its absence is not a hard error on logout.
         String principalId = request.getHeader(io.activej.http.HttpHeaders.of("X-Principal-ID"));
+        String tenantId = request.getHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"));
+        
         if (principalId != null && !principalId.isBlank()) {
+            // Record logout event for audit
+            if (auditTrailService != null) {
+                AuditTrailService.AuditTrailEvent logoutEvent = AuditTrailService.AuditTrailEvent.builder()
+                    .withEventType("AUTH_LOGOUT")
+                    .withEntityId(principalId)
+                    .withEntityType("USER")
+                    .withAction("LOGOUT")
+                    .withActorId(principalId)
+                    .withTenantId(tenantId != null ? tenantId : "default-tenant")
+                    .withOutcome("SUCCESS")
+                    .withDetails(Map.of())
+                    .withTimestamp(Instant.now())
+                    .build();
+                auditTrailService.recordAuditEvent(logoutEvent);
+            }
+            
             // Structured log for observability — audit trail records are written
             // via AuditTrailService in a dedicated audit middleware; the route
             // simply acknowledges the logout.

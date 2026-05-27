@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-05-25T17:45:57.844Z",
+  "generated": "2026-05-27T05:40:21.429Z",
   "source": "config/canonical-product-registry.json",
   "matrix": [
     {
@@ -54,6 +54,7 @@
       "nextActions": [
         "Define executable Audio-Video surfaces before adding lifecycle configs",
         "Add media artifact and retention evidence before enabling lifecycle execution",
+        "Register product manifest to enable full lifecycle conformance",
         "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
       ],
       "validationCommands": [
@@ -1115,7 +1116,7 @@
         "web"
       ],
       "lifecycleStatus": "disabled",
-      "lifecycleExecutionAllowed": false,
+      "lifecycleExecutionAllowed": true,
       "requiredKernelCapabilities": [
         "gate:a11y",
         "gate:artifact-intelligence-boundary",
@@ -1150,7 +1151,11 @@
       "currentEvidenceRefs": [
         "products/yappc/lifecycle/readiness-evidence.yaml",
         "products/yappc/kernel-bridge",
-        "platform/typescript/kernel-product-contracts/src/artifact-intelligence"
+        "platform/typescript/kernel-product-contracts/src/artifact-intelligence",
+        "scripts/check-platform-product-boundaries.mjs",
+        "scripts/check-deprecated-packages.mjs",
+        "scripts/check-orphan-modules.mjs",
+        "scripts/check-product-registry-drift.mjs"
       ],
       "missingEvidenceRefs": [
         "manifest:artifact-manifest",
@@ -1162,14 +1167,10 @@
         "missing-manifest:artifact-manifest",
         "missing-manifest:deployment-manifest",
         "missing-manifest:lifecycle-plan",
-        "missing-manifest:lifecycle-result",
-        "product-owner:artifact-intelligence-contracts-not-ready",
-        "product-owner:creator-kernel-lifecycle-not-separated",
-        "product-owner:missing-artifact-intelligence-boundary",
-        "product-owner:missing-product-unit-intent-export"
+        "missing-manifest:lifecycle-result"
       ],
       "nextActions": [
-        "Add a YAPPC lifecycle manifest only after creator lifecycle remains separate from Kernel product lifecycle",
+        "Maintain YAPPC lifecycle separation from Kernel product lifecycle",
         "Keep Kernel consumption limited to ProductUnitIntent and artifact-intelligence evidence contracts",
         "Wire platform-mode provider bridge before enabling lifecycle execution"
       ],

@@ -347,6 +347,8 @@ After fixes, test:
 
 ### After Fixing
 
+Evidence: [YAPPC production readiness evidence links](../PRODUCTION_READINESS_EVIDENCE_LINKS.md) and [release evidence bundle](../RELEASE_EVIDENCE_BUNDLE.md) are the current release-readiness sources; this gap analysis is historical.
+
 - ✅ 100% single-port architecture
 - ✅ All features work through Gateway
 - ✅ Consistent patterns throughout

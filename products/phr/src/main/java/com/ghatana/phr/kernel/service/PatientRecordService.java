@@ -264,6 +264,31 @@ public class PatientRecordService extends PhrServiceBase {
         public String getGender() { return gender; }
         public Address getAddress() { return address; }
         public Contact getContact() { return contact; }
+        
+        public String getFullName() { 
+            return (givenName != null ? givenName : "") + (familyName != null ? " " + familyName : ""); 
+        }
+        
+        public String getAge() {
+            // Placeholder - calculate age from dateOfBirth
+            return dateOfBirth != null ? "unknown" : "unknown";
+        }
+        
+        public String getDistrict() {
+            return address != null ? address.getDistrict() : null;
+        }
+        
+        public String getMunicipality() {
+            return address != null ? address.getCity() : null;
+        }
+        
+        public String getPhone() {
+            return contact != null ? contact.getPhone() : null;
+        }
+        
+        public String getEmail() {
+            return contact != null ? contact.getEmail() : null;
+        }
     }
 
     public static class Address {
@@ -339,6 +364,7 @@ public class PatientRecordService extends PhrServiceBase {
         public List<String> getConditions() { return conditions; }
         public List<String> getAllergies() { return allergies; }
         public List<String> getMedications() { return medications; }
+        public List<String> getChronicConditions() { return conditions; }
         public String getBloodType() { return bloodType; }
     }
 }

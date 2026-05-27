@@ -516,7 +516,7 @@ public final class DataCloudSecurityFilter {
         }
 
         AuditEvent event = AuditEvent.builder()
-            .tenantId(tenantId)
+            .tenantId(tenantId != null ? tenantId : "unknown")
             .eventType(resolveAuditEventType(path, sensitivity, statusCode))
             .principal(principalName)
             .resourceType("HTTP_ENDPOINT")
@@ -569,7 +569,7 @@ public final class DataCloudSecurityFilter {
         }
 
         AuditEvent event = AuditEvent.builder()
-            .tenantId(tenantId)
+            .tenantId(tenantId != null ? tenantId : "unknown")
             .eventType(resolveAuditEventType(path, sensitivity, statusCode))
             .principal(principalName)
             .resourceType("HTTP_ENDPOINT")
@@ -667,6 +667,16 @@ public final class DataCloudSecurityFilter {
                 throw new IllegalStateException(
                     "DC-P0-01: PolicyEngine is required when strictTenantResolution=true in production profile. " +
                     "Configure DATACLOUD_POLICY_ENGINE_URL.");
+            }
+
+            // DC-P1-011: audit-only mode (enforcing=false) is not permitted in production-like profiles.
+            // All security checks must be enforcing=true in production. Use a dedicated audit-only/canary
+            // profile with explicit override if gradual rollout is required.
+            if (!enforcing) {
+                throw new IllegalStateException(
+                    "DC-P1-011: enforcing=false (audit-only mode) is not permitted in production/staging/sovereign profiles. " +
+                    "All security checks must be enforcing in production. " +
+                    "Use a dedicated audit-only/canary profile with explicit runtime approval if gradual rollout is required.");
             }
 
             // DC-P0-01: Additional filter-specific validation for enforcing mode

@@ -357,69 +357,9 @@ class ArtifactCompilerContractCompatibilityTest {
     private String readFixture(String resourcePath) throws IOException {
         try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("fixtures/" + resourcePath)) {
             if (inputStream == null) {
-                // Create a minimal fixture for testing if it doesn't exist
-                return createMinimalFixture(resourcePath);
+                throw new IOException("Missing canonical artifact compiler contract fixture: fixtures/" + resourcePath);
             }
             return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         }
-    }
-
-    private String createMinimalFixture(String resourcePath) {
-        // Create minimal fixtures for testing when actual fixture files don't exist
-        if (resourcePath.equals("source-location-fixture.json")) {
-            return """
-                {
-                    "filePath": "src/main/java/Test.java",
-                    "startLine": 10,
-                    "startColumn": 5,
-                    "endLine": 20,
-                    "endColumn": 10
-                }
-                """;
-        }
-        if (resourcePath.equals("ts-worker-semantic-model-fixture.json")) {
-            return """
-                {
-                    "id": "model-1",
-                    "elementId": "element-1",
-                    "elementType": "component",
-                    "name": "TestComponent",
-                    "confidence": 0.95,
-                    "provenance": "EXACT",
-                    "extractedAt": "2024-01-01T00:00:00Z",
-                    "snapshotId": "snapshot-1",
-                    "sourceLocation": {
-                        "filePath": "src/main/java/Test.java",
-                        "startLine": 10,
-                        "startColumn": 5,
-                        "endLine": 20,
-                        "endColumn": 10
-                    }
-                }
-                """;
-        }
-        if (resourcePath.equals("ts-worker-residual-island-fixture.json")) {
-            return """
-                {
-                    "id": "island-1",
-                    "islandType": "imperative_logic",
-                    "summary": "Complex imperative logic",
-                    "originalSource": "for (let i = 0; i < 10; i++) { console.log(i); }",
-                    "checksum": "abc123",
-                    "sourceLocation": {
-                        "filePath": "src/main/java/Test.java",
-                        "startLine": 10,
-                        "startColumn": 5,
-                        "endLine": 20,
-                        "endColumn": 10
-                    },
-                    "tenantId": "tenant-1",
-                    "projectId": "project-1",
-                    "workspaceId": "workspace-1",
-                    "snapshotId": "snapshot-1"
-                }
-                """;
-        }
-        return "{}";
     }
 }

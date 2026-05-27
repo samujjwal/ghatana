@@ -5,6 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -25,7 +29,35 @@ class PhasePacketContractTest {
     @Test
     @DisplayName("Serialized packet exposes degraded dependency details and artifact provenance")
     void serializedPacket_includesDegradedDetailsAndArtifactProvenance() throws Exception {
-        PhasePacket packet = new PhasePacket(
+        JsonNode json = MAPPER.readTree(MAPPER.writeValueAsString(degradedPacketFixture()));
+
+        assertThat(json).isEqualTo(readGoldenJson("golden/phase-packet.degraded.json"));
+        assertThat(json.at("/degradedDetails/dependency").asText()).isEqualTo("DATA_CLOUD");
+        assertThat(json.at("/degradedDetails/truthSource").asText()).isEqualTo("projects");
+        assertThat(json.at("/degradedDetails/recoveryAction").asText()).contains("Restore Data Cloud");
+        assertThat(json.at("/degradedDetails/impactedFeatures/0").asText()).isEqualTo("phase-readiness");
+        assertThat(json.at("/completedArtifacts/0/version").asText()).isEqualTo("v1");
+        assertThat(json.at("/completedArtifacts/0/evidenceId").asText()).isEqualTo("evidence-1");
+        assertThat(json.at("/availableActions/0/category").asText()).isEqualTo("phase-transition");
+        assertThat(json.at("/availableActions/0/severity").asText()).isEqualTo("high");
+        assertThat(json.at("/availableActions/0/confirmationRequired").asBoolean()).isTrue();
+        assertThat(json.at("/availableActions/0/idempotencyKey").asText()).isEqualTo("phase.advance");
+        assertThat(json.at("/availableActions/0/auditType").asText()).isEqualTo("phase.advance.requested");
+        assertThat(json.at("/readiness/estimatedReadyIn").asText()).isEqualTo("Blocked");
+        assertThat(json.at("/readiness/estimatedReadyInHours").asInt()).isEqualTo(24);
+        assertThat(json.at("/readiness/predictionConfidence").asDouble()).isEqualTo(0.35);
+        assertThat(json.at("/activityFeed/0/eventType").asText()).isEqualTo("PHASE_ACTION_EXECUTED");
+        assertThat(json.at("/activityFeed/0/success").asBoolean()).isFalse();
+        assertThat(json.at("/activityFeed/0/outcome").asText()).isEqualTo("FAILURE");
+        assertThat(json.at("/activityFeed/0/correlationId").asText()).isEqualTo("corr-activity-1");
+        assertThat(json.at("/correlationId").asText()).isEqualTo("corr-1");
+        assertThat(json.at("/healthSignals/runtime/status").asText()).isEqualTo("degraded");
+        assertThat(json.at("/healthSignals/agentGovernance/governanceState").asText()).isEqualTo("policy-approved");
+        assertThat(json.at("/healthSignals/agentGovernance/evidenceIds/0").asText()).isEqualTo("learn-run-1");
+    }
+
+    private static PhasePacket degradedPacketFixture() {
+        return new PhasePacket(
                 "generate",
                 "project-1",
                 "Project One",
@@ -38,7 +70,16 @@ class PhasePacketContractTest {
                 Set.of("phase.advance"),
                 new PhasePacket.CapabilityModel(true, true, true, false, true, false, true),
                 List.of(),
-                new PhasePacket.PhaseReadiness(false, "run", List.of("Data Cloud service unavailable"), 0.0, true),
+                new PhasePacket.PhaseReadiness(
+                        false,
+                        "run",
+                        List.of("Data Cloud service unavailable"),
+                        0.0,
+                        true,
+                        "Blocked",
+                        24,
+                        0.35
+                ),
                 List.of(new PhasePacket.RequiredArtifact("shape-model", "SHAPE_MODEL", "Shape Model", "Canonical shape", false)),
                 List.of(new PhasePacket.CompletedArtifact(
                         "intent-spec",
@@ -49,7 +90,19 @@ class PhasePacketContractTest {
                         "actor-1",
                         "evidence-1"
                 )),
-                List.of(),
+                List.of(new PhasePacket.ActivityFeedEntry(
+                        "audit-1",
+                        "PHASE_ACTION_EXECUTED",
+                        "phase.advance",
+                        "Phase advance failed policy check",
+                        "actor-1",
+                        Instant.parse("2026-05-26T10:15:31Z"),
+                        "ERROR",
+                        "PHASE_ACTION_EXECUTED",
+                        false,
+                        "FAILURE",
+                        "corr-activity-1"
+                )),
                 List.of(),
                 List.of(),
                 new PhasePacket.PlatformRunStatus(
@@ -98,23 +151,12 @@ class PhasePacketContractTest {
                 1_779_791_730_000L,
                 "corr-1"
         );
+    }
 
-        JsonNode json = MAPPER.readTree(MAPPER.writeValueAsString(packet));
-
-        assertThat(json.at("/degradedDetails/dependency").asText()).isEqualTo("DATA_CLOUD");
-        assertThat(json.at("/degradedDetails/truthSource").asText()).isEqualTo("projects");
-        assertThat(json.at("/degradedDetails/recoveryAction").asText()).contains("Restore Data Cloud");
-        assertThat(json.at("/degradedDetails/impactedFeatures/0").asText()).isEqualTo("phase-readiness");
-        assertThat(json.at("/completedArtifacts/0/version").asText()).isEqualTo("v1");
-        assertThat(json.at("/completedArtifacts/0/evidenceId").asText()).isEqualTo("evidence-1");
-        assertThat(json.at("/availableActions/0/category").asText()).isEqualTo("phase-transition");
-        assertThat(json.at("/availableActions/0/severity").asText()).isEqualTo("high");
-        assertThat(json.at("/availableActions/0/confirmationRequired").asBoolean()).isTrue();
-        assertThat(json.at("/availableActions/0/idempotencyKey").asText()).isEqualTo("phase.advance");
-        assertThat(json.at("/availableActions/0/auditType").asText()).isEqualTo("phase.advance.requested");
-        assertThat(json.at("/correlationId").asText()).isEqualTo("corr-1");
-        assertThat(json.at("/healthSignals/runtime/status").asText()).isEqualTo("degraded");
-        assertThat(json.at("/healthSignals/agentGovernance/governanceState").asText()).isEqualTo("policy-approved");
-        assertThat(json.at("/healthSignals/agentGovernance/evidenceIds/0").asText()).isEqualTo("learn-run-1");
+    private static JsonNode readGoldenJson(String resourcePath) throws Exception {
+        URI uri = PhasePacketContractTest.class.getClassLoader()
+                .getResource(resourcePath)
+                .toURI();
+        return MAPPER.readTree(Files.readString(Path.of(uri), StandardCharsets.UTF_8));
     }
 }

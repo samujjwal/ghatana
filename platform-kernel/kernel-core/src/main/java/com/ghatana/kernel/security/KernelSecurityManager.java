@@ -110,22 +110,51 @@ public interface KernelSecurityManager {
     class ValidationResult {
         private final boolean valid;
         private final String reason;
+        private final AccountStatus accountStatus;
 
         public ValidationResult(boolean valid, String reason) {
+            this(valid, reason, AccountStatus.ACTIVE);
+        }
+
+        public ValidationResult(boolean valid, String reason, AccountStatus accountStatus) {
             this.valid = valid;
             this.reason = reason;
+            this.accountStatus = accountStatus;
         }
 
         public boolean isValid() { return valid; }
         public String getReason() { return reason; }
+        public AccountStatus getAccountStatus() { return accountStatus; }
 
         public static ValidationResult success() {
-            return new ValidationResult(true, "Valid");
+            return new ValidationResult(true, "Valid", AccountStatus.ACTIVE);
         }
 
         public static ValidationResult failure(String reason) {
-            return new ValidationResult(false, reason);
+            return new ValidationResult(false, reason, AccountStatus.ACTIVE);
         }
+
+        public static ValidationResult locked() {
+            return new ValidationResult(false, "Account is locked", AccountStatus.LOCKED);
+        }
+
+        public static ValidationResult inactive() {
+            return new ValidationResult(false, "Account is inactive", AccountStatus.INACTIVE);
+        }
+
+        public static ValidationResult mfaRequired() {
+            return new ValidationResult(false, "MFA required", AccountStatus.MFA_REQUIRED);
+        }
+    }
+
+    /**
+     * Account status enumeration for validation results.
+     */
+    enum AccountStatus {
+        ACTIVE,
+        LOCKED,
+        INACTIVE,
+        MFA_REQUIRED
     }
 
     /**

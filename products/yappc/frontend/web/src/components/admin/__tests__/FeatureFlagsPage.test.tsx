@@ -77,7 +77,17 @@ describe('FeatureFlagsPage', () => {
 
     renderPage();
 
-    expect(screen.getByText('Loading flags…')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Loading feature flags...');
+  });
+
+  it('renders standardized retryable error with correlation id', async () => {
+    mockListFlags.mockRejectedValue(new Error('feature flag service unavailable [Correlation ID: corr-flags-1]'));
+
+    renderPage();
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Feature flags unavailable');
+    expect(screen.getByRole('alert')).toHaveTextContent('Correlation ID: corr-flags-1');
+    expect(screen.getByRole('button', { name: 'Try Again' })).toBeInTheDocument();
   });
 
   it('renders flag rows after load', async () => {

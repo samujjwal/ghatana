@@ -130,13 +130,13 @@ start-backend:
 ## start-frontend: Start frontend development server
 start-frontend:
 	@echo "$(BLUE)═══ Starting frontend ═══$(NC)"
-	@cd $(REPO_ROOT)/products/yappc/frontend && pnpm dev:web
+	@cd $(REPO_ROOT)/products/yappc/frontend && pnpm dev
 
 ## dev: Start full development environment (infra + backend + frontend in parallel)
 dev: start-infra start-backend
 	@echo "$(GREEN)✓ Backend services started$(NC)"
 	@echo "$(YELLOW)Starting frontend... (press Ctrl+C to stop all)$(NC)"
-	@cd $(REPO_ROOT)/products/yappc/frontend && pnpm dev:web
+	@cd $(REPO_ROOT)/products/yappc/frontend && pnpm dev
 
 ## stop: Stop all services
 stop:

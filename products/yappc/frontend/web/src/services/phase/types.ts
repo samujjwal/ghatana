@@ -111,6 +111,9 @@ export interface PhaseActivityEvent {
   actor: string | null;
   severity?: string | null;
   success?: boolean | null;
+  eventType?: string | null;
+  outcome?: string | null;
+  correlationId?: string | null;
 }
 
 export interface PhaseActivityResponse {

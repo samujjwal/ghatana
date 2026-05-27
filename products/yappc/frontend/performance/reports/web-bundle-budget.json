@@ -1,0 +1,471 @@
+{
+  "generatedAt": "2026-05-27T03:01:54.146Z",
+  "thresholdsKb": {
+    "totalGzip": 500,
+    "jsGzip": 350,
+    "cssGzip": 100,
+    "largestJsGzip": 200
+  },
+  "releaseGateThresholdsKb": {
+    "initialTotalGzip": 500,
+    "initialJsGzip": 350,
+    "initialCssGzip": 100,
+    "largestInitialJsGzip": 200
+  },
+  "growthThresholdPercent": 10,
+  "summary": {
+    "buildDirectory": "D:\\samuj\\Developments\\ghatana\\products\\yappc\\frontend\\web\\build\\client\\assets",
+    "fileCount": 90,
+    "totalGzipKb": 1459.677734375,
+    "jsGzipKb": 1422.4189453125,
+    "cssGzipKb": 37.2587890625,
+    "largestJsFile": "build\\client\\assets\\ComponentRenderer-L8b7ETDs.js",
+    "largestJsGzipKb": 966.87109375,
+    "files": [
+      {
+        "path": "build\\client\\assets\\ComponentRenderer-L8b7ETDs.js",
+        "gzipKb": 966.87109375
+      },
+      {
+        "path": "build\\client\\assets\\vendor-react-Wk3c5zPH.js",
+        "gzipKb": 130.724609375
+      },
+      {
+        "path": "build\\client\\assets\\vendor-ui-DRgah9jP.js",
+        "gzipKb": 67.962890625
+      },
+      {
+        "path": "build\\client\\assets\\root-BK9XyZDg.js",
+        "gzipKb": 35.451171875
+      },
+      {
+        "path": "build\\client\\assets\\root-B_Y6f1j2.css",
+        "gzipKb": 34.77734375
+      },
+      {
+        "path": "build\\client\\assets\\workspace-ZLAmIR7e.js",
+        "gzipKb": 29.646484375
+      },
+      {
+        "path": "build\\client\\assets\\schemas-B6xOfzTU.js",
+        "gzipKb": 18.2314453125
+      },
+      {
+        "path": "build\\client\\assets\\_shell-CYraUVEx.js",
+        "gzipKb": 16.7685546875
+      },
+      {
+        "path": "build\\client\\assets\\vendor-utils-u70gqFsn.js",
+        "gzipKb": 13.763671875
+      },
+      {
+        "path": "build\\client\\assets\\_phaseCockpit-E2652mS2.js",
+        "gzipKb": 12.0126953125
+      },
+      {
+        "path": "build\\client\\assets\\_shell-CEDPFlFr.js",
+        "gzipKb": 11.2333984375
+      },
+      {
+        "path": "build\\client\\assets\\cn-BKpvYNsX.js",
+        "gzipKb": 7.96875
+      },
+      {
+        "path": "build\\client\\assets\\AuthService-G4oXCsOS.js",
+        "gzipKb": 7.4140625
+      },
+      {
+        "path": "build\\client\\assets\\dashboard-y_aWwEY8.js",
+        "gzipKb": 7.0126953125
+      },
+      {
+        "path": "build\\client\\assets\\KernelHealthDashboardPage-D3O7Rbfo.js",
+        "gzipKb": 6.7568359375
+      },
+      {
+        "path": "build\\client\\assets\\product-family-CvjVWUo9.js",
+        "gzipKb": 4.4521484375
+      },
+      {
+        "path": "build\\client\\assets\\ab-testing-CoMjb6q-.js",
+        "gzipKb": 4.4306640625
+      },
+      {
+        "path": "build\\client\\assets\\phase-DZbDLLUB.js",
+        "gzipKb": 4.015625
+      },
+      {
+        "path": "build\\client\\assets\\client-2ZujLVN5.js",
+        "gzipKb": 4.009765625
+      },
+      {
+        "path": "build\\client\\assets\\prompt-versions-BguCDd38.js",
+        "gzipKb": 3.7158203125
+      },
+      {
+        "path": "build\\client\\assets\\preview-builder-B1iiet5L.js",
+        "gzipKb": 3.5361328125
+      },
+      {
+        "path": "build\\client\\assets\\browser-ponyfill-BQRzHeUw.js",
+        "gzipKb": 3.4462890625
+      },
+      {
+        "path": "build\\client\\assets\\workspaces-COBbNNCG.js",
+        "gzipKb": 3.3525390625
+      },
+      {
+        "path": "build\\client\\assets\\index-CFxPphbE.js",
+        "gzipKb": 3.0732421875
+      },
+      {
+        "path": "build\\client\\assets\\projects-FrJTIpXZ.js",
+        "gzipKb": 3.048828125
+      },
+      {
+        "path": "build\\client\\assets\\settings-ConNE9a1.js",
+        "gzipKb": 2.8701171875
+      },
+      {
+        "path": "build\\client\\assets\\useWorkspaceData-tXCAaAYt.js",
+        "gzipKb": 2.7783203125
+      },
+      {
+        "path": "build\\client\\assets\\manifest-96751dba.js",
+        "gzipKb": 2.5908203125
+      },
+      {
+        "path": "build\\client\\assets\\CreateWorkspaceDialog-rk8FI5CG.js",
+        "gzipKb": 2.5234375
+      },
+      {
+        "path": "build\\client\\assets\\vendor-react-7LyQelc0.css",
+        "gzipKb": 2.4814453125
+      },
+      {
+        "path": "build\\client\\assets\\settings-ByfFuUmv.js",
+        "gzipKb": 2.4296875
+      },
+      {
+        "path": "build\\client\\assets\\PersonaContext-BM73uydV.js",
+        "gzipKb": 2.3740234375
+      },
+      {
+        "path": "build\\client\\assets\\WebSocketContext-CVdDzoc3.js",
+        "gzipKb": 2.2626953125
+      },
+      {
+        "path": "build\\client\\assets\\builder-document-B8M_JKv-.js",
+        "gzipKb": 2.2392578125
+      },
+      {
+        "path": "build\\client\\assets\\_root-Dmv2gX7u.js",
+        "gzipKb": 1.857421875
+      },
+      {
+        "path": "build\\client\\assets\\login-cDgvkZQD.js",
+        "gzipKb": 1.8310546875
+      },
+      {
+        "path": "build\\client\\assets\\ActionRegistry-DUkA75DD.js",
+        "gzipKb": 1.5712890625
+      },
+      {
+        "path": "build\\client\\assets\\storage-DDV97smI.js",
+        "gzipKb": 1.5302734375
+      },
+      {
+        "path": "build\\client\\assets\\Logger-BOSn1_lt.js",
+        "gzipKb": 1.318359375
+      },
+      {
+        "path": "build\\client\\assets\\Input-Uu20oklx.js",
+        "gzipKb": 1.3037109375
+      },
+      {
+        "path": "build\\client\\assets\\profile-mBmVOcs7.js",
+        "gzipKb": 1.1904296875
+      },
+      {
+        "path": "build\\client\\assets\\AuthProvider-CvhopQeA.js",
+        "gzipKb": 1.1787109375
+      },
+      {
+        "path": "build\\client\\assets\\ErrorState-BPsKOnd7.js",
+        "gzipKb": 1.1162109375
+      },
+      {
+        "path": "build\\client\\assets\\workspaceAtom-CrfFhyWX.js",
+        "gzipKb": 1.0947265625
+      },
+      {
+        "path": "build\\client\\assets\\Textarea-DlCdyYwa.js",
+        "gzipKb": 1.0439453125
+      },
+      {
+        "path": "build\\client\\assets\\ErrorBoundary-BWNIew0_.js",
+        "gzipKb": 1.0283203125
+      },
+      {
+        "path": "build\\client\\assets\\ApiUnavailableFallback-BdfMhzd5.js",
+        "gzipKb": 0.98828125
+      },
+      {
+        "path": "build\\client\\assets\\Select-_TPB5cHk.js",
+        "gzipKb": 0.962890625
+      },
+      {
+        "path": "build\\client\\assets\\useCapabilityGate-G-GDmrjT.js",
+        "gzipKb": 0.9580078125
+      },
+      {
+        "path": "build\\client\\assets\\Button-ClUXYyRC.js",
+        "gzipKb": 0.8974609375
+      },
+      {
+        "path": "build\\client\\assets\\Card-B8BRLxeN.js",
+        "gzipKb": 0.8828125
+      },
+      {
+        "path": "build\\client\\assets\\not-found-COl2zR9g.js",
+        "gzipKb": 0.796875
+      },
+      {
+        "path": "build\\client\\assets\\theme-Dp-YBxIB.js",
+        "gzipKb": 0.740234375
+      },
+      {
+        "path": "build\\client\\assets\\tabs-1JtB1E5z.js",
+        "gzipKb": 0.712890625
+      },
+      {
+        "path": "build\\client\\assets\\lifecycle-Dmce-osq.js",
+        "gzipKb": 0.67578125
+      },
+      {
+        "path": "build\\client\\assets\\LoadingState-B9_yYR81.js",
+        "gzipKb": 0.6376953125
+      },
+      {
+        "path": "build\\client\\assets\\rolldown-runtime-B9JFKw5i.js",
+        "gzipKb": 0.60546875
+      },
+      {
+        "path": "build\\client\\assets\\EmptyState-VSEY3Lcs.js",
+        "gzipKb": 0.53515625
+      },
+      {
+        "path": "build\\client\\assets\\SaveSyncStatusBadge-D3_FdOtq.js",
+        "gzipKb": 0.51171875
+      },
+      {
+        "path": "build\\client\\assets\\onboarding-fP-ON4aT.js",
+        "gzipKb": 0.4326171875
+      },
+      {
+        "path": "build\\client\\assets\\CanonicalPhaseService-BJirxIBd.js",
+        "gzipKb": 0.41015625
+      },
+      {
+        "path": "build\\client\\assets\\lifecycle-Chk20Hwn.js",
+        "gzipKb": 0.384765625
+      },
+      {
+        "path": "build\\client\\assets\\useLastOpenedProject-CANjr8oj.js",
+        "gzipKb": 0.3671875
+      },
+      {
+        "path": "build\\client\\assets\\deploy-OTPz3DIf.js",
+        "gzipKb": 0.3623046875
+      },
+      {
+        "path": "build\\client\\assets\\accessControl-CNnoun1h.js",
+        "gzipKb": 0.3515625
+      },
+      {
+        "path": "build\\client\\assets\\canvas-DS6tVQiI.js",
+        "gzipKb": 0.3505859375
+      },
+      {
+        "path": "build\\client\\assets\\preview-C-NgAs_U.js",
+        "gzipKb": 0.3505859375
+      },
+      {
+        "path": "build\\client\\assets\\ghatana-design-system-j6Sjkgac.js",
+        "gzipKb": 0.322265625
+      },
+      {
+        "path": "build\\client\\assets\\feature-flags-D2j_xNOP.js",
+        "gzipKb": 0.31640625
+      },
+      {
+        "path": "build\\client\\assets\\observability-Cq2CvZhB.js",
+        "gzipKb": 0.248046875
+      },
+      {
+        "path": "build\\client\\assets\\SkeletonLoaders-BhVlRiWz.js",
+        "gzipKb": 0.2353515625
+      },
+      {
+        "path": "build\\client\\assets\\user.store-DUzA4JhI.js",
+        "gzipKb": 0.2294921875
+      },
+      {
+        "path": "build\\client\\assets\\entry.client-D7BcTJrw.js",
+        "gzipKb": 0.2236328125
+      },
+      {
+        "path": "build\\client\\assets\\lifecycle-D3k_xVmX.js",
+        "gzipKb": 0.2109375
+      },
+      {
+        "path": "build\\client\\assets\\observe-ad9YPtID.js",
+        "gzipKb": 0.19921875
+      },
+      {
+        "path": "build\\client\\assets\\validate-BNpvNpVr.js",
+        "gzipKb": 0.1982421875
+      },
+      {
+        "path": "build\\client\\assets\\intent-H3Ap4ijg.js",
+        "gzipKb": 0.197265625
+      },
+      {
+        "path": "build\\client\\assets\\run-X2eBFr7s.js",
+        "gzipKb": 0.197265625
+      },
+      {
+        "path": "build\\client\\assets\\shape-BkVHAtcx.js",
+        "gzipKb": 0.197265625
+      },
+      {
+        "path": "build\\client\\assets\\learn-C9YYcX5I.js",
+        "gzipKb": 0.1962890625
+      },
+      {
+        "path": "build\\client\\assets\\evolve-CTgRnH5r.js",
+        "gzipKb": 0.1953125
+      },
+      {
+        "path": "build\\client\\assets\\generate-DjYMCD7l.js",
+        "gzipKb": 0.1953125
+      },
+      {
+        "path": "build\\client\\assets\\design-tokens-DfQ0Pz1v.js",
+        "gzipKb": 0.17578125
+      },
+      {
+        "path": "build\\client\\assets\\layoutAtom-C66Hrskc.js",
+        "gzipKb": 0.1689453125
+      },
+      {
+        "path": "build\\client\\assets\\LoadingSpinner-LRRyVHnZ.js",
+        "gzipKb": 0.16015625
+      },
+      {
+        "path": "build\\client\\assets\\api-B8ZyHgls.js",
+        "gzipKb": 0.138671875
+      },
+      {
+        "path": "build\\client\\assets\\kernel-health-C_jeoEFQ.js",
+        "gzipKb": 0.13671875
+      },
+      {
+        "path": "build\\client\\assets\\kernel-health-product-BMpjoumM.js",
+        "gzipKb": 0.13671875
+      },
+      {
+        "path": "build\\client\\assets\\preview-Bgn8mOOW.js",
+        "gzipKb": 0.0966796875
+      },
+      {
+        "path": "build\\client\\assets\\canvas-D9WI-ueg.js",
+        "gzipKb": 0.095703125
+      }
+    ],
+    "initial": {
+      "buildDirectory": "D:\\samuj\\Developments\\ghatana\\products\\yappc\\frontend\\web\\build\\client\\assets",
+      "fileCount": 18,
+      "totalGzipKb": 244.9267578125,
+      "jsGzipKb": 210.1494140625,
+      "cssGzipKb": 34.77734375,
+      "largestJsFile": "build\\client\\assets\\vendor-react-Wk3c5zPH.js",
+      "largestJsGzipKb": 130.724609375,
+      "files": [
+        {
+          "path": "build\\client\\assets\\vendor-react-Wk3c5zPH.js",
+          "gzipKb": 130.724609375
+        },
+        {
+          "path": "build\\client\\assets\\root-BK9XyZDg.js",
+          "gzipKb": 35.451171875
+        },
+        {
+          "path": "build\\client\\assets\\root-B_Y6f1j2.css",
+          "gzipKb": 34.77734375
+        },
+        {
+          "path": "build\\client\\assets\\vendor-utils-u70gqFsn.js",
+          "gzipKb": 13.763671875
+        },
+        {
+          "path": "build\\client\\assets\\cn-BKpvYNsX.js",
+          "gzipKb": 7.96875
+        },
+        {
+          "path": "build\\client\\assets\\AuthService-G4oXCsOS.js",
+          "gzipKb": 7.4140625
+        },
+        {
+          "path": "build\\client\\assets\\client-2ZujLVN5.js",
+          "gzipKb": 4.009765625
+        },
+        {
+          "path": "build\\client\\assets\\manifest-96751dba.js",
+          "gzipKb": 2.5908203125
+        },
+        {
+          "path": "build\\client\\assets\\WebSocketContext-CVdDzoc3.js",
+          "gzipKb": 2.2626953125
+        },
+        {
+          "path": "build\\client\\assets\\Logger-BOSn1_lt.js",
+          "gzipKb": 1.318359375
+        },
+        {
+          "path": "build\\client\\assets\\AuthProvider-CvhopQeA.js",
+          "gzipKb": 1.1787109375
+        },
+        {
+          "path": "build\\client\\assets\\Button-ClUXYyRC.js",
+          "gzipKb": 0.8974609375
+        },
+        {
+          "path": "build\\client\\assets\\theme-Dp-YBxIB.js",
+          "gzipKb": 0.740234375
+        },
+        {
+          "path": "build\\client\\assets\\rolldown-runtime-B9JFKw5i.js",
+          "gzipKb": 0.60546875
+        },
+        {
+          "path": "build\\client\\assets\\EmptyState-VSEY3Lcs.js",
+          "gzipKb": 0.53515625
+        },
+        {
+          "path": "build\\client\\assets\\SkeletonLoaders-BhVlRiWz.js",
+          "gzipKb": 0.2353515625
+        },
+        {
+          "path": "build\\client\\assets\\user.store-DUzA4JhI.js",
+          "gzipKb": 0.2294921875
+        },
+        {
+          "path": "build\\client\\assets\\entry.client-D7BcTJrw.js",
+          "gzipKb": 0.2236328125
+        }
+      ],
+      "source": "index.html"
+    }
+  }
+}

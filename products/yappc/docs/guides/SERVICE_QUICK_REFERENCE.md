@@ -174,6 +174,8 @@ echo $AEP_MODE
 
 ## Summary
 
+Evidence: [YAPPC production readiness evidence links](../PRODUCTION_READINESS_EVIDENCE_LINKS.md) are the current release-readiness source; this guide is a local-service startup reference.
+
 ✅ Canvas AI integrated into Java backend (not separate)
 ✅ GraphQL stays in Node.js API Gateway (correct position)
 ✅ AEP embedded as library in backend (no separate service)

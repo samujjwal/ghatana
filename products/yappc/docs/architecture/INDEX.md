@@ -26,7 +26,12 @@ Examples of focused docs to live here:
 
 `README.md` (in this docs directory) provides the high-level overview; this folder is the home for deeper YAPPC architecture docs.
 
+## Current Diagrams
+
+- `YAPPC_LIFECYCLE_KERNEL_DATA_CLOUD_AEP.md` - Mermaid diagrams for the current YAPPC lifecycle, Kernel handoff, Data Cloud truth, AEP runtime evidence, and frontend visibility boundaries.
+
 ## Current reference documents
 
 - `YAPPC_CANONICAL_MODELS.md` - Active contributor reference for the product, artifact, lifecycle, builder, preview trust, and governance trace models.
 - `YAPPC_STRUCTURE_SIMPLIFICATION_PLAN.md` - Comprehensive review of the current product structure, boundary problems, and the phased simplification plan.
+- `KERNEL_VISIBILITY_AND_CONTROL_PLANE.md` - Current Kernel visibility/control-plane boundaries and provider state.

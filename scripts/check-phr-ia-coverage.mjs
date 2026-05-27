@@ -2,10 +2,12 @@
 /**
  * PHR IA Coverage Gate
  * --------------------
- * Validates that every route defined in the PHR IA documentation (the route
- * contracts) has a corresponding entry in `phrRouteContracts` and — for routes
- * that are not feature-flagged — also an element registered in
- * `phrRouteElements`.
+ * Validates that every route defined in the PHR IA baseline has a corresponding
+ * entry in `phrRouteContracts` and — for routes that are not feature-flagged —
+ * also an element registered in `phrRouteElements`.
+ *
+ * Reads the canonical IA baseline from `products/phr/config/phr-usecase-baseline.json`
+ * instead of hardcoded routes.
  *
  * Exit code 0 = all IA routes are covered.
  * Exit code 1 = one or more IA routes are missing from the route manifest.
@@ -25,42 +27,39 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const require = createRequire(import.meta.url);
 
 // ---------------------------------------------------------------------------
-// IA documentation source of truth
+// Load canonical IA baseline
 // ---------------------------------------------------------------------------
-// These are the routes that the PHR IA documentation declares must exist in
-// the product. Paths use OpenAPI-style `{param}` placeholders.
-const IA_DECLARED_ROUTES = [
-  // Core patient routes
-  '/dashboard',
-  '/records',
-  '/records/{recordId}',
-  '/profile',
-  '/timeline',
-  '/conditions',
-  '/observations',
-  '/immunizations',
-  '/consents',
-  '/appointments',
-  '/labs',
-  '/medications',
-  '/documents',
-  '/documents/upload',
-  '/documents/{docId}/ocr',
-  '/notifications',
-  '/settings',
-  // Error pages
-  '/forbidden',
-  '/not-found',
-  // Governance
-  '/emergency',
-  '/release-readiness',
-  '/audit',
-  // Feature-flagged persona routes (must be present in manifest, even if deferred)
-  '/provider/dashboard',
-  '/provider/patients',
-  '/caregiver/dependents',
-  '/fchv/dashboard',
-];
+const BASELINE_FILE = resolve(
+  __dirname,
+  '../products/phr/config/phr-usecase-baseline.json',
+);
+
+let baseline;
+try {
+  const baselineSource = readFileSync(BASELINE_FILE, 'utf8');
+  baseline = JSON.parse(baselineSource);
+} catch (err) {
+  console.error(`[phr-ia-coverage] Cannot read IA baseline file: ${BASELINE_FILE}`);
+  console.error(err.message);
+  process.exit(1);
+}
+
+// Extract IA-declared routes from baseline
+// Include all routes regardless of status - they must be in the contract
+const IA_DECLARED_ROUTES = baseline.usecases
+  .filter(uc => uc.iaRoute && uc.iaRoute !== 'null')
+  .flatMap(uc => {
+    // Handle comma-separated routes like "/forbidden, /not-found"
+    if (uc.iaRoute.includes(',')) {
+      return uc.iaRoute.split(',').map(r => r.trim());
+    }
+    return [uc.iaRoute];
+  })
+  // Normalize IA routes to React Router style for comparison
+  .map(route => route.replace(/\{([^}]+)\}/g, ':$1'))
+  // Filter out mobile-only and backend-only routes for web contract check
+  .filter(route => !route.startsWith('/mobile/'))
+  .sort();
 
 // ---------------------------------------------------------------------------
 // Load the compiled route manifest via ts-node / tsx-compatible path
@@ -86,8 +85,8 @@ const CONTRACT_PATH_RE = /path:\s*'([^']+)'/g;
 const contractPaths = new Set();
 let match;
 while ((match = CONTRACT_PATH_RE.exec(contractSource)) !== null) {
-  // Normalise React Router params (:param) to OpenAPI style ({param}) for comparison
-  contractPaths.add(match[1].replace(/:([^/]+)/g, '{$1}'));
+  // Keep React Router param style (:param) for comparison with normalized IA routes
+  contractPaths.add(match[1]);
 }
 
 // ---------------------------------------------------------------------------

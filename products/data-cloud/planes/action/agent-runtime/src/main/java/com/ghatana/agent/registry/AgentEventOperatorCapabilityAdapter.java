@@ -94,6 +94,8 @@ public final class AgentEventOperatorCapabilityAdapter
     private volatile OperatorState state = OperatorState.CREATED;
     private volatile OperatorConfig config = OperatorConfig.empty();
     private volatile String lastOutcome = "not_invoked";
+    /** AGENT-P1-001: Deployment profile — blocks deprecated process(Event) bridge in production. */
+    private volatile String deploymentProfile = "local";
 
     public AgentEventOperatorCapabilityAdapter(
             @NotNull TypedAgent<Map<String, Object>, Map<String, Object>> agent,
@@ -275,11 +277,32 @@ public final class AgentEventOperatorCapabilityAdapter
         return capabilities;
     }
 
+    /**
+     * AGENT-P1-001: Sets the deployment profile; blocks the deprecated {@link #process(Event)}
+     * bridge in production-like profiles so callers are forced to migrate to
+     * {@link #process(EventContext, OperatorRuntimeContext)}.
+     *
+     * @param profile deployment profile label (e.g. "local", "production", "staging", "sovereign")
+     * @return {@code this} for chaining
+     */
+    public AgentEventOperatorCapabilityAdapter withDeploymentProfile(String profile) {
+        this.deploymentProfile = (profile == null || profile.isBlank()) ? "local" : profile.trim().toLowerCase(java.util.Locale.ROOT);
+        return this;
+    }
+
     @Override
     @Deprecated
     public Promise<OperatorResult> process(Event event) {
         // GHATANA-4321: temporary UnifiedOperator bridge; remove by 2026-06-30
         // after callers use process(EventContext, OperatorRuntimeContext).
+        // AGENT-P1-001: Strictly gated in production — callers must use the typed API.
+        String profile = this.deploymentProfile;
+        if ("production".equals(profile) || "staging".equals(profile) || "sovereign".equals(profile)) {
+            return Promise.ofException(new UnsupportedOperationException(
+                "AGENT-P1-001: Deprecated UnifiedOperator process(Event) bridge is not permitted in " +
+                "deployment profile '" + profile + "'. Use process(EventContext, OperatorRuntimeContext) instead. " +
+                "Ref: GHATANA-4321"));
+        }
         EventContext<Map<String, Object>> eventContext = eventContextFromEvent(event);
         OperatorRuntimeContext runtimeContext = runtimeContextFromEvent(event);
         return process(eventContext, runtimeContext)
@@ -380,26 +403,39 @@ public final class AgentEventOperatorCapabilityAdapter
             EventContext<Map<String, Object>> input,
             OperatorRuntimeContext ctx,
             long latencyNanos) {
-        // AGENT-P1-001: Map PENDING_APPROVAL to explicit non-success result
+        String status = result.getStatus().name();
+        Map<String, Object> evidence = buildEvidence(result, ctx, latencyNanos, status);
+
+        // AGENT-P1-002: Emit auditable evidence for failed/timeout outcomes as well.
         if (result.getStatus() == AgentResultStatus.FAILED
-                || result.getStatus() == AgentResultStatus.TIMEOUT) {
-            return EventOperatorResult.failure(List.of(nonBlank(result.getExplanation(), "Agent execution failed")));
+                || result.getStatus() == AgentResultStatus.TIMEOUT
+                || result.getStatus() == AgentResultStatus.CANCELLED
+                || result.getStatus() == AgentResultStatus.ROLLED_BACK) {
+            return new EventOperatorResult<>(
+                false,
+                Optional.empty(),
+                List.of(),
+                mapUncertainty(input.uncertainty(), result),
+                evidence,
+                List.of(nonBlank(result.getExplanation(), "Agent execution failed")));
         }
+
+        // AGENT-P2-006: Map DENIED to explicit non-success with denial evidence.
+        if (result.getStatus() == AgentResultStatus.DENIED) {
+            String denialCategory = classifyDenialCategory(result);
+            evidence.put("approvalStatus", "DENIED");
+            evidence.put("denialCategory", denialCategory);
+            return new EventOperatorResult<>(
+                false,
+                Optional.empty(),
+                List.of(),
+                mapUncertainty(input.uncertainty(), result),
+                evidence,
+                List.of(nonBlank(result.getExplanation(), "Agent execution denied")));
+        }
+
+        // AGENT-P1-001: Map PENDING_APPROVAL to explicit non-success result.
         if (result.getStatus() == AgentResultStatus.PENDING_APPROVAL) {
-            pendingApprovalCount.incrementAndGet();
-            Map<String, Object> evidence = new LinkedHashMap<>();
-            evidence.put("agentRef", agentRef);
-            evidence.put("capabilityId", capabilityId.value());
-            evidence.put("operatorId", operatorId.toString());
-            evidence.put("tenantId", ctx.tenantId());
-            evidence.put("traceId", ctx.traceId().orElseThrow());
-            evidence.put("correlationId", ctx.correlationId().orElseThrow());
-            evidence.put("latencyNanos", latencyNanos);
-            evidence.put("agentConfidence", result.getConfidence());
-            evidence.put("agentEvidence", result.getEvidence());
-            evidence.put("sideEffectProfile", descriptor.sideEffectProfile().name());
-            evidence.put("auditPolicy", observabilityPolicy.getOrDefault("auditPolicy", Map.of()));
-            evidence.put("idempotencyRequired", Boolean.TRUE.equals(replayPolicy.get("idempotencyRequired")));
             evidence.put("approvalStatus", "PENDING_APPROVAL");
             return new EventOperatorResult<>(
                 false,
@@ -409,6 +445,20 @@ public final class AgentEventOperatorCapabilityAdapter
                 evidence,
                 List.of(nonBlank(result.getExplanation(), "Agent execution requires approval")));
         }
+        return new EventOperatorResult<>(
+            true,
+            Optional.of(result.getOutput() != null ? result.getOutput() : Map.of()),
+            List.of(),
+            mapUncertainty(input.uncertainty(), result),
+            evidence,
+            List.of());
+    }
+
+    private Map<String, Object> buildEvidence(
+            AgentResult<Map<String, Object>> result,
+            OperatorRuntimeContext ctx,
+            long latencyNanos,
+            String outcome) {
         Map<String, Object> evidence = new LinkedHashMap<>();
         evidence.put("agentRef", agentRef);
         evidence.put("capabilityId", capabilityId.value());
@@ -422,13 +472,8 @@ public final class AgentEventOperatorCapabilityAdapter
         evidence.put("sideEffectProfile", descriptor.sideEffectProfile().name());
         evidence.put("auditPolicy", observabilityPolicy.getOrDefault("auditPolicy", Map.of()));
         evidence.put("idempotencyRequired", Boolean.TRUE.equals(replayPolicy.get("idempotencyRequired")));
-        return new EventOperatorResult<>(
-            true,
-            Optional.of(result.getOutput() != null ? result.getOutput() : Map.of()),
-            List.of(),
-            mapUncertainty(input.uncertainty(), result),
-            evidence,
-            List.of());
+        evidence.put("outcome", outcome);
+        return evidence;
     }
 
     private UncertaintyContext mapUncertainty(UncertaintyContext input, AgentResult<Map<String, Object>> result) {
@@ -482,9 +527,23 @@ public final class AgentEventOperatorCapabilityAdapter
             lastOutcome = "timeout";
             return;
         }
-        if (result.getStatus() == AgentResultStatus.FAILED) {
+        if (result.getStatus() == AgentResultStatus.FAILED
+                || result.getStatus() == AgentResultStatus.CANCELLED
+                || result.getStatus() == AgentResultStatus.ROLLED_BACK) {
             failureCount.incrementAndGet();
             lastOutcome = "failure";
+            return;
+        }
+        if (result.getStatus() == AgentResultStatus.DENIED) {
+            deniedCount.incrementAndGet();
+            String denialCategory = classifyDenialCategory(result);
+            if ("guardrail".equals(denialCategory)) {
+                guardrailDeniedCount.incrementAndGet();
+                lastOutcome = "guardrail_denied";
+            } else {
+                policyDeniedCount.incrementAndGet();
+                lastOutcome = "policy_denied";
+            }
             return;
         }
         if (result.getStatus() == AgentResultStatus.PENDING_APPROVAL) {
@@ -495,6 +554,25 @@ public final class AgentEventOperatorCapabilityAdapter
         }
         successCount.incrementAndGet();
         lastOutcome = "success";
+    }
+
+    private static String classifyDenialCategory(AgentResult<Map<String, Object>> result) {
+        Object explicitCategory = result.getMetrics().get("denialCategory");
+        if (isBlank(explicitCategory)) {
+            explicitCategory = result.getMetrics().get("denialType");
+        }
+        if (!isBlank(explicitCategory)) {
+            String normalized = String.valueOf(explicitCategory).trim().toLowerCase(java.util.Locale.ROOT);
+            if (normalized.contains("guardrail") || normalized.contains("invariant")) {
+                return "guardrail";
+            }
+            return "policy";
+        }
+        String explanation = nonBlank(result.getExplanation(), "").toLowerCase(java.util.Locale.ROOT);
+        if (explanation.contains("guardrail") || explanation.contains("invariant")) {
+            return "guardrail";
+        }
+        return "policy";
     }
 
     private static OperatorRuntimeContext runtimeContextFromInvocation(

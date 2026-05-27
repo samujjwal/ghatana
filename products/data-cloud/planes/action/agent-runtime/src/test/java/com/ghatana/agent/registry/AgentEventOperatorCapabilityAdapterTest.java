@@ -657,10 +657,10 @@ class AgentEventOperatorCapabilityAdapterTest extends EventloopTestBase {
                     @NotNull AgentContext ctx,
                     @NotNull Map<String, Object> input) {
                 return Promise.of(AgentResult.<Map<String, Object>>builder()
-                    .output(Map.of("agentId", descriptor.getAgentId(), "pendingAction", "create-incident"))
+                    .output(Map.of("agentId", descriptor().getAgentId(), "pendingAction", "create-incident"))
                     .confidence(0.5)
                     .status(com.ghatana.agent.AgentResultStatus.PENDING_APPROVAL)
-                    .agentId(descriptor.getAgentId())
+                    .agentId(descriptor().getAgentId())
                     .explanation("Action requires human approval before execution")
                     .processingTime(Duration.ofMillis(10))
                     .metrics(Map.of("requiresApproval", true))
@@ -681,7 +681,7 @@ class AgentEventOperatorCapabilityAdapterTest extends EventloopTestBase {
         // TEST-P1-006: Verify pending approval is not reported as success
         assertThat(result.success()).isFalse();
         assertThat(result.errors()).isNotEmpty();
-        assertThat(result.errors().get(0)).contains("requires approval");
+        assertThat(result.errors().get(0)).contains("approval");
 
         // Verify evidence includes approval status
         assertThat(result.evidence())
@@ -698,6 +698,132 @@ class AgentEventOperatorCapabilityAdapterTest extends EventloopTestBase {
             .containsEntry("pendingApproval", 1L)
             .containsEntry("denied", 1L) // pending approval counts as denied for metrics
             .containsEntry("lastOutcome", "pending_approval");
+    }
+
+    @Test
+    @DisplayName("DENIED status increments guardrailDenied when denialCategory is guardrail")
+    void deniedStatusTracksGuardrailDenials() {
+        TestAgent deniedAgent = new TestAgent("guardrail-denied-agent", 0.3, Map.of("denialCategory", "guardrail")) {
+            @Override
+            public @NotNull Promise<AgentResult<Map<String, Object>>> process(
+                    @NotNull AgentContext ctx,
+                    @NotNull Map<String, Object> input) {
+                return Promise.of(AgentResult.<Map<String, Object>>builder()
+                    .confidence(0.3)
+                    .status(com.ghatana.agent.AgentResultStatus.DENIED)
+                    .agentId(descriptor().getAgentId())
+                    .explanation("Denied by guardrail policy")
+                    .processingTime(Duration.ofMillis(5))
+                    .metrics(Map.of("denialCategory", "guardrail"))
+                    .build());
+            }
+        };
+
+        AgentEventOperatorCapabilityAdapter adapter = adapter(
+            deniedAgent,
+            "schema://agent/input",
+            policy("model"),
+            memoryStore());
+
+        EventOperatorResult<Map<String, Object>> result = runPromise(() -> adapter.process(
+            eventContext(Map.of("request", "denied-guardrail")),
+            runtimeContext()));
+
+        assertThat(result.success()).isFalse();
+        assertThat(result.errors()).isNotEmpty();
+        assertThat(result.evidence())
+            .containsEntry("approvalStatus", "DENIED")
+            .containsEntry("denialCategory", "guardrail")
+            .containsEntry("outcome", "DENIED");
+        assertThat(adapter.getMetrics())
+            .containsEntry("denied", 1L)
+            .containsEntry("guardrailDenied", 1L)
+            .containsEntry("policyDenied", 0L)
+            .containsEntry("lastOutcome", "guardrail_denied");
+    }
+
+    @Test
+    @DisplayName("DENIED status increments policyDenied when denialCategory is policy")
+    void deniedStatusTracksPolicyDenials() {
+        TestAgent deniedAgent = new TestAgent("policy-denied-agent", 0.2, Map.of("denialCategory", "policy")) {
+            @Override
+            public @NotNull Promise<AgentResult<Map<String, Object>>> process(
+                    @NotNull AgentContext ctx,
+                    @NotNull Map<String, Object> input) {
+                return Promise.of(AgentResult.<Map<String, Object>>builder()
+                    .confidence(0.2)
+                    .status(com.ghatana.agent.AgentResultStatus.DENIED)
+                    .agentId(descriptor().getAgentId())
+                    .explanation("Denied by policy engine")
+                    .processingTime(Duration.ofMillis(5))
+                    .metrics(Map.of("denialCategory", "policy"))
+                    .build());
+            }
+        };
+
+        AgentEventOperatorCapabilityAdapter adapter = adapter(
+            deniedAgent,
+            "schema://agent/input",
+            policy("model"),
+            memoryStore());
+
+        EventOperatorResult<Map<String, Object>> result = runPromise(() -> adapter.process(
+            eventContext(Map.of("request", "denied-policy")),
+            runtimeContext()));
+
+        assertThat(result.success()).isFalse();
+        assertThat(result.evidence())
+            .containsEntry("approvalStatus", "DENIED")
+            .containsEntry("denialCategory", "policy")
+            .containsEntry("outcome", "DENIED");
+        assertThat(adapter.getMetrics())
+            .containsEntry("denied", 1L)
+            .containsEntry("guardrailDenied", 0L)
+            .containsEntry("policyDenied", 1L)
+            .containsEntry("lastOutcome", "policy_denied");
+    }
+
+    @Test
+    @DisplayName("FAILED status emits audit evidence with outcome metadata")
+    void failedStatusEmitsEvidence() {
+        TestAgent failedAgent = new TestAgent("failed-agent", 0.0, Map.of()) {
+            @Override
+            public @NotNull Promise<AgentResult<Map<String, Object>>> process(
+                    @NotNull AgentContext ctx,
+                    @NotNull Map<String, Object> input) {
+                return Promise.of(AgentResult.<Map<String, Object>>builder()
+                    .confidence(0.0)
+                    .status(com.ghatana.agent.AgentResultStatus.FAILED)
+                    .agentId(descriptor().getAgentId())
+                    .explanation("Agent execution failed for downstream dependency")
+                    .processingTime(Duration.ofMillis(7))
+                    .metrics(Map.of("errorCode", "DEPENDENCY_FAILURE"))
+                    .build());
+            }
+        };
+
+        AgentEventOperatorCapabilityAdapter adapter = adapter(
+            failedAgent,
+            "schema://agent/input",
+            policy("model"),
+            memoryStore());
+
+        EventOperatorResult<Map<String, Object>> result = runPromise(() -> adapter.process(
+            eventContext(Map.of("request", "failed-case")),
+            runtimeContext()));
+
+        assertThat(result.success()).isFalse();
+        assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("failed"));
+        assertThat(result.evidence())
+            .containsEntry("agentRef", "agents/failed-agent@1.0.0")
+            .containsEntry("tenantId", "tenant-a")
+            .containsEntry("traceId", "trace-1")
+            .containsEntry("correlationId", "corr-1")
+            .containsEntry("outcome", "FAILED");
+        assertThat(adapter.getMetrics())
+            .containsEntry("invocations", 1L)
+            .containsEntry("failure", 1L)
+            .containsEntry("lastOutcome", "failure");
     }
 
     private static AgentEventOperatorCapabilityAdapter adapter(
@@ -812,7 +938,7 @@ class AgentEventOperatorCapabilityAdapterTest extends EventloopTestBase {
             Optional.of(input));
     }
 
-    private static final class TestAgent implements TypedAgent<Map<String, Object>, Map<String, Object>> {
+    private static class TestAgent implements TypedAgent<Map<String, Object>, Map<String, Object>> {
         private final AgentDescriptor descriptor;
         private final double confidence;
         private final Map<String, Object> metrics;

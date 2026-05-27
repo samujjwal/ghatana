@@ -1,5 +1,7 @@
 package com.ghatana.phr.api.routes;
 
+import com.ghatana.phr.kernel.service.CaregiverService;
+import com.ghatana.phr.kernel.service.PatientRecordService;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -26,9 +28,16 @@ import java.util.Objects;
 public final class PhrCaregiverRoutes {
 
     private final Eventloop eventloop;
+    private final CaregiverService caregiverService;
+    private final PatientRecordService patientRecordService;
 
-    public PhrCaregiverRoutes(Eventloop eventloop) {
+    public PhrCaregiverRoutes(
+            Eventloop eventloop,
+            CaregiverService caregiverService,
+            PatientRecordService patientRecordService) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
+        this.caregiverService = Objects.requireNonNull(caregiverService, "caregiverService must not be null");
+        this.patientRecordService = Objects.requireNonNull(patientRecordService, "patientRecordService must not be null");
     }
 
     /**
@@ -40,6 +49,7 @@ public final class PhrCaregiverRoutes {
         return RoutingServlet.builder(eventloop)
             .with(HttpMethod.GET, "/dependents", this::handleGetDependents)
             .with(HttpMethod.GET, "/patient/:patientId", this::handleGetPatientSummary)
+            .with(HttpMethod.GET, "/patient/:patientId/detail", this::handleGetPatientDetail)
             .build();
     }
 
@@ -57,15 +67,36 @@ public final class PhrCaregiverRoutes {
                 context.correlationId());
         }
 
-        return Promise.of(List.of(
-            Map.of(
-                "id", "dep-1",
-                "name", "Dependent Name",
-                "relationship", "parent",
-                "age", 8,
-                "consentGrantId", "cg-abc"
-            )
-        )).then(deps -> PhrRouteSupport.jsonResponse(200, deps, context.correlationId()));
+        // Fetch real caregiver relationships and patient data
+        return caregiverService.getPatientsForCaregiver(context.principalId())
+            .then(relationships -> {
+                // Fetch patient details for each relationship
+                List<Promise<Map<String, Object>>> dependentPromises = relationships.stream()
+                    .map(rel -> patientRecordService.getPatient(rel.patientId())
+                        .then(opt -> opt.map(patient -> Map.of(
+                            "id", patient.getId(),
+                            "name", patient.getDemographics().getFullName(),
+                            "relationship", rel.relationshipType().name(),
+                            "age", patient.getDemographics().getAge(),
+                            "consentScope", rel.consentScope(),
+                            "relationshipId", rel.id(),
+                            "status", rel.status().name(),
+                            "expiresAt", rel.expiresAt() != null ? rel.expiresAt().toString() : null
+                        )).orElse(Map.of(
+                            "id", rel.patientId(),
+                            "name", "Unknown",
+                            "relationship", rel.relationshipType().name(),
+                            "status", rel.status().name()
+                        )))
+                    )
+                    .toList();
+
+                return Promise.combine(dependentPromises)
+                    .then(dependents -> PhrRouteSupport.jsonResponse(200, Map.of(
+                        "dependents", dependents,
+                        "total", dependents.size()
+                    ), context.correlationId()));
+            });
     }
 
     private Promise<HttpResponse> handleGetPatientSummary(HttpRequest request) {
@@ -77,16 +108,96 @@ public final class PhrCaregiverRoutes {
         }
 
         String patientId = request.getPathParameter("patientId");
-        if (!PhrRouteSupport.canAccessPatientRecordForRole(context, patientId)) {
-            return PhrRouteSupport.errorResponse(403, "CAREGIVER_PATIENT_ACCESS_DENIED",
-                "Access denied to patient record for caregiver",
-                context.correlationId());
+        
+        // Verify caregiver has relationship with patient
+        return caregiverService.getPatientsForCaregiver(context.principalId())
+            .then(relationships -> {
+                boolean hasRelationship = relationships.stream()
+                    .anyMatch(rel -> rel.patientId().equals(patientId) && rel.status() == com.ghatana.phr.kernel.service.CaregiverService.RelationshipStatus.ACTIVE);
+                
+                if (!hasRelationship) {
+                    return PhrRouteSupport.errorResponse(403, "CAREGIVER_PATIENT_ACCESS_DENIED",
+                        "Caregiver does not have an active relationship with this patient",
+                        context.correlationId());
+                }
+                
+                return patientRecordService.getPatient(patientId)
+                    .then(opt -> {
+                        if (opt.isEmpty()) {
+                            return PhrRouteSupport.errorResponse(404, "PATIENT_NOT_FOUND",
+                                "Patient not found: " + patientId,
+                                context.correlationId());
+                        }
+                        var patient = opt.get();
+                        return PhrRouteSupport.jsonResponse(200, Map.of(
+                            "patientId", patientId,
+                            "tenantId", context.tenantId(),
+                            "caregiverId", context.principalId(),
+                            "name", patient.getDemographics().getFullName(),
+                            "age", patient.getDemographics().getAge(),
+                            "summary", "Caregiver-scoped patient summary"
+                        ), context.correlationId());
+                    });
+            });
+    }
+
+    private Promise<HttpResponse> handleGetPatientDetail(HttpRequest request) {
+        PhrRouteSupport.PhrRequestContext context;
+        try {
+            context = PhrRouteSupport.requireContext(request);
+        } catch (IllegalArgumentException ex) {
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        return Promise.of(Map.of(
-            "patientId", patientId,
-            "tenantId", context.tenantId(),
-            "summary", "Caregiver-scoped patient summary"
-        )).then(summary -> PhrRouteSupport.jsonResponse(200, summary, context.correlationId()));
+        String patientId = request.getPathParameter("patientId");
+        
+        // Verify caregiver has relationship with patient
+        return caregiverService.getPatientsForCaregiver(context.principalId())
+            .then(relationships -> {
+                boolean hasRelationship = relationships.stream()
+                    .anyMatch(rel -> rel.patientId().equals(patientId) && rel.status() == com.ghatana.phr.kernel.service.CaregiverService.RelationshipStatus.ACTIVE);
+                
+                if (!hasRelationship) {
+                    return PhrRouteSupport.errorResponse(403, "CAREGIVER_PATIENT_ACCESS_DENIED",
+                        "Caregiver does not have an active relationship with this patient",
+                        context.correlationId());
+                }
+                
+                return patientRecordService.getPatient(patientId)
+                    .then(opt -> {
+                        if (opt.isEmpty()) {
+                            return PhrRouteSupport.errorResponse(404, "PATIENT_NOT_FOUND",
+                                "Patient not found: " + patientId,
+                                context.correlationId());
+                        }
+                        var patient = opt.get();
+                        var demographics = patient.getDemographics();
+                        var medicalHistory = patient.getMedicalHistory();
+                        
+                        return PhrRouteSupport.jsonResponse(200, Map.of(
+                            "patientId", patientId,
+                            "tenantId", context.tenantId(),
+                            "caregiverId", context.principalId(),
+                            "demographics", Map.of(
+                                "fullName", demographics.getFullName(),
+                                "age", demographics.getAge(),
+                                "gender", demographics.getGender(),
+                                "bloodType", medicalHistory != null ? medicalHistory.getBloodType() : "Unknown",
+                                "district", demographics.getDistrict(),
+                                "municipality", demographics.getMunicipality()
+                            ),
+                            "contact", Map.of(
+                                "phone", demographics.getPhone(),
+                                "email", demographics.getEmail()
+                            ),
+                            "medicalHistory", medicalHistory != null ? Map.of(
+                                "allergies", medicalHistory.getAllergies(),
+                                "chronicConditions", medicalHistory.getChronicConditions(),
+                                "bloodType", medicalHistory.getBloodType()
+                            ) : Map.of(),
+                            "lastUpdated", patient.getUpdatedAt() != null ? patient.getUpdatedAt().toString() : ""
+                        ), context.correlationId());
+                    });
+            });
     }
 }

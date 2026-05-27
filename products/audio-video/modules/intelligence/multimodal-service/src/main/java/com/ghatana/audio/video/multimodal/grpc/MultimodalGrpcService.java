@@ -4,6 +4,7 @@ import com.ghatana.audio.video.common.model.FileSystemModelStore;
 import com.ghatana.audio.video.common.model.ModelMetadata;
 import com.ghatana.audio.video.common.model.ModelRegistry;
 import com.ghatana.audio.video.common.observability.MediaProcessingMetrics;
+import com.ghatana.audio.video.common.security.JwtServerInterceptor;
 import com.ghatana.audio.video.multimodal.engine.AudioVideoProcessingError;
 import com.ghatana.audio.video.multimodal.engine.MultimodalAnalysisEngine;
 import com.ghatana.audio.video.multimodal.engine.PlatformMultimodalAdapter;
@@ -67,9 +68,20 @@ public class MultimodalGrpcService extends MultimodalServiceGrpc.MultimodalServi
         requestCount.incrementAndGet();
         long startTime = System.currentTimeMillis();
         mediaMetrics.recordStarted("multimodal.analyse");
+
+        // AV-P1-008: Enforce tenant authentication
+        String tenantId = resolveTenantId();
+        if (tenantId == null || tenantId.isBlank()) {
+            responseObserver.onError(io.grpc.Status.UNAUTHENTICATED
+                .withDescription("Missing tenant context — authenticate before calling Multimodal service")
+                .asRuntimeException());
+            mediaMetrics.recordFailed("multimodal.analyse");
+            return;
+        }
+
         try {
-            LOG.debug("Processing multimodal request with {} analysis types",
-                    request.getAnalysisTypesList().size());
+            LOG.debug("Processing multimodal request with {} analysis types for tenant={}",
+                    request.getAnalysisTypesList().size(), tenantId);
 
             // Build engine request from proto — ByteString.isEmpty() and toByteArray() are valid
             com.ghatana.audio.video.multimodal.engine.MultimodalRequest engineRequest =
@@ -128,8 +140,17 @@ public class MultimodalGrpcService extends MultimodalServiceGrpc.MultimodalServi
     @Override
     public void analyzeVideoWithAudio(VideoAudioRequest request,
                                        StreamObserver<VideoAudioResponse> responseObserver) {
+        // AV-P1-008: Enforce tenant authentication
+        String tenantId = resolveTenantId();
+        if (tenantId == null || tenantId.isBlank()) {
+            responseObserver.onError(io.grpc.Status.UNAUTHENTICATED
+                .withDescription("Missing tenant context — authenticate before calling Multimodal service")
+                .asRuntimeException());
+            return;
+        }
         try {
-            LOG.debug("Analyzing video with audio extraction: {}", request.getExtractAudio());
+            LOG.debug("Analyzing video with audio extraction: {} for tenant={}",
+                    request.getExtractAudio(), tenantId);
 
             VideoAudioResult result = engine.analyseVideoWithAudio(
                     request.getVideoData().toByteArray(),
@@ -177,8 +198,17 @@ public class MultimodalGrpcService extends MultimodalServiceGrpc.MultimodalServi
     @Override
     public void generateDescription(DescriptionRequest request,
                                      StreamObserver<DescriptionResponse> responseObserver) {
+        // AV-P1-008: Enforce tenant authentication
+        String tenantId = resolveTenantId();
+        if (tenantId == null || tenantId.isBlank()) {
+            responseObserver.onError(io.grpc.Status.UNAUTHENTICATED
+                .withDescription("Missing tenant context — authenticate before calling Multimodal service")
+                .asRuntimeException());
+            return;
+        }
         try {
-            LOG.debug("Generating description with style: {}", request.getStyle());
+            LOG.debug("Generating description with style: {} for tenant={}",
+                    request.getStyle(), tenantId);
 
             com.ghatana.audio.video.multimodal.engine.MultimodalRequest engineRequest =
                     com.ghatana.audio.video.multimodal.engine.MultimodalRequest.builder()
@@ -219,6 +249,14 @@ public class MultimodalGrpcService extends MultimodalServiceGrpc.MultimodalServi
     @Override
     public void analyzeCrossModal(CrossModalRequest request,
                                    StreamObserver<CrossModalResponse> responseObserver) {
+        // AV-P1-008: Enforce tenant authentication
+        String tenantId = resolveTenantId();
+        if (tenantId == null || tenantId.isBlank()) {
+            responseObserver.onError(io.grpc.Status.UNAUTHENTICATED
+                .withDescription("Missing tenant context — authenticate before calling Multimodal service")
+                .asRuntimeException());
+            return;
+        }
         long startTime = System.currentTimeMillis();
         try {
             if (request.getAudioData().isEmpty() && request.getVideoData().isEmpty()) {
@@ -313,6 +351,14 @@ public class MultimodalGrpcService extends MultimodalServiceGrpc.MultimodalServi
 
     @Override
     public void getInsights(InsightsRequest request, StreamObserver<InsightsResponse> responseObserver) {
+        // AV-P1-008: Enforce tenant authentication
+        String tenantId = resolveTenantId();
+        if (tenantId == null || tenantId.isBlank()) {
+            responseObserver.onError(io.grpc.Status.UNAUTHENTICATED
+                .withDescription("Missing tenant context — authenticate before calling Multimodal service")
+                .asRuntimeException());
+            return;
+        }
         long startTime = System.currentTimeMillis();
         try {
             com.ghatana.audio.video.multimodal.engine.MultimodalRequest engineRequest =
@@ -547,5 +593,14 @@ public class MultimodalGrpcService extends MultimodalServiceGrpc.MultimodalServi
             baseStatus = Status.INVALID_ARGUMENT;
         }
         return baseStatus.withDescription(error.code() + ": " + error.message());
+    }
+
+    // AV-P1-008: Extract tenant from gRPC Context set by JwtServerInterceptor
+    private String resolveTenantId() {
+        String tenantId = JwtServerInterceptor.CTX_TENANT.get();
+        if (tenantId == null || tenantId.isBlank()) {
+            LOG.warn("Tenant ID not found in gRPC Context — request may not be authenticated");
+        }
+        return tenantId;
     }
 }

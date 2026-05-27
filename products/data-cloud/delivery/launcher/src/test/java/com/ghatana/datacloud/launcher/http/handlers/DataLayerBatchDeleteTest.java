@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
 import com.ghatana.datacloud.spi.EntityWriteIdempotencyStore;
+import com.ghatana.datacloud.spi.TransactionContext;
 import com.ghatana.datacloud.spi.TransactionManager;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -101,6 +102,18 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
         lenient().when(http.requireTenantIdWithError(request))
             .thenReturn(HttpHandlerSupport.TenantResolutionResult.success("tenant-1", null));
         lenient().when(request.getPathParameter("collection")).thenReturn("test-collection");
+
+        // Stub client.findById to return empty Optional (entities not found) for dry-run previews
+        lenient().when(client.findById(anyString(), anyString(), anyString()))
+            .thenReturn(Promise.of(Optional.empty()));
+        // Stub client.appendEvent for CDC event emission during transactional delete
+        lenient().when(client.appendEvent(anyString(), any()))
+            .thenReturn(Promise.of(DataCloudClient.Offset.of(1L)));
+        // Stub transactionManager to execute the operation directly (no real transaction)
+        lenient().doAnswer(invocation -> {
+            TransactionManager.TransactionalOperation<Object> op = invocation.getArgument(1);
+            return op.execute(null);
+        }).when(transactionManager).executeInTransactionWithContext(anyString(), any());
     }
 
     // ==================== DC-DATA-001: Dry-run functionality ====================
@@ -213,6 +226,7 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
 
         // Reset and try to use tampered token
         reset(request);
+        when(request.getPathParameter("collection")).thenReturn("test-collection");
         when(request.loadBody())
             .thenReturn(Promise.of(ByteBuf.wrapForReading(
                 ("{\"ids\":[\"entity-1\"],\"confirmationToken\":\"" + tamperedToken + "\"}")
@@ -242,6 +256,7 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
         reset(request);
         when(http.requireTenantIdWithError(request))
             .thenReturn(HttpHandlerSupport.TenantResolutionResult.success("tenant-2", null));
+        when(request.getPathParameter("collection")).thenReturn("test-collection");
         when(request.loadBody())
             .thenReturn(Promise.of(ByteBuf.wrapForReading(
                 ("{\"ids\":[\"entity-1\"],\"confirmationToken\":\"" + tokenForTenant1 + "\"}")
@@ -271,14 +286,15 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
         
         // Use token for actual deletion
         reset(request);
+        when(request.getPathParameter("collection")).thenReturn("test-collection");
         when(request.loadBody())
             .thenReturn(Promise.of(ByteBuf.wrapForReading(
                 ("{\"ids\":[\"entity-1\",\"entity-2\"],\"confirmationToken\":\"" + validToken + "\"}")
                     .getBytes(StandardCharsets.UTF_8))));
         when(client.delete(anyString(), anyString(), eq("entity-1")))
-            .thenReturn(Promise.of(true));
+            .thenReturn(Promise.of((Void) null));
         when(client.delete(anyString(), anyString(), eq("entity-2")))
-            .thenReturn(Promise.of(true));
+            .thenReturn(Promise.of((Void) null));
 
         HttpResponse response = runPromise(() -> handler.handleBatchDeleteEntities(request));
 
@@ -302,6 +318,7 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
         
         // Try to delete 3 IDs with a token for 2
         reset(request);
+        when(request.getPathParameter("collection")).thenReturn("test-collection");
         when(request.loadBody())
             .thenReturn(Promise.of(ByteBuf.wrapForReading(
                 ("{\"ids\":[\"entity-1\",\"entity-2\",\"entity-3\"],\"confirmationToken\":\"" + tokenFor2Ids + "\"}")
@@ -340,16 +357,17 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
         
         // Use token for actual deletion with one failure
         reset(request);
+        when(request.getPathParameter("collection")).thenReturn("test-collection");
         when(request.loadBody())
             .thenReturn(Promise.of(ByteBuf.wrapForReading(
                 ("{\"ids\":[\"entity-1\",\"entity-2\",\"entity-3\"],\"confirmationToken\":\"" + validToken + "\"}")
                     .getBytes(StandardCharsets.UTF_8))));
         when(client.delete(anyString(), anyString(), eq("entity-1")))
-            .thenReturn(Promise.of(true));
+            .thenReturn(Promise.of((Void) null));
         when(client.delete(anyString(), anyString(), eq("entity-2")))
             .thenReturn(Promise.ofException(new RuntimeException("Entity not found")));
         when(client.delete(anyString(), anyString(), eq("entity-3")))
-            .thenReturn(Promise.of(true));
+            .thenReturn(Promise.of((Void) null));
 
         HttpResponse response = runPromise(() -> handler.handleBatchDeleteEntities(request));
 
@@ -375,16 +393,17 @@ class DataLayerBatchDeleteTest extends EventloopTestBase {
         
         // Use token for actual deletion with one failure
         reset(request);
+        when(request.getPathParameter("collection")).thenReturn("test-collection");
         when(request.loadBody())
             .thenReturn(Promise.of(ByteBuf.wrapForReading(
                 ("{\"ids\":[\"entity-1\",\"entity-2\",\"entity-3\"],\"confirmationToken\":\"" + validToken + "\"}")
                     .getBytes(StandardCharsets.UTF_8))));
         when(client.delete(anyString(), anyString(), eq("entity-1")))
-            .thenReturn(Promise.of(true));
+            .thenReturn(Promise.of((Void) null));
         when(client.delete(anyString(), anyString(), eq("entity-2")))
             .thenReturn(Promise.ofException(new RuntimeException("Entity not found")));
         when(client.delete(anyString(), anyString(), eq("entity-3")))
-            .thenReturn(Promise.of(true));
+            .thenReturn(Promise.of((Void) null));
 
         HttpResponse response = runPromise(() -> handler.handleBatchDeleteEntities(request));
 

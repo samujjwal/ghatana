@@ -188,7 +188,10 @@ export function usePhaseCockpitData({
         timestamp: new Date(entry.timestamp).toISOString(),
         actor: entry.actor,
         severity: entry.severity as any,
-        success: true,
+        success: entry.success ?? null,
+        eventType: entry.eventType ?? entry.type,
+        outcome: entry.outcome ?? (entry.success === false ? 'FAILURE' : 'SUCCESS'),
+        correlationId: entry.correlationId ?? null,
       }));
     }
     return activityQuery.data?.activity ?? [];
@@ -206,9 +209,9 @@ export function usePhaseCockpitData({
         blockers: Array.from(packet.readiness.missingPrerequisites),
         requiredArtifacts: packet.requiredArtifacts.map(a => a.artifactId),
         completedArtifacts: packet.completedArtifacts.map(a => a.artifactId),
-        estimatedReadyIn: packet.readiness.canAdvance ? 'Ready now' : 'Blocked',
-        estimatedReadyInHours: packet.readiness.canAdvance ? 0 : 24,
-        predictionConfidence: packet.readiness.completenessScore,
+        estimatedReadyIn: packet.readiness.estimatedReadyIn ?? null,
+        estimatedReadyInHours: packet.readiness.estimatedReadyInHours ?? null,
+        predictionConfidence: packet.readiness.predictionConfidence ?? null,
         decisionSupport: null,
         checkedAt: new Date(packet.timestamp).toISOString(),
       } as PhaseTransitionPreviewSnapshot;

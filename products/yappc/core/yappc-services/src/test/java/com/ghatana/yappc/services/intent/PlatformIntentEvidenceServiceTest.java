@@ -68,6 +68,8 @@ class PlatformIntentEvidenceServiceTest extends EventloopTestBase {
                         "promptKey", "intent.analyze",
                         "promptVersion", "v1",
                         "modelUsed", "gpt-4",
+                        "prompt", "Full user prompt with private context",
+                        "generatedContent", "private generated summary",
                         "confidence", 0.82)));
 
         assertThat(evidenceId).startsWith("intent-analysis-intent-1-");
@@ -80,7 +82,11 @@ class PlatformIntentEvidenceServiceTest extends EventloopTestBase {
                 .containsEntry("feasible", "true")
                 .containsEntry("promptVersion", "v1")
                 .containsEntry("modelUsed", "gpt-4")
+                .containsEntry("prompt", "[REDACTED]")
+                .containsEntry("generatedContent", "[REDACTED]")
                 .containsEntry("confidence", 0.82);
+        assertThat(evidence.record().attributes().toString())
+                .doesNotContain("Full user prompt", "private generated summary");
     }
 
     @Test

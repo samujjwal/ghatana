@@ -21,8 +21,8 @@ import {
   Clock as InactiveIcon,
   X as CloseIcon,
   Loader2 as SpinnerIcon,
-  AlertCircle as ErrorIcon,
   RefreshCw as RefreshIcon,
+  FileClock as EmptyPromptIcon,
 } from 'lucide-react';
 import {
   listPromptVersions,
@@ -32,6 +32,9 @@ import {
 } from '../../services/admin/promptVersioningApi';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { EmptyState } from '../common/EmptyState';
+import { LoadingState } from '../common/LoadingState';
+import { ErrorState, errorCorrelationId, errorMessage } from '../common/ErrorState';
 
 interface PromptVersionsPageProps {
   className?: string;
@@ -162,19 +165,26 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
 
         {/* Loading */}
         {isLoading && (
-          <div className="flex items-center gap-2 text-fg-muted py-8 justify-center" data-testid="loading-spinner">
-            <SpinnerIcon size={20} className="animate-spin" />
-            <span>Loading prompt versions…</span>
+          <div className="py-8" data-testid="loading-spinner">
+            <LoadingState
+              message="Loading prompt versions..."
+              size="md"
+              className="justify-center text-fg-muted"
+            />
           </div>
         )}
 
         {/* Error */}
         {isError && (
-          <div className="flex items-center gap-2 text-destructive bg-destructive-bg/20 border border-destructive-border rounded-lg p-4" data-testid="error-message">
-            <ErrorIcon size={16} />
-            <span className="text-sm">
-              {error instanceof Error ? error.message : 'Failed to load prompt versions.'}
-            </span>
+          <div data-testid="error-message">
+            <ErrorState
+              title="Prompt versions unavailable"
+              message={errorMessage(error, 'Failed to load prompt versions.')}
+              correlationId={errorCorrelationId(error)}
+              onRetry={() => void refetch()}
+              variant="banner"
+              size="sm"
+            />
           </div>
         )}
 
@@ -273,8 +283,14 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
 
         {/* Empty state */}
         {!isLoading && !isError && promptVersions.length === 0 && (
-          <div className="text-center py-12 text-fg-muted" data-testid="empty-state">
-            No prompt versions found.
+          <div data-testid="empty-state">
+            <EmptyState
+              variant="default"
+              className="rounded-xl border border-dashed border-border bg-surface/60"
+              icon={<EmptyPromptIcon className="h-full w-full" aria-hidden="true" />}
+              title="No prompt versions found"
+              description="Prompt versions will appear here after the prompt registry publishes an active or candidate version."
+            />
           </div>
         )}
       </div>

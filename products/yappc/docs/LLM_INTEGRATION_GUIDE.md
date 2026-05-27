@@ -8,6 +8,8 @@
 
 ## Overview
 
+Evidence: [YAPPC production readiness evidence links](./PRODUCTION_READINESS_EVIDENCE_LINKS.md) are the current release-readiness source; this guide marks LLM dependencies as still required.
+
 Complete LLM integration infrastructure has been implemented with:
 - ✅ Prompt template registry with versioning
 - ✅ AI fallback strategy with circuit breaker

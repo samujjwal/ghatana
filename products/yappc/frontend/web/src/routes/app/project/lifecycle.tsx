@@ -1,38 +1,16 @@
 /**
- * Lifecycle Route - Redirect to Intent Phase
- *
- * This route is deprecated. Lifecycle phase navigation is now through the canonical phase tabs.
- * Redirects to the canonical intent phase cockpit.
+ * Legacy Lifecycle route.
  *
  * @doc.type route
- * @doc.purpose Redirect legacy lifecycle route to canonical phase
+ * @doc.purpose Redirect legacy lifecycle deep links to the canonical Intent phase
  * @doc.layer product
  * @doc.pattern Redirect Component
  */
+import { LegacyProjectRedirectRoute } from './LegacyProjectRedirectRoute';
+import { LEGACY_PROJECT_ROUTE_POLICIES } from './legacyProjectRoutePolicy';
 
-import { useEffect } from 'react';
-import { useTranslation } from '@ghatana/i18n';
-import { useParams, useNavigate } from 'react-router';
-
-// TRACK-009: Redirect legacy lifecycle route to canonical intent phase
 export default function LifecycleRedirectRoute() {
-  const { projectId } = useParams<{ projectId: string }>();
-  const navigate = useNavigate();
-  const { t } = useTranslation('common');
-
-  useEffect(() => {
-    if (projectId) {
-      navigate(`/p/${projectId}/intent`, { replace: true });
-    }
-  }, [projectId, navigate]);
-
-  return (
-    <div className="flex h-full items-center justify-center">
-      <div className="text-center">
-        <p className="text-sm text-fg-muted">{t('phaseCockpit.lifecycle.redirecting')}</p>
-      </div>
-    </div>
-  );
+  return <LegacyProjectRedirectRoute policy={LEGACY_PROJECT_ROUTE_POLICIES.lifecycle} />;
 }
 
 export function ErrorBoundary() {

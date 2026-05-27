@@ -214,7 +214,9 @@ class AgentReplaySafetyTest {
         // In a real implementation, this would verify replay metrics are tracked
         // For this test, we verify the metric structure
         assertThat(metric.get("name")).isEqualTo("agent.replay");
-        assertThat(metric.get("labels")).containsKey("replayMode");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> labels = (Map<String, Object>) metric.get("labels");
+        assertThat(labels).containsKey("replayMode");
     }
 
     // ==================== AGENT-004: Replay audit trail ====================

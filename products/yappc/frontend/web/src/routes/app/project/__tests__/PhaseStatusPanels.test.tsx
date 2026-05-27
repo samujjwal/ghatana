@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@/test-utils/test-utils';
+import { render, screen, within } from '@/test-utils/test-utils';
 import { describe, expect, it } from 'vitest';
 
 import { PhaseStatusPanels } from '../PhaseStatusPanels';
@@ -166,7 +166,99 @@ describe('PhaseStatusPanels', () => {
     );
 
     expect(screen.getByTestId('generate-activity-timeline')).toBeInTheDocument();
-    expect(screen.getByText('Schema artifact created')).toBeInTheDocument();
+    expect(within(screen.getByTestId('generate-activity-timeline')).getByText('Schema artifact created')).toBeInTheDocument();
+  });
+
+  it('renders generate artifacts, assurance checks, diffs, failures, and retry guidance', () => {
+    render(
+      <PhaseStatusPanels
+        phase="generate"
+        preview={{
+          projectId: 'proj-1',
+          currentPhase: 'GENERATE',
+          nextPhase: 'RUN',
+          canAdvance: false,
+          readiness: 72,
+          blockers: ['Security scan failed'],
+          requiredArtifacts: ['src/routes/Dashboard.tsx'],
+          completedArtifacts: ['src/routes/Dashboard.test.tsx'],
+          estimatedReadyIn: 'Needs retry',
+          estimatedReadyInHours: 1,
+          predictionConfidence: 0.66,
+          checkedAt: '2026-05-04T10:00:00.000Z',
+        }}
+        blockers={[
+          {
+            id: 'blocker-security',
+            title: 'Security assurance failed',
+            severity: 'high',
+            source: 'assurance',
+            description: 'Dependency scan found a critical issue.',
+          },
+        ]}
+        activity={[
+          {
+            id: 'compile-pass',
+            source: 'assurance',
+            action: 'generate.compile.passed',
+            summary: 'Compile passed for generated workspace.',
+            timestamp: '2026-05-04T10:00:00.000Z',
+            actor: 'system',
+            severity: null,
+            success: true,
+          },
+          {
+            id: 'test-pass',
+            source: 'assurance',
+            action: 'generate.tests.passed',
+            summary: 'Vitest generated suite passed.',
+            timestamp: '2026-05-04T10:01:00.000Z',
+            actor: 'system',
+            severity: null,
+            success: true,
+          },
+          {
+            id: 'security-fail',
+            source: 'assurance',
+            action: 'generate.security.failed',
+            summary: 'Security scan failed on generated dependency.',
+            timestamp: '2026-05-04T10:02:00.000Z',
+            actor: 'system',
+            severity: 'error',
+            success: false,
+          },
+          {
+            id: 'diff-ready',
+            source: 'lifecycle',
+            action: 'generate.diff.ready',
+            summary: 'Diff ready with 3 changed files.',
+            timestamp: '2026-05-04T10:03:00.000Z',
+            actor: 'system',
+            severity: null,
+            success: true,
+          },
+          {
+            id: 'artifact-created',
+            source: 'lifecycle',
+            action: 'artifact.created',
+            summary: 'Generated file created: src/routes/Dashboard.tsx.',
+            timestamp: '2026-05-04T10:04:00.000Z',
+            actor: 'system',
+            severity: null,
+            success: true,
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByTestId('generated-completed-artifacts')).toHaveTextContent('Dashboard.test.tsx');
+    expect(screen.getByTestId('generated-artifact-events')).toHaveTextContent('Generated file created');
+    expect(screen.getByTestId('generate-assurance-panel')).toHaveTextContent('Failing');
+    expect(screen.getAllByTestId('generate-assurance-check')).toHaveLength(6);
+    expect(screen.getByTestId('generate-diff-review')).toHaveTextContent('3 changed files');
+    expect(screen.getByTestId('generate-failure-panel')).toHaveTextContent('Security assurance failed');
+    expect(screen.getByTestId('generate-failure-panel')).toHaveTextContent('Security scan failed');
+    expect(screen.getByTestId('generate-retry-guidance')).toHaveTextContent(/retry generation/i);
   });
 
   it('renders signal timeline for observe phase with recent events', () => {
@@ -269,6 +361,75 @@ describe('PhaseStatusPanels', () => {
     expect(screen.getAllByTestId('preview-user-action')[0]).toHaveTextContent('operator-1');
   });
 
+  it('surfaces observe kernel app agent health and remediation recommendations', () => {
+    render(
+      <PhaseStatusPanels
+        phase="observe"
+        preview={{
+          projectId: 'proj-1',
+          currentPhase: 'OBSERVE',
+          nextPhase: 'LEARN',
+          canAdvance: false,
+          readiness: 40,
+          blockers: ['Kernel lifecycle truth degraded'],
+          requiredArtifacts: [],
+          completedArtifacts: [],
+          estimatedReadyIn: 'Needs remediation',
+          estimatedReadyInHours: 2,
+          predictionConfidence: 0.5,
+          checkedAt: '2026-05-04T10:00:00.000Z',
+        }}
+        agentGovernance={{
+          isHealthy: false,
+          status: 'degraded',
+          governanceState: 'policy-review-required',
+          learningLevel: 'quarantined',
+          evidenceIds: ['agent-evidence-1'],
+          issues: ['Agent policy approval expired.'],
+        }}
+        blockers={[
+          {
+            id: 'kernel-truth',
+            title: 'Kernel lifecycle truth degraded',
+            description: 'Kernel truth source is stale.',
+            severity: 'high',
+            source: 'kernel',
+          },
+        ]}
+        activity={[
+          {
+            id: 'kernel-event',
+            source: 'kernel',
+            action: 'kernel.truth.degraded',
+            summary: 'Kernel lifecycle truth degraded for product unit.',
+            timestamp: '2026-05-04T10:00:00.000Z',
+            actor: 'system',
+            severity: 'warning',
+            success: true,
+          },
+          {
+            id: 'preview-error',
+            source: 'audit',
+            action: 'preview.runtime.error',
+            summary: 'Preview runtime error while loading deployment.',
+            timestamp: '2026-05-04T10:01:00.000Z',
+            actor: null,
+            severity: 'error',
+            success: false,
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByTestId('observe-health-matrix')).toHaveTextContent('Kernel health');
+    expect(screen.getByTestId('observe-health-matrix')).toHaveTextContent('App health');
+    expect(screen.getByTestId('observe-health-matrix')).toHaveTextContent('Agent health');
+    expect(screen.getAllByTestId('observe-health-item')).toHaveLength(3);
+    expect(screen.getByTestId('observe-recommendations')).toHaveTextContent('Kernel lifecycle truth degraded');
+    expect(screen.getByTestId('observe-recommendations')).toHaveTextContent('Repair preview runtime');
+    expect(screen.getByTestId('observe-recommendations')).toHaveTextContent('Agent policy approval expired');
+  });
+
   it('surfaces preview security status in run and observe phases', () => {
     const previewHealth = {
       isHealthy: false,
@@ -316,6 +477,67 @@ describe('PhaseStatusPanels', () => {
     expect(screen.getAllByTestId('preview-security-issue')[0]).toHaveTextContent('Preview trust level is untrusted');
   });
 
+  it('renders run status, timeline, health, retry, rollback, and promote readiness', () => {
+    render(
+      <PhaseStatusPanels
+        phase="run"
+        preview={{
+          projectId: 'proj-1',
+          currentPhase: 'RUN',
+          nextPhase: 'OBSERVE',
+          canAdvance: false,
+          readiness: 48,
+          blockers: ['Runtime health degraded'],
+          requiredArtifacts: ['Preview token', 'Run evidence'],
+          completedArtifacts: [],
+          estimatedReadyIn: 'Needs operator action',
+          estimatedReadyInHours: 1,
+          predictionConfidence: 0.6,
+          checkedAt: '2026-05-04T10:00:00.000Z',
+        }}
+        blockers={[
+          {
+            id: 'run-blocker-1',
+            title: 'Runtime health degraded',
+            description: 'Preview runtime returned 500.',
+            severity: 'high',
+            source: 'platform-run',
+          },
+        ]}
+        activity={[
+          {
+            id: 'run-failed',
+            source: 'platform-run',
+            action: 'run.workflow.failed',
+            summary: 'Run workflow failed during preview deploy.',
+            timestamp: '2026-05-04T10:00:00.000Z',
+            actor: 'system',
+            severity: 'error',
+            success: false,
+          },
+          {
+            id: 'retry-linked',
+            source: 'platform-run',
+            action: 'run.retry.available',
+            summary: 'Retry evidence linked for failed run.',
+            timestamp: '2026-05-04T10:01:00.000Z',
+            actor: 'operator',
+            severity: null,
+            success: true,
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByTestId('platform-run-status')).toHaveTextContent('Platform run status');
+    expect(screen.getByTestId('platform-run-health')).toHaveTextContent('failed');
+    expect(screen.getByTestId('platform-run-timeline')).toHaveTextContent('Run workflow failed');
+    expect(screen.getAllByTestId('platform-run-event')).toHaveLength(2);
+    expect(screen.getByTestId('run-operation-retry')).toHaveTextContent('available');
+    expect(screen.getByTestId('run-operation-rollback')).toHaveTextContent('ready');
+    expect(screen.getByTestId('run-operation-promote')).toHaveTextContent('blocked');
+  });
+
   it('surfaces agent governance status and learning evidence in observe and learn phases', () => {
     const agentGovernance = {
       isHealthy: true,
@@ -353,5 +575,141 @@ describe('PhaseStatusPanels', () => {
 
     expect(screen.getByTestId('agent-governance-status')).toHaveTextContent('healthy');
     expect(screen.getByTestId('agent-learning-evidence')).toHaveTextContent('learn-approval-1');
+  });
+
+  it('renders learn evidence, recommendations, approvals, prompt learning, and agent learning', () => {
+    render(
+      <PhaseStatusPanels
+        phase="learn"
+        preview={null}
+        agentGovernance={{
+          isHealthy: false,
+          status: 'degraded',
+          governanceState: 'needs-human-review',
+          learningLevel: 'quarantined',
+          evidenceIds: ['agent-learn-1'],
+          issues: ['Agent output requires approval before promotion.'],
+        }}
+        blockers={[
+          {
+            id: 'policy-blocker',
+            title: 'Policy learning review',
+            description: 'Capture denied policy evidence before promoting this learning.',
+            severity: 'high',
+            source: 'governance',
+          },
+        ]}
+        activity={[
+          {
+            id: 'run-failure-learning',
+            source: 'platform-run',
+            action: 'learn.evidence.created',
+            summary: 'Failed run evidence created a remediation recommendation.',
+            timestamp: '2026-05-04T10:00:00.000Z',
+            actor: 'system',
+            severity: 'error',
+            success: false,
+          },
+          {
+            id: 'human-approval',
+            source: 'approval',
+            action: 'learn.approval.approved',
+            summary: 'Human approval accepted the rollback learning.',
+            timestamp: '2026-05-04T10:01:00.000Z',
+            actor: 'owner',
+            severity: null,
+            success: true,
+          },
+          {
+            id: 'prompt-score',
+            source: 'prompt-registry',
+            action: 'prompt.evaluation.scored',
+            summary: 'Prompt model evaluation scored 0.91 and promoted the active version.',
+            timestamp: '2026-05-04T10:02:00.000Z',
+            actor: 'system',
+            severity: null,
+            success: true,
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByTestId('learn-evidence-panel')).toHaveTextContent('Failed run evidence');
+    expect(screen.getAllByTestId('learn-evidence-item')).toHaveLength(3);
+    expect(screen.getByTestId('learn-recommendations-panel')).toHaveTextContent('Policy learning review');
+    expect(screen.getByTestId('learn-recommendations-panel')).toHaveTextContent('Convert failure into learning');
+    expect(screen.getByTestId('learn-human-approval-panel')).toHaveTextContent('approved');
+    expect(screen.getByTestId('learn-prompt-learning-panel')).toHaveTextContent('Prompt model evaluation scored 0.91');
+    expect(screen.getByTestId('agent-governance-health')).toHaveTextContent('needs-human-review');
+    expect(screen.getByTestId('agent-learning-evidence')).toHaveTextContent('agent-learn-1');
+  });
+
+  it('renders evolve proposals, impact, diff review, approval, and re-run readiness', () => {
+    render(
+      <PhaseStatusPanels
+        phase="evolve"
+        preview={null}
+        blockers={[]}
+        activity={[
+          {
+            id: 'proposal-created',
+            source: 'evolution',
+            action: 'evolve.proposal.created',
+            summary: 'Evolution proposal prop-1 links observe outage evidence to a login remediation plan.',
+            timestamp: '2026-05-04T10:00:00.000Z',
+            actor: 'system',
+            severity: null,
+            success: true,
+          },
+          {
+            id: 'impact-ready',
+            source: 'evolution',
+            action: 'evolve.impact.ready',
+            summary: 'Impact analysis affects web surface, auth module, and preview smoke tests.',
+            timestamp: '2026-05-04T10:01:00.000Z',
+            actor: 'system',
+            severity: null,
+            success: true,
+          },
+          {
+            id: 'diff-review',
+            source: 'patch-review',
+            action: 'evolve.diff.review_requested',
+            summary: 'Diff review is pending for 4 changed files with rollback available.',
+            timestamp: '2026-05-04T10:02:00.000Z',
+            actor: 'owner',
+            severity: 'warning',
+            success: true,
+          },
+          {
+            id: 'approval',
+            source: 'approval',
+            action: 'evolve.approval.approved',
+            summary: 'Human approval accepted the evolve diff.',
+            timestamp: '2026-05-04T10:03:00.000Z',
+            actor: 'owner',
+            severity: null,
+            success: true,
+          },
+          {
+            id: 'handoff',
+            source: 'evolution',
+            action: 'evolve.handoff.dispatched',
+            summary: 'Approved evolve proposal handed off for revalidate and regenerate.',
+            timestamp: '2026-05-04T10:04:00.000Z',
+            actor: 'system',
+            severity: null,
+            success: true,
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByTestId('evolve-proposals-panel')).toHaveTextContent('Evolution proposal prop-1');
+    expect(screen.getByTestId('evolve-impact-panel')).toHaveTextContent('auth module');
+    expect(screen.getByTestId('evolve-diff-review-panel')).toHaveTextContent('4 changed files');
+    expect(screen.getByTestId('evolve-approval-panel')).toHaveTextContent('Human approval accepted');
+    expect(screen.getByTestId('evolve-rerun-panel')).toHaveTextContent('ready');
+    expect(screen.getByTestId('evolve-rerun-panel')).toHaveTextContent('revalidate and regenerate');
   });
 });

@@ -187,6 +187,7 @@ public final class PhrEntitlementRoutes {
             
             // Emergency and governance
             route("/emergency", "Emergency", "clinician", List.of("break-glass-review"), List.of("override-audit-timeline")),
+            route("/emergency/reviews", "Emergency Reviews", "admin", List.of("review-emergency-access"), List.of("pending-reviews", "overdue-reviews")),
             route("/release-readiness", "Release Readiness", "admin", List.of("view-release-readiness"),
                 List.of("evidence-freshness", "fhir-runtime", "consent-cache-proof", "rollback-proof")),
             route("/audit", "Audit", "admin", List.of("view-audit-trail"), List.of("audit-trail")),
@@ -204,9 +205,10 @@ public final class PhrEntitlementRoutes {
 
         List<ProductRouteEntitlement.RouteEntitlement> filtered = routeEntitlementEvaluator.filterByRole(allRoutes, role, roleOrder);
         
-        // Unknown role - fail closed to patient routes (minimum access)
+        // Unknown role - fail closed with empty route list
+        // Do not silently fall back to patient routes for security
         if (filtered.isEmpty()) {
-            filtered = routeEntitlementEvaluator.filterByRole(allRoutes, "patient", roleOrder);
+            LOG.warn("Unknown role '{}' requested - returning empty route list (fail closed)", normalizedRole);
         }
         
         return filtered;

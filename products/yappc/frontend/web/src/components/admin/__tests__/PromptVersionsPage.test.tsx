@@ -73,6 +73,7 @@ describe('PromptVersionsPage', () => {
     mockListVersions.mockReturnValue(new Promise(() => undefined)); // never resolves
     renderPage();
     expect(await screen.findByTestId('loading-spinner')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Loading prompt versions...');
   });
 
   it('shows error message when fetch fails', async () => {
@@ -80,12 +81,21 @@ describe('PromptVersionsPage', () => {
     renderPage();
     expect(await screen.findByTestId('error-message')).toBeInTheDocument();
     expect(screen.getByText('network error')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Try Again' })).toBeInTheDocument();
+  });
+
+  it('shows correlation id in the standardized error state', async () => {
+    mockListVersions.mockRejectedValue(new Error('network error [Correlation ID: corr-prompts-1]'));
+    renderPage();
+    expect(await screen.findByTestId('error-message')).toHaveTextContent('Correlation ID: corr-prompts-1');
   });
 
   it('shows empty state when no versions exist', async () => {
     mockListVersions.mockResolvedValue({ items: [], total: 0 });
     renderPage();
     expect(await screen.findByTestId('empty-state')).toBeInTheDocument();
+    expect(screen.getByText('No prompt versions found')).toBeInTheDocument();
+    expect(screen.getByText(/after the prompt registry publishes/i)).toBeInTheDocument();
   });
 
   it('renders version rows grouped by prompt name', async () => {

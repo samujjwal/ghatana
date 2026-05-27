@@ -189,6 +189,13 @@ public final class DataCloudHttpLauncherBootstrap {
                         DataCloudLauncherSettings.resolveRateLimitRequests(env),
                         DataCloudLauncherSettings.resolveRateLimitWindowSeconds(env));
 
+                // DC-P1-003: Apply config-driven critical collections when set via DC_CRITICAL_COLLECTIONS env var
+                java.util.Set<String> criticalCollections = DataCloudLauncherSettings.resolveCriticalCollections(env);
+                if (criticalCollections != null) {
+                    httpServer.withCriticalCollections(criticalCollections);
+                    log.info("[DC-P1-003] Overriding critical collections from DC_CRITICAL_COLLECTIONS: {}", criticalCollections);
+                }
+
                 if (autonomyController != null) {
                     httpServer.withAutonomyController(autonomyController);
                 }

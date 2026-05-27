@@ -71,8 +71,7 @@ public class EmergencyAccessLogService extends PhrServiceBase {
      * Logs an emergency access event.
      *
      * <p>Must be called immediately at the time of access override, before or
-     * during the access itself. Caller is responsible for triggering an
-     * out-of-band patient notification.</p>
+     * during the access itself. Patient notification is triggered automatically.</p>
      *
      * @param event the emergency access event
      * @return Promise containing the persisted event
@@ -241,6 +240,21 @@ public class EmergencyAccessLogService extends PhrServiceBase {
             .sorted((a, b) -> a.reviewDueAt().compareTo(b.reviewDueAt()))
             .limit(limit)
             .toList());
+    }
+
+    /**
+     * Triggers patient notification for emergency access.
+     *
+     * <p>This is a policy gate requirement: patients must be notified when their
+     * records are accessed via emergency break-glass. The notification is sent
+     * through the review workflow notification sender.</p>
+     *
+     * @param event the emergency access event
+     * @return Promise completing when notification is sent
+     */
+    public Promise<Void> notifyPatientOfEmergencyAccess(EmergencyAccessEvent event) {
+        ensureRunning();
+        return reviewWorkflow.notifyPatient(event);
     }
 
     // ==================== Private Helpers ====================

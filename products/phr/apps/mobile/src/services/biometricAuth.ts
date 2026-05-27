@@ -1,4 +1,5 @@
 import * as LocalAuthentication from 'expo-local-authentication';
+import { t } from '../i18n/phrMobileI18n';
 
 export async function authenticateBiometric(): Promise<boolean> {
   const available = await LocalAuthentication.hasHardwareAsync();
@@ -12,7 +13,7 @@ export async function authenticateBiometric(): Promise<boolean> {
   }
 
   const result = await LocalAuthentication.authenticateAsync({
-    promptMessage: 'Authenticate to unlock your health record',
+    promptMessage: t('biometric.promptMessage'),
     disableDeviceFallback: false,
   });
   return result.success;

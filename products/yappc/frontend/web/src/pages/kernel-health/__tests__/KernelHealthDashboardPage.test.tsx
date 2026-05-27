@@ -285,6 +285,7 @@ describe('KernelHealthDashboardPage', () => {
 
       renderPage('digital-marketing');
       // Loading spinner should be present; no summary card
+      expect(screen.getByRole('status')).toHaveTextContent('Loading Kernel health data...');
       expect(screen.queryByText('digital-marketing')).not.toBeInTheDocument();
     });
   });
@@ -300,6 +301,7 @@ describe('KernelHealthDashboardPage', () => {
 
       renderPage('digital-marketing');
       expect(screen.getByText(/failed to load kernel health data/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Try Again' })).toBeInTheDocument();
     });
   });
 });

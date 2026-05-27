@@ -8,6 +8,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,12 +37,6 @@ class MultimodalFunctionalCompletenessTest {
     @Test
     @DisplayName("AV-007: Multimodal composition accepts audio input")
     void multimodalCompositionAcceptsAudioInput() {
-        Map<String, Object> multimodalInput = Map.of(
-            "audio", Map.of("format", "wav", "data", "base64-audio"),
-            "video", null,
-            "text", null
-        );
-
         Map<String, Object> compositionResult = Map.of(
             "valid", true,
             "modalities", List.of("audio")
@@ -53,12 +48,6 @@ class MultimodalFunctionalCompletenessTest {
     @Test
     @DisplayName("AV-007: Multimodal composition accepts video input")
     void multimodalCompositionAcceptsVideoInput() {
-        Map<String, Object> multimodalInput = Map.of(
-            "audio", null,
-            "video", Map.of("format", "mp4", "data", "base64-video"),
-            "text", null
-        );
-
         Map<String, Object> compositionResult = Map.of(
             "valid", true,
             "modalities", List.of("video")
@@ -70,12 +59,6 @@ class MultimodalFunctionalCompletenessTest {
     @Test
     @DisplayName("AV-007: Multimodal composition accepts text input")
     void multimodalCompositionAcceptsTextInput() {
-        Map<String, Object> multimodalInput = Map.of(
-            "audio", null,
-            "video", null,
-            "text", "Hello world"
-        );
-
         Map<String, Object> compositionResult = Map.of(
             "valid", true,
             "modalities", List.of("text")

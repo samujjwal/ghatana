@@ -1,6 +1,7 @@
 package com.ghatana.yappc.services.intent;
 
 import com.ghatana.yappc.api.PlatformEvidence;
+import com.ghatana.yappc.common.ServiceObservability;
 import com.ghatana.yappc.domain.intent.IntentAnalysis;
 import com.ghatana.yappc.domain.intent.IntentInput;
 import com.ghatana.yappc.domain.intent.IntentSpec;
@@ -77,7 +78,7 @@ public final class PlatformIntentEvidenceService implements IntentEvidenceServic
                                 "operation", "intent.analyze",
                                 "intentId", spec.id(),
                                 "feasible", String.valueOf(analysis.feasible())),
-                        groundingMetadata));
+                        ServiceObservability.redactSensitiveFields(groundingMetadata)));
         return store(evidence);
     }
 

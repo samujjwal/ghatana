@@ -7,6 +7,7 @@ package com.ghatana.yappc.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.yappc.services.phase.PhasePacketService;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -56,7 +57,7 @@ public final class PhasePacketController {
             String phase = request.getQueryParameter("phase");
             String projectId = request.getQueryParameter("projectId");
             String workspaceId = request.getQueryParameter("workspaceId");
-            String correlationId = request.getQueryParameter("correlationId");
+            String correlationId = extractCorrelationId(request, request.getQueryParameter("correlationId"));
 
             // Validate required fields
             if (phase == null || phase.isBlank()) {
@@ -140,7 +141,7 @@ public final class PhasePacketController {
                         req.projectId(),
                         req.workspaceId() != null ? req.workspaceId() : "default-workspace",
                         principal,
-                        req.correlationId()
+                        extractCorrelationId(request, req.correlationId())
                     )
                     .map(packet -> {
                         try {
@@ -166,4 +167,15 @@ public final class PhasePacketController {
             String workspaceId,
             String correlationId
     ) {}
+
+    private String extractCorrelationId(HttpRequest request, String explicitCorrelationId) {
+        if (explicitCorrelationId != null && !explicitCorrelationId.isBlank()) {
+            return explicitCorrelationId;
+        }
+        String header = request.getHeader(HttpHeaders.of("X-Correlation-ID"));
+        if (header == null || header.isBlank()) {
+            header = request.getHeader(HttpHeaders.of("X-Correlation-Id"));
+        }
+        return header;
+    }
 }

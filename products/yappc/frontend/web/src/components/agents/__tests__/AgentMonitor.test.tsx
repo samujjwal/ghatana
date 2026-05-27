@@ -162,6 +162,14 @@ describe('AgentMonitor', () => {
     expect(screen.getByText(/Agents \(3\)/)).toBeDefined();
   });
 
+  it('should render an explicit empty state when no agents are assigned', () => {
+    render(<AgentMonitor orchestration={createOrchestration({ agents: [], overallProgress: 0 })} />);
+
+    expect(screen.getByText(/Agents \(0\)/)).toBeDefined();
+    expect(screen.getByText('No agents available')).toBeDefined();
+    expect(screen.getByText(/after agents are assigned to this lifecycle run/i)).toBeDefined();
+  });
+
   it('should accept className prop', () => {
     const { container } = render(
       <AgentMonitor orchestration={createOrchestration()} className="test-class" />,

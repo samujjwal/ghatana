@@ -325,7 +325,7 @@ function ShellContent({
   });
 
   return (
-    <div className="flex flex-col h-screen bg-bg-default">
+    <div className="flex flex-col h-screen bg-bg-default" data-testid="yappc-product-shell">
       {/* Skip Link for keyboard accessibility */}
       <SkipLink targetId="main-content">Skip to main content</SkipLink>
 
@@ -393,6 +393,7 @@ function ShellContent({
           aria-label="Main content area"
           className="flex-1 overflow-auto bg-bg-default"
           tabIndex={-1}
+          data-testid="yappc-product-shell-main"
         >
           <Outlet />
         </main>

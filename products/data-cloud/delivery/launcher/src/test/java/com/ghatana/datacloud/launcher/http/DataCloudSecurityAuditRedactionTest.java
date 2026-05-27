@@ -9,16 +9,17 @@ import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.governance.security.ApiKeyResolver;
 import com.ghatana.platform.governance.security.Principal;
-import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.List;
 import java.util.Map;
@@ -26,7 +27,10 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * DC-SEC-003: Audit redaction/privacy tests.
@@ -45,69 +49,50 @@ import static org.mockito.Mockito.*;
 @Tag("privacy")
 class DataCloudSecurityAuditRedactionTest extends EventloopTestBase {
 
+    private static final String VALID_API_KEY = "valid-api-key";
+    private static final String TEST_TENANT = "tenant-1";
+    /** POST /api/v1/entities/{collection} is SENSITIVE in RouteSecurityRegistry. */
+    private static final String SENSITIVE_PATH = "/api/v1/entities/test-collection";
+
     private ApiKeyResolver apiKeyResolver;
-    private JwtTokenProvider jwtProvider;
     private PolicyEngine policyEngine;
     private AuditService auditService;
-    private DataCloudSecurityFilter filter;
-    private String originalProfile;
+
+    private static final AsyncServlet OK_DELEGATE = req -> HttpResponse.ok200().toPromise();
 
     @BeforeEach
     void setUp() {
-        originalProfile = System.getProperty("DATACLOUD_PROFILE");
-
         apiKeyResolver = apiKey -> {
-            if ("valid-api-key".equals(apiKey)) {
-                return Optional.of(new Principal("user-1", List.of("OPERATOR"), "tenant-1"));
+            if (VALID_API_KEY.equals(apiKey)) {
+                return Optional.of(new Principal("user-1", List.of("OPERATOR"), TEST_TENANT));
             }
             return Optional.empty();
         };
 
-        jwtProvider = new JwtTokenProvider() {
-            @Override
-            public String createToken(String userId, List<String> roles, Map<String, Object> additionalClaims) {
-                return "test-token";
-            }
-
-            @Override
-            public boolean validateToken(String token) {
-                return "valid-jwt-token".equals(token);
-            }
-
-            @Override
-            public Optional<String> getUserIdFromToken(String token) {
-                return "valid-jwt-token".equals(token) ? Optional.of("user-1") : Optional.empty();
-            }
-
-            @Override
-            public Optional<Map<String, Object>> extractClaims(String token) {
-                if ("valid-jwt-token".equals(token)) {
-                    return Optional.of(Map.of("tenant_id", "tenant-1", "sub", "user-1"));
-                }
-                return Optional.empty();
-            }
-
-            @Override
-            public List<String> getRolesFromToken(String token) {
-                return "valid-jwt-token".equals(token) ? List.of("OPERATOR") : List.of();
-            }
-        };
-
         policyEngine = mock(PolicyEngine.class);
-        when(policyEngine.evaluate(any(), any(), any())).thenReturn(true);
+        when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.TRUE));
+        when(policyEngine.policyExists(anyString())).thenReturn(Promise.of(Boolean.TRUE));
 
         auditService = mock(AuditService.class);
-        when(auditService.record(any(AuditEvent.class)))
-            .thenReturn(Promise.of(null));
+        when(auditService.record(any(AuditEvent.class))).thenReturn(Promise.of((Void) null));
     }
 
-    @AfterEach
-    void tearDown() {
-        if (originalProfile != null) {
-            System.setProperty("DATACLOUD_PROFILE", originalProfile);
-        } else {
-            System.clearProperty("DATACLOUD_PROFILE");
-        }
+    private HttpRequest sensitivePostRequest() {
+        return HttpRequest.post("http://localhost" + SENSITIVE_PATH)
+                .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
+    }
+
+    private DataCloudSecurityFilter productionFilter() {
+        return DataCloudSecurityFilter.builder()
+                .apiKeyResolver(apiKeyResolver)
+                .policyEngine(policyEngine)
+                .auditService(auditService)
+                .deploymentProfile("production")
+                .enforcing(true)
+                .build();
     }
 
     // ==================== DC-SEC-003: Audit details redaction ====================
@@ -115,35 +100,13 @@ class DataCloudSecurityAuditRedactionTest extends EventloopTestBase {
     @Test
     @DisplayName("DC-SEC-003: Audit details do not contain sensitive entity data")
     void auditDetailsDoNotContainSensitiveEntityData() {
-        System.setProperty("DATACLOUD_PROFILE", "production");
+        DataCloudSecurityFilter filter = productionFilter();
+        runPromise(() -> filter.apply(OK_DELEGATE).serve(sensitivePostRequest()));
 
-        filter = new DataCloudSecurityFilter(
-            apiKeyResolver,
-            jwtProvider,
-            policyEngine,
-            auditService,
-            "production"
-        );
-
-        HttpRequest request = HttpRequest.post(
-            io.activej.http.HttpUrl.parse("http://localhost:8080/api/v1/entities/test-collection")
-        );
-        request.addHeader(io.activej.http.HttpHeaders.of("Authorization", "Bearer valid-jwt-token"));
-
-        runPromise(() -> filter.filter(request, req -> {
-            return Promise.of(HttpResponse.ok200().build());
-        }));
-
-        // Verify audit was called
-        verify(auditService).record(any(AuditEvent.class));
-
-        // Capture the audit event
-        var captor = org.mockito.ArgumentCaptor.forClass(AuditEvent.class);
+        ArgumentCaptor<AuditEvent> captor = ArgumentCaptor.forClass(AuditEvent.class);
         verify(auditService).record(captor.capture());
-        AuditEvent auditEvent = captor.getValue();
+        Map<String, Object> details = captor.getValue().details();
 
-        // Verify sensitive data is not in audit details
-        Map<String, Object> details = auditEvent.details();
         assertThat(details).doesNotContainKey("password");
         assertThat(details).doesNotContainKey("secret");
         assertThat(details).doesNotContainKey("apiKey");
@@ -153,97 +116,48 @@ class DataCloudSecurityAuditRedactionTest extends EventloopTestBase {
     @Test
     @DisplayName("DC-SEC-003: Audit details do not contain raw request body")
     void auditDetailsDoNotContainRawRequestBody() {
-        System.setProperty("DATACLOUD_PROFILE", "production");
+        DataCloudSecurityFilter filter = productionFilter();
+        runPromise(() -> filter.apply(OK_DELEGATE).serve(sensitivePostRequest()));
 
-        filter = new DataCloudSecurityFilter(
-            apiKeyResolver,
-            jwtProvider,
-            policyEngine,
-            auditService,
-            "production"
-        );
-
-        HttpRequest request = HttpRequest.post(
-            io.activej.http.HttpUrl.parse("http://localhost:8080/api/v1/entities/test-collection")
-        );
-        request.addHeader(io.activej.http.HttpHeaders.of("Authorization", "Bearer valid-jwt-token"));
-
-        runPromise(() -> filter.filter(request, req -> {
-            return Promise.of(HttpResponse.ok200().build());
-        }));
-
-        var captor = org.mockito.ArgumentCaptor.forClass(AuditEvent.class);
+        ArgumentCaptor<AuditEvent> captor = ArgumentCaptor.forClass(AuditEvent.class);
         verify(auditService).record(captor.capture());
-        AuditEvent auditEvent = captor.getValue();
+        Map<String, Object> details = captor.getValue().details();
 
-        // Verify raw request body is not in audit details
-        Map<String, Object> details = auditEvent.details();
         assertThat(details).doesNotContainKey("requestBody");
         assertThat(details).doesNotContainKey("body");
     }
 
-    // ==================== DC-SEC-003: Log redaction ====================
+    // ==================== DC-SEC-003: Error response redaction ====================
 
     @Test
     @DisplayName("DC-SEC-003: Error responses do not leak sensitive data")
     void errorResponsesDoNotLeakSensitiveData() {
-        System.setProperty("DATACLOUD_PROFILE", "production");
+        DataCloudSecurityFilter filter = productionFilter();
 
-        filter = new DataCloudSecurityFilter(
-            apiKeyResolver,
-            jwtProvider,
-            policyEngine,
-            auditService,
-            "production"
-        );
+        // Use invalid auth to trigger a 401 response
+        HttpRequest request = HttpRequest.post("http://localhost" + SENSITIVE_PATH)
+                .withHeader(HttpHeaders.AUTHORIZATION, "Bearer invalid-token")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
 
-        // Simulate an error scenario
-        HttpRequest request = HttpRequest.post(
-            io.activej.http.HttpUrl.parse("http://localhost:8080/api/v1/entities/test-collection")
-        );
-        request.addHeader(io.activej.http.HttpHeaders.of("Authorization", "Bearer invalid-token"));
+        HttpResponse response = runPromise(() -> filter.apply(OK_DELEGATE).serve(request));
 
-        HttpResponse response = runPromise(() -> filter.filter(request, req -> {
-            return Promise.of(HttpResponse.ok(200));
-        }));
-
-        // Verify error response doesn't leak sensitive information
-        assertThat(response).isNotNull();
-        // In a real scenario, we'd check the response body for sensitive data
-        // For this test, we verify the filter returns an error response
-        assertThat(response.getCode()).isNotEqualTo(200);
+        // Authentication failure returns 401, not 200
+        assertThat(response.getCode()).isEqualTo(401);
     }
 
     @Test
-    @DisplayName("DC-SEC-003: Audit event contains redacted principal information")
-    void auditEventContainsRedactedPrincipalInformation() {
-        System.setProperty("DATACLOUD_PROFILE", "production");
+    @DisplayName("DC-SEC-003: Audit event contains expected principal information")
+    void auditEventContainsPrincipalInformation() {
+        DataCloudSecurityFilter filter = productionFilter();
+        runPromise(() -> filter.apply(OK_DELEGATE).serve(sensitivePostRequest()));
 
-        filter = new DataCloudSecurityFilter(
-            apiKeyResolver,
-            jwtProvider,
-            policyEngine,
-            auditService,
-            "production"
-        );
-
-        HttpRequest request = HttpRequest.post(
-            io.activej.http.HttpUrl.parse("http://localhost:8080/api/v1/entities/test-collection")
-        );
-        request.addHeader(io.activej.http.HttpHeaders.of("Authorization", "Bearer valid-jwt-token"));
-
-        runPromise(() -> filter.filter(request, req -> {
-            return Promise.of(HttpResponse.ok200().build());
-        }));
-
-        var captor = org.mockito.ArgumentCaptor.forClass(AuditEvent.class);
+        ArgumentCaptor<AuditEvent> captor = ArgumentCaptor.forClass(AuditEvent.class);
         verify(auditService).record(captor.capture());
         AuditEvent auditEvent = captor.getValue();
 
-        // Verify principal information is present but redacted if needed
         assertThat(auditEvent.principal()).isNotNull();
-        // In a real implementation, we'd verify specific redaction rules
-        // For this test, we verify the audit event structure
         assertThat(auditEvent.tenantId()).isNotNull();
         assertThat(auditEvent.eventType()).isNotNull();
     }
@@ -251,32 +165,22 @@ class DataCloudSecurityAuditRedactionTest extends EventloopTestBase {
     @Test
     @DisplayName("DC-SEC-003: Audit event does not contain raw headers")
     void auditEventDoesNotContainRawHeaders() {
-        System.setProperty("DATACLOUD_PROFILE", "production");
+        DataCloudSecurityFilter filter = productionFilter();
 
-        filter = new DataCloudSecurityFilter(
-            apiKeyResolver,
-            jwtProvider,
-            policyEngine,
-            auditService,
-            "production"
-        );
+        // Request with a sensitive custom header
+        HttpRequest request = HttpRequest.post("http://localhost" + SENSITIVE_PATH)
+                .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
+                .withHeader(HttpHeaders.of("X-Sensitive-Header"), "secret-value")
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
 
-        HttpRequest request = HttpRequest.post(
-            io.activej.http.HttpUrl.parse("http://localhost:8080/api/v1/entities/test-collection")
-        );
-        request.addHeader(io.activej.http.HttpHeaders.of("Authorization", "Bearer valid-jwt-token"));
-        request.addHeader(io.activej.http.HttpHeaders.of("X-Sensitive-Header", "secret-value"));
+        runPromise(() -> filter.apply(OK_DELEGATE).serve(request));
 
-        runPromise(() -> filter.filter(request, req -> {
-            return Promise.of(HttpResponse.ok200().build());
-        }));
-
-        var captor = org.mockito.ArgumentCaptor.forClass(AuditEvent.class);
+        ArgumentCaptor<AuditEvent> captor = ArgumentCaptor.forClass(AuditEvent.class);
         verify(auditService).record(captor.capture());
-        AuditEvent auditEvent = captor.getValue();
+        Map<String, Object> details = captor.getValue().details();
 
-        // Verify raw headers are not in audit details
-        Map<String, Object> details = auditEvent.details();
         assertThat(details).doesNotContainKey("headers");
         assertThat(details).doesNotContainKey("X-Sensitive-Header");
     }

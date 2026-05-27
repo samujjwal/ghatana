@@ -386,6 +386,171 @@ class EntityQuerySortFilterPaginationTest extends EventloopTestBase {
             assertThat(filters).extracting(DataCloudClient.Filter::field)
                 .containsExactlyInAnyOrder("status", "price");
         }
+
+        @Test
+        @DisplayName("DC-P2-014: Filter value containing colon (e.g. ISO timestamp) is preserved")
+        void filterValueWithColon_isPreserved() {
+            when(request.getQueryParameter("filter")).thenReturn("createdAt:gte:2024-01-01T00:00:00Z");
+            when(client.query(eq(TENANT), eq(COLLECTION), any())).thenReturn(Promise.of(List.of()));
+
+            runPromise(() -> handler.handleQueryEntities(request));
+
+            ArgumentCaptor<DataCloudClient.Query> queryCaptor =
+                ArgumentCaptor.forClass(DataCloudClient.Query.class);
+            verify(client).query(eq(TENANT), eq(COLLECTION), queryCaptor.capture());
+
+            List<DataCloudClient.Filter> filters = queryCaptor.getValue().filters();
+            assertThat(filters).hasSize(1);
+            assertThat(filters.get(0).field()).isEqualTo("createdAt");
+            assertThat(filters.get(0).value()).isEqualTo("2024-01-01T00:00:00Z");
+        }
+
+        @Test
+        @DisplayName("DC-P2-014: Filter value containing URL with colons is preserved")
+        void filterValueWithUrl_isPreserved() {
+            when(request.getQueryParameter("filter")).thenReturn("url:eq:https://example.com/path");
+            when(client.query(eq(TENANT), eq(COLLECTION), any())).thenReturn(Promise.of(List.of()));
+
+            runPromise(() -> handler.handleQueryEntities(request));
+
+            ArgumentCaptor<DataCloudClient.Query> queryCaptor =
+                ArgumentCaptor.forClass(DataCloudClient.Query.class);
+            verify(client).query(eq(TENANT), eq(COLLECTION), queryCaptor.capture());
+
+            List<DataCloudClient.Filter> filters = queryCaptor.getValue().filters();
+            assertThat(filters).hasSize(1);
+            assertThat(filters.get(0).value()).isEqualTo("https://example.com/path");
+        }
+    }
+
+    // ─── DC-P2-012: INVALID OFFSET VALIDATION ────────────────────────────────
+
+    @Nested
+    @DisplayName("DC-P2-012: Offset validation")
+    class OffsetValidation {
+
+        @Test
+        @DisplayName("DC-P2-012: Negative offset returns HTTP 400")
+        void negativeOffset_returns400() {
+            when(request.getQueryParameter("offset")).thenReturn("-1");
+            HttpResponse errorResp = mock(HttpResponse.class);
+            when(http.errorResponse(eq(400), anyString())).thenReturn(errorResp);
+
+            HttpResponse response = runPromise(() -> handler.handleQueryEntities(request));
+
+            assertThat(response).isSameAs(errorResp);
+        }
+
+        @Test
+        @DisplayName("DC-P2-012: Non-numeric offset returns HTTP 400")
+        void nonNumericOffset_returns400() {
+            when(request.getQueryParameter("offset")).thenReturn("abc");
+            HttpResponse errorResp = mock(HttpResponse.class);
+            when(http.errorResponse(eq(400), anyString())).thenReturn(errorResp);
+
+            HttpResponse response = runPromise(() -> handler.handleQueryEntities(request));
+
+            assertThat(response).isSameAs(errorResp);
+        }
+
+        @Test
+        @DisplayName("DC-P2-012: Offset that overflows int returns HTTP 400")
+        void hugeOffset_returns400() {
+            when(request.getQueryParameter("offset")).thenReturn("9999999999");
+            HttpResponse errorResp = mock(HttpResponse.class);
+            when(http.errorResponse(eq(400), anyString())).thenReturn(errorResp);
+
+            HttpResponse response = runPromise(() -> handler.handleQueryEntities(request));
+
+            assertThat(response).isSameAs(errorResp);
+        }
+
+        @Test
+        @DisplayName("DC-P2-012: Valid positive offset is forwarded to client")
+        void validPositiveOffset_forwardedToClient() {
+            when(request.getQueryParameter("offset")).thenReturn("50");
+            when(client.query(eq(TENANT), eq(COLLECTION), any())).thenReturn(Promise.of(List.of()));
+
+            runPromise(() -> handler.handleQueryEntities(request));
+
+            ArgumentCaptor<DataCloudClient.Query> queryCaptor =
+                ArgumentCaptor.forClass(DataCloudClient.Query.class);
+            verify(client).query(eq(TENANT), eq(COLLECTION), queryCaptor.capture());
+
+            assertThat(queryCaptor.getValue().offset()).isEqualTo(50);
+        }
+
+        @Test
+        @DisplayName("DC-P2-012: Zero offset is valid")
+        void zeroOffset_isValid() {
+            when(request.getQueryParameter("offset")).thenReturn("0");
+            when(client.query(eq(TENANT), eq(COLLECTION), any())).thenReturn(Promise.of(List.of()));
+
+            HttpResponse response = runPromise(() -> handler.handleQueryEntities(request));
+
+            assertThat(response).isNotNull();
+        }
+    }
+
+    // ─── DC-P2-013: SORT VALIDATION ──────────────────────────────────────────
+
+    @Nested
+    @DisplayName("DC-P2-013: Sort field and direction validation")
+    class SortValidation {
+
+        @Test
+        @DisplayName("DC-P2-013: Invalid sort direction returns HTTP 400")
+        void invalidSortDirection_returns400() {
+            when(request.getQueryParameter("sort")).thenReturn("name:random");
+            HttpResponse errorResp = mock(HttpResponse.class);
+            when(http.errorResponse(eq(400), anyString())).thenReturn(errorResp);
+
+            HttpResponse response = runPromise(() -> handler.handleQueryEntities(request));
+
+            assertThat(response).isSameAs(errorResp);
+        }
+
+        @Test
+        @DisplayName("DC-P2-013: Injection-like sort field returns HTTP 400")
+        void injectionLikeSortField_returns400() {
+            when(request.getQueryParameter("sort")).thenReturn("name;DROP TABLE entities:asc");
+            HttpResponse errorResp = mock(HttpResponse.class);
+            when(http.errorResponse(eq(400), anyString())).thenReturn(errorResp);
+
+            HttpResponse response = runPromise(() -> handler.handleQueryEntities(request));
+
+            assertThat(response).isSameAs(errorResp);
+        }
+
+        @Test
+        @DisplayName("DC-P2-013: Valid asc direction is accepted")
+        void validAscSort_accepted() {
+            when(request.getQueryParameter("sort")).thenReturn("name:asc");
+            when(client.query(eq(TENANT), eq(COLLECTION), any())).thenReturn(Promise.of(List.of()));
+
+            runPromise(() -> handler.handleQueryEntities(request));
+
+            ArgumentCaptor<DataCloudClient.Query> captor =
+                ArgumentCaptor.forClass(DataCloudClient.Query.class);
+            verify(client).query(eq(TENANT), eq(COLLECTION), captor.capture());
+
+            assertThat(captor.getValue().sorts().get(0).ascending()).isTrue();
+        }
+
+        @Test
+        @DisplayName("DC-P2-013: Valid desc direction is accepted")
+        void validDescSort_accepted() {
+            when(request.getQueryParameter("sort")).thenReturn("name:desc");
+            when(client.query(eq(TENANT), eq(COLLECTION), any())).thenReturn(Promise.of(List.of()));
+
+            runPromise(() -> handler.handleQueryEntities(request));
+
+            ArgumentCaptor<DataCloudClient.Query> captor =
+                ArgumentCaptor.forClass(DataCloudClient.Query.class);
+            verify(client).query(eq(TENANT), eq(COLLECTION), captor.capture());
+
+            assertThat(captor.getValue().sorts().get(0).ascending()).isFalse();
+        }
     }
 
     // ─── EMPTY AND ERROR STATES ──────────────────────────────────────────────

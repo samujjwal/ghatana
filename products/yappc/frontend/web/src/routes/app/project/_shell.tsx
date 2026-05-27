@@ -389,12 +389,13 @@ export function Layout() {
   const projectTabs = [...BASE_PROJECT_TABS].filter(tab => isPhaseEnabled(tab.key as any)) as (typeof BASE_PROJECT_TABS[number])[];
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full" data-testid="yappc-project-shell">
       {/* 8-phase IA navigation — the canonical top-level project nav */}
       <nav
         role="tablist"
         aria-label="Project phase navigation"
         className="flex gap-1 px-4 py-1.5 border-b border-divider bg-bg-default overflow-x-auto"
+        data-testid="yappc-project-phase-navigation"
       >
         {projectTabs.map((tab) => (
           <NavLink
@@ -418,7 +419,7 @@ export function Layout() {
       </nav>
 
       {/* Route Content - Full height minus header and tabs */}
-      <main className="flex-1 overflow-hidden bg-bg-default">
+      <main className="flex-1 overflow-hidden bg-bg-default" data-testid="yappc-project-shell-main">
         <Outlet />
       </main>
 

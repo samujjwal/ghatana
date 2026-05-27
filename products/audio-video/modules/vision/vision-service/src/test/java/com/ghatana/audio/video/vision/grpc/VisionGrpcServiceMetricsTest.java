@@ -5,6 +5,7 @@
 package com.ghatana.audio.video.vision.grpc;
 
 import com.ghatana.audio.video.common.observability.MediaProcessingMetrics;
+import com.ghatana.audio.video.common.security.JwtServerInterceptor;
 import com.ghatana.audio.video.vision.detection.VisionDetector;
 import com.ghatana.audio.video.vision.grpc.proto.*;
 import com.ghatana.audio.video.vision.model.BoundingBox;
@@ -12,6 +13,7 @@ import com.ghatana.audio.video.vision.model.DetectedObject;
 import com.ghatana.audio.video.vision.model.DetectionOptions;
 import com.ghatana.audio.video.vision.video.VideoFrameExtractor;
 import com.google.protobuf.ByteString;
+import io.grpc.Context;
 import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -64,7 +66,7 @@ class VisionGrpcServiceMetricsTest {
             .build(); 
         SimpleObserver<DetectResponse> observer = new SimpleObserver<>(); 
 
-        service.detectObjects(request, observer); 
+        withContext("tenant-metrics-test", () -> service.detectObjects(request, observer));
 
         assertThat(observer.error).isNull(); 
         assertThat(metrics.startedCount("vision.detect")).isEqualTo(1);
@@ -82,7 +84,7 @@ class VisionGrpcServiceMetricsTest {
             .build(); 
         SimpleObserver<DetectResponse> observer = new SimpleObserver<>(); 
 
-        service.detectObjects(request, observer); 
+        withContext("tenant-metrics-test", () -> service.detectObjects(request, observer));
 
         assertThat(observer.error).isNotNull(); 
         assertThat(metrics.startedCount("vision.detect")).isEqualTo(1);
@@ -101,7 +103,7 @@ class VisionGrpcServiceMetricsTest {
             .build(); 
         SimpleObserver<DetectResponse> observer = new SimpleObserver<>(); 
 
-        noopService.detectObjects(request, observer); 
+        withContext("tenant-metrics-test", () -> noopService.detectObjects(request, observer));
 
         assertThat(observer.error).isNull(); 
     }
@@ -133,5 +135,9 @@ class VisionGrpcServiceMetricsTest {
 
         @Override
         public boolean isInitialized() { return true; } 
+    }
+
+    private static void withContext(String tenantId, Runnable action) {
+        Context.current().withValue(JwtServerInterceptor.CTX_TENANT, tenantId).run(action);
     }
 }

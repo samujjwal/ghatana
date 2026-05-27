@@ -1,4 +1,4 @@
-// Re-export platform UI components from @ghatana/ui
+// Re-export platform UI components from the canonical design system package.
 export * from '@ghatana/design-system';
 
 // Re-export YAPPC-specific components from @ghatana/yappc-ui

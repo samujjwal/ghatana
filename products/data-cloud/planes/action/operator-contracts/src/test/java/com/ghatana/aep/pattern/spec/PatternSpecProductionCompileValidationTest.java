@@ -136,8 +136,7 @@ class PatternSpecProductionCompileValidationTest {
             "semantics", Map.of(),
             "pattern", Map.of(
                 "operator", Map.of(
-                    "kind", "AGENT_ACTION",
-                    // Missing capabilityRef
+                    "kind", "AGENT_ACTION" // Missing capabilityRef
                 )
             ),
             "emit", Map.of(),

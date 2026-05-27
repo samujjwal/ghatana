@@ -8,8 +8,13 @@ package com.ghatana.yappc.kernel;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 
@@ -74,6 +79,21 @@ class ProductUnitIntentExporterTest {
                 new ProductUnitIntentValidationService().validate(result.intent());
         assertThat(validation.errors()).isEmpty();
         assertThat(validation.isValid()).isTrue();
+    }
+
+    @Test
+    void exportedYamlMatchesKernelContractGoldenFile(@TempDir Path tempDir) throws Exception {
+        ProductUnitIntentExporter exporter = new ProductUnitIntentExporter(
+                new ProductUnitKernelContractRegistry(),
+                Clock.fixed(Instant.parse("2026-05-26T10:15:30Z"), ZoneOffset.UTC),
+                () -> "intent-golden-1");
+
+        ProductUnitIntentExporter.ExportResult result = exporter.export(
+                standardRequest(),
+                tempDir.resolve("intent.yaml"));
+
+        assertThat(normalizeLineEndings(Files.readString(result.outputPath())))
+                .isEqualTo(readResource("golden/product-unit-intent.standard.yaml"));
     }
 
     @Test
@@ -154,5 +174,16 @@ class ProductUnitIntentExporterTest {
                 .tenantId("tenant-123")
                 .workspaceId("workspace-123")
                 .build();
+    }
+
+    private static String readResource(String resourcePath) throws Exception {
+        URI uri = ProductUnitIntentExporterTest.class.getClassLoader()
+                .getResource(resourcePath)
+                .toURI();
+        return normalizeLineEndings(Files.readString(Path.of(uri), StandardCharsets.UTF_8));
+    }
+
+    private static String normalizeLineEndings(String value) {
+        return value.replace("\r\n", "\n");
     }
 }

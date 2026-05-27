@@ -13,6 +13,7 @@ import { PhaseEvidencePanel } from '../../../components/phase/PhaseEvidencePanel
 import { PhaseGovernanceTrace } from '../../../components/phase/PhaseGovernanceTrace';
 import { PhasePrimaryActionCard } from '../../../components/phase/PhasePrimaryActionCard';
 import { PhaseSuggestedNextStep, type SuggestedStep } from '../../../components/phase/PhaseSuggestedNextStep';
+import { ErrorState, errorCorrelationId } from '../../../components/common/ErrorState';
 import { Button } from '../../../components/ui/Button';
 import { usePhasePacket } from '../../../hooks/usePhasePacket';
 import {
@@ -153,9 +154,9 @@ function phasePacketToPreview(packet: PhaseCockpitPacket): PhaseTransitionPrevie
     blockers: packet.blockers.map((blocker) => blocker.title),
     requiredArtifacts: packet.requiredArtifacts.map((artifact) => artifact.title),
     completedArtifacts: packet.completedArtifacts.map((artifact) => artifact.title),
-    estimatedReadyIn: null,
-    estimatedReadyInHours: null,
-    predictionConfidence: null,
+    estimatedReadyIn: packet.readiness.estimatedReadyIn ?? null,
+    estimatedReadyInHours: packet.readiness.estimatedReadyInHours ?? null,
+    predictionConfidence: packet.readiness.predictionConfidence ?? null,
     checkedAt: new Date(packet.timestamp).toISOString(),
   };
 }
@@ -205,6 +206,18 @@ function PhasePacketSummary({ packet }: { readonly packet: PhaseCockpitPacket | 
         <p className="mt-1 text-xs text-fg-muted">
           {t('phaseCockpit.summary.score', { score: Math.round(packet.readiness.completenessScore * 100) })}
         </p>
+        {packet.readiness.estimatedReadyIn ? (
+          <p className="mt-1 text-xs text-fg-muted" data-testid="phase-packet-estimate">
+            {t('phaseCockpit.summary.estimate', { estimate: packet.readiness.estimatedReadyIn })}
+          </p>
+        ) : null}
+        {typeof packet.readiness.predictionConfidence === 'number' ? (
+          <p className="mt-1 text-xs text-fg-muted" data-testid="phase-packet-confidence">
+            {t('phaseCockpit.summary.confidence', {
+              confidence: Math.round(packet.readiness.predictionConfidence * 100),
+            })}
+          </p>
+        ) : null}
       </div>
     </section>
   );
@@ -217,23 +230,17 @@ function PhasePacketErrorPanel({ error, onRetry }: { readonly error: Error | nul
   }
 
   return (
-    <section
-      className="rounded-2xl border border-warning-border bg-warning-bg p-4 text-sm text-warning-color"
-      data-testid="phase-packet-error"
-      aria-label={t('phaseCockpit.error.aria')}
-    >
-      <p className="font-semibold text-warning-color">{t('phaseCockpit.error.title')}</p>
-      <p className="mt-1 text-xs text-fg-muted">{error.message}</p>
-      <Button
-        type="button"
-        variant="outline"
-        tone="warning"
-        size="small"
-        className="mt-2 border-warning-border bg-warning-bg text-warning-color"
-        onClick={onRetry}
-      >
-        {t('phaseCockpit.error.retry')}
-      </Button>
+    <section data-testid="phase-packet-error" aria-label={t('phaseCockpit.error.aria')}>
+      <ErrorState
+        title={t('phaseCockpit.error.title')}
+        message={error.message}
+        correlationId={errorCorrelationId(error)}
+        onRetry={onRetry}
+        retryLabel={t('phaseCockpit.error.retry')}
+        variant="banner"
+        type="warning"
+        size="sm"
+      />
     </section>
   );
 }
@@ -591,7 +598,10 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     timestamp: new Date(entry.timestamp).toISOString(),
     actor: entry.actor,
     severity: entry.severity,
-    success: true,
+    success: entry.success ?? null,
+    eventType: entry.eventType ?? entry.type,
+    outcome: entry.outcome ?? (entry.success === false ? 'FAILURE' : 'SUCCESS'),
+    correlationId: entry.correlationId ?? null,
   }));
   
   const statusPanels = (

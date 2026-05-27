@@ -63,6 +63,24 @@ public final class KernelEventEmergencyAccessNotificationSender implements Emerg
         return Promise.complete();
     }
 
+    @Override
+    public Promise<Void> notifyPatient(EmergencyAccessReviewCase reviewCase, EmergencyAccessLogService.EmergencyAccessEvent event) {
+        context.publishEvent(new EmergencyAccessNotificationEvent(
+            "patient_notify",
+            reviewCase.caseId(),
+            event.id(),
+            event.patientId(),
+            event.accessorId(),
+            Instant.now(),
+            Map.of(
+                "accessorRole", event.accessorRole(),
+                "justification", event.justification(),
+                "resourcesAccessed", String.join(",", event.resourcesAccessed())
+            )
+        ));
+        return Promise.complete();
+    }
+
     public record EmergencyAccessNotificationEvent(
         String action,
         String reviewCaseId,

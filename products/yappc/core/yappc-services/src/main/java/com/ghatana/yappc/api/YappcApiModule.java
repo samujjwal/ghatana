@@ -514,8 +514,7 @@ public class YappcApiModule extends AbstractModule {
             PlatformRunStatusService platformRunStatusService,
             PhaseActionAuthorizationService phaseActionAuthorizationService,
             PhaseRequiredArtifactProvider phaseRequiredArtifactProvider,
-            DegradedPhasePacketFactory degradedPhasePacketFactory,
-            @Nullable com.ghatana.audit.AuditLogger auditLogger) {
+            DegradedPhasePacketFactory degradedPhasePacketFactory) {
         return new PhasePacketServiceImpl(
             dataCloudClient,
             artifactRepository,
@@ -530,8 +529,7 @@ public class YappcApiModule extends AbstractModule {
             platformRunStatusService,
             phaseActionAuthorizationService,
             phaseRequiredArtifactProvider,
-            degradedPhasePacketFactory,
-            auditLogger
+            degradedPhasePacketFactory
         );
     }
 

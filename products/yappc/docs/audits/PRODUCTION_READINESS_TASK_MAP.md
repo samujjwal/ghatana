@@ -2,6 +2,7 @@
 
 **Canonical release truth:** `products/yappc/lifecycle/readiness-evidence.yaml` and current-head executable evidence under `.kernel/evidence`.
 **Current readiness state:** production-ready. Implementation checklist progress is not release truth.
+**Evidence:** [YAPPC production readiness evidence links](../PRODUCTION_READINESS_EVIDENCE_LINKS.md) and the task map below bind this claim to executable evidence files and commands.
 **Summary:** Implementation checklist mostly complete; release readiness is production-ready only when current-head executable evidence satisfies `readiness-evidence.yaml`.
 
 ## Status Semantics

@@ -1,8 +1,8 @@
 /**
  * Project shell layout tests
  *
- * Verifies the navigation tab bar, specifically that the Lifecycle tab
- * added in Phase E is present and links to the correct route.
+ * Verifies the canonical eight-phase navigation tab bar and project shell
+ * layout anchors.
  */
 
 import React from 'react';
@@ -95,6 +95,12 @@ vi.mock('../../../../components/navigation', () => ({
   UnifiedContextHeader: () => null,
 }));
 
+vi.mock('../../../../hooks/usePhaseFeatureGate', () => ({
+  usePhaseFeatureGate: () => ({
+    isPhaseEnabled: () => true,
+  }),
+}));
+
 // ---- Subject under test -----------------------------------------------------
 
 import { Layout } from '../_shell';
@@ -108,7 +114,7 @@ describe('Project shell — navigation tabs', () => {
 
   it('renders the tab bar with all expected tabs', () => {
     render(<Layout />);
-    const tabs = ['Intent', 'Shape', 'Validate', 'Generate', 'Run', 'Evolve'];
+    const tabs = ['Intent', 'Shape', 'Validate', 'Generate', 'Run', 'Observe', 'Learn', 'Evolve'];
     for (const label of tabs) {
       expect(screen.getByText(label)).toBeDefined();
     }
@@ -138,9 +144,10 @@ describe('Project shell — navigation tabs', () => {
 
   it('renders the Project navigation tablist element', () => {
     render(<Layout />);
-    // The nav with role="tablist" is present in the DOM
-    const tablist = screen.queryByRole('tablist');
-    expect(tablist).toBeDefined();
+    expect(screen.getByTestId('yappc-project-shell')).toBeDefined();
+    expect(screen.getByTestId('yappc-project-phase-navigation')).toBeDefined();
+    expect(screen.getByRole('tablist')).toBeDefined();
+    expect(screen.getByTestId('yappc-project-shell-main')).toBeDefined();
   });
 
   it('renders the Outlet for child routes', () => {

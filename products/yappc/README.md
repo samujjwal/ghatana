@@ -1,7 +1,7 @@
-# YAPPC - Product Development Platform (In Active Buildout)
+# YAPPC - Product Development Platform
 
-**Status:** Active Development  
-**Last Updated:** 2026-04-17  
+**Status:** Evidence-backed implementation and hardening  
+**Last Updated:** 2026-05-26  
 **Version:** 2.0
 
 ---
@@ -17,44 +17,42 @@ YAPPC follows an **8-phase creator lifecycle model**: Intent → Shape → Valid
 
 When YAPPC generates or manages a lifecycle-governed ProductUnit, delivery execution is delegated to Kernel through public contracts. YAPPC does not directly execute Kernel lifecycle phases or mutate Kernel registry files.
 
-Current implementation is partial and under active delivery.
+Current implementation status is tracked in [docs/YAPPC_BACKLOG_PROGRESS.md](docs/YAPPC_BACKLOG_PROGRESS.md). P0, P1, and P2 audit items are complete in that ledger; release approval still depends on current-head CI evidence and the generated release evidence bundle.
 
 The **Run** phase target drives an underlying SDLC lifecycle (Discover → Define → Design → Plan → Build → Test → Release → Deploy) managed by the AEP pipeline at `config/pipelines/lifecycle-management-v1.yaml`. Phase transitions, gate agents, and state persistence are defined in `config/agents/phase-transition-events.yaml`.
 
-## Implementation Reality (2026-04-17)
+## Implementation Reality (2026-05-26)
 
 | Dimension | Current Score | Notes |
 |----------|---------------|-------|
-| AI-Native Maturity | 3/10 | Real LLM wiring exists, but pervasive implicit AI is incomplete |
-| Feature Completeness | 4/10 | Several critical workflows are partial or still being integrated |
-| Production Readiness | 2/10 | Security/ops hardening and full end-to-end verification remain in progress |
+| AI-Native Maturity | 7/10 | Intent grounding, prompt lifecycle, learning evidence, A/B testing, approval loops, and agent state are implemented; deeper autonomous adaptation remains governed and evidence-gated |
+| Feature Completeness | 8/10 | P0/P1 lifecycle, Kernel handoff, Data Cloud truth, product-family, admin, and phase UX work is complete in the backlog ledger |
+| Production Readiness | 7/10 | Security, privacy, governance, observability, release evidence, and CI proof paths exist; release approval still requires current-head evidence and environment-specific signoff |
 
 ### Verified Current State
 
-- Phases 0-1 capabilities are largely present.
-- Phase 2 capabilities are partially implemented.
-- Phases 3-7 are in active implementation and hardening.
-- Some AI-assisted experiences are deterministic rule-based assistance and are explicitly labeled as such.
-- Lifecycle route now includes AI-driven workflow planning with one-click transition approval and explicit decision-support defaults.
-- Prompt template registry now supports active-version control, rollback, and score-driven variant weight rebalancing.
-- End-to-end lifecycle API execution now emits DAG execution metadata with phase timing telemetry for monitoring.
+- Intent, Shape, Validate, Generate, Run, Observe, Learn, and Evolve have backend/frontend evidence in the backlog ledger.
+- Kernel ProductUnitIntent export and API handoff use Kernel public contract values and typed validation.
+- Data Cloud-backed lifecycle truth, platform run status, evidence, governance, and tenant enforcement fail closed when dependencies degrade.
+- Prompt template registry supports active-version control, rollback, scoring, and weight rebalancing.
+- Release evidence now includes CI execution proof, scorecard dimensions, route/OpenAPI/client parity, E2E matrix mapping, a11y, performance, security, privacy, and governance checks.
 
 ### Known Limitations by Lifecycle Phase
 
 | Phase | Current Maturity | Known Limitations |
 |------|------------------|-------------------|
-| Intent | Medium | AI analysis depth is uneven; some flows still depend on manual interpretation |
-| Shape | Medium | Artifact derivation is partially automated; advanced modeling remains manual |
-| Validate | Low-Medium | Policy/config validation exists, but broader quality automation is incomplete |
-| Generate | Medium | Generation pipeline exists, but full end-to-end artifact quality checks are still maturing |
-| Run | Low | Execution orchestration and durable rollout behavior remain in active implementation |
-| Observe | Low-Medium | Observability is present with pipeline phase-duration telemetry, but deeper product-level diagnostics and SLO workflows are incomplete |
-| Learn | Low | Learning loops and adaptive updates are partial and not yet fully automated |
-| Evolve | Low | Evolution workflows are present in parts but not integrated into a complete closed loop |
+| Intent | High | Ongoing improvement area is broader model/prompt evaluation coverage |
+| Shape | High | Ongoing improvement area is richer canvas/performance coverage with larger real projects |
+| Validate | High | Ongoing improvement area is expanding policy fixtures and release-gate combinations |
+| Generate | High | Ongoing improvement area is broader generated-app round-trip coverage |
+| Run | Medium-High | Ongoing improvement area is environment-specific retry/rollback/promote E2E depth |
+| Observe | Medium-High | Ongoing improvement area is richer dependency-specific operational drill coverage |
+| Learn | Medium-High | Ongoing improvement area is longer-running feedback-loop evaluation |
+| Evolve | Medium-High | Ongoing improvement area is broader impact-analysis and diff-review E2E coverage |
 
 ### Key Capabilities (Implemented + In Progress)
 
-- **AI-Powered Code Generation** - Generate production-ready code from natural language
+- **AI-Powered Code Generation** - Generate code from natural-language intent with assurance checks and evidence
 - **Intelligent Scaffolding** - Multi-framework project generation (React, Node.js, Java, Python, etc.)
 - **Knowledge Graph** - Semantic understanding of your codebase and dependencies
 - **Visual Canvas** - Miro-like interface for product ideation and architecture
@@ -98,24 +96,25 @@ make start-frontend
 ```bash
 # Clone repository
 git clone https://github.com/ghatana/ghatana.git
-cd ghatana/products/yappc
+cd ghatana
 
 # Start infrastructure (Redis, Postgres, etc.)
-./start-infra.sh
+make -C products/yappc start-infra
 
 # Start all backend services
-docker compose --profile backend up -d
+make -C products/yappc start-backend
 
 # Start frontend
-cd app-creator
+cd products/yappc/frontend
 pnpm install
-pnpm dev:web
+pnpm dev
 ```
 
 #### Option 3: Docker Only
 
 ```bash
 # Start everything with Docker Compose
+cd products/yappc/deployment/docker
 docker compose --profile full up -d
 ```
 
@@ -138,23 +137,26 @@ For detailed setup, see [docs/guides/DEPLOYMENT_GUIDE.md](docs/guides/DEPLOYMENT
 
 - **[Architecture Overview](docs/ARCHITECTURE.md)** - System design and module structure
 - **[Kernel Visibility and Control Plane](docs/architecture/KERNEL_VISIBILITY_AND_CONTROL_PLANE.md)** - YAPPC as visibility layer over Kernel
+- **[Lifecycle/Kernel/Data Cloud/AEP Diagrams](docs/architecture/YAPPC_LIFECYCLE_KERNEL_DATA_CLOUD_AEP.md)** - Current implementation boundaries and evidence loops
 - **[Creator Lifecycle to Kernel Mapping](docs/architecture/CREATOR_LIFECYCLE_TO_KERNEL_MAPPING.md)** - Phase mapping between YAPPC and Kernel
 - **[Service Architecture (ADR-001)](docs/architecture/ADR-001-service-architecture.md)** - Service boundaries and responsibilities
 - **[Developer Guide](docs/DEVELOPER_GUIDE.md)** - Contributing, coding standards, testing
+- **[Ownership Boundaries](docs/OWNERSHIP_BOUNDARIES.md)** - YAPPC vs Kernel vs Data Cloud vs AEP vs platform ownership
 - **[Deployment Guide](docs/guides/DEPLOYMENT_GUIDE.md)** - Running YAPPC locally and in production
-- **[API Reference](docs/API_REFERENCE.md)** - HTTP and gRPC API documentation
+- **[API Reference](docs/API_REFERENCE.md)** - Generated route reference from OpenAPI and the route manifest
+- **[OpenAPI Contract](docs/api/openapi.yaml)** - HTTP contract validated against the route manifest
 
 ### Guides
 
 - [Testing Guide](docs/guides/ACTIVEJ_TEST_MIGRATION_GUIDE.md) - Writing and running tests
 - [Ollama Integration](docs/guides/OLLAMA_MANUAL_TESTING_GUIDE.md) - Local LLM setup
-- [Terminology Reference](docs/TERMINOLOGY_REFERENCE.md) - YAPPC concepts and glossary
-- [ActiveJ Version Standardization](docs/ACTIVEJ_VERSION_STANDARDIZATION.md) - Dependency management
+- [Terminology Reference](docs/guides/terminology-glossary.md) - YAPPC concepts and glossary
+- [Release Evidence Bundle](docs/RELEASE_EVIDENCE_BUNDLE.md) - CI release evidence and scorecard artifacts
 
 ### Engineering
 
-- [Principal Engineer Analysis](PRINCIPAL_ENGINEER_ANALYSIS_2026-01-27.md) - Comprehensive quality audit
-- [Library Structure](app-creator/libs/README.md) - Frontend library organization (35 libraries)
+- [Backlog Progress](docs/YAPPC_BACKLOG_PROGRESS.md) - Evidence-backed audit progress ledger
+- [Library Structure](frontend/libs/README.md) - Frontend library organization
 
 ---
 
@@ -164,17 +166,17 @@ YAPPC is organized into clear layers:
 
 ```
 yappc/
-├── api/                    # HTTP/gRPC API endpoints
-├── domain/                 # Core business logic
-├── infrastructure/         # Data-Cloud integration
-├── ai/                     # AI agents and workflows
-├── core/                   # Platform capabilities
-├── app-creator/            # React UI
-├── libs/yappc-domain/      # Shared models
+├── core/                   # Java capabilities and services
+├── frontend/web/           # React web app
+├── frontend/libs/          # Frontend libraries
+├── infrastructure/         # Data Cloud integration
+├── kernel-bridge/          # Kernel integration tests/adapters
+├── lifecycle/              # Readiness evidence contracts
+├── scripts/                # Product validation and evidence scripts
 └── docs/                   # Documentation
 ```
 
-**Tech Stack:** Java 21 + ActiveJ, React + Next.js, Data-Cloud, OpenAI/Ollama
+**Tech Stack:** Java 21 + ActiveJ, React, Data Cloud, Kernel public contracts, OpenAI/Ollama-compatible AI integrations
 Quick Commands
 
 See all available commands:
@@ -208,8 +210,8 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for complete architecture detai
 # Run tests
 ./gradlew test
 
-# Start development server
-./gradlew :products:yappc:domain:run
+# Run focused YAPPC frontend regression checks
+pnpm -C frontend/web test:regression
 ```
 
 ### Code Standards
@@ -232,18 +234,19 @@ See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) for:
 
 ---
 
-## 📊 Status
+## Status
 
-| Module | Status | Coverage |
+Canonical status and maturity evidence live in [docs/YAPPC_BACKLOG_PROGRESS.md](docs/YAPPC_BACKLOG_PROGRESS.md) and [docs/RELEASE_EVIDENCE_BUNDLE.md](docs/RELEASE_EVIDENCE_BUNDLE.md).
+
+| Surface | Status | Evidence |
 |--------|--------|----------|
-| domain | ✅ Stable | 85% |
-| api | ✅ Stable | 78% |
-| infrastructure | ✅ Stable | 82% |
-| ai | 🟡 Active Dev | 65% |
-| app-creator | ✅ Stable | 70% |
+| Kernel contract and handoff | Complete in backlog ledger | `YAPPC-P0-001` through `YAPPC-P0-004`, `YAPPC-P1-013`, `YAPPC-P1-026` |
+| Lifecycle phase services and UI | Complete in backlog ledger | `YAPPC-P0-010` through `YAPPC-P0-017`, `YAPPC-P1-001` through `YAPPC-P1-040` |
+| Security, privacy, governance | Complete in backlog ledger | `YAPPC-P2-035`, `YAPPC-P2-036`, `YAPPC-P2-037` |
+| Release evidence and docs evidence | Complete in backlog ledger | `YAPPC-P2-039`, `YAPPC-P2-040` |
+| frontend/web | Evidence-backed | `docs/TEST_SUITES.md` and `docs/YAPPC_BACKLOG_PROGRESS.md` |
 
-**Recent:** Documentation reorganized (172→15 files), ActiveJ migration complete
-
+**Recent:** P0, P1, and P2 audit items are complete in the evidence ledger; P3 documentation cleanup is in progress.
 ---
 
 ## 📝 License

@@ -44,6 +44,7 @@ function makeReleaseGate(overrides: Partial<ReleaseGateEvidence> = {}): ReleaseG
   return {
     id: 'product-slo-budgets',
     label: 'Product SLO budgets',
+    category: 'SLO',
     status: 'healthy',
     evidenceHref: '/release-evidence/product-slo-budgets.json',
     refreshedAt: new Date().toISOString(),
@@ -169,6 +170,7 @@ describe('ObservabilityDashboard', () => {
         makeReleaseGate({
           id: 'openapi-breaking-changes',
           label: 'OpenAPI breaking changes',
+          category: 'API',
           status: 'degraded',
           summary: 'One route requires review',
         }),
@@ -179,5 +181,22 @@ describe('ObservabilityDashboard', () => {
     expect(screen.getByText('Product SLO budgets')).toBeInTheDocument();
     expect(screen.getByText('OpenAPI breaking changes')).toBeInTheDocument();
     expect(screen.getAllByText('Evidence')).toHaveLength(2);
+  });
+
+  it('renders SLO, cost, domain invariant, and OpenAPI evidence cards with categories', () => {
+    renderDashboard({
+      metrics: [makeMetric()],
+      releaseGates: [
+        makeReleaseGate({ id: 'product-slo-budgets', label: 'Product SLO budgets', category: 'SLO' }),
+        makeReleaseGate({ id: 'product-cost-budgets', label: 'Product cost budgets', category: 'Cost' }),
+        makeReleaseGate({ id: 'product-domain-invariants', label: 'Product domain invariants', category: 'Domain' }),
+        makeReleaseGate({ id: 'openapi-breaking-changes', label: 'OpenAPI breaking changes', category: 'API' }),
+      ],
+    });
+
+    expect(screen.getByTestId('release-gate-product-slo-budgets')).toHaveTextContent('SLO');
+    expect(screen.getByTestId('release-gate-product-cost-budgets')).toHaveTextContent('Cost');
+    expect(screen.getByTestId('release-gate-product-domain-invariants')).toHaveTextContent('Domain');
+    expect(screen.getByTestId('release-gate-openapi-breaking-changes')).toHaveTextContent('API');
   });
 });

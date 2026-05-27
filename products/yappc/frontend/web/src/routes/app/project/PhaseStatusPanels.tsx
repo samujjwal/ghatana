@@ -48,6 +48,81 @@ interface ObservePreviewDiagnostics {
   readonly userActionTrace: readonly ObservePreviewDiagnostic[];
 }
 
+interface ObserveHealthItem {
+  readonly id: 'kernel' | 'app' | 'agent';
+  readonly label: string;
+  readonly status: 'healthy' | 'degraded' | 'failed' | 'unknown';
+  readonly detail: string;
+}
+
+interface ObserveRecommendation {
+  readonly id: string;
+  readonly title: string;
+  readonly detail: string;
+}
+
+interface LearnEvidenceItem {
+  readonly id: string;
+  readonly category: 'run' | 'approval' | 'prompt' | 'agent' | 'general';
+  readonly summary: string;
+  readonly trace: string;
+}
+
+interface LearnRecommendation {
+  readonly id: string;
+  readonly title: string;
+  readonly detail: string;
+  readonly status: 'ready' | 'needs-review' | 'blocked';
+}
+
+interface LearnApprovalItem {
+  readonly id: string;
+  readonly decision: 'approved' | 'rejected' | 'pending';
+  readonly detail: string;
+  readonly trace: string;
+}
+
+interface LearnPromptSignal {
+  readonly id: string;
+  readonly title: string;
+  readonly detail: string;
+  readonly trace: string;
+}
+
+interface EvolveSignal {
+  readonly id: string;
+  readonly title: string;
+  readonly detail: string;
+  readonly trace: string;
+  readonly status: 'ready' | 'needs-review' | 'blocked';
+}
+
+type GenerateAssuranceStatus = 'passed' | 'failed' | 'warning' | 'pending';
+
+interface GenerateAssuranceCheck {
+  readonly id: string;
+  readonly label: string;
+  readonly status: GenerateAssuranceStatus;
+  readonly detail: string;
+  readonly evidenceId?: string;
+}
+
+interface GenerateSignal {
+  readonly id: string;
+  readonly summary: string;
+  readonly trace: string;
+}
+
+type RunHealthStatus = 'healthy' | 'degraded' | 'failed' | 'unknown';
+type RunOperation = 'retry' | 'rollback' | 'promote';
+
+interface RunTimelineEvent {
+  readonly id: string;
+  readonly summary: string;
+  readonly status: RunHealthStatus;
+  readonly trace: string;
+}
+
 const OBSERVE_HEALTH_LABEL: Record<ObservePreviewHealth, string> = {
   healthy: 'Healthy',
   degraded: 'Degraded',
@@ -55,16 +130,26 @@ const OBSERVE_HEALTH_LABEL: Record<ObservePreviewHealth, string> = {
   unknown: 'Unknown',
 };
 
+const GENERATE_ASSURANCE_CHECKS = [
+  { id: 'compile', label: 'Compile', keywords: ['compile', 'build', 'typecheck', 'type-check'] },
+  { id: 'test', label: 'Tests', keywords: ['test', 'vitest', 'jest', 'playwright'] },
+  { id: 'static', label: 'Static analysis', keywords: ['lint', 'static', 'scan'] },
+  { id: 'security', label: 'Security', keywords: ['security', 'sast', 'dependency', 'vulnerability'] },
+  { id: 'i18n', label: 'i18n', keywords: ['i18n', 'translation', 'locale'] },
+  { id: 'a11y', label: 'Accessibility', keywords: ['a11y', 'accessibility', 'axe', 'wcag'] },
+] as const;
+
 function getObserveEventText(event: PhaseActivityEvent): string {
   return `${event.action} ${event.summary}`.toLowerCase();
 }
 
 function eventSeverity(event: PhaseActivityEvent): ObservePreviewDiagnostic['severity'] {
-  if (event.success === false || event.severity === 'error' || event.severity === 'critical') {
+  const severity = event.severity?.toLowerCase();
+  if (event.success === false || severity === 'error' || severity === 'critical') {
     return 'error';
   }
 
-  if (event.severity === 'warning') {
+  if (severity === 'warning') {
     return 'warning';
   }
 
@@ -78,6 +163,153 @@ function extractLatencyMs(event: PhaseActivityEvent): number | null {
   }
 
   return Math.round(Number(latencyMatch[1]));
+}
+
+function activityText(event: PhaseActivityEvent): string {
+  return `${event.action} ${event.summary}`.toLowerCase();
+}
+
+function generateAssuranceStatus(event: PhaseActivityEvent): GenerateAssuranceStatus {
+  const severity = event.severity?.toLowerCase();
+  if (event.success === false || severity === 'error' || severity === 'critical') {
+    return 'failed';
+  }
+  if (severity === 'warning') {
+    return 'warning';
+  }
+  return 'passed';
+}
+
+function buildGenerateAssuranceChecks(activity: readonly PhaseActivityEvent[]): readonly GenerateAssuranceCheck[] {
+  return GENERATE_ASSURANCE_CHECKS.map((definition) => {
+    const event = activity.find((candidate) => {
+      const text = activityText(candidate);
+      return definition.keywords.some((keyword) => text.includes(keyword));
+    });
+
+    if (!event) {
+      return {
+        id: definition.id,
+        label: definition.label,
+        status: 'pending',
+        detail: 'No assurance evidence has been reported yet.',
+      };
+    }
+
+    return {
+      id: definition.id,
+      label: definition.label,
+      status: generateAssuranceStatus(event),
+      detail: event.summary,
+      evidenceId: event.id,
+    };
+  });
+}
+
+function generateSignals(
+  activity: readonly PhaseActivityEvent[],
+  predicate: (event: PhaseActivityEvent) => boolean,
+): readonly GenerateSignal[] {
+  return activity
+    .filter(predicate)
+    .slice(0, 5)
+    .map((event) => ({
+      id: event.id,
+      summary: event.summary,
+      trace: formatActivityTrace(event),
+    }));
+}
+
+function isGenerateArtifactEvent(event: PhaseActivityEvent): boolean {
+  const text = activityText(event);
+  return text.includes('artifact') || text.includes('generated file') || text.includes('file created');
+}
+
+function isGenerateDiffEvent(event: PhaseActivityEvent): boolean {
+  const text = activityText(event);
+  return text.includes('diff') || text.includes('patch') || text.includes('changed file');
+}
+
+function isGenerateFailureEvent(event: PhaseActivityEvent): boolean {
+  const severity = event.severity?.toLowerCase();
+  return event.success === false || severity === 'error' || severity === 'critical';
+}
+
+function runHealthStatus(event: PhaseActivityEvent): RunHealthStatus {
+  const severity = event.severity?.toLowerCase();
+  const text = activityText(event);
+  if (event.success === false || severity === 'error' || severity === 'critical' || text.includes('failed')) {
+    return 'failed';
+  }
+  if (severity === 'warning' || text.includes('degraded') || text.includes('rollback')) {
+    return 'degraded';
+  }
+  if (event.success === true || text.includes('succeeded') || text.includes('healthy')) {
+    return 'healthy';
+  }
+  return 'unknown';
+}
+
+function buildRunTimeline(activity: readonly PhaseActivityEvent[]): readonly RunTimelineEvent[] {
+  return activity
+    .filter((event) => {
+      const text = activityText(event);
+      return text.includes('run') || text.includes('preview') || text.includes('deploy') || text.includes('promote') || text.includes('rollback');
+    })
+    .slice(0, 6)
+    .map((event) => ({
+      id: event.id,
+      summary: event.summary,
+      status: runHealthStatus(event),
+      trace: formatActivityTrace(event),
+    }));
+}
+
+function resolveRunStatus(
+  activity: readonly PhaseActivityEvent[],
+  blockers: readonly Blocker[],
+  preview: PhaseTransitionPreviewSnapshot | null,
+): RunHealthStatus {
+  if (activity.some((event) => runHealthStatus(event) === 'failed')) {
+    return 'failed';
+  }
+  if (blockers.length > 0 || activity.some((event) => runHealthStatus(event) === 'degraded')) {
+    return 'degraded';
+  }
+  if (preview?.canAdvance === true || activity.some((event) => runHealthStatus(event) === 'healthy')) {
+    return 'healthy';
+  }
+  return 'unknown';
+}
+
+function runOperationState(
+  operation: RunOperation,
+  runStatus: RunHealthStatus,
+  activity: readonly PhaseActivityEvent[],
+): 'available' | 'blocked' | 'ready' {
+  const hasOperationEvidence = activity.some((event) => activityText(event).includes(operation));
+  if (hasOperationEvidence) {
+    return 'available';
+  }
+  if (operation === 'retry') {
+    return runStatus === 'failed' || runStatus === 'degraded' ? 'ready' : 'blocked';
+  }
+  if (operation === 'rollback') {
+    return runStatus === 'failed' ? 'ready' : 'blocked';
+  }
+  return runStatus === 'healthy' ? 'ready' : 'blocked';
+}
+
+function formatActivityTrace(event: PhaseActivityEvent): string {
+  const parts = [
+    event.actor ? `Actor: ${event.actor}` : null,
+    event.timestamp ? `Time: ${new Date(event.timestamp).toLocaleString()}` : null,
+    event.eventType ? `Event: ${event.eventType}` : null,
+    event.outcome ? `Outcome: ${event.outcome}` : event.success === false ? 'Outcome: FAILURE' : null,
+    event.correlationId ? `Correlation ID: ${event.correlationId}` : null,
+  ].filter(Boolean);
+
+  return parts.join(' | ');
 }
 
 function activityDiagnostic(
@@ -179,6 +411,310 @@ function buildObservePreviewDiagnostics(
     loadTimings,
     userActionTrace,
   };
+}
+
+function observeStatusFromText(text: string): ObserveHealthItem['status'] {
+  if (text.includes('failed') || text.includes('down') || text.includes('error')) {
+    return 'failed';
+  }
+  if (text.includes('degraded') || text.includes('blocked') || text.includes('warning')) {
+    return 'degraded';
+  }
+  if (text.includes('healthy') || text.includes('passed') || text.includes('ready')) {
+    return 'healthy';
+  }
+  return 'unknown';
+}
+
+function buildObserveHealthItems(
+  activity: readonly PhaseActivityEvent[],
+  blockers: readonly Blocker[],
+  previewDiagnostics: ObservePreviewDiagnostics,
+  agentGovernance?: AgentGovernanceHealth,
+): readonly ObserveHealthItem[] {
+  const kernelSignals = [
+    ...activity.filter((event) => activityText(event).includes('kernel')),
+    ...blockers.filter((blocker) => `${blocker.title ?? ''} ${blocker.description}`.toLowerCase().includes('kernel')),
+  ];
+  const kernelText = kernelSignals
+    .map((signal) => 'summary' in signal ? activityText(signal) : `${signal.title ?? ''} ${signal.description}`.toLowerCase())
+    .join(' ');
+  const kernelStatus = kernelSignals.length > 0 ? observeStatusFromText(kernelText) : 'unknown';
+
+  const appStatus: ObserveHealthItem['status'] =
+    previewDiagnostics.health === 'down'
+      ? 'failed'
+      : previewDiagnostics.health === 'degraded'
+        ? 'degraded'
+        : previewDiagnostics.health === 'healthy'
+          ? 'healthy'
+          : 'unknown';
+
+  const agentStatus: ObserveHealthItem['status'] = agentGovernance
+    ? agentGovernance.isHealthy
+      ? 'healthy'
+      : 'degraded'
+    : 'unknown';
+
+  return [
+    {
+      id: 'kernel',
+      label: 'Kernel health',
+      status: kernelStatus,
+      detail: kernelSignals.length > 0 ? 'Kernel truth signals are present in backed evidence.' : 'No Kernel health signal has been reported yet.',
+    },
+    {
+      id: 'app',
+      label: 'App health',
+      status: appStatus,
+      detail: `Preview runtime is ${previewDiagnostics.health}.`,
+    },
+    {
+      id: 'agent',
+      label: 'Agent health',
+      status: agentStatus,
+      detail: agentGovernance
+        ? `Agent governance is ${agentGovernance.governanceState}.`
+        : 'No agent governance signal has been reported yet.',
+    },
+  ];
+}
+
+function buildObserveRecommendations(
+  blockers: readonly Blocker[],
+  activity: readonly PhaseActivityEvent[],
+  previewDiagnostics: ObservePreviewDiagnostics,
+  agentGovernance?: AgentGovernanceHealth,
+): readonly ObserveRecommendation[] {
+  const recommendations: ObserveRecommendation[] = blockers.slice(0, 3).map((blocker) => ({
+    id: `blocker-${blocker.id}`,
+    title: blocker.title ?? 'Resolve active blocker',
+    detail: blocker.description,
+  }));
+
+  activity
+    .filter((event) => isGenerateFailureEvent(event) || runHealthStatus(event) === 'failed')
+    .slice(0, 2)
+    .forEach((event) => {
+      recommendations.push({
+        id: `activity-${event.id}`,
+        title: 'Investigate failed runtime evidence',
+        detail: event.summary,
+      });
+    });
+
+  if (previewDiagnostics.health === 'down') {
+    recommendations.push({
+      id: 'preview-runtime',
+      title: 'Repair preview runtime',
+      detail: 'Review runtime errors and policy blocks before promoting Observe to Learn.',
+    });
+  }
+
+  if (agentGovernance && !agentGovernance.isHealthy) {
+    recommendations.push({
+      id: 'agent-governance',
+      title: 'Review agent governance',
+      detail: agentGovernance.issues[0] ?? `Agent governance state is ${agentGovernance.governanceState}.`,
+    });
+  }
+
+  return recommendations.slice(0, 5);
+}
+
+function learnEvidenceCategory(event: PhaseActivityEvent): LearnEvidenceItem['category'] {
+  const text = activityText(event);
+  if (text.includes('run') || text.includes('preview') || text.includes('runtime')) {
+    return 'run';
+  }
+  if (text.includes('approval') || text.includes('approved') || text.includes('rejected') || text.includes('human')) {
+    return 'approval';
+  }
+  if (text.includes('prompt') || text.includes('model') || text.includes('eval') || text.includes('score')) {
+    return 'prompt';
+  }
+  if (text.includes('agent')) {
+    return 'agent';
+  }
+  return 'general';
+}
+
+function buildLearnEvidence(activity: readonly PhaseActivityEvent[]): readonly LearnEvidenceItem[] {
+  return activity
+    .filter((event) => {
+      const text = activityText(event);
+      return (
+        text.includes('learn')
+        || text.includes('evidence')
+        || text.includes('recommend')
+        || text.includes('lesson')
+        || text.includes('pattern')
+        || text.includes('approval')
+        || text.includes('approved')
+        || text.includes('rejected')
+        || text.includes('prompt')
+        || text.includes('model')
+        || text.includes('agent')
+        || runHealthStatus(event) === 'failed'
+      );
+    })
+    .slice(0, 6)
+    .map((event) => ({
+      id: event.id,
+      category: learnEvidenceCategory(event),
+      summary: event.summary,
+      trace: formatActivityTrace(event),
+    }));
+}
+
+function buildLearnRecommendations(
+  blockers: readonly Blocker[],
+  activity: readonly PhaseActivityEvent[],
+  agentGovernance?: AgentGovernanceHealth,
+): readonly LearnRecommendation[] {
+  const recommendations: LearnRecommendation[] = blockers.slice(0, 3).map((blocker) => ({
+    id: `blocker-${blocker.id}`,
+    title: blocker.title ?? 'Capture blocker learning',
+    detail: blocker.description,
+    status: 'blocked',
+  }));
+
+  activity
+    .filter((event) => {
+      const text = activityText(event);
+      return text.includes('recommend') || text.includes('lesson') || text.includes('pattern') || runHealthStatus(event) === 'failed';
+    })
+    .slice(0, 3)
+    .forEach((event) => {
+      recommendations.push({
+        id: `activity-${event.id}`,
+        title: event.success === false ? 'Convert failure into learning' : 'Review learning recommendation',
+        detail: event.summary,
+        status: event.success === false ? 'needs-review' : 'ready',
+      });
+    });
+
+  if (agentGovernance && !agentGovernance.isHealthy) {
+    recommendations.push({
+      id: 'agent-governance-learning',
+      title: 'Quarantine agent learning',
+      detail: agentGovernance.issues[0] ?? `Agent governance state is ${agentGovernance.governanceState}.`,
+      status: 'needs-review',
+    });
+  }
+
+  return recommendations.slice(0, 5);
+}
+
+function buildLearnApprovals(activity: readonly PhaseActivityEvent[]): readonly LearnApprovalItem[] {
+  return activity
+    .filter((event) => {
+      const text = activityText(event);
+      return text.includes('approval') || text.includes('approved') || text.includes('rejected') || text.includes('human review');
+    })
+    .slice(0, 5)
+    .map((event) => {
+      const text = activityText(event);
+      const decision: LearnApprovalItem['decision'] = text.includes('rejected')
+        ? 'rejected'
+        : text.includes('approved')
+          ? 'approved'
+          : 'pending';
+
+      return {
+        id: event.id,
+        decision,
+        detail: event.summary,
+        trace: formatActivityTrace(event),
+      };
+    });
+}
+
+function buildLearnPromptSignals(activity: readonly PhaseActivityEvent[]): readonly LearnPromptSignal[] {
+  return activity
+    .filter((event) => {
+      const text = activityText(event);
+      return text.includes('prompt') || text.includes('model') || text.includes('eval') || text.includes('score') || text.includes('rollback') || text.includes('promotion');
+    })
+    .slice(0, 5)
+    .map((event) => ({
+      id: event.id,
+      title: event.action,
+      detail: event.summary,
+      trace: formatActivityTrace(event),
+    }));
+}
+
+function evolveSignalStatus(event: PhaseActivityEvent): EvolveSignal['status'] {
+  const severity = event.severity?.toLowerCase();
+  const text = activityText(event);
+  if (event.success === false || severity === 'error' || severity === 'critical' || text.includes('blocked')) {
+    return 'blocked';
+  }
+  if (severity === 'warning' || text.includes('review') || text.includes('approval') || text.includes('pending')) {
+    return 'needs-review';
+  }
+  return 'ready';
+}
+
+function buildEvolveSignals(
+  activity: readonly PhaseActivityEvent[],
+  predicate: (event: PhaseActivityEvent) => boolean,
+  fallbackTitle: string,
+): readonly EvolveSignal[] {
+  return activity
+    .filter(predicate)
+    .slice(0, 5)
+    .map((event) => ({
+      id: event.id,
+      title: event.action || fallbackTitle,
+      detail: event.summary,
+      trace: formatActivityTrace(event),
+      status: evolveSignalStatus(event),
+    }));
+}
+
+function isEvolveProposalEvent(event: PhaseActivityEvent): boolean {
+  const text = activityText(event);
+  return text.includes('proposal') || text.includes('evolution plan') || text.includes('roadmap') || text.includes('backlog');
+}
+
+function isEvolveImpactEvent(event: PhaseActivityEvent): boolean {
+  const text = activityText(event);
+  return text.includes('impact') || text.includes('affected') || text.includes('surface') || text.includes('module') || text.includes('test');
+}
+
+function isEvolveDiffEvent(event: PhaseActivityEvent): boolean {
+  const text = activityText(event);
+  return text.includes('diff') || text.includes('patch') || text.includes('changed file') || text.includes('review');
+}
+
+function isEvolveApprovalEvent(event: PhaseActivityEvent): boolean {
+  const text = activityText(event);
+  return text.includes('approval') || text.includes('approved') || text.includes('rejected') || text.includes('human');
+}
+
+function isEvolveRerunEvent(event: PhaseActivityEvent): boolean {
+  const text = activityText(event);
+  return text.includes('rerun') || text.includes('re-run') || text.includes('revalidate') || text.includes('regenerate') || text.includes('handoff');
+}
+
+function resolveEvolveRerunStatus(
+  blockers: readonly Blocker[],
+  diffSignals: readonly EvolveSignal[],
+  approvalSignals: readonly EvolveSignal[],
+  rerunSignals: readonly EvolveSignal[],
+): EvolveSignal['status'] {
+  if (rerunSignals.some((signal) => signal.status === 'ready')) {
+    return 'ready';
+  }
+  if (blockers.length > 0 || diffSignals.some((signal) => signal.status === 'blocked')) {
+    return 'blocked';
+  }
+  if (approvalSignals.length > 0 && approvalSignals.every((signal) => signal.status === 'ready')) {
+    return 'ready';
+  }
+  return 'needs-review';
 }
 
 function StatusPanel({ testId, title, content }: { testId: string; title: string; content: React.ReactNode }) {
@@ -375,7 +911,10 @@ export function PhaseStatusPanels({
               <div className="mt-3 space-y-2">
                 {activity.slice(0, 3).map((event) => (
                   <div key={event.id} className="text-sm text-fg" data-testid="shape-activity-event">
-                    {event.summary}
+                    <p>{event.summary}</p>
+                    <p className="mt-1 text-xs text-fg-muted" data-testid="activity-trace">
+                      {formatActivityTrace(event)}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -426,8 +965,21 @@ export function PhaseStatusPanels({
 
   if (phase === 'generate') {
     const outputBundle = preview?.requiredArtifacts ?? [];
+    const completedArtifacts = preview?.completedArtifacts ?? [];
     const isReady = blockers.length === 0 && preview?.canAdvance === true;
     const recentGenerateActivity = activity.slice(0, 3);
+    const assuranceChecks = buildGenerateAssuranceChecks(activity);
+    const artifactSignals = generateSignals(activity, isGenerateArtifactEvent);
+    const diffSignals = generateSignals(activity, isGenerateDiffEvent);
+    const failureSignals = [
+      ...blockers.map((blocker) => ({
+        id: blocker.id,
+        summary: `${blocker.title ? `${blocker.title}: ` : ''}${blocker.description}`,
+        trace: blocker.source ? `Source: ${blocker.source}` : '',
+      })),
+      ...generateSignals(activity, isGenerateFailureEvent),
+    ].slice(0, 5);
+    const hasFailedAssurance = assuranceChecks.some((check) => check.status === 'failed');
 
     return (
       <div className="space-y-4">
@@ -460,7 +1012,7 @@ export function PhaseStatusPanels({
           </Card>
           <Card variant="outlined" data-testid="generated-file-list">
             <CardContent className="p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Planned output bundle</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Generated artifacts</p>
               {outputBundle.length > 0 ? (
                 <div className="mt-3 space-y-2">
                   {outputBundle.map((item) => (
@@ -475,9 +1027,108 @@ export function PhaseStatusPanels({
                   Output plan is not ready yet.
                 </p>
               )}
+              {completedArtifacts.length > 0 ? (
+                <div className="mt-4 space-y-2" data-testid="generated-completed-artifacts">
+                  {completedArtifacts.map((item) => (
+                    <div key={item} className="flex items-center gap-2 text-sm text-fg">
+                      <span className="inline-block h-2 w-2 rounded-full bg-success-color" aria-hidden="true" />
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              {artifactSignals.length > 0 ? (
+                <div className="mt-4 space-y-2" data-testid="generated-artifact-events">
+                  {artifactSignals.map((item) => (
+                    <p key={item.id} className="text-xs text-fg-muted">
+                      {item.summary}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
             </CardContent>
           </Card>
         </div>
+        <Card variant="outlined" data-testid="generate-assurance-panel">
+          <CardContent className="p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Assurance status</p>
+              <Badge variant={hasFailedAssurance ? 'destructive' : isReady ? 'success' : 'secondary'}>
+                {hasFailedAssurance ? 'Failing' : isReady ? 'Passing' : 'Pending'}
+              </Badge>
+            </div>
+            <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+              {assuranceChecks.map((check) => (
+                <div
+                  key={check.id}
+                  className="rounded-lg border border-border bg-surface p-3"
+                  data-testid="generate-assurance-check"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium text-fg">{check.label}</p>
+                    <Badge
+                      variant={
+                        check.status === 'passed'
+                          ? 'success'
+                          : check.status === 'failed'
+                            ? 'destructive'
+                            : 'secondary'
+                      }
+                    >
+                      {check.status}
+                    </Badge>
+                  </div>
+                  <p className="mt-2 text-xs text-fg-muted">{check.detail}</p>
+                  {check.evidenceId ? (
+                    <p className="mt-1 text-xs text-fg-muted">Evidence: {check.evidenceId}</p>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        <Card variant="outlined" data-testid="generate-diff-review">
+          <CardContent className="p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Diff review</p>
+            {diffSignals.length > 0 ? (
+              <div className="mt-3 space-y-2">
+                {diffSignals.map((item) => (
+                  <div key={item.id} className="text-sm text-fg" data-testid="generate-diff-entry">
+                    <p>{item.summary}</p>
+                    {item.trace ? <p className="mt-1 text-xs text-fg-muted">{item.trace}</p> : null}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-fg-muted" data-testid="generate-diff-empty">
+                No generated diff has been reported yet.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+        {failureSignals.length > 0 ? (
+          <Card variant="outlined" data-testid="generate-failure-panel" className="border-destructive-border bg-destructive-bg/20">
+            <CardContent className="p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-destructive">Generation failures</p>
+                  <p className="mt-2 text-sm text-fg-muted" data-testid="generate-retry-guidance">
+                    Retry generation after the listed blocker or failed assurance evidence is resolved.
+                  </p>
+                </div>
+                <Badge variant="destructive">Action needed</Badge>
+              </div>
+              <div className="mt-3 space-y-2">
+                {failureSignals.map((item) => (
+                  <div key={item.id} className="text-sm text-fg" data-testid="generate-failure-entry">
+                    <p>{item.summary}</p>
+                    {item.trace ? <p className="mt-1 text-xs text-fg-muted">{item.trace}</p> : null}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
         {recentGenerateActivity.length > 0 && (
           <Card variant="outlined" data-testid="generate-activity-timeline">
             <CardContent className="p-4">
@@ -486,7 +1137,12 @@ export function PhaseStatusPanels({
                 {recentGenerateActivity.map((event) => (
                   <div key={event.id} className="flex items-start gap-2 text-sm">
                     <span className="mt-0.5 inline-block h-2 w-2 shrink-0 rounded-full bg-surface-muted" aria-hidden="true" />
-                    <span className="text-fg">{event.summary}</span>
+                    <span className="text-fg">
+                      <span>{event.summary}</span>
+                      <span className="mt-1 block text-xs text-fg-muted" data-testid="activity-trace">
+                        {formatActivityTrace(event)}
+                      </span>
+                    </span>
                   </div>
                 ))}
               </div>
@@ -499,6 +1155,9 @@ export function PhaseStatusPanels({
 
   if (phase === 'run') {
     const requiredCapabilities = preview?.requiredArtifacts ?? [];
+    const runTimeline = buildRunTimeline(activity);
+    const runStatus = resolveRunStatus(activity, blockers, preview);
+    const operations: readonly RunOperation[] = ['retry', 'rollback', 'promote'];
 
     return (
       <div className="space-y-4">
@@ -531,6 +1190,82 @@ export function PhaseStatusPanels({
             }
           />
         </div>
+        <Card variant="outlined" data-testid="platform-run-status">
+          <CardContent className="p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Platform run status</p>
+                <p className="mt-2 text-sm text-fg-muted">
+                  Latest runtime truth from backed run, preview, deploy, and promotion events.
+                </p>
+              </div>
+              <Badge
+                variant={
+                  runStatus === 'healthy'
+                    ? 'success'
+                    : runStatus === 'failed'
+                      ? 'destructive'
+                      : 'secondary'
+                }
+                data-testid="platform-run-health"
+              >
+                {runStatus}
+              </Badge>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-3" data-testid="run-operation-controls">
+              {operations.map((operation) => {
+                const state = runOperationState(operation, runStatus, activity);
+                return (
+                  <div key={operation} className="rounded-lg border border-border bg-surface p-3" data-testid={`run-operation-${operation}`}>
+                    <p className="text-sm font-medium capitalize text-fg">{operation}</p>
+                    <p className="mt-1 text-xs text-fg-muted">
+                      {state === 'ready'
+                        ? `${operation} is ready for the operator action surface.`
+                        : state === 'available'
+                          ? `${operation} evidence is already linked to this run.`
+                          : `${operation} is blocked until run status changes.`}
+                    </p>
+                    <Badge className="mt-2" variant={state === 'blocked' ? 'secondary' : 'success'}>
+                      {state}
+                    </Badge>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+        <Card variant="outlined" data-testid="platform-run-timeline">
+          <CardContent className="p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Run timeline</p>
+            {runTimeline.length > 0 ? (
+              <div className="mt-3 space-y-3">
+                {runTimeline.map((event) => (
+                  <div key={event.id} className="flex items-start gap-3 text-sm" data-testid="platform-run-event">
+                    <span
+                      className={[
+                        'mt-0.5 inline-block h-2 w-2 shrink-0 rounded-full',
+                        event.status === 'failed'
+                          ? 'bg-destructive'
+                          : event.status === 'degraded'
+                            ? 'bg-warning-color'
+                            : 'bg-success-color',
+                      ].join(' ')}
+                      aria-hidden="true"
+                    />
+                    <div>
+                      <p className="text-fg">{event.summary}</p>
+                      {event.trace ? <p className="mt-1 text-xs text-fg-muted">{event.trace}</p> : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-fg-muted" data-testid="platform-run-timeline-empty">
+                No platform run events have been reported yet.
+              </p>
+            )}
+          </CardContent>
+        </Card>
         <PreviewSecurityPanel previewHealth={previewHealth} />
       </div>
     );
@@ -539,6 +1274,8 @@ export function PhaseStatusPanels({
   if (phase === 'observe') {
     const recentEvents = activity.slice(0, 5);
     const previewDiagnostics = buildObservePreviewDiagnostics(activity, blockers, preview);
+    const observeHealthItems = buildObserveHealthItems(activity, blockers, previewDiagnostics, agentGovernance);
+    const observeRecommendations = buildObserveRecommendations(blockers, activity, previewDiagnostics, agentGovernance);
     const latestLoadTiming = previewDiagnostics.loadTimings[0];
 
     return (
@@ -661,6 +1398,53 @@ export function PhaseStatusPanels({
             </div>
           </CardContent>
         </Card>
+        <div className="grid gap-4 lg:grid-cols-[1fr_1fr]" data-testid="observe-health-and-recommendations">
+          <Card variant="outlined" data-testid="observe-health-matrix">
+            <CardContent className="p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Kernel, app, and agent health</p>
+              <div className="mt-3 space-y-3">
+                {observeHealthItems.map((item) => (
+                  <div key={item.id} className="rounded-lg border border-border bg-surface p-3" data-testid="observe-health-item">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium text-fg">{item.label}</p>
+                      <Badge
+                        variant={
+                          item.status === 'healthy'
+                            ? 'success'
+                            : item.status === 'failed'
+                              ? 'destructive'
+                              : 'secondary'
+                        }
+                      >
+                        {item.status}
+                      </Badge>
+                    </div>
+                    <p className="mt-2 text-xs text-fg-muted">{item.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          <Card variant="outlined" data-testid="observe-recommendations">
+            <CardContent className="p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Recommendations</p>
+              {observeRecommendations.length > 0 ? (
+                <div className="mt-3 space-y-3">
+                  {observeRecommendations.map((recommendation) => (
+                    <div key={recommendation.id} className="rounded-lg border border-border bg-surface p-3" data-testid="observe-recommendation">
+                      <p className="text-sm font-medium text-fg">{recommendation.title}</p>
+                      <p className="mt-2 text-xs text-fg-muted">{recommendation.detail}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-fg-muted" data-testid="observe-recommendations-empty">
+                  No remediation recommendations are currently reported.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
         <PreviewSecurityPanel previewHealth={previewHealth} />
         <AgentGovernancePanel agentGovernance={agentGovernance} />
         {recentEvents.length > 0 && (
@@ -673,9 +1457,9 @@ export function PhaseStatusPanels({
                     <span
                       className={[
                         'mt-0.5 inline-block h-2 w-2 shrink-0 rounded-full',
-                        event.severity === 'error' || event.success === false
+                        event.severity?.toLowerCase() === 'error' || event.success === false
                           ? 'bg-destructive'
-                          : event.severity === 'warning'
+                          : event.severity?.toLowerCase() === 'warning'
                             ? 'bg-warning-color'
                             : 'bg-success-color',
                       ].join(' ')}
@@ -683,7 +1467,10 @@ export function PhaseStatusPanels({
                     />
                     <div className="min-w-0 flex-1">
                       <p className="text-fg">{event.summary}</p>
-                      <p className="text-xs text-fg-muted">{event.source} · {event.action}</p>
+                      <p className="text-xs text-fg-muted">{event.source} | {event.action}</p>
+                      <p className="text-xs text-fg-muted" data-testid="activity-trace">
+                        {formatActivityTrace(event)}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -696,36 +1483,281 @@ export function PhaseStatusPanels({
   }
 
   if (phase === 'learn') {
+    const learnEvidence = buildLearnEvidence(activity);
+    const learnRecommendations = buildLearnRecommendations(blockers, activity, agentGovernance);
+    const approvalItems = buildLearnApprovals(activity);
+    const promptSignals = buildLearnPromptSignals(activity);
+
     return (
-      <div className="grid gap-4 md:grid-cols-2">
-        <StatusPanel
-          testId="retrospective-panel"
-          title="Retrospective"
-          content="Review the lifecycle evidence below to capture operator learnings and lessons from this cycle."
-        />
-        <StatusPanel
-          testId="reusable-patterns"
-          title="Reusable patterns"
-          content="Promote stable learnings into repeatable delivery patterns once they have enough backing evidence."
-        />
-        <AgentGovernancePanel agentGovernance={agentGovernance} />
+      <div className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card variant="outlined" data-testid="learn-evidence-panel">
+            <CardContent className="p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Learning evidence</p>
+              {learnEvidence.length > 0 ? (
+                <div className="mt-3 space-y-3">
+                  {learnEvidence.map((item) => (
+                    <div key={item.id} className="rounded-lg border border-border bg-surface p-3" data-testid="learn-evidence-item">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-fg">{item.summary}</p>
+                        <Badge variant="secondary">{item.category}</Badge>
+                      </div>
+                      {item.trace ? (
+                        <p className="mt-2 text-xs text-fg-muted" data-testid="activity-trace">
+                          {item.trace}
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-fg-muted" data-testid="learn-evidence-empty">
+                  No learning evidence has been attached to this lifecycle cycle yet.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+          <Card variant="outlined" data-testid="learn-recommendations-panel">
+            <CardContent className="p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Recommendations</p>
+              {learnRecommendations.length > 0 ? (
+                <div className="mt-3 space-y-3">
+                  {learnRecommendations.map((item) => (
+                    <div key={item.id} className="rounded-lg border border-border bg-surface p-3" data-testid="learn-recommendation">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-fg">{item.title}</p>
+                        <Badge
+                          variant={
+                            item.status === 'ready'
+                              ? 'success'
+                              : item.status === 'blocked'
+                                ? 'destructive'
+                                : 'secondary'
+                          }
+                        >
+                          {item.status}
+                        </Badge>
+                      </div>
+                      <p className="mt-2 text-xs text-fg-muted">{item.detail}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-fg-muted" data-testid="learn-recommendations-empty">
+                  No learning recommendations are currently reported.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+          <Card variant="outlined" data-testid="learn-human-approval-panel">
+            <CardContent className="p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Human approval</p>
+              {approvalItems.length > 0 ? (
+                <div className="mt-3 space-y-3">
+                  {approvalItems.map((item) => (
+                    <div key={item.id} className="rounded-lg border border-border bg-surface p-3" data-testid="learn-approval-item">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm text-fg">{item.detail}</p>
+                        <Badge variant={item.decision === 'approved' ? 'success' : item.decision === 'rejected' ? 'destructive' : 'secondary'}>
+                          {item.decision}
+                        </Badge>
+                      </div>
+                      {item.trace ? (
+                        <p className="mt-2 text-xs text-fg-muted" data-testid="activity-trace">
+                          {item.trace}
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-fg-muted" data-testid="learn-approval-empty">
+                  No human approval decisions have been linked yet.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+          <Card variant="outlined" data-testid="learn-prompt-learning-panel">
+            <CardContent className="p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Prompt and model learning</p>
+              {promptSignals.length > 0 ? (
+                <div className="mt-3 space-y-3">
+                  {promptSignals.map((item) => (
+                    <div key={item.id} className="rounded-lg border border-border bg-surface p-3" data-testid="learn-prompt-signal">
+                      <p className="text-sm font-medium text-fg">{item.title}</p>
+                      <p className="mt-2 text-xs text-fg-muted">{item.detail}</p>
+                      {item.trace ? (
+                        <p className="mt-2 text-xs text-fg-muted" data-testid="activity-trace">
+                          {item.trace}
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-fg-muted" data-testid="learn-prompt-empty">
+                  No prompt or model learning evidence has been reported yet.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <StatusPanel
+            testId="reusable-patterns"
+            title="Reusable patterns"
+            content="Promote stable learnings into repeatable delivery patterns once they have enough backing evidence."
+          />
+          <AgentGovernancePanel agentGovernance={agentGovernance} />
+        </div>
       </div>
     );
   }
 
   if (phase === 'evolve') {
+    const proposalSignals = buildEvolveSignals(activity, isEvolveProposalEvent, 'Evolution proposal');
+    const impactSignals = buildEvolveSignals(activity, isEvolveImpactEvent, 'Impact analysis');
+    const diffSignals = buildEvolveSignals(activity, isEvolveDiffEvent, 'Diff review');
+    const approvalSignals = buildEvolveSignals(activity, isEvolveApprovalEvent, 'Approval decision');
+    const rerunSignals = buildEvolveSignals(activity, isEvolveRerunEvent, 'Re-run handoff');
+    const rerunStatus = resolveEvolveRerunStatus(blockers, diffSignals, approvalSignals, rerunSignals);
+
     return (
-      <div className="grid gap-4 md:grid-cols-2">
-        <StatusPanel
-          testId="roadmap-panel"
-          title="Roadmap"
-          content="Use the learnings and blockers below to decide which work belongs in the next improvement cycle."
-        />
-        <StatusPanel
-          testId="backlog-panel"
-          title="Backlog"
-          content="The backlog should stay aligned with backed evidence and the highest-value next action."
-        />
+      <div className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card variant="outlined" data-testid="evolve-proposals-panel">
+            <CardContent className="p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Evolution proposals</p>
+              {proposalSignals.length > 0 ? (
+                <div className="mt-3 space-y-3">
+                  {proposalSignals.map((signal) => (
+                    <div key={signal.id} className="rounded-lg border border-border bg-surface p-3" data-testid="evolve-proposal">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-fg">{signal.detail}</p>
+                        <Badge variant={signal.status === 'ready' ? 'success' : signal.status === 'blocked' ? 'destructive' : 'secondary'}>
+                          {signal.status}
+                        </Badge>
+                      </div>
+                      {signal.trace ? (
+                        <p className="mt-2 text-xs text-fg-muted" data-testid="activity-trace">
+                          {signal.trace}
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-fg-muted" data-testid="evolve-proposals-empty">
+                  No evolution proposals have been linked to this cycle yet.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+          <Card variant="outlined" data-testid="evolve-impact-panel">
+            <CardContent className="p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Impact analysis</p>
+              {impactSignals.length > 0 ? (
+                <div className="mt-3 space-y-3">
+                  {impactSignals.map((signal) => (
+                    <div key={signal.id} className="rounded-lg border border-border bg-surface p-3" data-testid="evolve-impact-item">
+                      <p className="text-sm font-medium text-fg">{signal.title}</p>
+                      <p className="mt-2 text-xs text-fg-muted">{signal.detail}</p>
+                      {signal.trace ? (
+                        <p className="mt-2 text-xs text-fg-muted" data-testid="activity-trace">
+                          {signal.trace}
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-fg-muted" data-testid="evolve-impact-empty">
+                  No impacted surfaces, modules, or tests have been reported yet.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+          <Card variant="outlined" data-testid="evolve-diff-review-panel">
+            <CardContent className="p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Diff review</p>
+              {diffSignals.length > 0 ? (
+                <div className="mt-3 space-y-3">
+                  {diffSignals.map((signal) => (
+                    <div key={signal.id} className="rounded-lg border border-border bg-surface p-3" data-testid="evolve-diff-item">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-fg">{signal.title}</p>
+                        <Badge variant={signal.status === 'ready' ? 'success' : signal.status === 'blocked' ? 'destructive' : 'secondary'}>
+                          {signal.status}
+                        </Badge>
+                      </div>
+                      <p className="mt-2 text-xs text-fg-muted">{signal.detail}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-fg-muted" data-testid="evolve-diff-empty">
+                  No generated evolve diff is currently ready for review.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+          <Card variant="outlined" data-testid="evolve-approval-panel">
+            <CardContent className="p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Approval and rollback</p>
+              {approvalSignals.length > 0 ? (
+                <div className="mt-3 space-y-3">
+                  {approvalSignals.map((signal) => (
+                    <div key={signal.id} className="rounded-lg border border-border bg-surface p-3" data-testid="evolve-approval-item">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-fg">{signal.detail}</p>
+                        <Badge variant={signal.status === 'ready' ? 'success' : signal.status === 'blocked' ? 'destructive' : 'secondary'}>
+                          {signal.status}
+                        </Badge>
+                      </div>
+                      {signal.trace ? (
+                        <p className="mt-2 text-xs text-fg-muted" data-testid="activity-trace">
+                          {signal.trace}
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-fg-muted" data-testid="evolve-approval-empty">
+                  No approval, rejection, or rollback decision has been attached yet.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+        <Card variant="outlined" data-testid="evolve-rerun-panel">
+          <CardContent className="p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Re-run readiness</p>
+              <Badge variant={rerunStatus === 'ready' ? 'success' : rerunStatus === 'blocked' ? 'destructive' : 'secondary'}>
+                {rerunStatus}
+              </Badge>
+            </div>
+            {rerunSignals.length > 0 ? (
+              <div className="mt-3 space-y-3">
+                {rerunSignals.map((signal) => (
+                  <div key={signal.id} className="rounded-lg border border-border bg-surface p-3" data-testid="evolve-rerun-item">
+                    <p className="text-sm font-medium text-fg">{signal.title}</p>
+                    <p className="mt-2 text-xs text-fg-muted">{signal.detail}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-fg-muted" data-testid="evolve-rerun-empty">
+                Re-run is waiting for approved diff evidence and a clear impact analysis.
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
     );
   }

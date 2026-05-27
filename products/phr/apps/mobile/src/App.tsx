@@ -1,5 +1,5 @@
 import React, { type ErrorInfo, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { ConsentScreen } from './screens/ConsentScreen';
@@ -10,7 +10,7 @@ import { RecordsScreen } from './screens/RecordsScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { authenticateBiometric } from './services/biometricAuth';
 import { fetchMobileDashboard, loginMobile, logoutMobile, syncOfflineDashboard } from './services/phrMobileApi';
-import { clearMobileSession, saveMobileSession } from './services/mobileSessionStore';
+import { clearMobileSession, loadMobileSession, saveMobileSession } from './services/mobileSessionStore';
 import { registerForPushNotificationsAsync } from './services/pushNotifications';
 import { t } from './i18n/phrMobileI18n';
 import type { MobileDashboard, MobileSession } from './types';
@@ -19,6 +19,20 @@ type ScreenKey = 'dashboard' | 'records' | 'consents' | 'notifications' | 'emerg
 const APP_DIAGNOSTIC_EVENT = 'phr-mobile:diagnostic';
 
 const TAB_KEYS: readonly ScreenKey[] = ['dashboard', 'records', 'consents', 'notifications', 'emergency', 'settings'];
+
+interface TabItem {
+  key: ScreenKey;
+  label: string;
+  icon: string;
+}
+
+function getTabItems(): TabItem[] {
+  return TAB_KEYS.map((key) => ({
+    key,
+    label: getTabLabel(key),
+    icon: getTabIcon(key),
+  }));
+}
 
 function getTabLabel(key: ScreenKey): string {
   const keyMap: Record<ScreenKey, string> = {
@@ -30,6 +44,18 @@ function getTabLabel(key: ScreenKey): string {
     settings: t('tabs.settings'),
   };
   return keyMap[key];
+}
+
+function getTabIcon(key: ScreenKey): string {
+  const iconMap: Record<ScreenKey, string> = {
+    dashboard: '🏠',
+    records: '📋',
+    consents: '✓',
+    notifications: '🔔',
+    emergency: '🚨',
+    settings: '⚙️',
+  };
+  return iconMap[key];
 }
 
 class AppErrorBoundary extends React.Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -56,8 +82,8 @@ class AppErrorBoundary extends React.Component<{ children: ReactNode }, { hasErr
     if (this.state.hasError) {
       return (
         <SafeAreaView style={styles.loadingContainer}>
-          <Text style={styles.header}>PHR Nepal mobile</Text>
-          <Text style={styles.errorText}>Something went wrong. Restart the app to continue.</Text>
+          <Text style={styles.header}>{t('app.errorBoundaryTitle')}</Text>
+          <Text style={styles.errorText}>{t('app.errorBoundaryMessage')}</Text>
         </SafeAreaView>
       );
     }
@@ -68,13 +94,54 @@ class AppErrorBoundary extends React.Component<{ children: ReactNode }, { hasErr
 
 export default function App(): React.ReactElement {
   const [session, setSession] = React.useState<MobileSession | null>(null);
+  const [isRestoringSession, setIsRestoringSession] = React.useState(true);
   const isAuthenticated = session !== null;
   const [activeScreen, setActiveScreen] = React.useState<ScreenKey>('dashboard');
   const [dashboard, setDashboard] = React.useState<MobileDashboard | null>(null);
   const [loadError, setLoadError] = React.useState<string | null>(null);
-  const [syncMessage, setSyncMessage] = React.useState('Offline cache has not been refreshed in this session.');
+  const [syncMessage, setSyncMessage] = React.useState(t('app.initialSyncMessage'));
   const [isConnected, setIsConnected] = React.useState<boolean>(true);
   const [consents, setConsents] = React.useState(dashboard?.consents ?? []);
+
+  // Restore session on app launch
+  React.useEffect(() => {
+    const restoreSession = async (): Promise<void> => {
+      try {
+        const restoredSession = await loadMobileSession();
+        if (restoredSession) {
+          setSession(restoredSession);
+        }
+      } catch (error) {
+        console.error('Failed to restore session:', error);
+        // Session restore failed - user will need to log in again
+      } finally {
+        setIsRestoringSession(false);
+      }
+    };
+    void restoreSession();
+  }, []);
+
+  // Validate session expiry on app foreground/resume
+  React.useEffect(() => {
+    const handleAppStateChange = async (nextAppState: string): Promise<void> => {
+      if (nextAppState === 'active' && session) {
+        // App came to foreground - validate session is still valid and detect role/persona changes
+        const currentSession = await loadMobileSession(session);
+        if (!currentSession) {
+          // Session was cleared (expired or revoked)
+          await handleLogout();
+        } else if (currentSession.role !== session.role || currentSession.principalId !== session.principalId) {
+          // Role or principal changed - update session and clear UI state
+          setSession(currentSession);
+          setDashboard(null);
+          setConsents([]);
+        }
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription.remove();
+  }, [session]);
 
   React.useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state: { isConnected: boolean | null }) => {
@@ -97,7 +164,7 @@ export default function App(): React.ReactElement {
       })
       .catch((error: unknown) => {
         setDashboard(null);
-        setLoadError(error instanceof Error ? error.message : 'Unable to load mobile dashboard.');
+        setLoadError(error instanceof Error ? error.message : t('app.dashboardLoadError'));
       });
   }, [session]);
 
@@ -109,12 +176,12 @@ export default function App(): React.ReactElement {
 
   const onEnablePush = async (): Promise<void> => {
     const token = await registerForPushNotificationsAsync();
-    setSyncMessage(`Push notifications ready: ${token}`);
+    setSyncMessage(t('app.pushNotificationsReady', { token }));
   };
 
   const onAuthenticate = async (): Promise<boolean> => {
     const ok = await authenticateBiometric();
-    setSyncMessage(ok ? 'Biometric verification succeeded.' : 'Biometric verification unavailable on this device.');
+    setSyncMessage(ok ? t('app.biometricSuccess') : t('app.biometricUnavailable'));
     return ok;
   };
 
@@ -124,7 +191,7 @@ export default function App(): React.ReactElement {
       setSyncMessage(await syncOfflineDashboard(session));
       loadDashboard();
     } catch (error) {
-      setSyncMessage(error instanceof Error ? error.message : 'Offline cache refresh failed.');
+      setSyncMessage(error instanceof Error ? error.message : t('app.offlineCacheRefreshFailed'));
     }
   };
 
@@ -148,6 +215,15 @@ export default function App(): React.ReactElement {
     setConsents((prev) => prev.filter((c) => c.id !== grantId));
   }, []);
 
+  if (isRestoringSession) {
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#123c84" />
+        <Text style={styles.loadingText}>{t('app.restoringSession')}</Text>
+      </SafeAreaView>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <SafeAreaView style={styles.page}>
@@ -164,7 +240,7 @@ export default function App(): React.ReactElement {
     if (loadError) {
       return (
         <SafeAreaView style={styles.loadingContainer}>
-          <Text style={styles.header}>PHR Nepal mobile</Text>
+          <Text style={styles.header}>{t('app.errorBoundaryTitle')}</Text>
           <Text style={styles.errorText}>{loadError}</Text>
           <Pressable onPress={loadDashboard} style={styles.retryButton}>
             <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
@@ -195,9 +271,9 @@ export default function App(): React.ReactElement {
       case 'notifications':
         return <NotificationsScreen notifications={dashboard.notifications} onEnablePush={() => void onEnablePush()} />;
       case 'emergency':
-        return <EmergencyAccessScreen onAuthenticate={onAuthenticate} />;
+        return <EmergencyAccessScreen onAuthenticate={onAuthenticate} session={session} />;
       case 'settings':
-        return <SettingsScreen onSyncOffline={() => void onSyncOffline()} onLogout={() => void handleLogout()} syncMessage={syncMessage} />;
+        return <SettingsScreen onSyncOffline={() => void onSyncOffline()} onLogout={() => void handleLogout()} syncMessage={syncMessage} session={session} />;
       case 'dashboard':
       default:
         return <DashboardScreen dashboard={dashboard} />;
@@ -213,20 +289,22 @@ export default function App(): React.ReactElement {
           </View>
         )}
         <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.header}>PHR Nepal mobile</Text>
+          <Text style={styles.header}>{t('app.title')}</Text>
           {renderScreen()}
         </ScrollView>
-        <View style={styles.tabBar}>
-          {TAB_KEYS.map((key) => (
+        <View style={styles.tabBar} accessibilityRole="tabbar">
+          {getTabItems().map((tab) => (
             <Pressable
-              key={key}
-              onPress={() => setActiveScreen(key)}
-              style={[styles.tab, activeScreen === key && styles.tabActive]}
+              key={tab.key}
+              onPress={() => setActiveScreen(tab.key)}
+              style={[styles.tabItem, activeScreen === tab.key && styles.tabItemActive]}
               accessibilityRole="tab"
-              accessibilityState={{ selected: activeScreen === key }}
+              accessibilityState={{ selected: activeScreen === tab.key }}
+              accessibilityLabel={tab.label}
             >
-              <Text style={[styles.tabLabel, activeScreen === key && styles.tabLabelActive]}>
-                {getTabLabel(key)}
+              <Text style={styles.tabIcon}>{tab.icon}</Text>
+              <Text style={[styles.tabLabel, activeScreen === tab.key && styles.tabLabelActive]}>
+                {tab.label}
               </Text>
             </Pressable>
           ))}
@@ -248,6 +326,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#f3f8ff',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#4b5c77',
   },
   offlineBanner: {
     backgroundColor: '#f59e0b',
@@ -291,27 +374,34 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    paddingVertical: 12,
+    justifyContent: 'space-around',
+    paddingVertical: 8,
     borderTopWidth: 1,
     borderTopColor: '#d5dded',
     backgroundColor: '#f3f8ff',
+    paddingBottom: 8,
   },
-  tab: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 999,
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderRadius: 12,
+  },
+  tabItemActive: {
     backgroundColor: '#dce8fb',
   },
-  tabActive: {
-    backgroundColor: '#123c84',
+  tabIcon: {
+    fontSize: 20,
+    marginBottom: 4,
   },
   tabLabel: {
     color: '#123c84',
-    fontWeight: '700',
+    fontWeight: '600',
+    fontSize: 12,
   },
   tabLabelActive: {
-    color: '#fff',
+    color: '#0b1b35',
+    fontWeight: '700',
   },
 });

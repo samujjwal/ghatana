@@ -8,5 +8,8 @@ export type PhaseReadiness = {
     missingPrerequisites: Array<string>;
     completenessScore: number;
     isDegraded: boolean;
+    estimatedReadyIn?: string | null;
+    estimatedReadyInHours?: number | null;
+    predictionConfidence?: number | null;
 };
 

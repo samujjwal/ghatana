@@ -20,6 +20,7 @@ import java.util.Set;
 public final class DurablePhrNotificationSender extends PhrServiceBase implements PhrNotificationSender {
 
     static final String OUTBOX_DATASET = "phr.notifications.outbox";
+    static final String PREFERENCES_DATASET = "phr.notifications.preferences";
 
     public DurablePhrNotificationSender(KernelContext context) {
         super(context);
@@ -32,28 +33,42 @@ public final class DurablePhrNotificationSender extends PhrServiceBase implement
 
     @Override
     protected Promise<Void> initializeDatasets() {
-        return createSchema(
-            OUTBOX_DATASET,
-            Map.ofEntries(
-                Map.entry("id", "string"),
-                Map.entry("patientId", "string"),
-                Map.entry("recipientId", "string"),
-                Map.entry("providerId", "string"),
-                Map.entry("referenceId", "string"),
-                Map.entry("referenceType", "string"),
-                Map.entry("notificationType", "string"),
-                Map.entry("channel", "string"),
-                Map.entry("status", "string"),
-                Map.entry("scheduledFor", "timestamp"),
-                Map.entry("createdAt", "timestamp"),
-                Map.entry("correlationId", "string"),
-                Map.entry("traceOperation", "string"),
-                Map.entry("deliveryAttemptedAt", "timestamp"),
-                Map.entry("deliveredAt", "timestamp"),
-                Map.entry("failureReason", "string"),
-                Map.entry("providerMessageId", "string")
+        return Promises.all(
+            createSchema(
+                OUTBOX_DATASET,
+                Map.ofEntries(
+                    Map.entry("id", "string"),
+                    Map.entry("patientId", "string"),
+                    Map.entry("recipientId", "string"),
+                    Map.entry("providerId", "string"),
+                    Map.entry("referenceId", "string"),
+                    Map.entry("referenceType", "string"),
+                    Map.entry("notificationType", "string"),
+                    Map.entry("channel", "string"),
+                    Map.entry("status", "string"),
+                    Map.entry("scheduledFor", "timestamp"),
+                    Map.entry("createdAt", "timestamp"),
+                    Map.entry("correlationId", "string"),
+                    Map.entry("traceOperation", "string"),
+                    Map.entry("deliveryAttemptedAt", "timestamp"),
+                    Map.entry("deliveredAt", "timestamp"),
+                    Map.entry("failureReason", "string"),
+                    Map.entry("providerMessageId", "string"),
+                    Map.entry("readAt", "timestamp")
+                ),
+                Map.of("retention", "2years")
             ),
-            Map.of("retention", "2years")
+            createSchema(
+                PREFERENCES_DATASET,
+                Map.ofEntries(
+                    Map.entry("principalId", "string"),
+                    Map.entry("emailEnabled", "boolean"),
+                    Map.entry("smsEnabled", "boolean"),
+                    Map.entry("inAppEnabled", "boolean"),
+                    Map.entry("updatedAt", "timestamp")
+                ),
+                Map.of("retention", "5years")
+            )
         );
     }
 
@@ -157,6 +172,134 @@ public final class DurablePhrNotificationSender extends PhrServiceBase implement
             .toList());
     }
 
+    public Promise<Void> markAsRead(String notificationId, String principalId) {
+        ensureRunning();
+
+        String sanitizedNotificationId = PhrInputSanitizationUtils.requireSafeIdentifier(notificationId, "notificationId");
+        String sanitizedPrincipalId = PhrInputSanitizationUtils.requireSafeIdentifier(principalId, "principalId");
+
+        return queryRecords(OUTBOX_DATASET, "id = :id", Map.of("id", sanitizedNotificationId), 1, 0, NotificationOutboxEntry.class)
+            .then(entries -> {
+                if (entries.isEmpty()) {
+                    return Promise.ofException(new IllegalStateException("Notification not found"));
+                }
+                NotificationOutboxEntry entry = entries.get(0);
+                if (!entry.patientId().equals(sanitizedPrincipalId)) {
+                    return Promise.ofException(new IllegalStateException("Cannot mark another user's notification as read"));
+                }
+                
+                NotificationOutboxEntry updated = new NotificationOutboxEntry(
+                    entry.id(),
+                    entry.patientId(),
+                    entry.recipientId(),
+                    entry.providerId(),
+                    entry.referenceId(),
+                    entry.referenceType(),
+                    entry.notificationType(),
+                    entry.channel(),
+                    entry.status(),
+                    entry.scheduledFor(),
+                    entry.createdAt(),
+                    entry.correlationId(),
+                    entry.traceOperation(),
+                    entry.deliveryAttemptedAt(),
+                    entry.deliveredAt(),
+                    entry.failureReason(),
+                    entry.providerMessageId(),
+                    Instant.now()
+                );
+
+                return updateRecord(
+                    OUTBOX_DATASET,
+                    sanitizedNotificationId,
+                    updated,
+                    mutationMetadata(metadataFor(updated), updated.recipientId()),
+                    "PhrNotificationOutboxEntry",
+                    1
+                );
+            });
+    }
+
+    public Promise<String> handleNotificationAction(String notificationId, String principalId, String action) {
+        ensureRunning();
+
+        String sanitizedNotificationId = PhrInputSanitizationUtils.requireSafeIdentifier(notificationId, "notificationId");
+        String sanitizedPrincipalId = PhrInputSanitizationUtils.requireSafeIdentifier(principalId, "principalId");
+        String sanitizedAction = PhrInputSanitizationUtils.requireSafeCode(action, "action");
+
+        return queryRecords(OUTBOX_DATASET, "id = :id", Map.of("id", sanitizedNotificationId), 1, 0, NotificationOutboxEntry.class)
+            .then(entries -> {
+                if (entries.isEmpty()) {
+                    return Promise.ofException(new IllegalStateException("Notification not found"));
+                }
+                NotificationOutboxEntry entry = entries.get(0);
+                if (!entry.patientId().equals(sanitizedPrincipalId)) {
+                    return Promise.ofException(new IllegalStateException("Cannot handle action for another user's notification"));
+                }
+
+                // Handle action based on notification type
+                String result = switch (sanitizedAction) {
+                    case "view" -> "viewed";
+                    case "dismiss" -> "dismissed";
+                    case "accept" -> "accepted";
+                    case "decline" -> "declined";
+                    default -> "unknown_action";
+                };
+
+                return Promise.of(result);
+            });
+    }
+
+    public Promise<Map<String, Object>> getNotificationPreferences(String principalId) {
+        ensureRunning();
+        String sanitizedPrincipalId = PhrInputSanitizationUtils.requireSafeIdentifier(principalId, "principalId");
+
+        return queryRecords(PREFERENCES_DATASET, "id = :id", Map.of("id", sanitizedPrincipalId), 1, 0, NotificationPreferences.class)
+            .then(entries -> {
+                if (entries.isEmpty()) {
+                    return Promise.of(Map.of(
+                        "emailEnabled", true,
+                        "smsEnabled", false,
+                        "inAppEnabled", true,
+                        "updatedAt", Instant.now().toString()
+                    ));
+                }
+                NotificationPreferences pref = entries.get(0);
+                return Promise.of(Map.of(
+                    "emailEnabled", pref.emailEnabled(),
+                    "smsEnabled", pref.smsEnabled(),
+                    "inAppEnabled", pref.inAppEnabled(),
+                    "updatedAt", pref.updatedAt().toString()
+                ));
+            });
+    }
+
+    public Promise<Void> updateNotificationPreferences(String principalId, Map<String, Object> preferences) {
+        ensureRunning();
+        String sanitizedPrincipalId = PhrInputSanitizationUtils.requireSafeIdentifier(principalId, "principalId");
+
+        boolean emailEnabled = preferences.get("emailEnabled") instanceof Boolean ? (Boolean) preferences.get("emailEnabled") : true;
+        boolean smsEnabled = preferences.get("smsEnabled") instanceof Boolean ? (Boolean) preferences.get("smsEnabled") : false;
+        boolean inAppEnabled = preferences.get("inAppEnabled") instanceof Boolean ? (Boolean) preferences.get("inAppEnabled") : true;
+
+        NotificationPreferences updated = new NotificationPreferences(
+            sanitizedPrincipalId,
+            emailEnabled,
+            smsEnabled,
+            inAppEnabled,
+            Instant.now()
+        );
+
+        return createRecord(
+            PREFERENCES_DATASET,
+            sanitizedPrincipalId,
+            updated,
+            mutationMetadata(Map.of("principalId", sanitizedPrincipalId), sanitizedPrincipalId),
+            "NotificationPreferences",
+            1
+        ).toVoid();
+    }
+
     private Promise<Void> persistNotifications(
             String patientId,
             String recipientId,
@@ -204,6 +347,7 @@ public final class DurablePhrNotificationSender extends PhrServiceBase implement
                     createdAt,
                     sanitizedCorrelationId,
                     sanitizedTraceOperation,
+                    null,
                     null,
                     null,
                     null,
@@ -258,6 +402,19 @@ public final class DurablePhrNotificationSender extends PhrServiceBase implement
         FAILED
     }
 
+    public record NotificationPreferences(
+        String principalId,
+        boolean emailEnabled,
+        boolean smsEnabled,
+        boolean inAppEnabled,
+        Instant updatedAt
+    ) {
+        public NotificationPreferences {
+            Objects.requireNonNull(principalId, "principalId must not be null");
+            Objects.requireNonNull(updatedAt, "updatedAt must not be null");
+        }
+    }
+
     public record NotificationOutboxEntry(
         String id,
         String patientId,
@@ -275,7 +432,8 @@ public final class DurablePhrNotificationSender extends PhrServiceBase implement
         Instant deliveryAttemptedAt,
         Instant deliveredAt,
         String failureReason,
-        String providerMessageId
+        String providerMessageId,
+        Instant readAt
     ) {
         public NotificationOutboxEntry {
             Objects.requireNonNull(id, "id must not be null");

@@ -104,6 +104,8 @@ This document outlines a comprehensive plan to build a data-driven, config-drive
 
 ### Platform Libraries (Foundation) - ✅ Strong
 
+Evidence: [YAPPC production readiness evidence links](./PRODUCTION_READINESS_EVIDENCE_LINKS.md) and platform package governance are the current evidence sources; this table is a planning snapshot.
+
 | Module                   | Status              | Capabilities                                         | Usage in YAPPC             |
 | ------------------------ | ------------------- | ---------------------------------------------------- | -------------------------- |
 | `@ghatana/design-system` | ✅ Production-ready | 50+ atoms, 68 molecules, 23 organisms                | Direct imports             |

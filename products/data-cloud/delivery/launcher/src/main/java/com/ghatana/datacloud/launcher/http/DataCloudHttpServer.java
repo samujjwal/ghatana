@@ -390,6 +390,11 @@ public class DataCloudHttpServer {
     private boolean strictTenantResolution = false;
     /** Deployment mode label for observability and UI warnings (DC-AUD-024). */
     private String deploymentMode = "local";
+    /**
+     * DC-P1-003: Registry-driven set of collection names requiring transactional all-or-nothing delete.
+     * Null means use {@link com.ghatana.datacloud.launcher.http.handlers.EntityCrudHandler}'s built-in defaults.
+     */
+    private Set<String> criticalCollections = null;
     private EntityCrudHandler entityHandler;
     private EntityExportHandler exportHandler;
     private EntityAnomalyHandler anomalyHandler;
@@ -1078,6 +1083,19 @@ public class DataCloudHttpServer {
     }
 
     /**
+     * DC-P1-003: Registers a config/registry-driven set of collection names that must be
+     * deleted all-or-nothing (transactional). When set, overrides the built-in critical list
+     * in {@link com.ghatana.datacloud.launcher.http.handlers.EntityCrudHandler}.
+     *
+     * @param collections non-null, non-empty set of critical collection names
+     * @return {@code this} for chaining
+     */
+    public DataCloudHttpServer withCriticalCollections(Set<String> collections) {
+        this.criticalCollections = (collections == null || collections.isEmpty()) ? null : Set.copyOf(collections);
+        return this;
+    }
+
+    /**
      * Injects the Context Plane backing store.
      *
      * <p>Production-like deployment modes must provide a durable implementation.
@@ -1470,6 +1488,10 @@ public class DataCloudHttpServer {
         entityHandler.withSemanticSearchPorts(semanticSearchHandler::indexEntity, semanticSearchHandler::deleteEntity);
         // DC-P1-05: Set deployment profile for production validation
         entityHandler.withDeploymentProfile(deploymentMode);
+        // DC-P1-003: Propagate config-driven critical collections (if set); otherwise defaults apply in handler
+        if (criticalCollections != null) {
+            entityHandler.withCriticalCollections(criticalCollections);
+        }
         // DC-P1-04: Wire audit service for transaction/outbox lifecycle
         if (auditService != null) {
             entityHandler.withAuditService(auditService);

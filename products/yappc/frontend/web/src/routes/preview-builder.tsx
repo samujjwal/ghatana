@@ -16,8 +16,8 @@
  * @doc.pattern Route Component
  */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { normalizeBuilderDocument, type BuilderDocument, type NodeId } from '@ghatana/ui-builder';
+import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import type { BuilderDocument, NodeId } from '@ghatana/ui-builder';
 import type {
   HostToPreviewMessage,
   MountedMessage,
@@ -30,13 +30,17 @@ import type {
   HoverMessage,
   Viewport,
 } from '@ghatana/ui-builder/preview';
-import { PRESET_VIEWPORTS } from '@ghatana/ui-builder/preview';
-import { ComponentRenderer } from '../components/canvas/page/ComponentRenderer';
 import { validatePreviewSessionToken } from '../services/preview/PreviewSessionApi';
 import { getPreviewLocaleFixture } from '../services/preview/PreviewLocaleFixtures';
 import { cspConfigToHeader } from '../security/ContentSecurityPolicy';
 
 const PREVIEW_RUNTIME_VERSION = '1.1.0';
+const PreviewComponentRenderer = React.lazy(() =>
+  import('../components/canvas/page/ComponentRenderer').then((module) => ({
+    default: module.ComponentRenderer,
+  }))
+);
+
 export const PREVIEW_BUILDER_RESPONSE_HEADERS = {
   'Content-Security-Policy': cspConfigToHeader({
     defaultSrc: ["'self'"],
@@ -60,12 +64,17 @@ export const PREVIEW_BUILDER_RESPONSE_HEADERS = {
   'X-Frame-Options': 'SAMEORIGIN',
 } as const;
 
-export function headers(): HeadersInit {
+export function previewBuilderResponseHeaders(): HeadersInit {
   return PREVIEW_BUILDER_RESPONSE_HEADERS;
 }
 
 const DEFAULT_PREVIEW_ENVIRONMENT = {
-  viewport: PRESET_VIEWPORTS.desktop,
+  viewport: {
+    label: 'Desktop',
+    width: 1440,
+    height: 1024,
+    devicePixelRatio: 1,
+  },
   theme: 'default',
   locale: 'en-US',
 } as const;
@@ -313,23 +322,26 @@ export default function BuilderPreviewRoute() {
         }
 
         pendingCorrelationRef.current = message.correlationId;
-        setDocument(normalizeBuilderDocument(message.document));
         setRuntimeEnvironment({
           viewport: message.sandbox.viewport,
           theme: message.sandbox.theme,
           locale: message.sandbox.locale,
         });
-        // MOUNTED is sent after the state update triggers a render.
-        // We use a microtask so the render has a chance to flush.
         const correlationId = message.correlationId;
-        void Promise.resolve().then(() => {
-          const mounted: MountedMessage = {
-            type: 'MOUNTED',
-            correlationId,
-            durationMs: Math.round(performance.now() - start),
-          };
-          sendToHost(mounted);
-        });
+        void import('@ghatana/ui-builder/core/builder-document')
+          .then(({ normalizeBuilderDocument }) => {
+            setDocument(normalizeBuilderDocument(message.document));
+            const mounted: MountedMessage = {
+              type: 'MOUNTED',
+              correlationId,
+              durationMs: Math.round(performance.now() - start),
+            };
+            sendToHost(mounted);
+          })
+          .catch((error: unknown) => {
+            const detail = error instanceof Error ? error.message : 'Preview document normalization failed.';
+            sendPreviewError(correlationId, 'PREVIEW_NORMALIZATION_FAILED', detail);
+          });
         break;
       }
 
@@ -339,16 +351,21 @@ export default function BuilderPreviewRoute() {
           break;
         }
 
-        setDocument(normalizeBuilderDocument(message.document));
         const correlationId = message.correlationId;
-        void Promise.resolve().then(() => {
-          const updated: UpdatedMessage = {
-            type: 'UPDATED',
-            correlationId,
-            durationMs: Math.round(performance.now() - start),
-          };
-          sendToHost(updated);
-        });
+        void import('@ghatana/ui-builder/core/builder-document')
+          .then(({ normalizeBuilderDocument }) => {
+            setDocument(normalizeBuilderDocument(message.document));
+            const updated: UpdatedMessage = {
+              type: 'UPDATED',
+              correlationId,
+              durationMs: Math.round(performance.now() - start),
+            };
+            sendToHost(updated);
+          })
+          .catch((error: unknown) => {
+            const detail = error instanceof Error ? error.message : 'Preview document update failed.';
+            sendPreviewError(correlationId, 'PREVIEW_UPDATE_FAILED', detail);
+          });
         break;
       }
 
@@ -497,33 +514,41 @@ export default function BuilderPreviewRoute() {
         >
           {localeFixture.headline} {localeFixture.primaryCta} {localeFixture.dateExample} {localeFixture.currencyExample}
         </div>
-        {getPreviewRootNodeIds(document).map((nodeId) => (
-          <ComponentRenderer
-            key={nodeId}
-            document={document}
-            nodeId={nodeId}
-            selectedNodeId={selectedNodeId}
-            onSelect={(nodeId) => {
-              setSelectedNodeId(nodeId);
-            }}
-            onNodeClick={(nodeId, coordinates) => {
-              setSelectedNodeId(nodeId);
-              const click: ClickMessage = {
-                type: 'ELEMENT_CLICK',
-                nodeId,
-                coordinates,
-              };
-              sendToHost(click);
-            }}
-            onNodeHover={(nodeId) => {
-              const hover: HoverMessage = {
-                type: 'ELEMENT_HOVER',
-                nodeId,
-              };
-              sendToHost(hover);
-            }}
-          />
-        ))}
+        <Suspense
+          fallback={
+            <div className="flex min-h-40 items-center justify-center text-sm text-fg-muted">
+              Rendering preview...
+            </div>
+          }
+        >
+          {getPreviewRootNodeIds(document).map((nodeId) => (
+            <PreviewComponentRenderer
+              key={nodeId}
+              document={document}
+              nodeId={nodeId}
+              selectedNodeId={selectedNodeId}
+              onSelect={(nodeId) => {
+                setSelectedNodeId(nodeId);
+              }}
+              onNodeClick={(nodeId, coordinates) => {
+                setSelectedNodeId(nodeId);
+                const click: ClickMessage = {
+                  type: 'ELEMENT_CLICK',
+                  nodeId,
+                  coordinates,
+                };
+                sendToHost(click);
+              }}
+              onNodeHover={(nodeId) => {
+                const hover: HoverMessage = {
+                  type: 'ELEMENT_HOVER',
+                  nodeId,
+                };
+                sendToHost(hover);
+              }}
+            />
+          ))}
+        </Suspense>
       </div>
     </div>
   );

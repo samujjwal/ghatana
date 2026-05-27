@@ -6,6 +6,7 @@
  */
 
 import type { CSSProperties } from "react";
+import { SectionLoading } from "../common/LoadingState";
 
 /**
  *
@@ -124,20 +125,5 @@ export function LoadingSpinner({
  * Route-level loading component with consistent styling
  */
 export function RouteLoadingSpinner() {
-    return (
-        <div
-            style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                minHeight: "200px"
-            }}
-        >
-            <LoadingSpinner
-                size="lg"
-                message="Loading page..."
-                variant="primary"
-            />
-        </div>
-    );
+    return <SectionLoading message="Loading page..." />;
 }

@@ -5,6 +5,8 @@ import {
   estimateCanvasMemoryMb,
   evaluateCanvasPerformanceBudget,
   evaluatePageBuilderPerformanceBudget,
+  evaluateRoutePerformanceBudget,
+  routeLatencyBudgetMs,
   shouldUseCanvasViewportCulling,
 } from '../canvasPerformanceBudgets';
 
@@ -77,4 +79,96 @@ describe('canvas performance budgets', () => {
       'estimatedMemoryMb',
     ]);
   });
+
+  it('checks key route latency budgets for phase cockpit, admin, and kernel-health routes', () => {
+    expect(routeLatencyBudgetMs('phase-cockpit')).toBe(
+      CANVAS_PERFORMANCE_BUDGETS.maxPhaseCockpitRouteLatencyMs
+    );
+
+    expect(
+      evaluateRoutePerformanceBudget({
+        routeId: '/p/:projectId/validate',
+        kind: 'phase-cockpit',
+        latencyMs: 600,
+      })
+    ).toEqual({
+      withinBudget: true,
+      violations: [],
+    });
+
+    const adminResult = evaluateRoutePerformanceBudget({
+      routeId: '/admin/observability',
+      kind: 'admin',
+      latencyMs: CANVAS_PERFORMANCE_BUDGETS.maxAdminRouteLatencyMs + 1,
+    });
+    const kernelResult = evaluateRoutePerformanceBudget({
+      routeId: '/kernel-health/:productUnitId',
+      kind: 'kernel-health',
+      latencyMs: CANVAS_PERFORMANCE_BUDGETS.maxKernelHealthRouteLatencyMs + 1,
+    });
+
+    expect(adminResult.withinBudget).toBe(false);
+    expect(adminResult.violations[0]?.metric).toBe('/admin/observability.latencyMs');
+    expect(kernelResult.withinBudget).toBe(false);
+    expect(kernelResult.violations[0]?.metric).toBe('/kernel-health/:productUnitId.latencyMs');
+  });
+
+  it('keeps shape route canvas with representative project graph inside performance budgets', () => {
+    const shapeCanvas = representativeShapeRouteCanvas();
+    const visibleNodeCount = shapeCanvas.nodes.filter((node) => node.visible).length;
+    const result = evaluateCanvasPerformanceBudget({
+      nodeCount: shapeCanvas.nodes.length,
+      visibleNodeCount,
+      edgeCount: shapeCanvas.edges.length,
+      renderTimeMs: 54,
+      interactionLatencyMs: 32,
+    });
+
+    expect(shapeCanvas.projectId).toBe('project-shape-route-fixture');
+    expect(shapeCanvas.nodes.length).toBeGreaterThanOrEqual(500);
+    expect(visibleNodeCount).toBeLessThanOrEqual(
+      CANVAS_PERFORMANCE_BUDGETS.maxVisibleNodesForLargeCanvas
+    );
+    expect(result).toEqual({
+      withinBudget: true,
+      violations: [],
+    });
+  });
 });
+
+interface ShapeRouteCanvasNode {
+  readonly id: string;
+  readonly kind: 'surface' | 'module' | 'integration';
+  readonly visible: boolean;
+}
+
+interface ShapeRouteCanvasEdge {
+  readonly id: string;
+  readonly sourceId: string;
+  readonly targetId: string;
+}
+
+interface ShapeRouteCanvasFixture {
+  readonly projectId: string;
+  readonly nodes: ShapeRouteCanvasNode[];
+  readonly edges: ShapeRouteCanvasEdge[];
+}
+
+function representativeShapeRouteCanvas(): ShapeRouteCanvasFixture {
+  const nodes = Array.from({ length: 520 }, (_, index): ShapeRouteCanvasNode => ({
+    id: `shape-node-${index}`,
+    kind: index % 9 === 0 ? 'surface' : index % 5 === 0 ? 'integration' : 'module',
+    visible: index < 144,
+  }));
+  const edges = Array.from({ length: 780 }, (_, index): ShapeRouteCanvasEdge => ({
+    id: `shape-edge-${index}`,
+    sourceId: nodes[index % nodes.length]?.id ?? 'shape-node-0',
+    targetId: nodes[(index + 7) % nodes.length]?.id ?? 'shape-node-1',
+  }));
+
+  return {
+    projectId: 'project-shape-route-fixture',
+    nodes,
+    edges,
+  };
+}

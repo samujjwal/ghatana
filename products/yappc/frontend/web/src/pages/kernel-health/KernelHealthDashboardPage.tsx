@@ -13,8 +13,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/Button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, AlertCircle, CheckCircle, Clock, RefreshCw } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, RefreshCw } from 'lucide-react';
+import { LoadingState } from '@/components/common/LoadingState';
+import { ErrorState } from '@/components/common/ErrorState';
 
 import { LifecycleTimelinePanel, type LifecycleRunSummary } from './LifecycleTimelinePanel';
 import { GateHealthPanel, type GateEvaluation } from './GateHealthPanel';
@@ -422,7 +423,7 @@ export const KernelHealthDashboardPage: React.FC = () => {
   if (loading && !healthView) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <LoadingState message="Loading Kernel health data..." size="lg" />
       </div>
     );
   }
@@ -443,11 +444,13 @@ export const KernelHealthDashboardPage: React.FC = () => {
       </div>
 
       {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <ErrorState
+          title="Kernel health unavailable"
+          message={error}
+          onRetry={handleRefresh}
+          variant="banner"
+          size="sm"
+        />
       )}
 
       {healthView && (

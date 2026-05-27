@@ -1,43 +1,127 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { t } from '../i18n/phrMobileI18n';
+import type { MobileSession } from '../types';
 
 interface EmergencyAccessScreenProps {
   onAuthenticate: () => Promise<boolean>;
+  session: MobileSession;
 }
 
-type EmergencyState = 'locked' | 'verifying' | 'authorized' | 'denied';
+type EmergencyState = 'locked' | 'verifying' | 'server_approval' | 'authorized' | 'denied';
 
-export function EmergencyAccessScreen({ onAuthenticate }: EmergencyAccessScreenProps): React.ReactElement {
+interface EmergencyData {
+  patientName: string;
+  bloodType: string;
+  allergies: string[];
+  medications: string[];
+  emergencyContact: string;
+}
+
+export function EmergencyAccessScreen({ onAuthenticate, session }: EmergencyAccessScreenProps): React.ReactElement {
   const [state, setState] = React.useState<EmergencyState>('locked');
   const [reason, setReason] = React.useState('');
+  const [emergencyData, setEmergencyData] = React.useState<EmergencyData | null>(null);
+
+  const requestEmergencyAccess = async (): Promise<void> => {
+    try {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_PHR_API_URL ?? process.env.PHR_API_URL ?? ''}/emergency/request`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Tenant-Id': session.tenantId,
+          'X-Principal-Id': session.principalId,
+          'X-Role': session.role,
+          'X-Correlation-ID': crypto.randomUUID(),
+        },
+        body: JSON.stringify({ reason: reason.trim() }),
+      });
+
+      if (response.ok) {
+        const data = await response.json() as EmergencyData;
+        setEmergencyData(data);
+        setState('authorized');
+      } else {
+        setState('denied');
+      }
+    } catch {
+      setState('denied');
+    }
+  };
 
   const handleVerify = async (): Promise<void> => {
     setState('verifying');
     const granted = await onAuthenticate();
-    setState(granted ? 'authorized' : 'denied');
+    
+    if (granted) {
+      setState('server_approval');
+      await requestEmergencyAccess();
+    } else {
+      setState('denied');
+    }
   };
 
-  if (state === 'verifying') {
+  if (state === 'verifying' || state === 'server_approval') {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#7f1d1d" />
-        <Text style={styles.summary}>{t('emergency.requesting')}</Text>
+        <Text style={styles.summary}>
+          {state === 'verifying' ? t('emergency.requesting') : t('emergency.serverApproval')}
+        </Text>
       </View>
     );
   }
 
-  if (state === 'authorized') {
+  if (state === 'authorized' && emergencyData) {
     return (
-      <View style={styles.container}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <Text style={styles.title}>{t('emergency.authorized')}</Text>
         <Text style={styles.summary}>
           {t('emergency.reasonLabel')}: {reason || t('emergency.reasonPlaceholder')}
         </Text>
-        <Text style={styles.auditNote}>
-          This session has been logged for audit review. All PHI accessed in this session is recorded.
-        </Text>
-      </View>
+        <Text style={styles.auditNote}>{t('emergency.auditWarning')}</Text>
+
+        <View style={styles.dataCard}>
+          <Text style={styles.dataTitle}>{t('emergency.emergencyData')}</Text>
+          
+          <View style={styles.dataRow}>
+            <Text style={styles.dataLabel}>{t('login.title')}</Text>
+            <Text style={styles.dataValue}>{emergencyData.patientName}</Text>
+          </View>
+
+          <View style={styles.dataRow}>
+            <Text style={styles.dataLabel}>Blood Type</Text>
+            <Text style={styles.dataValue}>{emergencyData.bloodType}</Text>
+          </View>
+
+          <View style={styles.dataSection}>
+            <Text style={styles.dataLabel}>Allergies</Text>
+            {emergencyData.allergies.length > 0 ? (
+              emergencyData.allergies.map((allergy, index) => (
+                <Text key={index} style={styles.dataValue}>{allergy}</Text>
+              ))
+            ) : (
+              <Text style={styles.dataValue}>None reported</Text>
+            )}
+          </View>
+
+          <View style={styles.dataSection}>
+            <Text style={styles.dataLabel}>Current Medications</Text>
+            {emergencyData.medications.length > 0 ? (
+              emergencyData.medications.map((med, index) => (
+                <Text key={index} style={styles.dataValue}>{med}</Text>
+              ))
+            ) : (
+              <Text style={styles.dataValue}>None reported</Text>
+            )}
+          </View>
+
+          <View style={styles.dataRow}>
+            <Text style={styles.dataLabel}>Emergency Contact</Text>
+            <Text style={styles.dataValue}>{emergencyData.emergencyContact}</Text>
+          </View>
+        </View>
+      </ScrollView>
     );
   }
 
@@ -86,11 +170,12 @@ export function EmergencyAccessScreen({ onAuthenticate }: EmergencyAccessScreenP
 }
 
 const styles = StyleSheet.create({
-  container: { gap: 14 },
-  title: { fontWeight: '700', fontSize: 22, color: '#102243' },
+  container: { flex: 1, backgroundColor: '#fef2f2', padding: 18, gap: 14 },
+  content: { gap: 16 },
+  title: { fontWeight: '700', fontSize: 22, color: '#7f1d1d' },
   label: { fontWeight: '600', fontSize: 14, color: '#4b5c77' },
   summary: { color: '#4b5c77' },
-  auditNote: { color: '#7f1d1d', fontStyle: 'italic', fontSize: 13 },
+  auditNote: { color: '#7f1d1d', fontStyle: 'italic', fontSize: 13, backgroundColor: '#fef2f2', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#fecaca' },
   reasonInput: {
     borderWidth: 1,
     borderColor: '#d5dded',
@@ -105,4 +190,10 @@ const styles = StyleSheet.create({
   button: { backgroundColor: '#7f1d1d', borderRadius: 16, padding: 14, alignItems: 'center' },
   buttonDisabled: { backgroundColor: '#c4a0a0' },
   buttonText: { color: '#fff', fontWeight: '700' },
+  dataCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#fecaca', gap: 12 },
+  dataTitle: { fontWeight: '700', fontSize: 18, color: '#7f1d1d', marginBottom: 8 },
+  dataRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
+  dataSection: { gap: 4, paddingVertical: 4 },
+  dataLabel: { fontWeight: '600', fontSize: 14, color: '#4b5c77' },
+  dataValue: { color: '#0b1b35', fontSize: 15 },
 });

@@ -243,7 +243,7 @@ public final class BusinessMetrics {
     // ── Critical-flow canonical metrics ──────────────────────────────────────
 
     /**
-     * Canonical metric names for the ten critical YAPPC flows.
+     * Canonical metric names for critical YAPPC flows.
      *
      * <p>All of these emit tags: {@code tenantId}, {@code workspaceId},
      * {@code projectId}, {@code phase}, {@code operation}, {@code outcome},
@@ -259,6 +259,8 @@ public final class BusinessMetrics {
     public static final String METRIC_EVIDENCE_SEARCH       = "yappc.flow.evidence_search.total";
     public static final String METRIC_POLICY_EVALUATION     = "yappc.flow.policy_evaluation.total";
     public static final String METRIC_LEARNING_PROMOTION    = "yappc.flow.learning_promotion.total";
+    public static final String METRIC_KERNEL_TRUTH_SOURCE   = "yappc.flow.kernel_truth_source.total";
+    public static final String METRIC_GENERATION_ASSURANCE  = "yappc.flow.generation_assurance.total";
 
     /**
      * Records a single increment for any critical YAPPC flow using the canonical nine-tag set.
@@ -374,6 +376,22 @@ public final class BusinessMetrics {
             String phase, String operation, String outcome, boolean degraded,
             String errorClass, String correlationId) {
         recordCriticalFlow(METRIC_POLICY_EVALUATION,
+                tenantId, workspaceId, projectId, phase, operation, outcome, degraded, errorClass, correlationId);
+    }
+
+    /** Records a Kernel lifecycle truth-source lookup event. */
+    public void recordKernelTruthSource(String tenantId, String workspaceId, String projectId,
+            String phase, String operation, String outcome, boolean degraded,
+            String errorClass, String correlationId) {
+        recordCriticalFlow(METRIC_KERNEL_TRUTH_SOURCE,
+                tenantId, workspaceId, projectId, phase, operation, outcome, degraded, errorClass, correlationId);
+    }
+
+    /** Records generated-artifact assurance check outcomes. */
+    public void recordGenerationAssurance(String tenantId, String workspaceId, String projectId,
+            String phase, String operation, String outcome, boolean degraded,
+            String errorClass, String correlationId) {
+        recordCriticalFlow(METRIC_GENERATION_ASSURANCE,
                 tenantId, workspaceId, projectId, phase, operation, outcome, degraded, errorClass, correlationId);
     }
 

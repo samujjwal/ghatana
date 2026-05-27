@@ -75,6 +75,9 @@ public final class PhrDocumentImagingRoutes {
             .with(HttpMethod.POST, "/", this::handleUploadDocument)
             .with(HttpMethod.GET, "/:documentId/content", this::handleGetDocumentContent)
             .with(HttpMethod.GET, "/:documentId/fhir", this::handleDocumentFhir)
+            .with(HttpMethod.GET, "/:documentId/ocr", this::handleGetOcrDocument)
+            .with(HttpMethod.POST, "/:documentId/ocr/confirm", this::handleConfirmOcrDocument)
+            .with(HttpMethod.POST, "/:documentId/ocr/reject", this::handleRejectOcrDocument)
             .with(HttpMethod.POST, "/:documentId/consent", this::handleUpdateDocumentConsent)
             .with(HttpMethod.DELETE, "/:documentId", this::handleDeleteDocument)
             .with(HttpMethod.GET, "/:documentId", this::handleGetDocument)
@@ -131,6 +134,82 @@ public final class PhrDocumentImagingRoutes {
     private Promise<HttpResponse> handleDocumentFhir(HttpRequest request) {
         return documentService.toFhirDocumentReference(request.getPathParameter("documentId"))
             .then(fhir -> PhrRouteSupport.jsonResponse(200, fhir));
+    }
+
+    private Promise<HttpResponse> handleGetOcrDocument(HttpRequest request) {
+        PhrRouteSupport.PhrRequestContext context;
+        try {
+            context = PhrRouteSupport.requireContext(request);
+        } catch (IllegalArgumentException ex) {
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+        }
+        String documentId = request.getPathParameter("documentId");
+        return documentService.getOcrDocument(documentId, context.principalId())
+            .then(ocrDoc -> ocrDoc
+                .<Promise<HttpResponse>>map(doc -> PhrRouteSupport.jsonResponse(200, Map.of(
+                    "documentId", doc.documentId(),
+                    "title", doc.title(),
+                    "extractedText", doc.extractedText(),
+                    "confidence", doc.confidence(),
+                    "status", doc.status()
+                )))
+                .orElseGet(() -> PhrRouteSupport.errorResponse(404, "OCR_NOT_FOUND", "OCR document not found or not visible")));
+    }
+
+    private Promise<HttpResponse> handleConfirmOcrDocument(HttpRequest request) {
+        PhrRouteSupport.PhrRequestContext context;
+        try {
+            context = PhrRouteSupport.requireContext(request);
+        } catch (IllegalArgumentException ex) {
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+        }
+        String documentId = request.getPathParameter("documentId");
+        return request.loadBody()
+            .then(body -> {
+                String correctedText;
+                try {
+                    JsonNode node = PhrRouteSupport.JSON.readTree(body.getString(StandardCharsets.UTF_8));
+                    correctedText = node.path("correctedText").asText(null);
+                } catch (Exception ex) {
+                    return PhrRouteSupport.errorResponse(400, "INVALID_OCR_CONFIRM", ex.getMessage());
+                }
+                return documentService.confirmOcrDocument(documentId, context.principalId(), correctedText)
+                    .then(confirmed -> {
+                        // Create FHIR draft with provenance
+                        String correlationId = PhrTraceContext.newCorrelationId("phr_ocr_confirm");
+                        auditOcrConfirmation(context, documentId, correctedText, correlationId);
+                        return documentService.toFhirDocumentReference(documentId)
+                            .then(fhir -> PhrRouteSupport.jsonResponse(200, Map.of(
+                                "documentId", documentId,
+                                "confirmed", true,
+                                "fhirResource", fhir,
+                                "provenance", Map.of(
+                                    "reviewerId", context.principalId(),
+                                    "reviewedAt", java.time.Instant.now().toString(),
+                                    "correlationId", correlationId
+                                )
+                            )));
+                    });
+            });
+    }
+
+    private Promise<HttpResponse> handleRejectOcrDocument(HttpRequest request) {
+        PhrRouteSupport.PhrRequestContext context;
+        try {
+            context = PhrRouteSupport.requireContext(request);
+        } catch (IllegalArgumentException ex) {
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+        }
+        String documentId = request.getPathParameter("documentId");
+        return documentService.rejectOcrDocument(documentId, context.principalId())
+            .then($ -> {
+                String correlationId = PhrTraceContext.newCorrelationId("phr_ocr_reject");
+                auditOcrRejection(context, documentId, correlationId);
+                return PhrRouteSupport.jsonResponse(200, Map.of(
+                    "documentId", documentId,
+                    "rejected", true
+                ));
+            });
     }
 
     private Promise<HttpResponse> handleUpdateDocumentConsent(HttpRequest request) {
@@ -388,6 +467,40 @@ public final class PhrDocumentImagingRoutes {
         );
         return PhrRouteSupport.audit("DOCUMENT_UPLOAD", patientId, 
             "Document uploaded: " + documentType + " [" + correlationId + "]", 
+            auditMetadata, context.correlationId());
+    }
+
+    private Promise<Void> auditOcrConfirmation(
+            PhrRouteSupport.PhrRequestContext context,
+            String documentId,
+            String correctedText,
+            String correlationId) {
+        // Audit event for OCR confirmation (PHI-safe - no full text logged)
+        Map<String, Object> auditMetadata = Map.of(
+            "documentId", documentId,
+            "textLength", correctedText != null ? correctedText.length() : 0,
+            "principalId", context.principalId(),
+            "tenantId", context.tenantId(),
+            "role", context.role()
+        );
+        return PhrRouteSupport.audit("OCR_CONFIRMED", documentId, 
+            "OCR confirmed by reviewer [" + correlationId + "]", 
+            auditMetadata, context.correlationId());
+    }
+
+    private Promise<Void> auditOcrRejection(
+            PhrRouteSupport.PhrRequestContext context,
+            String documentId,
+            String correlationId) {
+        // Audit event for OCR rejection
+        Map<String, Object> auditMetadata = Map.of(
+            "documentId", documentId,
+            "principalId", context.principalId(),
+            "tenantId", context.tenantId(),
+            "role", context.role()
+        );
+        return PhrRouteSupport.audit("OCR_REJECTED", documentId, 
+            "OCR rejected by reviewer [" + correlationId + "]", 
             auditMetadata, context.correlationId());
     }
 }

@@ -11,6 +11,7 @@ import com.ghatana.yappc.domain.run.TaskResult;
 import com.ghatana.yappc.domain.validate.LifecycleValidationResult;
 import com.ghatana.yappc.domain.validate.ValidationIssue;
 import com.ghatana.yappc.platform.ai.InsightFeedbackService;
+import com.ghatana.yappc.common.ServiceObservability;
 import com.ghatana.yappc.services.lifecycle.ApprovalRequest;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
@@ -167,6 +168,7 @@ public final class LearningEvidenceServiceImpl implements LearningEvidenceServic
             List<String> actionItems,
             Map<String, Object> metadata) {
         requireContext(context);
+        Map<String, Object> safeMetadata = ServiceObservability.redactSensitiveFields(metadata);
         String evidenceId = "learn-" + sourceType + "-" + safeId(context.subjectId()) + "-" + UUID.randomUUID();
         Observation observation = Observation.builder()
                 .id("obs-" + evidenceId)
@@ -198,7 +200,7 @@ public final class LearningEvidenceServiceImpl implements LearningEvidenceServic
         provenance.add(context.subjectId());
         provenance.add(observation.id());
         provenance.add(insights.id());
-        Object evidenceIds = metadata.get("evidenceIds");
+        Object evidenceIds = safeMetadata.get("evidenceIds");
         if (evidenceIds instanceof List<?> values) {
             values.stream()
                     .filter(String.class::isInstance)
@@ -216,7 +218,7 @@ public final class LearningEvidenceServiceImpl implements LearningEvidenceServic
                         observation,
                         insights,
                         List.copyOf(provenance),
-                        Map.copyOf(metadata),
+                        Map.copyOf(safeMetadata),
                         Instant.now());
 
         return repository.save(evidence).map(ignored -> evidenceId);

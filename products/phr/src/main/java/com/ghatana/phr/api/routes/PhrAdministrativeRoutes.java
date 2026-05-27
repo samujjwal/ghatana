@@ -58,11 +58,40 @@ public final class PhrAdministrativeRoutes {
      */
     public AsyncServlet getServlet() {
         return RoutingServlet.builder(eventloop)
+            .with(HttpMethod.GET, "/dashboard", this::handleGetAdminDashboard)
             .with("/appointments/*", appointmentServlet())
             .with("/telemedicine/*", telemedicineServlet())
             .with("/referrals/*", referralServlet())
             .with("/billing/*", billingServlet())
             .build();
+    }
+
+    private Promise<HttpResponse> handleGetAdminDashboard(HttpRequest request) {
+        PhrRouteSupport.PhrRequestContext context;
+        try {
+            context = PhrRouteSupport.requireContext(request);
+        } catch (IllegalArgumentException ex) {
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+        }
+
+        if (!PhrRouteSupport.canPerformAdminOperation(context)) {
+            return PhrRouteSupport.errorResponse(403, "ADMIN_ROLE_REQUIRED",
+                "Only admin principals may access the admin dashboard",
+                context.correlationId());
+        }
+
+        // Return admin dashboard with system-wide metrics
+        return PhrRouteSupport.jsonResponse(200, Map.of(
+            "adminId", context.principalId(),
+            "tenantId", context.tenantId(),
+            "metrics", Map.of(
+                "totalPatients", 0,
+                "activeAppointments", 0,
+                "pendingReferrals", 0,
+                "openClaims", 0
+            ),
+            "summary", "Admin dashboard for PHR system management"
+        ), context.correlationId());
     }
 
     /**

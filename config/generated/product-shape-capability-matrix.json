@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-05-25T17:45:57.844Z",
+  "generated": "2026-05-27T05:40:21.429Z",
   "source": "config/canonical-product-registry.json",
   "matrix": [
     {
@@ -131,12 +131,14 @@
       "capabilityGaps": [],
       "reasonCodes": [
         "disabled-observed",
-        "requires-lifecycle-profile",
-        "requires-product-owner-executable-surface-definition"
+        "experimental-shared-service",
+        "lifecycle-execution-disabled",
+        "no-product-manifest"
       ],
       "nextActions": [
         "Define executable Audio-Video surfaces before adding lifecycle configs",
         "Add media artifact and retention evidence before enabling lifecycle execution",
+        "Register product manifest to enable full lifecycle conformance",
         "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
       ],
       "readinessEvidence": [
@@ -2635,20 +2637,25 @@
       "requiredCapabilities": [],
       "capabilityGaps": [],
       "reasonCodes": [
-        "artifact-intelligence-evidence-contracts-ready",
-        "creator-lifecycle-distinct-from-kernel",
+        "artifact-intelligence-boundary-established",
+        "creator-kernel-lifecycle-separated",
         "disabled-observed",
-        "platform-provider-mode-required"
+        "governance-layer-implemented",
+        "product-unit-intent-export-ready"
       ],
       "nextActions": [
-        "Add a YAPPC lifecycle manifest only after creator lifecycle remains separate from Kernel product lifecycle",
+        "Maintain YAPPC lifecycle separation from Kernel product lifecycle",
         "Keep Kernel consumption limited to ProductUnitIntent and artifact-intelligence evidence contracts",
         "Wire platform-mode provider bridge before enabling lifecycle execution"
       ],
       "readinessEvidence": [
         "products/yappc/lifecycle/readiness-evidence.yaml",
         "products/yappc/kernel-bridge",
-        "platform/typescript/kernel-product-contracts/src/artifact-intelligence"
+        "platform/typescript/kernel-product-contracts/src/artifact-intelligence",
+        "scripts/check-platform-product-boundaries.mjs",
+        "scripts/check-deprecated-packages.mjs",
+        "scripts/check-orphan-modules.mjs",
+        "scripts/check-product-registry-drift.mjs"
       ],
       "executionReadiness": "disabled",
       "status": "Disabled observed"

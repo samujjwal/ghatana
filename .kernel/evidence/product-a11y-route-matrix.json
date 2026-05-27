@@ -1,0 +1,33 @@
+{
+  "generatedAt": "2026-05-27T06:05:06.815Z",
+  "scopedProductCount": 2,
+  "rows": [
+    {
+      "productId": "digital-marketing",
+      "packagePath": "products/digital-marketing/ui/package.json",
+      "webPath": "products/digital-marketing/ui",
+      "checks": {
+        "packageScript": true,
+        "routeSpec": true,
+        "workflowCoverage": true
+      },
+      "evidence": {
+        "a11ySpecPath": "products\\digital-marketing\\ui\\e2e\\a11y.spec.ts"
+      }
+    },
+    {
+      "productId": "phr",
+      "packagePath": "products/phr/apps/web/package.json",
+      "webPath": "products/phr/apps/web",
+      "checks": {
+        "packageScript": true,
+        "routeSpec": true,
+        "workflowCoverage": true
+      },
+      "evidence": {
+        "a11ySpecPath": "products\\phr\\apps\\web\\tests\\e2e\\phr-a11y.spec.ts"
+      }
+    }
+  ],
+  "violations": []
+}

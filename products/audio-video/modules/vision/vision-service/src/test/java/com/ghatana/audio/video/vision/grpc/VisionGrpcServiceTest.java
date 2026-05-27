@@ -1,5 +1,6 @@
 package com.ghatana.audio.video.vision.grpc;
 
+import com.ghatana.audio.video.common.security.JwtServerInterceptor;
 import com.ghatana.audio.video.vision.detection.VisionDetector;
 import com.ghatana.audio.video.vision.grpc.proto.*;
 import com.ghatana.audio.video.vision.model.BoundingBox;
@@ -7,6 +8,7 @@ import com.ghatana.audio.video.vision.model.DetectedObject;
 import com.ghatana.audio.video.vision.model.DetectionOptions;
 import com.ghatana.audio.video.vision.video.VideoFrameExtractor;
 import com.google.protobuf.ByteString;
+import io.grpc.Context;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
@@ -35,6 +37,8 @@ import static org.mockito.Mockito.mock;
 @DisplayName("VisionGrpcService")
 class VisionGrpcServiceTest {
 
+    private static final String TENANT_ID = "tenant-vision-test";
+
     private FakeVisionDetector fakeDetector;
     private VisionGrpcService service;
     private VideoFrameExtractor frameExtractor;
@@ -60,7 +64,7 @@ class VisionGrpcServiceTest {
         CapturingObserver<DetectResponse> observer = new CapturingObserver<>(); 
 
         // WHEN
-        service.detectObjects(request, observer); 
+        withContext(TENANT_ID, () -> service.detectObjects(request, observer));
 
         // THEN — service guards against empty image before calling detector
         assertThat(observer.hasError()).isTrue(); 
@@ -87,7 +91,7 @@ class VisionGrpcServiceTest {
         CapturingObserver<DetectResponse> observer = new CapturingObserver<>(); 
 
         // WHEN
-        service.detectObjects(request, observer); 
+        withContext(TENANT_ID, () -> service.detectObjects(request, observer));
 
         // THEN
         assertThat(observer.hasError()).isFalse(); 
@@ -112,7 +116,7 @@ class VisionGrpcServiceTest {
         CapturingObserver<DetectResponse> observer = new CapturingObserver<>(); 
 
         // WHEN
-        service.detectObjects(request, observer); 
+        withContext(TENANT_ID, () -> service.detectObjects(request, observer));
 
         // THEN
         assertThat(observer.hasError()).isFalse(); 
@@ -132,7 +136,7 @@ class VisionGrpcServiceTest {
         CapturingObserver<DetectResponse> observer = new CapturingObserver<>(); 
 
         // WHEN
-        service.detectObjects(request, observer); 
+        withContext(TENANT_ID, () -> service.detectObjects(request, observer));
 
         // THEN — DetectionException must map to INTERNAL, not leak the raw exception
         assertThat(observer.hasError()).isTrue(); 
@@ -158,7 +162,7 @@ class VisionGrpcServiceTest {
         CapturingObserver<AnalyzeResponse> observer = new CapturingObserver<>(); 
 
         // WHEN
-        service.analyzeImage(request, observer); 
+        withContext(TENANT_ID, () -> service.analyzeImage(request, observer));
 
         // THEN
         assertThat(observer.hasError()).isFalse(); 
@@ -177,7 +181,7 @@ class VisionGrpcServiceTest {
         CapturingObserver<AnalyzeResponse> observer = new CapturingObserver<>(); 
 
         // WHEN
-        service.analyzeImage(request, observer); 
+        withContext(TENANT_ID, () -> service.analyzeImage(request, observer));
 
         // THEN
         assertThat(observer.hasError()).isFalse(); 
@@ -193,7 +197,7 @@ class VisionGrpcServiceTest {
         CapturingObserver<AnalyzeResponse> observer = new CapturingObserver<>(); 
 
         // WHEN
-        service.analyzeImage(request, observer); 
+        withContext(TENANT_ID, () -> service.analyzeImage(request, observer));
 
         // THEN — service guards against empty image before calling detector
         assertThat(observer.hasError()).isTrue(); 
@@ -214,7 +218,7 @@ class VisionGrpcServiceTest {
         CapturingObserver<AnalyzeResponse> observer = new CapturingObserver<>(); 
 
         // WHEN
-        service.analyzeImage(request, observer); 
+        withContext(TENANT_ID, () -> service.analyzeImage(request, observer));
 
         // THEN — DetectionException must map to INTERNAL with a safe message
         assertThat(observer.hasError()).isTrue(); 
@@ -234,7 +238,7 @@ class VisionGrpcServiceTest {
         ClassifyRequest request = ClassifyRequest.newBuilder().build(); 
         CapturingObserver<ClassifyResponse> observer = new CapturingObserver<>(); 
 
-        service.classifyImage(request, observer); 
+        withContext(TENANT_ID, () -> service.classifyImage(request, observer));
 
         assertThat(observer.hasError()).isTrue(); 
         assertThat(observer.getError()).isInstanceOf(StatusRuntimeException.class); 
@@ -243,7 +247,7 @@ class VisionGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("classifyImage: detections returned → labels ranked by confidence")
+    @DisplayName("classifyImage: detections returned \u2192 labels ranked by confidence")
     void classifyImage_withDetections_returnsRankedLabels() { 
         fakeDetector.setResults(buildDetections("cat", "cat", "dog")); 
         ClassifyRequest request = ClassifyRequest.newBuilder() 
@@ -252,7 +256,7 @@ class VisionGrpcServiceTest {
             .build(); 
         CapturingObserver<ClassifyResponse> observer = new CapturingObserver<>(); 
 
-        service.classifyImage(request, observer); 
+        withContext(TENANT_ID, () -> service.classifyImage(request, observer));
 
         assertThat(observer.hasError()).isFalse(); 
         ClassifyResponse response = observer.getValue(); 
@@ -272,7 +276,7 @@ class VisionGrpcServiceTest {
             .build(); 
         CapturingObserver<ClassifyResponse> observer = new CapturingObserver<>(); 
 
-        service.classifyImage(request, observer); 
+        withContext(TENANT_ID, () -> service.classifyImage(request, observer));
 
         assertThat(observer.hasError()).isTrue(); 
         assertThat(((StatusRuntimeException) observer.getError()).getStatus().getCode()) 
@@ -449,6 +453,10 @@ class VisionGrpcServiceTest {
                 .build()); 
         }
         return results;
+    }
+
+    private static void withContext(String tenantId, Runnable action) {
+        Context.current().withValue(JwtServerInterceptor.CTX_TENANT, tenantId).run(action);
     }
 
     // -------------------------------------------------------------------------

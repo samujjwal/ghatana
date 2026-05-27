@@ -358,5 +358,7 @@ docker-compose -f docker-compose.yappc.yml down -v
 
 ---
 
+Evidence: [YAPPC production readiness evidence links](../PRODUCTION_READINESS_EVIDENCE_LINKS.md) and [release evidence bundle](../RELEASE_EVIDENCE_BUNDLE.md) are the current release-readiness sources.
+
 **Status**: ✅ Production-Ready  
 **Support**: See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for advanced configuration

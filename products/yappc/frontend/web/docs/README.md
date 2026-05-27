@@ -1,26 +1,27 @@
-# YAPPC App-Creator Web App
+# YAPPC Web App Docs
 
-## Purpose & Scope
+## Purpose And Scope
 
-This package is the **web frontend for the YAPPC app-creator**. It provides:
+This package is the primary web frontend for YAPPC. It provides the phase cockpit, canvas and shape surfaces, Kernel health views, product-family surfaces, admin tools, and route-level integrations with YAPPC backend services.
 
-- The main canvas and visual editor for building applications.
-- Integration with YAPPC backend services (requirements, refactorer, KG, etc.).
-- A reference implementation of the `@ghatana/ui` design system and shared state patterns.
+## Related Product Docs
 
-## Relation to the YAPPC Product
+- [YAPPC docs index](../../../docs/README.md)
+- [YAPPC architecture diagrams](../../../docs/architecture/YAPPC_LIFECYCLE_KERNEL_DATA_CLOUD_AEP.md)
+- [YAPPC ownership boundaries](../../../docs/OWNERSHIP_BOUNDARIES.md)
 
-This app is the primary frontend surface for the YAPPC product described in:
+## Web App Docs
 
-- The YAPPC vision & requirements and product docs under `docs/vision-and-requirements/` and `products/yappc/docs/`
+- [Route inventory](route-inventory.md)
+- [Route docs](route-docs.md)
+- [Component inventory](component-inventory.md)
+- [UI primitive mapping](ui-primitive-mapping.md)
+- [Design architecture](DESIGN_ARCHITECTURE.md)
+- [Canvas implementation](CANVAS_IMPLEMENTATION.md)
 
-Those docs cover backend and frontend consolidation, state management, and documentation.
+## Layout
 
-## Docs layout for this app
-
-Documentation specific to this web app will be organized as:
-
-- `products/yappc/app-creator/apps/web/docs/architecture/` – UI architecture, routes, canvas design.
-- `products/yappc/app-creator/apps/web/docs/guidelines/` – frontend coding/testing/UX guidelines.
-- `products/yappc/app-creator/apps/web/docs/operations/` – deployment, environments, monitoring.
-- `products/yappc/app-creator/apps/web/docs/usage/` – user manual, technical reference, known issues.
+- `architecture/` - UI architecture, route, canvas, and component boundaries.
+- `guidelines/` - frontend coding, testing, and UX guidance.
+- `operations/` - deployment, environment, and monitoring notes.
+- `usage/` - user-facing and technical reference material.

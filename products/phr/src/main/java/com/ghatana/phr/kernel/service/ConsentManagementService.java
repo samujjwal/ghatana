@@ -676,6 +676,7 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
         public Instant getCreatedAt() { return createdAt; }
         public Instant getExpiresAt() { return expiresAt; }
         public Instant getRevokedAt() { return revokedAt; }
+        public String getGrantId() { return id; }
 
         public boolean isExpired() {
             return expiresAt != null && Instant.now().isAfter(expiresAt);

@@ -22,6 +22,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { Typography, Button, Box, Card, CardContent } from '@ghatana/design-system';
+import { EmptyState } from '@/components/common/EmptyState';
 
 // ============================================================================
 // Types
@@ -261,14 +262,28 @@ export const AgentMonitor: React.FC<AgentMonitorProps> = ({
         <Typography className="text-xs font-medium text-fg-muted mb-2">
           Agents ({agents.length})
         </Typography>
-        {agents.map((agent) => (
-          <AgentCard
-            key={agent.id}
-            agent={agent}
-            onRetry={onRetryAgent ? () => onRetryAgent(agent.id) : undefined}
-            onStop={onStopAgent ? () => onStopAgent(agent.id) : undefined}
-          />
-        ))}
+        {agents.length > 0 ? (
+          agents.map((agent) => (
+            <AgentCard
+              key={agent.id}
+              agent={agent}
+              onRetry={onRetryAgent ? () => onRetryAgent(agent.id) : undefined}
+              onStop={onStopAgent ? () => onStopAgent(agent.id) : undefined}
+            />
+          ))
+        ) : (
+          <Card>
+            <CardContent className="p-4">
+              <EmptyState
+                variant="compact"
+                className="rounded-lg border border-dashed border-border bg-surface-muted/40"
+                icon={<Bot className="h-full w-full" aria-hidden="true" />}
+                title="No agents available"
+                description="Agent orchestration details will appear here after agents are assigned to this lifecycle run."
+              />
+            </CardContent>
+          </Card>
+        )}
       </Box>
     </Box>
   );

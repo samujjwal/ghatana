@@ -1,0 +1,63 @@
+{
+  "productId": "data-cloud",
+  "productKind": "platform-provider",
+  "status": "pass",
+  "generatedAt": "2026-05-27T06:05:59.489Z",
+  "lastChecked": "2026-05-27T06:05:59.489Z",
+  "evidenceRun": {
+    "generatedBy": "scripts/check-data-cloud-platform-provider-readiness.mjs",
+    "command": "pnpm check:data-cloud-platform-provider-readiness",
+    "source": "scripts/check-data-cloud-platform-provider-readiness.mjs",
+    "commit": "e47a1f4ad7eeacf7c82e8c44a20c984c8afdff74",
+    "sourceCommitSha": "e47a1f4ad7eeacf7c82e8c44a20c984c8afdff74",
+    "targetCommitSha": "e47a1f4ad7eeacf7c82e8c44a20c984c8afdff74",
+    "targetEnvironment": "staging"
+  },
+  "sourceCommitSha": "e47a1f4ad7eeacf7c82e8c44a20c984c8afdff74",
+  "targetCommitSha": "e47a1f4ad7eeacf7c82e8c44a20c984c8afdff74",
+  "targetEnvironment": "staging",
+  "validationStatus": "validated",
+  "reviewDueAt": "2026-05-28T06:05:59.489Z",
+  "expiresAt": "2026-05-29T06:05:59.489Z",
+  "requiredGates": [
+    "bootstrap-build-without-platform-providers",
+    "platform-provider-health",
+    "runtime-truth-provider"
+  ],
+  "requiredRuntimeSignals": [
+    "lifecycle-events",
+    "artifact-refs",
+    "health-snapshots",
+    "provenance-refs",
+    "tenant-scoping"
+  ],
+  "prohibitedBusinessProductRoots": [
+    "products/digital-marketing",
+    "products/finance",
+    "products/phr",
+    "products/flashit"
+  ],
+  "conformance": {
+    "keepStatusBlockedUntil": [
+      "all-evidence-run-commits-match-current-head",
+      "product-release-readiness-pass-true",
+      "ai-governance-behavioral-proof-zero-warnings",
+      "all-active-data-cloud-modules-compile-and-release-check",
+      "action-plane-boundary-tests-pass"
+    ],
+    "executableProofRefs": [
+      "scripts/check-data-cloud-platform-providers.mjs",
+      "scripts/check-data-cloud-platform-provider-readiness.mjs",
+      "scripts/list-data-cloud-active-modules.mjs",
+      "scripts/generate-data-cloud-active-modules-evidence.mjs",
+      "scripts/check-ai-governance-behavioral-proof.mjs",
+      "scripts/check-product-release-readiness.mjs",
+      "scripts/check-action-plane-boundaries.mjs",
+      "scripts/check-evidence-current-commit.mjs",
+      ".kernel/evidence/product-release-readiness.json",
+      ".kernel/evidence/ai-governance-behavioral-proof/ai-governance-behavioral-proof-latest.json",
+      ".kernel/evidence/data-cloud-active-modules.json",
+      ".kernel/evidence/action-plane-boundaries.json"
+    ]
+  }
+}

@@ -1044,8 +1044,7 @@ public class LifecycleServiceModule extends AbstractModule {
             com.ghatana.yappc.services.phase.PlatformRunStatusService platformRunStatusService,
             com.ghatana.yappc.services.phase.PhaseActionAuthorizationService phaseActionAuthorizationService,
             com.ghatana.yappc.services.phase.PhaseRequiredArtifactProvider phaseRequiredArtifactProvider,
-            com.ghatana.yappc.services.phase.DegradedPhasePacketFactory degradedPhasePacketFactory,
-            AuditLogger auditLogger) {
+            com.ghatana.yappc.services.phase.DegradedPhasePacketFactory degradedPhasePacketFactory) {
         logger.info("Creating PhasePacketService (canonical cockpit read model)");
         return new com.ghatana.yappc.services.phase.PhasePacketServiceImpl(
                 dataCloudClient,
@@ -1061,8 +1060,7 @@ public class LifecycleServiceModule extends AbstractModule {
                 platformRunStatusService,
                 phaseActionAuthorizationService,
                 phaseRequiredArtifactProvider,
-                degradedPhasePacketFactory,
-                auditLogger);
+                degradedPhasePacketFactory);
     }
 
     // ========== Lifecycle Transitions ==========

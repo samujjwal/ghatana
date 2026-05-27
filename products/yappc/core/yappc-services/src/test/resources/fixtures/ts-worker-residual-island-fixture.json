@@ -1,0 +1,29 @@
+{
+  "id": "residual-island-shape-canvas-event-bridge",
+  "islandType": "imperative_logic",
+  "summary": "Canvas interaction bridge updates shape artifact lineage after a drag operation.",
+  "originalSource": "function handleCanvasDrop(event) { shapeGraph.link(event.nodeId, event.intentEvidenceId); }",
+  "sourceLocation": {
+    "filePath": "products/yappc/frontend/web/src/routes/app/project/shape.tsx",
+    "startLine": 118,
+    "startColumn": 5,
+    "endLine": 132,
+    "endColumn": 7
+  },
+  "rawFragmentRef": "products/yappc/frontend/web/src/routes/app/project/shape.tsx:118:5-132:7",
+  "checksum": "sha256:6ef6464c7b6203354f6edce5409f91eadb8fbd139b6f7d8cbb4b2f77689157fd",
+  "extractionReason": "Event-handler side effects require source-preserving round trip.",
+  "confidence": 0.86,
+  "roundTripRequired": true,
+  "modelingConfidence": 0.72,
+  "metadata": {
+    "surface": "web",
+    "framework": "react",
+    "phase": "shape"
+  },
+  "schemaVersion": 1,
+  "tenantId": "tenant-yappc-contract",
+  "projectId": "project-yappc-contract",
+  "workspaceId": "workspace-yappc-contract",
+  "snapshotId": "repo-snapshot-yappc-phase-cockpit-2026-05-26"
+}

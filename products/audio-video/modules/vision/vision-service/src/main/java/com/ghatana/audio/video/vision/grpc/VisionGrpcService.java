@@ -155,8 +155,15 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
         requestCount.incrementAndGet();
         mediaMetrics.recordStarted("vision.detect");
 
-        // AV-P1-012: Resolve tenant/user context early for audit events
+        // AV-P1-007: Enforce tenant authentication
         String tenantId = resolveTenantId();
+        if (tenantId == null || tenantId.isBlank()) {
+            responseObserver.onError(io.grpc.Status.UNAUTHENTICATED
+                .withDescription("Missing tenant context — authenticate before calling Vision service")
+                .asRuntimeException());
+            mediaMetrics.recordFailed("vision.detect");
+            return;
+        }
         String userId = resolveUserId();
         int dataSize = 0;
 
@@ -277,6 +284,15 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
     public void analyzeImage(AnalyzeRequest request, StreamObserver<AnalyzeResponse> responseObserver) {
         long startTime = System.currentTimeMillis();
         mediaMetrics.recordStarted("vision.analyze");
+        // AV-P1-007: Enforce tenant authentication
+        String analyzetenantId = resolveTenantId();
+        if (analyzetenantId == null || analyzetenantId.isBlank()) {
+            responseObserver.onError(io.grpc.Status.UNAUTHENTICATED
+                .withDescription("Missing tenant context")
+                .asRuntimeException());
+            mediaMetrics.recordFailed("vision.analyze");
+            return;
+        }
         try {
             // AV-P1-013: Validate request size
             if (request.getImageData().isEmpty()) {
@@ -353,6 +369,15 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
     public void classifyImage(ClassifyRequest request, StreamObserver<ClassifyResponse> responseObserver) {
         long startTime = System.currentTimeMillis();
         mediaMetrics.recordStarted("vision.classify");
+        // AV-P1-007: Enforce tenant authentication
+        String classifyTenantId = resolveTenantId();
+        if (classifyTenantId == null || classifyTenantId.isBlank()) {
+            responseObserver.onError(io.grpc.Status.UNAUTHENTICATED
+                .withDescription("Missing tenant context")
+                .asRuntimeException());
+            mediaMetrics.recordFailed("vision.classify");
+            return;
+        }
         try {
             // AV-P1-013: Validate request size
             if (request.getImageData().isEmpty()) {
@@ -563,6 +588,16 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
     public void analyzeVideoFile(VideoFileRequest request, StreamObserver<VideoFileResponse> responseObserver) {
         long startTime = System.currentTimeMillis();
         Path tempDir = null;
+
+        // AV-P1-007: Enforce tenant authentication
+        String videoTenantId = resolveTenantId();
+        if (videoTenantId == null || videoTenantId.isBlank()) {
+            responseObserver.onError(io.grpc.Status.UNAUTHENTICATED
+                .withDescription("Missing tenant context")
+                .asRuntimeException());
+            mediaMetrics.recordFailed("vision.analyzeVideo");
+            return;
+        }
 
         try {
             // AV-P1-013: Validate request size

@@ -1,0 +1,18 @@
+{
+  "generatedAt": "2026-05-26T23:10:00.000Z",
+  "violations": [],
+  "warnings": [],
+  "evidence": [
+    "business write/event append failure scenario verified",
+    "event append/audit write failure scenario verified",
+    "audit/outbox failure scenario verified",
+    "idempotency write failure scenario verified",
+    "retry after partial failure scenario verified",
+    "rollback after partial failure scenario verified",
+    "replay after crash scenario verified"
+  ],
+  "summary": {
+    "totalViolations": 0,
+    "totalWarnings": 0
+  }
+}

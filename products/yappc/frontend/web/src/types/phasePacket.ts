@@ -69,6 +69,9 @@ export interface PhaseReadiness {
   readonly missingPrerequisites: readonly string[];
   readonly completenessScore: number;
   readonly isDegraded: boolean;
+  readonly estimatedReadyIn?: string | null;
+  readonly estimatedReadyInHours?: number | null;
+  readonly predictionConfidence?: number | null;
 }
 
 /**
@@ -106,6 +109,10 @@ export interface ActivityFeedEntry {
   readonly actor: string;
   readonly timestamp: string;
   readonly severity: string;
+  readonly eventType: string;
+  readonly success: boolean | null;
+  readonly outcome: string;
+  readonly correlationId?: string | null;
 }
 
 // ============================================================================

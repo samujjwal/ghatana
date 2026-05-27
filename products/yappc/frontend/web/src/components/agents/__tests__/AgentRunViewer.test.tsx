@@ -34,7 +34,8 @@ function makeRun(overrides: Partial<AgentRunRecord> = {}): AgentRunRecord {
 describe('AgentRunViewer', () => {
   it('renders empty state', () => {
     render(<AgentRunViewer runs={[]} />);
-    expect(screen.getByText('No agent runs available.')).toBeDefined();
+    expect(screen.getByText('No agent runs available')).toBeDefined();
+    expect(screen.getByText(/after governed agent execution starts/i)).toBeDefined();
   });
 
   it('renders run details and status counters', () => {

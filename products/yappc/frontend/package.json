@@ -11,6 +11,7 @@
   "scripts": {
     "dev": "pnpm --filter web dev",
     "build": "pnpm --filter web build",
+    "build:web": "pnpm --filter @ghatana/yappc-web-app build",
     "build:verify": "pnpm --filter @ghatana/platform-events build && pnpm --filter @ghatana/ds-schema build && pnpm --filter @ghatana/ui-builder build && pnpm --filter yappc-artifact-compiler build",
     "preview": "pnpm --filter web preview",
     "test": "pnpm test:verify",

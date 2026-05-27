@@ -12,6 +12,14 @@ export function LoginPage(): React.ReactElement {
   const [error, setError] = useState<string | null>(null);
   const { setSession } = usePhrSession();
   const navigate = useNavigate();
+  const errorRef = React.useRef<HTMLDivElement>(null);
+
+  // Focus error message when error is set for accessibility
+  React.useEffect(() => {
+    if (error && errorRef.current) {
+      errorRef.current.focus();
+    }
+  }, [error]);
 
   const handleSignIn = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -44,7 +52,14 @@ export function LoginPage(): React.ReactElement {
         <CardHeader title={t('login.title')} subheader={t('login.subheader')} />
         <CardContent>
           {error && (
-            <div role="alert" className="error mb-4">{error}</div>
+            <div 
+              ref={errorRef}
+              role="alert" 
+              className="error mb-4"
+              tabIndex={-1}
+            >
+              {error}
+            </div>
           )}
           <form onSubmit={(e) => void handleSignIn(e)} className="stack gap-md" noValidate>
             <Input

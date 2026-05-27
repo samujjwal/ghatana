@@ -20,10 +20,14 @@ export interface ErrorStateProps {
   message: string;
   /** Error code (optional) */
   code?: string;
+  /** Correlation or request ID for support/debugging */
+  correlationId?: string;
   /** Error type */
   type?: 'error' | 'warning' | 'info';
   /** Retry callback */
   onRetry?: () => void;
+  /** Retry button label */
+  retryLabel?: string;
   /** Dismiss callback */
   onDismiss?: () => void;
   /** Size variant */
@@ -58,12 +62,35 @@ const sizeClasses = {
   lg: { icon: 'w-6 h-6', text: 'text-lg', padding: 'p-6' },
 };
 
+export function errorCorrelationId(error: unknown): string | undefined {
+  if (typeof error === 'object' && error !== null && 'correlationId' in error) {
+    const value = (error as { readonly correlationId?: unknown }).correlationId;
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return value.trim();
+    }
+  }
+
+  const message = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
+  const match = /\bcorrelation(?:\s+id)?\s*[:=]\s*([A-Za-z0-9_.:-]+)/i.exec(message);
+  return match?.[1];
+}
+
+export function errorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
 export function ErrorState({
   title,
   message,
   code,
+  correlationId,
   type = 'error',
   onRetry,
+  retryLabel = 'Try Again',
   onDismiss,
   size = 'md',
   variant = 'card',
@@ -81,10 +108,14 @@ export function ErrorState({
           {title && <p className={`${sizeClass.text} font-semibold text-foreground`}>{title}</p>}
           <p className={`${sizeClass.text} text-muted-foreground`}>{message}</p>
           {code && <p className="mt-1 text-xs text-muted-foreground">Error code: {code}</p>}
+          {correlationId && (
+            <p className="mt-1 text-xs text-muted-foreground">Correlation ID: {correlationId}</p>
+          )}
         </div>
         {onRetry && (
           <Button onClick={onRetry} variant="ghost" size="sm">
             <RefreshCw className="w-4 h-4" />
+            <span className="sr-only">{retryLabel}</span>
           </Button>
         )}
       </div>
@@ -103,10 +134,13 @@ export function ErrorState({
             {title && <p className={`${sizeClass.text} font-semibold text-foreground`}>{title}</p>}
             <p className={`${sizeClass.text} text-muted-foreground`}>{message}</p>
             {code && <p className="mt-1 text-xs text-muted-foreground">Error code: {code}</p>}
+            {correlationId && (
+              <p className="mt-1 text-xs text-muted-foreground">Correlation ID: {correlationId}</p>
+            )}
             {onRetry && (
               <Button onClick={onRetry} variant="outline" size="sm" className="mt-3">
                 <RefreshCw className="w-4 h-4 mr-2" />
-                Try Again
+                {retryLabel}
               </Button>
             )}
           </div>
@@ -137,10 +171,13 @@ export function ErrorState({
         {title && <h3 className={`${sizeClass.text} font-semibold text-foreground mb-2`}>{title}</h3>}
         <p className={`${sizeClass.text} text-muted-foreground mb-1`}>{message}</p>
         {code && <p className="text-xs text-muted-foreground mb-4">Error code: {code}</p>}
+        {correlationId && (
+          <p className="text-xs text-muted-foreground mb-4">Correlation ID: {correlationId}</p>
+        )}
         {onRetry && (
           <Button onClick={onRetry} variant="outline" size={size}>
             <RefreshCw className="w-4 h-4 mr-2" />
-            Try Again
+            {retryLabel}
           </Button>
         )}
       </div>

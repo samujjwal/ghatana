@@ -63,7 +63,7 @@ export default [
         route('evolve', 'routes/app/project/evolve.tsx'),
         // Project configuration (not a phase tab — accessible via settings icon)
         route('settings', 'routes/app/project/settings.tsx'),
-        // Legacy routes preserved for deep-links (may be removed in a future cycle)
+        // Legacy compatibility deep links: intentionally redirect to canonical phase tabs.
         route('canvas', 'routes/app/project/canvas.tsx'),
         route('preview', 'routes/app/project/preview.tsx'),
         route('deploy', 'routes/app/project/deploy.tsx'),

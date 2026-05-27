@@ -77,7 +77,7 @@
 | Goal | Evidence | Status |
 |------|----------|--------|
 | FHIR Server Endpoint | Listed as "Planned" in README | ❌ Not Implemented |
-| Mobile App (React Native) | Basic screens exist; full session/offline/i18n/a11y incomplete | 🔶 In Progress |
+| Mobile App (React Native) | Dashboard, Records, Consents, Notifications, Emergency, Settings screens; session restore/expire validation; encrypted PHI offline cache (AES-256-GCM); i18n coverage (en/ne); accessible bottom tab bar; high contrast support; offline banner; biometric auth | ✅ MVP Complete |
 | Nepal HIE Integration | Listed as "Planned" | ❌ Not Started |
 
 ---
@@ -163,7 +163,7 @@
 | Item | Status | Notes |
 |------|--------|-------|
 | FHIR Server Endpoint | Planned | Only transformation engine exists |
-| Mobile Application | Planned | React Native scaffold not started |
+| Mobile Application | Partial Implementation | Core screens implemented; full feature set in progress |
 | Nepal HIE Integration | Planned | Interface design pending |
 | EDI Clearinghouse | Out of Scope | Listed as "out of scope for v1" |
 
@@ -183,13 +183,13 @@
 | Dimension | Rating | Evidence |
 |-----------|--------|----------|
 | Backend Implementation | High | 15 services complete, kernel integration done |
-| Security/Privacy | High | PHRSecurityManager, PHRPrivacyManager complete |
+| Security/Privacy | High | PHRSecurityManager, PHRPrivacyManager complete; PHI encryption in mobile (AES-256-GCM) |
 | FHIR Compliance | High | R4 transformation engine complete |
 | AI Integration | Medium-High | 3 agents implemented, more planned |
-| Frontend | Not Started | React 19 + Tailwind planned but not observed |
-| Mobile | Not Started | React Native scaffold not started |
-| Test Coverage | Medium | 16 test files, more needed for full coverage |
-| Documentation | High | Comprehensive README, capability definitions |
+| Frontend | High | React 19 + Tailwind with 27 route contracts, auth context, multiple pages implemented, IA coverage complete |
+| Mobile | Medium-High | React Native with 6 core screens, session restore/expire validation, encrypted PHI offline cache, i18n coverage, accessible bottom tab bar, high contrast support |
+| Test Coverage | Medium | 16 test files, E2E smoke test template, more needed for full coverage |
+| Documentation | High | Comprehensive README, capability definitions, IA baseline, E2E test matrix |
 
 ---
 
@@ -198,7 +198,7 @@
 | Risk | Likelihood | Impact | Evidence/Mitigation |
 |------|------------|--------|---------------------|
 | FHIR Server delay | Medium | High | Listed as "Planned" - blocks API consumers |
-| Mobile app timeline | Medium | Medium | Not started - limits patient adoption |
+| Mobile app timeline | Low | Medium | Core screens implemented; remaining features in progress |
 | Nepal HIE changes | Medium | Medium | Interface pending - dependency on external spec |
 | Regulatory changes | Low | Medium | Nepal Directive 2081 compliance built-in |
 | AI agent accuracy | Medium | Medium | Clinical decision support requires validation |
@@ -210,7 +210,7 @@
 | Unknown | Impact | Path to Resolution |
 |---------|--------|-------------------|
 | FHIR Server architecture | High | Design needed for Patient/Provider APIs |
-| Mobile UX requirements | Medium | Patient/Provider app design needed |
+| Mobile UX requirements | Low | Core screens implemented; remaining features in progress |
 | HIE integration spec | Medium | Coordination with Nepal MoHP |
 | Production load patterns | Medium | Load testing with simulated patient volumes |
 | AI agent clinical validation | High | Clinical trials for decision support |

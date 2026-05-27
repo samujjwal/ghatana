@@ -90,6 +90,8 @@ const API_BASE = import.meta.env.DEV
 
 ## Benefits
 
+Evidence: [YAPPC production readiness evidence links](../PRODUCTION_READINESS_EVIDENCE_LINKS.md) and [YAPPC CI workflow](../../../../.github/workflows/yappc-ci.yml) are the current release-readiness sources; this architecture note is descriptive.
+
 ✅ **Single Gateway Pattern**: Frontend only knows about one API endpoint  
 ✅ **Clean Separation**: Backend complexity hidden from frontend  
 ✅ **Scalable Routing**: Easy to add/remove backend services  

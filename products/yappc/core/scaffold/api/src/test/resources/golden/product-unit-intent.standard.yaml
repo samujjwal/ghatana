@@ -1,0 +1,37 @@
+---
+schemaVersion: "1.0.0"
+intentId: "intent-golden-1"
+intentType: "create"
+scope:
+  tenantId: "tenant-123"
+  workspaceId: "workspace-123"
+  projectId: "digital-marketing-campaign"
+producer:
+  id: "yappc:workspace-123"
+  type: "yappc"
+  name: "yappc-product-unit-intent-exporter"
+  correlationId: "intent-golden-1"
+target:
+  registryProvider: "ghatana-file-registry"
+  sourceProvider: "ghatana-file-registry"
+productUnit:
+  id: "digital-marketing-campaign"
+  name: "Digital Marketing Campaign"
+  kind: "business-product"
+  surfaces:
+  - id: "digital-marketing-campaign-backend-api"
+    type: "backend-api"
+    implementationStatus: "planned"
+  - id: "digital-marketing-campaign-web"
+    type: "web"
+    implementationStatus: "planned"
+  lifecycleProfile: "standard-web-api-product"
+  metadata:
+    producer: "yappc"
+    sourcePhase: "generate"
+    projectId: "digital-marketing-campaign"
+    workspaceId: "workspace-123"
+    exportedAt: "2026-05-26T10:15:30Z"
+requestedLifecycle:
+  profile: "standard-web-api-product"
+  enableExecution: true

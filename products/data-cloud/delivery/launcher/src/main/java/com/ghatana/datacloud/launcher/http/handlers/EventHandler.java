@@ -626,6 +626,166 @@ public class EventHandler {
             }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
+    /**
+     * Read a single event by offset (delegates to {@link #handleGetEventByOffset}).
+     *
+     * <p>This is a named alias used by event-plane consumers that prefer the
+     * semantic name {@code readEvent} over the positional name.
+     *
+     * @param request incoming HTTP request with {@code offset} path parameter
+     * @return promise of the HTTP response
+     */
+    public Promise<HttpResponse> handleReadEvent(HttpRequest request) {
+        return handleGetEventByOffset(request);
+    }
+
+    /**
+     * Tail (poll) available events from a given offset.
+     *
+     * <p>Returns the batch of events available from {@code offset} without blocking.
+     *
+     * @param request incoming HTTP request with {@code offset} path parameter
+     * @return promise of the HTTP response containing an {@code events} array
+     */
+    public Promise<HttpResponse> handleTailEvents(HttpRequest request) {
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "Tenant is required"));
+        }
+
+        Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+        if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
+
+        String offsetParam = request.getPathParameter("offset");
+        long fromOffset = 0L;
+        if (offsetParam != null && !offsetParam.isBlank()) {
+            try {
+                fromOffset = Long.parseLong(offsetParam.trim());
+            } catch (NumberFormatException e) {
+                return Promise.of(http.errorResponse(400, "Invalid offset parameter: must be a long integer"));
+            }
+        }
+
+        final long finalFromOffset = fromOffset;
+        return client.tailEvents(tenantId, finalFromOffset)
+            .map(events -> {
+                Map<String, Object> response = new LinkedHashMap<>();
+                response.put("events", events.stream().map(e -> {
+                    Map<String, Object> ev = new LinkedHashMap<>();
+                    ev.put("type", e.type());
+                    ev.put("payload", e.payload());
+                    return ev;
+                }).toList());
+                response.put("fromOffset", finalFromOffset);
+                return http.jsonResponse(response);
+            });
+    }
+
+    /**
+     * Replay events between two offsets.
+     *
+     * <p>Expects a JSON body {@code {"fromOffset": N, "toOffset": M}}.
+     *
+     * @param request incoming HTTP request
+     * @return promise of the HTTP response containing an {@code events} array
+     */
+    public Promise<HttpResponse> handleReplayEvents(HttpRequest request) {
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "Tenant is required"));
+        }
+
+        Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+        if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
+
+        return request.loadBody().then(body -> {
+            try {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> req = http.objectMapper().readValue(
+                    body.asArray(), Map.class);
+                Number fromRaw = (Number) req.get("fromOffset");
+                Number toRaw   = (Number) req.get("toOffset");
+                if (fromRaw == null || toRaw == null) {
+                    return Promise.of(http.errorResponse(400, "fromOffset and toOffset are required"));
+                }
+                long from = fromRaw.longValue();
+                long to   = toRaw.longValue();
+                return client.replayEvents(tenantId, from, to)
+                    .map(events -> {
+                        Map<String, Object> response = new LinkedHashMap<>();
+                        response.put("events", events.stream().map(e -> {
+                            Map<String, Object> ev = new LinkedHashMap<>();
+                            ev.put("type", e.type());
+                            ev.put("payload", e.payload());
+                            return ev;
+                        }).toList());
+                        return http.jsonResponse(response);
+                    });
+            } catch (Exception e) {
+                log.error("[EventHandler] Error parsing replay request", e);
+                return Promise.of(http.errorResponse(400, "Invalid replay request body: " + e.getMessage()));
+            }
+        });
+    }
+
+    /**
+     * Store a consumer checkpoint (commit offset) for a named stream.
+     *
+     * <p>Expects a JSON body {@code {"stream": "event-type", "offset": N}}.
+     *
+     * @param request incoming HTTP request
+     * @return promise of the HTTP response containing the committed {@code offset}
+     */
+    public Promise<HttpResponse> handleCheckpoint(HttpRequest request) {
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "Tenant is required"));
+        }
+
+        Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+        if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
+
+        return request.loadBody().then(body -> {
+            try {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> req = http.objectMapper().readValue(
+                    body.asArray(), Map.class);
+                String stream = (String) req.get("stream");
+                Number offsetRaw = (Number) req.get("offset");
+                if (stream == null || stream.isBlank()) {
+                    return Promise.of(http.errorResponse(400, "stream is required"));
+                }
+                if (offsetRaw == null) {
+                    return Promise.of(http.errorResponse(400, "offset is required"));
+                }
+                long offset = offsetRaw.longValue();
+                return client.checkpoint(tenantId, stream, offset)
+                    .map(success -> {
+                        Map<String, Object> response = new LinkedHashMap<>();
+                        response.put("stream", stream);
+                        response.put("offset", offset);
+                        response.put("committed", success);
+                        return http.jsonResponse(response);
+                    });
+            } catch (Exception e) {
+                log.error("[EventHandler] Error parsing checkpoint request", e);
+                return Promise.of(http.errorResponse(400, "Invalid checkpoint request body: " + e.getMessage()));
+            }
+        });
+    }
+
     private static String optionalValue(Optional<String> value) {
         return value.filter(v -> !v.isBlank()).orElse(null);
     }

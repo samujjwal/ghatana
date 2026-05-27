@@ -103,6 +103,9 @@ function mockPhaseBootstrap({
   nextPhase = 'VALIDATE',
   canAdvance = true,
   readiness = 92,
+  estimatedReadyIn = 'Ready now',
+  estimatedReadyInHours = 0,
+  predictionConfidence = 0.82,
   requiredArtifacts = ['Requirements packet'],
   aiNextActions = ['Review the latest lifecycle evidence'],
   projectAccess = {
@@ -128,6 +131,9 @@ function mockPhaseBootstrap({
       timestamp: '2026-04-21T11:00:00.000Z',
       actor: 'user-1',
       success: true,
+      eventType: 'PROJECT_UPDATED',
+      outcome: 'SUCCESS',
+      correlationId: 'corr-audit-1',
     },
   ],
   degradedDetails,
@@ -138,6 +144,9 @@ function mockPhaseBootstrap({
   readonly nextPhase?: string;
   readonly canAdvance?: boolean;
   readonly readiness?: number;
+  readonly estimatedReadyIn?: string | null;
+  readonly estimatedReadyInHours?: number | null;
+  readonly predictionConfidence?: number | null;
   readonly requiredArtifacts?: readonly string[];
   readonly aiNextActions?: readonly string[];
   readonly projectAccess?: {
@@ -163,6 +172,9 @@ function mockPhaseBootstrap({
     readonly actor: string | null;
     readonly severity?: string | null;
     readonly success?: boolean | null;
+    readonly eventType?: string | null;
+    readonly outcome?: string | null;
+    readonly correlationId?: string | null;
   }[];
   readonly degradedDetails?: DegradedPacketDetails;
   readonly evidence?: readonly PhaseEvidence[];
@@ -229,6 +241,9 @@ function mockPhaseBootstrap({
       missingPrerequisites: canAdvance ? [] : [...requiredArtifacts],
       completenessScore: readiness / 100,
       isDegraded: !canAdvance,
+      estimatedReadyIn,
+      estimatedReadyInHours,
+      predictionConfidence,
     },
     requiredArtifacts: requiredArtifacts.map((artifact, index) => ({
       artifactId: `required-${index + 1}`,
@@ -254,6 +269,10 @@ function mockPhaseBootstrap({
       actor: event.actor ?? 'system',
       timestamp: event.timestamp,
       severity: event.severity ?? 'INFO',
+      eventType: event.eventType ?? event.action,
+      success: event.success ?? null,
+      outcome: event.outcome ?? (event.success === false ? 'FAILURE' : 'SUCCESS'),
+      correlationId: event.correlationId ?? null,
     })),
     evidence: evidenceOverride ?? activity.map((event) => ({
       id: `evidence-${event.id}`,
@@ -423,6 +442,47 @@ describe('phase cockpit routes', () => {
     });
   });
 
+  it('renders backend-provided transition estimate and confidence from the phase packet', async () => {
+    mockPhaseBootstrap({
+      estimatedReadyIn: '~6 hours',
+      estimatedReadyInHours: 6,
+      predictionConfidence: 0.64,
+    });
+
+    renderRoute(<ShapeRoute />);
+
+    expect(await screen.findByTestId('shape-cockpit')).toBeInTheDocument();
+    expect(screen.getByTestId('phase-packet-estimate')).toHaveTextContent('Ready estimate: ~6 hours');
+    expect(screen.getByTestId('phase-packet-confidence')).toHaveTextContent('Prediction confidence: 64%');
+  });
+
+  it('renders traceable activity actor, outcome, event type, timestamp, and correlation ID', async () => {
+    mockPhaseBootstrap({
+      activity: [{
+        id: 'audit-failure-1',
+        source: 'audit',
+        action: 'shape.validate',
+        summary: 'Shape validation failed',
+        timestamp: '2026-04-21T12:34:56.000Z',
+        actor: 'designer-1',
+        severity: 'ERROR',
+        success: false,
+        eventType: 'PHASE_ACTION_EXECUTED',
+        outcome: 'FAILURE',
+        correlationId: 'corr-shape-1',
+      }],
+    });
+
+    renderRoute(<ShapeRoute />);
+
+    expect(await screen.findByTestId('shape-cockpit')).toBeInTheDocument();
+    expect(screen.getAllByText('Shape validation failed').length).toBeGreaterThan(0);
+    expect(screen.getByTestId('activity-trace')).toHaveTextContent('Actor: designer-1');
+    expect(screen.getByTestId('activity-trace')).toHaveTextContent('Event: PHASE_ACTION_EXECUTED');
+    expect(screen.getByTestId('activity-trace')).toHaveTextContent('Outcome: FAILURE');
+    expect(screen.getByTestId('activity-trace')).toHaveTextContent('Correlation ID: corr-shape-1');
+  });
+
   it('executes safe one-click cockpit suggestions through the backed phase action path', async () => {
     mockPhaseBootstrap({
       lifecyclePhase: 'CONTEXT',
@@ -578,6 +638,15 @@ describe('phase cockpit routes', () => {
     expect(screen.getByText('Readiness packet timed out')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
     expect(screen.queryByTestId('validate-cockpit')).not.toBeInTheDocument();
+  });
+
+  it('surfaces phase packet correlation id for support handoff', async () => {
+    mockGetPhasePacket.mockRejectedValueOnce(new Error('Readiness packet timed out [Correlation ID: corr-phase-1]'));
+
+    renderRoute(<ValidateRoute />);
+
+    expect(await screen.findByTestId('phase-packet-error')).toHaveTextContent('Correlation ID: corr-phase-1');
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
   });
 
   it('mounts the validate cockpit route with real gate summaries', async () => {

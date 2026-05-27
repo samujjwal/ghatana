@@ -95,6 +95,13 @@ public class EntityCrudHandler {
     /** DC-P1-04: Audit service for audit emission in transaction lifecycle. */
     private com.ghatana.platform.audit.AuditService auditService;
 
+    /**
+     * DC-P1-003: Registry-driven set of collections requiring all-or-nothing transactional delete.
+     * Configurable via {@link #withCriticalCollections(java.util.Set)} at startup.
+     * Defaults to the built-in PHI/critical set.
+     */
+    private Set<String> criticalCollections = Set.of("patients", "consents", "audit", "emergency_access");
+
     private record IdempotencyEntry(Map<String, Object> responseBody, Instant storedAt) {}
 
     /**
@@ -186,6 +193,20 @@ public class EntityCrudHandler {
      */
     public EntityCrudHandler withDeploymentProfile(String profile) {
         this.deploymentProfile = profile != null ? profile : "local";
+        return this;
+    }
+
+    /**
+     * DC-P1-003: Registers a config/registry-driven set of collection names that require
+     * all-or-nothing transactional delete. Replaces the built-in default set.
+     *
+     * @param collections non-null set of collection names classified as destructive/critical
+     * @return this handler for chaining
+     */
+    public EntityCrudHandler withCriticalCollections(Set<String> collections) {
+        if (collections != null && !collections.isEmpty()) {
+            this.criticalCollections = Set.copyOf(collections);
+        }
         return this;
     }
 
@@ -644,6 +665,13 @@ public class EntityCrudHandler {
             
             return Promises.toList(fetchPromises)
                 .then(existingEntities -> {
+                    // DC-P1-005: Build a stable ID→entity lookup to avoid index misalignment when
+                    // some deletes fail and deletedIds is a strict subset of ids.
+                    Map<String, Optional<DataCloudClient.Entity>> entityByIdMap = new LinkedHashMap<>();
+                    for (int idx = 0; idx < ids.size(); idx++) {
+                        entityByIdMap.put(ids.get(idx), existingEntities.get(idx));
+                    }
+
                     // Delete all entities within transaction
                     List<Promise<Map<String, Object>>> trackedDeletes = ids.stream()
                         .map(id -> client.delete(tenantId, collection, id)
@@ -689,16 +717,17 @@ public class EntityCrudHandler {
                                 .toList();
                             
                             // DC-P1-004: Emit per-entity delete events using canonical CDC contract
-                            List<Promise<Void>> eventPromises = new ArrayList<>();
-                            for (int i = 0; i < deletedIds.size(); i++) {
-                                String id = deletedIds.get(i);
-                                Optional<DataCloudClient.Entity> existing = existingEntities.get(i);
+                            // DC-P1-005: Look up before-state by ID (not by list index) to avoid
+                            //            misalignment when some deletes fail mid-batch.
+                            List<Promise<DataCloudClient.Offset>> eventPromises = new ArrayList<>();
+                            for (String id : deletedIds) {
+                                Optional<DataCloudClient.Entity> existing = entityByIdMap.getOrDefault(id, Optional.empty());
                                 DataCloudClient.Event cdcEvent = DataCloudClient.Event.builder()
                                     .type("entity.deleted")
-                                    .payload(buildDeleteCdcEnvelope(tenantId, handlerSpan.spanId(), existing.orElse(null), collection, id))
+                                    .payload(buildDeleteCdcEnvelope(tenantId, handlerSpan != null ? handlerSpan.spanId() : null, existing.orElse(null), collection, id))
                                     .source("datacloud.launcher.entity-crud")
                                     .build();
-                                eventPromises.add(client.appendEvent(tenantId, cdcEvent).map(ignored -> null));
+                                eventPromises.add(client.appendEvent(tenantId, cdcEvent));
                             }
                             
                             // DC-P1-005: Emit batch audit event
@@ -768,13 +797,14 @@ public class EntityCrudHandler {
                             return Promises.toList(eventPromises)
                                 .then(ignored -> {
                                     // Build response body
-                                    Map<String, Object> responseBody = Map.of(
-                                        "deleted", deletedIds.size(),
-                                        "collection", collection,
-                                        "ids", deletedIds,
-                                        "errors", errors,
-                                        "timestamp", Instant.now().toString()
-                                    );
+                                    Map<String, Object> responseBody = new LinkedHashMap<>();
+                                    responseBody.put("deletedCount", deletedIds.size());
+                                    responseBody.put("failedCount", errors.size());
+                                    responseBody.put("collection", collection);
+                                    responseBody.put("ids", deletedIds);
+                                    responseBody.put("results", results);
+                                    responseBody.put("errors", errors);
+                                    responseBody.put("timestamp", Instant.now().toString());
                                     return Promise.of(http.jsonResponse(responseBody));
                                 });
                         });
@@ -866,7 +896,15 @@ public class EntityCrudHandler {
                             });
                 }
                 
-                // Non-transactional path (existing behavior)
+                // DC-P1-001: Non-transactional writes are local-only — fail fast in production
+                if (isProductionLikeProfile(deploymentProfile)) {
+                    log.error("[EntityCrudHandler] DC-P1-001: Non-transactional entity write attempted " +
+                        "in production profile '{}'. TransactionManager is required.", deploymentProfile);
+                    return Promise.of(http.errorResponse(500,
+                        "DC-P1-001: Non-transactional writes are not permitted in " +
+                        "production/staging/sovereign profiles. TransactionManager is required."));
+                }
+                // Non-transactional path (local/embedded only)
                 return traceSupport.trace(
                     request,
                     resolvedTenantId,
@@ -982,9 +1020,17 @@ public class EntityCrudHandler {
         if (!limitResult.isValid()) return Promise.of(http.errorResponse(400, limitResult.getError().orElseThrow()));
         int limit = limitResult.getValue();
 
-        int offset = parseOffset(request.getQueryParameter("offset"));
+        Integer offset = parseOffset(request.getQueryParameter("offset"));
+        if (offset == null) {
+            return Promise.of(http.errorResponse(400,
+                "DC-P2-012: Invalid 'offset' parameter: must be a non-negative integer"));
+        }
         String search = request.getQueryParameter("search");
         List<DataCloudClient.Sort> sorts = parseSorts(request.getQueryParameter("sort"));
+        if (sorts == null) {
+            return Promise.of(http.errorResponse(400,
+                "DC-P2-013: Invalid 'sort' parameter: expected field:asc|desc with a valid field name (alphanumeric, underscore, dot)"));
+        }
         List<DataCloudClient.Filter> filters = parseFilters(request.getQueryParameter("filter"));
         if (filters == null) {
             return Promise.of(http.errorResponse(400,
@@ -1050,17 +1096,34 @@ public class EntityCrudHandler {
             }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
-    private int parseOffset(String raw) {
+    /**
+     * DC-P2-012: Returns the validated offset, or {@code null} when the raw value is invalid.
+     * Callers must return HTTP 400 when this method returns {@code null}.
+     */
+    private Integer parseOffset(String raw) {
         if (raw == null || raw.isBlank()) {
             return 0;
         }
         try {
-            return Math.max(0, Integer.parseInt(raw.strip()));
+            int value = Integer.parseInt(raw.strip());
+            if (value < 0) {
+                return null; // DC-P2-012: negative offset is invalid
+            }
+            return value;
         } catch (NumberFormatException e) {
-            return 0;
+            return null; // DC-P2-012: non-numeric offset is invalid
         }
     }
 
+    /** DC-P2-013: Valid sort field name: alphanumeric, underscore, dot, hyphen. */
+    private static final java.util.regex.Pattern SORT_FIELD_PATTERN =
+        java.util.regex.Pattern.compile("[a-zA-Z0-9_.\\-]+");
+
+    /**
+     * DC-P2-013: Parses and validates sort expressions.
+     * Returns {@code null} when any sort token has an invalid direction or field name.
+     * Callers must return HTTP 400 when this method returns {@code null}.
+     */
     private List<DataCloudClient.Sort> parseSorts(String raw) {
         if (raw == null || raw.isBlank()) {
             // DC-P2-007: Always ensure deterministic results by using id as tie-breaker
@@ -1074,7 +1137,20 @@ public class EntityCrudHandler {
             }
             String[] tokens = trimmed.split(":");
             String field = tokens[0];
-            boolean ascending = tokens.length < 2 || "asc".equalsIgnoreCase(tokens[1]);
+            // DC-P2-013: Validate field name to reject injection-like strings
+            if (!SORT_FIELD_PATTERN.matcher(field).matches()) {
+                return null; // invalid field name
+            }
+            boolean ascending;
+            if (tokens.length < 2 || tokens[1].isBlank()) {
+                ascending = true; // default to asc if direction omitted
+            } else if ("asc".equalsIgnoreCase(tokens[1])) {
+                ascending = true;
+            } else if ("desc".equalsIgnoreCase(tokens[1])) {
+                ascending = false;
+            } else {
+                return null; // DC-P2-013: unknown sort direction
+            }
             result.add(ascending ? DataCloudClient.Sort.asc(field) : DataCloudClient.Sort.desc(field));
         }
         // DC-P2-007: Append id tiebreaker if not already present to ensure deterministic ordering
@@ -1092,6 +1168,9 @@ public class EntityCrudHandler {
     /**
      * Parses and validates filter expressions from the query string.
      * Returns {@code null} (not a list) when any filter token is malformed.
+     *
+     * <p>DC-P2-014: Uses {@code split(":", 3)} so values containing colons (e.g. timestamps,
+     * URLs) are preserved in full rather than truncated at the first colon.
      */
     private List<DataCloudClient.Filter> parseFilters(String raw) {
         if (raw == null || raw.isBlank()) {
@@ -1103,7 +1182,8 @@ public class EntityCrudHandler {
             if (trimmed.isEmpty()) {
                 continue;
             }
-            String[] tokens = trimmed.split(":");
+            // DC-P2-014: limit to 3 parts so colon-containing values are not split
+            String[] tokens = trimmed.split(":", 3);
             if (tokens.length < 3) {
                 return null; // signal malformed filter
             }
@@ -1346,7 +1426,15 @@ public class EntityCrudHandler {
                         });
             }
 
-            // Non-transactional path (existing behavior - best-effort)
+            // DC-P1-001: Non-transactional writes are local-only — fail fast in production
+            if (isProductionLikeProfile(deploymentProfile)) {
+                log.error("[EntityCrudHandler] DC-P1-001: Non-transactional batch entity write attempted " +
+                    "in production profile '{}'. TransactionManager is required.", deploymentProfile);
+                return Promise.of(http.errorResponse(500,
+                    "DC-P1-001: Non-transactional batch writes are not permitted in " +
+                    "production/staging/sovereign profiles. TransactionManager is required."));
+            }
+            // Non-transactional path (local/embedded only)
             List<Promise<DataCloudClient.Entity>> savePromises = provenancedEntities.stream()
                 .map(data -> client.save(resolvedTenant, collection, data))
                 .toList();
@@ -1458,8 +1546,8 @@ public class EntityCrudHandler {
                 
                 // DC-P1-007: Support all-or-nothing transactional delete for production-critical collections
                 boolean requireAllOrNothing = Boolean.TRUE.equals(payload.get("requireAllOrNothing"));
-                Set<String> transactionalCollections = Set.of("patients", "consents", "audit", "emergency_access");
-                boolean isTransactionalCollection = transactionalCollections.contains(collection);
+                // DC-P1-003: Use config-driven critical collections registry instead of hardcoded list
+                boolean isTransactionalCollection = criticalCollections.contains(collection);
                 
                 // For production-critical collections, require all-or-nothing unless explicitly disabled
                 if (isTransactionalCollection && !requireAllOrNothing && !dryRun) {
@@ -1523,6 +1611,7 @@ public class EntityCrudHandler {
                             result.put("confirmationToken", token);
                             result.put("tokenExpiresInSec", DestructiveActionToken.TOKEN_VALIDITY_MS / 1000);
                             result.put("totalCount", ids.size());
+                            result.put("estimatedCount", ids.size());
                             result.put("existingCount", existingCount);
                             result.put("missingCount", missingCount);
                             result.put("unauthorizedCount", unauthorizedCount);
@@ -1551,10 +1640,19 @@ public class EntityCrudHandler {
                 // DC-P1-001: Execute batch delete in transaction with audit and outbox parity
                 if (transactionManager != null) {
                     // DC-P1-007: Pass requireAllOrNothing flag for transactional delete
-                    return executeBatchDeleteInTransaction(resolvedTenant, collection, ids, request, handlerSpan, requireAllOrNothing);
+                    return executeBatchDeleteInTransaction(resolvedTenant, collection, ids, request, null, requireAllOrNothing);
                 }
 
                 // Fallback for non-transactional profiles (local/embedded only)
+                // DC-P1-006: Fail fast in production if transactionManager is missing — non-transactional
+                //             batch delete must never reach production (transactionManager is required).
+                if (isProductionLikeProfile(deploymentProfile)) {
+                    log.error("[EntityCrudHandler] DC-P1-006: Non-transactional batch delete attempted " +
+                        "in production profile '{}' — transactionManager is required", deploymentProfile);
+                    return Promise.of(http.errorResponse(500,
+                        "DC-P1-006: Transactional batch delete is required in production profile '" +
+                        deploymentProfile + "'. Configure a TransactionManager."));
+                }
                 log.warn("[EntityCrudHandler] DC-P1-001: Batch delete executing without transaction - transactionManager not configured");
                 
                 // DC-P1-004: Fetch existing entities before deletion to include in CDC envelopes
@@ -1563,7 +1661,14 @@ public class EntityCrudHandler {
                     .toList();
                 
                 return Promises.toList(fetchPromises)
-                    .then(existingEntities -> {
+                    .then((List<Optional<DataCloudClient.Entity>> existingEntities) -> {
+                        // DC-P1-005: Build stable ID→entity map to avoid index misalignment when
+                        //            some deletes fail and deletedIds is a strict subset of ids.
+                        Map<String, Optional<DataCloudClient.Entity>> entityByIdMap = new LinkedHashMap<>();
+                        for (int idx = 0; idx < ids.size(); idx++) {
+                            entityByIdMap.put(ids.get(idx), existingEntities.get(idx));
+                        }
+
                         // Delete all entities
                         List<Promise<Map<String, Object>>> trackedDeletes = ids.stream()
                             .map(id -> client.delete(resolvedTenant, collection, id)
@@ -1573,7 +1678,7 @@ public class EntityCrudHandler {
                                     result.put("success", true);
                                     return result;
                                 })
-                                .then(Promise::of, e -> {
+                                .then(v -> Promise.of(v), e -> {
                                     Map<String, Object> result = new LinkedHashMap<>();
                                     result.put("id", id);
                                     result.put("success", false);
@@ -1583,27 +1688,31 @@ public class EntityCrudHandler {
                             .toList();
                         
                         return Promises.toList(trackedDeletes)
-                            .then(results -> {
+                            .then((List<Map<String, Object>> results) -> {
                                 List<String> deletedIds = results.stream()
                                     .filter(r -> Boolean.TRUE.equals(r.get("success")))
                                     .map(r -> (String) r.get("id"))
                                     .toList();
                                 List<Map<String, Object>> errors = results.stream()
                                     .filter(r -> !Boolean.TRUE.equals(r.get("success")))
-                                    .map(r -> Map.of("id", r.get("id"), "error", r.get("error")))
+                                    .map(r -> {
+                                        Map<String, Object> errEntry = new LinkedHashMap<>();
+                                        errEntry.put("id", r.get("id"));
+                                        errEntry.put("error", r.get("error"));
+                                        return errEntry;
+                                    })
                                     .toList();
                                 
-                                // DC-P1-004: Emit per-entity delete events using canonical CDC contract
-                                List<Promise<Void>> eventPromises = new ArrayList<>();
-                                for (int i = 0; i < deletedIds.size(); i++) {
-                                    String id = deletedIds.get(i);
-                                    Optional<DataCloudClient.Entity> existing = existingEntities.get(i);
+                                // DC-P1-004/DC-P1-005: Emit per-entity delete events with correct before-state by ID lookup
+                                List<Promise<DataCloudClient.Offset>> eventPromises = new ArrayList<>();
+                                for (String id : deletedIds) {
+                                    Optional<DataCloudClient.Entity> existing = entityByIdMap.getOrDefault(id, Optional.empty());
                                     DataCloudClient.Event cdcEvent = DataCloudClient.Event.builder()
                                         .type("entity.deleted")
-                                        .payload(buildDeleteCdcEnvelope(resolvedTenant, handlerSpan.spanId(), existing.orElse(null), collection, id))
+                                        .payload(buildDeleteCdcEnvelope(resolvedTenant, null, existing.orElse(null), collection, id))
                                         .source("datacloud.launcher.entity-crud")
                                         .build();
-                                    eventPromises.add(client.appendEvent(resolvedTenant, cdcEvent).map(ignored -> null));
+                                    eventPromises.add(client.appendEvent(resolvedTenant, cdcEvent));
                                 }
                                 
                                 // DC-P1-005: Emit batch audit event
@@ -1621,7 +1730,7 @@ public class EntityCrudHandler {
                                         .detail("deletedIds", deletedIds.toString())
                                         .detail("errorCount", String.valueOf(errors.size()))
                                         .build();
-                                    auditService.emit(auditEvent);
+                                    auditService.record(auditEvent);
                                 }
                                 
                                 // DC-P1-005: Create outbox entry for async websocket broadcast
@@ -1646,16 +1755,19 @@ public class EntityCrudHandler {
                                     
                                     if (isProductionLikeProfile(deploymentProfile)
                                         && outboxProcessor instanceof InMemoryEntityWriteOutboxProcessor) {
-                                        log.error("[EntityCrudHandler] DC-P1-005: In-memory outbox processor used in production profile '{}' - " +
-                                                 "this violates durability requirements", deploymentProfile);
-                                    } else {
-                                        outboxProcessor.addPending(outbox);
+                                        // DC-P1-006: Fail the request — in-memory outbox must never be used in production.
+                                        //            The non-transactional path itself is already blocked for production
+                                        //            (see guard above), so this is a defence-in-depth check.
+                                        throw new IllegalStateException(
+                                            "DC-P1-006: In-memory outbox processor is not permitted in " +
+                                            "production profile '" + deploymentProfile + "'");
                                     }
+                                    outboxProcessor.addPending(outbox);
                                 }
                                 
                                 // Append all per-entity delete events
                                 return Promises.toList(eventPromises)
-                                    .then(ignored -> {
+                                    .map((List<DataCloudClient.Offset> ignored) -> {
                                         wsBroadcaster.accept("collection.batch-deleted", Map.of(
                                             "collection", collection,
                                             "count", deletedIds.size(),
@@ -1671,7 +1783,7 @@ public class EntityCrudHandler {
                                     });
                             });
                     })
-                    .then(Promise::of, e -> {
+                    .then(v -> Promise.of(v), e -> {
                         log.error("Batch delete failed for collection {}", collection, e);
                         return Promise.of(http.errorResponse(500, "Batch delete failed: " + e.getMessage()));
                     });
@@ -1856,12 +1968,43 @@ public class EntityCrudHandler {
                         merged.put("updatedAt", Instant.now().toString());
 
                         return client.save(tenantId, "dc_collections", merged)
-                            .map(saved -> {
-                                Map<String, Object> response = new LinkedHashMap<>();
-                                response.put("id", saved.id());
-                                response.put("collection", collection);
-                                response.put("metadata", saved.data());
-                                return http.createdResponse(response);
+                            .then(saved -> {
+                                // DC-P1-008: emit domain event for collection metadata change
+                                DataCloudClient.Event metaEvent = DataCloudClient.Event.builder()
+                                    .type("collection.metadata.updated")
+                                    .payload(Map.of(
+                                        "tenantId", tenantId,
+                                        "collection", collection,
+                                        "updatedAt", merged.get("updatedAt"),
+                                        "source", "datacloud.launcher.entity-crud"
+                                    ))
+                                    .source("datacloud.launcher.entity-crud")
+                                    .build();
+
+                                return client.appendEvent(tenantId, metaEvent)
+                                    .then($ -> {
+                                        // DC-P1-008: emit audit record for the metadata change
+                                        if (auditService != null) {
+                                            String principalId = http.resolvePrincipalId(request);
+                                            AuditEvent auditEvent = AuditEvent.builder()
+                                                .tenantId(tenantId)
+                                                .eventType("collection.metadata.updated")
+                                                .principal(principalId != null ? principalId : "system")
+                                                .resourceType("collection")
+                                                .resourceId(collection)
+                                                .success(true)
+                                                .detail("collection", collection)
+                                                .build();
+                                            auditService.record(auditEvent).whenException(e ->
+                                                log.warn("[DC-P1-008][upsertCollectionMetadata] audit write failed tenant={} collection={}: {}",
+                                                    tenantId, collection, e.getMessage()));
+                                        }
+                                        Map<String, Object> response = new LinkedHashMap<>();
+                                        response.put("id", saved.id());
+                                        response.put("collection", collection);
+                                        response.put("metadata", saved.data());
+                                        return Promise.of(http.createdResponse(response));
+                                    });
                             });
                     });
             } catch (Exception e) {

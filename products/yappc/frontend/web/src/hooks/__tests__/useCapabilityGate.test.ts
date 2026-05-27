@@ -212,6 +212,39 @@ describe('useCapabilityGate', () => {
     ['EDITOR', false],
     ['VIEWER', false],
   ] satisfies ReadonlyArray<readonly [WorkspaceRole, boolean]>)(
+    'evaluates kernel health read capability for %s workspace role',
+    (role, shouldGrant) => {
+      mockUseAuth.isAuthenticated = true;
+      mockUseAuth.hasRole.mockReturnValue(false);
+
+      const { result } = renderHook(() => useCapabilityGate('kernel-health:read'), {
+        wrapper: createWorkspaceWrapper({
+          role,
+          isOwner: role === 'OWNER',
+          capabilities: {
+            read: true,
+            create: role !== 'VIEWER',
+            update: role === 'OWNER' || role === 'ADMIN',
+            delete: role === 'OWNER',
+            comment: true,
+          },
+        }),
+      });
+
+      expect(result.current).toEqual(
+        shouldGrant
+          ? { granted: true, reason: undefined }
+          : { granted: false, reason: 'insufficient-role' },
+      );
+    },
+  );
+
+  it.each([
+    ['OWNER', true],
+    ['ADMIN', true],
+    ['EDITOR', false],
+    ['VIEWER', false],
+  ] satisfies ReadonlyArray<readonly [WorkspaceRole, boolean]>)(
     'evaluates admin feature flag capability for %s workspace role',
     (role, shouldGrant) => {
       mockUseAuth.isAuthenticated = true;

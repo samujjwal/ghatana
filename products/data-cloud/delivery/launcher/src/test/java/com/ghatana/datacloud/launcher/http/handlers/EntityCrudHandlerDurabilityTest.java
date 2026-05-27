@@ -573,4 +573,56 @@ class EntityCrudHandlerDurabilityTest extends EventloopTestBase {
         verify(outboxProcessor, never()).addPending(any());
     }
 
+    // ==================== DC-P1-001: Non-transactional path guard ====================
+
+    @Test
+    @DisplayName("DC-P1-001: Entity save in production profile without TransactionManager returns 500")
+    void productionProfileWithoutTransactionManager_returns500() {
+        String entityJson = "{\"id\":\"entity-1\",\"name\":\"Test\"}";
+
+        // Handler in production profile WITHOUT a transaction manager
+        EntityCrudHandler handlerNoTx = new EntityCrudHandler(client, http, wsBroadcaster)
+            .withTraceSupport(TraceSpanSupport.disabled())
+            .withDeploymentProfile("production");
+
+        when(request.loadBody())
+            .thenReturn(Promise.of(ByteBuf.wrapForReading(entityJson.getBytes(StandardCharsets.UTF_8))));
+        lenient().when(http.requireTenantIdWithError(request))
+            .thenReturn(HttpHandlerSupport.TenantResolutionResult.success("tenant-1", null));
+        lenient().when(request.getPathParameter("collection")).thenReturn("test-collection");
+
+        HttpResponse response = runPromise(() -> handlerNoTx.handleSaveEntity(request));
+
+        assertThat(response).isSameAs(errorResponse);
+        verify(client, never()).save(anyString(), anyString(), any());
+    }
+
+    @Test
+    @DisplayName("DC-P1-001: Entity save in local profile without TransactionManager is allowed")
+    void localProfileWithoutTransactionManager_isAllowed() {
+        String entityJson = "{\"id\":\"entity-1\",\"name\":\"Test\"}";
+
+        // Handler in local profile WITHOUT a transaction manager — should use non-transactional path
+        EntityCrudHandler handlerLocal = new EntityCrudHandler(client, http, wsBroadcaster)
+            .withTraceSupport(TraceSpanSupport.disabled())
+            .withDeploymentProfile("local");
+
+        when(request.loadBody())
+            .thenReturn(Promise.of(ByteBuf.wrapForReading(entityJson.getBytes(StandardCharsets.UTF_8))));
+        lenient().when(http.requireTenantIdWithError(request))
+            .thenReturn(HttpHandlerSupport.TenantResolutionResult.success("tenant-1", null));
+        lenient().when(request.getPathParameter("collection")).thenReturn("test-collection");
+        when(client.save(anyString(), anyString(), any()))
+            .thenReturn(Promise.of(DataCloudClient.Entity.of(
+                "entity-1", "test-collection", Map.of("id", "entity-1"))));
+        when(client.appendEvent(anyString(), any()))
+            .thenReturn(Promise.of(DataCloudClient.Offset.of(1L)));
+
+        HttpResponse response = runPromise(() -> handlerLocal.handleSaveEntity(request));
+
+        // Should proceed with non-transactional path in local profile
+        assertThat(response).isNotNull();
+        verify(client).save(anyString(), anyString(), any());
+    }
+
 }

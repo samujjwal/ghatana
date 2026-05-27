@@ -180,6 +180,60 @@ class DataCloudEventCloudStoreTest extends EventloopTestBase {
     }
 
     @Test
+    void deterministicReplayCheckpointAndDlqPathIsStableAcrossReplays() {
+        DataCloudEventCloudStore store = store();
+        EventCloudOffset start = runPromise(() -> store.append(event(
+            "event-start",
+            "deploy.started",
+            "tenant-a",
+            "partition-a",
+            "2026-05-23T00:00:00Z")));
+        runPromise(() -> store.append(event(
+            "event-risk",
+            "service.error_rate_elevated",
+            "tenant-a",
+            "partition-a",
+            "2026-05-23T00:01:00Z")));
+        EventCloudOffset poison = runPromise(() -> store.append(event(
+            "event-poison",
+            "poison.event",
+            "tenant-a",
+            "partition-a",
+            "2026-05-23T00:02:00Z")));
+
+        EventCloudWatermark watermark = runPromise(() -> store.watermark("tenant-a", "partition-a"));
+        List<String> firstDecisionPath = deriveDecisionPath(store, start, watermark.offset());
+
+        // Simulate bridge behavior: poison input is routed to DLQ as an append-only event.
+        EventCloudOffset dlq = runPromise(() -> store.append(event(
+            "event-dlq-poison",
+            "aep.dlq.recorded",
+            "tenant-a",
+            "partition-a",
+            "2026-05-23T00:03:00Z")));
+
+        EventCloudCheckpoint checkpoint = new EventCloudCheckpoint(
+            "tenant-a",
+            "bridge-consumer",
+            watermark.offset(),
+            Instant.parse("2026-05-23T00:04:00Z"),
+            Map.of("decisionPath", firstDecisionPath));
+        runPromise(() -> store.checkpoints().save(checkpoint));
+
+        EventCloudCheckpoint loaded = runPromise(() -> store.checkpoints().load("tenant-a", "bridge-consumer"))
+            .orElseThrow();
+        List<String> replayDecisionPath = deriveDecisionPath(store, start, loaded.offset());
+        List<EventCloudRecord> replayedWithDlq = new ArrayList<>();
+        runPromise(() -> store.replay("tenant-a", poison, dlq, replayedWithDlq::add));
+
+        assertThat(replayDecisionPath).containsExactlyElementsOf(firstDecisionPath);
+        assertThat(replayedWithDlq).extracting(record -> record.event().eventType())
+            .containsExactly("poison.event", "aep.dlq.recorded");
+        assertThat(firstDecisionPath)
+            .contains("pattern.matched:deploy-risk", "dlq:event-poison");
+    }
+
+    @Test
     void bridgePersistsStateWithoutPatternEvaluationOrReordering() {
         DataCloudEventCloudStore store = store();
         EventCloudOffset first = runPromise(() -> store.append(event(
@@ -304,5 +358,31 @@ class DataCloudEventCloudStoreTest extends EventloopTestBase {
             Map.of("source", "unit-test"),
             List.of("internal"),
             eventId + "-idempotency");
+    }
+
+    private List<String> deriveDecisionPath(
+            DataCloudEventCloudStore store,
+            EventCloudOffset from,
+            EventCloudOffset to) {
+        List<EventCloudRecord> replayed = new ArrayList<>();
+        runPromise(() -> store.replay("tenant-a", from, to, replayed::add));
+
+        boolean deploySeen = false;
+        List<String> path = new ArrayList<>();
+        for (EventCloudRecord record : replayed) {
+            String eventType = record.event().eventType();
+            if ("deploy.started".equals(eventType)) {
+                deploySeen = true;
+                continue;
+            }
+            if ("service.error_rate_elevated".equals(eventType) && deploySeen) {
+                path.add("pattern.matched:deploy-risk");
+                continue;
+            }
+            if ("poison.event".equals(eventType)) {
+                path.add("dlq:" + record.event().eventId());
+            }
+        }
+        return path;
     }
 }

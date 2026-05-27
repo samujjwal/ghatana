@@ -287,9 +287,12 @@ class BusinessMetricsTest {
         @DisplayName("phase packet build delegates to canonical counter")
         void phasePacketBuildDelegatesToCanonical() {
             metrics.recordPhasePacketBuild("t1", "ws1", "proj1",
-                    "DESIGN", "build", "SUCCESS", false, null, "c1");
+                    "DESIGN", "build", "ERROR", true, "TimeoutException", "c1");
             assertThat(registry.find(BusinessMetrics.METRIC_PHASE_PACKET_BUILD)
-                    .tag("outcome", "SUCCESS").counter().count()).isEqualTo(1.0);
+                    .tag("outcome", "ERROR")
+                    .tag("degraded", "true")
+                    .tag("errorClass", "TimeoutException")
+                    .counter().count()).isEqualTo(1.0);
         }
 
         @Test
@@ -325,7 +328,7 @@ class BusinessMetricsTest {
 
         @Test
         @DisplayName("all ten flow metrics have independent counters")
-        void allTenFlowMetricsAreIndependent() {
+        void allFlowMetricsAreIndependent() {
             String[] metricNames = {
                 BusinessMetrics.METRIC_PHASE_PACKET_BUILD,
                 BusinessMetrics.METRIC_DASHBOARD_ACTION,
@@ -337,6 +340,8 @@ class BusinessMetricsTest {
                 BusinessMetrics.METRIC_EVIDENCE_SEARCH,
                 BusinessMetrics.METRIC_POLICY_EVALUATION,
                 BusinessMetrics.METRIC_LEARNING_PROMOTION,
+                BusinessMetrics.METRIC_KERNEL_TRUTH_SOURCE,
+                BusinessMetrics.METRIC_GENERATION_ASSURANCE,
             };
             for (String metricName : metricNames) {
                 metrics.recordCriticalFlow(metricName, "t", "w", "p", "ph", "op", "OK", false, null, null);
@@ -344,6 +349,46 @@ class BusinessMetricsTest {
             for (String metricName : metricNames) {
                 assertThat(registry.find(metricName).counter()).as("counter for %s", metricName).isNotNull();
             }
+        }
+
+        @Test
+        @DisplayName("policy deny and evidence miss outcomes are labelled")
+        void policyDenyAndEvidenceMissAreLabelled() {
+            metrics.recordPolicyEvaluation("tenant-1", "ws-1", "project-1",
+                    "VALIDATE", "phase-advance", "DENIED", false, null, "corr-policy-1");
+            metrics.recordPlatformEvidenceSearch("tenant-1", "ws-1", "project-1",
+                    "VALIDATE", "phase-evidence", "MISS", true, "EvidenceUnavailable", "corr-evidence-1");
+
+            assertThat(registry.find(BusinessMetrics.METRIC_POLICY_EVALUATION)
+                    .tag("outcome", "DENIED")
+                    .tag("operation", "phase-advance")
+                    .tag("correlationId", "corr-policy-1")
+                    .counter().count()).isEqualTo(1.0);
+            assertThat(registry.find(BusinessMetrics.METRIC_EVIDENCE_SEARCH)
+                    .tag("outcome", "MISS")
+                    .tag("degraded", "true")
+                    .tag("errorClass", "EvidenceUnavailable")
+                    .counter().count()).isEqualTo(1.0);
+        }
+
+        @Test
+        @DisplayName("kernel truth source and generation assurance outcomes are labelled")
+        void kernelTruthAndGenerationAssuranceAreLabelled() {
+            metrics.recordKernelTruthSource("tenant-1", "ws-1", "project-1",
+                    "OBSERVE", "data-cloud", "DEGRADED", true, "MalformedTruthRecord", "corr-kernel-1");
+            metrics.recordGenerationAssurance("tenant-1", "ws-1", "project-1",
+                    "GENERATE", "security", "FAILED", false, "SecurityScanFailure", "corr-assurance-1");
+
+            assertThat(registry.find(BusinessMetrics.METRIC_KERNEL_TRUTH_SOURCE)
+                    .tag("operation", "data-cloud")
+                    .tag("outcome", "DEGRADED")
+                    .tag("errorClass", "MalformedTruthRecord")
+                    .counter().count()).isEqualTo(1.0);
+            assertThat(registry.find(BusinessMetrics.METRIC_GENERATION_ASSURANCE)
+                    .tag("operation", "security")
+                    .tag("outcome", "FAILED")
+                    .tag("correlationId", "corr-assurance-1")
+                    .counter().count()).isEqualTo(1.0);
         }
     }
 

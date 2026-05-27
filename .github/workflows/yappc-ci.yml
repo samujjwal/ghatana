@@ -379,6 +379,10 @@ jobs:
         working-directory: products/yappc/frontend
         run: pnpm build:web
 
+      - name: Bundle budget release gate
+        working-directory: products/yappc/frontend
+        run: pnpm --filter @ghatana/yappc-web-app run check:bundle-budget -- --report --ci
+
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v4
@@ -394,6 +398,14 @@ jobs:
         with:
           name: yappc-frontend-coverage
           path: products/yappc/frontend/coverage/
+          retention-days: 14
+
+      - name: Upload bundle budget evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yappc-web-bundle-budget
+          path: products/yappc/frontend/performance/reports/web-bundle-budget.json
           retention-days: 14
 
   # ─────────────────────────────────────────────
@@ -537,6 +549,30 @@ jobs:
       - name: Doc-tag compliance
         run: ./gradlew checkDocTags --no-daemon
 
+      - name: YAPPC doc evidence links
+        run: node products/yappc/scripts/check-doc-evidence-links.mjs products/yappc/docs
+
+      - name: YAPPC Data Cloud collection names
+        run: node products/yappc/scripts/check-datacloud-collection-names.mjs
+
+      - name: YAPPC feature flag docs
+        run: node products/yappc/scripts/check-feature-flag-docs.mjs
+
+      - name: YAPPC prompt operations docs
+        run: node products/yappc/scripts/check-prompt-ops-docs.mjs
+
+      - name: YAPPC agent operations docs
+        run: node products/yappc/scripts/check-agent-ops-docs.mjs
+
+      - name: YAPPC Kernel handoff docs
+        run: node products/yappc/scripts/check-kernel-handoff-docs.mjs
+
+      - name: YAPPC product-family docs
+        run: node products/yappc/scripts/check-product-family-docs.mjs
+
+      - name: YAPPC API reference
+        run: python products/yappc/scripts/generate-api-reference.py --check
+
       - name: YAPPC release gate evidence
         run: |
           pnpm check:product-slo-budgets
@@ -566,6 +602,7 @@ jobs:
             .kernel/evidence/product-cost-budgets.json
             .kernel/evidence/product-domain-invariants.json
             .kernel/evidence/openapi-breaking-changes.json
+            products/yappc/frontend/performance/reports/web-bundle-budget.json
           retention-days: 14
 
   # ─────────────────────────────────────────────
@@ -800,6 +837,8 @@ jobs:
         run: |
           bash products/yappc/scripts/generate-release-evidence.sh products/yappc/build/release-evidence artifacts
           node products/yappc/scripts/generate-ci-execution-proof.mjs products/yappc/build/release-evidence artifacts
+          node products/yappc/scripts/generate-yappc-scorecard-evidence.mjs products/yappc/build/release-evidence artifacts
+          node products/yappc/scripts/check-yappc-scorecard-evidence.mjs products/yappc/build/release-evidence/yappc-scorecard-evidence.json
 
       - name: Upload release evidence bundle
         uses: actions/upload-artifact@v4

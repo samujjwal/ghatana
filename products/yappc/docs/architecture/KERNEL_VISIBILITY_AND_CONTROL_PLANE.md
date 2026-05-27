@@ -91,7 +91,7 @@ The filesystem provider is valid only for local development and deterministic te
 | ProductUnitIntent validation | Production-backed | Provider/profile/surface validation uses `ProductUnitKernelContractRegistry`. |
 | CLI Kernel handoff | Production-backed | Kernel ProductUnit creation requires explicit workspace ID, project ID, lifecycle profile, and surfaces. |
 | Kernel filesystem ingest | Local-development provider | Managed executor lifecycle is supported; filesystem reads are not production truth. |
-| Kernel Data Cloud ingest | Provider contract implemented | Runtime composition must wire the Data Cloud/Event Cloud provider for production deployments. |
+| Kernel Data Cloud ingest | Production provider implemented | `DataCloudKernelLifecycleTruthSource` reads typed `kernel_lifecycle_truth` records; production profile guards reject local filesystem truth. |
 
 ---
 
@@ -228,27 +228,29 @@ Initial YAPPC kernel health dashboard will focus on Digital Marketing as the pil
 
 ---
 
-## 9. Future Data Cloud/Event-Backed Ingestion
+## 9. Data Cloud/Event-Backed Ingestion State
 
-Current implementation uses local filesystem ingestion for development. Future production implementation:
+YAPPC now has both local-development and Data Cloud-backed Kernel lifecycle truth providers. The local filesystem provider remains useful for deterministic fixtures and developer inspection, but production wiring must select Data Cloud/Event Cloud truth and reject `.kernel/out/products/**` as runtime truth.
 
-### 9.1 Event Stream Ingestion
+### 9.1 Implemented Provider Contract
 
-- Subscribe to Kernel lifecycle events via Event Cloud
-- Real-time updates to YAPPC read model
-- Event types: `PhaseTransitioned`, `GateEvaluated`, `ArtifactProduced`, `DeploymentUpdated`, `AgentGovernanceChanged`
+- `KernelLifecycleTruthSource` defines the read boundary used by ingest, health, and recommendation services.
+- `DataCloudKernelLifecycleTruthSource` reads typed `kernel_lifecycle_truth` records and returns explicit degraded records for malformed truth data.
+- `KernelLifecycleEventIngestService` can be constructed from an injected truth source or directly from Data Cloud client/tenant context.
+- `KernelHealthSnapshotService` and `KernelActionRecommendationService` can use the Data Cloud-backed truth source for product health and remediation views.
 
-### 9.2 Data Cloud Queries
+### 9.2 Production Wiring Rules
 
-- Query Data Cloud for historical lifecycle runs
-- Retrieve artifact metadata and deployment history
-- Access agent governance and learning state
+- Production deployments must set `YAPPC_KERNEL_LIFECYCLE_TRUTH_SOURCE=data-cloud`.
+- Production configuration rejects missing, local, mock, fake, or demo Kernel lifecycle truth sources.
+- Local filesystem constructors are guarded as dev/test-only and fail when `YAPPC_ENVIRONMENT=production`.
+- CI runs `check-production-truth-sources.mjs` to keep deployment manifests aligned with the Data Cloud truth-source requirement.
 
-### 9.3 Kernel Health APIs
+### 9.3 Remaining Integration Surface
 
-- Call Kernel health endpoints for current status
-- Query ProductUnit registry for metadata
-- Access gate evaluation results via API
+- Event Cloud streaming can still be layered onto the same `KernelLifecycleTruthSource` boundary for live updates.
+- Kernel health APIs can supplement Data Cloud records for fresh point-in-time status when those public APIs are available.
+- ProductUnit registry metadata remains consumed through public Kernel contracts; YAPPC must not mutate Kernel registry files.
 
 ---
 
@@ -287,19 +289,20 @@ Current implementation uses local filesystem ingestion for development. Future p
 
 ## 11. Implementation Status
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| Documentation (this file) | ✅ Complete | |
-| Creator Lifecycle to Kernel Mapping | ⏳ Pending | Task 5 |
-| ProductUnitIntentExporter | ⏳ Pending | Task 6 |
-| ProductUnitIntentValidationService | ⏳ Pending | Task 7 |
-| CreateCommand kernel-product-unit support | ⏳ Pending | Task 8 |
-| CICommand kernel-product-unit support | ⏳ Pending | Task 9 |
-| KernelLifecycleEventIngestService | ⏳ Pending | Task 11 |
-| KernelHealthSnapshotService | ⏳ Pending | Task 12 |
-| KernelActionRecommendationService | ⏳ Pending | Task 13 |
-| Kernel Health Dashboard UI | ⏳ Pending | Tasks 14-20 |
-| Boundary Check Script | ⏳ Pending | Task 21 |
+| Component | Status | Evidence |
+|-----------|--------|----------|
+| Documentation (this file) | Current | This document distinguishes local provider, production Data Cloud provider, and remaining integration surface. |
+| Creator Lifecycle to Kernel Mapping | Implemented | [Creator Lifecycle to Kernel Mapping](CREATOR_LIFECYCLE_TO_KERNEL_MAPPING.md) |
+| ProductUnitIntentExporter | Implemented | `ProductUnitIntentExporterTest` and golden ProductUnitIntent YAML contract coverage. |
+| ProductUnitIntentValidationService | Implemented | `ProductUnitIntentValidationServiceTest` validates Kernel contract provider/profile/surface values. |
+| CreateCommand kernel-product-unit support | Implemented | `CreateCommand` writes ProductUnitIntent files instead of mutating Kernel registry state. |
+| Backend/API Kernel handoff | Implemented | `KernelProductUnitHandoffService` and `POST /api/v1/yappc/generate/product-unit-intent`. |
+| KernelLifecycleEventIngestService | Implemented | `KernelLifecycleEventIngestServiceTest` covers injected truth source, provider delegation, and production local-provider rejection. |
+| DataCloudKernelLifecycleTruthSource | Implemented | `DataCloudKernelLifecycleTruthSourceTest` covers typed truth records and degraded malformed-record handling. |
+| KernelHealthSnapshotService | Implemented | `KernelHealthSnapshotServiceTest` covers list/detail health views from Kernel truth. |
+| KernelActionRecommendationService | Implemented | `KernelActionRecommendationServiceTest` covers evidence-backed remediation recommendations. |
+| Kernel Health Dashboard UI | Implemented | `KernelHealthDashboardPage.test.tsx` and kernel-health route E2E matrix entries cover list/detail sections. |
+| Boundary Check Script | Implemented | `check-kernel-boundary-usage.mjs` enforces public-contract and no-private-Kernel-boundary rules. |
 
 ---
 
@@ -308,7 +311,7 @@ Current implementation uses local filesystem ingestion for development. Future p
 - [YAPPC Architecture](../ARCHITECTURE.md)
 - [Creator Lifecycle to Kernel Mapping](CREATOR_LIFECYCLE_TO_KERNEL_MAPPING.md)
 - [Kernel Product Contracts](../../../../platform/typescript/kernel-product-contracts)
-- [Implementation Plan 02](../../../../../../Downloads/implementation_plan_02_yappc_visibility_shared_libraries.md)
+- [YAPPC Backlog Progress](../YAPPC_BACKLOG_PROGRESS.md)
 
 ---
 

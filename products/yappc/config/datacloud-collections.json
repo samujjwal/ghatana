@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1.0.0",
+  "product": "yappc",
+  "collections": [
+    {
+      "name": "kernel_lifecycle_truth",
+      "owner": "Kernel/Data Cloud boundary",
+      "purpose": "Typed Kernel lifecycle truth records consumed by YAPPC health, ingest, and recommendation services.",
+      "sourceFiles": [
+        "products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/kernelvisibility/DataCloudKernelLifecycleTruthSource.java",
+        "products/yappc/docs/architecture/KERNEL_VISIBILITY_AND_CONTROL_PLANE.md",
+        "products/yappc/docs/operations/DEGRADED_DEPENDENCY_TROUBLESHOOTING.md"
+      ],
+      "forbiddenAliases": [
+        "kernel-lifecycle-truth",
+        "kernelLifecycleTruth",
+        "kernel lifecycle truth collection"
+      ]
+    },
+    {
+      "name": "yappc_platform_runs",
+      "owner": "YAPPC/AEP runtime evidence boundary",
+      "purpose": "Platform run status records written from AEP/Kernel execution events and read by phase packets.",
+      "sourceFiles": [
+        "products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/phase/DataCloudPlatformRunStatusWriter.java",
+        "products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/phase/DataCloudPlatformRunStatusService.java",
+        "products/yappc/docs/architecture/YAPPC_LIFECYCLE_KERNEL_DATA_CLOUD_AEP.md",
+        "products/yappc/docs/operations/DEGRADED_DEPENDENCY_TROUBLESHOOTING.md"
+      ],
+      "forbiddenAliases": [
+        "yappc-platform-runs",
+        "yappcPlatformRuns"
+      ]
+    },
+    {
+      "name": "agent-executions",
+      "owner": "YAPPC agent runtime",
+      "purpose": "Tenant-scoped agent execution state records persisted by AgentStateRepository.",
+      "sourceFiles": [
+        "products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/repository/AgentStateRepository.java"
+      ],
+      "forbiddenAliases": [
+        "agent_executions",
+        "agentExecutions",
+        "agent executions collection"
+      ]
+    }
+  ]
+}

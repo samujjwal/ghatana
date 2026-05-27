@@ -162,14 +162,17 @@ class PatternSpecValidatorTest {
         Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
         spec.put("lifecycle", Map.of(
             "state", "DEGRADED",
+            "previousState", "ACTIVE",
             "degradationReason", "high_error_rate",
+            "degradedBehavior", Map.of("mode", "disabled", "sideEffectPolicy", "none"),
             "evidencePolicy", Map.of("retentionDays", 90),
             "evidenceStore", "eventcloud://default"));
         spec.put("governance", Map.of(
             "owner", "sre",
             "riskLevel", "medium",
             "rollbackPolicy", "manual",
-            "auditPolicy", "full"));
+            "auditPolicy", "full",
+            "approvalPolicy", "human_required"));
 
         PatternSpecValidationResult result = PatternSpecValidator.validate(
             spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
@@ -182,14 +185,20 @@ class PatternSpecValidatorTest {
         Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
         spec.put("lifecycle", Map.of(
             "state", "ROLLBACK",
-            "rollbackTo", "previous_version",
+            "previousState", "ACTIVE",
+            "governance", Map.of(
+                "rollbackDecision", "auto",
+                "rollbackReason", "high_error_rate",
+                "rollbackApprover", "sre-on-call",
+                "previousVersion", "v1.2.3"),
             "evidencePolicy", Map.of("retentionDays", 90),
             "evidenceStore", "eventcloud://default"));
         spec.put("governance", Map.of(
             "owner", "sre",
             "riskLevel", "high",
             "rollbackPolicy", "automatic",
-            "auditPolicy", "full"));
+            "auditPolicy", "full",
+            "approvalPolicy", "human_required"));
 
         PatternSpecValidationResult result = PatternSpecValidator.validate(
             spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
@@ -209,7 +218,8 @@ class PatternSpecValidatorTest {
             "owner", "sre",
             "riskLevel", "low",
             "rollbackPolicy", "none",
-            "auditPolicy", "full"));
+            "auditPolicy", "full",
+            "approvalPolicy", "human_required"));
 
         PatternSpecValidationResult result = PatternSpecValidator.validate(
             spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
@@ -228,7 +238,7 @@ class PatternSpecValidatorTest {
 
         assertThat(result.valid()).isFalse();
         assertThat(result.errors()).anySatisfy(error -> 
-            assertThat(error).contains("illegal transition"));
+            assertThat(error).contains("not allowed"));
     }
 
     @Test
@@ -252,7 +262,7 @@ class PatternSpecValidatorTest {
         Map<String, Object> spec = validSpec(Map.of(
             "operator", "AGENT_PREDICATE",
             "agentRef", "agents/sre-risk-assessor@1.0.0",
-            "capabilityRef", "agents/sre-risk-assessor@1.0.0/capability")));
+            "capabilityRef", "agents/sre-risk-assessor@1.0.0/capability"));
         // Missing outputSchema
 
         PatternSpecValidationResult result = PatternSpecValidator.validate(spec);
@@ -440,6 +450,88 @@ class PatternSpecValidatorTest {
             spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
 
         assertThat(result.valid()).isTrue();
+    }
+
+    // ==================== AEP-P1-004: Consistent promotion governance (root governance fallback) ====================
+
+    @Test
+    void aep004PromotionToActiveWithRootGovernanceIsAcceptedWhenLifecycleGovernanceAbsent() {
+        // AEP-P1-004: Root governance must be accepted as fallback when lifecycle.governance is absent
+        Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        spec.put("lifecycle", Map.of(
+            "state", "ACTIVE",
+            "previousState", "APPROVED",
+            "evidencePolicy", Map.of("retentionDays", 90),
+            "evidenceStore", "eventcloud://default"
+            // No nested lifecycle.governance — root governance should be the fallback
+        ));
+        spec.put("governance", Map.of(
+            "owner", "sre",
+            "riskLevel", "medium",
+            "rollbackPolicy", "manual",
+            "auditPolicy", "full",
+            "approvalPolicy", "human_required",
+            "evidenceStore", "eventcloud://default",
+            "commitSha", "7f84bc08e9e4e6d7e209cb49a855f199f7c90347"));
+
+        PatternSpecValidationResult result = PatternSpecValidator.validate(
+            spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
+
+        assertThat(result.valid()).isTrue();
+    }
+
+    @Test
+    void aep004PromotionToActiveWithNoGovernanceAtAllIsRejected() {
+        // AEP-P1-004: Promotion without any governance (neither lifecycle-scoped nor root) must fail
+        Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        spec.put("lifecycle", Map.of(
+            "state", "ACTIVE",
+            "previousState", "APPROVED",
+            "evidencePolicy", Map.of("retentionDays", 90),
+            "evidenceStore", "eventcloud://default"
+        ));
+        // Use governance with neither approvalPolicy nor reviewPolicy
+        spec.put("governance", Map.of("owner", "sre"));
+
+        PatternSpecValidationResult result = PatternSpecValidator.validate(
+            spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
+
+        assertThat(result.valid()).isFalse();
+    }
+
+    // ==================== AEP-P1-005: Tightened hasProductionPolicy in compiler ====================
+
+    @Test
+    void aep005CompilerRejectsSideEffectingCapabilityWithOnlyApprovalPolicyNoCommitSha() {
+        // AEP-P1-005: approvalPolicy alone is insufficient — commitSha is also required
+        // This validates the tightened hasProductionPolicy: requires BOTH approval/review AND commitSha
+        // Since PatternSpecCompiler.deploymentProfile defaults to "local", the check only runs in prod profile
+        // We validate the governance rule via the validator instead
+        Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        spec.put("governance", Map.of(
+            "approvalPolicy", "human_required"
+            // Missing commitSha, owner, etc.
+        ));
+        PatternSpecValidationResult result = PatternSpecValidator.validate(
+            spec, null, "production"); // null commitSha → should fail
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("commitSha"));
+    }
+
+    @Test
+    void aep005CompilerRejectsSideEffectingCapabilityWithOnlyCommitShaNoApprovalPolicy() {
+        // AEP-P1-005: commitSha alone is insufficient — approvalPolicy or reviewPolicy is also required
+        Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        spec.put("governance", Map.of(
+            "owner", "sre"
+            // No approvalPolicy, no reviewPolicy — commitSha provided externally
+        ));
+        PatternSpecValidationResult result = PatternSpecValidator.validate(
+            spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("approvalPolicy"));
     }
 
     private static Map<String, Object> validSpec(Map<String, Object> pattern) {

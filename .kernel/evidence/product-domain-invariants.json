@@ -1,0 +1,54 @@
+{
+  "generatedAt": "2026-05-27T06:05:20.619Z",
+  "status": "passed",
+  "coverage": [
+    {
+      "productId": "dcmaar",
+      "hasInvariantDeclaration": true,
+      "invariantCount": 6,
+      "mappingViolations": 0,
+      "categoryViolations": 0,
+      "executionViolations": 0
+    },
+    {
+      "productId": "digital-marketing",
+      "hasInvariantDeclaration": false,
+      "javaTestCount": 303,
+      "tsTestCount": 50,
+      "invariantNamedTestCount": 106
+    },
+    {
+      "productId": "finance",
+      "hasInvariantDeclaration": true,
+      "invariantCount": 8,
+      "mappingViolations": 0,
+      "categoryViolations": 0,
+      "executionViolations": 0
+    },
+    {
+      "productId": "flashit",
+      "hasInvariantDeclaration": true,
+      "invariantCount": 8,
+      "mappingViolations": 0,
+      "categoryViolations": 0,
+      "executionViolations": 0
+    },
+    {
+      "productId": "phr",
+      "hasInvariantDeclaration": true,
+      "invariantCount": 10,
+      "mappingViolations": 0,
+      "categoryViolations": 0,
+      "executionViolations": 0
+    },
+    {
+      "productId": "tutorputor",
+      "hasInvariantDeclaration": true,
+      "invariantCount": 7,
+      "mappingViolations": 0,
+      "categoryViolations": 0,
+      "executionViolations": 0
+    }
+  ],
+  "violations": []
+}

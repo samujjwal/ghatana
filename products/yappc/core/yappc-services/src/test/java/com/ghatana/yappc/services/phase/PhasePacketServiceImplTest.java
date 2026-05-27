@@ -3,6 +3,7 @@ package com.ghatana.yappc.services.phase;
 import com.ghatana.core.runtime.PreviewRuntimeService;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.governance.PolicyEngine;
+import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -99,8 +100,7 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
                 platformRunStatusService,
                 phaseActionAuthorizationService,
                 requiredArtifactProvider,
-                degradedPhasePacketFactory,
-                null
+                degradedPhasePacketFactory
         );
 
         // Common happy-path stubs — lenient because not every test exercises the full path
@@ -151,6 +151,20 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("Happy path: phase packet build stays inside backend latency budget")
+    void happyPath_buildPhasePacket_withinLatencyBudget() {
+        long started = System.nanoTime();
+        PhasePacket packet = runPromise(() ->
+                service.buildPhasePacket(PHASE, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+        long elapsedMillis = java.time.Duration.ofNanos(System.nanoTime() - started).toMillis();
+
+        assertThat(packet).isNotNull();
+        assertThat(elapsedMillis)
+                .as("mocked phase packet build should stay below the 1500ms backend budget")
+                .isLessThan(1_500);
+    }
+
+    @Test
     @DisplayName("Happy path: packet contains non-null capabilities when evaluation succeeds")
     void happyPath_buildPhasePacket_capabilitiesPresentWhenEvaluationSucceeds() {
         PhasePacket packet = runPromise(() ->
@@ -158,6 +172,81 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
 
         assertThat(packet).isNotNull();
         assertThat(packet.capabilities()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("Phase packet metrics cover build, evidence miss, and policy allow labels")
+    void happyPath_buildPhasePacket_recordsCriticalMetrics() {
+        runPromise(() ->
+                service.buildPhasePacket(PHASE, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+        verify(metrics).recordPhasePacketBuild(
+                TENANT_ID,
+                WORKSPACE_ID,
+                PROJECT_ID,
+                PHASE,
+                "build",
+                "SUCCESS",
+                false,
+                null,
+                CORRELATION_ID);
+        verify(metrics).recordPlatformEvidenceSearch(
+                TENANT_ID,
+                WORKSPACE_ID,
+                PROJECT_ID,
+                PHASE,
+                "phase-evidence",
+                "MISS",
+                true,
+                "EvidenceUnavailable",
+                CORRELATION_ID);
+        verify(metrics).recordPolicyEvaluation(
+                TENANT_ID,
+                WORKSPACE_ID,
+                PROJECT_ID,
+                PHASE,
+                "phase-governance",
+                "ALLOWED",
+                false,
+                null,
+                CORRELATION_ID);
+    }
+
+    @Test
+    @DisplayName("Activity feed preserves audit actor, event type, outcome, timestamp, and correlation ID")
+    void happyPath_buildPhasePacket_activityFeedContainsTraceableAuditFields() {
+        Instant timestamp = Instant.parse("2026-05-26T10:15:30Z");
+        when(auditService.queryByPhase(anyString(), anyString(), any(), any()))
+                .thenReturn(Promise.of(List.of(AuditEvent.builder()
+                        .id("audit-1")
+                        .tenantId(TENANT_ID)
+                        .eventType("PHASE_ACTION_EXECUTED")
+                        .principal("designer-1")
+                        .resourceType("project")
+                        .resourceId(PROJECT_ID)
+                        .success(false)
+                        .timestamp(timestamp)
+                        .details(Map.of(
+                                "action", "shape.validate",
+                                "description", "Shape validation failed",
+                                "correlationId", "corr-shape-1"
+                        ))
+                        .build())));
+
+        PhasePacket packet = runPromise(() ->
+                service.buildPhasePacket(PHASE, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+        assertThat(packet.activityFeed()).hasSize(1);
+        PhasePacket.ActivityFeedEntry entry = packet.activityFeed().get(0);
+        assertThat(entry.actor()).isEqualTo("designer-1");
+        assertThat(entry.timestamp()).isEqualTo(timestamp);
+        assertThat(entry.type()).isEqualTo("PHASE_ACTION_EXECUTED");
+        assertThat(entry.eventType()).isEqualTo("PHASE_ACTION_EXECUTED");
+        assertThat(entry.action()).isEqualTo("shape.validate");
+        assertThat(entry.summary()).isEqualTo("Shape validation failed");
+        assertThat(entry.success()).isFalse();
+        assertThat(entry.outcome()).isEqualTo("FAILURE");
+        assertThat(entry.correlationId()).isEqualTo("corr-shape-1");
     }
 
     @Test
@@ -347,8 +436,7 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
                 platformRunStatusService,
                 phaseActionAuthorizationService,
                 requiredArtifactProvider,
-                degradedPhasePacketFactory,
-                null
+                degradedPhasePacketFactory
         );
 
         PhasePacket packet = runPromise(() ->
@@ -426,8 +514,7 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
                 platformRunStatusService,
                 phaseActionAuthorizationService,
                 requiredArtifactProvider,
-                degradedPhasePacketFactory,
-                null
+                degradedPhasePacketFactory
         );
 
         PhasePacket packet = runPromise(() ->

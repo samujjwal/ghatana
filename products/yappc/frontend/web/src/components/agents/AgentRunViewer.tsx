@@ -9,9 +9,10 @@
 
 import React from 'react';
 import { Box, Button, Card, CardContent, Chip, Typography } from '@ghatana/design-system';
-import { RefreshCw, CirclePlay, CircleCheck, CircleX } from 'lucide-react';
+import { RefreshCw, CirclePlay, CircleCheck, CircleX, ListChecks } from 'lucide-react';
 
 import { RunLineage } from '@/components/ai/RunLineage';
+import { EmptyState } from '@/components/common/EmptyState';
 import { fetchAepRunLineage } from '@/services/ai/aepRunLineageApi';
 
 export type AgentRunStatus = 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED';
@@ -81,7 +82,13 @@ export const AgentRunViewer: React.FC<AgentRunViewerProps> = ({
       {runs.length === 0 && (
         <Card>
           <CardContent className="p-4">
-            <Typography className="text-sm text-fg-muted">No agent runs available.</Typography>
+            <EmptyState
+              variant="compact"
+              className="rounded-lg border border-dashed border-border bg-surface-muted/40"
+              icon={<ListChecks className="h-full w-full" aria-hidden="true" />}
+              title="No agent runs available"
+              description="Agent run history will appear here after governed agent execution starts."
+            />
           </CardContent>
         </Card>
       )}

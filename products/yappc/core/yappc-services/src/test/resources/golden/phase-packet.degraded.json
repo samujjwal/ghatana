@@ -1,0 +1,171 @@
+{
+  "phase": "generate",
+  "projectId": "project-1",
+  "projectName": "Project One",
+  "tenantId": "tenant-1",
+  "workspaceId": "workspace-1",
+  "workspaceName": "Workspace One",
+  "actor": {
+    "actorId": "actor-1",
+    "actorName": "Owner",
+    "role": "owner",
+    "isOwner": true,
+    "isAdmin": true
+  },
+  "lifecyclePhase": "generate",
+  "tenantTier": "PRO",
+  "enabledPhaseFlags": [
+    "phase.advance"
+  ],
+  "capabilities": {
+    "canRead": true,
+    "canCreate": true,
+    "canUpdate": true,
+    "canDelete": false,
+    "canApprove": true,
+    "canReject": false,
+    "canRollback": true
+  },
+  "blockers": [],
+  "readiness": {
+    "canAdvance": false,
+    "nextPhase": "run",
+    "missingPrerequisites": [
+      "Data Cloud service unavailable"
+    ],
+    "completenessScore": 0.0,
+    "isDegraded": true,
+    "estimatedReadyIn": "Blocked",
+    "estimatedReadyInHours": 24,
+    "predictionConfidence": 0.35
+  },
+  "requiredArtifacts": [
+    {
+      "artifactId": "shape-model",
+      "artifactType": "SHAPE_MODEL",
+      "title": "Shape Model",
+      "description": "Canonical shape",
+      "isComplete": false
+    }
+  ],
+  "completedArtifacts": [
+    {
+      "artifactId": "intent-spec",
+      "artifactType": "INTENT_SPEC",
+      "version": "v1",
+      "title": "Intent Spec",
+      "completedAt": 1.77979053E9,
+      "completedBy": "actor-1",
+      "evidenceId": "evidence-1"
+    }
+  ],
+  "activityFeed": [
+    {
+      "id": "audit-1",
+      "type": "PHASE_ACTION_EXECUTED",
+      "action": "phase.advance",
+      "summary": "Phase advance failed policy check",
+      "actor": "actor-1",
+      "timestamp": 1.779790531E9,
+      "severity": "ERROR",
+      "eventType": "PHASE_ACTION_EXECUTED",
+      "success": false,
+      "outcome": "FAILURE",
+      "correlationId": "corr-activity-1"
+    }
+  ],
+  "evidence": [],
+  "governance": [],
+  "platformRunStatus": {
+    "runId": "run-1",
+    "status": "DEGRADED",
+    "platform": "data-cloud-aep",
+    "startedAt": 1.77979053E9,
+    "completedAt": null,
+    "traceId": "trace-1",
+    "evidenceIds": [
+      "evidence-1"
+    ]
+  },
+  "availableActions": [
+    {
+      "actionId": "advance-phase",
+      "label": "phaseAction.advancePhase.label",
+      "description": "phaseAction.advancePhase.description",
+      "enabled": false,
+      "disabledReason": "phaseAction.disabled.blockersMustResolve",
+      "requiredPermission": "phase:advance",
+      "category": "phase-transition",
+      "severity": "high",
+      "confirmationRequired": true,
+      "idempotencyKey": "phase.advance",
+      "auditType": "phase.advance.requested",
+      "parameters": {
+        "nextPhase": "run"
+      }
+    }
+  ],
+  "dashboardActions": {
+    "primaryAction": null,
+    "blockedActions": [
+      "all"
+    ],
+    "reviewRequiredActions": [],
+    "safeToContinueActions": []
+  },
+  "healthSignals": {
+    "preview": {
+      "isHealthy": false,
+      "status": "degraded",
+      "issues": [
+        "Data Cloud service unavailable"
+      ],
+      "security": {
+        "trustLevel": "trusted",
+        "tokenScopes": [],
+        "expiresAt": null,
+        "expired": false,
+        "safe": true,
+        "issues": []
+      }
+    },
+    "generation": {
+      "isHealthy": false,
+      "status": "degraded",
+      "lastGeneratedAt": null,
+      "issues": [
+        "Data Cloud service unavailable"
+      ]
+    },
+    "runtime": {
+      "isHealthy": false,
+      "status": "degraded",
+      "lastDeployedAt": null,
+      "issues": [
+        "Data Cloud service unavailable"
+      ]
+    },
+    "agentGovernance": {
+      "isHealthy": true,
+      "status": "healthy",
+      "governanceState": "policy-approved",
+      "learningLevel": "evidence-backed",
+      "evidenceIds": [
+        "learn-run-1"
+      ],
+      "issues": []
+    }
+  },
+  "degradedDetails": {
+    "dependency": "DATA_CLOUD",
+    "reason": "Project state not found",
+    "truthSource": "projects",
+    "recoveryAction": "Restore Data Cloud project state access and retry phase packet retrieval.",
+    "impactedFeatures": [
+      "phase-readiness",
+      "phase-actions"
+    ]
+  },
+  "timestamp": 1779791730000,
+  "correlationId": "corr-1"
+}

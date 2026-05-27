@@ -149,6 +149,13 @@ export default defineConfig({
         find: '@ghatana/ui-builder/preview',
         replacement: resolve(__dirname, '../../../../platform/typescript/ui-builder/src/preview/index.ts'),
       },
+      {
+        find: '@ghatana/ui-builder/core/builder-document',
+        replacement: resolve(
+          __dirname,
+          '../../../../platform/typescript/ui-builder/src/core/builder-document.ts'
+        ),
+      },
           {
             find: '@ghatana/tokens',
             replacement: resolve(__dirname, '../../../../platform/typescript/tokens/src/index.ts'),

@@ -11,7 +11,7 @@ Generated from:
 
 | Product | Kind | Mode | Profile | Lifecycle Status | Readiness | Required Adapters | Reason Codes | Status |
 |---------|------|------|---------|------------------|-----------|-------------------|--------------|--------|
-| audio-video | shared-service | disabled-observed | not-declared | disabled | disabled | None | disabled-observed, requires-lifecycle-profile, requires-product-owner-executable-surface-definition | Disabled observed |
+| audio-video | shared-service | disabled-observed | not-declared | disabled | disabled | None | disabled-observed, experimental-shared-service, lifecycle-execution-disabled, no-product-manifest | Disabled observed |
 | aura | demo/example | disabled-observed | not-declared | disabled | disabled | None | demo-product-not-execution-ready, disabled-observed, requires-lifecycle-profile, requires-product-owner-executable-surface-definition | Disabled observed |
 | data-cloud | platform-provider | disabled-observed | not-declared | disabled | disabled | None | bootstrap-platform-separation-validated, data-cloud-release-gate-passed, disabled-observed, platform-provider-health-validated, platform-provider-mode-required, runtime-truth-provider-validated | Disabled observed |
 | dcmaar | business-product | disabled-observed | not-declared | disabled | disabled | None | disabled-observed, requires-lifecycle-profile, requires-product-owner-executable-surface-definition, requires-security-threat-model-gates | Disabled observed |
@@ -27,7 +27,7 @@ Generated from:
 | tutorputor | business-product | shape-only-with-known-limitations | stable | partial | not-enabled | gradle-java-service, pnpm-vite-react | partial-lifecycle, requires-content-safety-gates, requires-product-owner-executable-surface-definition | Shape-only with limitations |
 | typescript-fixture | demo/example | shape-only | stable | planned | not-enabled | pnpm-node-api | opening-pilot-policy-exemption, planned-shape-only, polyglot-fixture-execution-proof, typescript-node-adapter-native-tests-pass | Shape-only |
 | virtual-org | demo/example | disabled-observed | not-declared | disabled | disabled | None | demo-product-not-execution-ready, disabled-observed, requires-lifecycle-profile, requires-product-owner-executable-surface-definition | Disabled observed |
-| yappc | platform-provider | disabled-observed | not-declared | disabled | disabled | None | artifact-intelligence-evidence-contracts-ready, creator-lifecycle-distinct-from-kernel, disabled-observed, platform-provider-mode-required | Disabled observed |
+| yappc | platform-provider | disabled-observed | not-declared | disabled | disabled | None | artifact-intelligence-boundary-established, creator-kernel-lifecycle-separated, disabled-observed, governance-layer-implemented, product-unit-intent-export-ready | Disabled observed |
 
 ## Findings
 

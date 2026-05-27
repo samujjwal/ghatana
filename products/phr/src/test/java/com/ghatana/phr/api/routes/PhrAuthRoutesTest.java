@@ -60,7 +60,7 @@ class PhrAuthRoutesTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        servlet = new PhrAuthRoutes(eventloop(), securityManager, userRepository).getServlet();
+        servlet = new PhrAuthRoutes(eventloop(), securityManager, userRepository, null).getServlet();
 
         PHRUser user = new PHRUser();
         user.setUserId("patient-001");

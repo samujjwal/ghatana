@@ -10,6 +10,10 @@ export type ActivityFeedEntry = {
     actor: string;
     timestamp: string;
     severity: ActivityFeedEntry.severity;
+    eventType: string;
+    success: boolean | null;
+    outcome: string;
+    correlationId?: string | null;
 };
 export namespace ActivityFeedEntry {
     export enum severity {

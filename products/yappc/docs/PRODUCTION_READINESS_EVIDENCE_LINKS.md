@@ -1,0 +1,12 @@
+# YAPPC Production Readiness Evidence Links
+
+Production-readiness statements in YAPPC docs must point to executable evidence, not prose confidence. This matrix is the doc-level index for those claims.
+
+| Claim Surface | Evidence Links | Validation Command |
+| --- | --- | --- |
+| Release readiness is current-head and evidence-gated | [Production readiness task map](./audits/PRODUCTION_READINESS_TASK_MAP.md), [readiness evidence contract](../lifecycle/readiness-evidence.yaml), [release evidence bundle](./RELEASE_EVIDENCE_BUNDLE.md) | `pnpm check:evidence-current-commit` |
+| CI release artifacts cover YAPPC scorecard dimensions | [scorecard evidence generator](../scripts/generate-yappc-scorecard-evidence.mjs), [scorecard evidence checker](../scripts/check-yappc-scorecard-evidence.mjs), [YAPPC CI workflow](../../../.github/workflows/yappc-ci.yml) | `node products/yappc/scripts/check-yappc-scorecard-evidence.mjs products/yappc/build/release-evidence/yappc-scorecard-evidence.json` |
+| Backend/frontend/contract/security/privacy/governance suites have targeted checks | [test suite guide](./TEST_SUITES.md), [backlog progress ledger](./YAPPC_BACKLOG_PROGRESS.md) | `pnpm -C products/yappc/frontend/web test:regression` plus targeted Gradle slices in the test suite guide |
+| Product-family release readiness UI is evidence-backed | [product-family feature contract](./PRODUCT_FAMILY_FEATURE_CONTRACT.md), [release gate API test](../core/yappc-services/src/test/java/com/ghatana/yappc/api/AdminObservabilityControllerTest.java), [observability dashboard test](../frontend/web/src/components/admin/__tests__/ObservabilityDashboard.test.tsx) | `./gradlew :products:yappc:core:yappc-services:test --tests "com.ghatana.yappc.api.AdminObservabilityControllerTest"` |
+| VS Code extension historical readiness statements are internal-testing scoped | [extension test results](./guides/vscode-extension/EXTENSION_TEST_RESULTS.md), [runtime testing results](./guides/vscode-extension/YAPPC_RUNTIME_TESTING_RESULTS.md), [final summary](./guides/vscode-extension/YAPPC_FINAL_SUMMARY.md) | Historical manual-test artifact, not current YAPPC release approval |
+| Documentation production-readiness claims remain evidence-linked | [doc evidence checker](../scripts/check-doc-evidence-links.mjs), [this matrix](./PRODUCTION_READINESS_EVIDENCE_LINKS.md) | `node products/yappc/scripts/check-doc-evidence-links.mjs products/yappc/docs` |

@@ -125,6 +125,7 @@ function parsePlanTasksFromTodoTable(planSource) {
   const lines = planSource.split(/\r?\n/);
   const legacyRegex = /^\|\s*TODO-(\d{3})\s*\|/;
   const idRegex = /^([A-Z]+)-(\d{3})$/;
+  const modernIdRegex = /^[A-Z]+(?:-[A-Z0-9]+)+$/;
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -163,17 +164,30 @@ function parsePlanTasksFromTodoTable(planSource) {
     }
 
     const idMatch = columns[0].match(idRegex);
-    if (!idMatch) {
+    if (idMatch) {
+      const id = Number(idMatch[2]);
+      const todoColumn = columns[2];
+      const whereRefs = [...todoColumn.matchAll(/`([^`]+)`/g)].map((token) => token[1].trim());
+
+      tasks.push({
+        id,
+        title: `${idMatch[1]}-${idMatch[2]}`,
+        whereRefs,
+      });
       continue;
     }
 
-    const id = Number(idMatch[2]);
-    const todoColumn = columns[2];
-    const whereRefs = [...todoColumn.matchAll(/`([^`]+)`/g)].map((token) => token[1].trim());
+    // Current kernel plan table uses IDs like AEP-P1-006, AGENT-P2-006, YAPPC-P1-001.
+    const modernId = columns[0];
+    if (!modernIdRegex.test(modernId) || modernId === 'ID') {
+      continue;
+    }
 
+    const whereColumn = columns[2] ?? '';
+    const whereRefs = [...whereColumn.matchAll(/`([^`]+)`/g)].map((token) => token[1].trim());
     tasks.push({
-      id,
-      title: `${idMatch[1]}-${idMatch[2]}`,
+      id: tasks.length + 1,
+      title: modernId,
       whereRefs,
     });
   }

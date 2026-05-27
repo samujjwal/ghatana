@@ -109,5 +109,19 @@
       "visibility": "visible",
       "featureFlag": "ENABLE_HIE_EXPORT"
     }
+  ],
+  "routeVisibilityRules": [
+    {
+      "route": "/caregiver/dependents",
+      "personas": ["caregiver"],
+      "visibility": "visible",
+      "featureFlag": "ENABLE_CAREGIVER_DELEGATED_ACCESS"
+    },
+    {
+      "route": "/fchv/dashboard",
+      "personas": ["fchv"],
+      "visibility": "visible",
+      "featureFlag": "ENABLE_FCHV_ROUTES"
+    }
   ]
 }

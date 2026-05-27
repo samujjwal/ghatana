@@ -329,6 +329,10 @@ export default defineConfig({
         __dirname,
         '../../../../platform/typescript/kernel-product-contracts/dist/index.js'
       ),
+      '@ghatana/ui-builder/core/builder-document': path.resolve(
+        __dirname,
+        '../../../../platform/typescript/ui-builder/src/core/builder-document.ts'
+      ),
 
       // Legacy compatibility - using shim to avoid complex cross-package resolution
       '@ghatana/canvas': path.resolve(__dirname, 'src/shims/ghatana-canvas.ts'),
@@ -436,16 +440,12 @@ export default defineConfig({
             ) {
               return 'vendor-utils';
             }
-            // Everything else
-            return 'vendor-other';
+            return undefined;
           }
 
           // App chunks - lazy load heavy features
           if (id.includes('/routes/app/canvas')) {
             return 'app-canvas';
-          }
-          if (id.includes('/routes/app/project')) {
-            return 'app-project';
           }
           if (id.includes('/routes/app/settings')) {
             return 'app-settings';

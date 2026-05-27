@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { revokeConsentGrant } from '../services/phrMobileApi';
+import { phiClearAll } from '../services/phiEncryptedStorage';
+import { clearDashboardOffline } from '../services/offlineStore';
 import { t } from '../i18n/phrMobileI18n';
 import type { MobileConsent, MobileSession } from '../types';
 
@@ -24,8 +26,11 @@ export function ConsentScreen({ consents, session, onConsentRevoked }: ConsentSc
           style: 'destructive',
           onPress: () => {
             setRevoking(grantId);
-            revokeConsentGrant(grantId, session)
-              .then(() => {
+            revokeConsentGrant(grantId, session.principalId, session)
+              .then(async () => {
+                // Clear encrypted PHI cache on consent revocation
+                await phiClearAll();
+                await clearDashboardOffline();
                 onConsentRevoked(grantId);
               })
               .catch((err: unknown) => {

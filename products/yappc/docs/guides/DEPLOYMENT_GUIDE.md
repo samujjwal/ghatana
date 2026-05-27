@@ -358,7 +358,8 @@ npm run monitor:prod
 
 ## 🎉 **Production Ready!**
 
-The YAPPC platform is now **100% production-ready** with:
+YAPPC production release approval is conditional on current-head executable evidence, not this deployment guide.
+Evidence: [YAPPC production readiness evidence links](../PRODUCTION_READINESS_EVIDENCE_LINKS.md) and [release evidence bundle](../RELEASE_EVIDENCE_BUNDLE.md).
 
 - **✅ Enterprise-grade security**
 - **✅ High-performance architecture**

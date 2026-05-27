@@ -26,8 +26,11 @@ import com.ghatana.phr.api.routes.PhrEntitlementRoutes;
 import com.ghatana.phr.api.routes.PhrEmergencyRoutes;
 import com.ghatana.phr.api.routes.PhrFhirRoutes;
 import com.ghatana.phr.api.routes.PhrHealthRoutes;
+import com.ghatana.phr.api.routes.PhrMobileRoutes;
 import com.ghatana.phr.api.routes.PhrPatientRecordRoutes;
 import com.ghatana.phr.api.routes.PhrReleaseReadinessRoutes;
+import com.ghatana.kernel.release.FileBasedReleaseReadinessRuntimeService;
+import com.ghatana.kernel.release.ReleaseReadinessRuntimeService;
 import com.ghatana.phr.fhir.server.PhrFhirR4Server;
 import com.ghatana.phr.hie.HttpNepalHieClient;
 import com.ghatana.phr.hie.NepalHieConfig;
@@ -426,7 +429,15 @@ public class PhrKernelModule implements KernelModule {
         RouteEntitlementEvaluator routeEntitlementEvaluator = new RouteEntitlementEvaluator(new RoleEvaluator.FailClosed());
         IdentityAwareBoundedCache<String, Map<String, Object>> entitlementCache = new IdentityAwareBoundedCache<>(1000, 300);
         PhrEntitlementRoutes entitlementRoutes = new PhrEntitlementRoutes(eventloop, routeEntitlementEvaluator, entitlementCache);
-        PhrReleaseReadinessRoutes releaseReadinessRoutes = new PhrReleaseReadinessRoutes(eventloop);
+        ReleaseReadinessRuntimeService releaseReadinessService = new FileBasedReleaseReadinessRuntimeService();
+        PhrReleaseReadinessRoutes releaseReadinessRoutes = new PhrReleaseReadinessRoutes(eventloop, releaseReadinessService);
+        PhrMobileRoutes mobileRoutes = new PhrMobileRoutes(
+            eventloop,
+            patientRecords,
+            consent,
+            documents,
+            notificationSender
+        );
         
         PhrHttpServer phrHttpServer = new PhrHttpServer(
             eventloop,
@@ -439,7 +450,13 @@ public class PhrKernelModule implements KernelModule {
             documentImagingRoutes,
             releaseReadinessRoutes,
             entitlementRoutes,
-            healthRoutes
+            healthRoutes,
+            null,
+            null,
+            null,
+            null,
+            mobileRoutes,
+            notificationSender
         );
         context.registerService(PhrEvidenceOutboxDispatcher.class, evidenceDispatcher);
         context.registerService(PhrHttpServer.class, phrHttpServer);

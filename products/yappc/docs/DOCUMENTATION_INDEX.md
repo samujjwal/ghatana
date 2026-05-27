@@ -29,7 +29,7 @@
 | [architecture/](architecture/) | Architecture ADRs and diagrams |
 | [EVENT_DRIVEN_ARCHITECTURE.md](EVENT_DRIVEN_ARCHITECTURE.md) | Event streaming design |
 | [MODULE_CATALOG.md](MODULE_CATALOG.md) | All YAPPC modules |
-| [DOMAIN_MODEL_REGISTRY.md](../DOMAIN_MODEL_REGISTRY.md) | Entity domain model registry *(root-level, to be moved here)* |
+| [DOMAIN_MODEL_REGISTRY.md](DOMAIN_MODEL_REGISTRY.md) | Entity domain model registry |
 
 ---
 
@@ -38,6 +38,7 @@
 | Document | Purpose |
 |---|---|
 | [api/openapi.yaml](api/openapi.yaml) | REST OpenAPI spec (canonical) |
+| [KERNEL_HANDOFF.md](KERNEL_HANDOFF.md) | CLI and API Kernel ProductUnitIntent handoff flows, validation, and boundary rules |
 | [API_STANDARDIZATION_GUIDE.md](API_STANDARDIZATION_GUIDE.md) | API design guide |
 | [API_SURFACE_CANONICALIZATION.md](API_SURFACE_CANONICALIZATION.md) | GraphQL ↔ REST canonical surface map |
 | [adr/ADR-GENERATED-API-CLIENTS.md](adr/ADR-GENERATED-API-CLIENTS.md) | Generated clients only (SIMP-Y19) |
@@ -60,6 +61,8 @@
 |---|---|
 | [PERSISTENCE_OWNERSHIP.md](PERSISTENCE_OWNERSHIP.md) | Per-entity persistence ownership matrix |
 | [database/](database/) | Database schemas and migration guides |
+| [PRODUCT_FAMILY_FEATURE_CONTRACT.md](PRODUCT_FAMILY_FEATURE_CONTRACT.md) | Product-family purpose, ownership boundary, routes, data, permissions, and validation |
+| [FEATURE_FLAGS_AND_ENTITLEMENTS.md](FEATURE_FLAGS_AND_ENTITLEMENTS.md) | Feature flag and entitlement owners, defaults, behavior, and validation evidence |
 | [BACKUP_RESTORE_STRATEGY.md](BACKUP_RESTORE_STRATEGY.md) | Backup and restore strategy |
 
 ---
@@ -68,9 +71,16 @@
 
 | Document | Purpose |
 |---|---|
-| [JWT_AUTHENTICATION.md](JWT_AUTHENTICATION.md) | JWT authentication design |
-| [JWT_HTTPONLY_COOKIE_MIGRATION_PLAN.md](JWT_HTTPONLY_COOKIE_MIGRATION_PLAN.md) | Cookie migration plan |
+| [SECURITY.md](SECURITY.md) | Authentication, authorization, JWT bearer token, privacy, and route security policy |
 | [security/](security/) | Security docs and threat models |
+
+---
+
+## AI and Prompt Operations
+
+| Document | Purpose |
+|---|---|
+| [PROMPT_OPERATIONS.md](PROMPT_OPERATIONS.md) | Prompt evaluation, promotion, rollback, rebalancing, and quarantine runbook |
 
 ---
 
@@ -79,13 +89,14 @@
 | Document | Purpose |
 |---|---|
 | [01-extended-agent-catalog.md](01-extended-agent-catalog.md) | All agents |
+| [AGENT_OPERATIONS.md](AGENT_OPERATIONS.md) | Agent execution state, lifecycle, failure handling, governance, and retention runbook |
 | [02-persona-to-agent-matrix.md](02-persona-to-agent-matrix.md) | Persona ↔ agent mapping |
 | [03-lifecycle-phase-to-agent-matrix.md](03-lifecycle-phase-to-agent-matrix.md) | Phase ↔ agent mapping |
 | [06-agent-execution-contract.md](06-agent-execution-contract.md) | Agent execution contract |
 | [PERSISTENT_AGENT_REGISTRY.md](PERSISTENT_AGENT_REGISTRY.md) | Agent registry |
 | [LLM_INTEGRATION_GUIDE.md](LLM_INTEGRATION_GUIDE.md) | LLM integration |
 | [LLM_OBSERVABILITY.md](LLM_OBSERVABILITY.md) | LLM observability |
-| [05-platform-mapping-yappc-aep.md](05-platform-mapping-yappc-aep.md) | AEP integration map |
+| [05-platform-mapping-yappc-data-cloud-aep.md](05-platform-mapping-yappc-data-cloud-aep.md) | Data Cloud and AEP integration map |
 
 ---
 
@@ -105,7 +116,7 @@
 |---|---|
 | [OPERATIONS.md](OPERATIONS.md) | Operations guide |
 | [deployment/](deployment/) | Deployment guides |
-| [RELEASE_READINESS_CHECKLIST.md](RELEASE_READINESS_CHECKLIST.md) | Release checklist |
+| [RELEASE_READINESS_EXECUTION_MODE.md](RELEASE_READINESS_EXECUTION_MODE.md) | Release readiness execution mode |
 | [PRODUCT_BUILD_ISOLATION.md](PRODUCT_BUILD_ISOLATION.md) | Build isolation strategy |
 
 ---

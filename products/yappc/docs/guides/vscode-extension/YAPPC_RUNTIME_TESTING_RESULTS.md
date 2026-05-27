@@ -390,6 +390,7 @@ All features working as expected. No blocking issues found.
 ## Recommendations
 
 ### Immediate (Ready for Use) ✅
+Evidence: [Extension test results](./EXTENSION_TEST_RESULTS.md) and this runtime testing report scope this readiness statement to internal VS Code extension testing, not the current YAPPC web release gate.
 - All features production-ready for internal use
 - Extension deployable to team members
 - Canvas functional for daily workflows

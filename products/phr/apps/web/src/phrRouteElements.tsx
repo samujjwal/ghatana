@@ -40,6 +40,7 @@ const routeElements: Record<PhrRoutePath, React.ReactElement> = {
   '/labs': <LabsPage />,
   '/medications': <MedicationsPage />,
   '/emergency': <EmergencyAccessPage />,
+  '/emergency/reviews': <EmergencyAccessPage />,
   '/release-readiness': <ReleaseCockpitPage />,
   '/audit': <AuditPage />,
   '/settings': <SettingsPage />,
@@ -67,8 +68,13 @@ export function attachPhrRouteElement(route: PhrRouteContract): PhrRouteManifest
     throw new Error(`PHR route element is missing for path ${route.path}`);
   }
 
+  // Feature-flagged routes render a placeholder instead of the actual page
+  const finalElement = route.featureFlag
+    ? <FeatureFlagPage routePath={route.path} />
+    : element;
+
   return {
     ...route,
-    element,
+    element: finalElement,
   };
 }

@@ -82,6 +82,10 @@ export function buildPhaseGovernanceRecords(
     metadata: {
       summary: entry.summary,
       severity: entry.severity ?? undefined,
+      eventType: entry.eventType ?? undefined,
+      outcome: entry.outcome ?? undefined,
+      success: entry.success ?? undefined,
+      correlationId: entry.correlationId ?? undefined,
     },
   }));
 }

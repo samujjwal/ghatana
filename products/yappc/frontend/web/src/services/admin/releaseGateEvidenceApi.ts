@@ -12,6 +12,7 @@ export type ReleaseGateStatus = 'healthy' | 'degraded' | 'down';
 export interface ReleaseGateEvidenceRecord {
   readonly id: string;
   readonly label: string;
+  readonly category: string;
   readonly status: ReleaseGateStatus;
   readonly evidenceHref: string;
   readonly refreshedAt: string;
@@ -21,6 +22,7 @@ export interface ReleaseGateEvidenceRecord {
 interface ReleaseGateDescriptor {
   readonly id: string;
   readonly label: string;
+  readonly category: string;
   readonly evidenceHref: string;
 }
 
@@ -28,21 +30,25 @@ const RELEASE_GATE_DESCRIPTORS: readonly ReleaseGateDescriptor[] = [
   {
     id: 'product-slo-budgets',
     label: 'Product SLO budgets',
+    category: 'SLO',
     evidenceHref: '/release-evidence/product-slo-budgets.json',
   },
   {
     id: 'product-cost-budgets',
     label: 'Product cost budgets',
+    category: 'Cost',
     evidenceHref: '/release-evidence/product-cost-budgets.json',
   },
   {
     id: 'product-domain-invariants',
     label: 'Product domain invariants',
+    category: 'Domain',
     evidenceHref: '/release-evidence/product-domain-invariants.json',
   },
   {
     id: 'openapi-breaking-changes',
     label: 'OpenAPI breaking changes',
+    category: 'API',
     evidenceHref: '/release-evidence/openapi-breaking-changes.json',
   },
 ] as const;
@@ -161,11 +167,13 @@ function normalizeRecord(
   if (isRecord(payload)) {
     const id = stringValue(payload.id) ?? descriptor.id;
     const label = stringValue(payload.label) ?? descriptor.label;
+    const category = stringValue(payload.category) ?? descriptor.category;
     const evidenceHref = stringValue(payload.evidenceHref) ?? descriptor.evidenceHref;
 
     return {
       id,
       label,
+      category,
       status: normalizeStatus(payload),
       evidenceHref,
       refreshedAt: normalizeRefreshedAt(payload, fallbackTimestamp),
@@ -176,6 +184,7 @@ function normalizeRecord(
   return {
     id: descriptor.id,
     label: descriptor.label,
+    category: descriptor.category,
     status: 'degraded',
     evidenceHref: descriptor.evidenceHref,
     refreshedAt: fallbackTimestamp,
@@ -202,6 +211,14 @@ function readApiItems(payload: unknown): readonly unknown[] | null {
   return null;
 }
 
+function descriptorForPayload(item: unknown, fallback: ReleaseGateDescriptor): ReleaseGateDescriptor {
+  if (!isRecord(item)) {
+    return fallback;
+  }
+  const id = stringValue(item.id);
+  return RELEASE_GATE_DESCRIPTORS.find((descriptor) => descriptor.id === id) ?? fallback;
+}
+
 async function fetchApiReleaseGates(
   fetchImpl: FetchLike,
   fallbackTimestamp: string,
@@ -225,11 +242,10 @@ async function fetchApiReleaseGates(
     throw new Error('release gate evidence returned an unsupported payload shape');
   }
 
-  return items.map((item, index) => normalizeRecord(
-    item,
-    RELEASE_GATE_DESCRIPTORS[index] ?? RELEASE_GATE_DESCRIPTORS[0],
-    fallbackTimestamp,
-  ));
+  return items.map((item, index) => {
+    const fallback = RELEASE_GATE_DESCRIPTORS[index] ?? RELEASE_GATE_DESCRIPTORS[0];
+    return normalizeRecord(item, descriptorForPayload(item, fallback), fallbackTimestamp);
+  });
 }
 
 async function fetchArtifactEvidence(
@@ -246,6 +262,7 @@ async function fetchArtifactEvidence(
     return {
       id: descriptor.id,
       label: descriptor.label,
+      category: descriptor.category,
       status: 'down',
       evidenceHref: descriptor.evidenceHref,
       refreshedAt: fallbackTimestamp,

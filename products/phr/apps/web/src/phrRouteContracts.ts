@@ -12,6 +12,16 @@ export interface PhrRouteContract extends ProductRouteCapability {
    * placeholder instead of the real page component.
    */
   readonly featureFlag?: boolean;
+  /**
+   * Route lifecycle metadata for tracking introduction, deprecation, and removal.
+   */
+  readonly lifecycle?: {
+    readonly introducedAt: string; // Version or date when route was introduced
+    readonly stability: 'stable' | 'experimental' | 'deprecated';
+    readonly deprecatedAt?: string; // Version or date when route was deprecated
+    readonly removedAt?: string; // Version or date when route was removed
+    readonly migrationNotes?: string; // Notes for migrating from this route
+  };
 }
 
 export const PHR_ROLE_ORDER: Readonly<Record<PhrRole, number>> = {
@@ -38,6 +48,10 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['view-patient-summary'],
     cards: ['patient-summary', 'care-plan', 'emergency-readiness'],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
   },
   {
     path: '/records',
@@ -49,6 +63,10 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['view-records'],
     cards: ['record-highlights', 'interop-status'],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
   },
   {
     path: '/consents',
@@ -60,6 +78,10 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['manage-consent'],
     cards: ['active-consent-grants', 'expiring-consents'],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
   },
   {
     path: '/appointments',
@@ -71,6 +93,10 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['schedule-visit'],
     cards: ['upcoming-appointments'],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
   },
   {
     path: '/labs',
@@ -82,6 +108,10 @@ export const phrRouteContracts = [
     tiers: ['clinical'],
     actions: ['review-lab-results'],
     cards: ['recent-lab-results'],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
   },
   {
     path: '/medications',
@@ -93,6 +123,10 @@ export const phrRouteContracts = [
     tiers: ['clinical'],
     actions: ['review-medications'],
     cards: ['medication-adherence'],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
   },
   {
     path: '/emergency',
@@ -105,6 +139,25 @@ export const phrRouteContracts = [
     emergencyAction: true,
     actions: ['break-glass-review'],
     cards: ['override-audit-timeline'],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
+  },
+  {
+    path: '/emergency/reviews',
+    label: t('route.emergency.label'),
+    description: t('route.emergency.description'),
+    group: t('route.group.governance'),
+    minimumRole: 'admin',
+    personas: ['admin'],
+    tiers: ['emergency'],
+    actions: ['review-emergency-access'],
+    cards: ['pending-reviews', 'overdue-reviews'],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
   },
   {
     path: '/release-readiness',
@@ -116,6 +169,10 @@ export const phrRouteContracts = [
     tiers: ['clinical'],
     actions: ['view-release-readiness'],
     cards: ['evidence-freshness', 'fhir-runtime', 'consent-cache-proof', 'rollback-proof'],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
   },
   {
     path: '/audit',
@@ -127,6 +184,10 @@ export const phrRouteContracts = [
     tiers: ['clinical'],
     actions: ['view-audit-trail'],
     cards: ['audit-trail'],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
   },
   {
     path: '/settings',
@@ -138,6 +199,10 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['manage-profile-settings'],
     cards: ['profile-controls', 'integration-status'],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
   },
   {
     path: '/records/:recordId',
@@ -149,6 +214,10 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['view-records'],
     cards: [],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
   },
   {
     path: '/profile',
@@ -160,6 +229,10 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['view-profile', 'edit-profile'],
     cards: ['profile-summary'],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
   },
   {
     path: '/timeline',
@@ -171,6 +244,10 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['view-timeline'],
     cards: ['health-timeline'],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
   },
   {
     path: '/conditions',
@@ -182,6 +259,10 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['view-conditions'],
     cards: ['condition-list'],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
   },
   {
     path: '/observations',
@@ -193,6 +274,10 @@ export const phrRouteContracts = [
     tiers: ['clinical'],
     actions: ['view-observations'],
     cards: ['observation-trends'],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
   },
   {
     path: '/immunizations',
@@ -204,6 +289,10 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['view-immunizations'],
     cards: ['immunization-schedule'],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
   },
   {
     path: '/documents',
@@ -215,6 +304,10 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['view-documents', 'upload-document'],
     cards: ['document-list'],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
   },
   {
     path: '/documents/upload',
@@ -226,6 +319,10 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['upload-document'],
     cards: [],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
   },
   {
     path: '/documents/:docId/ocr',
@@ -237,6 +334,10 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['review-ocr'],
     cards: [],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
   },
   {
     path: '/notifications',
@@ -248,6 +349,10 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['view-notifications'],
     cards: ['notification-feed'],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
   },
   {
     path: '/forbidden',
@@ -259,6 +364,10 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: [],
     cards: [],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
   },
   {
     path: '/not-found',
@@ -270,6 +379,10 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: [],
     cards: [],
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'stable',
+    },
   },
 
   // ── Feature-flagged routes (not yet production-ready) ──────────────────────
@@ -286,7 +399,10 @@ export const phrRouteContracts = [
     tiers: ['clinical'],
     actions: ['view-provider-dashboard'],
     cards: ['provider-panel'],
-    featureFlag: true,
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'experimental',
+    },
   },
   {
     path: '/provider/patients',
@@ -298,7 +414,10 @@ export const phrRouteContracts = [
     tiers: ['clinical'],
     actions: ['view-patient-list'],
     cards: ['patient-roster'],
-    featureFlag: true,
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'experimental',
+    },
   },
   {
     path: '/caregiver/dependents',
@@ -311,6 +430,10 @@ export const phrRouteContracts = [
     actions: ['view-dependents'],
     cards: ['dependent-summaries'],
     featureFlag: true,
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'experimental',
+    },
   },
   {
     path: '/fchv/dashboard',
@@ -323,6 +446,10 @@ export const phrRouteContracts = [
     actions: ['view-fchv-dashboard'],
     cards: ['community-health-summary'],
     featureFlag: true,
+    lifecycle: {
+      introducedAt: '1.0.0',
+      stability: 'experimental',
+    },
   },
 ] as const satisfies readonly PhrRouteContract[];
 

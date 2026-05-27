@@ -7,8 +7,8 @@ import {
   isRouteErrorResponse,
   useRouteError,
 } from "react-router";
+import { Suspense, lazy, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { GraphQLProvider } from 'yappc-core/api';
 import { WebSocketProvider } from './contexts/WebSocketContext';
 import { ToastProvider } from './components/common';
 import { AuthProvider } from './providers/AuthProvider';
@@ -19,6 +19,17 @@ import { initI18n } from '@ghatana/i18n';
 import './index.css';
 import '@xyflow/react/dist/style.css';
 
+const enableGraphQLProvider =
+  import.meta.env.VITE_ENABLE_GRAPHQL_PROVIDER === 'true';
+
+const LazyGraphQLProvider = enableGraphQLProvider
+  ? lazy(() =>
+      import('yappc-core/api').then((module) => ({
+        default: module.GraphQLProvider,
+      }))
+    )
+  : null;
+
 // Initialize i18n with HTTP backend (loads from /locales/{lng}/{ns}.json)
 const i18nInstance = await initI18n({
   defaultNS: 'common',
@@ -27,7 +38,19 @@ const i18nInstance = await initI18n({
   loadPath: '/locales/{{lng}}/{{ns}}.json',
 });
 
-export function Layout({ children }: { children: React.ReactNode }) {
+function OptionalGraphQLProvider({ children }: { children: ReactNode }) {
+  if (!LazyGraphQLProvider) {
+    return <>{children}</>;
+  }
+
+  return (
+    <Suspense fallback={<HydrateFallback />}>
+      <LazyGraphQLProvider>{children}</LazyGraphQLProvider>
+    </Suspense>
+  );
+}
+
+export function Layout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
@@ -93,7 +116,7 @@ export default function App() {
     <I18nProvider instance={i18nInstance}>
       <AppThemeProvider>
         <QueryClientProvider client={queryClient}>
-          <GraphQLProvider>
+          <OptionalGraphQLProvider>
             <WebSocketProvider
               wsUrl={import.meta.env.VITE_WEBSOCKET_URL ?? 'ws://localhost:3001/ws'}
               autoConnect={
@@ -110,7 +133,7 @@ export default function App() {
                 </AuthProvider>
               </ToastProvider>
             </WebSocketProvider>
-          </GraphQLProvider>
+          </OptionalGraphQLProvider>
         </QueryClientProvider>
       </AppThemeProvider>
     </I18nProvider>

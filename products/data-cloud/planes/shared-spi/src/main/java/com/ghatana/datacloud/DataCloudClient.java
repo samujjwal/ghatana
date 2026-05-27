@@ -105,6 +105,64 @@ public interface DataCloudClient extends AutoCloseable {
      */
     Subscription tailEvents(String tenantId, TailRequest request, Consumer<Event> handler);
 
+    /**
+     * Read a single event at the given offset.
+     *
+     * <p>Convenience method built on {@link #queryEvents}. Returns the first event
+     * at or after {@code offset}, or empty if no such event exists.
+     *
+     * @param tenantId   tenant identifier
+     * @param offset     log offset to read from
+     * @return promise of the event at that offset, or empty
+     */
+    default Promise<Optional<Event>> readEvent(String tenantId, long offset) {
+        return queryEvents(tenantId, EventQuery.fromOffset(offset))
+            .map(events -> events.isEmpty() ? Optional.empty() : Optional.of(events.get(0)));
+    }
+
+    /**
+     * Poll for events starting from {@code fromOffset} (non-streaming variant).
+     *
+     * <p>Returns all currently available events from the given offset.
+     * Unlike the callback-based {@link #tailEvents(String, TailRequest, Consumer)}, this
+     * method returns a bounded list suitable for pagination or polling loops.
+     *
+     * @param tenantId   tenant identifier
+     * @param fromOffset log offset to start from (inclusive)
+     * @return promise of events available from that offset
+     */
+    default Promise<List<Event>> tailEvents(String tenantId, long fromOffset) {
+        return queryEvents(tenantId, EventQuery.fromOffset(fromOffset));
+    }
+
+    /**
+     * Replay events between two offsets.
+     *
+     * @param tenantId   tenant identifier
+     * @param fromOffset start offset (inclusive)
+     * @param toOffset   end offset (inclusive upper bound)
+     * @return promise of events in that range
+     */
+    default Promise<List<Event>> replayEvents(String tenantId, long fromOffset, long toOffset) {
+        int limit = (int) Math.min(toOffset - fromOffset + 1, 1000);
+        return queryEvents(tenantId, new EventQuery(List.of(), null, null, Offset.of(fromOffset), limit));
+    }
+
+    /**
+     * Store a consumer checkpoint (commit offset) for a named stream.
+     *
+     * <p>Default implementation is a no-op that returns {@code true}. Override
+     * in concrete implementations to durably persist checkpoints.
+     *
+     * @param tenantId tenant identifier
+     * @param stream   stream / event-type identifier
+     * @param offset   offset to commit
+     * @return promise of {@code true} when the checkpoint is stored
+     */
+    default Promise<Boolean> checkpoint(String tenantId, String stream, long offset) {
+        return Promise.of(true);
+    }
+
     // ==================== Lifecycle (1 method) ====================
 
     /**

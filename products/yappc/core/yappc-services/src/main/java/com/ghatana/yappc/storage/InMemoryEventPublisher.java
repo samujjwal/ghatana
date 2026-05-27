@@ -38,9 +38,10 @@ public class InMemoryEventPublisher implements AepEventPublisher {
     public Promise<Void> publish(String eventType, String tenantId, Map<String, Object> payload) {
         events.computeIfAbsent(eventType, k -> new ArrayList<>()).add(Map.copyOf(payload));
 
-        log.info("Published event: {} tenant={} (total: {})", eventType, tenantId,
+        log.info("Published event: eventType={}, tenantId={}, total={}", eventType, tenantId,
                 events.get(eventType).size());
-        log.debug("Event data: {}", payload);
+        log.debug("Published event payload summary: eventType={}, tenantId={}, payloadKeys={}, payloadSize={}",
+                eventType, tenantId, payload.keySet(), payload.size());
 
         return Promise.complete();
     }

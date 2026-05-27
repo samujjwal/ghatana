@@ -214,8 +214,30 @@ public final class PhasePacket {
             String nextPhase,
             List<String> missingPrerequisites,
             double completenessScore,
-            boolean isDegraded
-    ) {}
+            boolean isDegraded,
+            String estimatedReadyIn,
+            Integer estimatedReadyInHours,
+            Double predictionConfidence
+    ) {
+        public PhaseReadiness(
+                boolean canAdvance,
+                String nextPhase,
+                List<String> missingPrerequisites,
+                double completenessScore,
+                boolean isDegraded
+        ) {
+            this(
+                    canAdvance,
+                    nextPhase,
+                    missingPrerequisites,
+                    completenessScore,
+                    isDegraded,
+                    null,
+                    null,
+                    null
+            );
+        }
+    }
 
     /**
      * Required artifact for the current phase.
@@ -251,8 +273,36 @@ public final class PhasePacket {
             String summary,
             String actor,
             Instant timestamp,
-            String severity
-    ) {}
+            String severity,
+            String eventType,
+            Boolean success,
+            String outcome,
+            String correlationId
+    ) {
+        public ActivityFeedEntry(
+                String id,
+                String type,
+                String action,
+                String summary,
+                String actor,
+                Instant timestamp,
+                String severity
+        ) {
+            this(
+                    id,
+                    type,
+                    action,
+                    summary,
+                    actor,
+                    timestamp,
+                    severity,
+                    type,
+                    !"ERROR".equalsIgnoreCase(severity),
+                    "ERROR".equalsIgnoreCase(severity) ? "FAILURE" : "SUCCESS",
+                    null
+            );
+        }
+    }
 
     /**
      * Phase evidence record from Data Cloud+AEP.

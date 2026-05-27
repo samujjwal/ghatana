@@ -92,6 +92,11 @@ describe('ErrorState', () => {
     expect(screen.getByText(/ERR_404/)).toBeTruthy();
   });
 
+  it('renders correlation id when provided', () => {
+    render(<ErrorState message="Oops" correlationId="corr-123" />);
+    expect(screen.getByText(/Correlation ID: corr-123/)).toBeTruthy();
+  });
+
   it('has role=alert', () => {
     render(<ErrorState message="Broken" />);
     expect(screen.getByRole('alert')).toBeTruthy();
@@ -104,6 +109,12 @@ describe('ErrorState', () => {
     );
     // card variant renders "Try Again" button
     expect(screen.getByText('Try Again')).toBeTruthy();
+  });
+
+  it('renders custom retry label when provided', () => {
+    const onRetry = vi.fn();
+    render(<ErrorState message="Failed" onRetry={onRetry} retryLabel="Retry" />);
+    expect(screen.getByText('Retry')).toBeTruthy();
   });
 
   it('calls onRetry when Retry clicked', () => {

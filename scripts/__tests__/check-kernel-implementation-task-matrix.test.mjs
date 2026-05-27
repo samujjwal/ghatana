@@ -19,8 +19,11 @@ test('kernel implementation task matrix parses all actionable plan tasks', () =>
 
   const evidencePath = path.join(repoRoot, '.kernel/evidence/kernel-implementation-task-matrix.json');
   const evidence = JSON.parse(readFileSync(evidencePath, 'utf8'));
+  const matrixConfig = JSON.parse(
+    readFileSync(path.join(repoRoot, 'config/kernel-implementation-task-matrix.json'), 'utf8'),
+  );
 
-  assert.equal(evidence.summary.requiredTaskCount, 8);
+  assert.equal(evidence.summary.requiredTaskCount, matrixConfig.requiredTaskCount);
   assert.equal(evidence.incrementalRoadmap.targetMaturityDepth, 5);
   assert.ok(Array.isArray(evidence.incrementalRoadmap.tasks));
   assert.ok(evidence.incrementalRoadmap.tasks.length >= 1);

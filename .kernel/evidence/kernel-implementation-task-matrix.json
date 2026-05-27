@@ -1,0 +1,1970 @@
+{
+  "generatedAt": "2026-05-27T06:05:01.088Z",
+  "status": "passed",
+  "summary": {
+    "requiredTaskCount": 64,
+    "parsedTaskCount": 64,
+    "statusCounts": {
+      "Partial": 61,
+      "Planned": 3
+    },
+    "averageMaturityDepth": 2.06,
+    "warningCount": 61,
+    "violationCount": 0
+  },
+  "incrementalRoadmap": {
+    "generatedAt": "2026-05-27T06:05:01.089Z",
+    "targetMaturityDepth": 5,
+    "remainingTaskCount": 64,
+    "deferredTaskIds": [],
+    "waveBuckets": {
+      "wave-1-foundation": [
+        8,
+        5,
+        7,
+        9,
+        10,
+        1,
+        2,
+        3,
+        4,
+        6
+      ],
+      "wave-2-runtime-governance": [
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23
+      ],
+      "wave-3-quality-performance": [
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "wave-4-release-ops": [
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64
+      ]
+    },
+    "tasks": [
+      {
+        "id": 8,
+        "title": "AV-P1-005",
+        "status": "Planned",
+        "maturityDepth": 1,
+        "targetDepth": 5,
+        "depthGap": 4,
+        "ownerTeam": "YAPPC Frontend",
+        "ownerModule": "products/yappc/frontend/web",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 5,
+        "title": "AV-P1-002",
+        "status": "Planned",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Product Family Platform",
+        "ownerModule": "products/yappc",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 7,
+        "title": "AV-P1-004",
+        "status": "Planned",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Product Family Platform",
+        "ownerModule": "docs",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 9,
+        "title": "AV-P1-006",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 10,
+        "title": "AV-P1-007",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 11,
+        "title": "AV-P1-008",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 12,
+        "title": "AV-P1-009",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 13,
+        "title": "AV-P1-010",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 14,
+        "title": "DC-P1-001",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 15,
+        "title": "DC-P1-002",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 16,
+        "title": "DC-P1-003",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 17,
+        "title": "DC-P1-004",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 18,
+        "title": "DC-P1-005",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 19,
+        "title": "DC-P1-006",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 20,
+        "title": "DC-P1-007",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 21,
+        "title": "DC-P1-008",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 22,
+        "title": "DC-P1-009",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 23,
+        "title": "DC-P1-010",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 24,
+        "title": "DC-P1-011",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 25,
+        "title": "DC-P2-012",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 26,
+        "title": "DC-P2-013",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 27,
+        "title": "DC-P2-014",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 28,
+        "title": "AEP-P1-001",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 29,
+        "title": "AEP-P1-002",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 30,
+        "title": "AEP-P1-003",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 31,
+        "title": "AEP-P1-004",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 32,
+        "title": "AEP-P1-005",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 33,
+        "title": "AEP-P1-006",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 34,
+        "title": "AEP-P2-007",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 35,
+        "title": "AGENT-P1-001",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 36,
+        "title": "AGENT-P1-002",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 37,
+        "title": "AGENT-P1-003",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 38,
+        "title": "AGENT-P1-004",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 39,
+        "title": "AGENT-P1-005",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 40,
+        "title": "AGENT-P2-006",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 41,
+        "title": "YAPPC-P1-001",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 42,
+        "title": "YAPPC-P1-002",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 43,
+        "title": "YAPPC-P1-003",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 44,
+        "title": "YAPPC-P1-004",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 45,
+        "title": "YAPPC-P1-005",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 46,
+        "title": "YAPPC-P2-006",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 47,
+        "title": "YAPPC-P2-007",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 48,
+        "title": "XPROD-P1-001",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 49,
+        "title": "XPROD-P1-002",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 50,
+        "title": "XPROD-P1-003",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 51,
+        "title": "XPROD-P1-004",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 52,
+        "title": "XPROD-P1-005",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 53,
+        "title": "TEST-P1-001",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 54,
+        "title": "TEST-P1-002",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 55,
+        "title": "TEST-P1-003",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 56,
+        "title": "TEST-P2-004",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 57,
+        "title": "TEST-P2-005",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 58,
+        "title": "TEST-P2-006",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 59,
+        "title": "QUAL-P2-001",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 60,
+        "title": "QUAL-P2-002",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 61,
+        "title": "QUAL-P2-003",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 62,
+        "title": "QUAL-P2-004",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 63,
+        "title": "QUAL-P2-005",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 64,
+        "title": "QUAL-P3-006",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 1,
+        "title": "AV-P0-001",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 2,
+        "title": "AV-P0-002",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 3,
+        "title": "AV-P0-003",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 4,
+        "title": "AV-P1-001",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 6,
+        "title": "AV-P1-003",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "release-evidence",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 1,
+      "title": "AV-P0-001",
+      "whereRefs": [
+        "products/audio-video/modules/speech/stt-service/build.gradle.kts"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 2,
+      "title": "AV-P0-002",
+      "whereRefs": [
+        "products/audio-video/modules/speech/tts-service/build.gradle.kts"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 3,
+      "title": "AV-P0-003",
+      "whereRefs": [
+        "products/audio-video/modules/**/build.gradle.kts"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 4,
+      "title": "AV-P1-001",
+      "whereRefs": [
+        "products/audio-video/libs/common/src/main/java/**",
+        "products/audio-video/modules/*/*/src/main/java/**"
+      ]
+    },
+    {
+      "ownerTeam": "Product Family Platform",
+      "ownerModule": "products/yappc",
+      "status": "Planned",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 5,
+      "title": "AV-P1-002",
+      "whereRefs": [
+        "products/audio-video/modules/speech/stt-service/src/main/java/com/ghatana/stt/grpc/SttGrpcService.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "release-evidence",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 6,
+      "title": "AV-P1-003",
+      "whereRefs": [
+        "SttGrpcService.java"
+      ]
+    },
+    {
+      "ownerTeam": "Product Family Platform",
+      "ownerModule": "docs",
+      "status": "Planned",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 7,
+      "title": "AV-P1-004",
+      "whereRefs": [
+        "SttGrpcService.java"
+      ]
+    },
+    {
+      "ownerTeam": "YAPPC Frontend",
+      "ownerModule": "products/yappc/frontend/web",
+      "status": "Planned",
+      "maturityDepth": 1,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 8,
+      "title": "AV-P1-005",
+      "whereRefs": [
+        "SttGrpcService.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 9,
+      "title": "AV-P1-006",
+      "whereRefs": [
+        "products/audio-video/modules/speech/tts-service/src/main/java/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 10,
+      "title": "AV-P1-007",
+      "whereRefs": [
+        "products/audio-video/modules/vision/vision-service/src/main/java/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 11,
+      "title": "AV-P1-008",
+      "whereRefs": [
+        "products/audio-video/modules/intelligence/multimodal-service/src/main/java/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 12,
+      "title": "AV-P1-009",
+      "whereRefs": [
+        "products/audio-video/modules/**",
+        "products/data-cloud/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 13,
+      "title": "AV-P1-010",
+      "whereRefs": [
+        "products/audio-video/modules/integration-tests/src/test/java/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 14,
+      "title": "DC-P1-001",
+      "whereRefs": [
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/EntityCrudHandler.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 15,
+      "title": "DC-P1-002",
+      "whereRefs": [
+        "EntityCrudHandler.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 16,
+      "title": "DC-P1-003",
+      "whereRefs": [
+        "EntityCrudHandler.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 17,
+      "title": "DC-P1-004",
+      "whereRefs": [
+        "EntityCrudHandler.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 18,
+      "title": "DC-P1-005",
+      "whereRefs": [
+        "EntityCrudHandler.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 19,
+      "title": "DC-P1-006",
+      "whereRefs": [
+        "EntityCrudHandler.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 20,
+      "title": "DC-P1-007",
+      "whereRefs": [
+        "EntityCrudHandler.java",
+        "DataCloudClient"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 21,
+      "title": "DC-P1-008",
+      "whereRefs": [
+        "EntityCrudHandler.handleUpsertCollectionMetadata"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 22,
+      "title": "DC-P1-009",
+      "whereRefs": [
+        "products/data-cloud/planes/event/**",
+        "delivery/launcher/http/handlers/EventHandler.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 23,
+      "title": "DC-P1-010",
+      "whereRefs": [
+        "DataCloudSecurityFilter.java",
+        "RouteSecurityRegistry.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 24,
+      "title": "DC-P1-011",
+      "whereRefs": [
+        "DataCloudSecurityFilter.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 25,
+      "title": "DC-P2-012",
+      "whereRefs": [
+        "EntityCrudHandler.parseOffset"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 26,
+      "title": "DC-P2-013",
+      "whereRefs": [
+        "EntityCrudHandler.parseSorts",
+        "parseFilters"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 27,
+      "title": "DC-P2-014",
+      "whereRefs": [
+        "EntityCrudHandler.parseFilters"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 28,
+      "title": "AEP-P1-001",
+      "whereRefs": [
+        "PatternSpecCompiler.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 29,
+      "title": "AEP-P1-002",
+      "whereRefs": [
+        "PatternSpecCompiler.validateProductionRequirements()"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 30,
+      "title": "AEP-P1-003",
+      "whereRefs": [
+        "PatternSpecValidator.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 31,
+      "title": "AEP-P1-004",
+      "whereRefs": [
+        "PatternSpecValidator.validateLifecycle"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 32,
+      "title": "AEP-P1-005",
+      "whereRefs": [
+        "PatternSpecCompiler.compileExpression"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 33,
+      "title": "AEP-P1-006",
+      "whereRefs": [
+        "products/data-cloud/planes/action/event-bridge/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 34,
+      "title": "AEP-P2-007",
+      "whereRefs": [
+        "products/data-cloud/planes/action/operator-contracts/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 35,
+      "title": "AGENT-P1-001",
+      "whereRefs": [
+        "AgentEventOperatorCapabilityAdapter.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 36,
+      "title": "AGENT-P1-002",
+      "whereRefs": [
+        "AgentEventOperatorCapabilityAdapter.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 37,
+      "title": "AGENT-P1-003",
+      "whereRefs": [
+        "AgentEventOperatorCapabilityAdapter.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 38,
+      "title": "AGENT-P1-004",
+      "whereRefs": [
+        "products/yappc/core/yappc-services/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 39,
+      "title": "AGENT-P1-005",
+      "whereRefs": [
+        "scripts/audit-agent-usage.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 40,
+      "title": "AGENT-P2-006",
+      "whereRefs": [
+        "AgentEventOperatorCapabilityAdapter.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 41,
+      "title": "YAPPC-P1-001",
+      "whereRefs": [
+        "products/yappc/infrastructure/datacloud/src/test/java/.../YappcDataCloudContractIntegrationTest.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 42,
+      "title": "YAPPC-P1-002",
+      "whereRefs": [
+        "products/yappc/infrastructure/datacloud/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 43,
+      "title": "YAPPC-P1-003",
+      "whereRefs": [
+        "products/yappc/core/yappc-services/**",
+        "products/yappc/core/agents/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 44,
+      "title": "YAPPC-P1-004",
+      "whereRefs": [
+        "products/yappc/kernel-bridge/**",
+        "products:yappc:kernel-bridge"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 45,
+      "title": "YAPPC-P1-005",
+      "whereRefs": [
+        "scripts/check-yappc-*.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 46,
+      "title": "YAPPC-P2-006",
+      "whereRefs": [
+        "products/yappc/core/scaffold/**",
+        "products/yappc/core/agents/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 47,
+      "title": "YAPPC-P2-007",
+      "whereRefs": [
+        "products/yappc/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 48,
+      "title": "XPROD-P1-001",
+      "whereRefs": [
+        "products/data-cloud/planes/event/**",
+        "products/data-cloud/planes/action/event-bridge/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 49,
+      "title": "XPROD-P1-002",
+      "whereRefs": [
+        "products/data-cloud/planes/action/agent-runtime/**",
+        "operator-contracts/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 50,
+      "title": "XPROD-P1-003",
+      "whereRefs": [
+        "products/audio-video/**",
+        "products/data-cloud/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 51,
+      "title": "XPROD-P1-004",
+      "whereRefs": [
+        "products/audio-video/**",
+        "products/data-cloud/planes/action/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 52,
+      "title": "XPROD-P1-005",
+      "whereRefs": [
+        "platform-kernel/**",
+        "products/yappc/**",
+        "products/data-cloud/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 53,
+      "title": "TEST-P1-001",
+      "whereRefs": [
+        "package.json",
+        "scripts/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 54,
+      "title": "TEST-P1-002",
+      "whereRefs": [
+        "package.json"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 55,
+      "title": "TEST-P1-003",
+      "whereRefs": [
+        "products/audio-video/modules/integration-tests/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 56,
+      "title": "TEST-P2-004",
+      "whereRefs": [
+        "scripts/check-production-stubs.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 57,
+      "title": "TEST-P2-005",
+      "whereRefs": [
+        "scripts/check-product-feature-completeness*"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 58,
+      "title": "TEST-P2-006",
+      "whereRefs": [
+        "scripts/check-route-entitlement-contracts.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 59,
+      "title": "QUAL-P2-001",
+      "whereRefs": [
+        "DataCloudHttpServer.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 60,
+      "title": "QUAL-P2-002",
+      "whereRefs": [
+        "DataCloudHttpServer.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 61,
+      "title": "QUAL-P2-003",
+      "whereRefs": [
+        "products/audio-video/modules/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 62,
+      "title": "QUAL-P2-004",
+      "whereRefs": [
+        "products/audio-video/modules/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 63,
+      "title": "QUAL-P2-005",
+      "whereRefs": [
+        "products/data-cloud/**",
+        "platform/java/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 64,
+      "title": "QUAL-P3-006",
+      "whereRefs": []
+    }
+  ],
+  "warnings": [
+    "Task 3 references non-existing path \"products/audio-video/modules/**/build.gradle.kts\"",
+    "Task 4 references non-existing path \"products/audio-video/libs/common/src/main/java/**\"",
+    "Task 4 references non-existing path \"products/audio-video/modules/*/*/src/main/java/**\"",
+    "Task 6 references non-existing path \"SttGrpcService.java\"",
+    "Task 7 references non-existing path \"SttGrpcService.java\"",
+    "Task 8 references non-existing path \"SttGrpcService.java\"",
+    "Task 9 references non-existing path \"products/audio-video/modules/speech/tts-service/src/main/java/**\"",
+    "Task 10 references non-existing path \"products/audio-video/modules/vision/vision-service/src/main/java/**\"",
+    "Task 11 references non-existing path \"products/audio-video/modules/intelligence/multimodal-service/src/main/java/**\"",
+    "Task 12 references non-existing path \"products/audio-video/modules/**\"",
+    "Task 12 references non-existing path \"products/data-cloud/**\"",
+    "Task 13 references non-existing path \"products/audio-video/modules/integration-tests/src/test/java/**\"",
+    "Task 15 references non-existing path \"EntityCrudHandler.java\"",
+    "Task 16 references non-existing path \"EntityCrudHandler.java\"",
+    "Task 17 references non-existing path \"EntityCrudHandler.java\"",
+    "Task 18 references non-existing path \"EntityCrudHandler.java\"",
+    "Task 19 references non-existing path \"EntityCrudHandler.java\"",
+    "Task 20 references non-existing path \"EntityCrudHandler.java\"",
+    "Task 22 references non-existing path \"products/data-cloud/planes/event/**\"",
+    "Task 22 references non-existing path \"delivery/launcher/http/handlers/EventHandler.java\"",
+    "Task 23 references non-existing path \"DataCloudSecurityFilter.java\"",
+    "Task 23 references non-existing path \"RouteSecurityRegistry.java\"",
+    "Task 24 references non-existing path \"DataCloudSecurityFilter.java\"",
+    "Task 28 references non-existing path \"PatternSpecCompiler.java\"",
+    "Task 30 references non-existing path \"PatternSpecValidator.java\"",
+    "Task 33 references non-existing path \"products/data-cloud/planes/action/event-bridge/**\"",
+    "Task 34 references non-existing path \"products/data-cloud/planes/action/operator-contracts/**\"",
+    "Task 35 references non-existing path \"AgentEventOperatorCapabilityAdapter.java\"",
+    "Task 36 references non-existing path \"AgentEventOperatorCapabilityAdapter.java\"",
+    "Task 37 references non-existing path \"AgentEventOperatorCapabilityAdapter.java\"",
+    "Task 38 references non-existing path \"products/yappc/core/yappc-services/**\"",
+    "Task 40 references non-existing path \"AgentEventOperatorCapabilityAdapter.java\"",
+    "Task 41 references non-existing path \"products/yappc/infrastructure/datacloud/src/test/java/.../YappcDataCloudContractIntegrationTest.java\"",
+    "Task 42 references non-existing path \"products/yappc/infrastructure/datacloud/**\"",
+    "Task 43 references non-existing path \"products/yappc/core/yappc-services/**\"",
+    "Task 43 references non-existing path \"products/yappc/core/agents/**\"",
+    "Task 44 references non-existing path \"products/yappc/kernel-bridge/**\"",
+    "Task 45 references non-existing path \"scripts/check-yappc-*.mjs\"",
+    "Task 46 references non-existing path \"products/yappc/core/scaffold/**\"",
+    "Task 46 references non-existing path \"products/yappc/core/agents/**\"",
+    "Task 47 references non-existing path \"products/yappc/**\"",
+    "Task 48 references non-existing path \"products/data-cloud/planes/event/**\"",
+    "Task 48 references non-existing path \"products/data-cloud/planes/action/event-bridge/**\"",
+    "Task 49 references non-existing path \"products/data-cloud/planes/action/agent-runtime/**\"",
+    "Task 50 references non-existing path \"products/audio-video/**\"",
+    "Task 50 references non-existing path \"products/data-cloud/**\"",
+    "Task 51 references non-existing path \"products/audio-video/**\"",
+    "Task 51 references non-existing path \"products/data-cloud/planes/action/**\"",
+    "Task 52 references non-existing path \"platform-kernel/**\"",
+    "Task 52 references non-existing path \"products/yappc/**\"",
+    "Task 52 references non-existing path \"products/data-cloud/**\"",
+    "Task 53 references non-existing path \"scripts/**\"",
+    "Task 55 references non-existing path \"products/audio-video/modules/integration-tests/**\"",
+    "Task 57 references non-existing path \"scripts/check-product-feature-completeness*\"",
+    "Task 59 references non-existing path \"DataCloudHttpServer.java\"",
+    "Task 60 references non-existing path \"DataCloudHttpServer.java\"",
+    "Task 61 references non-existing path \"products/audio-video/modules/**\"",
+    "Task 62 references non-existing path \"products/audio-video/modules/**\"",
+    "Task 63 references non-existing path \"products/data-cloud/**\"",
+    "Task 63 references non-existing path \"platform/java/**\"",
+    "Task 64 has no parsed Where references in implementation plan"
+  ],
+  "violations": []
+}

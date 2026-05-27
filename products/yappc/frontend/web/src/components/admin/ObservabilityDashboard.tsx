@@ -65,6 +65,7 @@ export interface MonitoringLink {
 export interface ReleaseGateEvidence {
   id: string;
   label: string;
+  category: string;
   status: HealthStatus;
   evidenceHref: string;
   refreshedAt: string;
@@ -208,6 +209,12 @@ const ReleaseGateCard: React.FC<ReleaseGateCardProps> = ({ gate, t }) => (
     <CardContent className="space-y-3 p-4">
       <Box className="flex items-start justify-between gap-3">
         <Box>
+          <Chip
+            label={gate.category}
+            size="sm"
+            className="mb-2 bg-info-bg text-info-color"
+            data-testid={`release-gate-category-${gate.id}`}
+          />
           <Typography className="text-sm font-medium text-fg">
             {gate.label}
           </Typography>

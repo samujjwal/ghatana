@@ -24,4 +24,9 @@ public interface EmergencyAccessNotificationSender {
         EmergencyAccessReviewCase reviewCase,
         EmergencyAccessLogService.EmergencyAccessEvent event
     );
+
+    Promise<Void> notifyPatient(
+        EmergencyAccessReviewCase reviewCase,
+        EmergencyAccessLogService.EmergencyAccessEvent event
+    );
 }

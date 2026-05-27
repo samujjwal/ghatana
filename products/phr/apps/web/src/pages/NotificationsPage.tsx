@@ -31,6 +31,10 @@ export function NotificationsPage(): React.ReactElement {
       .finally(() => setLoading(false));
   }, [session]);
 
+  // PHI safety: Backend notification service must ensure that notification
+  // title and body fields never contain PHI (patient names, record IDs, etc.).
+  // Frontend displays notifications as-is; PHI redaction is enforced server-side.
+
   if (loading) return <div className="loading">{t('notifications.loading')}</div>;
   if (error) return <div className="error">{t('notifications.error')}: {error}</div>;
 

@@ -18,6 +18,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SectionLoading } from '@/components/common/LoadingState';
+import { ErrorState, errorCorrelationId, errorMessage } from '@/components/common/ErrorState';
 import {
   getKernelTimeline,
   getReleaseReadiness,
@@ -72,16 +74,19 @@ const ReleasePanel: React.FC<ReleasePanelProps> = ({ productKey, title }) => {
   });
 
   if (query.isLoading) {
-    return <div className="p-4 text-sm text-fg-muted">{t('productFamily.loading.releaseReadiness')}</div>;
+    return <SectionLoading message={t('productFamily.loading.releaseReadiness')} />;
   }
 
   if (query.isError || !query.data) {
     return (
-      <Card variant="filled">
-        <CardContent>
-          <p className="text-sm text-destructive">{t('productFamily.error.releaseReadinessUnavailable')}</p>
-        </CardContent>
-      </Card>
+      <ErrorState
+        title={t('productFamily.error.releaseReadinessUnavailable')}
+        message={errorMessage(query.error, t('productFamily.error.releaseReadinessUnavailable'))}
+        correlationId={errorCorrelationId(query.error)}
+        onRetry={() => void query.refetch()}
+        variant="banner"
+        size="sm"
+      />
     );
   }
 
@@ -203,7 +208,7 @@ const AssetRegistryPanel: React.FC = () => {
   });
 
   if (query.isLoading) {
-    return <div className="p-4 text-sm text-fg-muted">{t('productFamily.loading.reusableAssets')}</div>;
+    return <SectionLoading message={t('productFamily.loading.reusableAssets')} />;
   }
 
   const assets = query.data?.assets ?? [];

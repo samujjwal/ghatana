@@ -24,11 +24,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 /**
  * Exports YAPPC project generation intent as a Kernel ProductUnitIntent.
@@ -70,6 +74,8 @@ public final class ProductUnitIntentExporter {
     private final ObjectMapper yamlMapper;
     private final ObjectMapper jsonMapper;
     private final ProductUnitKernelContractRegistry contractRegistry;
+    private final Clock clock;
+    private final Supplier<String> intentIdSupplier;
 
     /**
      * Constructs a new ProductUnitIntentExporter with default YAML and JSON mappers.
@@ -84,12 +90,21 @@ public final class ProductUnitIntentExporter {
      * @param contractRegistry Kernel contract registry
      */
     public ProductUnitIntentExporter(@NotNull ProductUnitKernelContractRegistry contractRegistry) {
+        this(contractRegistry, Clock.systemUTC(), () -> UUID.randomUUID().toString());
+    }
+
+    ProductUnitIntentExporter(
+            @NotNull ProductUnitKernelContractRegistry contractRegistry,
+            @NotNull Clock clock,
+            @NotNull Supplier<String> intentIdSupplier) {
         this.yamlMapper = new ObjectMapper(new YAMLFactory());
         this.yamlMapper.enable(SerializationFeature.INDENT_OUTPUT);
         
         this.jsonMapper = new ObjectMapper();
         this.jsonMapper.enable(SerializationFeature.INDENT_OUTPUT);
         this.contractRegistry = contractRegistry;
+        this.clock = clock;
+        this.intentIdSupplier = intentIdSupplier;
     }
 
     /**
@@ -309,12 +324,12 @@ public final class ProductUnitIntentExporter {
     }
 
     private Map<String, Object> buildIntent(Request request, String intentId) {
-        Map<String, Object> metadata = new HashMap<>(request.metadata());
+        Map<String, Object> metadata = new LinkedHashMap<>(request.metadata());
         metadata.put("producer", PRODUCER_TYPE);
         metadata.put("sourcePhase", request.sourcePhase());
         metadata.put("projectId", request.projectId());
         metadata.put("workspaceId", request.workspaceId());
-        metadata.put("exportedAt", Instant.now().toString());
+        metadata.put("exportedAt", Instant.now(clock).toString());
 
         ProductUnitIntentDocument document = new ProductUnitIntentDocument(
                 SCHEMA_VERSION,
@@ -338,7 +353,7 @@ public final class ProductUnitIntentExporter {
                                         "planned"))
                                 .toList(),
                         request.lifecycleProfile(),
-                        Map.copyOf(metadata)),
+                        Collections.unmodifiableMap(metadata)),
                 new RequestedLifecycleDocument(request.lifecycleProfile(), true));
 
         @SuppressWarnings("unchecked")
@@ -347,7 +362,7 @@ public final class ProductUnitIntentExporter {
     }
 
     private String generateIntentId() {
-        return UUID.randomUUID().toString();
+        return intentIdSupplier.get();
     }
 
     private String inferKindFromTargetType(String targetType) {

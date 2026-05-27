@@ -4,6 +4,7 @@
   "lastUpdated": "2026-05-26",
   "description": "Canonical PHR use-case baseline: maps personas, IA routes/screens, backend APIs, and implementation status.",
   "statusValues": ["implemented", "partial", "feature_flagged", "backend_only", "ui_only", "missing", "deferred", "removed"],
+  "phaseValues": ["mvp-current", "mvp-next", "phase-2", "deferred", "removed"],
   "usecases": [
     {
       "id": "uc-patient-dashboard",
@@ -22,6 +23,7 @@
       "kernelCapability": "patient-record-read",
       "offlineSupport": true,
       "status": "implemented",
+      "phase": "mvp-current",
       "notes": "Web and mobile both serve dashboard data. Mobile uses encrypted offline cache with AES-256-GCM."
     },
     {
@@ -38,7 +40,8 @@
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
-      "status": "implemented"
+      "status": "implemented",
+      "phase": "mvp-current"
     },
     {
       "id": "uc-patient-record-detail",
@@ -53,6 +56,7 @@
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
       "status": "partial",
+      "phase": "mvp-next",
       "notes": "Web route exists, mobile screen needs implementation"
     },
     {
@@ -68,7 +72,8 @@
       ],
       "kernelCapability": "patient-profile-manage",
       "offlineSupport": false,
-      "status": "implemented"
+      "status": "implemented",
+      "phase": "mvp-current"
     },
     {
       "id": "uc-patient-timeline",
@@ -82,7 +87,8 @@
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
-      "status": "implemented"
+      "status": "implemented",
+      "phase": "mvp-current"
     },
     {
       "id": "uc-patient-conditions",
@@ -96,7 +102,8 @@
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
-      "status": "implemented"
+      "status": "implemented",
+      "phase": "mvp-current"
     },
     {
       "id": "uc-patient-observations",
@@ -110,7 +117,8 @@
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
-      "status": "implemented"
+      "status": "implemented",
+      "phase": "mvp-current"
     },
     {
       "id": "uc-patient-immunizations",
@@ -124,7 +132,8 @@
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
-      "status": "implemented"
+      "status": "implemented",
+      "phase": "mvp-current"
     },
     {
       "id": "uc-patient-consent-management",
@@ -142,6 +151,7 @@
       "kernelCapability": "consent-manage",
       "offlineSupport": false,
       "status": "implemented",
+      "phase": "mvp-current",
       "notes": "Payload uses recipientId + scope.resourceTypes (aligned with backend). Mobile endpoint needs alignment to /consents/grants/:grantId/revoke pattern."
     },
     {
@@ -159,6 +169,7 @@
       "kernelCapability": "appointment-manage",
       "offlineSupport": false,
       "status": "partial",
+      "phase": "mvp-next",
       "notes": "Request workflow exists, full booking workflow needs implementation"
     },
     {
@@ -173,7 +184,8 @@
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
-      "status": "implemented"
+      "status": "implemented",
+      "phase": "mvp-current"
     },
     {
       "id": "uc-patient-medications",
@@ -187,7 +199,8 @@
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
-      "status": "implemented"
+      "status": "implemented",
+      "phase": "mvp-current"
     },
     {
       "id": "uc-patient-documents",
@@ -202,7 +215,8 @@
       ],
       "kernelCapability": "document-manage",
       "offlineSupport": false,
-      "status": "implemented"
+      "status": "implemented",
+      "phase": "mvp-current"
     },
     {
       "id": "uc-patient-document-upload",
@@ -216,7 +230,8 @@
       ],
       "kernelCapability": "document-manage",
       "offlineSupport": false,
-      "status": "implemented"
+      "status": "implemented",
+      "phase": "mvp-current"
     },
     {
       "id": "uc-patient-ocr-review",
@@ -232,7 +247,8 @@
       ],
       "kernelCapability": "document-manage",
       "offlineSupport": false,
-      "status": "implemented"
+      "status": "implemented",
+      "phase": "mvp-current"
     },
     {
       "id": "uc-patient-notifications",
@@ -246,7 +262,8 @@
       ],
       "kernelCapability": "notification-read",
       "offlineSupport": false,
-      "status": "implemented"
+      "status": "implemented",
+      "phase": "mvp-current"
     },
     {
       "id": "uc-patient-settings",
@@ -262,7 +279,8 @@
       ],
       "kernelCapability": "patient-profile-manage",
       "offlineSupport": false,
-      "status": "implemented"
+      "status": "implemented",
+      "phase": "mvp-current"
     },
     {
       "id": "uc-patient-emergency-access",
@@ -279,6 +297,7 @@
       "kernelCapability": "emergency-break-glass",
       "offlineSupport": false,
       "status": "implemented",
+      "phase": "mvp-current",
       "notes": "Mobile requires documented reason + biometric gate before PHI is shown. Server policy gate needs hardening."
     },
     {
@@ -294,6 +313,7 @@
       "kernelCapability": "provider-dashboard",
       "offlineSupport": false,
       "status": "feature_flagged",
+      "phase": "phase-2",
       "notes": "Route exists but backend implementation incomplete. Feature-flagged until production-ready."
     },
     {
@@ -310,6 +330,7 @@
       "kernelCapability": "provider-patient-search",
       "offlineSupport": false,
       "status": "feature_flagged",
+      "phase": "phase-2",
       "notes": "Feature-flagged until backend consent/treatment relationship policy is implemented."
     },
     {
@@ -326,6 +347,7 @@
       "kernelCapability": "caregiver-access",
       "offlineSupport": false,
       "status": "feature_flagged",
+      "phase": "phase-2",
       "notes": "Placeholder/minimal page exists. Full implementation deferred."
     },
     {
@@ -343,6 +365,7 @@
       "kernelCapability": "fchv-workflow",
       "offlineSupport": false,
       "status": "feature_flagged",
+      "phase": "deferred",
       "notes": "Feature-flagged. May be deferred from MVP depending on Nepal healthcare priorities."
     },
     {
@@ -359,7 +382,8 @@
       ],
       "kernelCapability": "audit-read",
       "offlineSupport": false,
-      "status": "implemented"
+      "status": "implemented",
+      "phase": "mvp-current"
     },
     {
       "id": "uc-admin-release-readiness",
@@ -374,6 +398,7 @@
       "kernelCapability": "release-readiness",
       "offlineSupport": false,
       "status": "implemented",
+      "phase": "mvp-current",
       "notes": "Currently parses evidence files directly. Should migrate to Kernel runtime API."
     },
     {
@@ -390,7 +415,8 @@
       ],
       "kernelCapability": "emergency-review",
       "offlineSupport": false,
-      "status": "implemented"
+      "status": "implemented",
+      "phase": "mvp-current"
     },
     {
       "id": "uc-mobile-dashboard",
@@ -405,6 +431,7 @@
       "kernelCapability": "patient-record-read",
       "offlineSupport": true,
       "status": "implemented",
+      "phase": "mvp-current",
       "notes": "Dedicated mobile endpoint with session-header auth (X-Tenant-Id, X-Principal-Id, X-Role). Backend route needs verification."
     },
     {
@@ -417,7 +444,8 @@
       "backendApis": [],
       "kernelCapability": null,
       "offlineSupport": false,
-      "status": "implemented"
+      "status": "implemented",
+      "phase": "mvp-current"
     }
   ]
 }

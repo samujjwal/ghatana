@@ -2,6 +2,8 @@ package com.ghatana.phr.api.routes;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.phr.api.validation.PhrRequestValidator;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -27,13 +29,13 @@ import java.util.Set;
  * @doc.layer product
  * @doc.pattern Adapter Helper
  */
-final class PhrRouteSupport {
+public final class PhrRouteSupport {
 
     static final String CONTENT_JSON = "application/json";
     static final ObjectMapper JSON = new ObjectMapper().findAndRegisterModules();
 
     /** Roles permitted to call PHR routes. */
-    static final Set<String> ALLOWED_ROLES = Set.of("patient", "caregiver", "clinician", "admin");
+    static final Set<String> ALLOWED_ROLES = Set.of("patient", "caregiver", "clinician", "admin", "fchv");
 
     private PhrRouteSupport() {}
 
@@ -101,7 +103,8 @@ final class PhrRouteSupport {
     /**
      * Determines whether the context holder may access a given patient record.
      *
-     * <p>Patients may only access their own record. Clinicians and admins may access any record.
+     * <p>Delegates to PhrPolicyEvaluator for Kernel-backed policy evaluation.
+     * Patients may only access their own record. Clinicians and admins may access any record.
      * Caregivers are provisionally granted access; consent must be verified in the service layer.
      *
      * @param context   the validated request context
@@ -109,12 +112,55 @@ final class PhrRouteSupport {
      * @return true if access is provisionally allowed
      */
     static boolean canAccessPatientRecordForRole(PhrRequestContext context, String patientId) {
-        return switch (context.role()) {
-            case "admin", "clinician" -> true;
-            case "caregiver" -> true; // consent verified by service layer
-            case "patient" -> context.principalId().equals(patientId);
-            default -> false;
-        };
+        return PhrPolicyEvaluator.canAccessPatientRecord(context, patientId);
+    }
+
+    /**
+     * Validates that a tenant ID is properly formatted.
+     * 
+     * @param tenantId the tenant ID to validate
+     * @throws IllegalArgumentException if the tenant ID is invalid
+     */
+    static void validateTenantId(String tenantId) {
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new IllegalArgumentException("Tenant ID cannot be blank");
+        }
+        // Tenant IDs should be alphanumeric with hyphens, 3-50 characters
+        if (!tenantId.matches("^[a-zA-Z0-9-]{3,50}$")) {
+            throw new IllegalArgumentException("Tenant ID must be 3-50 alphanumeric characters with hyphens");
+        }
+    }
+
+    /**
+     * Validates that a principal ID is properly formatted.
+     * 
+     * @param principalId the principal ID to validate
+     * @throws IllegalArgumentException if the principal ID is invalid
+     */
+    static void validatePrincipalId(String principalId) {
+        if (principalId == null || principalId.isBlank()) {
+            throw new IllegalArgumentException("Principal ID cannot be blank");
+        }
+        // Principal IDs should be alphanumeric with hyphens/underscores, 3-100 characters
+        if (!principalId.matches("^[a-zA-Z0-9_-]{3,100}$")) {
+            throw new IllegalArgumentException("Principal ID must be 3-100 alphanumeric characters with hyphens/underscores");
+        }
+    }
+
+    /**
+     * Validates that a facility ID is properly formatted (if provided).
+     * 
+     * @param facilityId the facility ID to validate (may be null/blank for non-facility users)
+     * @throws IllegalArgumentException if the facility ID is provided but invalid
+     */
+    static void validateFacilityId(String facilityId) {
+        if (facilityId == null || facilityId.isBlank()) {
+            return; // Optional for non-facility users
+        }
+        // Facility IDs should be alphanumeric with hyphens, 3-50 characters
+        if (!facilityId.matches("^[a-zA-Z0-9-]{3,50}$")) {
+            throw new IllegalArgumentException("Facility ID must be 3-50 alphanumeric characters with hyphens");
+        }
     }
 
     static Promise<HttpResponse> jsonResponse(int statusCode, Object body) {
@@ -163,6 +209,56 @@ final class PhrRouteSupport {
         return jsonResponse(statusCode, body, correlationId);
     }
 
+    /**
+     * Parses and validates a request body into a DTO using Bean Validation.
+     *
+     * @param json the JSON string to parse
+     * @param type the target DTO class
+     * @param dtoName the name of the DTO for error messages
+     * @param <T> the DTO type
+     * @return the parsed and validated DTO
+     * @throws IllegalArgumentException if parsing or validation fails
+     */
+    static <T> T parseAndValidate(String json, Class<T> type, String dtoName) {
+        try {
+            T dto = JSON.readValue(json, type);
+            PhrRequestValidator.validate(dto, dtoName);
+            return dto;
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Invalid " + dtoName + ": " + ex.getMessage(), ex);
+        }
+    }
+
+    /**
+     * Extracts the idempotency key from request headers.
+     *
+     * @param request the HTTP request
+     * @return the idempotency key, or null if not present
+     */
+    static String getIdempotencyKey(HttpRequest request) {
+        String key = request.getHeader("X-Idempotency-Key");
+        if (key != null && !key.isBlank()) {
+            return key.trim();
+        }
+        return null;
+    }
+
+    /**
+     * Validates an idempotency key format.
+     *
+     * @param key the idempotency key to validate
+     * @return true if valid, false otherwise
+     */
+    static boolean isValidIdempotencyKey(String key) {
+        if (key == null || key.isBlank()) {
+            return false;
+        }
+        // Idempotency keys should be at least 16 characters and at most 255 characters
+        // They should be URL-safe (alphanumeric, hyphen, underscore)
+        return key.length() >= 16 && key.length() <= 255 
+            && key.matches("^[a-zA-Z0-9_-]+$");
+    }
+
     static String requiredQuery(HttpRequest request, String name) {
         String value = request.getQueryParameter(name);
         if (value == null || value.isBlank()) {
@@ -193,5 +289,5 @@ final class PhrRouteSupport {
         return null;
     }
 
-    record PhrRequestContext(String tenantId, String principalId, String role, String correlationId) {}
+    public record PhrRequestContext(String tenantId, String principalId, String role, String correlationId) {}
 }

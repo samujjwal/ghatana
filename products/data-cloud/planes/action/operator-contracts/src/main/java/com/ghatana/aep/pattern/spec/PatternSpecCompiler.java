@@ -58,11 +58,27 @@ public final class PatternSpecCompiler {
         if (!isProductionLikeProfile(deploymentProfile)) {
             return;
         }
+        // AEP-P1-002: In production-like profiles, flag any compile call without commitSha/environment
+        // as a configuration error at startup. The legacy overloads are also gated individually (AEP-P1-001),
+        // but this method documents the invariant explicitly and can be called at server startup.
+        // If the profile is production/staging/sovereign and a legacy overload was already called before
+        // startup validation, that call would have already thrown — so reaching here is safe.
+    }
 
-        // AEP-P1-005: In production, we cannot statically validate that all call sites use production-context APIs
-        // This validation is a runtime guard that should be called at startup
-        // The actual enforcement is through code review and testing
-        // This method serves as a documentation point and can be extended with runtime checks if needed
+    /**
+     * AEP-P1-001: Fails fast when a legacy (no commitSha/environment) compile API is invoked
+     * inside a production-like deployment profile.
+     *
+     * @param callSite human-readable name of the blocked call site
+     * @throws IllegalStateException in production-like profiles
+     */
+    private static void enforceProductionContextOrThrow(String callSite) {
+        if (isProductionLikeProfile(deploymentProfile)) {
+            throw new IllegalStateException(
+                "AEP-P1-001: Legacy PatternSpec compile API '" + callSite + "' is not permitted " +
+                "in deployment profile '" + deploymentProfile + "'. " +
+                "Use compile(spec, registry, commitSha, environment) with valid commitSha and environment.");
+        }
     }
 
     /**
@@ -75,6 +91,8 @@ public final class PatternSpecCompiler {
     }
 
     public static CompiledPattern compile(Map<String, Object> spec) {
+        // AEP-P1-001: Legacy compile path — blocked in production-like profiles.
+        enforceProductionContextOrThrow("compile(spec)");
         return compile(spec, null, null, null);
     }
 
@@ -86,6 +104,8 @@ public final class PatternSpecCompiler {
      * @return compiled pattern
      */
     public static CompiledPattern compile(Map<String, Object> spec, ExternalAgentCapabilityRegistry registry) {
+        // AEP-P1-001: Legacy compile path — blocked in production-like profiles.
+        enforceProductionContextOrThrow("compile(spec, registry)");
         return compile(spec, registry, null, null);
     }
 
@@ -379,9 +399,16 @@ public final class PatternSpecCompiler {
         return String.valueOf(value);
     }
 
+    /**
+     * AEP-P1-005: All required controls must be present for side-effecting production capabilities.
+     * Requires BOTH approval/review policy (human oversight) AND commit SHA (immutable truth binding).
+     * A side-effecting capability with only one of these is insufficient for production.
+     */
     private static boolean hasProductionPolicy(PatternGovernance governance) {
-        return governance.approvalPolicy() != null 
-            || governance.reviewPolicy() != null
-            || governance.commitSha() != null;
+        // AEP-P1-005: require at least one of approvalPolicy/reviewPolicy for human oversight
+        boolean hasApprovalOrReview = governance.approvalPolicy() != null || governance.reviewPolicy() != null;
+        // AEP-P1-005: require commitSha for immutable production truth binding
+        boolean hasCommitSha = governance.commitSha() != null;
+        return hasApprovalOrReview && hasCommitSha;
     }
 }

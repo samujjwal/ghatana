@@ -1,5 +1,6 @@
 package com.ghatana.audio.video.vision.grpc;
 
+import com.ghatana.audio.video.common.security.JwtServerInterceptor;
 import com.ghatana.audio.video.vision.detection.VisionDetector;
 import com.ghatana.audio.video.vision.grpc.proto.DetectRequest;
 import com.ghatana.audio.video.vision.grpc.proto.DetectResponse;
@@ -9,10 +10,16 @@ import com.ghatana.audio.video.vision.model.DetectedObject;
 import com.ghatana.audio.video.vision.model.DetectionOptions;
 import com.ghatana.audio.video.vision.video.VideoFrameExtractor;
 import com.google.protobuf.ByteString;
+import io.grpc.Context;
+import io.grpc.Contexts;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.Metadata;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.ServerCall;
+import io.grpc.ServerCallHandler;
+import io.grpc.ServerInterceptor;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import org.junit.jupiter.api.AfterEach;
@@ -37,6 +44,20 @@ import static org.mockito.Mockito.when;
  */
 @DisplayName("VisionGrpcService In-Process Integration")
 class VisionGrpcServiceInProcessIntegrationTest {
+
+    private static final String TEST_TENANT = "tenant-integration-test";
+
+    /** Server interceptor that injects a test tenant into the gRPC context. */
+    private static final class TenantInjector implements ServerInterceptor {
+        @Override
+        public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
+                ServerCall<ReqT, RespT> call,
+                Metadata headers,
+                ServerCallHandler<ReqT, RespT> next) {
+            Context ctx = Context.current().withValue(JwtServerInterceptor.CTX_TENANT, TEST_TENANT);
+            return Contexts.interceptCall(ctx, call, headers, next);
+        }
+    }
 
     private Server server;
     private ManagedChannel channel;
@@ -69,6 +90,7 @@ class VisionGrpcServiceInProcessIntegrationTest {
 
         server = ServerBuilder.forPort(0)
             .directExecutor()
+            .intercept(new TenantInjector())
             .addService(service)
             .build()
             .start();

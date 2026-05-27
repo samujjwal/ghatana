@@ -1,0 +1,156 @@
+{
+  "version": 1,
+  "updatedAt": "2026-05-26",
+  "coverage": [
+    {
+      "id": "E2E-001",
+      "journey": "New user opens YAPPC",
+      "spec": "e2e/page-designer-live-backend.spec.ts",
+      "assertions": ["login route loads", "workspace redirect succeeds", "no unexpected backend request"]
+    },
+    {
+      "id": "E2E-002",
+      "journey": "Workspace create/select",
+      "spec": "e2e/page-designer-live-backend.spec.ts",
+      "assertions": ["workspace list fixture is tenant scoped", "workspace detail persists after navigation", "workspace id is sent in headers"]
+    },
+    {
+      "id": "E2E-003",
+      "journey": "Project create",
+      "spec": "e2e/page-designer-live-backend.spec.ts",
+      "assertions": ["project route opens", "project API fixture returns tenant/workspace/project scope", "project artifacts route is queried"]
+    },
+    {
+      "id": "E2E-004",
+      "journey": "Intent capture",
+      "spec": "e2e/end-to-end-product-correctness.spec.ts",
+      "assertions": ["intent phase opens", "intent packet contains evidence", "intent phase participates in lifecycle smoke"]
+    },
+    {
+      "id": "E2E-005",
+      "journey": "Shape via canvas",
+      "spec": "e2e/end-to-end-product-correctness.spec.ts",
+      "assertions": ["shape phase opens", "shape packet has artifact lineage evidence", "canvas-backed shape state is deterministic"]
+    },
+    {
+      "id": "E2E-006",
+      "journey": "Validate blocked",
+      "spec": "e2e/end-to-end-product-correctness.spec.ts",
+      "assertions": ["validate blockers are rendered", "unsafe advance is disabled", "missing evidence remains visible"]
+    },
+    {
+      "id": "E2E-007",
+      "journey": "Validate pass",
+      "spec": "e2e/end-to-end-product-correctness.spec.ts",
+      "assertions": ["validate readiness can advance", "required evidence is present", "phase packet supports advance"]
+    },
+    {
+      "id": "E2E-008",
+      "journey": "Generate artifacts",
+      "spec": "e2e/end-to-end-product-correctness.spec.ts",
+      "assertions": ["generate phase opens", "generation action is available", "assurance evidence is included"]
+    },
+    {
+      "id": "E2E-009",
+      "journey": "Generate ProductUnitIntent",
+      "spec": "e2e/end-to-end-product-correctness.spec.ts",
+      "assertions": ["ProductUnitIntent API is called", "workspace/project/surface data is included", "Kernel contract values validate"]
+    },
+    {
+      "id": "E2E-010",
+      "journey": "Kernel handoff",
+      "spec": "e2e/end-to-end-product-correctness.spec.ts",
+      "assertions": ["Kernel handoff route accepts intent", "run status is recorded", "evidence id is returned"]
+    },
+    {
+      "id": "E2E-011",
+      "journey": "Run preview success",
+      "spec": "e2e/end-to-end-product-correctness.spec.ts",
+      "assertions": ["run phase opens", "preview health is healthy", "runtime health is healthy"]
+    },
+    {
+      "id": "E2E-012",
+      "journey": "Run failure",
+      "spec": "e2e/phase-cockpit-and-palette.spec.ts",
+      "assertions": ["run failure fixture is visible", "blocked action state is rendered", "recommendation copy is present"]
+    },
+    {
+      "id": "E2E-013",
+      "journey": "Observe Kernel health",
+      "spec": "e2e/end-to-end-product-correctness.spec.ts",
+      "assertions": ["observe phase opens", "Kernel health diagnostics are visible", "gate/artifact/deployment signals are present"]
+    },
+    {
+      "id": "E2E-014",
+      "journey": "Learn from failure",
+      "spec": "e2e/end-to-end-product-correctness.spec.ts",
+      "assertions": ["learn phase opens", "learning evidence appears", "recommendation is traceable to failed run"]
+    },
+    {
+      "id": "E2E-015",
+      "journey": "Prompt rollback",
+      "spec": "e2e/feature-flags.spec.ts",
+      "assertions": ["admin shell loads", "governed admin action is role scoped", "audit-backed admin controls render"]
+    },
+    {
+      "id": "E2E-016",
+      "journey": "Evolve change",
+      "spec": "e2e/end-to-end-product-correctness.spec.ts",
+      "assertions": ["evolve phase opens", "proposal/diff/approval surfaces render", "revalidation handoff is visible"]
+    },
+    {
+      "id": "E2E-017",
+      "journey": "Unauthorized user",
+      "spec": "e2e/end-to-end-product-correctness.spec.ts",
+      "assertions": ["viewer mutation is disabled", "API bypass is denied", "admin-only action is not available"]
+    },
+    {
+      "id": "E2E-018",
+      "journey": "Data Cloud degraded",
+      "spec": "e2e/end-to-end-product-correctness.spec.ts",
+      "assertions": ["Data Cloud degraded details render", "unsafe actions are disabled", "recovery action is visible"]
+    },
+    {
+      "id": "E2E-019",
+      "journey": "AEP degraded",
+      "spec": "e2e/end-to-end-product-correctness.spec.ts",
+      "assertions": ["AEP evidence failure renders as blocker", "empty evidence fallback is not accepted", "advance remains disabled"]
+    },
+    {
+      "id": "E2E-020",
+      "journey": "Kernel degraded",
+      "spec": "e2e/end-to-end-product-correctness.spec.ts",
+      "assertions": ["Kernel degraded details render", "run controls are disabled", "recovery instruction is visible"]
+    },
+    {
+      "id": "E2E-021",
+      "journey": "Product-family assets",
+      "spec": "e2e/end-to-end-product-correctness.spec.ts",
+      "assertions": ["product-family route loads", "assets/releases render", "promotion permissions are enforced"]
+    },
+    {
+      "id": "E2E-022",
+      "journey": "Admin observability",
+      "spec": "e2e/end-to-end-product-correctness.spec.ts",
+      "assertions": ["admin observability route loads", "SLO/cost/domain/OpenAPI evidence is visible", "gate status is deterministic"]
+    },
+    {
+      "id": "E2E-023",
+      "journey": "i18n",
+      "spec": "e2e/accessibility-contracts.spec.ts",
+      "assertions": ["key YAPPC routes render catalog-backed controls", "raw loading strings are absent", "localized landmarks are named"]
+    },
+    {
+      "id": "E2E-024",
+      "journey": "a11y",
+      "spec": "e2e/accessibility-contracts.spec.ts",
+      "assertions": ["phase routes pass accessibility checks", "admin/product-family/kernel routes pass checks", "no critical axe violations"]
+    },
+    {
+      "id": "E2E-025",
+      "journey": "Performance",
+      "spec": "e2e/performance-memory.spec.ts",
+      "assertions": ["route memory budget is measured", "performance APIs are guarded", "budget result is CI-friendly"]
+    }
+  ]
+}

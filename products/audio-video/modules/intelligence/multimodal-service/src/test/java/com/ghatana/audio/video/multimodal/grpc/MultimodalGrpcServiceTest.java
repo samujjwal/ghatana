@@ -1,6 +1,7 @@
 package com.ghatana.audio.video.multimodal.grpc;
 
 import com.ghatana.audio.video.common.observability.MediaProcessingMetrics;
+import com.ghatana.audio.video.common.security.JwtServerInterceptor;
 import com.ghatana.audio.video.multimodal.engine.AudioResult;
 import com.ghatana.audio.video.multimodal.engine.MultimodalAnalysisEngine;
 import com.ghatana.audio.video.multimodal.engine.MultimodalResult;
@@ -9,6 +10,7 @@ import com.ghatana.audio.video.multimodal.engine.VideoAudioResult;
 import com.ghatana.audio.video.multimodal.engine.VisualResult;
 import com.ghatana.audio.video.multimodal.grpc.proto.*;
 import com.google.protobuf.ByteString;
+import io.grpc.Context;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
@@ -42,6 +44,8 @@ import static org.mockito.Mockito.when;
 @DisplayName("MultimodalGrpcService")
 class MultimodalGrpcServiceTest {
 
+    private static final String TENANT_ID = "tenant-multimodal-test";
+
     @Mock
     private MultimodalAnalysisEngine mockEngine;
 
@@ -62,6 +66,19 @@ class MultimodalGrpcServiceTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
+    @DisplayName("processMultimodal: no tenant context → UNAUTHENTICATED")
+    void processMultimodal_noTenantContext_returnsUnauthenticated() {
+        CapturingObserver<MultimodalResponse> observer = new CapturingObserver<>();
+        service.processMultimodal(
+            MultimodalRequest.newBuilder().setAudioData(ByteString.copyFrom(new byte[]{1})).build(),
+            observer);
+
+        assertThat(observer.hasError()).isTrue();
+        assertThat(((StatusRuntimeException) observer.getError()).getStatus().getCode())
+            .isEqualTo(Status.UNAUTHENTICATED.getCode());
+    }
+
+    @Test
     @DisplayName("processMultimodal: audio + image → fused response returned")
     void processMultimodal_withAudioAndImage_returnsFusedResponse() { 
         MultimodalResult result = MultimodalResult.builder() 
@@ -77,7 +94,7 @@ class MultimodalGrpcServiceTest {
             .setImageData(ByteString.copyFrom(new byte[]{4, 5, 6})) 
             .build(); 
         CapturingObserver<MultimodalResponse> observer = new CapturingObserver<>(); 
-        service.processMultimodal(request, observer); 
+        withContext(TENANT_ID, () -> service.processMultimodal(request, observer)); 
 
         assertThat(observer.hasError()).isFalse(); 
         MultimodalResponse response = observer.getValue(); 
@@ -93,11 +110,11 @@ class MultimodalGrpcServiceTest {
         when(mockEngine.analyse(any())).thenThrow(new RuntimeException("engine failure"));
 
         CapturingObserver<MultimodalResponse> observer = new CapturingObserver<>(); 
-        service.processMultimodal( 
+        withContext(TENANT_ID, () -> service.processMultimodal( 
             MultimodalRequest.newBuilder() 
                 .setAudioData(ByteString.copyFrom(new byte[]{1})) 
                 .build(), 
-            observer);
+            observer));
 
         assertThat(observer.hasError()).isTrue(); 
         assertThat(((StatusRuntimeException) observer.getError()).getStatus().getCode()) 
@@ -115,11 +132,11 @@ class MultimodalGrpcServiceTest {
         when(mockEngine.analyse(any())).thenReturn(result); 
 
         CapturingObserver<MultimodalResponse> observer = new CapturingObserver<>(); 
-        service.processMultimodal( 
+        withContext(TENANT_ID, () -> service.processMultimodal( 
             MultimodalRequest.newBuilder() 
                 .setAudioData(ByteString.copyFrom(new byte[]{1})) 
                 .build(), 
-            observer);
+            observer));
 
         assertThat(observer.hasError()).isFalse(); 
         assertThat(observer.getValue().hasVisualAnalysis()).isFalse(); 
@@ -140,12 +157,12 @@ class MultimodalGrpcServiceTest {
         when(mockEngine.analyse(any())).thenReturn(result); 
 
         CapturingObserver<DescriptionResponse> observer = new CapturingObserver<>(); 
-        service.generateDescription( 
+        withContext(TENANT_ID, () -> service.generateDescription( 
             DescriptionRequest.newBuilder() 
                 .setAudioData(ByteString.copyFrom(new byte[]{1, 2})) 
                 .setContext("quarterly review")
                 .build(), 
-            observer);
+            observer));
 
         assertThat(observer.hasError()).isFalse(); 
         DescriptionResponse response = observer.getValue(); 
@@ -172,13 +189,13 @@ class MultimodalGrpcServiceTest {
             .thenReturn(result); 
 
         CapturingObserver<VideoAudioResponse> observer = new CapturingObserver<>(); 
-        service.analyzeVideoWithAudio( 
+        withContext(TENANT_ID, () -> service.analyzeVideoWithAudio( 
             VideoAudioRequest.newBuilder() 
                 .setVideoData(ByteString.copyFrom(new byte[]{9, 8, 7})) 
                 .setExtractAudio(true) 
                 .setAnalyzeFrames(true) 
                 .build(), 
-            observer);
+            observer));
 
         assertThat(observer.hasError()).isFalse(); 
         assertThat(observer.getValue().getCombinedNarrative()).isEqualTo("narrator speaking with outdoor scene");
@@ -193,7 +210,7 @@ class MultimodalGrpcServiceTest {
     @DisplayName("analyzeCrossModal: no audio and no video → INVALID_ARGUMENT")
     void analyzeCrossModal_noAudioNoVideo_returnsInvalidArgument() { 
         CapturingObserver<CrossModalResponse> observer = new CapturingObserver<>(); 
-        service.analyzeCrossModal(CrossModalRequest.getDefaultInstance(), observer); 
+        withContext(TENANT_ID, () -> service.analyzeCrossModal(CrossModalRequest.getDefaultInstance(), observer)); 
 
         assertThat(observer.hasError()).isTrue(); 
         assertThat(((StatusRuntimeException) observer.getError()).getStatus().getCode()) 
@@ -212,12 +229,12 @@ class MultimodalGrpcServiceTest {
         when(mockEngine.analyse(any())).thenReturn(result); 
 
         CapturingObserver<CrossModalResponse> observer = new CapturingObserver<>(); 
-        service.analyzeCrossModal( 
+        withContext(TENANT_ID, () -> service.analyzeCrossModal( 
             CrossModalRequest.newBuilder() 
                 .setAudioData(ByteString.copyFrom(new byte[]{1, 2})) 
                 .setVideoData(ByteString.copyFrom(new byte[]{3, 4})) 
                 .build(), 
-            observer);
+            observer));
 
         assertThat(observer.hasError()).isFalse(); 
         CrossModalResponse response = observer.getValue(); 
@@ -237,11 +254,11 @@ class MultimodalGrpcServiceTest {
         when(mockEngine.analyse(any())).thenReturn(result); 
 
         CapturingObserver<CrossModalResponse> observer = new CapturingObserver<>(); 
-        service.analyzeCrossModal( 
+        withContext(TENANT_ID, () -> service.analyzeCrossModal( 
             CrossModalRequest.newBuilder() 
                 .setAudioData(ByteString.copyFrom(new byte[]{1})) 
                 .build(), 
-            observer);
+            observer));
 
         assertThat(observer.hasError()).isFalse(); 
         assertThat(observer.getValue().getAlignmentScore()).isEqualTo(0.4); 
@@ -265,11 +282,11 @@ class MultimodalGrpcServiceTest {
         when(mockEngine.analyse(any())).thenReturn(result); 
 
         CapturingObserver<InsightsResponse> observer = new CapturingObserver<>(); 
-        service.getInsights( 
+        withContext(TENANT_ID, () -> service.getInsights( 
             InsightsRequest.newBuilder() 
                 .setAudioData(ByteString.copyFrom(new byte[]{1})) 
                 .build(), 
-            observer);
+            observer));
 
         assertThat(observer.hasError()).isFalse(); 
         InsightsResponse response = observer.getValue(); 
@@ -288,9 +305,9 @@ class MultimodalGrpcServiceTest {
         when(mockEngine.analyse(any())).thenReturn(result); 
 
         CapturingObserver<InsightsResponse> observer = new CapturingObserver<>(); 
-        service.getInsights( 
+        withContext(TENANT_ID, () -> service.getInsights( 
             InsightsRequest.newBuilder().setText("some context").build(),
-            observer);
+            observer));
 
         assertThat(observer.hasError()).isFalse(); 
         assertThat(observer.getValue().getTopicsList()).contains("text");
@@ -455,5 +472,9 @@ class MultimodalGrpcServiceTest {
         T getValue() { return value; } 
         boolean hasError() { return error != null; } 
         Throwable getError() { return error; } 
+    }
+
+    private static void withContext(String tenantId, Runnable action) {
+        Context.current().withValue(JwtServerInterceptor.CTX_TENANT, tenantId).run(action);
     }
 }

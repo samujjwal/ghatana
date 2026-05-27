@@ -53,6 +53,7 @@ export type CapabilityName =
   | 'ops:metrics'
   | 'ops:logs'
   | 'ops:dashboards'
+  | 'kernel-health:read'
   | 'product-family:control-plane'
   | 'admin:billing'
   | 'admin:teams'
@@ -114,6 +115,7 @@ const CAPABILITY_REGISTRY: Readonly<Record<CapabilityName, CapabilityConfig>> = 
   'ops:metrics':      { enabled: false, requiredRoles: ['OWNER', 'ADMIN', 'LEAD', 'DEVELOPER'] },
   'ops:logs':         { enabled: false, requiredRoles: ['OWNER', 'ADMIN', 'LEAD', 'DEVELOPER'] },
   'ops:dashboards':   { enabled: false, requiredRoles: ['OWNER', 'ADMIN', 'LEAD', 'DEVELOPER'] },
+  'kernel-health:read': { enabled: true, requiredRoles: ['OWNER', 'ADMIN'] },
   'product-family:control-plane': { enabled: true, requiredRoles: ['OWNER', 'ADMIN', 'LEAD', 'DEVELOPER', 'EDITOR'] },
 
   // ── Admin surfaces (F-Y013) ───────────────────────────────────────────────

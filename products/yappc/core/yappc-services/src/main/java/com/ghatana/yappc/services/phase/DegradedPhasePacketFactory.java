@@ -61,7 +61,10 @@ public final class DegradedPhasePacketFactory {
                 null,
                 List.of("Data Cloud service unavailable"),
                 0.0,
-                true
+                true,
+                "Blocked",
+                24,
+                0.35
         );
         PhasePacket.HealthSignals healthSignals = new PhasePacket.HealthSignals(
                 new PhasePacket.PreviewHealth(false, "degraded", List.of(reason)),

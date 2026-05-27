@@ -8,7 +8,8 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, Package, Link as LinkIcon } from 'lucide-react';
+import { CheckCircle, XCircle, Package, PackageX, Link as LinkIcon } from 'lucide-react';
+import { EmptyState } from '@/components/common/EmptyState';
 
 export interface KernelArtifactHealth {
   id: string;
@@ -63,9 +64,13 @@ export const ArtifactHealthPanel: React.FC<ArtifactHealthPanelProps> = ({
           <CardTitle>Artifact Health</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">
-            No artifacts available for {productUnitId}
-          </p>
+          <EmptyState
+            variant="compact"
+            className="rounded-lg border border-dashed border-border bg-muted/40"
+            icon={<PackageX className="h-full w-full" aria-hidden="true" />}
+            title="No artifacts available"
+            description={`No Kernel artifact metadata has been recorded for ${productUnitId} yet.`}
+          />
         </CardContent>
       </Card>
     );

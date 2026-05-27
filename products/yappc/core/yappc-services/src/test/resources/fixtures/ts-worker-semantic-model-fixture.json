@@ -1,0 +1,27 @@
+{
+  "id": "semantic-model-phase-cockpit-shape-surface",
+  "elementId": "shape-surface-panel",
+  "elementType": "component",
+  "name": "ShapeSurfacePanel",
+  "qualifiedName": "products/yappc/frontend/web/src/routes/app/project/shape.tsx#ShapeSurfacePanel",
+  "filePath": "products/yappc/frontend/web/src/routes/app/project/shape.tsx",
+  "confidence": 0.97,
+  "provenance": "EXACT",
+  "extractedAt": "2026-05-26T18:30:00Z",
+  "snapshotId": "repo-snapshot-yappc-phase-cockpit-2026-05-26",
+  "tenantId": "tenant-yappc-contract",
+  "workspaceId": "workspace-yappc-contract",
+  "projectId": "project-yappc-contract",
+  "sourceLocation": {
+    "filePath": "products/yappc/frontend/web/src/routes/app/project/shape.tsx",
+    "startLine": 42,
+    "startColumn": 3,
+    "endLine": 86,
+    "endColumn": 11
+  },
+  "metadata": {
+    "surface": "web",
+    "framework": "react",
+    "phase": "shape"
+  }
+}

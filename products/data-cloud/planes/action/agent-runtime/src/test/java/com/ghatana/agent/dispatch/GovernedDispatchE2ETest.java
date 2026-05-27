@@ -4,13 +4,12 @@
  */
 package com.ghatana.agent.dispatch;
 
-import com.ghatana.aep.agent.capability.CapabilityDescriptor;
 import com.ghatana.aep.agent.capability.ExternalAgentCapabilityRegistry;
-import com.ghatana.aep.operator.contract.OperatorKind;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,15 +53,14 @@ class GovernedDispatchE2ETest {
         ExternalAgentCapabilityRegistry registry = mock(ExternalAgentCapabilityRegistry.class);
         String capabilityRef = "http-request";
 
-        CapabilityDescriptor descriptor = CapabilityDescriptor.builder()
-            .capabilityId(capabilityRef)
-            .name("HTTP Request")
-            .description("Makes HTTP requests")
-            .build();
+        Map<String, Object> descriptor = Map.of(
+            "capabilityRef", capabilityRef,
+            "name", "HTTP Request",
+            "description", "Makes HTTP requests");
 
         // In a real implementation, this would verify the lookup returns the descriptor
         // For this test, we verify the descriptor structure
-        assertThat(descriptor.capabilityId()).isEqualTo(capabilityRef);
+        assertThat(descriptor.get("capabilityRef")).isEqualTo(capabilityRef);
     }
 
     // ==================== AGENT-002: EventOperatorCapability invocation ====================

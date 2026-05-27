@@ -24,6 +24,7 @@ describe('releaseGateEvidenceApi', () => {
         {
           id: 'product-slo-budgets',
           label: 'Product SLO budgets',
+          category: 'SLO',
           status: 'passed',
           evidenceHref: '/evidence/slo.json',
           generatedAt: '2026-05-23T01:00:00.000Z',
@@ -32,6 +33,7 @@ describe('releaseGateEvidenceApi', () => {
         {
           id: 'openapi-breaking-changes',
           label: 'OpenAPI breaking changes',
+          category: 'API',
           passed: false,
           evidenceHref: '/evidence/openapi.json',
           generatedAt: '2026-05-23T01:01:00.000Z',
@@ -50,6 +52,7 @@ describe('releaseGateEvidenceApi', () => {
       {
         id: 'product-slo-budgets',
         label: 'Product SLO budgets',
+        category: 'SLO',
         status: 'healthy',
         evidenceHref: '/evidence/slo.json',
         refreshedAt: '2026-05-23T01:00:00.000Z',
@@ -58,6 +61,7 @@ describe('releaseGateEvidenceApi', () => {
       {
         id: 'openapi-breaking-changes',
         label: 'OpenAPI breaking changes',
+        category: 'API',
         status: 'down',
         evidenceHref: '/evidence/openapi.json',
         refreshedAt: '2026-05-23T01:01:00.000Z',
@@ -81,16 +85,19 @@ describe('releaseGateEvidenceApi', () => {
     expect(records).toHaveLength(4);
     expect(records[0]).toMatchObject({
       id: 'product-slo-budgets',
+      category: 'SLO',
       status: 'healthy',
       summary: 'SLO evidence ready',
     });
     expect(records[2]).toMatchObject({
       id: 'product-domain-invariants',
+      category: 'Domain',
       status: 'degraded',
       summary: 'Domain invariant warning',
     });
     expect(records[3]).toMatchObject({
       id: 'openapi-breaking-changes',
+      category: 'API',
       status: 'down',
       summary: 'OpenAPI breaking changes evidence is unavailable: missing artifact',
     });

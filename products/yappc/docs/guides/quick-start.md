@@ -12,20 +12,20 @@ Get started with YAPPC in 5 minutes.
 
 ```bash
 git clone https://github.com/ghatana/ghatana.git
-cd ghatana/products/yappc
+cd ghatana
 ```
 
 ## 3. Start Services
 
 ```bash
 # Start infrastructure
-./start-infra.sh
+make -C products/yappc start-infra
 
 # Start backend
-./gradlew :services:run
+make -C products/yappc start-backend
 
 # Start frontend (new terminal)
-cd frontend
+cd products/yappc/frontend
 pnpm install
 pnpm dev
 ```

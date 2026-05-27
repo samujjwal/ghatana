@@ -18,8 +18,11 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
+const PRODUCT_ROOT = path.resolve(ROOT, '..', '..');
 const ROUTES_FILE = path.join(ROOT, 'src', 'routes.ts');
+const ROUTE_MANIFEST_FILE = path.join(PRODUCT_ROOT, 'docs', 'api', 'route-manifest.yaml');
 const INVENTORY_FILE = path.join(ROOT, 'docs', 'route-inventory.md');
+const ROUTE_DOCS_FILE = path.join(ROOT, 'docs', 'route-docs.md');
 
 const ROUTE_METADATA = new Map([
   routeMetadata('preview/builder', 'routes/preview-builder.tsx', {
@@ -347,6 +350,12 @@ function validateMetadata(routes) {
       continue;
     }
 
+    for (const requiredField of ['owner', 'auth', 'nav', 'featureFlag']) {
+      if (typeof metadata[requiredField] !== 'string' || metadata[requiredField].trim() === '') {
+        errors.push(`Missing ${requiredField} metadata for ${route.path} (${route.file})`);
+      }
+    }
+
     if (!metadata.expectedActions.length) {
       errors.push(`Missing expected user actions for ${route.path} (${route.file})`);
     }
@@ -369,6 +378,70 @@ function validateMetadata(routes) {
 
 function joinList(values) {
   return values.map((value) => value.replaceAll('|', '\\|')).join('<br>');
+}
+
+function stripYamlValue(value) {
+  return value
+    .replace(/\s+#.*$/, '')
+    .trim()
+    .replace(/^['"]|['"]$/g, '');
+}
+
+function parseInlineArray(value) {
+  const stripped = stripYamlValue(value);
+  if (stripped === '[]') {
+    return [];
+  }
+  if (!stripped.startsWith('[') || !stripped.endsWith(']')) {
+    return [stripped].filter(Boolean);
+  }
+  return stripped
+    .slice(1, -1)
+    .split(',')
+    .map((entry) => stripYamlValue(entry))
+    .filter(Boolean);
+}
+
+function parseRouteManifest(content) {
+  const routes = [];
+  let current = null;
+
+  for (const rawLineWithCarriageReturn of content.split('\n')) {
+    const rawLine = rawLineWithCarriageReturn.replace(/\r$/, '');
+    const methodMatch = rawLine.match(/^\s*-\s+method:\s*(.+)$/);
+    if (methodMatch) {
+      if (current) {
+        routes.push(current);
+      }
+      current = { method: stripYamlValue(methodMatch[1]), scopes: [] };
+      continue;
+    }
+
+    if (!current) {
+      continue;
+    }
+
+    const keyMatch = rawLine.match(/^\s+([A-Za-z][A-Za-z0-9]*):\s*(.*)$/);
+    if (!keyMatch) {
+      continue;
+    }
+
+    const key = keyMatch[1];
+    const value = keyMatch[2];
+    if (key === 'scopes') {
+      current.scopes = parseInlineArray(value);
+    } else if (['path', 'auth', 'owner', 'boundary', 'operationId', 'privacyClassification'].includes(key)) {
+      current[key] = stripYamlValue(value);
+    }
+  }
+
+  if (current) {
+    routes.push(current);
+  }
+
+  return routes
+    .filter((route) => route.method && route.path && route.operationId)
+    .sort((left, right) => `${left.owner}:${left.path}:${left.method}`.localeCompare(`${right.owner}:${right.path}:${right.method}`));
 }
 
 function generationDate() {
@@ -417,6 +490,81 @@ function generateMarkdown(routes) {
   return lines.join('\n');
 }
 
+function generateRouteDocs(frontendRoutes, manifestRoutes) {
+  const now = generationDate();
+  const ownerCounts = new Map();
+  for (const route of manifestRoutes) {
+    ownerCounts.set(route.owner, (ownerCounts.get(route.owner) ?? 0) + 1);
+  }
+
+  const ownerRows = Array.from(ownerCounts.entries())
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([owner, count]) => `| \`${owner}\` | ${count} |`)
+    .join('\n');
+
+  const frontendRows = frontendRoutes.map((route) => {
+    const metadata = metadataFor(route);
+    return [
+      `| \`${route.path}\``,
+      `\`${route.file}\``,
+      metadata.owner,
+      metadata.auth,
+      metadata.nav,
+      metadata.featureFlag,
+      joinList(metadata.expectedActions),
+    ].join(' | ') + ' |';
+  }).join('\n');
+
+  const manifestRows = manifestRoutes.map((route) => [
+    `| \`${route.method}\``,
+    `\`${route.path}\``,
+    `\`${route.operationId}\``,
+    `\`${route.owner}\``,
+    route.auth ?? '',
+    joinList((route.scopes ?? []).map((scope) => `\`${scope}\``)) || '`[]`',
+    route.boundary ?? '',
+    route.privacyClassification ?? '',
+  ].join(' | ') + ' |').join('\n');
+
+  return `# YAPPC Route Docs
+
+> Auto-generated from \`src/routes.ts\` and \`products/yappc/docs/api/route-manifest.yaml\` on ${now}.
+> Run \`node scripts/generate-route-inventory.mjs\` to regenerate.
+
+## Summary
+
+| Source | Count |
+| --- | ---: |
+| Frontend mounted routes | ${frontendRoutes.length} |
+| API manifest operations | ${manifestRoutes.length} |
+
+## API Operations By Owner
+
+| Owner | Operations |
+| --- | ---: |
+${ownerRows}
+
+## Frontend Routes
+
+| URL Path | Route File | Owner | Auth | Nav | Feature Flag | Expected User Actions |
+| --- | --- | --- | --- | --- | --- | --- |
+${frontendRows}
+
+## API Manifest Operations
+
+| Method | Path | Operation ID | Owner | Auth | Scopes | Boundary | Privacy |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+${manifestRows}
+`;
+}
+
+function compareGenerated(existing, generated) {
+  const stripDate = (s) => s
+    .replace(/> Auto-generated from `src\/routes\.ts` on \d{4}-\d{2}-\d{2}\./, '')
+    .replace(/> Auto-generated from `src\/routes\.ts` and `products\/yappc\/docs\/api\/route-manifest\.yaml` on \d{4}-\d{2}-\d{2}\./, '');
+  return stripDate(existing) === stripDate(generated);
+}
+
 function main() {
   if (!fs.existsSync(ROUTES_FILE)) {
     console.error(`Routes file not found: ${ROUTES_FILE}`);
@@ -425,6 +573,8 @@ function main() {
 
   const content = fs.readFileSync(ROUTES_FILE, 'utf8');
   const routes = parseRoutes(content);
+  const manifestContent = fs.readFileSync(ROUTE_MANIFEST_FILE, 'utf8');
+  const manifestRoutes = parseRouteManifest(manifestContent);
   const metadataErrors = validateMetadata(routes);
   if (metadataErrors.length > 0) {
     console.error('Route inventory metadata is incomplete:');
@@ -435,6 +585,7 @@ function main() {
   }
 
   const markdown = generateMarkdown(routes);
+  const routeDocsMarkdown = generateRouteDocs(routes, manifestRoutes);
 
   const checkMode = process.argv.includes('--check');
 
@@ -444,10 +595,17 @@ function main() {
       process.exit(1);
     }
     const existing = fs.readFileSync(INVENTORY_FILE, 'utf8');
-    // Compare ignoring the generation date line
-    const stripDate = (s) => s.replace(/> Auto-generated from `src\/routes\.ts` on \d{4}-\d{2}-\d{2}\./, '');
-    if (stripDate(existing) !== stripDate(markdown)) {
+    if (!compareGenerated(existing, markdown)) {
       console.error('Route inventory is out of date. Run `node scripts/generate-route-inventory.mjs` to regenerate.');
+      process.exit(1);
+    }
+    if (!fs.existsSync(ROUTE_DOCS_FILE)) {
+      console.error(`Route docs file not found: ${ROUTE_DOCS_FILE}`);
+      process.exit(1);
+    }
+    const existingRouteDocs = fs.readFileSync(ROUTE_DOCS_FILE, 'utf8');
+    if (!compareGenerated(existingRouteDocs, routeDocsMarkdown)) {
+      console.error('Route docs are out of date. Run `node scripts/generate-route-inventory.mjs` to regenerate.');
       process.exit(1);
     }
     console.log('Route inventory is up to date.');
@@ -461,7 +619,9 @@ function main() {
   }
 
   fs.writeFileSync(INVENTORY_FILE, markdown);
+  fs.writeFileSync(ROUTE_DOCS_FILE, routeDocsMarkdown);
   console.log(`Route inventory written to ${INVENTORY_FILE} (${routes.length} routes).`);
+  console.log(`Route docs written to ${ROUTE_DOCS_FILE} (${manifestRoutes.length} API operations).`);
 }
 
 main();

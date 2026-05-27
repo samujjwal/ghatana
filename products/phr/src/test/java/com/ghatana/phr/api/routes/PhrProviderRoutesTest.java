@@ -2,6 +2,8 @@ package com.ghatana.phr.api.routes;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.phr.kernel.service.ConsentManagementService;
+import com.ghatana.phr.kernel.service.PatientRecordService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
@@ -17,7 +19,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for {@link PhrProviderRoutes}.
@@ -37,7 +38,9 @@ class PhrProviderRoutesTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        PhrProviderRoutes routes = new PhrProviderRoutes(eventloop());
+        PatientRecordService patientRecordService = mock(PatientRecordService.class);
+        ConsentManagementService consentService = mock(ConsentManagementService.class);
+        PhrProviderRoutes routes = new PhrProviderRoutes(eventloop(), patientRecordService, consentService);
         servlet = routes.getServlet();
     }
 

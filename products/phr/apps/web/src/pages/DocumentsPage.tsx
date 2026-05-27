@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { fetchDocuments, downloadDocument } from '../api/phrApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import type { DocumentSummary } from '../types';
@@ -11,6 +11,8 @@ export function DocumentsPage(): React.ReactElement {
   const [error, setError] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [downloading, setDownloading] = useState<Set<string>>(new Set());
+  const [previewing, setPreviewing] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session) return;
@@ -50,6 +52,31 @@ export function DocumentsPage(): React.ReactElement {
         return next;
       });
     }
+  };
+
+  const handlePreview = async (documentId: string, contentType: string): Promise<void> => {
+    if (!session) return;
+    setPreviewing(documentId);
+    setPreviewError(null);
+    try {
+      const blob = await downloadDocument(documentId, session.principalId, {
+        tenantId: session.tenantId,
+        principalId: session.principalId,
+        role: session.role,
+      });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err) {
+      setPreviewError(err instanceof Error ? err.message : 'Failed to preview document');
+    } finally {
+      setPreviewing(null);
+    }
+  };
+
+  const canPreview = (contentType: string): boolean => {
+    return contentType === 'application/pdf' || 
+           contentType.startsWith('image/') ||
+           contentType === 'text/plain';
   };
 
   if (loading) return <div className="loading">Loading documents...</div>;
@@ -97,22 +124,34 @@ export function DocumentsPage(): React.ReactElement {
                 <li key={doc.id} className="document-entry">
                   <span className="document-title">{doc.title}</span>
                   <span className="muted">{doc.contentType}</span>
-                  {doc.size && <span className="muted">{(doc.size / 1024).toFixed(1)} KB</span>}
+                  {doc.sizeKb && <span className="muted">{doc.sizeKb.toFixed(1)} KB</span>}
                   <time dateTime={doc.uploadedAt}>{new Date(doc.uploadedAt).toLocaleDateString()}</time>
                   {doc.ocrStatus && (
                     <span className={`badge badge--ocr-${doc.ocrStatus}`}>
-                      {doc.ocrStatus === 'complete' && 'OCR Complete'}
+                      {doc.ocrStatus === 'ready' && 'OCR Complete'}
                       {doc.ocrStatus === 'pending' && 'OCR Pending'}
+                      {doc.ocrStatus === 'processing' && 'OCR Processing'}
                       {doc.ocrStatus === 'failed' && 'OCR Failed'}
                     </span>
                   )}
-                  <button
-                    onClick={() => handleDownload(doc.id, doc.title)}
-                    disabled={downloading.has(doc.id)}
-                    className="download-button"
-                  >
-                    {downloading.has(doc.id) ? 'Downloading...' : 'Download'}
-                  </button>
+                  <div className="row gap-sm">
+                    {canPreview(doc.contentType || '') && (
+                      <Button
+                        size="small"
+                        onClick={() => handlePreview(doc.id, doc.contentType || '')}
+                        disabled={previewing === doc.id}
+                      >
+                        {previewing === doc.id ? 'Previewing...' : 'Preview'}
+                      </Button>
+                    )}
+                    <Button
+                      size="small"
+                      onClick={() => handleDownload(doc.id, doc.title)}
+                      disabled={downloading.has(doc.id)}
+                    >
+                      {downloading.has(doc.id) ? 'Downloading...' : 'Download'}
+                    </Button>
+                  </div>
                 </li>
               ))
             )}

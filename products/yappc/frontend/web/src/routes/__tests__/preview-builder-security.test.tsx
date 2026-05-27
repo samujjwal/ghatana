@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import BuilderPreviewRoute from '../preview-builder';
-import { PREVIEW_BUILDER_RESPONSE_HEADERS, headers } from '../preview-builder';
+import { PREVIEW_BUILDER_RESPONSE_HEADERS, previewBuilderResponseHeaders } from '../preview-builder';
 import type { HostToPreviewMessage } from '@ghatana/ui-builder/preview';
 import { validatePreviewSessionToken } from '../../services/preview/PreviewSessionApi';
 
@@ -34,7 +34,7 @@ describe('BuilderPreviewRoute security', () => {
   });
 
   it('exports strict same-origin response headers for the preview document', () => {
-    expect(headers()).toBe(PREVIEW_BUILDER_RESPONSE_HEADERS);
+    expect(previewBuilderResponseHeaders()).toBe(PREVIEW_BUILDER_RESPONSE_HEADERS);
     expect(PREVIEW_BUILDER_RESPONSE_HEADERS['X-Frame-Options']).toBe('SAMEORIGIN');
     expect(PREVIEW_BUILDER_RESPONSE_HEADERS['X-Content-Type-Options']).toBe('nosniff');
     expect(PREVIEW_BUILDER_RESPONSE_HEADERS['Referrer-Policy']).toBe('no-referrer');

@@ -1,6 +1,30 @@
-# YAPPC Codebase - Quick Reference & Action Items
+﻿# YAPPC Codebase - Quick Reference & Action Items
 
 > **Updated:** 2026-04-27 | **Version:** 2.0 (post-refactoring)
+
+## YAPPC-Only Checks by Task Category
+
+Run these commands from the repository root unless a command explicitly changes directory. They are the current focused checks used by the YAPPC backlog progress ledger.
+
+| Category | Command | Use when |
+| --- | --- | --- |
+| P0 Kernel contract/export | `./gradlew :products:yappc:core:scaffold:api:test --tests "com.ghatana.yappc.kernel.ProductUnitKernelContractRegistryTest" --tests "com.ghatana.yappc.kernel.ProductUnitIntentExporterTest"` | ProductUnitIntent contract import/export changes. |
+| P0 phase packet contract | `./gradlew :products:yappc:core:yappc-services:test --tests "com.ghatana.yappc.api.PhasePacketContractTest" --tests "com.ghatana.yappc.services.phase.PhasePacketServiceImplTest"` | Phase packet shape, degraded packet, gate, action, evidence, or governance changes. |
+| P0 route/auth parity | `./gradlew :products:yappc:core:yappc-services:test --tests "com.ghatana.yappc.api.RouteManifestParityTest" --tests "com.ghatana.yappc.api.RouteAuthorizationRoleMatrixTest"` | Route manifest, OpenAPI, backend handler, authorization, scope, or role changes. |
+| P1 lifecycle integration | `./gradlew :products:yappc:core:yappc-services:test --tests "com.ghatana.yappc.services.integration.DataCloudPhasePacketTruthIntegrationTest"` | Data Cloud, Kernel truth, platform run status, or lifecycle truth wiring changes. |
+| P1 admin/product-family | `pnpm -C products/yappc/frontend/web exec vitest run src/components/admin/__tests__/ObservabilityDashboard.test.tsx src/routes/app/__tests__/product-family-gate.test.tsx` | Admin observability or product-family UI changes. |
+| P2 frontend unit | `pnpm -C products/yappc/frontend/web test:unit` | Component, hook, and direct packet-rendering changes. |
+| P2 frontend integration | `pnpm -C products/yappc/frontend/web test:integration` | Phase cockpit routes, panels, status, or action rendering changes. |
+| P2 frontend contract | `pnpm -C products/yappc/frontend/web test:contract` | API client, route inventory, E2E matrix metadata, or i18n-key changes. |
+| P2 a11y | `pnpm -C products/yappc/frontend/web test:a11y` | Route markup, landmarks, keyboard affordances, or accessibility fixture changes. |
+| P2 performance | `pnpm -C products/yappc/frontend/web test:performance` | Canvas, route performance, memory, or bundle-sensitive changes. |
+| P2 security/privacy/governance | `./gradlew :products:yappc:core:yappc-services:test --tests "com.ghatana.yappc.api.YappcSecurityMatrixTest" --tests "com.ghatana.yappc.api.YappcPrivacyContractTest" --tests "com.ghatana.yappc.services.phase.PhaseActionAuthorizationServiceTest"` | Tenant, role, scope, privacy, feature-flag, or mutating action policy changes. |
+| P2 regression grouping | `pnpm -C products/yappc/frontend/web test:regression:groups:check` | Package script or test-suite grouping changes. |
+| P3 API docs | `python products/yappc/scripts/generate-api-reference.py --check` | OpenAPI, route manifest, or generated API reference changes. |
+| P3 doc evidence | `node products/yappc/scripts/check-doc-evidence-links.mjs products/yappc/docs` | Documentation claims about readiness, checks, evidence, or completed behavior. |
+| Release evidence | `node products/yappc/scripts/generate-yappc-scorecard-evidence.mjs products/yappc/build/release-evidence artifacts && node products/yappc/scripts/check-yappc-scorecard-evidence.mjs products/yappc/build/release-evidence/yappc-scorecard-evidence.json` | CI evidence bundle, scorecard, or release-gate metadata changes. |
+
+For a compact reference, see [TEST_SUITES.md](TEST_SUITES.md). For evidence-backed backlog status, see [YAPPC_BACKLOG_PROGRESS.md](YAPPC_BACKLOG_PROGRESS.md).
 
 ## Source of Truth
 
@@ -32,7 +56,7 @@ YAPPC follows a modular service architecture aligned with platform standards. Al
 | `core/ai` | AI capabilities (agents, router, canvas, vector, **resilience**) |
 | `core/scaffold` | Scaffold schemas, adapters, packs |
 | `core/lifecycle` | SDLC models and engines |
-| `core/framework` | ⚠️ **DEPRECATED** — see [Migration Runbook](MIGRATION_RUNBOOK.md) |
+| `core/framework` | ⚠️ **DEPRECATED** — see [Core Architecture](CORE_ARCHITECTURE.md) |
 | `libs/java/yappc-domain` | Domain models, DTOs, repositories |
 | `libs/java/yappc-plugin-spi` | Plugin SPI for native plugin development |
 
@@ -140,7 +164,7 @@ The entire `core/framework/framework-api` module (55+ classes) is **deprecated s
 | `framework.encryption.KeyManagementService` | `platform.security.encryption.KeyManagementService` |
 | `framework.security.Authentication*` | `platform.security.auth.*` |
 
-See [Migration Runbook](MIGRATION_RUNBOOK.md) for full migration instructions.
+See [Core Architecture](CORE_ARCHITECTURE.md) for current module boundaries.
 
 ---
 

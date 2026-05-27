@@ -22,6 +22,7 @@ public final class ResilientEmergencyAccessNotificationSender implements Emergen
     private final CircuitBreaker complianceCircuitBreaker;
     private final CircuitBreaker scheduleCircuitBreaker;
     private final CircuitBreaker escalationCircuitBreaker;
+    private final CircuitBreaker patientCircuitBreaker;
 
     public ResilientEmergencyAccessNotificationSender(
             Eventloop eventloop,
@@ -32,7 +33,8 @@ public final class ResilientEmergencyAccessNotificationSender implements Emergen
             EmergencyAccessWorkflowResilienceUtils.createRetryPolicy(),
             EmergencyAccessWorkflowResilienceUtils.createCircuitBreaker("phr-emergency-review-notify-compliance"),
             EmergencyAccessWorkflowResilienceUtils.createCircuitBreaker("phr-emergency-review-schedule-review"),
-            EmergencyAccessWorkflowResilienceUtils.createCircuitBreaker("phr-emergency-review-escalation")
+            EmergencyAccessWorkflowResilienceUtils.createCircuitBreaker("phr-emergency-review-escalation"),
+            EmergencyAccessWorkflowResilienceUtils.createCircuitBreaker("phr-emergency-review-notify-patient")
         );
     }
 
@@ -42,7 +44,8 @@ public final class ResilientEmergencyAccessNotificationSender implements Emergen
             RetryPolicy retryPolicy,
             CircuitBreaker complianceCircuitBreaker,
             CircuitBreaker scheduleCircuitBreaker,
-            CircuitBreaker escalationCircuitBreaker) {
+            CircuitBreaker escalationCircuitBreaker,
+            CircuitBreaker patientCircuitBreaker) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.delegate = Objects.requireNonNull(delegate, "delegate must not be null");
         this.retryPolicy = Objects.requireNonNull(retryPolicy, "retryPolicy must not be null");
@@ -57,6 +60,10 @@ public final class ResilientEmergencyAccessNotificationSender implements Emergen
         this.escalationCircuitBreaker = Objects.requireNonNull(
             escalationCircuitBreaker,
             "escalationCircuitBreaker must not be null"
+        );
+        this.patientCircuitBreaker = Objects.requireNonNull(
+            patientCircuitBreaker,
+            "patientCircuitBreaker must not be null"
         );
     }
 
@@ -81,6 +88,14 @@ public final class ResilientEmergencyAccessNotificationSender implements Emergen
         return escalationCircuitBreaker.execute(
             eventloop,
             () -> retryPolicy.execute(eventloop, () -> delegate.notifyEscalation(reviewCase, event))
+        );
+    }
+
+    @Override
+    public Promise<Void> notifyPatient(EmergencyAccessReviewCase reviewCase, EmergencyAccessEvent event) {
+        return patientCircuitBreaker.execute(
+            eventloop,
+            () -> retryPolicy.execute(eventloop, () -> delegate.notifyPatient(reviewCase, event))
         );
     }
 }

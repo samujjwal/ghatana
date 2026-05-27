@@ -83,3 +83,21 @@ export async function loadDashboardOffline(): Promise<MobileDashboard | null> {
 export async function clearDashboardOffline(): Promise<void> {
   await phiRemove(DASHBOARD_KEY);
 }
+
+/**
+ * Returns the timestamp when the dashboard cache was last saved.
+ * Returns `null` if no cache exists.
+ */
+export async function getDashboardOfflineTimestamp(): Promise<number | null> {
+  const raw = await phiGet(DASHBOARD_KEY);
+  if (!raw) return null;
+
+  let envelope: DashboardCacheEnvelope;
+  try {
+    envelope = JSON.parse(raw) as DashboardCacheEnvelope;
+  } catch {
+    return null;
+  }
+
+  return envelope.savedAt;
+}

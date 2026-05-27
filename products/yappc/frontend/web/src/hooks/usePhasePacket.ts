@@ -32,6 +32,18 @@ import type {
   PhasePacketRequest,
 } from '../types/phasePacket';
 
+export function createPhasePacketCorrelationId(request: PhasePacketRequest): string {
+  if (request.correlationId && request.correlationId.trim().length > 0) {
+    return request.correlationId;
+  }
+
+  const randomPart =
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2);
+  return `phase-packet:${request.phase}:${request.projectId}:${Date.now()}:${randomPart}`;
+}
+
 // ============================================================================
 // Hook Return Type
 // ============================================================================
@@ -74,13 +86,14 @@ export function usePhasePacket(request: PhasePacketRequest): UsePhasePacketResul
     setError(null);
 
     try {
+      const correlationId = createPhasePacketCorrelationId(request);
       // Use generated client with GET method (query parameters)
       // Task 5.A.2: Ensure GET/POST parity between manifest, OpenAPI, backend, frontend
       const data = await LifecycleService.getPhasePacket(
         request.phase as 'intent' | 'shape' | 'validate' | 'generate' | 'run' | 'observe' | 'learn' | 'evolve',
         request.projectId,
         request.workspaceId,
-        request.correlationId
+        correlationId
       );
       setPacket(data);
     } catch (err) {

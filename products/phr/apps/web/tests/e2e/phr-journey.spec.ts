@@ -248,3 +248,205 @@ test.describe('PHR Cross-Role Authorization', () => {
     expect(hasError).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Emergency Break-Glass E2E Tests
+// ---------------------------------------------------------------------------
+
+test.describe('PHR Emergency Break-Glass', () => {
+  test('clinician can request emergency access with justification', async ({ page }) => {
+    await mockPhrEntitlements(page);
+    
+    // Login as clinician
+    await page.goto('/login');
+    await page.getByRole('textbox', { name: /email|username|id/i }).fill('clinician@example.com');
+    await page.getByRole('textbox', { name: /password/i }).fill('password123');
+    await page.getByRole('button', { name: /login|sign in/i }).click();
+    
+    // Navigate to emergency access
+    await page.getByRole('link', { name: /emergency/i }).click();
+    await expect(page.getByText('Emergency Access')).toBeVisible();
+    
+    // Fill emergency access form
+    await page.getByRole('textbox', { name: /patient id/i }).fill('patient-1');
+    await page.getByRole('textbox', { name: /justification/i }).fill('Critical emergency - patient unconscious');
+    await page.getByRole('checkbox', { name: /labs/i }).check();
+    await page.getByRole('checkbox', { name: /medications/i }).check();
+    
+    // Submit emergency access request
+    await page.getByRole('button', { name: /request access/i }).click();
+    
+    // Verify success message
+    await expect(page.getByText(/emergency access granted|logged/i)).toBeVisible();
+  });
+
+  test('emergency access requires non-empty justification', async ({ page }) => {
+    await mockPhrEntitlements(page);
+    
+    // Login as clinician
+    await page.goto('/login');
+    await page.getByRole('textbox', { name: /email|username|id/i }).fill('clinician@example.com');
+    await page.getByRole('textbox', { name: /password/i }).fill('password123');
+    await page.getByRole('button', { name: /login|sign in/i }).click();
+    
+    // Navigate to emergency access
+    await page.getByRole('link', { name: /emergency/i }).click();
+    
+    // Try to submit without justification
+    await page.getByRole('textbox', { name: /patient id/i }).fill('patient-1');
+    await page.getByRole('button', { name: /request access/i }).click();
+    
+    // Should see validation error
+    await expect(page.getByText(/justification.*required/i)).toBeVisible();
+  });
+
+  test('emergency access requires at least one resource to be selected', async ({ page }) => {
+    await mockPhrEntitlements(page);
+    
+    // Login as clinician
+    await page.goto('/login');
+    await page.getByRole('textbox', { name: /email|username|id/i }).fill('clinician@example.com');
+    await page.getByRole('textbox', { name: /password/i }).fill('password123');
+    await page.getByRole('button', { name: /login|sign in/i }).click();
+    
+    // Navigate to emergency access
+    await page.getByRole('link', { name: /emergency/i }).click();
+    
+    // Try to submit without selecting resources
+    await page.getByRole('textbox', { name: /patient id/i }).fill('patient-1');
+    await page.getByRole('textbox', { name: /justification/i }).fill('Critical emergency');
+    await page.getByRole('button', { name: /request access/i }).click();
+    
+    // Should see validation error
+    await expect(page.getByText(/at least one resource/i)).toBeVisible();
+  });
+
+  test('non-clinician cannot request emergency access', async ({ page }) => {
+    await mockPhrEntitlements(page);
+    
+    // Login as patient
+    await page.goto('/login');
+    await page.getByRole('textbox', { name: /email|username|id/i }).fill('patient@example.com');
+    await page.getByRole('textbox', { name: /password/i }).fill('password123');
+    await page.getByRole('button', { name: /login|sign in/i }).click();
+    
+    // Try to access emergency request page
+    await page.goto('/emergency');
+    
+    // Should see 403 or authorization error
+    const hasError = await page.getByText(/forbidden|403|unauthorized|clinician only/i).isVisible().catch(() => false);
+    expect(hasError).toBe(true);
+  });
+
+  test('admin can review pending emergency access events', async ({ page }) => {
+    await mockPhrEntitlements(page);
+    
+    // Login as admin
+    await page.goto('/login');
+    await page.getByRole('textbox', { name: /email|username|id/i }).fill('admin@example.com');
+    await page.getByRole('textbox', { name: /password/i }).fill('password123');
+    await page.getByRole('button', { name: /login|sign in/i }).click();
+    
+    // Navigate to emergency reviews
+    await page.goto('/emergency/reviews');
+    await expect(page.getByText('Emergency Reviews')).toBeVisible();
+    
+    // Verify pending reviews section
+    await expect(page.getByText('Pending Reviews')).toBeVisible();
+  });
+
+  test('admin can approve emergency access review', async ({ page }) => {
+    await mockPhrEntitlements(page);
+    
+    // Login as admin
+    await page.goto('/login');
+    await page.getByRole('textbox', { name: /email|username|id/i }).fill('admin@example.com');
+    await page.getByRole('textbox', { name: /password/i }).fill('password123');
+    await page.getByRole('button', { name: /login|sign in/i }).click();
+    
+    // Navigate to emergency reviews
+    await page.goto('/emergency/reviews');
+    
+    // Click on a pending review
+    const reviewItem = page.getByTestId('emergency-review-item').first();
+    if (await reviewItem.isVisible()) {
+      await reviewItem.click();
+      
+      // Approve the review
+      await page.getByRole('button', { name: /approve/i }).click();
+      
+      // Verify success message
+      await expect(page.getByText(/reviewed|approved/i)).toBeVisible();
+    }
+  });
+
+  test('admin denied review requires notes', async ({ page }) => {
+    await mockPhrEntitlements(page);
+    
+    // Login as admin
+    await page.goto('/login');
+    await page.getByRole('textbox', { name: /email|username|id/i }).fill('admin@example.com');
+    await page.getByRole('textbox', { name: /password/i }).fill('password123');
+    await page.getByRole('button', { name: /login|sign in/i }).click();
+    
+    // Navigate to emergency reviews
+    await page.goto('/emergency/reviews');
+    
+    // Click on a pending review
+    const reviewItem = page.getByTestId('emergency-review-item').first();
+    if (await reviewItem.isVisible()) {
+      await reviewItem.click();
+      
+      // Try to deny without notes
+      await page.getByRole('button', { name: /deny/i }).click();
+      
+      // Should see validation error
+      await expect(page.getByText(/notes.*required/i)).toBeVisible();
+      
+      // Add notes and deny
+      await page.getByRole('textbox', { name: /notes/i }).fill('Insufficient justification provided');
+      await page.getByRole('button', { name: /deny/i }).click();
+      
+      // Verify success
+      await expect(page.getByText(/reviewed|denied/i)).toBeVisible();
+    }
+  });
+
+  test('patient can view their emergency access log', async ({ page }) => {
+    await mockPhrEntitlements(page);
+    
+    // Login as patient
+    await page.goto('/login');
+    await page.getByRole('textbox', { name: /email|username|id/i }).fill('patient@example.com');
+    await page.getByRole('textbox', { name: /password/i }).fill('password123');
+    await page.getByRole('button', { name: /login|sign in/i }).click();
+    
+    // Navigate to emergency access
+    await page.getByRole('link', { name: /emergency/i }).click();
+    
+    // Verify emergency access events are displayed
+    await expect(page.getByText('Emergency Access Events')).toBeVisible();
+  });
+
+  test('emergency access event includes audit trail', async ({ page }) => {
+    await mockPhrEntitlements(page);
+    
+    // Login as admin
+    await page.goto('/login');
+    await page.getByRole('textbox', { name: /email|username|id/i }).fill('admin@example.com');
+    await page.getByRole('textbox', { name: /password/i }).fill('password123');
+    await page.getByRole('button', { name: /login|sign in/i }).click();
+    
+    // Navigate to emergency reviews
+    await page.goto('/emergency/reviews');
+    
+    // Click on a review to view details
+    const reviewItem = page.getByTestId('emergency-review-item').first();
+    if (await reviewItem.isVisible()) {
+      await reviewItem.click();
+      
+      // Verify audit trail is displayed
+      await expect(page.getByText(/accessor|timestamp|resources/i)).toBeVisible();
+    }
+  });
+});

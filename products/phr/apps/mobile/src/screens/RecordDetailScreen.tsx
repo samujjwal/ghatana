@@ -26,7 +26,7 @@ export function RecordDetailScreen({ record, onBack }: RecordDetailScreenProps):
       </View>
 
       <View style={styles.fieldRow}>
-        <Text style={styles.label}>ID</Text>
+        <Text style={styles.label}>{t('records.recordId')}</Text>
         <Text style={styles.value}>{record.id}</Text>
       </View>
 
@@ -36,7 +36,7 @@ export function RecordDetailScreen({ record, onBack }: RecordDetailScreenProps):
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>FHIR Preview</Text>
+        <Text style={styles.sectionTitle}>{t('records.fhirResource')}</Text>
         <Text style={styles.code}>{record.fhirPreview}</Text>
       </View>
     </ScrollView>

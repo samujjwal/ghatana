@@ -113,7 +113,8 @@ public final class PatternSpecValidator {
 
         validateSemantics(spec.get("semantics"), errors);
         validateEmit(spec.get("emit"), errors);
-        validateLifecycle(spec.get("lifecycle"), environment, errors);
+        // AEP-P1-004: Pass root governance for consistent fallback in promotion checks
+        validateLifecycle(spec.get("lifecycle"), spec.get("governance"), environment, errors);
         validateGovernance(spec.get("governance"), commitSha, environment, errors);
 
         Object pattern = spec.get("pattern");
@@ -328,7 +329,12 @@ public final class PatternSpecValidator {
         }
     }
 
-    private static void validateLifecycle(Object lifecycle, String environment, List<String> errors) {
+    /**
+     * AEP-P1-004: Validates lifecycle with consistent promotion governance — root governance
+     * is accepted as a fallback when lifecycle-scoped governance is absent for production promotions.
+     */
+    private static void validateLifecycle(
+            Object lifecycle, Object rootGovernance, String environment, List<String> errors) {
         if (!(lifecycle instanceof Map<?, ?> lifecycleMap)) {
             if (lifecycle != null) {
                 errors.add("lifecycle must be an object");
@@ -353,13 +359,18 @@ public final class PatternSpecValidator {
                 }
             }
             
-            // AEP-P1-002: Validate promotion to active/predictive requires governance proof
+            // AEP-P1-002 / AEP-P1-004: Validate promotion to active/predictive requires governance proof.
+            // Accept lifecycle-scoped governance OR root governance (canonical location) for promotion checks.
             if ("production".equals(environment) && (state.equalsIgnoreCase("active") || state.equalsIgnoreCase("predictive"))) {
                 if (previousState != null && !previousState.equalsIgnoreCase(state)) {
-                    // This is a promotion - validate governance requirements
-                    Object governance = lifecycleMap.get("governance");
+                    // AEP-P1-004: Use lifecycle-scoped governance if present; fall back to root governance.
+                    Object governanceSource = lifecycleMap.get("governance");
+                    if (governanceSource == null) {
+                        governanceSource = rootGovernance; // AEP-P1-004: consistent fallback
+                    }
+                    Object governance = governanceSource;
                     if (!(governance instanceof Map<?, ?> governanceMap)) {
-                        errors.add("lifecycle.governance is required for promotion to " + state + " in production");
+                        errors.add("lifecycle.governance or root governance is required for promotion to " + state + " in production");
                     } else {
                         // AEP-P1-002: Promotion requires approval policy
                         if (isBlank(governanceMap.get("approvalPolicy")) && isBlank(governanceMap.get("reviewPolicy"))) {

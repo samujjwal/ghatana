@@ -221,6 +221,27 @@ public final class DataCloudLauncherSettings {
         return Long.parseLong(raw);
     }
 
+    /**
+     * DC-P1-003: Resolves the set of collection names that must be deleted all-or-nothing
+     * (transactional). Reads the comma-separated {@code DC_CRITICAL_COLLECTIONS} env var.
+     * Returns {@code null} when the variable is absent or blank, causing the handler to use
+     * its own built-in defaults.
+     */
+    public static java.util.Set<String> resolveCriticalCollections(Map<String, String> env) {
+        String raw = env.get("DC_CRITICAL_COLLECTIONS");
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        java.util.Set<String> result = new java.util.LinkedHashSet<>();
+        for (String token : raw.split(",")) {
+            String trimmed = token.trim();
+            if (!trimmed.isEmpty()) {
+                result.add(trimmed);
+            }
+        }
+        return result.isEmpty() ? null : java.util.Collections.unmodifiableSet(result);
+    }
+
     private static boolean isEnabled(String rawValue) {
         if (rawValue == null) {
             return false;

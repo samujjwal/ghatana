@@ -16,9 +16,12 @@ export const CANVAS_PERFORMANCE_BUDGETS = {
   maxEstimatedMemoryMb: 64,
   largeBuilderComponentCount: 250,
   maxBuilderValidationTimeMs: 120,
+  maxPhaseCockpitRouteLatencyMs: 900,
+  maxAdminRouteLatencyMs: 1_100,
+  maxKernelHealthRouteLatencyMs: 1_100,
 } as const;
 
-export type PerformanceBudgetArea = 'canvas' | 'page-builder';
+export type PerformanceBudgetArea = 'canvas' | 'page-builder' | 'route';
 
 export interface PerformanceBudgetViolation {
   readonly area: PerformanceBudgetArea;
@@ -41,6 +44,14 @@ export interface PageBuilderPerformanceBudgetInput {
   readonly componentCount: number;
   readonly validationTimeMs: number;
   readonly estimatedMemoryMb?: number;
+}
+
+export type KeyRouteBudgetKind = 'phase-cockpit' | 'admin' | 'kernel-health';
+
+export interface RoutePerformanceBudgetInput {
+  readonly routeId: string;
+  readonly kind: KeyRouteBudgetKind;
+  readonly latencyMs: number;
 }
 
 export interface PerformanceBudgetResult {
@@ -164,5 +175,41 @@ export function evaluatePageBuilderPerformanceBudget(
   return {
     withinBudget: violations.length === 0,
     violations,
+  };
+}
+
+export function routeLatencyBudgetMs(kind: KeyRouteBudgetKind): number {
+  switch (kind) {
+    case 'phase-cockpit':
+      return CANVAS_PERFORMANCE_BUDGETS.maxPhaseCockpitRouteLatencyMs;
+    case 'admin':
+      return CANVAS_PERFORMANCE_BUDGETS.maxAdminRouteLatencyMs;
+    case 'kernel-health':
+      return CANVAS_PERFORMANCE_BUDGETS.maxKernelHealthRouteLatencyMs;
+  }
+}
+
+export function evaluateRoutePerformanceBudget(
+  input: RoutePerformanceBudgetInput
+): PerformanceBudgetResult {
+  const budget = routeLatencyBudgetMs(input.kind);
+  if (input.latencyMs <= budget) {
+    return {
+      withinBudget: true,
+      violations: [],
+    };
+  }
+
+  return {
+    withinBudget: false,
+    violations: [
+      {
+        area: 'route',
+        metric: `${input.routeId}.latencyMs`,
+        actual: input.latencyMs,
+        budget,
+        message: `Route ${input.routeId} latency ${input.latencyMs}ms exceeds ${input.kind} budget ${budget}ms.`,
+      },
+    ],
   };
 }

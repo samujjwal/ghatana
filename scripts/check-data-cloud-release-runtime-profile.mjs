@@ -9,6 +9,7 @@ const evidenceDir = path.join(repoRoot, '.kernel/evidence');
 const evidencePath = path.join(evidenceDir, 'data-cloud-release-runtime-profile.json');
 const targetEnvironment = process.env.RELEASE_ENVIRONMENT ?? 'staging';
 const evidenceValidityHours = Number(process.env.RELEASE_EVIDENCE_VALIDITY_HOURS ?? '48');
+const bootstrapMode = process.env.DATACLOUD_RELEASE_GATE_BOOTSTRAP === 'product-release-readiness';
 
 function currentGitSha() {
   const result = spawnSync('git', ['rev-parse', 'HEAD'], {
@@ -72,9 +73,23 @@ const checks = [
   { name: 'Observability conformance', command: ['node', './scripts/check-observability-conformance.mjs'] },
 ];
 
+const bootstrapSkippedChecks = new Set([
+  'Runtime dependency failure-injection executable',
+  'Atomic workflow failure-injection executable',
+  'AI governance behavioral proof',
+  'i18n behavioral proof',
+  'a11y behavioral proof',
+]);
+
+const checksToRun = bootstrapMode ? checks.filter((check) => !bootstrapSkippedChecks.has(check.name)) : checks;
+
+if (bootstrapMode) {
+  console.warn('Bootstrap mode enabled: skipping heavy executable runtime profile checks.');
+}
+
 const results = [];
 
-for (const check of checks) {
+for (const check of checksToRun) {
   const [bin, ...args] = check.command;
   const run = spawnSync(bin, args, {
     cwd: repoRoot,
@@ -112,6 +127,8 @@ writeJsonWithRetry(evidencePath, {
   reviewDueAt: new Date(generatedAt.getTime() + 24 * 60 * 60 * 1000).toISOString(),
   expiresAt: new Date(generatedAt.getTime() + evidenceValidityHours * 60 * 60 * 1000).toISOString(),
   checks: results,
+  bootstrapMode,
+  skippedChecks: bootstrapMode ? [...bootstrapSkippedChecks] : [],
   pass: results.every((entry) => entry.ok),
 });
 

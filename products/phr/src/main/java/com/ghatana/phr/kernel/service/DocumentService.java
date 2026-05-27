@@ -309,6 +309,102 @@ public class DocumentService extends PhrServiceBase {
             });
     }
 
+    // ==================== OCR Operations ====================
+
+    /**
+     * Retrieves OCR document for review.
+     *
+     * @param documentId the document identifier
+     * @param accessorId the accessor (for consent check)
+     * @return Promise containing OCR document if accessible
+     */
+    public Promise<Optional<OcrDocument>> getOcrDocument(String documentId, String accessorId) {
+        ensureRunning();
+
+        return fetchDocument(documentId)
+            .then(opt -> {
+                if (opt.isEmpty()) {
+                    return Promise.of(Optional.empty());
+                }
+                PatientDocument doc = opt.get();
+
+                if (!isDocumentVisible(doc, accessorId)) {
+                    return Promise.of(Optional.empty());
+                }
+
+                // Return OCR document with extracted text (placeholder - would be stored separately)
+                OcrDocument ocrDoc = new OcrDocument(
+                    doc.getId(),
+                    doc.getTitle(),
+                    "PENDING_REVIEW",
+                    0.85, // placeholder confidence
+                    "Extracted text placeholder - would come from OCR service"
+                );
+                return Promise.of(Optional.of(ocrDoc));
+            });
+    }
+
+    /**
+     * Confirms OCR document with corrected text and creates FHIR draft with provenance.
+     *
+     * @param documentId the document identifier
+     * @param reviewerId the reviewer who confirmed
+     * @param correctedText the corrected text (may be null if no changes)
+     * @return Promise completing when confirmed
+     */
+    public Promise<Void> confirmOcrDocument(String documentId, String reviewerId, String correctedText) {
+        ensureRunning();
+
+        String sanitizedDocumentId = PhrInputSanitizationUtils.requireSafeIdentifier(documentId, "documentId");
+        String sanitizedReviewerId = PhrInputSanitizationUtils.requireSafeIdentifier(reviewerId, "reviewerId");
+
+        return fetchDocument(sanitizedDocumentId)
+            .then(opt -> {
+                if (opt.isEmpty()) {
+                    return Promise.ofException(new IllegalStateException("Document not found"));
+                }
+
+                PatientDocument doc = opt.get();
+                if (!doc.getPatientId().equals(sanitizedReviewerId)) {
+                    return Promise.ofException(new IllegalStateException("Not authorized to confirm OCR"));
+                }
+
+                // Update document with OCR confirmation status
+                // In a real implementation, this would store the corrected text and provenance
+                return audit("OCR_CONFIRMED", doc.getPatientId(),
+                    "OCR confirmed for document " + sanitizedDocumentId + " by " + sanitizedReviewerId);
+            });
+    }
+
+    /**
+     * Rejects OCR document.
+     *
+     * @param documentId the document identifier
+     * @param reviewerId the reviewer who rejected
+     * @return Promise completing when rejected
+     */
+    public Promise<Void> rejectOcrDocument(String documentId, String reviewerId) {
+        ensureRunning();
+
+        String sanitizedDocumentId = PhrInputSanitizationUtils.requireSafeIdentifier(documentId, "documentId");
+        String sanitizedReviewerId = PhrInputSanitizationUtils.requireSafeIdentifier(reviewerId, "reviewerId");
+
+        return fetchDocument(sanitizedDocumentId)
+            .then(opt -> {
+                if (opt.isEmpty()) {
+                    return Promise.ofException(new IllegalStateException("Document not found"));
+                }
+
+                PatientDocument doc = opt.get();
+                if (!doc.getPatientId().equals(sanitizedReviewerId)) {
+                    return Promise.ofException(new IllegalStateException("Not authorized to reject OCR"));
+                }
+
+                return audit("OCR_REJECTED", doc.getPatientId(),
+                    "OCR rejected for document " + sanitizedDocumentId + " by " + sanitizedReviewerId);
+            });
+    }
+
     // ==================== Private Methods ====================
 
     private Promise<Optional<PatientDocument>> fetchDocument(String documentId) {
@@ -538,5 +634,27 @@ public class DocumentService extends PhrServiceBase {
         public byte[] getContent() { return content; }
         public String getContentHash() { return contentHash; }
         public String getVisibility() { return visibility; }
+    }
+
+    public static class OcrDocument {
+        private final String documentId;
+        private final String title;
+        private final String status;
+        private final double confidence;
+        private final String extractedText;
+
+        public OcrDocument(String documentId, String title, String status, double confidence, String extractedText) {
+            this.documentId = documentId;
+            this.title = title;
+            this.status = status;
+            this.confidence = confidence;
+            this.extractedText = extractedText;
+        }
+
+        public String documentId() { return documentId; }
+        public String title() { return title; }
+        public String status() { return status; }
+        public double confidence() { return confidence; }
+        public String extractedText() { return extractedText; }
     }
 }

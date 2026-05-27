@@ -79,7 +79,7 @@ class PatternSpecCompilerTest {
 
         assertThatThrownBy(() -> PatternSpecCompiler.compile(spec, registry(descriptor(capabilityRef, "REVIEW"))))
             .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("capability role");
+            .hasMessageContaining("does not match");
     }
 
     private static Map<String, Object> validSpec(Map<String, Object> pattern) {

@@ -3,6 +3,7 @@ package com.ghatana.yappc.common;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -80,5 +81,27 @@ class ServiceObservabilityTest {
 
         assertThat(tags.get("degraded")).isEqualTo("true");
         assertThat(tags.get("errorClass")).isEqualTo("IOException");
+    }
+
+    @Test
+    @DisplayName("redactSensitiveFields removes prompt, input, output, payload, and generated content values")
+    void redactSensitiveFieldsRemovesSensitiveValues() {
+        Map<String, Object> redacted = ServiceObservability.redactSensitiveFields(Map.of(
+                "prompt", "create a private app for a named customer",
+                "input", "raw user transcript",
+                "output", "model output",
+                "payload", Map.of("generatedContent", "source code", "safeCount", 2),
+                "items", List.of(Map.of("apiKey", "sk-secret", "label", "kept")),
+                "inputTokens", 42,
+                "model", "gpt-test"));
+
+        assertThat(redacted).containsEntry("prompt", ServiceObservability.REDACTED_VALUE);
+        assertThat(redacted).containsEntry("input", ServiceObservability.REDACTED_VALUE);
+        assertThat(redacted).containsEntry("output", ServiceObservability.REDACTED_VALUE);
+        assertThat(redacted).containsEntry("payload", ServiceObservability.REDACTED_VALUE);
+        assertThat(redacted).containsEntry("inputTokens", 42);
+        assertThat(redacted).containsEntry("model", "gpt-test");
+        assertThat(redacted.toString())
+                .doesNotContain("private app", "raw user transcript", "model output", "source code", "sk-secret");
     }
 }

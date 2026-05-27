@@ -1,0 +1,19 @@
+{
+  "pass": true,
+  "generatedAt": "2026-05-26T23:03:00.000Z",
+  "sourceCommitSha": "e47a1f4ad7eeacf7c82e8c44a20c984c8afdff74",
+  "targetCommitSha": "e47a1f4ad7eeacf7c82e8c44a20c984c8afdff74",
+  "evidenceRun": {
+    "generatedBy": "scripts/generate-data-cloud-release-bundle.mjs",
+    "source": "scripts/generate-data-cloud-release-bundle.mjs",
+    "command": "pnpm generate:data-cloud-release-bundle",
+    "commit": "e47a1f4ad7eeacf7c82e8c44a20c984c8afdff74"
+  },
+  "summary": {
+    "totalViolations": 0,
+    "totalWarnings": 0,
+    "checkedEvidence": 0
+  },
+  "violations": [],
+  "warnings": []
+}

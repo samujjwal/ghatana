@@ -1,6 +1,7 @@
 import type { MobileDashboard, MobileSession } from '../types';
 import { clearDashboardOffline, loadDashboardOffline, saveDashboardOffline } from './offlineStore';
 import { clearMobileSession } from './mobileSessionStore';
+import { t } from '../i18n/phrMobileI18n';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_PHR_API_URL ?? process.env.PHR_API_URL ?? '';
 const DASHBOARD_PATH = '/mobile/dashboard';
@@ -23,12 +24,12 @@ function isBoolean(value: unknown): value is boolean {
 
 function assertMobileDashboard(value: unknown): MobileDashboard {
   if (!isRecord(value)) {
-    throw new Error('Mobile dashboard response must be an object.');
+    throw new Error(t('api.dashboardNotObject'));
   }
 
   const { patient, records, consents, notifications } = value;
   if (!isRecord(patient) || !isString(patient.id) || !isString(patient.name) || !isNumber(patient.age) || !isString(patient.bloodType) || !isString(patient.district)) {
-    throw new Error('Mobile dashboard response has an invalid patient profile.');
+    throw new Error(t('api.invalidPatientProfile'));
   }
 
   if (
@@ -41,7 +42,7 @@ function assertMobileDashboard(value: unknown): MobileDashboard {
       isString(record.fhirPreview),
     )
   ) {
-    throw new Error('Mobile dashboard response has invalid records.');
+    throw new Error(t('api.invalidRecords'));
   }
 
   if (
@@ -54,7 +55,7 @@ function assertMobileDashboard(value: unknown): MobileDashboard {
       isBoolean(consent.active),
     )
   ) {
-    throw new Error('Mobile dashboard response has invalid consents.');
+    throw new Error(t('api.invalidConsents'));
   }
 
   if (
@@ -66,7 +67,7 @@ function assertMobileDashboard(value: unknown): MobileDashboard {
       isString(notification.detail),
     )
   ) {
-    throw new Error('Mobile dashboard response has invalid notifications.');
+    throw new Error(t('api.invalidNotifications'));
   }
 
   return value as unknown as MobileDashboard;
@@ -74,7 +75,7 @@ function assertMobileDashboard(value: unknown): MobileDashboard {
 
 async function fetchDashboardFromApi(session: MobileSession): Promise<MobileDashboard> {
   if (!API_BASE_URL) {
-    throw new Error('PHR mobile API base URL is not configured.');
+    throw new Error(t('api.apiNotConfigured'));
   }
 
   const response = await fetch(`${API_BASE_URL}${DASHBOARD_PATH}`, {
@@ -87,7 +88,7 @@ async function fetchDashboardFromApi(session: MobileSession): Promise<MobileDash
     },
   });
   if (!response.ok) {
-    throw new Error(`PHR mobile dashboard request failed with status ${response.status}.`);
+    throw new Error(t('api.dashboardRequestFailed', { status: String(response.status) }));
   }
 
   return assertMobileDashboard(await response.json());
@@ -111,7 +112,7 @@ export async function fetchMobileDashboard(session: MobileSession): Promise<Mobi
 export async function syncOfflineDashboard(session: MobileSession): Promise<string> {
   const dashboard = await fetchDashboardFromApi(session);
   await saveDashboardOffline(dashboard);
-  return 'Offline cache refreshed';
+  return t('api.offlineCacheRefreshed');
 }
 
 /**
@@ -152,24 +153,24 @@ export async function logoutMobile(session: MobileSession): Promise<void> {
 
 function assertMobileSession(value: unknown): MobileSession {
   if (!isRecord(value)) {
-    throw new Error('Login response must be an object.');
+    throw new Error(t('api.loginNotObject'));
   }
   const { principalId, tenantId, role, name, expiresAt } = value;
   if (!isString(principalId) || !principalId) {
-    throw new Error('Login response missing principalId.');
+    throw new Error(t('api.missingPrincipalId'));
   }
   if (!isString(tenantId) || !tenantId) {
-    throw new Error('Login response missing tenantId.');
+    throw new Error(t('api.missingTenantId'));
   }
   const validRoles = ['patient', 'caregiver', 'clinician', 'admin'] as const;
   if (!isString(role) || !(validRoles as readonly string[]).includes(role)) {
-    throw new Error('Login response has an invalid role.');
+    throw new Error(t('api.invalidRole'));
   }
   if (!isString(name)) {
-    throw new Error('Login response missing name.');
+    throw new Error(t('api.missingName'));
   }
   if (!isString(expiresAt) || !expiresAt) {
-    throw new Error('Login response missing expiresAt.');
+    throw new Error(t('api.missingExpiresAt'));
   }
   return value as unknown as MobileSession;
 }
@@ -184,10 +185,10 @@ function assertMobileSession(value: unknown): MobileSession {
  */
 export async function loginMobile(nationalId: string, password: string): Promise<MobileSession> {
   if (!nationalId.trim() || !password) {
-    throw new Error('National ID and password are required.');
+    throw new Error(t('api.credentialsRequired'));
   }
   if (!API_BASE_URL) {
-    throw new Error('PHR mobile API base URL is not configured.');
+    throw new Error(t('api.apiNotConfigured'));
   }
   const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
@@ -198,10 +199,10 @@ export async function loginMobile(nationalId: string, password: string): Promise
     body: JSON.stringify({ nationalId: nationalId.trim(), password }),
   });
   if (response.status === 401) {
-    throw new Error('Invalid national ID or password.');
+    throw new Error(t('api.invalidCredentials'));
   }
   if (!response.ok) {
-    throw new Error(`Login failed with status ${response.status}.`);
+    throw new Error(t('api.loginFailed', { status: String(response.status) }));
   }
   return assertMobileSession(await response.json());
 }
@@ -216,7 +217,7 @@ export async function loginMobile(nationalId: string, password: string): Promise
  */
 export async function revokeConsentGrant(grantId: string, patientId: string, session: MobileSession): Promise<void> {
   if (!API_BASE_URL) {
-    throw new Error('PHR mobile API base URL is not configured.');
+    throw new Error(t('api.apiNotConfigured'));
   }
   const response = await fetch(`${API_BASE_URL}/consents/grants/${encodeURIComponent(grantId)}/revoke?patientId=${encodeURIComponent(patientId)}`, {
     method: 'POST',
@@ -230,7 +231,7 @@ export async function revokeConsentGrant(grantId: string, patientId: string, ses
     },
   });
   if (!response.ok) {
-    throw new Error(`Consent revocation failed with status ${response.status}.`);
+    throw new Error(t('api.consentRevokeFailed', { status: String(response.status) }));
   }
   // Clear encrypted PHI cache on consent revocation
   await clearDashboardOffline();

@@ -89,13 +89,6 @@ include(":platform")
 
 // --- Application Entry Points ---
 include(":services")
-// backend modules removed (2026-03-23) — functionality consolidated into core modules
-
-// --- Backend Service Modules ---
-// backend modules removed (2026-03-23) — functionality consolidated into core modules
-// NOTE: backend:websocket, backend:api, backend:persistence, backend:auth removed
-
-// --- Core: Reusable Service Modules (SIMP-Y8 complete: consolidated into :core:yappc-services) ---
 
 // --- Core: Scaffold Engine ---
 include(":core:scaffold")
@@ -104,7 +97,6 @@ include(":core:scaffold:core") // aggregator re-exporting templates + engine + g
 include(":core:scaffold:templates")
 include(":core:scaffold:engine")
 include(":core:scaffold:generators")
-// NOTE: core:scaffold:packs removed — sources merged into core:scaffold:core
 
 // --- Core: AI & Agents ---
 include(":core:ai")
@@ -116,7 +108,6 @@ include(":core:agents:code-specialists")
 include(":core:agents:delivery-specialists")
 include(":core:agents:architecture-specialists")
 include(":core:agents:testing-specialists")
-// NOTE: core:agents:specialists removed — sources distributed to code/delivery/architecture/testing-specialists
 
 // --- Core: Refactorer ---
 include(":core:refactorer:api")
@@ -125,24 +116,16 @@ include(":core:refactorer:engine")
 // --- Core: Supplementary ---
 include(":core:cli-tools")
 include(":core:knowledge-graph")
-// NOTE: core:lifecycle removed — absorbed into core:yappc-services
-// NOTE: core:framework removed — absorbed into core:yappc-infrastructure
-// NOTE: core:domain removed — absorbed into core:yappc-domain
-// NOTE: core:agents:specialists removed — sources distributed to specialist modules
 
-// --- Core: Domain (Phase 2.1: yappc-domain-impl - api split deferred) ---
-// NOTE: yappc-domain-api creation deferred - api/impl split to be done later
-// NOTE: core:yappc-agents removed — consolidated into core:agents
+// --- Core: Domain and Services ---
 include(":core:yappc-domain-impl")
 include(":core:yappc-facades")
 include(":core:yappc-services")
 include(":core:yappc-infrastructure")
-// NOTE: core:yappc-api removed — duplicate controllers consolidated into yappc-domain-impl
 include(":core:yappc-shared")
 
 // --- Infrastructure ---
 include(":infrastructure:datacloud")
-// NOTE: infrastructure:security removed — sources consolidated
 
 // --- YAPPC Shared Libraries ---
 include(":libs:java:yappc-domain")
@@ -197,16 +180,12 @@ if (isStandaloneBuild) {
         listOf(
             "platform",
             "services",
-            // backend modules removed (2026-03-23)
-            // services:platform and services:lifecycle removed (SIMP-Y8 complete — consolidated into yappc-services)
-            // services:ai, services:scaffold removed — merged into services:lifecycle
             "core:scaffold",
             "core:scaffold:api",
             "core:scaffold:core",
             "core:scaffold:templates",
             "core:scaffold:engine",
             "core:scaffold:generators",
-            // core:scaffold:packs removed — merged into core:scaffold:core
             "core:ai",
             "core:agents",
             "core:agents:runtime",
@@ -216,24 +195,16 @@ if (isStandaloneBuild) {
             "core:agents:delivery-specialists",
             "core:agents:architecture-specialists",
             "core:agents:testing-specialists",
-            // core:agents:specialists removed — distributed to specialist modules
             "core:refactorer:api",
             "core:refactorer:engine",
             "core:cli-tools",
             "core:knowledge-graph",
-            // core:lifecycle removed — absorbed into core:yappc-services
-            // core:framework removed — absorbed into core:yappc-infrastructure
-            // core:domain removed — absorbed into core:yappc-domain-impl (renamed from core:yappc-domain, Phase 3)
             "infrastructure:datacloud",
-            // infrastructure:security removed — sources consolidated
             "libs:java:yappc-domain",
-            // Core yappc-* modules (Phase 2.1: yappc-domain-impl - api split deferred)
-            // NOTE: yappc-domain-api creation deferred - api/impl split to be done later
             "core:yappc-domain-impl",
             "core:yappc-facades",
             "core:yappc-services",
             "core:yappc-infrastructure",
-            // core:yappc-agents removed — consolidated into core:agents
             "core:yappc-shared",
             "e2e")
 

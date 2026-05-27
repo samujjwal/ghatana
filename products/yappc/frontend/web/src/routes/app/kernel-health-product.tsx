@@ -7,5 +7,12 @@
  */
 
 import { KernelHealthDashboardPage } from '../../pages/kernel-health/KernelHealthDashboardPage';
+import { KernelHealthCapabilityGate } from './KernelHealthCapabilityGate';
 
-export default KernelHealthDashboardPage;
+export default function KernelHealthProductRoute() {
+  return (
+    <KernelHealthCapabilityGate>
+      <KernelHealthDashboardPage />
+    </KernelHealthCapabilityGate>
+  );
+}

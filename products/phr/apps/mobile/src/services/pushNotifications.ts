@@ -22,7 +22,7 @@ export function notificationBodyContainsPhi(text: string): boolean {
  * Redacts PHI-sensitive details from a notification title/body so that only
  * the event type and a generic message are preserved.
  */
-function redactPhiFromText(text: string): string {
+export function redactPhiFromText(text: string): string {
   return notificationBodyContainsPhi(text) ? '[Redacted — open app to view details]' : text;
 }
 
@@ -40,17 +40,29 @@ export function installNotificationPhiRedactionHandler(): void {
       const bodyHasPhi = notificationBodyContainsPhi(rawBody);
 
       if (titleHasPhi || bodyHasPhi) {
-        // Mutate a copy of content — Expo does not expose a replace API so we
-        // override the presentation flags instead, then surface a safe message
-        // through the notification handler result.
+        // Return a modified notification with redacted content
         return {
           shouldShowAlert: true,
           shouldShowBanner: true,
           shouldShowList: true,
-          shouldPlaySound: false,
+          shouldPlaySound: true,
           shouldSetBadge: true,
-          // The redacted text is appended as a data key for in-app reading;
-          // the alert shown to the OS uses only the event type.
+          // Redact PHI from title and body
+          notification: {
+            ...notification.request,
+            content: {
+              ...notification.request.content,
+              title: redactPhiFromText(rawTitle),
+              body: redactPhiFromText(rawBody),
+              // Store original content in data for in-app reading after authentication
+              data: {
+                ...notification.request.content.data,
+                hasRedactedPhi: true,
+                originalTitle: rawTitle,
+                originalBody: rawBody,
+              },
+            },
+          },
         };
       }
 

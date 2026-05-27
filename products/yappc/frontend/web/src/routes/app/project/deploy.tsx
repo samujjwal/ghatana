@@ -1,36 +1,16 @@
 /**
- * Deploy Route - Redirect to Run Phase
- *
- * This route is deprecated. Deployment planning and execution controls are now part of Run.
- * Redirects to the canonical run phase cockpit.
+ * Legacy Deploy route.
  *
  * @doc.type route
- * @doc.purpose Redirect legacy deploy route to canonical phase
+ * @doc.purpose Redirect legacy deploy deep links to the canonical Run phase
  * @doc.layer product
  * @doc.pattern Redirect Component
  */
+import { LegacyProjectRedirectRoute } from './LegacyProjectRedirectRoute';
+import { LEGACY_PROJECT_ROUTE_POLICIES } from './legacyProjectRoutePolicy';
 
-import { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router';
-
-// TRACK-009: Redirect legacy deploy route to canonical run phase
 export default function DeployRedirectRoute() {
-  const { projectId } = useParams<{ projectId: string }>();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (projectId) {
-      navigate(`/p/${projectId}/run`, { replace: true });
-    }
-  }, [projectId, navigate]);
-
-  return (
-    <div className="flex h-full items-center justify-center">
-      <div className="text-center">
-        <p className="text-sm text-fg-muted">Redirecting to Run phase...</p>
-      </div>
-    </div>
-  );
+  return <LegacyProjectRedirectRoute policy={LEGACY_PROJECT_ROUTE_POLICIES.deploy} />;
 }
 
 export function ErrorBoundary() {

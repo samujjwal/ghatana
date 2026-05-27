@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   canPhaseAdvance,
+  createPhasePacketCorrelationId,
   getBlockedActions,
   getPrimaryAction,
   isActionEnabled,
@@ -50,5 +51,24 @@ describe('usePhasePacket helpers', () => {
     expect(canPhaseAdvance({ canAdvance: true, isDegraded: false })).toBe(true);
     expect(canPhaseAdvance({ canAdvance: true, isDegraded: true })).toBe(false);
     expect(canPhaseAdvance({ canAdvance: false, isDegraded: false })).toBe(false);
+  });
+
+  it('preserves caller supplied phase packet correlation IDs', () => {
+    expect(createPhasePacketCorrelationId({
+      phase: 'shape',
+      projectId: 'project-1',
+      workspaceId: 'workspace-1',
+      correlationId: 'corr-user-1',
+    })).toBe('corr-user-1');
+  });
+
+  it('generates traceable phase packet correlation IDs when absent', () => {
+    const correlationId = createPhasePacketCorrelationId({
+      phase: 'shape',
+      projectId: 'project-1',
+      workspaceId: 'workspace-1',
+    });
+
+    expect(correlationId).toContain('phase-packet:shape:project-1:');
   });
 });

@@ -1,0 +1,121 @@
+{
+  "generatedAt": "2026-05-27T06:06:03.534Z",
+  "productId": "data-cloud",
+  "targetScore": 5,
+  "sourceCommitRequired": "5323e76480f52d237d7adb4142d1258a82b2dc4d",
+  "violations": [],
+  "rows": [
+    {
+      "area": "atomicWorkflowFamilies.entities",
+      "sourceCount": 7,
+      "requiredTokenCount": 3,
+      "missingTokens": []
+    },
+    {
+      "area": "atomicWorkflowFamilies.events",
+      "sourceCount": 7,
+      "requiredTokenCount": 3,
+      "missingTokens": []
+    },
+    {
+      "area": "atomicWorkflowFamilies.governance-policies",
+      "sourceCount": 7,
+      "requiredTokenCount": 3,
+      "missingTokens": []
+    },
+    {
+      "area": "atomicWorkflowFamilies.privacy-redaction",
+      "sourceCount": 7,
+      "requiredTokenCount": 3,
+      "missingTokens": []
+    },
+    {
+      "area": "atomicWorkflowFamilies.retention-purge",
+      "sourceCount": 7,
+      "requiredTokenCount": 3,
+      "missingTokens": []
+    },
+    {
+      "area": "atomicWorkflowFamilies.connector-credential-rotation",
+      "sourceCount": 7,
+      "requiredTokenCount": 2,
+      "missingTokens": []
+    },
+    {
+      "area": "atomicWorkflowFamilies.settings-key-rotation",
+      "sourceCount": 7,
+      "requiredTokenCount": 2,
+      "missingTokens": []
+    },
+    {
+      "area": "atomicWorkflowFamilies.model-promotion",
+      "sourceCount": 7,
+      "requiredTokenCount": 3,
+      "missingTokens": []
+    },
+    {
+      "area": "atomicWorkflowFamilies.action-plane-lifecycle",
+      "sourceCount": 7,
+      "requiredTokenCount": 6,
+      "missingTokens": []
+    },
+    {
+      "area": "atomicWorkflowFamilies.plugin-lifecycle",
+      "sourceCount": 7,
+      "requiredTokenCount": 4,
+      "missingTokens": []
+    },
+    {
+      "area": "atomicWorkflowFamilies.legal-holds",
+      "sourceCount": 7,
+      "requiredTokenCount": 3,
+      "missingTokens": []
+    },
+    {
+      "area": "atomicWorkflowFamilies.sovereign-backup-restore",
+      "sourceCount": 7,
+      "requiredTokenCount": 3,
+      "missingTokens": []
+    },
+    {
+      "area": "agentRuntimeProof",
+      "sourceCount": 7,
+      "requiredTokenCount": 12,
+      "missingTokens": []
+    },
+    {
+      "area": "aiGovernanceProof",
+      "sourceCount": 3,
+      "requiredTokenCount": 6,
+      "missingTokens": []
+    },
+    {
+      "area": "uiRouteProof",
+      "sourceCount": 5,
+      "requiredTokenCount": 4,
+      "missingTokens": []
+    },
+    {
+      "area": "actionPlaneLifecycleProof",
+      "sourceCount": 3,
+      "requiredTokenCount": 8,
+      "missingTokens": []
+    },
+    {
+      "area": "routeClassification",
+      "canonicalPathCount": 45,
+      "aepCompatibilityPathCount": 67,
+      "canonicalLegacyLeakCount": 0
+    },
+    {
+      "area": "movedPlaceholderSources",
+      "violationCount": 0,
+      "matches": []
+    }
+  ],
+  "summary": {
+    "passed": true,
+    "violationCount": 0,
+    "proofAreaCount": 18
+  }
+}

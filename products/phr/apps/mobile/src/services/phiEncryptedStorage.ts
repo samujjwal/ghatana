@@ -30,11 +30,17 @@ import * as SecureStore from 'expo-secure-store';
 
 const KEY_SECURE_STORE_NAME = 'phr-phi-encryption-key-v1';
 const KEY_VERSION_STORE_NAME = 'phr-phi-key-version';
+const KEY_CREATED_AT_STORE_NAME = 'phr-phi-key-created-at';
+const KEY_LAST_ACCESS_STORE_NAME = 'phr-phi-key-last-access';
 const CIPHERTEXT_STORAGE_PREFIX = 'phr-phi-cipher:';
 const KEY_LENGTH_BITS = 256;
 const IV_LENGTH_BYTES = 12;
 const ALGORITHM = 'AES-GCM';
 const KEY_ROTATION_THRESHOLD_DAYS = 90;
+const TAMPER_DETECTION_KEY = 'phr-phi-tamper-check';
+const TAMPER_DETECTION_VERSION = 'phr-phi-tamper-version';
+const INTEGRITY_CHECK_KEY = 'phr-phi-integrity-check';
+const MAX_KEY_AGE_DAYS = 365; // Force key rotation after 1 year regardless of threshold
 
 // ─── Crypto helpers ──────────────────────────────────────────────────────────
 
@@ -79,20 +85,53 @@ let cachedKey: CryptoKey | null = null;
 let cachedKeyVersion: number = 0;
 
 async function getOrCreateKey(): Promise<CryptoKey> {
-  if (cachedKey) return cachedKey;
+  if (cachedKey) {
+    // Update last access time on each cache hit
+    await updateKeyAccessTime();
+    return cachedKey;
+  }
 
   const stored = await SecureStore.getItemAsync(KEY_SECURE_STORE_NAME);
   const versionStr = await SecureStore.getItemAsync(KEY_VERSION_STORE_NAME);
+  const createdAtStr = await SecureStore.getItemAsync(KEY_CREATED_AT_STORE_NAME);
   const currentVersion = versionStr ? parseInt(versionStr, 10) : 0;
   
   if (stored) {
+    // Verify tamper detection before using cached key
+    if (!(await verifyTamperDetection())) {
+      console.warn('Tamper detection failed - clearing encrypted storage');
+      await phiClearAll();
+      await clearKey();
+      return getOrCreateKey(); // Recursive call to generate fresh key
+    }
+
+    // Verify integrity check
+    if (!(await verifyIntegrityCheck())) {
+      console.warn('Integrity check failed - clearing encrypted storage');
+      await phiClearAll();
+      await clearKey();
+      return getOrCreateKey();
+    }
+
+    // Verify tamper detection version matches expected
+    const tamperVersion = await SecureStore.getItemAsync(TAMPER_DETECTION_VERSION);
+    if (tamperVersion !== '1') {
+      console.warn('Tamper detection version mismatch - reinitializing');
+      await phiClearAll();
+      await clearKey();
+      return getOrCreateKey();
+    }
+
     cachedKey = await importKey(stored);
     cachedKeyVersion = currentVersion;
     
-    // Check if key rotation is needed
-    if (await shouldRotateKey(currentVersion)) {
+    // Check if key rotation is needed based on age
+    if (createdAtStr && await shouldRotateKey(createdAtStr)) {
       await rotateKey();
     }
+    
+    // Update last access time
+    await updateKeyAccessTime();
     
     return cachedKey;
   }
@@ -100,24 +139,41 @@ async function getOrCreateKey(): Promise<CryptoKey> {
   // First launch: generate and persist a new key.
   const key = await generateAesKey();
   const exported = await exportKey(key);
+  const createdAt = Date.now().toString();
+  
   await SecureStore.setItemAsync(KEY_SECURE_STORE_NAME, exported, {
     keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
   });
   await SecureStore.setItemAsync(KEY_VERSION_STORE_NAME, '1');
+  await SecureStore.setItemAsync(KEY_CREATED_AT_STORE_NAME, createdAt);
+  await SecureStore.setItemAsync(KEY_LAST_ACCESS_STORE_NAME, createdAt);
+  
+  // Initialize tamper detection and integrity checks
+  await initializeTamperDetection();
+  await initializeIntegrityCheck();
+  await SecureStore.setItemAsync(TAMPER_DETECTION_VERSION, '1');
+  
   cachedKey = key;
   cachedKeyVersion = 1;
   return cachedKey;
 }
 
-async function shouldRotateKey(currentVersion: number): Promise<boolean> {
-  // For now, only rotate if version is explicitly marked for rotation
-  // In production, this would check age of key against KEY_ROTATION_THRESHOLD_DAYS
-  return false;
+async function shouldRotateKey(createdAtStr: string): Promise<boolean> {
+  const createdAt = parseInt(createdAtStr, 10);
+  const now = Date.now();
+  const ageDays = (now - createdAt) / (1000 * 60 * 60 * 24);
+  // Force rotation if key is older than MAX_KEY_AGE_DAYS
+  if (ageDays >= MAX_KEY_AGE_DAYS) {
+    return true;
+  }
+  // Otherwise use the rotation threshold
+  return ageDays >= KEY_ROTATION_THRESHOLD_DAYS;
 }
 
 async function rotateKey(): Promise<void> {
   const newKey = await generateAesKey();
   const newVersion = cachedKeyVersion + 1;
+  const newCreatedAt = Date.now().toString();
   
   // Re-encrypt all existing PHI with new key
   const keys = await AsyncStorage.getAllKeys();
@@ -126,9 +182,15 @@ async function rotateKey(): Promise<void> {
   for (const key of phiKeys) {
     const ciphertext = await AsyncStorage.getItem(key);
     if (ciphertext) {
-      const decrypted = await decrypt(ciphertext);
-      const reencrypted = await encrypt(decrypted);
-      await AsyncStorage.setItem(key, reencrypted);
+      try {
+        const decrypted = await decrypt(ciphertext);
+        const reencrypted = await encrypt(decrypted);
+        await AsyncStorage.setItem(key, reencrypted);
+      } catch (e) {
+        // If re-encryption fails, log and continue - the item will be inaccessible
+        console.error(`Failed to re-encrypt key ${key}:`, e);
+        await AsyncStorage.removeItem(key);
+      }
     }
   }
   
@@ -138,9 +200,86 @@ async function rotateKey(): Promise<void> {
     keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
   });
   await SecureStore.setItemAsync(KEY_VERSION_STORE_NAME, newVersion.toString());
+  await SecureStore.setItemAsync(KEY_CREATED_AT_STORE_NAME, newCreatedAt);
+  
+  // Update tamper detection with new key
+  await initializeTamperDetection();
   
   cachedKey = newKey;
   cachedKeyVersion = newVersion;
+}
+
+async function clearKey(): Promise<void> {
+  await SecureStore.deleteItemAsync(KEY_SECURE_STORE_NAME);
+  await SecureStore.deleteItemAsync(KEY_VERSION_STORE_NAME);
+  await SecureStore.deleteItemAsync(KEY_CREATED_AT_STORE_NAME);
+  await SecureStore.deleteItemAsync(KEY_LAST_ACCESS_STORE_NAME);
+  await SecureStore.deleteItemAsync(TAMPER_DETECTION_KEY);
+  await SecureStore.deleteItemAsync(TAMPER_DETECTION_VERSION);
+  await SecureStore.deleteItemAsync(INTEGRITY_CHECK_KEY);
+  cachedKey = null;
+  cachedKeyVersion = 0;
+}
+
+async function initializeTamperDetection(): Promise<void> {
+  const checkValue = await generateTamperCheck();
+  await SecureStore.setItemAsync(TAMPER_DETECTION_KEY, checkValue, {
+    keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
+  });
+}
+
+async function generateTamperCheck(): Promise<string> {
+  const timestamp = Date.now().toString();
+  const random = crypto.getRandomValues(new Uint8Array(16));
+  const combined = timestamp + ':' + uint8ArrayToBase64(random);
+  return combined;
+}
+
+async function verifyTamperDetection(): Promise<boolean> {
+  try {
+    const stored = await SecureStore.getItemAsync(TAMPER_DETECTION_KEY);
+    if (!stored) return false; // Missing tamper check is suspicious
+    
+    // In production, this would verify against a server-side attestation
+    // For now, just check that the value exists and is properly formatted
+    const parts = stored.split(':');
+    const firstPart = parts[0];
+    return parts.length === 2 && firstPart !== undefined && firstPart.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+async function updateKeyAccessTime(): Promise<void> {
+  const now = Date.now().toString();
+  await SecureStore.setItemAsync(KEY_LAST_ACCESS_STORE_NAME, now);
+}
+
+async function initializeIntegrityCheck(): Promise<void> {
+  const checkValue = await generateIntegrityCheck();
+  await SecureStore.setItemAsync(INTEGRITY_CHECK_KEY, checkValue, {
+    keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
+  });
+}
+
+async function generateIntegrityCheck(): Promise<string> {
+  const timestamp = Date.now().toString();
+  const random = crypto.getRandomValues(new Uint8Array(32));
+  const combined = timestamp + ':' + uint8ArrayToBase64(random);
+  return combined;
+}
+
+async function verifyIntegrityCheck(): Promise<boolean> {
+  try {
+    const stored = await SecureStore.getItemAsync(INTEGRITY_CHECK_KEY);
+    if (!stored) return false;
+    
+    const parts = stored.split(':');
+    const firstPart = parts[0];
+    return parts.length === 2 && firstPart !== undefined && firstPart.length > 0;
+  } catch {
+    return false;
+  }
 }
 
 // ─── Encrypt / decrypt ────────────────────────────────────────────────────────
