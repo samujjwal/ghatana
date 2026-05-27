@@ -67,19 +67,19 @@ public final class PhrEntitlementRoutes {
 
         // Validate required headers - fail closed for missing identity
         if (principalId == null || principalId.isBlank()) {
-            return errorResponse(400, "MISSING_PRINCIPAL", "X-Principal-Id header is required");
+            return PhrRouteSupport.errorResponse(400, "MISSING_PRINCIPAL", "X-Principal-Id header is required");
         }
         if (tenantId == null || tenantId.isBlank()) {
-            return errorResponse(400, "MISSING_TENANT", "X-Tenant-Id header is required");
+            return PhrRouteSupport.errorResponse(400, "MISSING_TENANT", "X-Tenant-Id header is required");
         }
         if (role == null || role.isBlank()) {
-            return errorResponse(400, "MISSING_ROLE", "X-Role header is required");
+            return PhrRouteSupport.errorResponse(400, "MISSING_ROLE", "X-Role header is required");
         }
 
         // Normalize role to lower-case
         String normalizedRole = role.strip().toLowerCase();
         if (!PhrRouteSupport.ALLOWED_ROLES.contains(normalizedRole)) {
-            return errorResponse(400, "INVALID_ROLE", "Unrecognised role: " + role);
+            return PhrRouteSupport.errorResponse(400, "INVALID_ROLE", "Unrecognised role: " + role);
         }
 
         // Set sensible defaults for optional headers

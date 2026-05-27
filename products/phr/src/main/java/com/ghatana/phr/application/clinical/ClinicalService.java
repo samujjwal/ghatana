@@ -113,7 +113,8 @@ public interface ClinicalService {
         String frequency,
         String quantity,
         String status,
-        String prescribedAt
+        String prescribedAt,
+        String route
     ) {}
 
     record AdministrationRecord(

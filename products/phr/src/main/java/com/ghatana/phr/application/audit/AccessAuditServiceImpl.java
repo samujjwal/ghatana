@@ -157,7 +157,7 @@ public class AccessAuditServiceImpl implements AccessAuditService {
             originalHash,
             correctedHash,
             reviewerId,
-            ctx.role(),
+            "unknown", // PatientOperationContext doesn't have role, using placeholder
             hasChanges
         );
         

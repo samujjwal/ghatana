@@ -530,6 +530,7 @@ public class DocumentService extends PhrServiceBase {
         }
 
         public String getId() { return id; }
+        public String getDocumentId() { return id; }
         public String getPatientId() { return patientId; }
         public String getDocumentType() { return documentType; }
         public String getTitle() { return title; }

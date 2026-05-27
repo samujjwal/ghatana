@@ -69,7 +69,7 @@ public final class PhrReleaseReadinessRoutes {
         String environment = normalizeEnvironment(request.getQueryParameter("environment"));
         return releaseReadinessService.getReleaseReadiness("phr", environment)
             .then(evidence -> PhrRouteSupport.jsonResponse(200, buildResponse(context, environment, evidence)))
-            .mapError(ex -> PhrRouteSupport.errorResponse(503, "PHR_RELEASE_READINESS_UNAVAILABLE", ex.getMessage()));
+            .whenException(ex -> PhrRouteSupport.errorResponse(503, "PHR_RELEASE_READINESS_UNAVAILABLE", ex.getMessage()));
     }
 
     private Promise<HttpResponse> handleSectionDrillDown(HttpRequest request) {
@@ -103,7 +103,7 @@ public final class PhrReleaseReadinessRoutes {
                 
                 return PhrRouteSupport.jsonResponse(200, response);
             })
-            .mapError(ex -> PhrRouteSupport.errorResponse(503, "PHR_RELEASE_READINESS_UNAVAILABLE", ex.getMessage()));
+            .whenException(ex -> PhrRouteSupport.errorResponse(503, "PHR_RELEASE_READINESS_UNAVAILABLE", ex.getMessage()));
     }
 
     private Map<String, Object> buildResponse(
