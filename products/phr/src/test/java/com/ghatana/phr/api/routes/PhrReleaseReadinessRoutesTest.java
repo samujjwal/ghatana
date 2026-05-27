@@ -1,6 +1,7 @@
 package com.ghatana.phr.api.routes;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.ghatana.kernel.release.ReleaseReadinessRuntimeService;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
@@ -9,10 +10,15 @@ import io.activej.http.HttpResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.nio.file.Path;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 /**
  * Enforcement matrix tests for {@link PhrReleaseReadinessRoutes}.
@@ -29,15 +35,19 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Test
  */
 @DisplayName("PhrReleaseReadinessRoutes — enforcement matrix")
+@ExtendWith(MockitoExtension.class)
 class PhrReleaseReadinessRoutesTest extends EventloopTestBase {
+
+    @Mock
+    private ReleaseReadinessRuntimeService releaseReadinessService;
 
     private AsyncServlet servlet;
 
     @BeforeEach
     void setUp() {
-        // Use a temp path that has no real evidence files — the route
-        // handles missing evidence gracefully with MISSING_EVIDENCE errors.
-        servlet = new PhrReleaseReadinessRoutes(eventloop(), Path.of(System.getProperty("java.io.tmpdir")))
+        when(releaseReadinessService.getReleaseReadiness(anyString(), anyString()))
+            .thenReturn(io.activej.promise.Promise.of(Map.of("sections", Map.of("evidenceFreshness", Map.of("runtimeProven", true)))));
+        servlet = new PhrReleaseReadinessRoutes(eventloop(), releaseReadinessService)
             .getServlet();
     }
 
@@ -62,13 +72,13 @@ class PhrReleaseReadinessRoutesTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("200 — clinician with valid context receives release readiness report")
-    void clinicianReceivesReadinessReport() throws Exception {
+    @DisplayName("403 — clinician with valid context is denied release readiness report")
+    void clinicianReceivesForbidden() throws Exception {
         HttpRequest request = contextRequest(HttpMethod.GET, "/", "t1", "dr-1", "clinician");
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
-        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getCode()).isEqualTo(403);
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────

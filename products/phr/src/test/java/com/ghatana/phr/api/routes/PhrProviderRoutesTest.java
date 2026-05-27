@@ -2,6 +2,7 @@ package com.ghatana.phr.api.routes;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.phr.application.clinical.ClinicalService;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
 import com.ghatana.phr.kernel.service.PatientRecordService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -40,7 +41,8 @@ class PhrProviderRoutesTest extends EventloopTestBase {
     void setUp() {
         PatientRecordService patientRecordService = mock(PatientRecordService.class);
         ConsentManagementService consentService = mock(ConsentManagementService.class);
-        PhrProviderRoutes routes = new PhrProviderRoutes(eventloop(), patientRecordService, consentService);
+        ClinicalService clinicalService = mock(ClinicalService.class);
+        PhrProviderRoutes routes = new PhrProviderRoutes(eventloop(), patientRecordService, consentService, clinicalService);
         servlet = routes.getServlet();
     }
 

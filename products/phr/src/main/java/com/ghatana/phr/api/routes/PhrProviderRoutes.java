@@ -18,6 +18,8 @@ import io.activej.promise.Promise;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Provider (clinician) API for the PHR product.
@@ -76,7 +78,7 @@ public final class PhrProviderRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        if (!PhrRouteSupport.hasClinicalRole(context)) {
+        if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
             return PhrRouteSupport.errorResponse(403, "CLINICAL_ROLE_REQUIRED",
                 "Only clinician or admin principals may access the patient roster",
                 context.correlationId());
@@ -97,7 +99,7 @@ public final class PhrProviderRoutes {
             // In a real implementation, this would check treatment relationships
             // For now, return all patients with consent status
             List<Map<String, Object>> patientSummaries = patients.stream()
-                .map(patient -> Map.of(
+                .map(patient -> Map.<String, Object>of(
                     "id", patient.getId(),
                     "name", patient.getDemographics().getFullName(),
                     "age", patient.getDemographics().getAge(),
@@ -121,7 +123,7 @@ public final class PhrProviderRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        if (!PhrRouteSupport.hasClinicalRole(context)) {
+        if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
             return PhrRouteSupport.errorResponse(403, "CLINICAL_ROLE_REQUIRED",
                 "Only clinician or admin principals may view patient clinical summaries",
                 context.correlationId());
@@ -131,16 +133,26 @@ public final class PhrProviderRoutes {
         
         // Check consent/treatment relationship before accessing patient data
         return consentService.checkAccess(
-            new com.ghatana.phr.kernel.consent.ConsentCheckRequest(
-                new com.ghatana.phr.kernel.consent.Actor(
+            new com.ghatana.phr.kernel.consent.ConsentService.ConsentCheckRequest(
+                UUID.randomUUID().toString(),
+                context.tenantId(),
+                new com.ghatana.phr.kernel.consent.ConsentService.ActorContext(
                     context.principalId(),
-                    com.ghatana.phr.kernel.consent.ActorType.CLINICIAN
+                    com.ghatana.phr.kernel.consent.ConsentService.ActorType.PROVIDER,
+                    null,
+                    context.principalId(),
+                    null,
+                    Set.of()
                 ),
-                patientId,
-                "clinical-summary",
-                com.ghatana.phr.kernel.consent.PurposeOfUse.TREATMENT,
-                null,
-                context.tenantId()
+                new com.ghatana.phr.kernel.consent.ConsentService.TargetResource(
+                    patientId,
+                    "Patient",
+                    null,
+                    com.ghatana.phr.kernel.policy.PhrDataClassification.C3
+                ),
+                com.ghatana.phr.kernel.consent.ConsentService.ConsentAction.PATIENT_READ,
+                com.ghatana.phr.kernel.consent.ConsentService.PurposeOfUse.CARE_DELIVERY,
+                null
             )
         ).then(decision -> {
             if (!decision.allowed()) {
@@ -178,7 +190,7 @@ public final class PhrProviderRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        if (!PhrRouteSupport.hasClinicalRole(context)) {
+        if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
             return PhrRouteSupport.errorResponse(403, "CLINICAL_ROLE_REQUIRED",
                 "Only clinician or admin principals may view patient details",
                 context.correlationId());
@@ -188,16 +200,26 @@ public final class PhrProviderRoutes {
         
         // Check consent/treatment relationship before accessing patient data
         return consentService.checkAccess(
-            new com.ghatana.phr.kernel.consent.ConsentCheckRequest(
-                new com.ghatana.phr.kernel.consent.Actor(
+            new com.ghatana.phr.kernel.consent.ConsentService.ConsentCheckRequest(
+                UUID.randomUUID().toString(),
+                context.tenantId(),
+                new com.ghatana.phr.kernel.consent.ConsentService.ActorContext(
                     context.principalId(),
-                    com.ghatana.phr.kernel.consent.ActorType.CLINICIAN
+                    com.ghatana.phr.kernel.consent.ConsentService.ActorType.PROVIDER,
+                    null,
+                    context.principalId(),
+                    null,
+                    Set.of()
                 ),
-                patientId,
-                "patient-detail",
-                com.ghatana.phr.kernel.consent.PurposeOfUse.TREATMENT,
-                null,
-                context.tenantId()
+                new com.ghatana.phr.kernel.consent.ConsentService.TargetResource(
+                    patientId,
+                    "Patient",
+                    null,
+                    com.ghatana.phr.kernel.policy.PhrDataClassification.C3
+                ),
+                com.ghatana.phr.kernel.consent.ConsentService.ConsentAction.PATIENT_READ,
+                com.ghatana.phr.kernel.consent.ConsentService.PurposeOfUse.CARE_DELIVERY,
+                null
             )
         ).then(decision -> {
             if (!decision.allowed()) {
@@ -253,7 +275,7 @@ public final class PhrProviderRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        if (!PhrRouteSupport.hasClinicalRole(context)) {
+        if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
             return PhrRouteSupport.errorResponse(403, "CLINICAL_ROLE_REQUIRED",
                 "Only clinician or admin principals may create encounters",
                 context.correlationId());
@@ -262,16 +284,26 @@ public final class PhrProviderRoutes {
         String patientId = request.getPathParameter("patientId");
         
         return consentService.checkAccess(
-            new com.ghatana.phr.kernel.consent.ConsentCheckRequest(
-                new com.ghatana.phr.kernel.consent.Actor(
+            new com.ghatana.phr.kernel.consent.ConsentService.ConsentCheckRequest(
+                UUID.randomUUID().toString(),
+                context.tenantId(),
+                new com.ghatana.phr.kernel.consent.ConsentService.ActorContext(
                     context.principalId(),
-                    com.ghatana.phr.kernel.consent.ActorType.CLINICIAN
+                    com.ghatana.phr.kernel.consent.ConsentService.ActorType.PROVIDER,
+                    null,
+                    context.principalId(),
+                    null,
+                    Set.of()
                 ),
-                patientId,
-                "encounter-create",
-                com.ghatana.phr.kernel.consent.PurposeOfUse.TREATMENT,
-                null,
-                context.tenantId()
+                new com.ghatana.phr.kernel.consent.ConsentService.TargetResource(
+                    patientId,
+                    "Encounter",
+                    null,
+                    com.ghatana.phr.kernel.policy.PhrDataClassification.C3
+                ),
+                com.ghatana.phr.kernel.consent.ConsentService.ConsentAction.PATIENT_WRITE,
+                com.ghatana.phr.kernel.consent.ConsentService.PurposeOfUse.CARE_DELIVERY,
+                null
             )
         ).then(decision -> {
             if (!decision.allowed()) {
@@ -290,9 +322,10 @@ public final class PhrProviderRoutes {
                         String location = node.path("location").asText();
                         
                         PatientOperationContext ctx = new PatientOperationContext(
-                            patientId,
-                            context.principalId(),
                             context.tenantId(),
+                            "default",
+                            context.principalId(),
+                            patientId,
                             context.correlationId()
                         );
                         
@@ -329,7 +362,7 @@ public final class PhrProviderRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        if (!PhrRouteSupport.hasClinicalRole(context)) {
+        if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
             return PhrRouteSupport.errorResponse(403, "CLINICAL_ROLE_REQUIRED",
                 "Only clinician or admin principals may view encounters",
                 context.correlationId());
@@ -339,16 +372,26 @@ public final class PhrProviderRoutes {
         String encounterId = request.getPathParameter("encounterId");
         
         return consentService.checkAccess(
-            new com.ghatana.phr.kernel.consent.ConsentCheckRequest(
-                new com.ghatana.phr.kernel.consent.Actor(
+            new com.ghatana.phr.kernel.consent.ConsentService.ConsentCheckRequest(
+                UUID.randomUUID().toString(),
+                context.tenantId(),
+                new com.ghatana.phr.kernel.consent.ConsentService.ActorContext(
                     context.principalId(),
-                    com.ghatana.phr.kernel.consent.ActorType.CLINICIAN
+                    com.ghatana.phr.kernel.consent.ConsentService.ActorType.PROVIDER,
+                    null,
+                    context.principalId(),
+                    null,
+                    Set.of()
                 ),
-                patientId,
-                "encounter-view",
-                com.ghatana.phr.kernel.consent.PurposeOfUse.TREATMENT,
-                null,
-                context.tenantId()
+                new com.ghatana.phr.kernel.consent.ConsentService.TargetResource(
+                    patientId,
+                    "Encounter",
+                    null,
+                    com.ghatana.phr.kernel.policy.PhrDataClassification.C3
+                ),
+                com.ghatana.phr.kernel.consent.ConsentService.ConsentAction.PATIENT_READ,
+                com.ghatana.phr.kernel.consent.ConsentService.PurposeOfUse.CARE_DELIVERY,
+                null
             )
         ).then(decision -> {
             if (!decision.allowed()) {
@@ -358,9 +401,10 @@ public final class PhrProviderRoutes {
             }
             
             PatientOperationContext ctx = new PatientOperationContext(
-                patientId,
-                context.principalId(),
                 context.tenantId(),
+                "default",
+                context.principalId(),
+                patientId,
                 context.correlationId()
             );
             
@@ -394,7 +438,7 @@ public final class PhrProviderRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        if (!PhrRouteSupport.hasClinicalRole(context)) {
+        if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
             return PhrRouteSupport.errorResponse(403, "CLINICAL_ROLE_REQUIRED",
                 "Only clinician or admin principals may update encounters",
                 context.correlationId());
@@ -404,16 +448,26 @@ public final class PhrProviderRoutes {
         String encounterId = request.getPathParameter("encounterId");
         
         return consentService.checkAccess(
-            new com.ghatana.phr.kernel.consent.ConsentCheckRequest(
-                new com.ghatana.phr.kernel.consent.Actor(
+            new com.ghatana.phr.kernel.consent.ConsentService.ConsentCheckRequest(
+                UUID.randomUUID().toString(),
+                context.tenantId(),
+                new com.ghatana.phr.kernel.consent.ConsentService.ActorContext(
                     context.principalId(),
-                    com.ghatana.phr.kernel.consent.ActorType.CLINICIAN
+                    com.ghatana.phr.kernel.consent.ConsentService.ActorType.PROVIDER,
+                    null,
+                    context.principalId(),
+                    null,
+                    Set.of()
                 ),
-                patientId,
-                "encounter-update",
-                com.ghatana.phr.kernel.consent.PurposeOfUse.TREATMENT,
-                null,
-                context.tenantId()
+                new com.ghatana.phr.kernel.consent.ConsentService.TargetResource(
+                    patientId,
+                    "Encounter",
+                    null,
+                    com.ghatana.phr.kernel.policy.PhrDataClassification.C3
+                ),
+                com.ghatana.phr.kernel.consent.ConsentService.ConsentAction.PATIENT_WRITE,
+                com.ghatana.phr.kernel.consent.ConsentService.PurposeOfUse.CARE_DELIVERY,
+                null
             )
         ).then(decision -> {
             if (!decision.allowed()) {
@@ -432,9 +486,10 @@ public final class PhrProviderRoutes {
                         String participant = node.has("participant") ? node.path("participant").asText() : null;
                         
                         PatientOperationContext ctx = new PatientOperationContext(
-                            patientId,
-                            context.principalId(),
                             context.tenantId(),
+                            "default",
+                            context.principalId(),
+                            patientId,
                             context.correlationId()
                         );
                         
@@ -471,7 +526,7 @@ public final class PhrProviderRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        if (!PhrRouteSupport.hasClinicalRole(context)) {
+        if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
             return PhrRouteSupport.errorResponse(403, "CLINICAL_ROLE_REQUIRED",
                 "Only clinician or admin principals may complete encounters",
                 context.correlationId());
@@ -481,16 +536,26 @@ public final class PhrProviderRoutes {
         String encounterId = request.getPathParameter("encounterId");
         
         return consentService.checkAccess(
-            new com.ghatana.phr.kernel.consent.ConsentCheckRequest(
-                new com.ghatana.phr.kernel.consent.Actor(
+            new com.ghatana.phr.kernel.consent.ConsentService.ConsentCheckRequest(
+                UUID.randomUUID().toString(),
+                context.tenantId(),
+                new com.ghatana.phr.kernel.consent.ConsentService.ActorContext(
                     context.principalId(),
-                    com.ghatana.phr.kernel.consent.ActorType.CLINICIAN
+                    com.ghatana.phr.kernel.consent.ConsentService.ActorType.PROVIDER,
+                    null,
+                    context.principalId(),
+                    null,
+                    Set.of()
                 ),
-                patientId,
-                "encounter-complete",
-                com.ghatana.phr.kernel.consent.PurposeOfUse.TREATMENT,
-                null,
-                context.tenantId()
+                new com.ghatana.phr.kernel.consent.ConsentService.TargetResource(
+                    patientId,
+                    "Encounter",
+                    null,
+                    com.ghatana.phr.kernel.policy.PhrDataClassification.C3
+                ),
+                com.ghatana.phr.kernel.consent.ConsentService.ConsentAction.PATIENT_WRITE,
+                com.ghatana.phr.kernel.consent.ConsentService.PurposeOfUse.CARE_DELIVERY,
+                null
             )
         ).then(decision -> {
             if (!decision.allowed()) {
@@ -500,9 +565,10 @@ public final class PhrProviderRoutes {
             }
             
             PatientOperationContext ctx = new PatientOperationContext(
-                patientId,
-                context.principalId(),
                 context.tenantId(),
+                "default",
+                context.principalId(),
+                patientId,
                 context.correlationId()
             );
             
@@ -528,7 +594,7 @@ public final class PhrProviderRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        if (!PhrRouteSupport.hasClinicalRole(context)) {
+        if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
             return PhrRouteSupport.errorResponse(403, "CLINICAL_ROLE_REQUIRED",
                 "Only clinician or admin principals may prescribe medications",
                 context.correlationId());
@@ -537,16 +603,26 @@ public final class PhrProviderRoutes {
         String patientId = request.getPathParameter("patientId");
         
         return consentService.checkAccess(
-            new com.ghatana.phr.kernel.consent.ConsentCheckRequest(
-                new com.ghatana.phr.kernel.consent.Actor(
+            new com.ghatana.phr.kernel.consent.ConsentService.ConsentCheckRequest(
+                UUID.randomUUID().toString(),
+                context.tenantId(),
+                new com.ghatana.phr.kernel.consent.ConsentService.ActorContext(
                     context.principalId(),
-                    com.ghatana.phr.kernel.consent.ActorType.CLINICIAN
+                    com.ghatana.phr.kernel.consent.ConsentService.ActorType.PROVIDER,
+                    null,
+                    context.principalId(),
+                    null,
+                    Set.of()
                 ),
-                patientId,
-                "medication-prescribe",
-                com.ghatana.phr.kernel.consent.PurposeOfUse.TREATMENT,
-                null,
-                context.tenantId()
+                new com.ghatana.phr.kernel.consent.ConsentService.TargetResource(
+                    patientId,
+                    "Medication",
+                    null,
+                    com.ghatana.phr.kernel.policy.PhrDataClassification.C3
+                ),
+                com.ghatana.phr.kernel.consent.ConsentService.ConsentAction.MEDICATION_WRITE,
+                com.ghatana.phr.kernel.consent.ConsentService.PurposeOfUse.CARE_DELIVERY,
+                null
             )
         ).then(decision -> {
             if (!decision.allowed()) {
@@ -567,9 +643,10 @@ public final class PhrProviderRoutes {
                         String route = node.path("route").asText();
                         
                         PatientOperationContext ctx = new PatientOperationContext(
-                            patientId,
-                            context.principalId(),
                             context.tenantId(),
+                            "default",
+                            context.principalId(),
+                            patientId,
                             context.correlationId()
                         );
                         
@@ -578,8 +655,7 @@ public final class PhrProviderRoutes {
                             medicationName,
                             dosage,
                             frequency,
-                            route,
-                            null
+                            route
                         );
                         
                         return clinicalService.prescribeMedication(ctx, prescribeRequest)
@@ -609,7 +685,7 @@ public final class PhrProviderRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        if (!PhrRouteSupport.hasClinicalRole(context)) {
+        if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
             return PhrRouteSupport.errorResponse(403, "CLINICAL_ROLE_REQUIRED",
                 "Only clinician or admin principals may view provider calendar",
                 context.correlationId());

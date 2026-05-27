@@ -77,15 +77,13 @@ class PhrAdministrativeRoutesTest extends EventloopTestBase {
         lenient().when(consentService.validateAccess(anyString(), anyString(), anyString()))
             .thenReturn(Promise.of(new ConsentManagementService.ConsentValidationResult(
                 true, "GRANT_VALID", "grant-42")));
-        lenient().when(appointmentService.getPatientAppointments(anyString()))
+        lenient().when(appointmentService.getPatientAppointments(anyString(), any()))
             .thenReturn(Promise.of(List.of()));
-        lenient().when(appointmentService.getAppointment(anyString()))
-            .thenReturn(Promise.of(Optional.empty()));
         lenient().when(referralService.getReferral(anyString()))
             .thenReturn(Promise.of(Optional.empty()));
         lenient().when(referralService.getPatientReferrals(anyString()))
             .thenReturn(Promise.of(List.of()));
-        lenient().when(billingService.getPatientBills(anyString()))
+        lenient().when(billingService.getPatientBillingHistory(anyString()))
             .thenReturn(Promise.of(List.of()));
     }
 

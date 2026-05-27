@@ -65,8 +65,9 @@ public final class PhrTimelineRoutes {
 
         PatientOperationContext opCtx = new PatientOperationContext(
             context.tenantId(),
+            "default",
             context.principalId(),
-            context.role(),
+            patientId,
             context.correlationId()
         );
 
@@ -113,8 +114,9 @@ public final class PhrTimelineRoutes {
 
         PatientOperationContext opCtx = new PatientOperationContext(
             context.tenantId(),
+            "default",
             context.principalId(),
-            context.role(),
+            patientId,
             context.correlationId()
         );
 

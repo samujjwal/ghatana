@@ -2,6 +2,7 @@ package com.ghatana.phr.api;
 
 import com.ghatana.platform.testing.contract.*;
 import io.activej.http.HttpMethod;
+import org.assertj.core.api.AbstractBooleanAssert;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -302,5 +303,26 @@ public final class PhrWebExposedRoutesContractTest extends ApiContractConformanc
         // The base class testApiContractConformance validates route existence
         // Individual route tests validate documentation
         // Security tests validate tenant/principal header requirements
+    }
+
+    private AbstractBooleanAssert<?> assertThatRouteExists(HttpRouteScanner.RouteDefinition route) {
+        Set<HttpRouteScanner.RouteDefinition> implementedRoutes = HttpRouteScanner.scanRoutes(getHttpServerClass());
+        String expectedPath = HttpRouteScanner.normalizePathFormat(route.getPath(), true);
+        boolean exists = implementedRoutes.stream().anyMatch(candidate ->
+            candidate.getMethod() == route.getMethod()
+                && HttpRouteScanner.normalizePathFormat(candidate.getPath(), true).equals(expectedPath)
+        );
+        return assertThat(exists);
+    }
+
+    private AbstractBooleanAssert<?> assertThatRouteDocumented(HttpRouteScanner.RouteDefinition route) {
+        try {
+            ApiContractDefinition specContract = OpenApiContractParser.parseFromFile(getOpenApiSpecPath());
+            String normalizedPath = HttpRouteScanner.normalizePathFormat(route.getPath(), true);
+            Set<String> methods = specContract.getMethodsForRoute(normalizedPath);
+            return assertThat(methods.contains(route.getMethod().name()));
+        } catch (Exception ex) {
+            throw new IllegalStateException("Unable to parse OpenAPI specification", ex);
+        }
     }
 }

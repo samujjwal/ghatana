@@ -1365,4 +1365,64 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
         // Should not throw any exception even if audit service is configured
         filter.validateProductionRequirements();
     }
+        // =========================================================================
+        //  DC-P1-011: Audit-only mode (enforcing=false) must fail-fast in production
+        // =========================================================================
+
+        @Test
+        @DisplayName("DC-P1-011: enforcing=false in production profile throws IllegalStateException")
+        void dc_p1_011_auditOnlyModeInProductionProfileThrows() {
+            System.setProperty("DATACLOUD_PROFILE", "production");
+
+            DataCloudSecurityFilter auditOnlyFilter = DataCloudSecurityFilter.builder()
+                .apiKeyResolver(apiKeyResolver)
+                .jwtProvider(jwtProvider)
+                .policyEngine(policyEngine)
+                .auditService(auditService)
+                .enforcing(false)  // audit-only: must be rejected in production
+                .deploymentProfile("production")
+                .build();
+
+            assertThatThrownBy(auditOnlyFilter::validateProductionRequirements)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("DC-P1-011")
+                .hasMessageContaining("enforcing=false");
+        }
+
+        @Test
+        @DisplayName("DC-P1-011: enforcing=false in staging profile also throws IllegalStateException")
+        void dc_p1_011_auditOnlyModeInStagingProfileThrows() {
+            System.setProperty("DATACLOUD_PROFILE", "staging");
+
+            DataCloudSecurityFilter auditOnlyFilter = DataCloudSecurityFilter.builder()
+                .apiKeyResolver(apiKeyResolver)
+                .jwtProvider(jwtProvider)
+                .policyEngine(policyEngine)
+                .auditService(auditService)
+                .enforcing(false)  // audit-only: must also be rejected in staging
+                .deploymentProfile("staging")
+                .build();
+
+            assertThatThrownBy(auditOnlyFilter::validateProductionRequirements)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("DC-P1-011");
+        }
+
+        @Test
+        @DisplayName("DC-P1-011: enforcing=false is permitted in local profile (not production-like)")
+        void dc_p1_011_auditOnlyModeInLocalProfileDoesNotThrow() {
+            System.setProperty("DATACLOUD_PROFILE", "local");
+
+            DataCloudSecurityFilter auditOnlyFilter = DataCloudSecurityFilter.builder()
+                .apiKeyResolver(apiKeyResolver)
+                .jwtProvider(jwtProvider)
+                .policyEngine(policyEngine)
+                .auditService(auditService)
+                .enforcing(false)  // audit-only: permitted in local/dev profiles
+                .deploymentProfile("local")
+                .build();
+
+            // Must not throw — local profiles are explicitly exempted from this rule
+            auditOnlyFilter.validateProductionRequirements();
+        }
 }

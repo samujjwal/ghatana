@@ -1,6 +1,7 @@
 package com.ghatana.phr.api.routes;
 
 import com.ghatana.kernel.observability.AuditTrailService;
+import com.ghatana.phr.kernel.policy.PhrLogRedactor;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -56,6 +57,8 @@ public final class PhrAuditRoutes {
     public AsyncServlet getServlet() {
         return RoutingServlet.builder(eventloop)
             .with(HttpMethod.GET, "/events", this::handleQueryEvents)
+            .with(HttpMethod.GET, "/events/:eventId", this::handleGetEventDetail)
+            .with(HttpMethod.GET, "/events/export", this::handleExportEvents)
             .build();
     }
 
@@ -74,7 +77,7 @@ public final class PhrAuditRoutes {
 
         // Patient-scoped enforcement: non-privileged principals may only query their own data.
         String effectiveEntityId;
-        if (PhrRouteSupport.hasClinicalRole(context)) {
+        if ("clinician".equals(context.role()) || "admin".equals(context.role())) {
             effectiveEntityId = patientIdParam; // may be null → full-tenant query
         } else {
             effectiveEntityId = context.principalId(); // always scoped to self
@@ -119,6 +122,126 @@ public final class PhrAuditRoutes {
         }
     }
 
+    private Promise<HttpResponse> handleGetEventDetail(HttpRequest request) {
+        PhrRouteSupport.PhrRequestContext context;
+        try {
+            context = PhrRouteSupport.requireContext(request);
+        } catch (IllegalArgumentException ex) {
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+        }
+
+        String eventId = request.getPathParameter("eventId");
+        if (eventId == null || eventId.isBlank()) {
+            return PhrRouteSupport.errorResponse(400, "INVALID_EVENT_ID", "Event ID is required");
+        }
+
+        try {
+            AuditTrailService.AuditQuery query = AuditTrailService.AuditQuery.builder()
+                .tenantId(context.tenantId())
+                .limit(1)
+                .build();
+
+            List<AuditTrailService.AuditTrailEvent> events = auditTrailService.queryAuditEvents(query);
+            AuditTrailService.AuditTrailEvent event = events.stream()
+                .filter(e -> eventId.equals(e.getEventId()))
+                .findFirst()
+                .orElse(null);
+
+            if (event == null) {
+                return PhrRouteSupport.errorResponse(404, "EVENT_NOT_FOUND", "Audit event not found");
+            }
+
+            // Patient-scoped enforcement: non-privileged principals may only view their own events
+            if (!("clinician".equals(context.role()) || "admin".equals(context.role())) && 
+                !context.principalId().equals(event.getUserId()) && 
+                !context.principalId().equals(event.getEntityId())) {
+                return PhrRouteSupport.errorResponse(403, "ACCESS_DENIED", "Not authorized to view this event");
+            }
+
+            return PhrRouteSupport.jsonResponse(200, toEventDto(event));
+        } catch (Exception ex) {
+            return PhrRouteSupport.errorResponse(500, "AUDIT_DETAIL_FAILED", "Failed to fetch event detail");
+        }
+    }
+
+    private Promise<HttpResponse> handleExportEvents(HttpRequest request) {
+        PhrRouteSupport.PhrRequestContext context;
+        try {
+            context = PhrRouteSupport.requireContext(request);
+        } catch (IllegalArgumentException ex) {
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+        }
+
+        // Export requires admin role
+        if (!"admin".equals(context.role())) {
+            return PhrRouteSupport.errorResponse(403, "ADMIN_REQUIRED", "Export requires admin role");
+        }
+
+        String patientIdParam = request.getQueryParameter("patientId");
+        String filterParam = request.getQueryParameter("filter");
+        String formatParam = request.getQueryParameter("format");
+        String format = (formatParam != null && !formatParam.isBlank()) ? formatParam : "json";
+
+        if (!"json".equalsIgnoreCase(format) && !"csv".equalsIgnoreCase(format)) {
+            return PhrRouteSupport.errorResponse(400, "INVALID_FORMAT", "Format must be 'json' or 'csv'");
+        }
+
+        String effectiveEntityId = patientIdParam;
+        String eventTypeFilter = resolveEventTypeFilter(filterParam);
+
+        AuditTrailService.AuditQuery.Builder queryBuilder = AuditTrailService.AuditQuery.builder()
+            .tenantId(context.tenantId())
+            .limit(1000); // Export limit
+
+        if (effectiveEntityId != null && !effectiveEntityId.isBlank()) {
+            queryBuilder.entityId(effectiveEntityId);
+        }
+        if (eventTypeFilter != null) {
+            queryBuilder.eventType(eventTypeFilter);
+        }
+
+        try {
+            List<AuditTrailService.AuditTrailEvent> events = auditTrailService.queryAuditEvents(queryBuilder.build());
+            
+            if ("csv".equalsIgnoreCase(format)) {
+                String csv = convertToCsv(events);
+                return PhrRouteSupport.textResponse(200, csv, "text/csv");
+            } else {
+                List<Map<String, Object>> eventDtos = events.stream()
+                    .map(this::toEventDto)
+                    .toList();
+                return PhrRouteSupport.jsonResponse(200, Map.of(
+                    "events", eventDtos,
+                    "total", eventDtos.size(),
+                    "exportedAt", Instant.now().toString()
+                ));
+            }
+        } catch (Exception ex) {
+            return PhrRouteSupport.errorResponse(500, "AUDIT_EXPORT_FAILED", "Failed to export audit events");
+        }
+    }
+
+    private String convertToCsv(List<AuditTrailService.AuditTrailEvent> events) {
+        StringBuilder csv = new StringBuilder();
+        csv.append("eventId,tenantId,eventType,principal,timestamp,success,resourceType,resourceId\n");
+        
+        for (AuditTrailService.AuditTrailEvent event : events) {
+            csv.append(event.getEventId()).append(",");
+            csv.append(event.getTenantId()).append(",");
+            csv.append(event.getEventType() != null ? event.getEventType() : event.getAction()).append(",");
+            csv.append(event.getUserId()).append(",");
+            csv.append(Instant.ofEpochMilli(event.getTimestamp()).toString()).append(",");
+            csv.append(isSuccessEvent(event)).append(",");
+            
+            Map<String, Object> data = event.getData();
+            csv.append(data != null && data.containsKey("resourceType") ? data.get("resourceType") : "").append(",");
+            csv.append(data != null && data.containsKey("resourceId") ? data.get("resourceId") : 
+                  (event.getEntityId() != null ? event.getEntityId() : "")).append("\n");
+        }
+        
+        return csv.toString();
+    }
+
     private Map<String, Object> toEventDto(AuditTrailService.AuditTrailEvent event) {
         Map<String, Object> dto = new LinkedHashMap<>();
         dto.put("id", event.getEventId());
@@ -138,11 +261,14 @@ public final class PhrAuditRoutes {
             } else if (event.getEntityId() != null) {
                 dto.put("resourceId", event.getEntityId());
             }
-            // Collect remaining data fields as details strings
+            // Collect remaining data fields as details strings with PHI redaction
             Map<String, String> details = new LinkedHashMap<>();
             for (Map.Entry<String, Object> entry : data.entrySet()) {
                 if (!Set.of("resourceType", "resourceId", "success").contains(entry.getKey()) && entry.getValue() != null) {
-                    details.put(entry.getKey(), String.valueOf(entry.getValue()));
+                    String value = String.valueOf(entry.getValue());
+                    // Redact sensitive fields based on canonical classification
+                    String redactedValue = PhrLogRedactor.redactForAuditExport(value);
+                    details.put(entry.getKey(), redactedValue);
                 }
             }
             if (!details.isEmpty()) {

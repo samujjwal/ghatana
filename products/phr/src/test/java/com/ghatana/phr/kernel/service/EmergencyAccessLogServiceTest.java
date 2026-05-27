@@ -292,6 +292,13 @@ class EmergencyAccessLogServiceTest extends EventloopTestBase {
             escalations.add(reviewCase);
             return io.activej.promise.Promise.complete();
         }
+
+        @Override
+        public io.activej.promise.Promise<Void> notifyPatient(
+                EmergencyAccessReviewCase reviewCase,
+                EmergencyAccessEvent event) {
+            return io.activej.promise.Promise.complete();
+        }
     }
 
     private static final class RecordingAuditLogger implements EmergencyAccessReviewAuditLogger {

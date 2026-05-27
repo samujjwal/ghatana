@@ -1,0 +1,437 @@
+{
+  "schemaVersion": "1.0.0",
+  "product": "phr",
+  "roleOrder": {
+    "patient": 0,
+    "caregiver": 1,
+    "clinician": 2,
+    "admin": 3
+  },
+  "routes": [
+    {
+      "path": "/dashboard",
+      "label": "Dashboard",
+      "description": "Patient dashboard with summary and care plan",
+      "group": "care",
+      "minimumRole": "patient",
+      "personas": ["patient", "caregiver", "clinician", "admin"],
+      "tiers": ["core"],
+      "actions": ["view-patient-summary"],
+      "cards": ["patient-summary", "care-plan", "emergency-readiness"],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/records",
+      "label": "Records",
+      "description": "Patient health records",
+      "group": "care",
+      "minimumRole": "patient",
+      "personas": ["patient", "caregiver", "clinician", "admin"],
+      "tiers": ["core"],
+      "actions": ["view-records"],
+      "cards": ["record-highlights", "interop-status"],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/consents",
+      "label": "Consents",
+      "description": "Consent management",
+      "group": "care",
+      "minimumRole": "patient",
+      "personas": ["patient", "caregiver", "clinician", "admin"],
+      "tiers": ["core"],
+      "actions": ["manage-consent"],
+      "cards": ["active-consent-grants", "expiring-consents"],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/appointments",
+      "label": "Appointments",
+      "description": "Appointment scheduling",
+      "group": "care",
+      "minimumRole": "patient",
+      "personas": ["patient", "caregiver", "clinician", "admin"],
+      "tiers": ["core"],
+      "actions": ["schedule-visit"],
+      "cards": ["upcoming-appointments"],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/settings",
+      "label": "Settings",
+      "description": "Profile and settings",
+      "group": "governance",
+      "minimumRole": "patient",
+      "personas": ["patient", "caregiver", "clinician", "admin"],
+      "tiers": ["core"],
+      "actions": ["manage-profile-settings"],
+      "cards": ["profile-controls", "integration-status"],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/labs",
+      "label": "Labs",
+      "description": "Lab results",
+      "group": "clinical",
+      "minimumRole": "caregiver",
+      "personas": ["caregiver", "clinician", "admin"],
+      "tiers": ["clinical"],
+      "actions": ["review-lab-results"],
+      "cards": ["recent-lab-results"],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/medications",
+      "label": "Medications",
+      "description": "Medication management",
+      "group": "clinical",
+      "minimumRole": "caregiver",
+      "personas": ["caregiver", "clinician", "admin"],
+      "tiers": ["clinical"],
+      "actions": ["review-medications"],
+      "cards": ["medication-adherence"],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/conditions",
+      "label": "Conditions",
+      "description": "Health conditions",
+      "group": "clinical",
+      "minimumRole": "patient",
+      "personas": ["patient", "caregiver", "clinician", "admin"],
+      "tiers": ["core"],
+      "actions": ["view-conditions"],
+      "cards": ["condition-list"],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/observations",
+      "label": "Observations",
+      "description": "Clinical observations",
+      "group": "clinical",
+      "minimumRole": "caregiver",
+      "personas": ["caregiver", "clinician", "admin"],
+      "tiers": ["clinical"],
+      "actions": ["view-observations"],
+      "cards": ["observation-trends"],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/immunizations",
+      "label": "Immunizations",
+      "description": "Immunization records",
+      "group": "clinical",
+      "minimumRole": "patient",
+      "personas": ["patient", "caregiver", "clinician", "admin"],
+      "tiers": ["core"],
+      "actions": ["view-immunizations"],
+      "cards": ["immunization-schedule"],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/documents",
+      "label": "Documents",
+      "description": "Document management",
+      "group": "care",
+      "minimumRole": "patient",
+      "personas": ["patient", "caregiver", "clinician", "admin"],
+      "tiers": ["core"],
+      "actions": ["view-documents", "upload-document"],
+      "cards": ["document-list"],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/documents/upload",
+      "label": "Document Upload",
+      "description": "Upload documents",
+      "group": "care",
+      "minimumRole": "patient",
+      "personas": ["patient", "caregiver", "clinician", "admin"],
+      "tiers": ["core"],
+      "actions": ["upload-document"],
+      "cards": [],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/documents/:docId/ocr",
+      "label": "OCR Review",
+      "description": "OCR document review",
+      "group": "care",
+      "minimumRole": "patient",
+      "personas": ["patient", "caregiver", "clinician", "admin"],
+      "tiers": ["core"],
+      "actions": ["review-ocr"],
+      "cards": [],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/timeline",
+      "label": "Timeline",
+      "description": "Health timeline",
+      "group": "care",
+      "minimumRole": "patient",
+      "personas": ["patient", "caregiver", "clinician", "admin"],
+      "tiers": ["core"],
+      "actions": ["view-timeline"],
+      "cards": ["health-timeline"],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/profile",
+      "label": "Profile",
+      "description": "Patient profile",
+      "group": "care",
+      "minimumRole": "patient",
+      "personas": ["patient", "caregiver", "clinician", "admin"],
+      "tiers": ["core"],
+      "actions": ["view-profile", "edit-profile"],
+      "cards": ["profile-summary"],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/records/:recordId",
+      "label": "Record Detail",
+      "description": "Detailed record view",
+      "group": "care",
+      "minimumRole": "patient",
+      "personas": ["patient", "caregiver", "clinician", "admin"],
+      "tiers": ["core"],
+      "actions": ["view-records"],
+      "cards": [],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/notifications",
+      "label": "Notifications",
+      "description": "Patient notifications",
+      "group": "care",
+      "minimumRole": "patient",
+      "personas": ["patient", "caregiver", "clinician", "admin"],
+      "tiers": ["core"],
+      "actions": ["view-notifications"],
+      "cards": ["notification-feed"],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/forbidden",
+      "label": "Forbidden",
+      "description": "Access denied page",
+      "group": "governance",
+      "minimumRole": "patient",
+      "personas": ["patient", "caregiver", "clinician", "admin"],
+      "tiers": ["core"],
+      "actions": [],
+      "cards": [],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/not-found",
+      "label": "Not Found",
+      "description": "Page not found",
+      "group": "governance",
+      "minimumRole": "patient",
+      "personas": ["patient", "caregiver", "clinician", "admin"],
+      "tiers": ["core"],
+      "actions": [],
+      "cards": [],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/emergency",
+      "label": "Emergency",
+      "description": "Emergency break-glass access",
+      "group": "governance",
+      "minimumRole": "clinician",
+      "personas": ["clinician", "admin"],
+      "tiers": ["emergency"],
+      "emergencyAction": true,
+      "actions": ["break-glass-review"],
+      "cards": ["override-audit-timeline"],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/emergency/reviews",
+      "label": "Emergency Reviews",
+      "description": "Emergency access review",
+      "group": "governance",
+      "minimumRole": "admin",
+      "personas": ["admin"],
+      "tiers": ["emergency"],
+      "actions": ["review-emergency-access"],
+      "cards": ["pending-reviews", "overdue-reviews"],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/release-readiness",
+      "label": "Release Readiness",
+      "description": "Release readiness dashboard",
+      "group": "governance",
+      "minimumRole": "admin",
+      "personas": ["admin"],
+      "tiers": ["clinical"],
+      "actions": ["view-release-readiness"],
+      "cards": ["evidence-freshness", "fhir-runtime", "consent-cache-proof", "rollback-proof"],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/audit",
+      "label": "Audit",
+      "description": "Audit trail",
+      "group": "governance",
+      "minimumRole": "admin",
+      "personas": ["admin"],
+      "tiers": ["clinical"],
+      "actions": ["view-audit-trail"],
+      "cards": ["audit-trail"],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    },
+    {
+      "path": "/provider/dashboard",
+      "label": "Provider Dashboard",
+      "description": "Provider dashboard",
+      "group": "provider",
+      "minimumRole": "clinician",
+      "personas": ["clinician", "admin"],
+      "tiers": ["clinical"],
+      "actions": ["view-provider-dashboard"],
+      "cards": ["provider-panel"],
+      "featureFlag": true,
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "experimental"
+      }
+    },
+    {
+      "path": "/provider/patients",
+      "label": "Provider Patients",
+      "description": "Provider patient list",
+      "group": "provider",
+      "minimumRole": "clinician",
+      "personas": ["clinician", "admin"],
+      "tiers": ["clinical"],
+      "actions": ["view-patient-list"],
+      "cards": ["patient-roster"],
+      "featureFlag": true,
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "experimental"
+      }
+    },
+    {
+      "path": "/caregiver/dependents",
+      "label": "Caregiver Dependents",
+      "description": "Caregiver dependent management",
+      "group": "caregiver",
+      "minimumRole": "caregiver",
+      "personas": ["caregiver", "admin"],
+      "tiers": ["core"],
+      "actions": ["view-dependents"],
+      "cards": ["dependent-summaries"],
+      "featureFlag": true,
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "experimental"
+      }
+    },
+    {
+      "path": "/fchv/dashboard",
+      "label": "FCHV Dashboard",
+      "description": "FCHV community health dashboard",
+      "group": "fchv",
+      "minimumRole": "caregiver",
+      "personas": ["caregiver", "admin"],
+      "tiers": ["core"],
+      "actions": ["view-fchv-dashboard"],
+      "cards": ["community-health-summary"],
+      "featureFlag": true,
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "experimental"
+      }
+    },
+    {
+      "path": "/mobile/dashboard",
+      "label": "Mobile Dashboard",
+      "description": "Mobile-specific dashboard",
+      "group": "care",
+      "minimumRole": "patient",
+      "personas": ["patient"],
+      "tiers": ["core"],
+      "actions": ["view-mobile-dashboard"],
+      "cards": ["mobile-patient-summary"],
+      "lifecycle": {
+        "introducedAt": "1.0.0",
+        "stability": "stable"
+      }
+    }
+  ]
+}

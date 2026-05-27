@@ -1,0 +1,39 @@
+{
+  "timestamp": "commit:6f1692bdd665ecb6cd4e4c0086fa29fdc0ccb6f8",
+  "productScope": [
+    "data-cloud"
+  ],
+  "violations": [],
+  "warnings": [],
+  "evidence": [
+    "Data Cloud: Executed real atomic workflow failure scenarios",
+    "Data Cloud: Executable test run validated business write/event append failure",
+    "Data Cloud: Executable test run validated event append/audit write failure",
+    "Data Cloud: Executable test run validated audit/outbox failure",
+    "Data Cloud: Executable test run validated idempotency write failure",
+    "Data Cloud: Executable test run validated retry after partial failure",
+    "Data Cloud: Executable test run validated rollback after partial failure",
+    "Data Cloud: Executable test run validated replay after crash",
+    "Data Cloud: Executable test run validated side effect rollback",
+    "Data Cloud: Executable test run validated rollback verification",
+    "Data Cloud: Executable test run validated cleanup after failure"
+  ],
+  "scenarioCoverage": {
+    "businessWriteEventAppendFailure": true,
+    "eventAppendAuditWriteFailure": true,
+    "auditOutboxFailure": true,
+    "idempotencyWriteFailure": true,
+    "retryAfterPartialFailure": true,
+    "rollbackAfterPartialFailure": true,
+    "replayAfterCrash": true,
+    "sideEffectRollback": true
+  },
+  "summary": {
+    "totalViolations": 0,
+    "totalWarnings": 0,
+    "totalEvidence": 11,
+    "missingScenarioCount": 0,
+    "executedTestProductCount": 1,
+    "expectedProductCount": 1
+  }
+}

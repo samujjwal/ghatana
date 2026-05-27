@@ -1,6 +1,9 @@
 package com.ghatana.phr.api.routes;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.ghatana.phr.kernel.service.CaregiverService;
+import com.ghatana.phr.kernel.service.PatientRecordService;
+import io.activej.promise.Promise;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
@@ -11,9 +14,17 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 
 /**
  * Unit tests for {@link PhrCaregiverRoutes}.
@@ -27,12 +38,51 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ExtendWith(MockitoExtension.class)
 class PhrCaregiverRoutesTest extends EventloopTestBase {
 
+    @Mock
+    private CaregiverService caregiverService;
+
+    @Mock
+    private PatientRecordService patientRecordService;
+
     private AsyncServlet servlet;
 
     @BeforeEach
     void setUp() {
-        PhrCaregiverRoutes routes = new PhrCaregiverRoutes(eventloop());
+        PhrCaregiverRoutes routes = new PhrCaregiverRoutes(eventloop(), caregiverService, patientRecordService);
         servlet = routes.getServlet();
+
+        lenient().when(caregiverService.getPatientsForCaregiver(anyString()))
+            .thenReturn(Promise.of(List.of(
+                new CaregiverService.CaregiverRelationship(
+                    "rel-1",
+                    "cg1",
+                    "dep-42",
+                    CaregiverService.RelationshipType.PARENT,
+                    Set.of("records"),
+                    CaregiverService.RelationshipStatus.ACTIVE,
+                    Instant.now(),
+                    null
+                )
+            )));
+
+        PatientRecordService.Patient patient = PatientRecordService.Patient.builder()
+            .id("dep-42")
+            .nationalId("NP-123")
+            .demographics(new PatientRecordService.Demographics(
+                "Dependent",
+                "Patient",
+                "2010-01-01",
+                "female",
+                new PatientRecordService.Address("Ward 1", "Lalitpur", "Lalitpur", "Bagmati", "44700"),
+                new PatientRecordService.Contact("9800000000", "dep@example.com", "Guardian", "9811111111")
+            ))
+            .medicalHistory(new PatientRecordService.MedicalHistory(List.of(), List.of(), List.of(), "O+"))
+            .createdAt(Instant.now())
+            .updatedAt(Instant.now())
+            .deleted(false)
+            .build();
+        lenient().when(patientRecordService.getPatient("dep-42"))
+            .thenReturn(Promise.of(Optional.of(patient)));
     }
 
     @Nested

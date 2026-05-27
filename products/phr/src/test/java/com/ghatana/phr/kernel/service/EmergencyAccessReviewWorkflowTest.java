@@ -103,6 +103,11 @@ class EmergencyAccessReviewWorkflowTest extends EventloopTestBase {
             public Promise<Void> notifyEscalation(EmergencyAccessReviewCase reviewCase, EmergencyAccessEvent event) {
                 return Promise.complete();
             }
+
+            @Override
+            public Promise<Void> notifyPatient(EmergencyAccessReviewCase reviewCase, EmergencyAccessEvent event) {
+                return Promise.complete();
+            }
         };
 
         workflow = new EmergencyAccessReviewWorkflow(
@@ -115,7 +120,8 @@ class EmergencyAccessReviewWorkflowTest extends EventloopTestBase {
                     .build(),
                 com.ghatana.platform.resilience.CircuitBreaker.builder("compliance").failureThreshold(5).resetTimeout(Duration.ofSeconds(1)).build(),
                 com.ghatana.platform.resilience.CircuitBreaker.builder("schedule").failureThreshold(5).resetTimeout(Duration.ofSeconds(1)).build(),
-                com.ghatana.platform.resilience.CircuitBreaker.builder("escalation").failureThreshold(5).resetTimeout(Duration.ofSeconds(1)).build()
+                com.ghatana.platform.resilience.CircuitBreaker.builder("escalation").failureThreshold(5).resetTimeout(Duration.ofSeconds(1)).build(),
+                com.ghatana.platform.resilience.CircuitBreaker.builder("patient").failureThreshold(5).resetTimeout(Duration.ofSeconds(1)).build()
             ),
             auditLogger
         );
@@ -261,6 +267,11 @@ class EmergencyAccessReviewWorkflowTest extends EventloopTestBase {
         @Override
         public Promise<Void> notifyEscalation(EmergencyAccessReviewCase reviewCase, EmergencyAccessEvent event) {
             escalations.add(reviewCase);
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> notifyPatient(EmergencyAccessReviewCase reviewCase, EmergencyAccessEvent event) {
             return Promise.complete();
         }
     }

@@ -1,6 +1,7 @@
 package com.ghatana.phr.api.routes;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.ghatana.phr.api.dto.CreateConsentGrantRequest;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
@@ -51,23 +52,66 @@ public final class PhrConsentRoutes {
 
     private Promise<HttpResponse> handleCreateGrant(HttpRequest request) {
         PhrRouteSupport.PhrRequestContext context;
+        String idempotencyKey;
         try {
             context = PhrRouteSupport.requireContext(request);
+            idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
+        // If idempotency key is provided, check for existing grant
+        if (idempotencyKey != null) {
+            return consentService.getGrantByIdempotencyKey(idempotencyKey)
+                .then(existing -> {
+                    if (existing.isPresent()) {
+                        return PhrRouteSupport.jsonResponse(200, existing.get());
+                    }
+                    // Proceed with creation
+                    return createConsentGrant(request, context, idempotencyKey);
+                });
+        }
+
+        return createConsentGrant(request, context, null);
+    }
+
+    private Promise<HttpResponse> createConsentGrant(
+            HttpRequest request,
+            PhrRouteSupport.PhrRequestContext context,
+            String idempotencyKey) {
         return request.loadBody()
             .then(body -> {
-                ConsentManagementService.ConsentGrant grant;
+                CreateConsentGrantRequest dto;
                 try {
-                    grant = parseGrant(body.getString(StandardCharsets.UTF_8));
+                    dto = PhrRouteSupport.parseAndValidate(
+                        body.getString(StandardCharsets.UTF_8),
+                        CreateConsentGrantRequest.class,
+                        "CreateConsentGrantRequest");
                 } catch (IllegalArgumentException ex) {
                     return PhrRouteSupport.errorResponse(400, "INVALID_CONSENT_GRANT", ex.getMessage());
                 }
-                if (!mayManagePatientConsent(context, grant.getPatientId())) {
+                if (!mayManagePatientConsent(context, dto.getPatientId())) {
                     return PhrRouteSupport.errorResponse(403, "CONSENT_OWNER_REQUIRED", "Only the patient or an admin can create consent grants");
                 }
+                // Convert DTO to domain model
+                ConsentManagementService.ConsentScope scope = new ConsentManagementService.ConsentScope(
+                    dto.getScope().getResourceTypes(),
+                    dto.getScope().isAllDocuments(),
+                    dto.getScope().getSpecificDocumentIds(),
+                    dto.getScope().getActions(),
+                    dto.getScope().getFieldLevelAccess()
+                );
+                ConsentManagementService.ConsentGrant grant = new ConsentManagementService.ConsentGrant(
+                    null,
+                    dto.getPatientId(),
+                    dto.getRecipientId(),
+                    scope,
+                    "ACTIVE",
+                    null,
+                    Instant.parse(dto.getExpiresAt()),
+                    null,
+                    idempotencyKey
+                );
                 return consentService.createGrant(grant)
                     .then(created -> PhrRouteSupport.jsonResponse(201, created));
             });
@@ -143,7 +187,7 @@ public final class PhrConsentRoutes {
         return context.principalId().equals(patientId) || "admin".equalsIgnoreCase(context.role());
     }
 
-    private static ConsentManagementService.ConsentGrant parseGrant(String json) {
+    private static ConsentManagementService.ConsentGrant parseGrant(String json, String idempotencyKey) {
         try {
             JsonNode node = PhrRouteSupport.JSON.readTree(json);
             String patientId = requiredText(node, "patientId");
@@ -152,7 +196,8 @@ public final class PhrConsentRoutes {
                 stringSet(node.path("scope").path("resourceTypes")),
                 node.path("scope").path("allDocuments").asBoolean(false),
                 stringSet(node.path("scope").path("specificDocumentIds")),
-                stringSet(node.path("scope").path("actions"))
+                stringSet(node.path("scope").path("actions")),
+                Map.of()
             );
             return new ConsentManagementService.ConsentGrant(
                 text(node, "id", null),
@@ -162,7 +207,8 @@ public final class PhrConsentRoutes {
                 text(node, "status", "ACTIVE"),
                 null,
                 Instant.parse(requiredText(node, "expiresAt")),
-                null
+                null,
+                idempotencyKey
             );
         } catch (Exception ex) {
             throw new IllegalArgumentException(ex.getMessage(), ex);

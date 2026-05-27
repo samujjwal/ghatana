@@ -1,0 +1,44 @@
+{
+  "generatedAt": "2026-05-27T18:59:55.656Z",
+  "productId": "data-cloud",
+  "area": "action-plane-route-lifecycle",
+  "targetScore": 5,
+  "files": {
+    "actionPlane": "products/data-cloud/contracts/openapi/action-plane.yaml",
+    "aep": "products/data-cloud/contracts/openapi/aep.yaml",
+    "routeRegistry": "products/data-cloud/contracts/openapi/route-compatibility-registry.yaml",
+    "routeSecurityRegistry": "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java"
+  },
+  "classification": {
+    "canonicalActionPathCount": 45,
+    "canonicalActionOperationCount": 50,
+    "aepCompatibilityOnlyPathCount": 67,
+    "aepDeprecatedOperationCount": 11,
+    "registeredLegacyRouteCount": 28,
+    "duplicateRegistryEntryCount": 0,
+    "runtimeCompatibilityRouteCount": 28,
+    "registeredRuntimeCompatibilityRouteCount": 28,
+    "canonicalActionRoutesReservedCount": 0
+  },
+  "policy": {
+    "canonicalProductLanguage": "Data Cloud Action Plane",
+    "internalCompatibilityName": "AEP",
+    "canonicalRoutePrefix": "/api/v1/action/",
+    "compatibilityRouteStatus": "compatibility-only",
+    "registryRequiredLifecycleFields": [
+      "path",
+      "canonical",
+      "methods",
+      "deprecated_since",
+      "retirement_target",
+      "feature_flag",
+      "migration_notes"
+    ]
+  },
+  "summary": {
+    "passed": true,
+    "violationCount": 0,
+    "proofAreaCount": 4
+  },
+  "violations": []
+}

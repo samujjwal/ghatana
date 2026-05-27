@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -37,6 +38,13 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
 
     private final AudioVideoLibrary library;
     private final Timer transcribeTimer;
+
+    // AV-P1-004: Supported languages and sample-rate bounds (mirrors PersistentSttService constants).
+    static final Set<String> SUPPORTED_LANGUAGES = Set.of(
+        "en", "es", "fr", "de", "it", "pt", "nl", "pl", "ru", "zh", "ja", "ko", "ar", "hi", "tr");
+    static final int MIN_SAMPLE_RATE = 8_000;
+    static final int MAX_SAMPLE_RATE = 48_000;
+    static final long MAX_AUDIO_SIZE_BYTES = 100L * 1024 * 1024; // 100 MB
 
     /**
      * Package-private constructor for unit testing — supply a pre-configured library.
@@ -89,8 +97,36 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
                     return;
                 }
 
-                int sampleRate = request.getSampleRate() > 0 ? request.getSampleRate() : 16000;
-                AudioData audio = new AudioData(audioBytes, sampleRate, 1, 16, Duration.ZERO, AudioFormat.PCM);
+                    // AV-P1-004: Validate audio size
+                    if (audioBytes.length > MAX_AUDIO_SIZE_BYTES) {
+                        responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                            .withDescription("Audio data exceeds maximum size of 100 MB")
+                            .asRuntimeException());
+                        return;
+                    }
+
+                    // AV-P1-004: Validate and resolve sample rate
+                    int sampleRate = request.getSampleRate() > 0 ? request.getSampleRate() : 16_000;
+                    if (sampleRate < MIN_SAMPLE_RATE || sampleRate > MAX_SAMPLE_RATE) {
+                        responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                            .withDescription("Sample rate must be between " + MIN_SAMPLE_RATE + " and " + MAX_SAMPLE_RATE + " Hz")
+                            .asRuntimeException());
+                        return;
+                    }
+
+                    // AV-P1-004: Validate language if provided
+                    String language = request.getLanguage();
+                    if (language != null && !language.isBlank()) {
+                        String langCode = language.toLowerCase(Locale.ROOT).split("-")[0];
+                        if (!SUPPORTED_LANGUAGES.contains(langCode)) {
+                            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                                .withDescription("Unsupported language: " + language)
+                                .asRuntimeException());
+                            return;
+                        }
+                    }
+
+                    AudioData audio = new AudioData(audioBytes, sampleRate, 1, 16, Duration.ZERO, AudioFormat.PCM);
 
                 TranscriptionResult result;
                 try (SttEngine stt = library.getSttEngine()) {

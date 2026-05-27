@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.phr.api.validation.PhrRequestValidator;
 import com.ghatana.phr.security.PhrPolicyEvaluator;
+import io.activej.bytebuf.ByteBuf;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -83,21 +84,31 @@ public final class PhrRouteSupport {
     /**
      * Returns true if the context holder has clinical read access (clinician or admin).
      *
+     * <p>Deprecated: Use PhrPolicyEvaluator for policy-based access control.
+     * This method is a role-based shortcut and should be replaced with proper policy checks.</p>
+     *
      * @param context the validated request context
      * @return true for clinician or admin roles
+     * @deprecated Use PhrPolicyEvaluator.canAccessPatientRecord with proper consent/treatment relationship checks
      */
+    @Deprecated
     static boolean hasClinicalRole(PhrRequestContext context) {
-        return "clinician".equals(context.role()) || "admin".equals(context.role());
+        return PhrPolicyEvaluator.canAccessPatientRecord(context, null);
     }
 
     /**
      * Returns true if the context holder may perform administrative operations.
      *
+     * <p>Deprecated: Use PhrPolicyEvaluator for policy-based access control.
+     * This method is a role-based shortcut and should be replaced with proper policy checks.</p>
+     *
      * @param context the validated request context
      * @return true only for admin role
+     * @deprecated Use PhrPolicyEvaluator.canViewAuditTrail or specific policy methods
      */
+    @Deprecated
     static boolean canPerformAdminOperation(PhrRequestContext context) {
-        return "admin".equals(context.role());
+        return PhrPolicyEvaluator.canViewAuditTrail(context);
     }
 
     /**
@@ -209,6 +220,43 @@ public final class PhrRouteSupport {
         return jsonResponse(statusCode, body, correlationId);
     }
 
+    static Promise<HttpResponse> errorResponse(int statusCode, String code, String message, String correlationId, Map<String, Object> details) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error", code);
+        body.put("message", message);
+        body.put("correlationId", correlationId);
+        if (details != null && !details.isEmpty()) {
+            body.put("details", details);
+        }
+        return jsonResponse(statusCode, body, correlationId);
+    }
+
+    static Promise<HttpResponse> textResponse(int statusCode, String text, String contentType) {
+        return Promise.of(HttpResponse.ofCode(statusCode)
+            .withHeader(HttpHeaders.of("Content-Type"), contentType)
+            .withBody(ByteBuf.wrapForReading(text.getBytes(java.nio.charset.StandardCharsets.UTF_8)))
+            .build());
+    }
+
+    /**
+     * Extracts and validates an idempotency key from the request headers.
+     *
+     * @param request the HTTP request
+     * @return the idempotency key, or null if not present
+     * @throws IllegalArgumentException if the key format is invalid
+     */
+    static String extractIdempotencyKey(HttpRequest request) {
+        String key = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
+        if (key == null || key.isBlank()) {
+            return null;
+        }
+        // Validate format: UUID or alphanumeric string 8-64 chars
+        if (!key.matches("^[a-zA-Z0-9\\-]{8,64}$")) {
+            throw new IllegalArgumentException("Idempotency key must be 8-64 alphanumeric characters or UUID format");
+        }
+        return key;
+    }
+
     /**
      * Parses and validates a request body into a DTO using Bean Validation.
      *
@@ -236,7 +284,7 @@ public final class PhrRouteSupport {
      * @return the idempotency key, or null if not present
      */
     static String getIdempotencyKey(HttpRequest request) {
-        String key = request.getHeader("X-Idempotency-Key");
+        String key = request.getHeader(io.activej.http.HttpHeaders.of("X-Idempotency-Key"));
         if (key != null && !key.isBlank()) {
             return key.trim();
         }

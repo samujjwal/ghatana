@@ -6,10 +6,12 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.datacloud.infrastructure.storage.OpenSearchConnector;
 import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
 import com.ghatana.datacloud.spi.EntityWriteIdempotencyStore;
 import com.ghatana.datacloud.spi.EntityWriteOutboxProcessor;
+import com.ghatana.datacloud.spi.InMemoryEntityWriteOutboxProcessor;
 import com.ghatana.datacloud.spi.TransactionManager;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -181,7 +183,93 @@ class EntityCrudHandlerDurabilityTest extends EventloopTestBase {
         verify(client, never()).save(anyString(), anyString(), any());
     }
 
+    // ==================== DC-P1-008: Collection Metadata Domain Event Tests ====================
+
     @Test
+    @DisplayName("DC-P1-008: handleUpsertCollectionMetadata emits domain event and audit record")
+    void dc_p1_008_upsertCollectionMetadataEmitsDomainEventAndAudit() throws Exception {
+        when(handler.getClass().getSimpleName()).thenReturn("EntityCrudHandler");
+        // Re-wire handler with audit service
+        EntityCrudHandler handlerWithAudit = new EntityCrudHandler(client, http, wsBroadcaster)
+            .withTraceSupport(TraceSpanSupport.disabled())
+            .withOpenSearchConnector(openSearchConnector)
+            .withTransactionManager(transactionManager)
+            .withOutboxProcessor(outboxProcessor)
+            .withIdempotencyStore(idempotencyStore)
+            .withAuditService(auditService)
+            .withDeploymentProfile("production");
+
+        lenient().when(http.createdResponse(any())).thenReturn(successResponse);
+        lenient().when(http.resolvePrincipalId(request)).thenReturn("user-123");
+
+        String metadataJson = "{\"description\":\"test collection\",\"sensitivity\":\"standard\"}";
+        ByteBuf body = ByteBuf.wrapForReading(metadataJson.getBytes(StandardCharsets.UTF_8));
+        when(request.loadBody()).thenReturn(Promise.of(body));
+
+        DataCloudClient.Entity existingEntity = DataCloudClient.Entity.of(
+            "test-collection", "dc_collections", Map.of("id", "test-collection"));
+        when(client.findById("tenant-1", "dc_collections", "test-collection"))
+            .thenReturn(Promise.of(Optional.of(existingEntity)));
+
+        DataCloudClient.Entity savedEntity = DataCloudClient.Entity.of(
+            "test-collection", "dc_collections",
+            Map.of("id", "test-collection", "description", "test collection"));
+        when(client.save(eq("tenant-1"), eq("dc_collections"), any()))
+            .thenReturn(Promise.of(savedEntity));
+        when(client.appendEvent(eq("tenant-1"), any()))
+            .thenReturn(Promise.of(DataCloudClient.Offset.of(1L)));
+        when(auditService.record(any(AuditEvent.class))).thenReturn(Promise.of(null));
+
+        HttpResponse response = runPromise(() -> handlerWithAudit.handleUpsertCollectionMetadata(request));
+
+        // domain event must be appended with correct type
+        verify(client).appendEvent(eq("tenant-1"), argThat(event ->
+            "collection.metadata.updated".equals(event.type())));
+        // audit record must be emitted
+        verify(auditService).record(argThat(audit ->
+            "collection.metadata.updated".equals(audit.eventType())
+                && "test-collection".equals(audit.resourceId())
+                && "collection".equals(audit.resourceType())
+                && audit.success()));
+        assertThat(response).isSameAs(successResponse);
+    }
+
+    @Test
+    @DisplayName("DC-P1-008: handleUpsertCollectionMetadata domain event includes correct tenantId and source")
+    void dc_p1_008_upsertCollectionMetadataDomainEventHasCorrectTenantAndSource() throws Exception {
+        EntityCrudHandler handlerWithAudit = new EntityCrudHandler(client, http, wsBroadcaster)
+            .withTraceSupport(TraceSpanSupport.disabled())
+            .withOpenSearchConnector(openSearchConnector)
+            .withTransactionManager(transactionManager)
+            .withOutboxProcessor(outboxProcessor)
+            .withIdempotencyStore(idempotencyStore)
+            .withAuditService(auditService)
+            .withDeploymentProfile("production");
+
+        lenient().when(http.createdResponse(any())).thenReturn(successResponse);
+        lenient().when(http.resolvePrincipalId(request)).thenReturn(null);
+
+        String metadataJson = "{\"description\":\"another-collection\"}";
+        ByteBuf body = ByteBuf.wrapForReading(metadataJson.getBytes(StandardCharsets.UTF_8));
+        when(request.loadBody()).thenReturn(Promise.of(body));
+        when(client.findById("tenant-1", "dc_collections", "test-collection"))
+            .thenReturn(Promise.of(Optional.empty()));
+        when(client.save(eq("tenant-1"), eq("dc_collections"), any()))
+            .thenReturn(Promise.of(DataCloudClient.Entity.of(
+                "test-collection", "dc_collections", Map.of("id", "test-collection"))));
+        when(client.appendEvent(eq("tenant-1"), any()))
+            .thenReturn(Promise.of(DataCloudClient.Offset.of(2L)));
+        when(auditService.record(any(AuditEvent.class))).thenReturn(Promise.of(null));
+
+        HttpResponse response = runPromise(() -> handlerWithAudit.handleUpsertCollectionMetadata(request));
+
+        verify(client).appendEvent(eq("tenant-1"), argThat(event ->
+            "collection.metadata.updated".equals(event.type())
+                && "datacloud.launcher.entity-crud".equals(event.source())
+                && "tenant-1".equals(((Map<?, ?>) event.payload()).get("tenantId"))));
+        assertThat(response).isSameAs(successResponse);
+    }
+
     @DisplayName("DC-P1-05: Outbox event is queued after successful transaction commit")
     void outboxEventIsQueuedAfterSuccessfulTransactionCommit() {
         String entityJson = "{\"id\":\"entity-1\",\"name\":\"Test\"}";
@@ -600,29 +688,131 @@ class EntityCrudHandlerDurabilityTest extends EventloopTestBase {
     @Test
     @DisplayName("DC-P1-001: Entity save in local profile without TransactionManager is allowed")
     void localProfileWithoutTransactionManager_isAllowed() {
-        String entityJson = "{\"id\":\"entity-1\",\"name\":\"Test\"}";
+            String entityJson = "{\"id\":\"entity-1\",\"name\":\"Test\"}";
 
-        // Handler in local profile WITHOUT a transaction manager — should use non-transactional path
-        EntityCrudHandler handlerLocal = new EntityCrudHandler(client, http, wsBroadcaster)
-            .withTraceSupport(TraceSpanSupport.disabled())
-            .withDeploymentProfile("local");
+            // Handler in local profile WITHOUT a transaction manager — should use non-transactional path
+            EntityCrudHandler handlerLocal = new EntityCrudHandler(client, http, wsBroadcaster)
+                .withTraceSupport(TraceSpanSupport.disabled())
+                .withDeploymentProfile("local");
 
-        when(request.loadBody())
-            .thenReturn(Promise.of(ByteBuf.wrapForReading(entityJson.getBytes(StandardCharsets.UTF_8))));
-        lenient().when(http.requireTenantIdWithError(request))
-            .thenReturn(HttpHandlerSupport.TenantResolutionResult.success("tenant-1", null));
-        lenient().when(request.getPathParameter("collection")).thenReturn("test-collection");
-        when(client.save(anyString(), anyString(), any()))
-            .thenReturn(Promise.of(DataCloudClient.Entity.of(
-                "entity-1", "test-collection", Map.of("id", "entity-1"))));
-        when(client.appendEvent(anyString(), any()))
-            .thenReturn(Promise.of(DataCloudClient.Offset.of(1L)));
+            when(request.loadBody())
+                .thenReturn(Promise.of(ByteBuf.wrapForReading(entityJson.getBytes(StandardCharsets.UTF_8))));
+            lenient().when(http.requireTenantIdWithError(request))
+                .thenReturn(HttpHandlerSupport.TenantResolutionResult.success("tenant-1", null));
+            lenient().when(request.getPathParameter("collection")).thenReturn("test-collection");
+            when(client.save(anyString(), anyString(), any()))
+                .thenReturn(Promise.of(DataCloudClient.Entity.of(
+                    "entity-1", "test-collection", Map.of("id", "entity-1"))));
+            when(client.appendEvent(anyString(), any()))
+                .thenReturn(Promise.of(DataCloudClient.Offset.of(1L)));
 
-        HttpResponse response = runPromise(() -> handlerLocal.handleSaveEntity(request));
+            HttpResponse response = runPromise(() -> handlerLocal.handleSaveEntity(request));
 
-        // Should proceed with non-transactional path in local profile
-        assertThat(response).isNotNull();
-        verify(client).save(anyString(), anyString(), any());
+            // Should proceed with non-transactional path in local profile
+            assertThat(response).isNotNull();
+            verify(client).save(anyString(), anyString(), any());
+        }
+
+        // ==================== DC-P1-006: In-memory outbox fail-fast in production ====================
+
+        @Test
+        @DisplayName("DC-P1-006: Entity save in production profile with InMemoryEntityWriteOutboxProcessor returns 500")
+        void productionProfileWithInMemoryOutbox_returns500OnSave() {
+            // DC-P1-006: Production profile must not silently accept an in-memory outbox.
+            String entityJson = "{\"id\":\"entity-dc1006\",\"name\":\"Test\"}";
+
+            EntityCrudHandler handlerWithInMemoryOutbox = new EntityCrudHandler(client, http, wsBroadcaster)
+                    .withTraceSupport(TraceSpanSupport.disabled())
+                    .withOpenSearchConnector(openSearchConnector)
+                    .withTransactionManager(transactionManager)
+                    .withIdempotencyStore(idempotencyStore)
+                    .withOutboxProcessor(new InMemoryEntityWriteOutboxProcessor())
+                    .withDeploymentProfile("production");
+
+            // Stub the transaction manager to delegate to the operation
+            doAnswer(inv -> {
+                @SuppressWarnings("unchecked")
+                TransactionManager.TransactionalOperation<HttpResponse> op = inv.getArgument(1);
+                return op.execute(null);
+            }).when(transactionManager).executeInTransactionWithContext(anyString(), any());
+            when(client.save(anyString(), anyString(), any()))
+                    .thenReturn(Promise.of(DataCloudClient.Entity.of(
+                            "entity-dc1006", "test-collection", Map.of("id", "entity-dc1006"))));
+            when(client.appendEvent(anyString(), any()))
+                    .thenReturn(Promise.of(DataCloudClient.Offset.of(1L)));
+            when(request.loadBody())
+                    .thenReturn(Promise.of(ByteBuf.wrapForReading(entityJson.getBytes(StandardCharsets.UTF_8))));
+
+            HttpResponse response = runPromise(() -> handlerWithInMemoryOutbox.handleSaveEntity(request));
+
+            // Fail-fast: in-memory outbox in production must return a server error, not silently succeed
+            assertThat(response).isSameAs(errorResponse);
+        }
+
+        @Test
+        @DisplayName("DC-P1-006: InMemoryEntityWriteOutboxProcessor is ALLOWED in local/dev profile")
+        void localProfileWithInMemoryOutbox_succeeds() {
+            String entityJson = "{\"id\":\"entity-local\",\"name\":\"Test\"}";
+
+            EntityCrudHandler handlerLocal = new EntityCrudHandler(client, http, wsBroadcaster)
+                    .withTraceSupport(TraceSpanSupport.disabled())
+                    .withOpenSearchConnector(openSearchConnector)
+                    .withTransactionManager(transactionManager)
+                    .withIdempotencyStore(idempotencyStore)
+                    .withOutboxProcessor(new InMemoryEntityWriteOutboxProcessor())
+                    .withDeploymentProfile("local");
+
+            doAnswer(inv -> {
+                @SuppressWarnings("unchecked")
+                TransactionManager.TransactionalOperation<HttpResponse> op = inv.getArgument(1);
+                return op.execute(null);
+            }).when(transactionManager).executeInTransactionWithContext(anyString(), any());
+            when(client.save(anyString(), anyString(), any()))
+                    .thenReturn(Promise.of(DataCloudClient.Entity.of(
+                            "entity-local", "test-collection", Map.of("id", "entity-local"))));
+            when(client.appendEvent(anyString(), any()))
+                    .thenReturn(Promise.of(DataCloudClient.Offset.of(1L)));
+            when(request.loadBody())
+                    .thenReturn(Promise.of(ByteBuf.wrapForReading(entityJson.getBytes(StandardCharsets.UTF_8))));
+            lenient().when(http.requireTenantIdWithError(request))
+                    .thenReturn(HttpHandlerSupport.TenantResolutionResult.success("tenant-1", null));
+            lenient().when(request.getPathParameter("collection")).thenReturn("test-collection");
+
+            HttpResponse response = runPromise(() -> handlerLocal.handleSaveEntity(request));
+
+            // Local profile allows in-memory outbox — save should succeed
+            assertThat(response).isNotNull();
+            verify(client).save(anyString(), anyString(), any());
+        }
+
+        @Test
+        @DisplayName("DC-P1-006: Staging profile with InMemoryEntityWriteOutboxProcessor also returns 500")
+        void stagingProfileWithInMemoryOutbox_returns500() {
+            String entityJson = "{\"id\":\"entity-staging\",\"name\":\"Test\"}";
+
+            EntityCrudHandler handlerStaging = new EntityCrudHandler(client, http, wsBroadcaster)
+                    .withTraceSupport(TraceSpanSupport.disabled())
+                    .withOpenSearchConnector(openSearchConnector)
+                    .withTransactionManager(transactionManager)
+                    .withIdempotencyStore(idempotencyStore)
+                    .withOutboxProcessor(new InMemoryEntityWriteOutboxProcessor())
+                    .withDeploymentProfile("staging");
+
+            doAnswer(inv -> {
+                @SuppressWarnings("unchecked")
+                TransactionManager.TransactionalOperation<HttpResponse> op = inv.getArgument(1);
+                return op.execute(null);
+            }).when(transactionManager).executeInTransactionWithContext(anyString(), any());
+            when(client.save(anyString(), anyString(), any()))
+                    .thenReturn(Promise.of(DataCloudClient.Entity.of(
+                            "entity-staging", "test-collection", Map.of("id", "entity-staging"))));
+            when(client.appendEvent(anyString(), any()))
+                    .thenReturn(Promise.of(DataCloudClient.Offset.of(1L)));
+            when(request.loadBody())
+                    .thenReturn(Promise.of(ByteBuf.wrapForReading(entityJson.getBytes(StandardCharsets.UTF_8))));
+
+            HttpResponse response = runPromise(() -> handlerStaging.handleSaveEntity(request));
+
+            assertThat(response).isSameAs(errorResponse);
+        }
     }
-
-}

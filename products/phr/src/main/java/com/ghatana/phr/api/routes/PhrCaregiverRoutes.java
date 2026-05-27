@@ -9,6 +9,7 @@ import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.http.RoutingServlet;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 
 import java.util.List;
 import java.util.Map;
@@ -73,25 +74,32 @@ public final class PhrCaregiverRoutes {
                 // Fetch patient details for each relationship
                 List<Promise<Map<String, Object>>> dependentPromises = relationships.stream()
                     .map(rel -> patientRecordService.getPatient(rel.patientId())
-                        .then(opt -> opt.map(patient -> Map.of(
-                            "id", patient.getId(),
-                            "name", patient.getDemographics().getFullName(),
-                            "relationship", rel.relationshipType().name(),
-                            "age", patient.getDemographics().getAge(),
-                            "consentScope", rel.consentScope(),
-                            "relationshipId", rel.id(),
-                            "status", rel.status().name(),
-                            "expiresAt", rel.expiresAt() != null ? rel.expiresAt().toString() : null
-                        )).orElse(Map.of(
-                            "id", rel.patientId(),
-                            "name", "Unknown",
-                            "relationship", rel.relationshipType().name(),
-                            "status", rel.status().name()
-                        )))
+                        .then(opt -> {
+                            if (opt.isPresent()) {
+                                var patient = opt.get();
+                                return Promise.of(Map.<String, Object>of(
+                                    "id", patient.getId(),
+                                    "name", patient.getDemographics().getFullName(),
+                                    "relationship", rel.relationshipType().name(),
+                                    "age", patient.getDemographics().getAge(),
+                                    "consentScope", rel.consentScope(),
+                                    "relationshipId", rel.id(),
+                                    "status", rel.status().name(),
+                                    "expiresAt", rel.expiresAt() != null ? rel.expiresAt().toString() : null
+                                ));
+                            } else {
+                                return Promise.of(Map.<String, Object>of(
+                                    "id", rel.patientId(),
+                                    "name", "Unknown",
+                                    "relationship", rel.relationshipType().name(),
+                                    "status", rel.status().name()
+                                ));
+                            }
+                        })
                     )
                     .toList();
 
-                return Promise.combine(dependentPromises)
+                return Promises.toList(dependentPromises)
                     .then(dependents -> PhrRouteSupport.jsonResponse(200, Map.of(
                         "dependents", dependents,
                         "total", dependents.size()

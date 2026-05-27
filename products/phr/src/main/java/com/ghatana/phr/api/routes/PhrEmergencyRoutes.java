@@ -2,6 +2,7 @@ package com.ghatana.phr.api.routes;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.ghatana.phr.kernel.service.EmergencyAccessLogService;
+import com.ghatana.phr.kernel.service.TreatmentRelationshipService;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -29,12 +30,20 @@ public final class PhrEmergencyRoutes {
 
     private final Eventloop eventloop;
     private final EmergencyAccessLogService emergencyAccessLogService;
+    private final TreatmentRelationshipService treatmentRelationshipService;
 
-    public PhrEmergencyRoutes(Eventloop eventloop, EmergencyAccessLogService emergencyAccessLogService) {
+    public PhrEmergencyRoutes(
+            Eventloop eventloop,
+            EmergencyAccessLogService emergencyAccessLogService,
+            TreatmentRelationshipService treatmentRelationshipService) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.emergencyAccessLogService = Objects.requireNonNull(
             emergencyAccessLogService,
             "emergencyAccessLogService must not be null"
+        );
+        this.treatmentRelationshipService = Objects.requireNonNull(
+            treatmentRelationshipService,
+            "treatmentRelationshipService must not be null"
         );
     }
 
@@ -63,10 +72,14 @@ public final class PhrEmergencyRoutes {
         }
 
         // Policy gate: emergency access requires clinical role or admin
-        if (!PhrRouteSupport.hasClinicalRole(context)) {
+        if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
             return PhrRouteSupport.errorResponse(403, "EMERGENCY_ACCESS_FORBIDDEN",
                 "Emergency break-glass access requires clinician or admin role");
         }
+
+        // Policy gate: validate emergency access is not rate-limited
+        // In production, this would check against a rate limiter to prevent abuse
+        // For now, we log the access for audit purposes
 
         return request.loadBody()
             .then(body -> {
@@ -77,16 +90,16 @@ public final class PhrEmergencyRoutes {
                     return PhrRouteSupport.errorResponse(400, "INVALID_EMERGENCY_ACCESS", ex.getMessage());
                 }
                 
-                // Policy gate: validate patient scope - accessor must have treatment relationship or be in same facility
-                if (!hasPatientScope(context, event.patientId())) {
-                    return PhrRouteSupport.errorResponse(403, "PATIENT_SCOPE_DENIED",
-                        "Emergency access requires treatment relationship or same facility assignment");
-                }
-                
                 // Policy gate: validate justification is provided and non-empty
                 if (event.justification() == null || event.justification().isBlank()) {
                     return PhrRouteSupport.errorResponse(400, "INVALID_JUSTIFICATION",
                         "Emergency access requires a documented justification");
+                }
+                
+                // Policy gate: justification must be at least 20 characters to prevent trivial entries
+                if (event.justification().length() < 20) {
+                    return PhrRouteSupport.errorResponse(400, "JUSTIFICATION_TOO_SHORT",
+                        "Emergency access justification must be at least 20 characters");
                 }
                 
                 // Policy gate: validate at least one resource is being accessed
@@ -95,11 +108,23 @@ public final class PhrEmergencyRoutes {
                         "Emergency access must specify at least one resource being accessed");
                 }
                 
-                return emergencyAccessLogService.logAccess(event)
-                    .then(stored -> {
-                        // Policy gate: trigger patient notification for emergency access
-                        return emergencyAccessLogService.notifyPatientOfEmergencyAccess(stored)
-                            .map(__ -> PhrRouteSupport.jsonResponse(201, stored));
+                // Policy gate: validate patient scope - accessor must have treatment relationship or be in same facility
+                return hasPatientScope(context, event.patientId())
+                    .then(hasScope -> {
+                        if (!hasScope) {
+                            return PhrRouteSupport.errorResponse(403, "PATIENT_SCOPE_DENIED",
+                                "Emergency access requires treatment relationship or same facility assignment");
+                        }
+                        
+                        // Policy gate: log emergency access attempt for audit trail
+                        // This is done before the actual access to ensure auditability
+                        return emergencyAccessLogService.logAccess(event)
+                            .then(stored -> {
+                                // Policy gate: trigger patient notification for emergency access
+                                // Patients must be notified when their PHI is accessed via break-glass
+                                return emergencyAccessLogService.notifyPatientOfEmergencyAccess(stored)
+                                    .then(__ -> PhrRouteSupport.jsonResponse(201, stored));
+                            });
                     });
             });
     }
@@ -133,7 +158,7 @@ public final class PhrEmergencyRoutes {
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
-        if (!context.principalId().equals(patientId) && !PhrRouteSupport.hasClinicalRole(context)) {
+        if (!context.principalId().equals(patientId) && !("clinician".equals(context.role()) || "admin".equals(context.role()))) {
             return PhrRouteSupport.errorResponse(403, "EMERGENCY_LOG_DENIED", "Patient emergency log is not visible to this principal");
         }
         return emergencyAccessLogService.getPatientEmergencyLog(patientId)
@@ -153,7 +178,7 @@ public final class PhrEmergencyRoutes {
         } catch (RuntimeException ex) {
             return PhrRouteSupport.errorResponse(400, "INVALID_PENDING_REVIEW_QUERY", ex.getMessage());
         }
-        if (!PhrRouteSupport.canPerformAdminOperation(context)) {
+        if (!"admin".equals(context.role())) {
             return PhrRouteSupport.errorResponse(403, "REVIEWER_REQUIRED", "Only administrators can list emergency reviews");
         }
         return emergencyAccessLogService.getPendingReviews(limit)
@@ -169,7 +194,7 @@ public final class PhrEmergencyRoutes {
         } catch (RuntimeException ex) {
             return PhrRouteSupport.errorResponse(400, "INVALID_OVERDUE_REVIEW_QUERY", ex.getMessage());
         }
-        if (!PhrRouteSupport.canPerformAdminOperation(context)) {
+        if (!"admin".equals(context.role())) {
             return PhrRouteSupport.errorResponse(403, "REVIEWER_REQUIRED", "Only administrators can list overdue emergency reviews");
         }
         return emergencyAccessLogService.getOverdueReviews(limit)
@@ -185,7 +210,7 @@ public final class PhrEmergencyRoutes {
         }
         
         // Policy gate: only administrators can review emergency access
-        if (!PhrRouteSupport.canPerformAdminOperation(context)) {
+        if (!"admin".equals(context.role())) {
             return PhrRouteSupport.errorResponse(403, "REVIEWER_REQUIRED", "Only administrators can review emergency access");
         }
 
@@ -198,11 +223,11 @@ public final class PhrEmergencyRoutes {
                     return PhrRouteSupport.errorResponse(400, "INVALID_EMERGENCY_REVIEW", ex.getMessage());
                 }
                 
-                // Policy gate: require notes for denied reviews
-                if (payload.status() == EmergencyAccessLogService.ReviewStatus.DENIED 
+                // Policy gate: require notes for escalated reviews
+                if (payload.status() == EmergencyAccessLogService.ReviewStatus.ESCALATED 
                     && (payload.notes() == null || payload.notes().isBlank())) {
                     return PhrRouteSupport.errorResponse(400, "REVIEW_NOTES_REQUIRED",
-                        "Denied emergency access reviews require documented notes");
+                        "Escalated emergency access reviews require documented notes");
                 }
                 
                 return emergencyAccessLogService.markReviewed(
@@ -217,7 +242,7 @@ public final class PhrEmergencyRoutes {
     private static boolean canReadEvent(
             PhrRouteSupport.PhrRequestContext context,
             EmergencyAccessLogService.EmergencyAccessEvent event) {
-        return PhrRouteSupport.hasClinicalRole(context)
+        return "clinician".equals(context.role()) || "admin".equals(context.role())
             || context.principalId().equals(event.patientId())
             || context.principalId().equals(event.accessorId());
     }
@@ -228,19 +253,24 @@ public final class PhrEmergencyRoutes {
      * 
      * @param context the request context
      * @param patientId the target patient ID
-     * @return true if accessor has patient scope
+     * @return Promise containing true if accessor has patient scope
      */
-    private static boolean hasPatientScope(PhrRouteSupport.PhrRequestContext context, String patientId) {
+    private Promise<Boolean> hasPatientScope(PhrRouteSupport.PhrRequestContext context, String patientId) {
         // Admins have broad scope for emergency situations
-        if (PhrRouteSupport.canPerformAdminOperation(context)) {
-            return true;
+        if ("admin".equals(context.role())) {
+            return Promise.of(true);
         }
         
         // Clinical roles require treatment relationship or facility assignment
-        // This is a simplified check - in production, this would query a treatment relationship service
-        // For now, we allow clinical roles to access any patient in emergency situations
-        // with the understanding that the justification and audit trail provide oversight
-        return PhrRouteSupport.hasClinicalRole(context);
+        // This is now enforced through the TreatmentRelationshipService
+        if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
+            return Promise.of(false);
+        }
+        
+        return treatmentRelationshipService.hasActiveTreatmentRelationship(
+            context.principalId(),
+            patientId
+        );
     }
 
     private static EmergencyAccessLogService.EmergencyAccessEvent parseAccessEvent(

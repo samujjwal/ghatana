@@ -78,6 +78,17 @@ tasks.register<JavaExec>("runVisionService") {
     environment("VISION_GRPC_PORT", visionPort)
 }
 
+// AV-P0-003: Smoke test that validates the mainClass is resolvable on the runtime classpath.
+tasks.register<JavaExec>("smokeTestMainClass") {
+    group = "verification"
+    description = "AV-P0-003: Verify mainClass 'com.ghatana.audio.video.vision.grpc.VisionGrpcServer' is resolvable on the runtime classpath."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.ghatana.audio.video.vision.grpc.VisionGrpcServer")
+    systemProperty("av.smokeTest", "true")
+    isIgnoreExitValue = false
+    jvmArgs("-Dav.smokeTest=true")
+}
+
 // Fix duplicate jar entries in distribution
 tasks.named<Tar>("distTar") {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE

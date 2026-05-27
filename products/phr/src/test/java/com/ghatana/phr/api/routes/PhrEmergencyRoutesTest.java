@@ -2,6 +2,7 @@ package com.ghatana.phr.api.routes;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.phr.kernel.service.EmergencyAccessLogService;
+import com.ghatana.phr.kernel.service.TreatmentRelationshipService;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
@@ -23,6 +24,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 
@@ -49,6 +51,9 @@ class PhrEmergencyRoutesTest extends EventloopTestBase {
     @Mock
     private EmergencyAccessLogService emergencyAccessLogService;
 
+    @Mock
+    private TreatmentRelationshipService treatmentRelationshipService;
+
     private AsyncServlet servlet;
 
     private static final String ACCESS_BODY = """
@@ -61,20 +66,22 @@ class PhrEmergencyRoutesTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        servlet = new PhrEmergencyRoutes(eventloop(), emergencyAccessLogService).getServlet();
+        servlet = new PhrEmergencyRoutes(eventloop(), emergencyAccessLogService, treatmentRelationshipService).getServlet();
 
         lenient().when(emergencyAccessLogService.logAccess(any()))
             .thenReturn(Promise.of(stubEvent()));
         lenient().when(emergencyAccessLogService.getEvent(anyString()))
             .thenReturn(Promise.of(Optional.of(stubEvent())));
-        lenient().when(emergencyAccessLogService.getPatientLog(anyString()))
+        lenient().when(emergencyAccessLogService.getPatientEmergencyLog(anyString()))
             .thenReturn(Promise.of(List.of(stubEvent())));
-        lenient().when(emergencyAccessLogService.getPendingReviews())
+        lenient().when(emergencyAccessLogService.getPendingReviews(anyInt()))
             .thenReturn(Promise.of(List.of(stubEvent())));
-        lenient().when(emergencyAccessLogService.getOverdueReviews())
+        lenient().when(emergencyAccessLogService.getOverdueReviews(anyInt()))
             .thenReturn(Promise.of(List.of()));
-        lenient().when(emergencyAccessLogService.reviewEvent(anyString(), any()))
+        lenient().when(emergencyAccessLogService.markReviewed(anyString(), anyString(), any(), anyString()))
             .thenReturn(Promise.of(stubEvent()));
+        lenient().when(treatmentRelationshipService.hasActiveTreatmentRelationship(anyString(), anyString()))
+            .thenReturn(Promise.of(true));
     }
 
     @Nested
@@ -236,12 +243,17 @@ class PhrEmergencyRoutesTest extends EventloopTestBase {
             "event-1",
             "patient-1",
             "dr-1",
+            "ER_PHYSICIAN",
             "Cardiac emergency",
-            List.of("labs"),
+            java.util.Set.of("labs"),
             Instant.now(),
             null,
-            "PENDING_REVIEW",
-            null
+            EmergencyAccessLogService.ReviewStatus.PENDING_REVIEW,
+            null,
+            null,
+            null,
+            null,
+            "review-case-1"
         );
     }
 }

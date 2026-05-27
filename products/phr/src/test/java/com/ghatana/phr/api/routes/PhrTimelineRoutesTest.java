@@ -1,16 +1,27 @@
 package com.ghatana.phr.api.routes;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.ghatana.phr.application.record.RecordService;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
+import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 /**
  * Enforcement matrix tests for {@link PhrTimelineRoutes}.
@@ -29,13 +40,30 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Test
  */
 @DisplayName("PhrTimelineRoutes — enforcement matrix")
+@ExtendWith(MockitoExtension.class)
 class PhrTimelineRoutesTest extends EventloopTestBase {
+
+    @Mock
+    private RecordService recordService;
 
     private AsyncServlet servlet;
 
     @BeforeEach
     void setUp() {
-        servlet = new PhrTimelineRoutes(eventloop()).getServlet();
+        when(recordService.getRecordTimeline(any(), anyString()))
+            .thenReturn(Promise.of(new RecordService.RecordTimeline(
+                "patient-1",
+                List.of(new RecordService.TimelineEntry(
+                    "entry-1",
+                    "2026-01-01T00:00:00Z",
+                    "labs",
+                    "LAB_RESULT",
+                    "Normal",
+                    Map.of("status", "ok")
+                )),
+                "2026-01-01T00:00:00Z"
+            )));
+        servlet = new PhrTimelineRoutes(eventloop(), recordService).getServlet();
     }
 
     @Test

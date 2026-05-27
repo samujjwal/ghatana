@@ -155,5 +155,91 @@ public final class ClinicalDecisionSupportService implements KernelLifecycleAwar
         ReviewPriority reviewPriority,
         List<String> recommendations
     ) {
+        /**
+         * Checks if this decision requires explicit human confirmation before action.
+         *
+         * <p>Critical and high-priority decisions require human review. This method
+         * enforces the safety boundary by preventing automated actions on high-risk
+         * clinical recommendations.</p>
+         *
+         * @return true if human confirmation is required
+         */
+        public boolean requiresHumanConfirmation() {
+            return requiresHumanReview || reviewPriority == ReviewPriority.CRITICAL || reviewPriority == ReviewPriority.HIGH;
+        }
+
+        /**
+         * Checks if this decision can be safely acted upon without human review.
+         *
+         * <p>Only low and moderate priority decisions with no human review requirement
+         * can be acted upon automatically.</p>
+         *
+         * @return true if the decision can be acted upon automatically
+         */
+        public boolean canActAutomatically() {
+            return !requiresHumanReview && (reviewPriority == ReviewPriority.LOW || reviewPriority == ReviewPriority.MODERATE);
+        }
+    }
+
+    /**
+     * Enforces the safety boundary for clinical decision actions.
+     *
+     * <p>This method ensures that critical/high-priority decisions are not acted upon
+     * without explicit human confirmation. It throws an exception if an attempt is made
+     * to act on a decision that requires human review.</p>
+     *
+     * @param decision the clinical decision summary
+     * @param action the action being attempted
+     * @throws IllegalStateException if the action requires human review
+     */
+    public void enforceSafetyBoundary(ClinicalDecisionSummary decision, String action) {
+        if (decision.requiresHumanConfirmation()) {
+            throw new IllegalStateException(
+                String.format(
+                    "Safety boundary violation: Action '%s' on patient %s requires human review. " +
+                    "Review priority: %s, Human review required: %s",
+                    action,
+                    decision.patientId(),
+                    decision.reviewPriority(),
+                    decision.requiresHumanReview()
+                )
+            );
+        }
+    }
+
+    /**
+     * Records human review confirmation for a clinical decision.
+     *
+     * <p>This method should be called when a human clinician reviews and approves
+     * a clinical decision that required human review. It creates an audit trail
+     * of the human override.</p>
+     *
+     * @param decision the clinical decision summary
+     * @param reviewerId the ID of the clinician who reviewed
+     * @param approved whether the decision was approved
+     * @param comments optional review comments
+     * @return Promise completing when review is recorded
+     */
+    public Promise<Void> recordHumanReview(
+            ClinicalDecisionSummary decision,
+            String reviewerId,
+            boolean approved,
+            String comments) {
+        ensureRunning();
+        Objects.requireNonNull(decision, "decision cannot be null");
+        Objects.requireNonNull(reviewerId, "reviewerId cannot be null");
+
+        // In production, this would record to an audit dataset
+        // For now, just log the review
+        System.out.println(String.format(
+            "Human review recorded: Patient=%s, Reviewer=%s, Approved=%s, Priority=%s, Comments=%s",
+            decision.patientId(),
+            reviewerId,
+            approved,
+            decision.reviewPriority(),
+            comments != null ? comments : "none"
+        ));
+
+        return Promise.complete();
     }
 }

@@ -405,10 +405,16 @@ public final class PatternSpecCompiler {
      * A side-effecting capability with only one of these is insufficient for production.
      */
     private static boolean hasProductionPolicy(PatternGovernance governance) {
-        // AEP-P1-005: require at least one of approvalPolicy/reviewPolicy for human oversight
+        // Control 1: human oversight (approval or review)
         boolean hasApprovalOrReview = governance.approvalPolicy() != null || governance.reviewPolicy() != null;
-        // AEP-P1-005: require commitSha for immutable production truth binding
+        // Control 2: immutable truth binding
         boolean hasCommitSha = governance.commitSha() != null;
-        return hasApprovalOrReview && hasCommitSha;
+        // Control 3: allowed-tool declaration (AEP-P1-005)
+        boolean hasToolPolicy = governance.toolPolicy() != null;
+        // Control 4: audit sink specification (AEP-P1-005)
+        boolean hasAuditPolicy = governance.auditPolicy() != null;
+        // Control 5: rollback / compensation strategy (AEP-P1-005)
+        boolean hasRollbackPolicy = governance.rollbackPolicy() != null;
+        return hasApprovalOrReview && hasCommitSha && hasToolPolicy && hasAuditPolicy && hasRollbackPolicy;
     }
 }

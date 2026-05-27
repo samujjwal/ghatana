@@ -171,7 +171,7 @@ public final class PhrFchvRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        boolean canRead = PhrRouteSupport.hasClinicalRole(context)
+        boolean canRead = "clinician".equals(context.role()) || "admin".equals(context.role())
             || "caregiver".equals(context.role())
             || "fchv".equals(context.role());
         if (!canRead) {

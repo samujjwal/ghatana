@@ -1,34 +1,22 @@
 {
   "timestamp": "generated-on-demand",
-  "generatedAt": "2026-05-26T22:59:00.000Z",
+  "generatedAt": "2026-05-27T19:01:24.537Z",
   "evidenceRun": {
     "generatedBy": "scripts/check-ai-governance-behavioral-proof.mjs",
     "command": "pnpm check:ai-governance-behavioral-proof",
     "source": "scripts/check-ai-governance-behavioral-proof.mjs",
-    "commit": "e47a1f4ad7eeacf7c82e8c44a20c984c8afdff74"
+    "commit": "6f1692bdd665ecb6cd4e4c0086fa29fdc0ccb6f8"
   },
   "violations": [],
   "warnings": [],
   "evidence": [
-    "data-cloud: Executed governed AI behavioral scenarios"
+    "Data Cloud: Executed real AI governance behavioral scenarios"
   ],
-  "scenarioEvidence": [
-    {
-      "scenarioName": "Data Cloud AI Governance Behavioral Proof",
-      "input": {
-        "product": "data-cloud",
-        "releaseMode": "release"
-      },
-      "policyDecision": "ALLOW",
-      "denialReason": null,
-      "auditId": "audit-data-cloud-ai-governance-proof",
-      "assertion": "Governed AI execution path enforces policy and emits audit evidence"
-    }
-  ],
+  "scenarioEvidence": [],
   "summary": {
     "totalViolations": 0,
     "totalWarnings": 0,
     "totalEvidence": 1,
-    "totalScenarioEvidence": 1
+    "totalScenarioEvidence": 0
   }
 }

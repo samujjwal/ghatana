@@ -144,6 +144,11 @@ class EmergencyAccessReviewWorkflowContextTest extends EventloopTestBase {
         public Promise<Void> notifyEscalation(EmergencyAccessReviewCase reviewCase, EmergencyAccessLogService.EmergencyAccessEvent event) {
             return Promise.complete();
         }
+
+        @Override
+        public Promise<Void> notifyPatient(EmergencyAccessReviewCase reviewCase, EmergencyAccessLogService.EmergencyAccessEvent event) {
+            return Promise.complete();
+        }
     }
 
     private static final class RecordingAuditLogger implements EmergencyAccessReviewAuditLogger {

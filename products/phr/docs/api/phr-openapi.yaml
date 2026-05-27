@@ -1,0 +1,818 @@
+openapi: 3.0.3
+info:
+  title: PHR API
+  description: |
+    Personal Health Record API for the Ghatana PHR product.
+    
+    This API provides endpoints for patient records, consent management, clinical data,
+    documents, notifications, provider access, caregiver delegation, and audit trails.
+    
+    All endpoints require authentication via headers:
+    - X-Principal-Id: The authenticated principal ID
+    - X-Tenant-Id: The tenant ID
+    - X-Role: The role (patient, clinician, admin, caregiver)
+    - X-Persona: The persona (optional, defaults to role)
+    - X-Tier: The tier (optional, defaults to "core")
+    
+    Idempotency can be achieved by providing an X-Idempotency-Key header for create/update operations.
+  version: 1.0.0
+  contact:
+    name: Ghatana PHR Team
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.ghatana.com/phr/v1
+    description: Production server
+  - url: https://staging-api.ghatana.com/phr/v1
+    description: Staging server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /dashboard:
+    get:
+      summary: Get patient dashboard
+      description: Returns a dashboard summary for the authenticated patient
+      tags:
+        - Dashboard
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Patient not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /mobile/dashboard:
+    get:
+      summary: Get mobile dashboard
+      description: Returns a mobile-optimized dashboard summary
+      tags:
+        - Mobile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Mobile dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /profile:
+    get:
+      summary: Get patient profile
+      description: Returns the patient's demographic profile
+      tags:
+        - Profile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Patient profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientProfile'
+        '404':
+          description: Patient not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /timeline/{patientId}:
+    get:
+      summary: Get patient timeline
+      description: Returns a chronological list of health events for a patient
+      tags:
+        - Timeline
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Timeline events
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimelineResponse'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /conditions/{patientId}:
+    get:
+      summary: Get patient conditions
+      description: Returns active and resolved diagnoses for a patient
+      tags:
+        - Conditions
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Patient conditions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConditionsResponse'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /consent/grants:
+    post:
+      summary: Create consent grant
+      description: Creates a new consent grant for a patient
+      tags:
+        - Consent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConsentGrantRequest'
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Consent grant created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentGrant'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /consent/grants/{grantId}/revoke:
+    post:
+      summary: Revoke consent grant
+      description: Revokes an existing consent grant
+      tags:
+        - Consent
+      parameters:
+        - name: grantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Consent grant revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentGrant'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /documents:
+    post:
+      summary: Upload document
+      description: Uploads a new document for a patient
+      tags:
+        - Documents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentUploadRequest'
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Document uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientDocument'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /documents/{documentId}/ocr/confirm:
+    post:
+      summary: Confirm OCR document
+      description: Confirms OCR extraction results for a document
+      tags:
+        - Documents
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OcrConfirmationRequest'
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: OCR confirmed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documentId:
+                    type: string
+                  confirmed:
+                    type: boolean
+                  fhirResource:
+                    type: object
+                  provenance:
+                    type: object
+
+  /notifications:
+    get:
+      summary: List notifications
+      description: Returns pending notifications for the authenticated principal
+      tags:
+        - Notifications
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationsResponse'
+
+  /notifications/{notificationId}/read:
+    post:
+      summary: Mark notification as read
+      description: Marks a notification as read
+      tags:
+        - Notifications
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notificationId:
+                    type: string
+                  read:
+                    type: boolean
+
+  /provider/patients:
+    get:
+      summary: List provider patients
+      description: Returns a list of patients accessible to the provider
+      tags:
+        - Provider
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Patient list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientListResponse'
+
+  /provider/patient/{patientId}/summary:
+    get:
+      summary: Get patient summary
+      description: Returns a clinical summary for a patient
+      tags:
+        - Provider
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Patient summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientSummary'
+
+  /caregiver/dependents:
+    get:
+      summary: List caregiver dependents
+      description: Returns a list of dependents for a caregiver
+      tags:
+        - Caregiver
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Dependent list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DependentListResponse'
+
+  /fchv/dashboard:
+    get:
+      summary: Get FCHV dashboard
+      description: Returns dashboard data for FCHV volunteers
+      tags:
+        - FCHV
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: FCHV dashboard
+          content:
+            application/json:
+              type: object
+
+  /audit/events:
+    get:
+      summary: Query audit events
+      description: Returns audit events with pagination
+      tags:
+        - Audit
+      parameters:
+        - name: patientId
+          in: query
+          schema:
+            type: string
+        - name: filter
+          in: query
+          schema:
+            type: string
+            enum: [all, access, consent, emergency]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 50
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Audit events
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditEventsResponse'
+
+  /audit/events/{eventId}:
+    get:
+      summary: Get audit event detail
+      description: Returns detailed information about a specific audit event
+      tags:
+        - Audit
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Audit event detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditEvent'
+        '404':
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /audit/events/export:
+    get:
+      summary: Export audit events
+      description: Exports audit events in JSON or CSV format (admin only)
+      tags:
+        - Audit
+      parameters:
+        - name: patientId
+          in: query
+          schema:
+            type: string
+        - name: filter
+          in: query
+          schema:
+            type: string
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [json, csv]
+            default: json
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Exported audit events
+          content:
+            application/json:
+              schema:
+                type: object
+            text/csv:
+              schema:
+                type: string
+        '403':
+          description: Admin required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Human-readable error message
+        correlationId:
+          type: string
+          description: Correlation ID for tracing
+        details:
+          type: object
+          description: Additional error details
+
+    DashboardResponse:
+      type: object
+      properties:
+        tenantId:
+          type: string
+        principalId:
+          type: string
+        role:
+          type: string
+        correlationId:
+          type: string
+        profileSummary:
+          type: object
+        nextAppointment:
+          type: object
+          nullable: true
+        medications:
+          type: object
+        recentObservations:
+          type: object
+        activeConditions:
+          type: object
+        documents:
+          type: object
+        accessAlerts:
+          type: object
+        generatedAt:
+          type: string
+          format: date-time
+
+    PatientProfile:
+      type: object
+      properties:
+        patientId:
+          type: string
+        demographics:
+          type: object
+        contact:
+          type: object
+        medicalHistory:
+          type: object
+
+    TimelineResponse:
+      type: object
+      properties:
+        patientId:
+          type: string
+        events:
+          type: array
+          items:
+            type: object
+        total:
+          type: integer
+
+    ConditionsResponse:
+      type: object
+      properties:
+        patientId:
+          type: string
+        conditions:
+          type: array
+          items:
+            type: object
+
+    CreateConsentGrantRequest:
+      type: object
+      required:
+        - patientId
+        - recipientId
+        - scope
+        - expiresAt
+      properties:
+        patientId:
+          type: string
+          pattern: '^[a-zA-Z0-9\-]{8,64}$'
+        recipientId:
+          type: string
+          pattern: '^[a-zA-Z0-9\-]{8,64}$'
+        scope:
+          $ref: '#/components/schemas/ConsentScope'
+        expiresAt:
+          type: string
+          format: date-time
+
+    ConsentScope:
+      type: object
+      properties:
+        resourceTypes:
+          type: array
+          items:
+            type: string
+        allDocuments:
+          type: boolean
+        specificDocumentIds:
+          type: array
+          items:
+            type: string
+        actions:
+          type: array
+          items:
+            type: string
+            enum: [READ, WRITE]
+
+    ConsentGrant:
+      type: object
+      properties:
+        id:
+          type: string
+        patientId:
+          type: string
+        recipientId:
+          type: string
+        scope:
+          $ref: '#/components/schemas/ConsentScope'
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        revokedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    DocumentUploadRequest:
+      type: object
+      required:
+        - patientId
+        - documentType
+        - title
+        - contentType
+        - content
+        - contentHash
+        - visibility
+      properties:
+        patientId:
+          type: string
+        documentType:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        contentType:
+          type: string
+          enum:
+            - application/pdf
+            - image/jpeg
+            - image/png
+            - image/tiff
+            - application/msword
+            - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+        content:
+          type: string
+          description: Base64 encoded content
+        contentHash:
+          type: string
+          pattern: '^[a-fA-F0-9]{64}$'
+        visibility:
+          type: string
+          enum: [private, provider, public]
+
+    OcrConfirmationRequest:
+      type: object
+      required:
+        - correctedText
+      properties:
+        correctedText:
+          type: string
+          maxLength: 10000
+
+    PatientDocument:
+      type: object
+      properties:
+        documentId:
+          type: string
+        patientId:
+          type: string
+        documentType:
+          type: string
+        title:
+          type: string
+        contentType:
+          type: string
+        contentHash:
+          type: string
+        visibility:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    NotificationsResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+        count:
+          type: integer
+        principalId:
+          type: string
+
+    PatientListResponse:
+      type: object
+      properties:
+        patients:
+          type: array
+          items:
+            type: object
+        total:
+          type: integer
+
+    PatientSummary:
+      type: object
+      properties:
+        patientId:
+          type: string
+        demographics:
+          type: object
+        activeConditions:
+          type: array
+          items:
+            type: object
+        medications:
+          type: array
+          items:
+            type: object
+
+    DependentListResponse:
+      type: object
+      properties:
+        dependents:
+          type: array
+          items:
+            type: object
+        total:
+          type: integer
+
+    AuditEventsResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditEvent'
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+
+    AuditEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        eventType:
+          type: string
+        principal:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        success:
+          type: boolean
+        resourceType:
+          type: string
+        resourceId:
+          type: string
+        details:
+          type: object

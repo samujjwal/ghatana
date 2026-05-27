@@ -1,5 +1,7 @@
 package com.ghatana.phr.api.routes;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.cache.IdentityAwareBoundedCache;
 import com.ghatana.platform.http.security.ProductRouteEntitlement;
 import com.ghatana.platform.http.security.RouteEntitlementEvaluator;
@@ -12,6 +14,9 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,10 +36,14 @@ public final class PhrEntitlementRoutes {
 
     private static final Logger LOG = LoggerFactory.getLogger(PhrEntitlementRoutes.class);
     private static final String CONTENT_JSON = "application/json";
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final Path ROUTE_CONTRACT_PATH = Path.of("products/phr/config/phr-route-contract.json");
 
     private final Eventloop eventloop;
     private final RouteEntitlementEvaluator routeEntitlementEvaluator;
     private final IdentityAwareBoundedCache<String, Map<String, Object>> entitlementCache;
+    private Map<String, Integer> roleOrder;
+    private List<ProductRouteEntitlement.RouteEntitlement> cachedRoutes;
 
     public PhrEntitlementRoutes(
             Eventloop eventloop,
@@ -43,6 +52,100 @@ public final class PhrEntitlementRoutes {
         this.eventloop = eventloop;
         this.routeEntitlementEvaluator = routeEntitlementEvaluator;
         this.entitlementCache = entitlementCache;
+        loadRouteContract();
+    }
+
+    /**
+     * Loads the route contract from the canonical JSON file.
+     * This ensures web and backend use the same source of truth for routes.
+     */
+    private void loadRouteContract() {
+        try {
+            if (!Files.exists(ROUTE_CONTRACT_PATH)) {
+                LOG.warn("Route contract file not found at {}, using fallback", ROUTE_CONTRACT_PATH);
+                this.roleOrder = phrRoleOrder();
+                this.cachedRoutes = phrRoutesFor("*", this.roleOrder);
+                return;
+            }
+
+            String json = Files.readString(ROUTE_CONTRACT_PATH);
+            JsonNode root = OBJECT_MAPPER.readTree(json);
+
+            // Load role order
+            JsonNode roleOrderNode = root.path("roleOrder");
+            Map<String, Integer> loadedRoleOrder = new java.util.HashMap<>();
+            roleOrderNode.fields().forEachRemaining(entry -> {
+                loadedRoleOrder.put(entry.getKey(), entry.getValue().asInt());
+            });
+            this.roleOrder = loadedRoleOrder;
+
+            // Load routes
+            JsonNode routesNode = root.path("routes");
+            List<ProductRouteEntitlement.RouteEntitlement> loadedRoutes = new ArrayList<>();
+            for (JsonNode routeNode : routesNode) {
+                String path = routeNode.path("path").asText();
+                String label = routeNode.path("label").asText();
+                String minimumRole = routeNode.path("minimumRole").asText();
+                
+                // Parse actions
+                List<String> actions = new ArrayList<>();
+                JsonNode actionsNode = routeNode.path("actions");
+                if (actionsNode.isArray()) {
+                    for (JsonNode action : actionsNode) {
+                        actions.add(action.asText());
+                    }
+                }
+                
+                // Parse cards
+                List<String> cards = new ArrayList<>();
+                JsonNode cardsNode = routeNode.path("cards");
+                if (cardsNode.isArray()) {
+                    for (JsonNode card : cardsNode) {
+                        cards.add(card.asText());
+                    }
+                }
+                
+                // Parse personas (default to all roles if not specified)
+                List<String> personas = new ArrayList<>();
+                JsonNode personasNode = routeNode.path("personas");
+                if (personasNode.isArray()) {
+                    for (JsonNode persona : personasNode) {
+                        personas.add(persona.asText());
+                    }
+                } else {
+                    personas = List.of("patient", "caregiver", "clinician", "admin");
+                }
+                
+                // Parse tiers (default to core if not specified)
+                List<String> tiers = new ArrayList<>();
+                JsonNode tiersNode = routeNode.path("tiers");
+                if (tiersNode.isArray()) {
+                    for (JsonNode tier : tiersNode) {
+                        tiers.add(tier.asText());
+                    }
+                } else {
+                    tiers = List.of("core");
+                }
+
+                loadedRoutes.add(new ProductRouteEntitlement.RouteEntitlement(
+                    path,
+                    label,
+                    minimumRole,
+                    personas,
+                    tiers,
+                    actions,
+                    cards,
+                    null
+                ));
+            }
+            this.cachedRoutes = loadedRoutes;
+            
+            LOG.info("Loaded {} routes from contract file {}", loadedRoutes.size(), ROUTE_CONTRACT_PATH);
+        } catch (Exception ex) {
+            LOG.error("Failed to load route contract from {}, using fallback", ROUTE_CONTRACT_PATH, ex);
+            this.roleOrder = phrRoleOrder();
+            this.cachedRoutes = phrRoutesFor("*", this.roleOrder);
+        }
     }
 
     /**
@@ -103,8 +206,9 @@ public final class PhrEntitlementRoutes {
             return jsonResponse(200, cached.get());
         }
 
-        Map<String, Integer> roleOrder = phrRoleOrder();
-        List<ProductRouteEntitlement.RouteEntitlement> routes = phrRoutesFor(normalizedRole, roleOrder);
+        // Use loaded route contract
+        List<ProductRouteEntitlement.RouteEntitlement> routes = routeEntitlementEvaluator.filterByRole(
+            cachedRoutes, normalizedRole, roleOrder);
         List<ProductRouteEntitlement.ActionEntitlement> actions =
             routeEntitlementEvaluator.filterActionsByRole(routes, normalizedRole, roleOrder);
         List<ProductRouteEntitlement.CardEntitlement> cards =
@@ -145,90 +249,51 @@ public final class PhrEntitlementRoutes {
 
     private static Map<String, Integer> phrRoleOrder() {
         return Map.of(
-            "patient", 0,
-            "caregiver", 1,
-            "clinician", 2,
-            "admin", 3
+            "patient", 1,
+            "caregiver", 2,
+            "clinician", 3,
+            "admin", 4
         );
     }
 
-    private List<ProductRouteEntitlement.RouteEntitlement> phrRoutesFor(String role, Map<String, Integer> roleOrder) {
-        List<ProductRouteEntitlement.RouteEntitlement> allRoutes = List.of(
-            // Core patient routes
-            route("/dashboard", "Dashboard", "patient", List.of("view-patient-summary"), List.of("patient-summary", "care-plan", "emergency-readiness")),
-            route("/records", "Records", "patient", List.of("view-records"), List.of("record-highlights", "interop-status")),
-            route("/consents", "Consents", "patient", List.of("manage-consent"), List.of("active-consent-grants", "expiring-consents")),
-            route("/appointments", "Appointments", "patient", List.of("schedule-visit"), List.of("upcoming-appointments")),
-            route("/settings", "Settings", "patient", List.of("manage-profile-settings"), List.of("profile-controls", "integration-status")),
-            
-            // Clinical routes
-            route("/labs", "Labs", "caregiver", List.of("review-lab-results"), List.of("recent-lab-results")),
-            route("/medications", "Medications", "caregiver", List.of("review-medications"), List.of("medication-adherence")),
-            route("/conditions", "Conditions", "patient", List.of("view-conditions"), List.of("condition-list")),
-            route("/observations", "Observations", "caregiver", List.of("view-observations"), List.of("observation-trends")),
-            route("/immunizations", "Immunizations", "patient", List.of("view-immunizations"), List.of("immunization-schedule")),
-            
-            // Document routes
-            route("/documents", "Documents", "patient", List.of("view-documents", "upload-document"), List.of("document-list")),
-            route("/documents/upload", "Document Upload", "patient", List.of("upload-document"), List.of()),
-            route("/documents/:docId/ocr", "OCR Review", "patient", List.of("review-ocr"), List.of()),
-            
-            // Timeline and profile
-            route("/timeline", "Timeline", "patient", List.of("view-timeline"), List.of("health-timeline")),
-            route("/profile", "Profile", "patient", List.of("view-profile", "edit-profile"), List.of("profile-summary")),
-            route("/records/:recordId", "Record Detail", "patient", List.of("view-records"), List.of()),
-            
-            // Notifications
-            route("/notifications", "Notifications", "patient", List.of("view-notifications"), List.of("notification-feed")),
-            
-            // Error pages
-            route("/forbidden", "Forbidden", "patient", List.of(), List.of()),
-            route("/not-found", "Not Found", "patient", List.of(), List.of()),
-            
-            // Emergency and governance
-            route("/emergency", "Emergency", "clinician", List.of("break-glass-review"), List.of("override-audit-timeline")),
-            route("/emergency/reviews", "Emergency Reviews", "admin", List.of("review-emergency-access"), List.of("pending-reviews", "overdue-reviews")),
-            route("/release-readiness", "Release Readiness", "admin", List.of("view-release-readiness"),
-                List.of("evidence-freshness", "fhir-runtime", "consent-cache-proof", "rollback-proof")),
-            route("/audit", "Audit", "admin", List.of("view-audit-trail"), List.of("audit-trail")),
-            
-            // Feature-flagged provider routes
-            route("/provider/dashboard", "Provider Dashboard", "clinician", List.of("view-provider-dashboard"), List.of("provider-panel")),
-            route("/provider/patients", "Provider Patients", "clinician", List.of("view-patient-list"), List.of("patient-roster")),
-            
-            // Feature-flagged caregiver routes
-            route("/caregiver/dependents", "Caregiver Dependents", "caregiver", List.of("view-dependents"), List.of("dependent-summaries")),
-            
-            // Feature-flagged FCHV routes
-            route("/fchv/dashboard", "FCHV Dashboard", "caregiver", List.of("view-fchv-dashboard"), List.of("community-health-summary"))
-        );
+    private static List<ProductRouteEntitlement.RouteEntitlement> phrRoutesFor(
+            String tier,
+            Map<String, Integer> roleOrder) {
+        List<String> supportedTiers = "*".equals(tier)
+            ? List.of("core", "plus", "premium")
+            : List.of(tier);
 
-        List<ProductRouteEntitlement.RouteEntitlement> filtered = routeEntitlementEvaluator.filterByRole(allRoutes, role, roleOrder);
-        
-        // Unknown role - fail closed with empty route list
-        // Do not silently fall back to patient routes for security
-        if (filtered.isEmpty()) {
-            LOG.warn("Unknown role '{}' requested - returning empty route list (fail closed)", normalizedRole);
-        }
-        
-        return filtered;
-    }
-
-    private static ProductRouteEntitlement.RouteEntitlement route(
-            String path,
-            String label,
-            String minimumRole,
-            List<String> actions,
-            List<String> cards) {
-        return new ProductRouteEntitlement.RouteEntitlement(
-            path,
-            label,
-            minimumRole,
-            List.of("patient", "caregiver", "clinician", "admin"),
-            List.of("core"),
-            actions,
-            cards,
-            null
+        return List.of(
+            new ProductRouteEntitlement.RouteEntitlement(
+                "/dashboard",
+                "Dashboard",
+                "patient",
+                List.copyOf(roleOrder.keySet()),
+                supportedTiers,
+                List.of(),
+                List.of(),
+                null
+            ),
+            new ProductRouteEntitlement.RouteEntitlement(
+                "/records",
+                "Health Records",
+                "caregiver",
+                List.copyOf(roleOrder.keySet()),
+                supportedTiers,
+                List.of(),
+                List.of(),
+                null
+            ),
+            new ProductRouteEntitlement.RouteEntitlement(
+                "/admin",
+                "Administration",
+                "admin",
+                List.copyOf(roleOrder.keySet()),
+                supportedTiers,
+                List.of(),
+                List.of(),
+                null
+            )
         );
     }
 

@@ -67,6 +67,8 @@ import com.ghatana.phr.kernel.service.PhrNotificationSender;
 import com.ghatana.phr.kernel.service.PhrServiceCatalog;
 import com.ghatana.phr.kernel.service.ReferralService;
 import com.ghatana.phr.kernel.service.TelemedicineService;
+import com.ghatana.phr.kernel.service.TreatmentRelationshipService;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
@@ -395,8 +397,12 @@ public class PhrKernelModule implements KernelModule {
         BillingService billing = new BillingService(context);
         TelemedicineService telemedicine = new TelemedicineService(context);
         CaregiverService caregivers = new CaregiverService(context);
+        TreatmentRelationshipService treatmentRelationship = new TreatmentRelationshipService(context);
         EmergencyAccessReviewWorkflow emergencyReview = EmergencyAccessReviewWorkflow.fromContext(context);
         EmergencyAccessLogService emergencyAccess = new EmergencyAccessLogService(context, emergencyReview);
+        
+        // Initialize policy evaluator with required services
+        PhrPolicyEvaluator.initialize(consent, treatmentRelationship);
         
         // Create route objects with eventloop
         Eventloop eventloop = context.getEventloop();
@@ -410,7 +416,7 @@ public class PhrKernelModule implements KernelModule {
             immunizations,
             consent
         );
-        PhrEmergencyRoutes emergencyRoutes = new PhrEmergencyRoutes(eventloop, emergencyAccess);
+        PhrEmergencyRoutes emergencyRoutes = new PhrEmergencyRoutes(eventloop, emergencyAccess, treatmentRelationship);
         PhrAdministrativeRoutes administrativeRoutes = new PhrAdministrativeRoutes(
             eventloop,
             appointments,
@@ -451,12 +457,13 @@ public class PhrKernelModule implements KernelModule {
             releaseReadinessRoutes,
             entitlementRoutes,
             healthRoutes,
-            null,
-            null,
-            null,
-            null,
+            null,  // auditRoutes
+            null,  // authRoutes
+            null,  // providerRoutes
+            null,  // caregiverRoutes
+            null,  // fchvRoutes
             mobileRoutes,
-            notificationSender
+            null   // notificationRoutes
         );
         context.registerService(PhrEvidenceOutboxDispatcher.class, evidenceDispatcher);
         context.registerService(PhrHttpServer.class, phrHttpServer);
@@ -501,6 +508,7 @@ public class PhrKernelModule implements KernelModule {
         services.add(billing);
         services.add(telemedicine);
         services.add(caregivers);
+        services.add(treatmentRelationship);
         services.add(emergencyAccess);
     }
 

@@ -2,6 +2,7 @@ package com.ghatana.phr.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.kernel.release.ReleaseReadinessRuntimeService;
 import com.ghatana.phr.fhir.server.PhrFhirR4Server;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
 import com.ghatana.phr.kernel.service.EmergencyAccessLogService;
@@ -21,6 +22,7 @@ import com.ghatana.phr.kernel.service.PhrTestInfrastructure;
 import com.ghatana.phr.kernel.service.PhrNotificationSender;
 import com.ghatana.phr.kernel.service.ReferralService;
 import com.ghatana.phr.kernel.service.TelemedicineService;
+import com.ghatana.phr.kernel.service.TreatmentRelationshipService;
 import com.ghatana.platform.cache.DistributedCachePort;
 import com.ghatana.platform.cache.IdentityAwareBoundedCache;
 import com.ghatana.platform.http.security.RoleEvaluator;
@@ -46,9 +48,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -104,10 +109,31 @@ class PhrHttpServerTest extends EventloopTestBase {
         BillingService billingService = new BillingService(PhrTestInfrastructure.createTestContext(dataCloud));
         DocumentService documentService = new DocumentService(PhrTestInfrastructure.createTestContext(dataCloud));
         ImagingService imagingService = new ImagingService(PhrTestInfrastructure.createTestContext(dataCloud));
+        TreatmentRelationshipService treatmentRelationshipService = Mockito.mock(TreatmentRelationshipService.class);
         EmergencyAccessLogService emergencyAccessLogService = new EmergencyAccessLogService(
             PhrTestInfrastructure.createTestContext(dataCloud),
             new EmergencyAccessReviewWorkflow(new NoopEmergencyAccessNotificationSender(), new NoopEmergencyAccessAuditLogger())
         );
+        ReleaseReadinessRuntimeService releaseReadinessRuntimeService = new ReleaseReadinessRuntimeService() {
+            @Override
+            public Promise<Map<String, Object>> getReleaseReadiness(String productId, String environment) {
+                return Promise.of(Map.of(
+                    "sections", Map.of(
+                        "evidenceFreshness", Map.of("runtimeProven", true),
+                        "fhirRuntime", Map.of("details", Map.of("resourcesSupported", List.of("Patient"))),
+                        "consentCache", Map.of("runtimeProven", true),
+                        "rollback", Map.of("runtimeProven", true)
+                    )
+                ));
+            }
+
+            @Override
+            public Promise<Map<String, Object>> getReleaseReadinessSection(String productId, String environment, String sectionId) {
+                return Promise.of(Map.of("sectionId", sectionId, "status", "ok"));
+            }
+        };
+        Mockito.when(treatmentRelationshipService.hasActiveTreatmentRelationship(Mockito.anyString(), Mockito.anyString()))
+            .thenReturn(Promise.of(true));
         ConsentManagementService consentService = new ConsentManagementService(
             PhrTestInfrastructure.createTestContext(
                 dataCloud,
@@ -140,7 +166,11 @@ class PhrHttpServerTest extends EventloopTestBase {
             immunizationService,
             consentService
         );
-        PhrEmergencyRoutes emergencyRoutes = new PhrEmergencyRoutes(eventloop(), emergencyAccessLogService);
+        PhrEmergencyRoutes emergencyRoutes = new PhrEmergencyRoutes(
+            eventloop(),
+            emergencyAccessLogService,
+            treatmentRelationshipService
+        );
         PhrAdministrativeRoutes administrativeRoutes = new PhrAdministrativeRoutes(
             eventloop(),
             appointmentService,
@@ -156,7 +186,10 @@ class PhrHttpServerTest extends EventloopTestBase {
             consentService
         );
         PhrHealthRoutes healthRoutes = new PhrHealthRoutes(eventloop(), fhirServer);
-        PhrReleaseReadinessRoutes releaseReadinessRoutes = new PhrReleaseReadinessRoutes(eventloop());
+        PhrReleaseReadinessRoutes releaseReadinessRoutes = new PhrReleaseReadinessRoutes(
+            eventloop(),
+            releaseReadinessRuntimeService
+        );
         RouteEntitlementEvaluator routeEntitlementEvaluator = new RouteEntitlementEvaluator(new RoleEvaluator.FailClosed());
         IdentityAwareBoundedCache<String, Map<String, Object>> entitlementCache = new IdentityAwareBoundedCache<>(1000, 300);
         PhrEntitlementRoutes entitlementRoutes = new PhrEntitlementRoutes(eventloop(), routeEntitlementEvaluator, entitlementCache);
@@ -238,6 +271,19 @@ class PhrHttpServerTest extends EventloopTestBase {
         void returnsProductRouteEntitlementShape() throws Exception {
             HttpResponse response = dispatch(HttpMethod.GET, "/route-entitlements", null);
 
+            assertThat(response.getCode()).isEqualTo(400);
+        }
+
+        @Test
+        @DisplayName("returns ProductRouteEntitlement-shaped payload with required identity headers")
+        void returnsProductRouteEntitlementShapeWithHeaders() throws Exception {
+            HttpResponse response = dispatch(HttpMethod.GET, "/route-entitlements", null,
+                Map.of(
+                    "X-Role", "patient",
+                    "X-Tenant-Id", "default",
+                    "X-Principal-Id", "anonymous"
+                ));
+
             assertThat(response.getCode()).isEqualTo(200);
             JsonNode body = JSON.readTree(bodyString(response));
             assertThat(body.path("product").asText()).isEqualTo("phr");
@@ -253,7 +299,11 @@ class PhrHttpServerTest extends EventloopTestBase {
         @DisplayName("patient role is denied clinician-only emergency route")
         void patientRoleDoesNotReceiveEmergencyRoute() throws Exception {
             HttpResponse response = dispatch(HttpMethod.GET, "/route-entitlements", null,
-                Map.of("X-Role", "patient"));
+                Map.of(
+                    "X-Role", "patient",
+                    "X-Tenant-Id", "tenant-health-1",
+                    "X-Principal-Id", "patient-1"
+                ));
 
             JsonNode body = JSON.readTree(bodyString(response));
             JsonNode routes = body.path("routes");
@@ -266,7 +316,11 @@ class PhrHttpServerTest extends EventloopTestBase {
         @DisplayName("clinician role receives emergency route")
         void clinicianRoleReceivesEmergencyRoute() throws Exception {
             HttpResponse response = dispatch(HttpMethod.GET, "/route-entitlements", null,
-                Map.of("X-Role", "clinician"));
+                Map.of(
+                    "X-Role", "clinician",
+                    "X-Tenant-Id", "tenant-health-1",
+                    "X-Principal-Id", "clinician-1"
+                ));
 
             JsonNode body = JSON.readTree(bodyString(response));
             JsonNode routes = body.path("routes");
@@ -279,7 +333,11 @@ class PhrHttpServerTest extends EventloopTestBase {
         @DisplayName("admin role receives release readiness cockpit route")
         void adminRoleReceivesReleaseReadinessRoute() throws Exception {
             HttpResponse response = dispatch(HttpMethod.GET, "/route-entitlements", null,
-                Map.of("X-Role", "admin"));
+                Map.of(
+                    "X-Role", "admin",
+                    "X-Tenant-Id", "tenant-health-1",
+                    "X-Principal-Id", "admin-1"
+                ));
 
             JsonNode body = JSON.readTree(bodyString(response));
             assertThat(routePaths(body.path("routes"))).contains("/release-readiness");
@@ -290,11 +348,14 @@ class PhrHttpServerTest extends EventloopTestBase {
         @DisplayName("unknown role fails closed to patient-scoped routes")
         void unknownRoleFailsClosedToPatientRoutes() throws Exception {
             HttpResponse response = dispatch(HttpMethod.GET, "/route-entitlements", null,
-                Map.of("X-Role", "superuser"));
+                Map.of(
+                    "X-Role", "superuser",
+                    "X-Tenant-Id", "tenant-health-1",
+                    "X-Principal-Id", "superuser-1"
+                ));
 
             JsonNode routes = JSON.readTree(bodyString(response)).path("routes");
-            assertThat(routePaths(routes)).contains("/dashboard", "/records");
-            assertThat(routePaths(routes)).doesNotContain("/labs", "/emergency");
+            assertThat(routePaths(routes)).isEmpty();
         }
 
         @Test
@@ -302,8 +363,9 @@ class PhrHttpServerTest extends EventloopTestBase {
         void propagatesEntitlementContextHeaders() throws Exception {
             HttpResponse response = dispatch(HttpMethod.GET, "/route-entitlements", null,
                 Map.of(
-                    "X-Tenant-ID", "tenant-health-1",
-                    "X-Principal-ID", "principal-1",
+                    "X-Tenant-Id", "tenant-health-1",
+                    "X-Principal-Id", "principal-1",
+                    "X-Role", "clinician",
                     "X-Persona", "clinician",
                     "X-Tier", "clinical"
                 ));
@@ -1356,6 +1418,13 @@ class PhrHttpServerTest extends EventloopTestBase {
 
         @Override
         public Promise<Void> notifyEscalation(
+                EmergencyAccessReviewCase reviewCase,
+                EmergencyAccessLogService.EmergencyAccessEvent event) {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> notifyPatient(
                 EmergencyAccessReviewCase reviewCase,
                 EmergencyAccessLogService.EmergencyAccessEvent event) {
             return Promise.complete();

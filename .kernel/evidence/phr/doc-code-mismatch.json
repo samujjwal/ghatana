@@ -1,0 +1,436 @@
+{
+  "product": "phr",
+  "version": "2.0.0",
+  "generatedAt": "2026-05-27T19:22:12.869Z",
+  "baselinePath": "D:\\samuj\\Developments\\ghatana\\products\\phr\\config\\phr-usecase-baseline.json",
+  "summary": {
+    "totalUsecases": 27,
+    "usecasesWithMismatches": 23,
+    "undocumentedWebRoutes": 1
+  },
+  "mismatches": [
+    {
+      "usecaseId": "uc-patient-dashboard",
+      "persona": "patient",
+      "screen": "DashboardPage",
+      "iaRoute": "/dashboard",
+      "webRoute": "/dashboard",
+      "mobileScreen": "dashboard",
+      "status": "implemented",
+      "phase": "mvp-current",
+      "issues": [
+        {
+          "type": "missing_mobile_screen",
+          "documented": "dashboard",
+          "severity": "high",
+          "inconsistency": "marked_implemented_but_missing_code"
+        }
+      ]
+    },
+    {
+      "usecaseId": "uc-patient-records",
+      "persona": "patient",
+      "screen": "RecordsPage",
+      "iaRoute": "/records",
+      "webRoute": "/records",
+      "mobileScreen": "records",
+      "status": "implemented",
+      "phase": "mvp-current",
+      "issues": [
+        {
+          "type": "missing_mobile_screen",
+          "documented": "records",
+          "severity": "high",
+          "inconsistency": "marked_implemented_but_missing_code"
+        }
+      ]
+    },
+    {
+      "usecaseId": "uc-patient-record-detail",
+      "persona": "patient",
+      "screen": "RecordDetailPage",
+      "iaRoute": "/records/:recordId",
+      "webRoute": "/records/:recordId",
+      "mobileScreen": "record-detail",
+      "status": "partial",
+      "phase": "mvp-next",
+      "issues": [
+        {
+          "type": "missing_mobile_screen",
+          "documented": "record-detail",
+          "severity": "medium"
+        }
+      ]
+    },
+    {
+      "usecaseId": "uc-patient-profile",
+      "persona": "patient",
+      "screen": "ProfilePage",
+      "iaRoute": "/profile",
+      "webRoute": "/profile",
+      "mobileScreen": "profile",
+      "status": "implemented",
+      "phase": "mvp-current",
+      "issues": [
+        {
+          "type": "missing_mobile_screen",
+          "documented": "profile",
+          "severity": "high",
+          "inconsistency": "marked_implemented_but_missing_code"
+        }
+      ]
+    },
+    {
+      "usecaseId": "uc-patient-timeline",
+      "persona": "patient",
+      "screen": "TimelinePage",
+      "iaRoute": "/timeline",
+      "webRoute": "/timeline",
+      "mobileScreen": "timeline",
+      "status": "implemented",
+      "phase": "mvp-current",
+      "issues": [
+        {
+          "type": "missing_mobile_screen",
+          "documented": "timeline",
+          "severity": "high",
+          "inconsistency": "marked_implemented_but_missing_code"
+        }
+      ]
+    },
+    {
+      "usecaseId": "uc-patient-conditions",
+      "persona": "patient",
+      "screen": "ConditionsPage",
+      "iaRoute": "/conditions",
+      "webRoute": "/conditions",
+      "mobileScreen": "conditions",
+      "status": "implemented",
+      "phase": "mvp-current",
+      "issues": [
+        {
+          "type": "missing_mobile_screen",
+          "documented": "conditions",
+          "severity": "high",
+          "inconsistency": "marked_implemented_but_missing_code"
+        }
+      ]
+    },
+    {
+      "usecaseId": "uc-patient-observations",
+      "persona": "patient",
+      "screen": "ObservationsPage",
+      "iaRoute": "/observations",
+      "webRoute": "/observations",
+      "mobileScreen": "observations",
+      "status": "implemented",
+      "phase": "mvp-current",
+      "issues": [
+        {
+          "type": "missing_mobile_screen",
+          "documented": "observations",
+          "severity": "high",
+          "inconsistency": "marked_implemented_but_missing_code"
+        }
+      ]
+    },
+    {
+      "usecaseId": "uc-patient-immunizations",
+      "persona": "patient",
+      "screen": "ImmunizationsPage",
+      "iaRoute": "/immunizations",
+      "webRoute": "/immunizations",
+      "mobileScreen": "immunizations",
+      "status": "implemented",
+      "phase": "mvp-current",
+      "issues": [
+        {
+          "type": "missing_mobile_screen",
+          "documented": "immunizations",
+          "severity": "high",
+          "inconsistency": "marked_implemented_but_missing_code"
+        }
+      ]
+    },
+    {
+      "usecaseId": "uc-patient-consent-management",
+      "persona": "patient",
+      "screen": "ConsentPage",
+      "iaRoute": "/consents",
+      "webRoute": "/consents",
+      "mobileScreen": "consents",
+      "status": "implemented",
+      "phase": "mvp-current",
+      "issues": [
+        {
+          "type": "missing_mobile_screen",
+          "documented": "consents",
+          "severity": "high",
+          "inconsistency": "marked_implemented_but_missing_code"
+        }
+      ]
+    },
+    {
+      "usecaseId": "uc-patient-appointments",
+      "persona": "patient",
+      "screen": "AppointmentsPage",
+      "iaRoute": "/appointments",
+      "webRoute": "/appointments",
+      "mobileScreen": "appointments",
+      "status": "partial",
+      "phase": "mvp-next",
+      "issues": [
+        {
+          "type": "missing_mobile_screen",
+          "documented": "appointments",
+          "severity": "medium"
+        }
+      ]
+    },
+    {
+      "usecaseId": "uc-patient-labs",
+      "persona": "patient",
+      "screen": "LabsPage",
+      "iaRoute": "/labs",
+      "webRoute": "/labs",
+      "mobileScreen": "labs",
+      "status": "implemented",
+      "phase": "mvp-current",
+      "issues": [
+        {
+          "type": "missing_mobile_screen",
+          "documented": "labs",
+          "severity": "high",
+          "inconsistency": "marked_implemented_but_missing_code"
+        }
+      ]
+    },
+    {
+      "usecaseId": "uc-patient-medications",
+      "persona": "patient",
+      "screen": "MedicationsPage",
+      "iaRoute": "/medications",
+      "webRoute": "/medications",
+      "mobileScreen": "medications",
+      "status": "implemented",
+      "phase": "mvp-current",
+      "issues": [
+        {
+          "type": "missing_mobile_screen",
+          "documented": "medications",
+          "severity": "high",
+          "inconsistency": "marked_implemented_but_missing_code"
+        }
+      ]
+    },
+    {
+      "usecaseId": "uc-patient-documents",
+      "persona": "patient",
+      "screen": "DocumentsPage",
+      "iaRoute": "/documents",
+      "webRoute": "/documents",
+      "mobileScreen": "documents",
+      "status": "implemented",
+      "phase": "mvp-current",
+      "issues": [
+        {
+          "type": "missing_mobile_screen",
+          "documented": "documents",
+          "severity": "high",
+          "inconsistency": "marked_implemented_but_missing_code"
+        }
+      ]
+    },
+    {
+      "usecaseId": "uc-patient-document-upload",
+      "persona": "patient",
+      "screen": "DocumentUploadPage",
+      "iaRoute": "/documents/upload",
+      "webRoute": "/documents/upload",
+      "mobileScreen": "document-upload",
+      "status": "implemented",
+      "phase": "mvp-current",
+      "issues": [
+        {
+          "type": "missing_mobile_screen",
+          "documented": "document-upload",
+          "severity": "high",
+          "inconsistency": "marked_implemented_but_missing_code"
+        }
+      ]
+    },
+    {
+      "usecaseId": "uc-patient-ocr-review",
+      "persona": "patient",
+      "screen": "OcrReviewPage",
+      "iaRoute": "/documents/:docId/ocr",
+      "webRoute": "/documents/:docId/ocr",
+      "mobileScreen": "ocr-review",
+      "status": "implemented",
+      "phase": "mvp-current",
+      "issues": [
+        {
+          "type": "missing_mobile_screen",
+          "documented": "ocr-review",
+          "severity": "high",
+          "inconsistency": "marked_implemented_but_missing_code"
+        }
+      ]
+    },
+    {
+      "usecaseId": "uc-patient-notifications",
+      "persona": "patient",
+      "screen": "NotificationsPage",
+      "iaRoute": "/notifications",
+      "webRoute": "/notifications",
+      "mobileScreen": "notifications",
+      "status": "implemented",
+      "phase": "mvp-current",
+      "issues": [
+        {
+          "type": "missing_mobile_screen",
+          "documented": "notifications",
+          "severity": "high",
+          "inconsistency": "marked_implemented_but_missing_code"
+        }
+      ]
+    },
+    {
+      "usecaseId": "uc-patient-settings",
+      "persona": "patient",
+      "screen": "SettingsPage / SettingsScreen",
+      "iaRoute": "/settings",
+      "webRoute": "/settings",
+      "mobileScreen": "settings",
+      "status": "implemented",
+      "phase": "mvp-current",
+      "issues": [
+        {
+          "type": "missing_mobile_screen",
+          "documented": "settings",
+          "severity": "high",
+          "inconsistency": "marked_implemented_but_missing_code"
+        }
+      ]
+    },
+    {
+      "usecaseId": "uc-patient-emergency-access",
+      "persona": "patient",
+      "screen": "EmergencyAccessPage / EmergencyAccessScreen",
+      "iaRoute": "/emergency",
+      "webRoute": "/emergency",
+      "mobileScreen": "emergency",
+      "status": "implemented",
+      "phase": "mvp-current",
+      "issues": [
+        {
+          "type": "missing_mobile_screen",
+          "documented": "emergency",
+          "severity": "high",
+          "inconsistency": "marked_implemented_but_missing_code"
+        }
+      ]
+    },
+    {
+      "usecaseId": "uc-caregiver-dependents",
+      "persona": "caregiver",
+      "screen": "CaregiverDependentsPage",
+      "iaRoute": "/caregiver/dependents",
+      "webRoute": "/caregiver/dependents",
+      "mobileScreen": "caregiver-dependents",
+      "status": "feature_flagged",
+      "phase": "phase-2",
+      "issues": [
+        {
+          "type": "missing_mobile_screen",
+          "documented": "caregiver-dependents",
+          "severity": "medium"
+        }
+      ]
+    },
+    {
+      "usecaseId": "uc-fchv-dashboard",
+      "persona": "caregiver",
+      "screen": "FchvDashboardPage",
+      "iaRoute": "/fchv/dashboard",
+      "webRoute": "/fchv/dashboard",
+      "mobileScreen": "fchv-dashboard",
+      "status": "feature_flagged",
+      "phase": "deferred",
+      "issues": [
+        {
+          "type": "missing_mobile_screen",
+          "documented": "fchv-dashboard",
+          "severity": "medium"
+        }
+      ]
+    },
+    {
+      "usecaseId": "uc-admin-emergency-review",
+      "persona": "admin",
+      "screen": "EmergencyReviewPage",
+      "iaRoute": "/emergency/reviews",
+      "webRoute": "/emergency",
+      "mobileScreen": null,
+      "status": "implemented",
+      "phase": "mvp-current",
+      "issues": [
+        {
+          "type": "missing_web_page",
+          "documented": "EmergencyReviewPage",
+          "severity": "high",
+          "inconsistency": "marked_implemented_but_missing_code"
+        }
+      ]
+    },
+    {
+      "usecaseId": "uc-mobile-dashboard",
+      "persona": "patient",
+      "screen": "MobileDashboard",
+      "iaRoute": "/mobile/dashboard",
+      "webRoute": null,
+      "mobileScreen": "dashboard",
+      "status": "implemented",
+      "phase": "mvp-current",
+      "issues": [
+        {
+          "type": "missing_web_page",
+          "documented": "MobileDashboard",
+          "severity": "high",
+          "inconsistency": "marked_implemented_but_missing_code"
+        },
+        {
+          "type": "missing_mobile_screen",
+          "documented": "dashboard",
+          "severity": "high",
+          "inconsistency": "marked_implemented_but_missing_code"
+        }
+      ]
+    },
+    {
+      "usecaseId": "uc-error-pages",
+      "persona": "patient",
+      "screen": "ForbiddenPage / NotFoundPage",
+      "iaRoute": "/forbidden, /not-found",
+      "webRoute": "/forbidden, /not-found",
+      "mobileScreen": "forbidden, not-found",
+      "status": "implemented",
+      "phase": "mvp-current",
+      "issues": [
+        {
+          "type": "missing_mobile_screen",
+          "documented": "forbidden, not-found",
+          "severity": "high",
+          "inconsistency": "marked_implemented_but_missing_code"
+        }
+      ]
+    }
+  ],
+  "undocumentedRoutes": [
+    "/emergency/reviews"
+  ],
+  "severityBreakdown": {
+    "high": 19,
+    "medium": 4
+  }
+}

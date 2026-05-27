@@ -233,6 +233,11 @@ public class ImagingService extends PhrServiceBase {
         return readRecord(ORDER_DATASET, orderId, ImagingOrder.class);
     }
 
+    public Promise<Optional<ImagingStudy>> getStudy(String studyId) {
+        ensureRunning();
+        return readRecord(STUDY_DATASET, studyId, ImagingStudy.class);
+    }
+
     // ==================== Private Helpers ====================
 
     private Promise<Void> fulfillOrder(String orderId) {

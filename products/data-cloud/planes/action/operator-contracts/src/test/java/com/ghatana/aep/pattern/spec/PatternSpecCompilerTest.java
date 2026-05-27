@@ -95,6 +95,91 @@ class PatternSpecCompilerTest {
             "observability", Map.of("metricsPolicy", "enabled", "loggingPolicy", "enabled")));
     }
 
+    // ---- AEP-P1-005: Five-control governance enforcement (typed compiler path) ----
+
+    @Test
+    void aep_p1_005_sideEffectingCapabilityWithoutToolPolicyIsRejectedByCompiler() {
+        String capabilityRef = "agents/deploy-executor@1.0.0/capability";
+        Map<String, Object> spec = new java.util.LinkedHashMap<>(validSpec(Map.of(
+            "operator", "AGENT_ACTION",
+            "capabilityRef", capabilityRef,
+            "inputSchema", "EventContext",
+            "outputSchema", "DeployResult")));
+        // governance with approval + commitSha + auditPolicy + rollbackPolicy, but no toolPolicy
+        spec.put("governance", Map.of(
+            "approvalPolicy", "human_required",
+            "commitSha", "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+            "auditPolicy", "full",
+            "rollbackPolicy", "compensate"));
+        spec.put("lifecycle", Map.of("state", "ACTIVE"));
+
+        assertThatThrownBy(() -> PatternSpecCompiler.compile(spec, sideEffectingRegistry(capabilityRef)))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void aep_p1_005_sideEffectingCapabilityWithoutAuditPolicyIsRejectedByCompiler() {
+        String capabilityRef = "agents/deploy-executor@1.0.0/capability";
+        Map<String, Object> spec = new java.util.LinkedHashMap<>(validSpec(Map.of(
+            "operator", "AGENT_ACTION",
+            "capabilityRef", capabilityRef,
+            "inputSchema", "EventContext",
+            "outputSchema", "DeployResult")));
+        // governance with all controls except auditPolicy
+        spec.put("governance", Map.of(
+            "approvalPolicy", "human_required",
+            "commitSha", "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+            "toolPolicy", "strict",
+            "rollbackPolicy", "compensate"));
+        spec.put("lifecycle", Map.of("state", "ACTIVE"));
+
+        assertThatThrownBy(() -> PatternSpecCompiler.compile(spec, sideEffectingRegistry(capabilityRef)))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void aep_p1_005_sideEffectingCapabilityWithoutRollbackPolicyIsRejectedByCompiler() {
+        String capabilityRef = "agents/deploy-executor@1.0.0/capability";
+        Map<String, Object> spec = new java.util.LinkedHashMap<>(validSpec(Map.of(
+            "operator", "AGENT_ACTION",
+            "capabilityRef", capabilityRef,
+            "inputSchema", "EventContext",
+            "outputSchema", "DeployResult")));
+        // governance with all controls except rollbackPolicy
+        spec.put("governance", Map.of(
+            "approvalPolicy", "human_required",
+            "commitSha", "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+            "toolPolicy", "strict",
+            "auditPolicy", "full"));
+        spec.put("lifecycle", Map.of("state", "ACTIVE"));
+
+        assertThatThrownBy(() -> PatternSpecCompiler.compile(spec, sideEffectingRegistry(capabilityRef)))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void aep_p1_005_sideEffectingCapabilityWithAllFiveControlsIsAccepted() {
+        String capabilityRef = "agents/deploy-executor@1.0.0/capability";
+        Map<String, Object> spec = new java.util.LinkedHashMap<>(validSpec(Map.of(
+            "operator", "AGENT_ACTION",
+            "capabilityRef", capabilityRef,
+            "inputSchema", "EventContext",
+            "outputSchema", "DeployResult")));
+        // governance with ALL 5 controls present
+        spec.put("governance", Map.of(
+            "approvalPolicy", "human_required",
+            "commitSha", "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+            "toolPolicy", "strict",
+            "auditPolicy", "full",
+            "rollbackPolicy", "compensate"));
+        spec.put("lifecycle", Map.of("state", "ACTIVE",
+            "evidencePolicy", Map.of("retentionDays", 90),
+            "evidenceStore", "eventcloud://default"));
+
+        CompiledPattern compiled = PatternSpecCompiler.compile(spec, sideEffectingRegistry(capabilityRef));
+        assertThat(compiled.patternId()).isEqualTo("sre-risk-sequence");
+    }
+
     private static CapabilityDescriptor descriptor(String capabilityRef, String role) {
         return new CapabilityDescriptor(
             CapabilityId.of(capabilityRef),
@@ -107,6 +192,21 @@ class PatternSpecCompilerTest {
             List.of("agent-capability"),
             Map.of("policyRef", "required"),
             Map.of("owner", "aep", "role", role));
+    }
+
+    private static ExternalAgentCapabilityRegistry sideEffectingRegistry(String capabilityRef) {
+        CapabilityDescriptor sideEffecting = new CapabilityDescriptor(
+            CapabilityId.of(capabilityRef),
+            CapabilityKind.EVENT_OPERATOR,
+            "agents/deploy-executor@1.0.0",
+            Optional.empty(),
+            "EventContext",
+            "DeployResult",
+            AgentSideEffectProfile.SIDE_EFFECTING,
+            List.of("agent-capability"),
+            Map.of("policyRef", "required"),
+            Map.of("owner", "aep", "role", "AGENT_ACTION"));
+        return registry(sideEffecting);
     }
 
     private static ExternalAgentCapabilityRegistry registry(CapabilityDescriptor descriptor) {

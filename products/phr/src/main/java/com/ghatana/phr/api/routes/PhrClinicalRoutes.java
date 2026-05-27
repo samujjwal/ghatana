@@ -260,7 +260,7 @@ public final class PhrClinicalRoutes {
     }
 
     private Promise<Boolean> requireAccess(PhrRouteSupport.PhrRequestContext context, String patientId, String resourceType) {
-        if (context.principalId().equals(patientId) || PhrRouteSupport.canPerformAdminOperation(context)) {
+        if (context.principalId().equals(patientId) || "admin".equals(context.role())) {
             // Patient accessing their own data, or admin performing a system operation.
             return Promise.of(true);
         }

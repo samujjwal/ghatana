@@ -180,7 +180,8 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
                     status,
                     Instant.now(),
                     expiresAt,
-                    grant.getRevokedAt()
+                    grant.getRevokedAt(),
+                    grant.getIdempotencyKey()
                 );
 
                 return createRecord(
@@ -416,6 +417,30 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
      * @param patientId the patient identifier
      * @return Promise containing list of grants
      */
+    public Promise<Optional<ConsentGrant>> getGrantByIdempotencyKey(String idempotencyKey) {
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return Promise.of(Optional.empty());
+        }
+        return queryRecords(
+            CONSENT_DATASET,
+            "idempotencyKey = :idempotencyKey AND status = :status",
+            Map.of(
+                "idempotencyKey", idempotencyKey,
+                "status", "ACTIVE"
+            ),
+            10,
+            0,
+            ConsentGrant.class
+        )
+            .then(grants -> {
+                if (grants.isEmpty()) {
+                    return Promise.of(Optional.empty());
+                }
+                // Return the most recent grant with this idempotency key
+                return Promise.of(Optional.of(grants.get(0)));
+            });
+    }
+
     public Promise<List<ConsentGrant>> getPatientGrants(String patientId) {
         ensureRunning();
 
@@ -598,7 +623,7 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
         Set<String> actions = scope.actions.stream()
             .map(action -> PhrInputSanitizationUtils.requireSafeCode(action, "scope.actions"))
             .collect(java.util.stream.Collectors.toUnmodifiableSet());
-        return new ConsentScope(resourceTypes, scope.allDocuments, documentIds, actions);
+        return new ConsentScope(resourceTypes, scope.allDocuments, documentIds, actions, scope.fieldLevelAccess);
     }
 
     private static Instant requireFutureExpiry(Instant expiresAt, String fieldName) {
@@ -647,6 +672,7 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
         private final Instant createdAt;
         private final Instant expiresAt;
         private final Instant revokedAt;
+        private final String idempotencyKey;
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public ConsentGrant(
@@ -657,7 +683,8 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
             @JsonProperty("status") String status,
             @JsonProperty("createdAt") Instant createdAt,
             @JsonProperty("expiresAt") Instant expiresAt,
-            @JsonProperty("revokedAt") Instant revokedAt) {
+            @JsonProperty("revokedAt") Instant revokedAt,
+            @JsonProperty("idempotencyKey") String idempotencyKey) {
             this.id = id;
             this.patientId = patientId;
             this.recipientId = recipientId;
@@ -666,6 +693,7 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
             this.createdAt = createdAt;
             this.expiresAt = expiresAt;
             this.revokedAt = revokedAt;
+            this.idempotencyKey = idempotencyKey;
         }
 
         public String getId() { return id; }
@@ -677,6 +705,7 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
         public Instant getExpiresAt() { return expiresAt; }
         public Instant getRevokedAt() { return revokedAt; }
         public String getGrantId() { return id; }
+        public String getIdempotencyKey() { return idempotencyKey; }
 
         public boolean isExpired() {
             return expiresAt != null && Instant.now().isAfter(expiresAt);
@@ -692,22 +721,27 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
 
         public ConsentGrant withId(String newId) {
             return new ConsentGrant(newId, patientId, recipientId, scope, status,
-                createdAt, expiresAt, revokedAt);
+                createdAt, expiresAt, revokedAt, idempotencyKey);
         }
 
         public ConsentGrant withStatus(String newStatus) {
             return new ConsentGrant(id, patientId, recipientId, scope, newStatus,
-                createdAt, expiresAt, revokedAt);
+                createdAt, expiresAt, revokedAt, idempotencyKey);
         }
 
         public ConsentGrant withCreatedAt(Instant newCreatedAt) {
             return new ConsentGrant(id, patientId, recipientId, scope, status,
-                newCreatedAt, expiresAt, revokedAt);
+                newCreatedAt, expiresAt, revokedAt, idempotencyKey);
         }
 
         public ConsentGrant withRevokedAt(Instant newRevokedAt) {
             return new ConsentGrant(id, patientId, recipientId, scope, status,
-                createdAt, expiresAt, newRevokedAt);
+                createdAt, expiresAt, newRevokedAt, idempotencyKey);
+        }
+
+        public ConsentGrant withIdempotencyKey(String newIdempotencyKey) {
+            return new ConsentGrant(id, patientId, recipientId, scope, status,
+                createdAt, expiresAt, revokedAt, newIdempotencyKey);
         }
     }
 
@@ -716,17 +750,20 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
         private final boolean allDocuments;
         private final Set<String> specificDocumentIds;
         private final Set<String> actions; // READ, WRITE
+        private final Map<String, Set<String>> fieldLevelAccess; // resourceType -> allowed fields
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public ConsentScope(
                 @JsonProperty("resourceTypes") Set<String> resourceTypes,
                 @JsonProperty("allDocuments") boolean allDocuments,
                 @JsonProperty("specificDocumentIds") Set<String> specificDocumentIds,
-                @JsonProperty("actions") Set<String> actions) {
+                @JsonProperty("actions") Set<String> actions,
+                @JsonProperty("fieldLevelAccess") Map<String, Set<String>> fieldLevelAccess) {
             this.resourceTypes = resourceTypes != null ? resourceTypes : Set.of();
             this.allDocuments = allDocuments;
             this.specificDocumentIds = specificDocumentIds != null ? specificDocumentIds : Set.of();
             this.actions = actions != null ? actions : Set.of("READ");
+            this.fieldLevelAccess = fieldLevelAccess != null ? fieldLevelAccess : Map.of();
         }
 
         public Set<String> getResourceTypes() { return resourceTypes; }
@@ -737,8 +774,48 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
 
         public Set<String> getActions() { return actions; }
 
+        public Map<String, Set<String>> getFieldLevelAccess() { return fieldLevelAccess; }
+
         public boolean includes(String resourceType) {
             return resourceTypes.contains(resourceType) || resourceTypes.contains("*");
+        }
+
+        /**
+         * Checks if a specific field within a resource type is allowed access.
+         * If no field-level restrictions are defined for the resource type,
+         * all fields are assumed allowed (backward compatibility).
+         *
+         * @param resourceType the resource type
+         * @param field the field name
+         * @return true if the field is accessible
+         */
+        public boolean allowsField(String resourceType, String field) {
+            if (field == null || field.isBlank()) {
+                return true; // No field specified, allow access
+            }
+            
+            Set<String> allowedFields = fieldLevelAccess.get(resourceType);
+            if (allowedFields == null || allowedFields.isEmpty()) {
+                // No field-level restrictions for this resource type
+                return true;
+            }
+            
+            // If field-level restrictions exist, check if field is allowed
+            return allowedFields.contains(field) || allowedFields.contains("*");
+        }
+
+        /**
+         * Checks if the scope allows a specific action on a resource type.
+         *
+         * @param resourceType the resource type
+         * @param action the action (READ, WRITE)
+         * @return true if the action is allowed
+         */
+        public boolean allowsAction(String resourceType, String action) {
+            if (!includes(resourceType)) {
+                return false;
+            }
+            return actions.contains(action) || actions.contains("*");
         }
 
         public boolean overlaps(ConsentScope other) {

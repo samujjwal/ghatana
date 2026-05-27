@@ -77,7 +77,7 @@
 | Goal | Evidence | Status |
 |------|----------|--------|
 | FHIR Server Endpoint | Listed as "Planned" in README | ❌ Not Implemented |
-| Mobile App (React Native) | Dashboard, Records, Consents, Notifications, Emergency, Settings screens; session restore/expire validation; encrypted PHI offline cache (AES-256-GCM); i18n coverage (en/ne); accessible bottom tab bar; high contrast support; offline banner; biometric auth | ✅ MVP Complete |
+| Mobile App (React Native) | 8 screens (Dashboard, Records, Consents, Notifications, Emergency, Settings, Login, Record Detail); session restore/expire validation; encrypted PHI offline cache (AES-256-GCM) with key rotation and biometric policy; i18n coverage (en/ne); accessible bottom tab bar; high contrast support; offline banner; biometric auth; PHI-safe logging; consent revocation clears cache | ✅ MVP Complete |
 | Nepal HIE Integration | Listed as "Planned" | ❌ Not Started |
 
 ---
@@ -163,7 +163,7 @@
 | Item | Status | Notes |
 |------|--------|-------|
 | FHIR Server Endpoint | Planned | Only transformation engine exists |
-| Mobile Application | Partial Implementation | Core screens implemented; full feature set in progress |
+| Mobile Application | MVP Complete | Core screens implemented with encrypted PHI storage, session management, i18n, and accessibility support |
 | Nepal HIE Integration | Planned | Interface design pending |
 | EDI Clearinghouse | Out of Scope | Listed as "out of scope for v1" |
 
@@ -187,7 +187,7 @@
 | FHIR Compliance | High | R4 transformation engine complete |
 | AI Integration | Medium-High | 3 agents implemented, more planned |
 | Frontend | High | React 19 + Tailwind with 27 route contracts, auth context, multiple pages implemented, IA coverage complete |
-| Mobile | Medium-High | React Native with 6 core screens, session restore/expire validation, encrypted PHI offline cache, i18n coverage, accessible bottom tab bar, high contrast support |
+| Mobile | High | React Native with encrypted PHI storage (AES-256-GCM), session management, i18n (en/ne), accessibility support, biometric auth, offline cache |
 | Test Coverage | Medium | 16 test files, E2E smoke test template, more needed for full coverage |
 | Documentation | High | Comprehensive README, capability definitions, IA baseline, E2E test matrix |
 

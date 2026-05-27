@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -110,15 +111,14 @@ public final class PhrAuthRoutes {
                     // Record failed login attempt for audit
                     if (auditTrailService != null) {
                         AuditTrailService.AuditTrailEvent failedEvent = AuditTrailService.AuditTrailEvent.builder()
-                            .withEventType("AUTH_LOGIN_FAILED")
-                            .withEntityId(nationalId)
-                            .withEntityType("USER")
-                            .withAction("LOGIN_ATTEMPT")
-                            .withActorId(nationalId)
-                            .withTenantId("default-tenant")
-                            .withOutcome("FAILURE")
-                            .withDetails(Map.of("reason", "INVALID_CREDENTIALS"))
-                            .withTimestamp(Instant.now())
+                            .eventId(UUID.randomUUID().toString())
+                            .eventType("AUTH_LOGIN_FAILED")
+                            .entityId(nationalId)
+                            .userId(nationalId)
+                            .tenantId("default-tenant")
+                            .action("LOGIN_ATTEMPT")
+                            .data(Map.of("reason", "INVALID_CREDENTIALS"))
+                            .timestamp(Instant.now().toEpochMilli())
                             .build();
                         auditTrailService.recordAuditEvent(failedEvent);
                     }
@@ -148,15 +148,14 @@ public final class PhrAuthRoutes {
                 // Record successful login for audit
                 if (auditTrailService != null) {
                     AuditTrailService.AuditTrailEvent successEvent = AuditTrailService.AuditTrailEvent.builder()
-                        .withEventType("AUTH_LOGIN_SUCCESS")
-                        .withEntityId(user.getUserId())
-                        .withEntityType("USER")
-                        .withAction("LOGIN")
-                        .withActorId(user.getUserId())
-                        .withTenantId(tenantId)
-                        .withOutcome("SUCCESS")
-                        .withDetails(Map.of("role", role, "sessionExpiresAt", expiresAt))
-                        .withTimestamp(Instant.now())
+                        .eventId(UUID.randomUUID().toString())
+                        .eventType("AUTH_LOGIN_SUCCESS")
+                        .entityId(user.getUserId())
+                        .userId(user.getUserId())
+                        .tenantId(tenantId)
+                        .action("LOGIN")
+                        .data(Map.of("role", role, "sessionExpiresAt", expiresAt))
+                        .timestamp(Instant.now().toEpochMilli())
                         .build();
                     auditTrailService.recordAuditEvent(successEvent);
                 }
@@ -176,15 +175,14 @@ public final class PhrAuthRoutes {
             // Record logout event for audit
             if (auditTrailService != null) {
                 AuditTrailService.AuditTrailEvent logoutEvent = AuditTrailService.AuditTrailEvent.builder()
-                    .withEventType("AUTH_LOGOUT")
-                    .withEntityId(principalId)
-                    .withEntityType("USER")
-                    .withAction("LOGOUT")
-                    .withActorId(principalId)
-                    .withTenantId(tenantId != null ? tenantId : "default-tenant")
-                    .withOutcome("SUCCESS")
-                    .withDetails(Map.of())
-                    .withTimestamp(Instant.now())
+                    .eventId(UUID.randomUUID().toString())
+                    .eventType("AUTH_LOGOUT")
+                    .entityId(principalId)
+                    .userId(principalId)
+                    .tenantId(tenantId != null ? tenantId : "default-tenant")
+                    .action("LOGOUT")
+                    .data(Map.of())
+                    .timestamp(Instant.now().toEpochMilli())
                     .build();
                 auditTrailService.recordAuditEvent(logoutEvent);
             }

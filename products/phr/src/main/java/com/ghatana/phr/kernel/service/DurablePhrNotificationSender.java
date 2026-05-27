@@ -216,7 +216,7 @@ public final class DurablePhrNotificationSender extends PhrServiceBase implement
                     mutationMetadata(metadataFor(updated), updated.recipientId()),
                     "PhrNotificationOutboxEntry",
                     1
-                );
+                ).map(__ -> (Void) null);
             });
     }
 
@@ -468,7 +468,8 @@ public final class DurablePhrNotificationSender extends PhrServiceBase implement
                 deliveredAt,
                 deliveredAt,
                 null,
-                messageId
+                messageId,
+                null
             );
         }
 
@@ -490,6 +491,7 @@ public final class DurablePhrNotificationSender extends PhrServiceBase implement
                 attemptedAt,
                 null,
                 failureReason,
+                null,
                 null
             );
         }

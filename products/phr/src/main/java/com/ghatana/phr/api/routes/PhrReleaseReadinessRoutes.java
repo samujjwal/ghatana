@@ -61,7 +61,7 @@ public final class PhrReleaseReadinessRoutes {
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
-        if (!PhrRouteSupport.canPerformAdminOperation(context)) {
+        if (!"admin".equals(context.role())) {
             return PhrRouteSupport.errorResponse(403, "PHR_RELEASE_READINESS_FORBIDDEN",
                 "Release readiness evidence requires an admin principal");
         }
@@ -79,7 +79,7 @@ public final class PhrReleaseReadinessRoutes {
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
-        if (!PhrRouteSupport.canPerformAdminOperation(context)) {
+        if (!"admin".equals(context.role())) {
             return PhrRouteSupport.errorResponse(403, "PHR_RELEASE_READINESS_FORBIDDEN",
                 "Release readiness evidence requires an admin principal");
         }

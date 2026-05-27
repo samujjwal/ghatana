@@ -331,12 +331,13 @@ class EmergencyAccessBreakGlassE2EIT extends EventloopTestBase {
             return Promise.complete();
         }
 
-        public Promise<Void> notifyPatient(String patientId, String accessorId, String justification) {
+        @Override
+        public Promise<Void> notifyPatient(EmergencyAccessReviewCase reviewCase, EmergencyAccessEvent event) {
             patientNotifications.add(new PatientNotification(
-                patientId,
-                accessorId,
+                event.patientId(),
+                event.accessorId(),
                 "EMERGENCY_ACCESS_GRANTED",
-                "Emergency access to your PHR was granted by " + accessorId + ". Justification: " + justification,
+                "Emergency access to your PHR was granted by " + event.accessorId() + ". Justification: " + event.justification(),
                 Instant.now()
             ));
             return Promise.complete();

@@ -95,3 +95,14 @@ tasks.named<Zip>("distZip") {
 tasks.named<Sync>("installDist") {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
+
+// AV-P0-003: Smoke test that validates the mainClass is resolvable on the runtime classpath.
+tasks.register<JavaExec>("smokeTestMainClass") {
+    group = "verification"
+    description = "AV-P0-003: Verify mainClass 'com.ghatana.audio.video.multimodal.grpc.MultimodalGrpcServer' is resolvable on the runtime classpath."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.ghatana.audio.video.multimodal.grpc.MultimodalGrpcServer")
+    systemProperty("av.smokeTest", "true")
+    isIgnoreExitValue = false
+    jvmArgs("-Dav.smokeTest=true")
+}

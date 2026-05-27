@@ -110,7 +110,8 @@ public class ClinicalServiceImpl implements ClinicalService {
             request.frequency(),
             request.quantity(),
             "ACTIVE",
-            Instant.now().toString()
+            Instant.now().toString(),
+            null
         );
         medications.put(medicationId, medication);
         return Promise.of(medication);

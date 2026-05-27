@@ -39,6 +39,12 @@ public final class SttGrpcServer extends AudioVideoGrpcServerBase {
      * @param args unused
      */
     public static void main(String[] args) {
+        // AV-P0-003: Smoke-test mode — verify classpath + mainClass resolution and exit cleanly.
+        if (Boolean.getBoolean("av.smokeTest")) {
+            LOG.info("[smoke-test] SttGrpcServer classpath check passed — exiting cleanly.");
+            return;
+        }
+
         int port = Integer.parseInt(
                 System.getenv().getOrDefault("STT_GRPC_PORT", String.valueOf(DEFAULT_PORT)));
 

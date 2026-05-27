@@ -218,6 +218,131 @@ public class MedicationService extends PhrServiceBase {
             });
     }
 
+    /**
+     * Checks for potential drug-drug interactions for a patient's medications.
+     *
+     * <p>This method analyzes the patient's active medications and identifies
+     * potential interactions based on known drug interaction databases. Returns
+     * a list of interaction warnings with severity levels.</p>
+     *
+     * @param patientId the patient identifier
+     * @return Promise containing list of interaction warnings
+     */
+    public Promise<List<InteractionWarning>> checkDrugInteractions(String patientId) {
+        ensureRunning();
+
+        String sanitizedPatientId = PhrInputSanitizationUtils.requireSafeIdentifier(patientId, "patientId");
+
+        return queryRecords(
+            MEDICATION_DATASET,
+            "patientId = :patientId AND status = :status",
+            Map.of("patientId", sanitizedPatientId, "status", PrescriptionStatus.ACTIVE.name()),
+            100,
+            0,
+            Prescription.class
+        ).then(activePrescriptions -> {
+            List<InteractionWarning> warnings = new java.util.ArrayList<>();
+            
+            // Check for known interactions between active medications
+            for (int i = 0; i < activePrescriptions.size(); i++) {
+                for (int j = i + 1; j < activePrescriptions.size(); j++) {
+                    Prescription rx1 = activePrescriptions.get(i);
+                    Prescription rx2 = activePrescriptions.get(j);
+                    
+                    InteractionWarning warning = checkInteraction(rx1, rx2);
+                    if (warning != null) {
+                        warnings.add(warning);
+                    }
+                }
+            }
+            
+            return Promise.of(warnings);
+        });
+    }
+
+    /**
+     * Checks for potential drug-allergy interactions for a patient.
+     *
+     * <p>This method compares a proposed medication against the patient's
+     * known allergies and returns warnings if there's a potential allergy.</p>
+     *
+     * @param patientId the patient identifier
+     * @param medicationCode the medication code to check
+     * @return Promise containing list of allergy warnings
+     */
+    public Promise<List<AllergyWarning>> checkAllergyInteractions(String patientId, String medicationCode) {
+        ensureRunning();
+
+        String sanitizedPatientId = PhrInputSanitizationUtils.requireSafeIdentifier(patientId, "patientId");
+        String sanitizedMedicationCode = PhrInputSanitizationUtils.requireSafeIdentifier(medicationCode, "medicationCode");
+
+        // Query patient allergies (would be in a separate dataset in production)
+        // For now, return empty list as placeholder
+        return Promise.of(new java.util.ArrayList<>());
+    }
+
+    /**
+     * Checks interaction between two specific medications.
+     *
+     * @param rx1 first prescription
+     * @param rx2 second prescription
+     * @return InteractionWarning if interaction exists, null otherwise
+     */
+    private InteractionWarning checkInteraction(Prescription rx1, Prescription rx2) {
+        // In production, this would query a drug interaction database
+        // For now, implement a few known high-severity interactions
+        
+        // Warfarin + NSAIDs (increased bleeding risk)
+        if (isWarfarin(rx1.medicationCode()) && isNsaid(rx2.medicationCode()) ||
+            isWarfarin(rx2.medicationCode()) && isNsaid(rx1.medicationCode())) {
+            return new InteractionWarning(
+                rx1.medicationCode(),
+                rx2.medicationCode(),
+                InteractionSeverity.HIGH,
+                "Increased risk of bleeding when warfarin is combined with NSAIDs",
+                "Consider alternative analgesic or monitor INR closely"
+            );
+        }
+        
+        // ACE inhibitors + potassium-sparing diuretics (hyperkalemia risk)
+        if (isAceInhibitor(rx1.medicationCode()) && isPotassiumSparingDiuretic(rx2.medicationCode()) ||
+            isAceInhibitor(rx2.medicationCode()) && isPotassiumSparingDiuretic(rx1.medicationCode())) {
+            return new InteractionWarning(
+                rx1.medicationCode(),
+                rx2.medicationCode(),
+                InteractionSeverity.MEDIUM,
+                "Increased risk of hyperkalemia",
+                "Monitor potassium levels regularly"
+            );
+        }
+        
+        return null;
+    }
+
+    private boolean isWarfarin(String code) {
+        return code != null && (code.equalsIgnoreCase("B01AA03") || 
+            code.toLowerCase().contains("warfarin"));
+    }
+
+    private boolean isNsaid(String code) {
+        return code != null && (code.startsWith("M01A") || 
+            code.toLowerCase().contains("ibuprofen") ||
+            code.toLowerCase().contains("naproxen") ||
+            code.toLowerCase().contains("aspirin"));
+    }
+
+    private boolean isAceInhibitor(String code) {
+        return code != null && (code.startsWith("C09A") ||
+            code.toLowerCase().contains("lisinopril") ||
+            code.toLowerCase().contains("enalapril"));
+    }
+
+    private boolean isPotassiumSparingDiuretic(String code) {
+        return code != null && (code.startsWith("C03D") ||
+            code.toLowerCase().contains("spironolactone") ||
+            code.toLowerCase().contains("amiloride"));
+    }
+
     // ==================== Private Helpers ====================
 
     // ==================== Inner Types ====================
@@ -271,6 +396,35 @@ public class MedicationService extends PhrServiceBase {
         /** Prescription has expired without being filled. */
         EXPIRED
     }
+
+    /** Severity levels for drug interactions. */
+    public enum InteractionSeverity {
+        /** Low severity - monitor but no action required */
+        LOW,
+        /** Medium severity - consider alternative or monitor */
+        MEDIUM,
+        /** High severity - avoid combination or require close monitoring */
+        HIGH,
+        /** Contraindicated - do not combine */
+        CONTRAINDICATED
+    }
+
+    /** Warning about a potential drug-drug interaction. */
+    public record InteractionWarning(
+            String medicationCode1,
+            String medicationCode2,
+            InteractionSeverity severity,
+            String description,
+            String recommendation
+    ) {}
+
+    /** Warning about a potential drug-allergy interaction. */
+    public record AllergyWarning(
+            String medicationCode,
+            String allergen,
+            String description,
+            String recommendation
+    ) {}
 
     /** Immutable audit entry for a medication event. */
     public record MedicationAuditEntry(

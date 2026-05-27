@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-27T06:09:17.648Z",
+  "generatedAt": "2026-05-27T18:41:36.230Z",
   "status": "failed",
   "mode": "execute",
   "includeHeavy": false,
@@ -38,62 +38,62 @@
     {
       "command": "pnpm:check:data-cloud-ui-a11y",
       "status": 0,
-      "durationMs": 1994
+      "durationMs": 857
     },
     {
       "command": "pnpm:check:product-a11y-route-matrix",
       "status": 0,
-      "durationMs": 4030
+      "durationMs": 1044
     },
     {
       "command": "pnpm:check:i18n-conformance",
       "status": 0,
-      "durationMs": 4369
+      "durationMs": 1433
     },
     {
       "command": "pnpm:check:product-slo-budgets",
       "status": 0,
-      "durationMs": 2987
+      "durationMs": 932
     },
     {
       "command": "pnpm:check:product-cost-budgets",
       "status": 0,
-      "durationMs": 1918
+      "durationMs": 918
     },
     {
       "command": "pnpm:check:product-domain-invariants",
       "status": 0,
-      "durationMs": 4677
+      "durationMs": 1821
     },
     {
       "command": "pnpm:check:openapi-release-quality",
       "status": 0,
-      "durationMs": 1864
+      "durationMs": 1009
     },
     {
       "command": "pnpm:check:openapi-breaking-changes",
       "status": 0,
-      "durationMs": 4771
+      "durationMs": 2041
     },
     {
       "command": "pnpm:check:data-cloud-runbook-smoke",
       "status": 0,
-      "durationMs": 22096
+      "durationMs": 10430
     },
     {
       "command": "pnpm:check:release-rollback-drill",
       "status": 0,
-      "durationMs": 2586
+      "durationMs": 1260
     },
     {
       "command": "pnpm:check:affected-product-strict-release-profile",
       "status": 0,
-      "durationMs": 2077
+      "durationMs": 951
     },
     {
       "command": "pnpm:check:product-release-readiness",
       "status": 1,
-      "durationMs": 203181
+      "durationMs": 2906
     }
   ],
   "taskMatrixSummary": {
@@ -108,7 +108,7 @@
     "violationCount": 0
   },
   "incrementalRoadmap": {
-    "generatedAt": "2026-05-27T06:05:01.089Z",
+    "generatedAt": "2026-05-27T18:41:10.624Z",
     "targetMaturityDepth": 5,
     "remainingTaskCount": 64,
     "deferredTaskIds": [],

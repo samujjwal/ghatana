@@ -94,7 +94,7 @@ public final class PhrMobileRoutes {
                 return documentService.getPatientDocuments(context.principalId(), context.principalId())
                     .then(documents -> {
                         List<Map<String, Object>> records = documents.stream()
-                            .map(doc -> Map.of(
+                            .map(doc -> Map.<String, Object>of(
                                 "id", doc.getId(),
                                 "title", doc.getTitle(),
                                 "summary", doc.getDescription() != null ? doc.getDescription() : "",
@@ -108,7 +108,7 @@ public final class PhrMobileRoutes {
                         return consentService.getPatientGrants(context.principalId())
                             .then(grants -> {
                                 List<Map<String, Object>> consents = grants.stream()
-                                    .map(grant -> Map.of(
+                                    .map(grant -> Map.<String, Object>of(
                                         "id", grant.getGrantId(),
                                         "grantee", grant.getRecipientId(),
                                         "purpose", grant.getScope() != null ? grant.getScope().toString() : "Treatment",
@@ -122,7 +122,7 @@ public final class PhrMobileRoutes {
                                 return notificationSender.getPendingNotifications(context.principalId(), 10)
                                     .then(notifications -> {
                                         List<Map<String, Object>> notificationList = notifications.stream()
-                                            .map(entry -> Map.of(
+                                            .map(entry -> Map.<String, Object>of(
                                                 "id", entry.id(),
                                                 "type", entry.notificationType(),
                                                 "referenceId", entry.referenceId(),

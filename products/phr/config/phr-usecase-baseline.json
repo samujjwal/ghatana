@@ -145,14 +145,14 @@
       "backendApis": [
         "GET /consents?patientId=:id",
         "POST /consents/grants",
-        "POST /consents/:grantId/revoke",
+        "POST /consents/grants/:grantId/revoke",
         "GET /consents/check"
       ],
       "kernelCapability": "consent-manage",
       "offlineSupport": false,
       "status": "implemented",
       "phase": "mvp-current",
-      "notes": "Payload uses recipientId + scope.resourceTypes (aligned with backend). Mobile endpoint needs alignment to /consents/grants/:grantId/revoke pattern."
+      "notes": "Payload uses recipientId + scope.resourceTypes (aligned with backend). Mobile endpoint aligned to /consents/grants/:grantId/revoke pattern."
     },
     {
       "id": "uc-patient-appointments",

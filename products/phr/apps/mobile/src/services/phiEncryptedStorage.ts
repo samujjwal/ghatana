@@ -27,6 +27,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import * as LocalAuthentication from 'expo-local-authentication';
 
 const KEY_SECURE_STORE_NAME = 'phr-phi-encryption-key-v1';
 const KEY_VERSION_STORE_NAME = 'phr-phi-key-version';
@@ -41,6 +42,8 @@ const TAMPER_DETECTION_KEY = 'phr-phi-tamper-check';
 const TAMPER_DETECTION_VERSION = 'phr-phi-tamper-version';
 const INTEGRITY_CHECK_KEY = 'phr-phi-integrity-check';
 const MAX_KEY_AGE_DAYS = 365; // Force key rotation after 1 year regardless of threshold
+const BIOMETRIC_POLICY_KEY = 'phr-phi-biometric-policy-enabled';
+const DEVICE_INSTALL_ID_KEY = 'phr-phi-device-install-id';
 
 // ─── Crypto helpers ──────────────────────────────────────────────────────────
 
@@ -91,6 +94,14 @@ async function getOrCreateKey(): Promise<CryptoKey> {
     return cachedKey;
   }
 
+  // Verify device install integrity before key access
+  if (!(await verifyDeviceInstallIntegrity())) {
+    console.warn('Device install integrity check failed - clearing encrypted storage');
+    await phiClearAll();
+    await clearKey();
+    return getOrCreateKey(); // Recursive call to generate fresh key
+  }
+
   const stored = await SecureStore.getItemAsync(KEY_SECURE_STORE_NAME);
   const versionStr = await SecureStore.getItemAsync(KEY_VERSION_STORE_NAME);
   const createdAtStr = await SecureStore.getItemAsync(KEY_CREATED_AT_STORE_NAME);
@@ -120,6 +131,14 @@ async function getOrCreateKey(): Promise<CryptoKey> {
       await phiClearAll();
       await clearKey();
       return getOrCreateKey();
+    }
+
+    // Require biometric authentication if policy is enabled
+    if (await isBiometricPolicyEnabled()) {
+      const authenticated = await authenticateWithBiometrics();
+      if (!authenticated) {
+        throw new Error('Biometric authentication required for PHI access');
+      }
     }
 
     cachedKey = await importKey(stored);
@@ -152,6 +171,9 @@ async function getOrCreateKey(): Promise<CryptoKey> {
   await initializeTamperDetection();
   await initializeIntegrityCheck();
   await SecureStore.setItemAsync(TAMPER_DETECTION_VERSION, '1');
+  
+  // Initialize device install ID
+  await getOrCreateDeviceInstallId();
   
   cachedKey = key;
   cachedKeyVersion = 1;
@@ -217,6 +239,8 @@ async function clearKey(): Promise<void> {
   await SecureStore.deleteItemAsync(TAMPER_DETECTION_KEY);
   await SecureStore.deleteItemAsync(TAMPER_DETECTION_VERSION);
   await SecureStore.deleteItemAsync(INTEGRITY_CHECK_KEY);
+  await SecureStore.deleteItemAsync(BIOMETRIC_POLICY_KEY);
+  await SecureStore.deleteItemAsync(DEVICE_INSTALL_ID_KEY);
   cachedKey = null;
   cachedKeyVersion = 0;
 }
@@ -277,6 +301,80 @@ async function verifyIntegrityCheck(): Promise<boolean> {
     const parts = stored.split(':');
     const firstPart = parts[0];
     return parts.length === 2 && firstPart !== undefined && firstPart.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+// ─── Biometric access policy ─────────────────────────────────────────────────────
+
+async function isBiometricPolicyEnabled(): Promise<boolean> {
+  const enabled = await SecureStore.getItemAsync(BIOMETRIC_POLICY_KEY);
+  return enabled === 'true';
+}
+
+async function enableBiometricPolicy(): Promise<void> {
+  await SecureStore.setItemAsync(BIOMETRIC_POLICY_KEY, 'true', {
+    keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
+  });
+}
+
+async function disableBiometricPolicy(): Promise<void> {
+  await SecureStore.deleteItemAsync(BIOMETRIC_POLICY_KEY);
+}
+
+async function authenticateWithBiometrics(): Promise<boolean> {
+  try {
+    const hasHardware = await LocalAuthentication.hasHardwareAsync();
+    if (!hasHardware) {
+      console.warn('Biometric hardware not available');
+      return false;
+    }
+
+    const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+    if (!isEnrolled) {
+      console.warn('No biometrics enrolled');
+      return false;
+    }
+
+    const result = await LocalAuthentication.authenticateAsync({
+      promptMessage: 'Authenticate to access protected health information',
+      fallbackLabel: 'Use passcode',
+      cancelLabel: 'Cancel',
+      disableDeviceFallback: false,
+    });
+
+    return result.success;
+  } catch (error) {
+    console.error('Biometric authentication failed:', error);
+    return false;
+  }
+}
+
+// ─── Device install ID tracking ──────────────────────────────────────────────────
+
+async function getOrCreateDeviceInstallId(): Promise<string> {
+  let installId = await SecureStore.getItemAsync(DEVICE_INSTALL_ID_KEY);
+  if (!installId) {
+    installId = crypto.randomUUID();
+    await SecureStore.setItemAsync(DEVICE_INSTALL_ID_KEY, installId, {
+      keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
+    });
+  }
+  return installId;
+}
+
+async function verifyDeviceInstallIntegrity(): Promise<boolean> {
+  try {
+    const storedInstallId = await SecureStore.getItemAsync(DEVICE_INSTALL_ID_KEY);
+    if (!storedInstallId) {
+      // First install - generate and store
+      await getOrCreateDeviceInstallId();
+      return true;
+    }
+    
+    // Verify the install ID still exists (not tampered)
+    return storedInstallId.length > 0;
   } catch {
     return false;
   }
@@ -406,4 +504,36 @@ export async function phiClearAll(): Promise<void> {
   for (const key of phiKeys) {
     await AsyncStorage.removeItem(key);
   }
+}
+
+/**
+ * Enables biometric authentication requirement for PHI access.
+ * When enabled, users must authenticate with biometrics or device passcode
+ * before any PHI can be decrypted.
+ */
+export async function phiEnableBiometricPolicy(): Promise<void> {
+  await enableBiometricPolicy();
+}
+
+/**
+ * Disables biometric authentication requirement for PHI access.
+ * PHI will be accessible without biometric authentication after this call.
+ */
+export async function phiDisableBiometricPolicy(): Promise<void> {
+  await disableBiometricPolicy();
+}
+
+/**
+ * Checks whether biometric authentication is currently required for PHI access.
+ */
+export async function phiIsBiometricPolicyEnabled(): Promise<boolean> {
+  return isBiometricPolicyEnabled();
+}
+
+/**
+ * Returns the device install ID used for integrity verification.
+ * This ID is generated once per installation and stored in the secure keychain.
+ */
+export async function phiGetDeviceInstallId(): Promise<string> {
+  return getOrCreateDeviceInstallId();
 }

@@ -1,0 +1,74 @@
+{
+  "generatedAt": "2026-05-27T18:59:53.733Z",
+  "pass": true,
+  "evidenceRun": {
+    "generatedBy": "scripts/check-audit-completeness.mjs",
+    "source": "scripts/check-audit-completeness.mjs",
+    "command": "pnpm check:audit-completeness",
+    "commit": "6f1692bdd665ecb6cd4e4c0086fa29fdc0ccb6f8"
+  },
+  "summary": {
+    "requiredFileCount": 10,
+    "coveredFileCount": 10,
+    "mutationSurfacesChecked": 5,
+    "violationCount": 0
+  },
+  "mutationSurfaces": [
+    {
+      "file": "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudSecurityFilter.java",
+      "requiredTokens": [
+        "auditService",
+        "AuditEvent.builder",
+        "sensitivity",
+        "success"
+      ]
+    },
+    {
+      "file": "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/EntityCrudHandler.java",
+      "requiredTokens": [
+        "AuditService is required",
+        "AuditEvent.builder",
+        "auditPayload",
+        "Entity writes must be atomic with event append and audit emission"
+      ]
+    },
+    {
+      "file": "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataLifecycleHandler.java",
+      "requiredTokens": [
+        "recordCritical",
+        "RETENTION_PURGE",
+        "PII_REDACT"
+      ]
+    },
+    {
+      "file": "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataSourceRegistryHandler.java",
+      "requiredTokens": [
+        "emitConnectorAudit",
+        "CONNECTOR_CREATED",
+        "CONNECTOR_UPDATED",
+        "CONNECTOR_DELETED"
+      ]
+    },
+    {
+      "file": "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/audit/EventLogAuditService.java",
+      "requiredTokens": [
+        "recordCritical",
+        "failClosed",
+        "eventLogStore.append"
+      ]
+    }
+  ],
+  "coveredFiles": [
+    "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/audit/EventLogAuditService.java",
+    "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudSecurityFilter.java",
+    "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/EntityCrudHandler.java",
+    "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataLifecycleHandler.java",
+    "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataSourceRegistryHandler.java",
+    "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/audit/EventLogAuditServiceTest.java",
+    "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/audit/CriticalAuditFailureInjectionTest.java",
+    "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/SensitiveMutationAuditTrailTest.java",
+    "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/handlers/EntityEventAuditIdempotencyGoldenTest.java",
+    "products/data-cloud/planes/governance/core/src/test/java/com/ghatana/datacloud/governance/audit/GovernanceAuditServiceTest.java"
+  ],
+  "violations": []
+}

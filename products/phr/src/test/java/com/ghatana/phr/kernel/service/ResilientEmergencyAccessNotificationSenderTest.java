@@ -48,6 +48,11 @@ class ResilientEmergencyAccessNotificationSenderTest extends EventloopTestBase {
             public Promise<Void> notifyEscalation(EmergencyAccessReviewCase reviewCase, EmergencyAccessEvent event) {
                 return Promise.complete();
             }
+
+            @Override
+            public Promise<Void> notifyPatient(EmergencyAccessReviewCase reviewCase, EmergencyAccessEvent event) {
+                return Promise.complete();
+            }
         };
 
         ResilientEmergencyAccessNotificationSender sender = new ResilientEmergencyAccessNotificationSender(
@@ -56,7 +61,8 @@ class ResilientEmergencyAccessNotificationSenderTest extends EventloopTestBase {
             RetryPolicy.builder().maxRetries(2).initialDelay(Duration.ofMillis(1)).build(),
             CircuitBreaker.builder("compliance").failureThreshold(5).resetTimeout(Duration.ofSeconds(1)).build(),
             CircuitBreaker.builder("schedule").failureThreshold(5).resetTimeout(Duration.ofSeconds(1)).build(),
-            CircuitBreaker.builder("escalation").failureThreshold(5).resetTimeout(Duration.ofSeconds(1)).build()
+            CircuitBreaker.builder("escalation").failureThreshold(5).resetTimeout(Duration.ofSeconds(1)).build(),
+            CircuitBreaker.builder("patient").failureThreshold(5).resetTimeout(Duration.ofSeconds(1)).build()
         );
 
         runPromise(() -> sender.notifyComplianceLead(reviewCase(), event()));
@@ -86,6 +92,11 @@ class ResilientEmergencyAccessNotificationSenderTest extends EventloopTestBase {
                 escalationAttempts.incrementAndGet();
                 return Promise.complete();
             }
+
+            @Override
+            public Promise<Void> notifyPatient(EmergencyAccessReviewCase reviewCase, EmergencyAccessEvent event) {
+                return Promise.complete();
+            }
         };
 
         ResilientEmergencyAccessNotificationSender sender = new ResilientEmergencyAccessNotificationSender(
@@ -94,7 +105,8 @@ class ResilientEmergencyAccessNotificationSenderTest extends EventloopTestBase {
             RetryPolicy.builder().maxRetries(0).build(),
             CircuitBreaker.builder("compliance").failureThreshold(2).resetTimeout(Duration.ofSeconds(1)).build(),
             CircuitBreaker.builder("schedule").failureThreshold(1).resetTimeout(Duration.ofSeconds(30)).build(),
-            CircuitBreaker.builder("escalation").failureThreshold(2).resetTimeout(Duration.ofSeconds(1)).build()
+            CircuitBreaker.builder("escalation").failureThreshold(2).resetTimeout(Duration.ofSeconds(1)).build(),
+            CircuitBreaker.builder("patient").failureThreshold(2).resetTimeout(Duration.ofSeconds(1)).build()
         );
 
         assertThatThrownBy(() -> runPromise(() -> sender.scheduleMandatoryReview(reviewCase(), event())))

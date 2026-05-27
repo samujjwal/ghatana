@@ -348,8 +348,8 @@ class ConsentManagementServiceTest extends EventloopTestBase {
     private static ConsentGrant testGrant(String patientId, String recipientId) {
         return new ConsentGrant(
                 null, patientId, recipientId,
-                new ConsentScope(Set.of("medications", "lab-results"), false, Set.of(), Set.of("READ")),
-                "ACTIVE", null, Instant.now().plusSeconds(3600), null
+                new ConsentScope(Set.of("medications", "lab-results"), false, Set.of(), Set.of("READ"), Map.of()),
+            "ACTIVE", null, Instant.now().plusSeconds(3600), null, null
         );
     }
 

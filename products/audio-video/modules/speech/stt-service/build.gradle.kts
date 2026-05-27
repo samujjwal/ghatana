@@ -101,3 +101,18 @@ tasks.named<Zip>("distZip") {
 tasks.named<Sync>("installDist") {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
+
+// AV-P0-003: Smoke test that validates the mainClass is resolvable on the runtime classpath.
+// Runs the JVM with -cp and -noverify-style class loading check via Class.forName in dry-run mode.
+// This task is intended for CI verification and will fail if the mainClass is wrong or missing.
+tasks.register<JavaExec>("smokeTestMainClass") {
+    group = "verification"
+    description = "AV-P0-003: Verify mainClass 'com.ghatana.stt.grpc.SttGrpcServer' is resolvable on the runtime classpath."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.ghatana.stt.grpc.SttGrpcServer")
+    // Pass a smoke-check system property so the server main() can detect dry-run mode and exit cleanly
+    systemProperty("av.smokeTest", "true")
+    // Fail-fast: treat non-zero exit as a build error
+    isIgnoreExitValue = false
+    jvmArgs("-Dav.smokeTest=true")
+}

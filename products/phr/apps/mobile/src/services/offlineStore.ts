@@ -10,6 +10,10 @@
  *   `phiEncryptedStorage` adapter. The key is held in the OS keychain
  *   via expo-secure-store; AsyncStorage holds ciphertext only.
  *   Consent revocation must call `clearDashboardOffline()` directly.
+ * - Field classification: Restricted fields (mental health, substance use,
+ *   genetic info, reproductive health, HIV status) are never cached.
+ *   Identifiable fields (patient ID, name, DOB) are encrypted at rest.
+ *   Sensitive PHI fields (diagnosis, medication, lab results) are encrypted.
  *
  * NEVER call `AsyncStorage.setItem` with PHI outside this module.
  */

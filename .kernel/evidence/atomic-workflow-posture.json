@@ -275,7 +275,7 @@
     }
   ],
   "failureInjectionEvidence": {
-    "reportSource": "atomic-workflow-failure-injection-2026-05-26T23-10-00Z.json",
+    "reportSource": "atomic-workflow-failure-injection-latest.json",
     "hasReport": true,
     "violationCount": 0,
     "warningCount": 0

@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -336,10 +337,11 @@ class PhrConsentRoutesTest extends EventloopTestBase {
             "patient-1",
             "clinician-1",
             new ConsentManagementService.ConsentScope(
-                Set.of("labs"), false, Set.of(), Set.of("read")),
+                Set.of("labs"), false, Set.of(), Set.of("read"), Map.of()),
             "ACTIVE",
             Instant.now(),
             Instant.now().plusSeconds(86400),
+            null,
             null
         );
     }

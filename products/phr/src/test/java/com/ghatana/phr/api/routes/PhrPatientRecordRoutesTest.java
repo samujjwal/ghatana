@@ -24,6 +24,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 
@@ -69,18 +71,30 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
     void setUp() {
         servlet = new PhrPatientRecordRoutes(eventloop(), patientRecordService, consentService).getServlet();
 
-        PatientRecordService.Patient patient = new PatientRecordService.Patient(
-            "patient-1", "t1", "Test Patient", "1990-01-01",
-            "O+", "Lalitpur", "NP-123456", List.of(), Instant.now().toString(), null
-        );
+        PatientRecordService.Patient patient = PatientRecordService.Patient.builder()
+            .id("patient-1")
+            .nationalId("NP-123456")
+            .demographics(new PatientRecordService.Demographics(
+                "Test",
+                "Patient",
+                "1990-01-01",
+                "male",
+                new PatientRecordService.Address("Ward 1", "Lalitpur", "Lalitpur", "Bagmati", "44700"),
+                new PatientRecordService.Contact("9800000000", "patient@example.com", "Guardian", "9811111111")
+            ))
+            .medicalHistory(new PatientRecordService.MedicalHistory(List.of(), List.of(), List.of(), "O+"))
+            .createdAt(Instant.now())
+            .updatedAt(Instant.now())
+            .deleted(false)
+            .build();
 
         lenient().when(patientRecordService.createPatient(any()))
             .thenReturn(Promise.of(patient));
         lenient().when(patientRecordService.getPatient(anyString()))
             .thenReturn(Promise.of(Optional.of(patient)));
-        lenient().when(patientRecordService.searchPatients(any()))
+        lenient().when(patientRecordService.searchPatients(anyString(), anyMap(), anyInt(), anyInt()))
             .thenReturn(Promise.of(List.of(patient)));
-        lenient().when(patientRecordService.updatePatient(anyString(), any()))
+        lenient().when(patientRecordService.updatePatient(any(PatientRecordService.Patient.class)))
             .thenReturn(Promise.of(patient));
         lenient().when(consentService.validateAccess(anyString(), anyString(), anyString()))
             .thenReturn(Promise.of(new ConsentManagementService.ConsentValidationResult(

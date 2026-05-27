@@ -54,6 +54,13 @@ class EmergencyServicesModuleTest {
                 com.ghatana.phr.kernel.service.EmergencyAccessLogService.EmergencyAccessEvent event) {
             return io.activej.promise.Promise.complete();
         }
+
+        @Override
+        public io.activej.promise.Promise<Void> notifyPatient(
+                com.ghatana.phr.kernel.service.EmergencyAccessReviewCase reviewCase,
+                com.ghatana.phr.kernel.service.EmergencyAccessLogService.EmergencyAccessEvent event) {
+            return io.activej.promise.Promise.complete();
+        }
     }
 
     private static final class EmergencyAccessReviewAuditLoggerAdapter

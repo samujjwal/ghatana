@@ -67,14 +67,14 @@ class PhrDocumentImagingRoutesTest extends EventloopTestBase {
         lenient().when(consentService.validateAccess(anyString(), anyString(), anyString()))
             .thenReturn(Promise.of(new ConsentManagementService.ConsentValidationResult(
                 true, "GRANT_VALID", "grant-42")));
-        lenient().when(documentService.listDocuments(anyString()))
+        lenient().when(documentService.getPatientDocuments(anyString(), anyString()))
             .thenReturn(Promise.of(List.of()));
-        lenient().when(documentService.getDocument(anyString()))
+        lenient().when(documentService.getDocument(anyString(), anyString()))
             .thenReturn(Promise.of(Optional.empty()));
-        lenient().when(imagingService.listStudies(anyString()))
+        lenient().when(imagingService.getPatientOrders(anyString()))
             .thenReturn(Promise.of(List.of()));
-        lenient().when(imagingService.getStudy(anyString()))
-            .thenReturn(Promise.of(Optional.empty()));
+        lenient().when(imagingService.getPatientStudies(anyString()))
+            .thenReturn(Promise.of(List.of()));
     }
 
     @Nested

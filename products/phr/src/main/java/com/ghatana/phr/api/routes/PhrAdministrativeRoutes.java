@@ -74,7 +74,7 @@ public final class PhrAdministrativeRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        if (!PhrRouteSupport.canPerformAdminOperation(context)) {
+        if (!"admin".equals(context.role())) {
             return PhrRouteSupport.errorResponse(403, "ADMIN_ROLE_REQUIRED",
                 "Only admin principals may access the admin dashboard",
                 context.correlationId());
@@ -455,7 +455,7 @@ public final class PhrAdministrativeRoutes {
     }
 
     private Promise<Boolean> requireAccess(PhrRouteSupport.PhrRequestContext context, String patientId, String resourceType) {
-        if (context.principalId().equals(patientId) || PhrRouteSupport.canPerformAdminOperation(context)) {
+        if (context.principalId().equals(patientId) || "admin".equals(context.role())) {
             // Patient accessing their own data, or admin performing a system operation.
             return Promise.of(true);
         }

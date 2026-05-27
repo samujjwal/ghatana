@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-05-27T18:59:51.612Z",
+  "pass": true,
+  "evidenceRun": {
+    "generatedBy": "scripts/audit-agent-usage.mjs",
+    "source": "scripts/audit-agent-usage.mjs",
+    "command": "pnpm check:agent-usage-audit",
+    "commit": "6f1692bdd665ecb6cd4e4c0086fa29fdc0ccb6f8",
+    "sourceCommitSha": "6f1692bdd665ecb6cd4e4c0086fa29fdc0ccb6f8",
+    "targetCommitSha": "6f1692bdd665ecb6cd4e4c0086fa29fdc0ccb6f8",
+    "targetEnvironment": "staging"
+  },
+  "sourceCommitSha": "6f1692bdd665ecb6cd4e4c0086fa29fdc0ccb6f8",
+  "targetCommitSha": "6f1692bdd665ecb6cd4e4c0086fa29fdc0ccb6f8",
+  "targetEnvironment": "staging",
+  "summary": {
+    "scannedDirectories": 7,
+    "findingCount": 0,
+    "approvedExceptionRegistry": "products/data-cloud/planes/action/agent-runtime/docs/AGENT_USAGE_EXCEPTIONS.md",
+    "approvedExceptionPatterns": [
+      "\\/test\\/",
+      "\\/__tests__\\/",
+      "\\/node_modules\\/",
+      "AgentCapabilityExecutionFactory",
+      "AgentEventOperatorCapabilityAdapter",
+      "AgentAdapter",
+      "GovernedAgentDispatcher",
+      "AbstractAgentInferenceOperator",
+      "AgentPredicateOperator",
+      "AgentActionOperator",
+      "canvas\\/",
+      "CanvasCommand",
+      "ReflexEngine",
+      "AgentDispatchPipeline",
+      "AgentDispatchStage",
+      "CircuitBreakerOperator",
+      "HybridStateStore",
+      "WindowedQueryPlan",
+      "AepCentralRegistryService",
+      "AgentMarketplaceService",
+      "AgentCapabilityExecutionFactory",
+      "AgentEventOperatorCapabilityAdapter",
+      "GovernedAgentDispatcher"
+    ]
+  },
+  "violations": []
+}

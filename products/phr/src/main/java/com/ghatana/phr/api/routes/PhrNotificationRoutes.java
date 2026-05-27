@@ -1,6 +1,7 @@
 package com.ghatana.phr.api.routes;
 
 import com.ghatana.phr.kernel.service.DurablePhrNotificationSender;
+import com.ghatana.phr.kernel.policy.PhrLogRedactor;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -77,20 +78,25 @@ public final class PhrNotificationRoutes {
         return notificationSender.getPendingNotifications(context.principalId(), limit)
             .then(entries -> {
                 List<Map<String, Object>> notifications = entries.stream()
-                    .map(entry -> Map.of(
-                        "id", entry.id(),
-                        "type", entry.notificationType(),
-                        "title", getNotificationTitle(entry.notificationType()),
-                        "body", getNotificationBody(entry.notificationType()),
-                        "referenceId", entry.referenceId(),
-                        "referenceType", entry.referenceType(),
-                        "channel", entry.channel().name(),
-                        "scheduledFor", entry.scheduledFor() != null ? entry.scheduledFor().toString() : "",
-                        "status", entry.status().name(),
-                        "readAt", entry.readAt() != null ? entry.readAt().toString() : null,
-                        "actionable", isActionable(entry.notificationType()),
-                        "createdAt", entry.createdAt() != null ? entry.createdAt().toString() : ""
-                    ))
+                    .map(entry -> {
+                        Map<String, Object> map = new java.util.HashMap<>();
+                        map.put("id", entry.id());
+                        map.put("type", entry.notificationType());
+                        // Apply PHI redaction to notification title and body
+                        String title = getNotificationTitle(entry.notificationType());
+                        String body = getNotificationBody(entry.notificationType());
+                        map.put("title", PhrLogRedactor.redactForNotification(title));
+                        map.put("body", PhrLogRedactor.redactForNotification(body));
+                        map.put("referenceId", entry.referenceId());
+                        map.put("referenceType", entry.referenceType());
+                        map.put("channel", entry.channel().name());
+                        map.put("scheduledFor", entry.scheduledFor() != null ? entry.scheduledFor().toString() : "");
+                        map.put("status", entry.status().name());
+                        map.put("readAt", entry.readAt() != null ? entry.readAt().toString() : null);
+                        map.put("actionable", isActionable(entry.notificationType()));
+                        map.put("createdAt", entry.createdAt() != null ? entry.createdAt().toString() : "");
+                        return map;
+                    })
                     .toList();
 
                 return PhrRouteSupport.jsonResponse(200, Map.of(

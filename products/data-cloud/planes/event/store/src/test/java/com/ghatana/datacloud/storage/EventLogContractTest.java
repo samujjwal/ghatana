@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -546,6 +547,226 @@ class EventLogContractTest {
     // =========================================================================
     //  Helper Methods
     // =========================================================================
+
+    // =========================================================================
+    //  DC-P1-009: Checkpoint and Consumer Progress
+    // =========================================================================
+
+    @Nested
+    @DisplayName("DC-P1-009: Checkpoint-based consumer progress")
+    class CheckpointTests {
+
+        @Test
+        @DisplayName("consumer can resume from a saved checkpoint offset")
+        void consumerResumesFromCheckpointOffset() {
+            EventLogStore store = new InMemoryEventLogStore();
+
+            // Produce 10 events
+            for (int i = 0; i < 10; i++) {
+                store.append(TENANT_CONTEXT, createTestEntry("event-" + i)).getResult();
+            }
+
+            // Simulated checkpoint: consumer processed up to offset 5
+            long checkpointOffset = 5L;
+
+            // Resume from checkpoint
+            List<EventLogStore.EventEntry> eventsAfterCheckpoint =
+                    store.read(TENANT_CONTEXT, Offset.of(checkpointOffset), 10).getResult();
+
+            // Should see events 5..9 (5 events)
+            assertThat(eventsAfterCheckpoint).hasSize(5);
+        }
+
+        @Test
+        @DisplayName("checkpoint at latest offset yields empty read for next batch")
+        void checkpointAtLatestOffset_yieldsEmptyNextBatch() {
+            EventLogStore store = new InMemoryEventLogStore();
+
+            for (int i = 0; i < 3; i++) {
+                store.append(TENANT_CONTEXT, createTestEntry("event-" + i)).getResult();
+            }
+            Offset latest = store.getLatestOffset(TENANT_CONTEXT).getResult();
+
+            // Reading from the latest offset should return empty (no newer events)
+            List<EventLogStore.EventEntry> nextBatch =
+                    store.read(TENANT_CONTEXT, latest, 10).getResult();
+
+            assertThat(nextBatch).isEmpty();
+        }
+
+        @Test
+        @DisplayName("checkpoint progress is tenant-scoped — tenant A progress does not affect tenant B")
+        void checkpointProgressIsTenantScoped() {
+            EventLogStore store = new InMemoryEventLogStore();
+            TenantContext tenantA = TenantContext.of("checkpoint-tenant-a");
+            TenantContext tenantB = TenantContext.of("checkpoint-tenant-b");
+
+            // Append 6 events for tenant A, 4 for tenant B
+            for (int i = 0; i < 6; i++) store.append(tenantA, createTestEntry("a-" + i)).getResult();
+            for (int i = 0; i < 4; i++) store.append(tenantB, createTestEntry("b-" + i)).getResult();
+
+            // Tenant A consumer committed at offset 3
+            List<EventLogStore.EventEntry> aRemaining = store.read(tenantA, Offset.of(3), 10).getResult();
+            // Tenant B consumer starts fresh from 0
+            List<EventLogStore.EventEntry> bAll = store.read(tenantB, Offset.of(0), 10).getResult();
+
+            assertThat(aRemaining).hasSize(3); // events 3..5
+            assertThat(bAll).hasSize(4);        // all B events unaffected
+        }
+    }
+
+    // =========================================================================
+    //  DC-P1-009: Poison-event / DLQ semantics
+    // =========================================================================
+
+    @Nested
+    @DisplayName("DC-P1-009: Poison-event (DLQ) semantics")
+    class PoisonEventDlqTests {
+
+        /**
+         * Verifies that a consumer can skip a malformed "poison" event, route it to a
+         * simulated DLQ list, and continue processing subsequent healthy events.
+         *
+         * <p>The EventLogStore itself is not responsible for DLQ routing — that is a
+         * consumer responsibility. This test validates the replay contract that allows
+         * consumers to implement skip-and-route strategies.
+         */
+        @Test
+        @DisplayName("consumer can skip poison event, route to DLQ, and continue processing")
+        void consumerSkipsPoisonEventAndContinues() {
+            EventLogStore store = new InMemoryEventLogStore();
+
+            // 2 good events, 1 poison, 2 more good events
+            store.append(TENANT_CONTEXT, createTestEntry("good-0")).getResult();
+            store.append(TENANT_CONTEXT, createTestEntry("good-1")).getResult();
+            store.append(TENANT_CONTEXT, EventLogStore.EventEntry.builder()
+                    .eventType("poison-event")
+                    .payload("{{{INVALID JSON")
+                    .build()).getResult();
+            store.append(TENANT_CONTEXT, createTestEntry("good-3")).getResult();
+            store.append(TENANT_CONTEXT, createTestEntry("good-4")).getResult();
+
+            List<EventLogStore.EventEntry> all = store.read(TENANT_CONTEXT, Offset.of(0), 10).getResult();
+            assertThat(all).hasSize(5);
+
+            // Consumer simulates DLQ routing by inspecting payload
+            List<EventLogStore.EventEntry> processed = new ArrayList<>();
+            List<EventLogStore.EventEntry> dlq = new ArrayList<>();
+            long lastCommittedOffset = 0L;
+
+            for (int i = 0; i < all.size(); i++) {
+                EventLogStore.EventEntry entry = all.get(i);
+                String payload = new String(entry.payload().array());
+                if (payload.startsWith("{{{")) {
+                    dlq.add(entry); // route to DLQ
+                } else {
+                    processed.add(entry);
+                    lastCommittedOffset = i + 1L; // advance checkpoint past this event
+                }
+            }
+
+            assertThat(dlq).hasSize(1);
+            assertThat(dlq.get(0).eventType()).isEqualTo("poison-event");
+            assertThat(processed).hasSize(4);
+
+            // Consumer resumes from checkpoint: no events remain
+            List<EventLogStore.EventEntry> afterResume =
+                    store.read(TENANT_CONTEXT, Offset.of(lastCommittedOffset), 10).getResult();
+            assertThat(afterResume).isEmpty();
+        }
+
+        @Test
+        @DisplayName("replay from checkpoint offset after DLQ routing skips already-processed events")
+        void replayFromOffsetAfterDlqRouting() {
+            EventLogStore store = new InMemoryEventLogStore();
+
+            // Event at index 1 is the poison event
+            store.append(TENANT_CONTEXT, createTestEntry("ok-0")).getResult();
+            store.append(TENANT_CONTEXT, EventLogStore.EventEntry.builder()
+                    .eventType("bad-event")
+                    .payload("POISON")
+                    .build()).getResult();
+            store.append(TENANT_CONTEXT, createTestEntry("ok-2")).getResult();
+
+            // Consumer processes event 0, routes event 1 to DLQ, commits checkpoint at 2
+            // Then resumes at offset 2 to get the remaining good event
+            List<EventLogStore.EventEntry> replayed = store.read(TENANT_CONTEXT, Offset.of(2), 10).getResult();
+
+            assertThat(replayed).hasSize(1);
+            assertThat(new String(replayed.get(0).payload().array())).contains("ok-2");
+        }
+
+        @Test
+        @DisplayName("poison events are stored immutably — DLQ routing is exclusively consumer logic")
+        void poisonEventsAreStoredImmutably() {
+            EventLogStore store = new InMemoryEventLogStore();
+
+            EventLogStore.EventEntry poisonEvent = EventLogStore.EventEntry.builder()
+                    .eventType("poison-event")
+                    .payload("BAD_PAYLOAD")
+                    .build();
+
+            store.append(TENANT_CONTEXT, poisonEvent).getResult();
+
+            // Store must persist the event as-is without silent mutation
+            List<EventLogStore.EventEntry> stored = store.read(TENANT_CONTEXT, Offset.of(0), 10).getResult();
+            assertThat(stored).hasSize(1);
+            assertThat(stored.get(0).eventType()).isEqualTo("poison-event");
+            assertThat(new String(stored.get(0).payload().array())).isEqualTo("BAD_PAYLOAD");
+        }
+    }
+
+    // =========================================================================
+    //  DC-P1-009: Deterministic replay after failures
+    // =========================================================================
+
+    @Nested
+    @DisplayName("DC-P1-009: Deterministic replay after failure")
+    class DeterministicReplayTests {
+
+        @Test
+        @DisplayName("replay from offset N returns identical events regardless of subsequent appends")
+        void replayFromOffsetIsStable() {
+            EventLogStore store = new InMemoryEventLogStore();
+
+            for (int i = 0; i < 5; i++) store.append(TENANT_CONTEXT, createTestEntry("batch-0-" + i)).getResult();
+
+            List<EventLogStore.EventEntry> snap1 = store.read(TENANT_CONTEXT, Offset.of(0), 5).getResult();
+
+            // Append more events (simulates concurrent producers after checkpoint)
+            for (int i = 5; i < 10; i++) store.append(TENANT_CONTEXT, createTestEntry("batch-1-" + i)).getResult();
+
+            // Re-read from same offset with same limit — must return the same 5 events
+            List<EventLogStore.EventEntry> snap2 = store.read(TENANT_CONTEXT, Offset.of(0), 5).getResult();
+
+            assertThat(snap2).hasSize(5);
+            for (int i = 0; i < 5; i++) {
+                assertThat(snap2.get(i).eventId()).isEqualTo(snap1.get(i).eventId());
+            }
+        }
+
+        @Test
+        @DisplayName("consumer can re-read and retry a failed batch from the same checkpoint offset")
+        void failedBatchCanBeRetriedFromCheckpoint() {
+            EventLogStore store = new InMemoryEventLogStore();
+
+            for (int i = 0; i < 6; i++) store.append(TENANT_CONTEXT, createTestEntry("ev-" + i)).getResult();
+
+            long checkpointBefore = 3L;
+
+            // First attempt
+            List<EventLogStore.EventEntry> attempt1 = store.read(TENANT_CONTEXT, Offset.of(checkpointBefore), 10).getResult();
+            assertThat(attempt1).hasSize(3); // events 3, 4, 5
+
+            // Second attempt (retry from same checkpoint) — must yield identical events
+            List<EventLogStore.EventEntry> attempt2 = store.read(TENANT_CONTEXT, Offset.of(checkpointBefore), 10).getResult();
+
+            assertThat(attempt2).hasSize(3);
+            for (int i = 0; i < 3; i++) {
+                assertThat(attempt2.get(i).eventId()).isEqualTo(attempt1.get(i).eventId());
+            }
+        }
+    }
 
     private EventLogStore.EventEntry createTestEntry(String data) {
         return EventLogStore.EventEntry.builder()

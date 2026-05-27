@@ -1,0 +1,42 @@
+{
+  "timestamp": "commit:6f1692bdd665ecb6cd4e4c0086fa29fdc0ccb6f8",
+  "productScope": [
+    "data-cloud"
+  ],
+  "violations": [],
+  "warnings": [],
+  "evidence": [
+    "Data Cloud: Executed real dependency failure scenarios",
+    "Data Cloud: Executable test run validated postgres unavailability",
+    "Data Cloud: Executable test run validated clickhouse unavailability",
+    "Data Cloud: Executable test run validated opensearch unavailability",
+    "Data Cloud: Executable test run validated s3 unavailability",
+    "Data Cloud: Executable test run validated audit sink unavailability",
+    "Data Cloud: Executable test run validated policy engine unavailability",
+    "Data Cloud: Executable test run validated ai completion unavailability",
+    "Data Cloud: Executable test run validated network timeout",
+    "Data Cloud: Executable test run validated queue saturation",
+    "Data Cloud: Executable test run validated retry implementation",
+    "Data Cloud: Executable test run validated backoff implementation"
+  ],
+  "scenarioCoverage": {
+    "postgresDown": true,
+    "clickhouseDown": true,
+    "openSearchDown": true,
+    "s3Down": true,
+    "auditSinkUnavailable": true,
+    "policyEngineUnavailable": true,
+    "aiCompletionUnavailable": true,
+    "networkTimeout": true,
+    "queueSaturation": true,
+    "retryBackoff": true
+  },
+  "summary": {
+    "totalViolations": 0,
+    "totalWarnings": 0,
+    "totalEvidence": 12,
+    "missingScenarioCount": 0,
+    "executedTestProductCount": 1,
+    "expectedProductCount": 1
+  }
+}
