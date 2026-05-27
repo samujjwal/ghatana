@@ -5,6 +5,7 @@ All notable YAPPC product changes are summarized here. Entries should describe r
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
+- **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`9e37000`](https://github.com/samujjwal/ghatana/commit/9e370000b856df0a93f05731a452972c368f083b)
 - **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`6f1692b`](https://github.com/samujjwal/ghatana/commit/6f1692bdd665ecb6cd4e4c0086fa29fdc0ccb6f8)
 
 ### Added
