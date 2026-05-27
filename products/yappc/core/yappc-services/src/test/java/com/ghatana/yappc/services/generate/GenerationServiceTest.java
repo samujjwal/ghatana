@@ -25,6 +25,7 @@ import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.time.Instant;
 import java.util.List;
@@ -267,15 +268,38 @@ class GenerationServiceTest extends EventloopTestBase {
             @Test
             @DisplayName("generate: failure persists failed run state with correlation and reason")
             void shouldPersistFailedRunStateOnGenerationFailure() {
-            when(aiService.complete(any(CompletionRequest.class)))
-                .thenReturn(Promise.ofException(new RuntimeException("Generation failed")));
+                GenerationAssuranceService failingAssurance = new GenerationAssuranceService() {
+                    @Override
+                    public GenerationAssuranceReport assure(ValidatedSpec spec, GeneratedArtifacts artifacts) {
+                    return new GenerationAssuranceReport(
+                        false,
+                        List.of(new GenerationAssuranceCheck(
+                            "security",
+                            false,
+                            List.of("unsafe generated path"))));
+                    }
+                };
+                service = new GenerationServiceImpl(
+                    aiService,
+                    auditLogger,
+                    metrics,
+                    generationRunRepository,
+                    objectMapper,
+                    aiHealthProvider,
+                    failingAssurance);
 
             assertThrows(Exception.class, () -> runPromise(() -> service.generate(specWithoutEntities(), defaultContext())));
 
-            verify(generationRunRepository, atLeast(2)).save(argThat(run ->
-                run.status() == GenerationRun.RunStatus.FAILED
-                    && "corr-1".equals(run.provenance().get("correlation_id"))
-                    && "Generation failed".equals(run.metadata().get("failure_reason"))));
+                ArgumentCaptor<GenerationRun> runCaptor = ArgumentCaptor.forClass(GenerationRun.class);
+                verify(generationRunRepository, atLeast(2)).save(runCaptor.capture());
+
+                assertThat(runCaptor.getAllValues())
+                    .anySatisfy(run -> {
+                        assertThat(run.status()).isEqualTo(GenerationRun.RunStatus.FAILED);
+                        assertThat(run.provenance()).containsEntry("correlation_id", "corr-1");
+                        assertThat(String.valueOf(run.metadata().get("failure_reason")))
+                            .containsIgnoringCase("Generate assurance failed");
+                    });
             }
 
     @Test

@@ -45,8 +45,8 @@ class LocalKernelManifestTruthSourceTest extends EventloopTestBase {
     void setUp() {
         kernelOutputRoot = tempDir.resolve(".kernel");
         KernelLifecycleEventIngestService ingestService =
-                new KernelLifecycleEventIngestService(kernelOutputRoot);
-        truthSource = new LocalKernelManifestTruthSource(ingestService);
+                                KernelLifecycleEventIngestService.forLocalDevelopment(kernelOutputRoot);
+                truthSource = LocalKernelManifestTruthSource.forLocalDevelopment(ingestService);
     }
 
     @Test

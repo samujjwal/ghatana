@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Tests for KernelHealthSnapshotService.
@@ -44,8 +45,26 @@ class KernelHealthSnapshotServiceTest extends EventloopTestBase {
     @BeforeEach
     void setUp() {
         kernelOutputRoot = tempDir.resolve(".kernel");
-        ingestService = new KernelLifecycleEventIngestService(kernelOutputRoot);
-        healthService = new KernelHealthSnapshotService(ingestService);
+        ingestService = KernelLifecycleEventIngestService.forLocalDevelopment(kernelOutputRoot);
+        healthService = KernelHealthSnapshotService.forLocalDevelopment(ingestService);
+    }
+
+    @Test
+    void localDevelopmentFactoryRejectsProductionRuntime() {
+        String previousProfile = System.getProperty("yappc.runtime.profile");
+        try {
+            System.setProperty("yappc.runtime.profile", "production");
+
+            assertThatThrownBy(KernelHealthSnapshotService::forLocalDevelopment)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("production must inject DataCloudKernelLifecycleTruthSource");
+        } finally {
+            if (previousProfile == null) {
+                System.clearProperty("yappc.runtime.profile");
+            } else {
+                System.setProperty("yappc.runtime.profile", previousProfile);
+            }
+        }
     }
 
     @Test

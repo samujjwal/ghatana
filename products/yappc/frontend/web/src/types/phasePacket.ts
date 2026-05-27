@@ -190,6 +190,32 @@ export interface DashboardActionClassification {
   readonly safeToContinueActions: readonly string[];
 }
 
+/**
+ * Backend-owned card within a phase status panel.
+ */
+export interface PhasePanelCard {
+  readonly id: string;
+  readonly title: string;
+  readonly detail: string;
+  readonly status: string;
+  readonly trace: string;
+  readonly metadata: Record<string, unknown>;
+}
+
+/**
+ * Backend-owned phase panel view model.
+ */
+export interface PhasePanelView {
+  readonly phase: string;
+  readonly status: string;
+  readonly summary: string;
+  readonly recommendation: string;
+  readonly owner: string;
+  readonly confidence: number;
+  readonly supportTrace: string;
+  readonly cards: readonly PhasePanelCard[];
+}
+
 // ============================================================================
 // Health Signal Types
 // ============================================================================
@@ -320,6 +346,7 @@ export interface PhaseCockpitPacket {
   // Action fields
   readonly availableActions: readonly PhaseAction[];
   readonly dashboardActions: DashboardActionClassification;
+  readonly phasePanels: readonly PhasePanelView[];
   
   // Health signals
   readonly healthSignals: HealthSignals;

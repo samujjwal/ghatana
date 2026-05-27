@@ -106,24 +106,6 @@ public final class PhrRouteSupport {
         return java.util.UUID.randomUUID().toString();
     }
 
-    static boolean hasClinicalRole(PhrRequestContext context) {
-        if (context == null) {
-            return false;
-        }
-        return "clinician".equals(context.role()) || "admin".equals(context.role());
-    }
-
-    static boolean canAccessPatientRecordForRole(PhrRequestContext context, String patientId) {
-        if (context == null || patientId == null || patientId.isBlank()) {
-            return false;
-        }
-        return switch (context.role()) {
-            case "patient" -> context.principalId().equals(patientId);
-            case "clinician", "admin" -> true;
-            default -> false;
-        };
-    }
-
 
     /**
      * Validates that a tenant ID is properly formatted.

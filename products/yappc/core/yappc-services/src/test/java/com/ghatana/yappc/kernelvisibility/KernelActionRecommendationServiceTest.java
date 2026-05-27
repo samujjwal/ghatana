@@ -44,8 +44,8 @@ class KernelActionRecommendationServiceTest extends EventloopTestBase {
     void setUp() {
         kernelOutputRoot = tempDir.resolve(".kernel");
         KernelLifecycleEventIngestService ingestService =
-                new KernelLifecycleEventIngestService(kernelOutputRoot);
-        KernelHealthSnapshotService healthService = new KernelHealthSnapshotService(ingestService);
+                                KernelLifecycleEventIngestService.forLocalDevelopment(kernelOutputRoot);
+                KernelHealthSnapshotService healthService = KernelHealthSnapshotService.forLocalDevelopment(ingestService);
         recommendationService = new KernelActionRecommendationService(healthService);
     }
 

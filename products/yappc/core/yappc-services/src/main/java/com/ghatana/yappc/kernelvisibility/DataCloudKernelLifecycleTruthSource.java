@@ -8,11 +8,12 @@ package com.ghatana.yappc.kernelvisibility;
 import com.ghatana.datacloud.DataCloudClient;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -135,7 +136,12 @@ public final class DataCloudKernelLifecycleTruthSource implements KernelLifecycl
     public record KernelLifecycleTruthRecord(
             String productUnitId,
             String status,
-            Map<String, Object> attributes
+            @Nullable Map<String, Object> lifecycleResult,
+            @Nullable HealthSnapshotSection healthSnapshot,
+            @Nullable GateStateSection gates,
+            @Nullable ArtifactStateSection artifacts,
+            @Nullable DeploymentStateSection deployment,
+            Map<String, Object> metadata
     ) {
 
         public KernelLifecycleTruthRecord {
@@ -145,7 +151,8 @@ public final class DataCloudKernelLifecycleTruthSource implements KernelLifecycl
             if (status == null || status.isBlank()) {
                 throw new IllegalArgumentException("status is required");
             }
-            attributes = Map.copyOf(attributes);
+            lifecycleResult = immutableMap(lifecycleResult);
+            metadata = immutableMap(metadata);
         }
 
         public static KernelLifecycleTruthRecord from(String entityId, Map<String, Object> data) {
@@ -169,18 +176,213 @@ public final class DataCloudKernelLifecycleTruthSource implements KernelLifecycl
                 throw new IllegalArgumentException("status must be a non-blank string");
             }
 
-            Map<String, Object> attributes = new HashMap<>(data);
-            attributes.remove("productUnitId");
-            attributes.remove("status");
-            return new KernelLifecycleTruthRecord(productUnitId, status, attributes);
+            Map<String, Object> metadata = new LinkedHashMap<>(data);
+            metadata.remove("productUnitId");
+            metadata.remove("status");
+
+            Map<String, Object> lifecycleResult = extractSection(metadata, "lifecycleResult");
+            HealthSnapshotSection healthSnapshot = HealthSnapshotSection.from(extractSection(metadata, "healthSnapshot"));
+            GateStateSection gates = GateStateSection.from(extractSection(metadata, "gates"));
+            ArtifactStateSection artifacts = ArtifactStateSection.from(extractSection(metadata, "artifacts"));
+            DeploymentStateSection deployment = DeploymentStateSection.from(extractSection(metadata, "deployment"));
+
+            return new KernelLifecycleTruthRecord(
+                    productUnitId,
+                    status,
+                    lifecycleResult,
+                    healthSnapshot,
+                    gates,
+                    artifacts,
+                    deployment,
+                    metadata);
         }
 
         public Map<String, Object> toMap() {
-            Map<String, Object> result = new LinkedHashMap<>(attributes);
+            Map<String, Object> result = new LinkedHashMap<>(metadata);
+            if (lifecycleResult != null) {
+                result.put("lifecycleResult", lifecycleResult);
+            }
+            if (healthSnapshot != null) {
+                result.put("healthSnapshot", healthSnapshot.toMap());
+            }
+            if (gates != null) {
+                result.put("gates", gates.toMap());
+            }
+            if (artifacts != null) {
+                result.put("artifacts", artifacts.toMap());
+            }
+            if (deployment != null) {
+                result.put("deployment", deployment.toMap());
+            }
             result.put("productUnitId", productUnitId);
             result.put("status", status);
             result.put("truthSource", "data-cloud");
             return Map.copyOf(result);
+        }
+
+        private static Map<String, Object> extractSection(Map<String, Object> metadata, String key) {
+            Object value = metadata.remove(key);
+            if (value == null) {
+                return null;
+            }
+            if (!(value instanceof Map<?, ?> rawMap)) {
+                throw new IllegalArgumentException(key + " must be an object");
+            }
+            Map<String, Object> typedMap = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
+                if (!(entry.getKey() instanceof String stringKey) || stringKey.isBlank()) {
+                    throw new IllegalArgumentException(key + " contains a non-string key");
+                }
+                typedMap.put(stringKey, entry.getValue());
+            }
+            return typedMap;
+        }
+
+        private static Map<String, Object> immutableMap(@Nullable Map<String, Object> value) {
+            if (value == null) {
+                return null;
+            }
+            return Collections.unmodifiableMap(new LinkedHashMap<>(value));
+        }
+
+        public record HealthSnapshotSection(
+                @Nullable String status,
+                @Nullable String lastChecked,
+                Map<String, Object> metadata
+        ) {
+            public HealthSnapshotSection {
+                metadata = immutableMap(metadata);
+            }
+
+            static HealthSnapshotSection from(@Nullable Map<String, Object> data) {
+                if (data == null) {
+                    return null;
+                }
+                Map<String, Object> metadata = new LinkedHashMap<>(data);
+                return new HealthSnapshotSection(
+                        readOptionalString(metadata, "status"),
+                        readOptionalString(metadata, "lastChecked"),
+                        metadata);
+            }
+
+            Map<String, Object> toMap() {
+                Map<String, Object> result = new LinkedHashMap<>(metadata);
+                putIfPresent(result, "status", status);
+                putIfPresent(result, "lastChecked", lastChecked);
+                return Map.copyOf(result);
+            }
+        }
+
+        public record GateStateSection(
+                @Nullable Integer failedCount,
+                @Nullable Integer totalCount,
+                Map<String, Object> metadata
+        ) {
+            public GateStateSection {
+                metadata = immutableMap(metadata);
+            }
+
+            static GateStateSection from(@Nullable Map<String, Object> data) {
+                if (data == null) {
+                    return null;
+                }
+                Map<String, Object> metadata = new LinkedHashMap<>(data);
+                return new GateStateSection(
+                        readOptionalInteger(metadata, "failedCount"),
+                        readOptionalInteger(metadata, "totalCount"),
+                        metadata);
+            }
+
+            Map<String, Object> toMap() {
+                Map<String, Object> result = new LinkedHashMap<>(metadata);
+                putIfPresent(result, "failedCount", failedCount);
+                putIfPresent(result, "totalCount", totalCount);
+                return Map.copyOf(result);
+            }
+        }
+
+        public record ArtifactStateSection(
+                @Nullable String status,
+                @Nullable Integer artifactCount,
+                Map<String, Object> metadata
+        ) {
+            public ArtifactStateSection {
+                metadata = immutableMap(metadata);
+            }
+
+            static ArtifactStateSection from(@Nullable Map<String, Object> data) {
+                if (data == null) {
+                    return null;
+                }
+                Map<String, Object> metadata = new LinkedHashMap<>(data);
+                return new ArtifactStateSection(
+                        readOptionalString(metadata, "status"),
+                        readOptionalInteger(metadata, "artifactCount"),
+                        metadata);
+            }
+
+            Map<String, Object> toMap() {
+                Map<String, Object> result = new LinkedHashMap<>(metadata);
+                putIfPresent(result, "status", status);
+                putIfPresent(result, "artifactCount", artifactCount);
+                return Map.copyOf(result);
+            }
+        }
+
+        public record DeploymentStateSection(
+                @Nullable String status,
+                @Nullable String environment,
+                Map<String, Object> metadata
+        ) {
+            public DeploymentStateSection {
+                metadata = immutableMap(metadata);
+            }
+
+            static DeploymentStateSection from(@Nullable Map<String, Object> data) {
+                if (data == null) {
+                    return null;
+                }
+                Map<String, Object> metadata = new LinkedHashMap<>(data);
+                return new DeploymentStateSection(
+                        readOptionalString(metadata, "status"),
+                        readOptionalString(metadata, "environment"),
+                        metadata);
+            }
+
+            Map<String, Object> toMap() {
+                Map<String, Object> result = new LinkedHashMap<>(metadata);
+                putIfPresent(result, "status", status);
+                putIfPresent(result, "environment", environment);
+                return Map.copyOf(result);
+            }
+        }
+
+        private static String readOptionalString(Map<String, Object> metadata, String key) {
+            Object value = metadata.remove(key);
+            if (value == null) {
+                return null;
+            }
+            if (!(value instanceof String stringValue) || stringValue.isBlank()) {
+                throw new IllegalArgumentException(key + " must be a non-blank string");
+            }
+            return stringValue;
+        }
+
+        private static Integer readOptionalInteger(Map<String, Object> metadata, String key) {
+            Object value = metadata.remove(key);
+            if (value == null) {
+                return null;
+            }
+            if (value instanceof Number number) {
+                return number.intValue();
+            }
+            throw new IllegalArgumentException(key + " must be numeric");
+        }
+
+        private static void putIfPresent(Map<String, Object> target, String key, @Nullable Object value) {
+            if (value != null) {
+                target.put(key, value);
+            }
         }
     }
 }

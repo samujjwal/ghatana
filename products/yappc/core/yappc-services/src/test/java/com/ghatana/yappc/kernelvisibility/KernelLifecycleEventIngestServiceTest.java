@@ -100,7 +100,7 @@ class KernelLifecycleEventIngestServiceTest extends EventloopTestBase {
         try {
             System.setProperty("yappc.runtime.profile", "production");
 
-            assertThatThrownBy(KernelLifecycleEventIngestService::new)
+                assertThatThrownBy(KernelLifecycleEventIngestService::forLocalDevelopment)
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("production must inject DataCloudKernelLifecycleTruthSource");
         } finally {

@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -49,4 +50,59 @@ class DataCloudKernelLifecycleTruthSourceTest extends EventloopTestBase {
         assertThat(record.get("degradedReason")).isEqualTo("MALFORMED_KERNEL_LIFECYCLE_TRUTH");
         assertThat(record.get("truthSource")).isEqualTo("data-cloud");
     }
+
+    @Test
+    @DisplayName("typed truth record preserves known sections and extension metadata")
+    void typedTruthRecordPreservesKnownSectionsAndExtensionMetadata() {
+        DataCloudKernelLifecycleTruthSource.KernelLifecycleTruthRecord record =
+                DataCloudKernelLifecycleTruthSource.KernelLifecycleTruthRecord.from(
+                        "product-1",
+                        Map.of(
+                                "productUnitId", "product-1",
+                                "status", "healthy",
+                                "healthSnapshot", Map.of("status", "healthy", "lastChecked", "2026-05-27T10:15:30Z", "probe", "kernel"),
+                                "gates", Map.of("failedCount", 1, "totalCount", 6, "lastGateId", "deploy"),
+                                "artifacts", Map.of("status", "ready", "artifactCount", 3, "bundle", "phase-packet"),
+                                "deployment", Map.of("status", "deployed", "environment", "production", "target", "cluster-a"),
+                                "lifecycleResult", Map.of("currentPhase", "deploy"),
+                                "sourceVersion", "v2"));
+
+        assertThat(record.healthSnapshot()).isNotNull();
+        assertThat(record.healthSnapshot().status()).isEqualTo("healthy");
+        assertThat(record.gates()).isNotNull();
+        assertThat(record.gates().failedCount()).isEqualTo(1);
+        assertThat(record.artifacts()).isNotNull();
+        assertThat(record.artifacts().artifactCount()).isEqualTo(3);
+        assertThat(record.deployment()).isNotNull();
+        assertThat(record.deployment().environment()).isEqualTo("production");
+        assertThat(record.metadata()).containsEntry("sourceVersion", "v2");
+
+        Map<String, Object> emitted = record.toMap();
+        assertThat(emitted).containsEntry("productUnitId", "product-1");
+        assertThat(emitted).containsEntry("truthSource", "data-cloud");
+        assertThat(emitted).containsEntry("sourceVersion", "v2");
+        assertThat(asStringObjectMap(emitted.get("healthSnapshot"))).containsEntry("status", "healthy");
+        assertThat(asStringObjectMap(emitted.get("gates"))).containsEntry("failedCount", 1);
+        assertThat(asStringObjectMap(emitted.get("artifacts"))).containsEntry("artifactCount", 3);
+        assertThat(asStringObjectMap(emitted.get("deployment"))).containsEntry("environment", "production");
+    }
+
+    @Test
+    @DisplayName("typed truth record rejects malformed known sections")
+    void typedTruthRecordRejectsMalformedKnownSections() {
+        assertThatThrownBy(() -> DataCloudKernelLifecycleTruthSource.KernelLifecycleTruthRecord.from(
+                "product-1",
+                Map.of(
+                        "productUnitId", "product-1",
+                        "status", "healthy",
+                        "gates", Map.of("failedCount", "one"))))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("failedCount must be numeric");
+    }
+
+        @SuppressWarnings("unchecked")
+        private static Map<String, Object> asStringObjectMap(Object value) {
+                assertThat(value).isInstanceOf(Map.class);
+                return (Map<String, Object>) value;
+        }
 }

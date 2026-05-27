@@ -13,7 +13,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { usePhrAccess } from '../auth/PhrAccessContext';
 import { API_BASE_URL } from '../api/phrApi';
 import { t } from '../i18n/phrI18n';
-import { PHR_ROLE_ORDER, phrRouteContracts } from '../routeManifest';
+import { PHR_ROLE_ORDER, phrRouteContracts } from '../phrRouteContracts';
 
 const roleLabels = {
   patient: t('role.patient.label'),

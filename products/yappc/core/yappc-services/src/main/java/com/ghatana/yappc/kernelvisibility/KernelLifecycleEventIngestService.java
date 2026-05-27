@@ -69,8 +69,40 @@ public final class KernelLifecycleEventIngestService implements AutoCloseable {
     private final KernelLifecycleEventProvider provider;
 
     /**
+     * Creates a local filesystem-backed ingest service for development/test usage.
+     *
+     * <p>Uses {@code .kernel} as the output root.
+     */
+    public static KernelLifecycleEventIngestService forLocalDevelopment() {
+        return new KernelLifecycleEventIngestService(Path.of(".kernel"));
+    }
+
+    /**
+     * Creates a local filesystem-backed ingest service for development/test usage.
+     *
+     * @param kernelOutputRoot root directory for local Kernel output files
+     */
+    public static KernelLifecycleEventIngestService forLocalDevelopment(@NotNull Path kernelOutputRoot) {
+        return new KernelLifecycleEventIngestService(kernelOutputRoot);
+    }
+
+    /**
+     * Creates a local filesystem-backed ingest service with externally managed executor.
+     *
+     * @param kernelOutputRoot root directory for local Kernel output files
+     * @param blockingExecutor executor used for blocking filesystem reads
+     */
+    public static KernelLifecycleEventIngestService forLocalDevelopment(
+            @NotNull Path kernelOutputRoot,
+            @NotNull Executor blockingExecutor
+    ) {
+        return new KernelLifecycleEventIngestService(kernelOutputRoot, blockingExecutor);
+    }
+
+    /**
      * Constructs a new KernelLifecycleEventIngestService with default kernel output root.
      */
+    @Deprecated(since = "2026-05", forRemoval = false)
     public KernelLifecycleEventIngestService() {
         this(localFilesystemProvider(Path.of(".kernel"), createOwnedBlockingExecutor(), true));
     }
@@ -80,6 +112,7 @@ public final class KernelLifecycleEventIngestService implements AutoCloseable {
      *
      * @param kernelOutputRoot the root directory for Kernel output files
      */
+    @Deprecated(since = "2026-05", forRemoval = false)
     public KernelLifecycleEventIngestService(@NotNull Path kernelOutputRoot) {
         this(localFilesystemProvider(kernelOutputRoot, createOwnedBlockingExecutor(), true));
     }
@@ -90,6 +123,7 @@ public final class KernelLifecycleEventIngestService implements AutoCloseable {
      * @param kernelOutputRoot the root directory for Kernel output files
      * @param blockingExecutor executor used for blocking filesystem reads
      */
+    @Deprecated(since = "2026-05", forRemoval = false)
     public KernelLifecycleEventIngestService(@NotNull Path kernelOutputRoot, @NotNull Executor blockingExecutor) {
         this(localFilesystemProvider(kernelOutputRoot, blockingExecutor, false));
     }

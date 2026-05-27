@@ -36,7 +36,7 @@ import { currentUserAtom } from '../../../stores/user.store';
 import type { PhaseCockpitPacket, PhaseAction, DegradedPacketDetails } from '../../../types/phasePacket';
 
 import { PhaseEmbeddedSurface } from './PhaseEmbeddedSurface';
-import { PhaseStatusPanels } from './PhaseStatusPanels';
+import { PhaseStatusPanelsCanonical } from './PhaseStatusPanelsCanonical';
 
 import { currentWorkspaceIdAtom } from '@/state/atoms/workspaceAtom';
 
@@ -605,13 +605,9 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   }));
   
   const statusPanels = (
-    <PhaseStatusPanels
+    <PhaseStatusPanelsCanonical
       phase={phase}
-      preview={preview}
-      previewHealth={packet.healthSignals.preview}
-      agentGovernance={packet.healthSignals.agentGovernance}
-      blockers={blockers}
-      activity={activity}
+      phasePanels={packet.phasePanels ?? []}
     />
   );
   const primaryPacketAction = packet.availableActions.find(

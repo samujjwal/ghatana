@@ -103,7 +103,7 @@ async function getOrCreateKey(): Promise<CryptoKey> {
     await logSecurityEvent('DEVICE_INTEGRITY_CHECK_FAILED');
     await phiClearAll();
     await clearKey();
-    // Bounded retry: attempt fresh initialization once
+    // M-003: Bounded retry - attempt fresh initialization once without recursion
     return initializeFreshKey();
   }
 
@@ -365,8 +365,8 @@ async function authenticateWithBiometrics(): Promise<boolean> {
 }
 
 async function logSecurityEvent(event: string): Promise<void> {
+  // M-004: Use safe logger with no PHI/key details; include safe reason codes only
   // In production, this would send to a secure logging service
-  // For now, we use a minimal safe log without PHI details
   const timestamp = Date.now();
   const logEntry = `${timestamp}:${event}`;
   await SecureStore.setItemAsync('phr-security-log', logEntry, {
@@ -385,6 +385,34 @@ async function getOrCreateDeviceInstallId(): Promise<string> {
     });
   }
   return installId;
+}
+
+// ─── PHI key registry for reliable clearing ───────────────────────────────────────
+
+const PHI_KEY_REGISTRY_KEY = 'phr-phi-key-registry';
+
+async function registerPhiKey(key: string): Promise<void> {
+  const registryJson = await SecureStore.getItemAsync(PHI_KEY_REGISTRY_KEY);
+  const phiKeys = registryJson ? JSON.parse(registryJson) as string[] : [];
+  
+  if (!phiKeys.includes(key)) {
+    phiKeys.push(key);
+    await SecureStore.setItemAsync(PHI_KEY_REGISTRY_KEY, JSON.stringify(phiKeys), {
+      keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
+    });
+  }
+}
+
+async function unregisterPhiKey(key: string): Promise<void> {
+  const registryJson = await SecureStore.getItemAsync(PHI_KEY_REGISTRY_KEY);
+  if (!registryJson) return;
+  
+  const phiKeys = JSON.parse(registryJson) as string[];
+  const filteredKeys = phiKeys.filter((k) => k !== key);
+  
+  await SecureStore.setItemAsync(PHI_KEY_REGISTRY_KEY, JSON.stringify(filteredKeys), {
+    keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
+  });
 }
 
 async function verifyDeviceInstallIntegrity(): Promise<boolean> {
@@ -450,6 +478,8 @@ const productionAdapter: PhiStorageAdapter = {
   async setItem(key: string, value: string): Promise<void> {
     const ciphertext = await encrypt(value);
     await AsyncStorage.setItem(key, ciphertext);
+    // M-002: Register the key in the PHI key registry for reliable clearing
+    await registerPhiKey(key);
   },
 
   async getItem(key: string): Promise<string | null> {
@@ -460,12 +490,14 @@ const productionAdapter: PhiStorageAdapter = {
     } catch {
       // Decryption failure (tampered, wrong key after reinstall, etc.) — treat as absent.
       await AsyncStorage.removeItem(key);
+      await unregisterPhiKey(key);
       return null;
     }
   },
 
   async removeItem(key: string): Promise<void> {
     await AsyncStorage.removeItem(key);
+    await unregisterPhiKey(key);
   },
 };
 
@@ -519,18 +551,29 @@ export async function phiRemove(key: string): Promise<void> {
 /**
  * Clears all PHI-bearing values from encrypted storage.
  * Must be called on consent revocation, logout, session expiry, and role/persona change.
+ * 
+ * M-002: Fixed to clear all PHI by maintaining a PHI key registry.
+ * All PHI keys are registered when set, so we can clear them all reliably.
  */
 export async function phiClearAll(): Promise<void> {
-  // Clear all keys with the PHI prefix
-  const keys = await AsyncStorage.getAllKeys();
-  const phiKeys = keys.filter((k) => k.startsWith(CIPHERTEXT_STORAGE_PREFIX));
+  // Get all PHI keys from registry
+  const registryJson = await SecureStore.getItemAsync('phr-phi-key-registry');
+  const phiKeys = registryJson ? JSON.parse(registryJson) as string[] : [];
   
+  // Clear all registered PHI keys from AsyncStorage
   for (const key of phiKeys) {
     await AsyncStorage.removeItem(key);
   }
   
-  // Clear PHI key registry
+  // Clear the registry itself
   await SecureStore.deleteItemAsync('phr-phi-key-registry');
+  
+  // Also clear any keys with the PHI prefix as a safety net
+  const allKeys = await AsyncStorage.getAllKeys();
+  const prefixedKeys = allKeys.filter((k) => k.startsWith(CIPHERTEXT_STORAGE_PREFIX));
+  for (const key of prefixedKeys) {
+    await AsyncStorage.removeItem(key);
+  }
 }
 
 /**

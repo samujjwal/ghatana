@@ -70,6 +70,7 @@ public final class PhasePacket {
     // Action fields
     private final List<PhaseAction> availableActions;
     private final DashboardActionClassification dashboardActions;
+        private final List<PhasePanelView> phasePanels;
     
     // Health signals
     private final HealthSignals healthSignals;
@@ -101,6 +102,7 @@ public final class PhasePacket {
             PlatformRunStatus platformRunStatus,
             @NotNull List<PhaseAction> availableActions,
             @NotNull DashboardActionClassification dashboardActions,
+            @NotNull List<PhasePanelView> phasePanels,
             @NotNull HealthSignals healthSignals,
             DegradedPacketDetails degradedDetails,
             long timestamp,
@@ -127,6 +129,7 @@ public final class PhasePacket {
         this.platformRunStatus = platformRunStatus;
         this.availableActions = availableActions;
         this.dashboardActions = dashboardActions;
+        this.phasePanels = phasePanels;
         this.healthSignals = healthSignals;
         this.degradedDetails = degradedDetails;
         this.timestamp = timestamp;
@@ -155,6 +158,7 @@ public final class PhasePacket {
     public PlatformRunStatus platformRunStatus() { return platformRunStatus; }
     public List<PhaseAction> availableActions() { return availableActions; }
     public DashboardActionClassification dashboardActions() { return dashboardActions; }
+        public List<PhasePanelView> phasePanels() { return phasePanels; }
     public HealthSignals healthSignals() { return healthSignals; }
     public DegradedPacketDetails degradedDetails() { return degradedDetails; }
     public long timestamp() { return timestamp; }
@@ -369,6 +373,32 @@ public final class PhasePacket {
             List<String> blockedActions,
             List<String> reviewRequiredActions,
             List<String> safeToContinueActions
+    ) {}
+
+    /**
+     * Backend-owned phase panel view model for frontend rendering.
+     */
+    public record PhasePanelView(
+            String phase,
+            String status,
+            String summary,
+            String recommendation,
+            String owner,
+            Double confidence,
+            String supportTrace,
+            List<PhasePanelCard> cards
+    ) {}
+
+    /**
+     * Card item within a backend-owned phase panel.
+     */
+    public record PhasePanelCard(
+            String id,
+            String title,
+            String detail,
+            String status,
+            String trace,
+            Map<String, Object> metadata
     ) {}
 
     /**

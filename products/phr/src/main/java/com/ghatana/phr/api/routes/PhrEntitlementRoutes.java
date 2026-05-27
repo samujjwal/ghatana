@@ -43,7 +43,6 @@ public final class PhrEntitlementRoutes {
     private final Eventloop eventloop;
     private final RouteEntitlementEvaluator routeEntitlementEvaluator;
     private final IdentityAwareBoundedCache<String, Map<String, Object>> entitlementCache;
-    private Map<String, Integer> roleOrder;
     private List<ProductRouteEntitlement.RouteEntitlement> cachedRoutes;
     private volatile boolean contractLoaded = false;
 
@@ -79,30 +78,11 @@ public final class PhrEntitlementRoutes {
             JsonNode root = OBJECT_MAPPER.readTree(json);
 
             // Validate required top-level fields
-            if (!root.has("roleOrder") || !root.has("routes")) {
-                LOG.error("Route contract missing required fields (roleOrder, routes) - failing closed");
+            if (!root.has("routes")) {
+                LOG.error("Route contract missing required field (routes) - failing closed");
                 this.contractLoaded = false;
                 return;
             }
-
-            // Load and validate role order
-            JsonNode roleOrderNode = root.path("roleOrder");
-            Map<String, Integer> loadedRoleOrder = new java.util.HashMap<>();
-            roleOrderNode.fields().forEachRemaining(entry -> {
-                String role = entry.getKey();
-                if (!PhrRouteSupport.ALLOWED_ROLES.contains(role)) {
-                    LOG.error("Route contract contains unknown role: {} - failing closed", role);
-                    this.contractLoaded = false;
-                    return;
-                }
-                loadedRoleOrder.put(role, entry.getValue().asInt());
-            });
-            if (loadedRoleOrder.isEmpty()) {
-                LOG.error("Route contract has empty role order - failing closed");
-                this.contractLoaded = false;
-                return;
-            }
-            this.roleOrder = loadedRoleOrder;
 
             // Load and validate routes
             JsonNode routesNode = root.path("routes");
@@ -164,7 +144,7 @@ public final class PhrEntitlementRoutes {
                         personas.add(persona.asText());
                     }
                 } else {
-                    personas = List.of("patient", "caregiver", "clinician", "admin");
+                    personas = List.of("patient", "caregiver", "clinician", "admin", "fchv");
                 }
                 
                 // Parse tiers (default to core if not specified)
@@ -180,9 +160,6 @@ public final class PhrEntitlementRoutes {
 
                 // E-004: Parse stability/visibility
                 String stability = routeNode.has("stability") ? routeNode.path("stability").asText() : "stable";
-                boolean hidden = routeNode.has("hidden") && routeNode.path("hidden").asBoolean();
-                boolean blocked = routeNode.has("blocked") && routeNode.path("blocked").asBoolean();
-                String featureFlag = routeNode.has("featureFlag") ? routeNode.path("featureFlag").asText() : null;
 
                 loadedRoutes.add(new ProductRouteEntitlement.RouteEntitlement(
                     path,
@@ -270,7 +247,7 @@ public final class PhrEntitlementRoutes {
         }
 
         // E-005: Use tenant/principal/persona/tier in cache key
-        String cacheKey = String.format("route-entitlements:%s:%s:%s:%s", 
+        String cacheKey = String.format("route-entitlements:%s:%s:%s:%s:%s", 
             tenantId, principalId, normalizedRole, persona, tier);
 
         // Try cache first
@@ -284,13 +261,13 @@ public final class PhrEntitlementRoutes {
             return jsonResponse(200, cached.get(), correlationId);
         }
 
-        // Use loaded route contract
+        // Use loaded route contract with built-in role order
         List<ProductRouteEntitlement.RouteEntitlement> routes = routeEntitlementEvaluator.filterByRole(
-            cachedRoutes, normalizedRole, roleOrder);
+            cachedRoutes, normalizedRole);
         List<ProductRouteEntitlement.ActionEntitlement> actions =
-            routeEntitlementEvaluator.filterActionsByRole(routes, normalizedRole, roleOrder);
+            routeEntitlementEvaluator.filterActionsByRole(routes, normalizedRole);
         List<ProductRouteEntitlement.CardEntitlement> cards =
-            routeEntitlementEvaluator.filterCardsByRole(routes, normalizedRole, roleOrder);
+            routeEntitlementEvaluator.filterCardsByRole(routes, normalizedRole);
 
         ProductRouteEntitlement entitlement = new ProductRouteEntitlement(
             "phr",
@@ -305,7 +282,7 @@ public final class PhrEntitlementRoutes {
             cards
         );
 
-        // E-007: Use platform contract serialization if available, otherwise manual map
+        // E-007: Use platform contract serialization
         Map<String, Object> entitlementMap = entitlement.toMap();
         
         // Cache for 5 minutes (300 seconds)

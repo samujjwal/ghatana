@@ -914,7 +914,7 @@ export async function reviewEmergencyAccess(
 const PhrSessionSchema = z.object({
   principalId: z.string(),
   tenantId: z.string(),
-  role: z.enum(['patient', 'caregiver', 'clinician', 'admin']),
+  role: z.enum(['patient', 'caregiver', 'clinician', 'admin', 'fchv']),
   name: z.string(),
   expiresAt: z.string(),
 });

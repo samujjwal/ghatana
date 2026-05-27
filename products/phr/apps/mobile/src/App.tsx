@@ -13,7 +13,7 @@ import { fetchMobileDashboard, loginMobile, logoutMobile, syncOfflineDashboard }
 import { clearDashboardOffline } from './services/offlineStore';
 import { clearMobileSession, loadMobileSession, saveMobileSession } from './services/mobileSessionStore';
 import { registerForPushNotificationsAsync } from './services/pushNotifications';
-import { t } from './i18n/phrMobileI18n';
+import { initializeLocale, t } from './i18n/phrMobileI18n';
 import type { MobileDashboard, MobileSession } from './types';
 
 type ScreenKey = 'dashboard' | 'records' | 'consents' | 'notifications' | 'emergency' | 'settings';
@@ -108,6 +108,9 @@ export default function App(): React.ReactElement {
   React.useEffect(() => {
     const restoreSession = async (): Promise<void> => {
       try {
+        // M-008: Initialize locale from AsyncStorage on app startup
+        await initializeLocale();
+        
         const restoredSession = await loadMobileSession();
         if (restoredSession) {
           setSession(restoredSession);

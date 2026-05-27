@@ -129,6 +129,7 @@ class PhasePacketContractTest {
                         java.util.Map.of("nextPhase", "run")
                 )),
                 new PhasePacket.DashboardActionClassification(null, List.of("all"), List.of(), List.of()),
+                List.of(),
                 new PhasePacket.HealthSignals(
                         new PhasePacket.PreviewHealth(false, "degraded", List.of("Data Cloud service unavailable")),
                         new PhasePacket.GenerationHealth(false, "degraded", null, List.of("Data Cloud service unavailable")),

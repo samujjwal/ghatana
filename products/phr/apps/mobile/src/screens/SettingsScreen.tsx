@@ -13,6 +13,12 @@ interface SettingsScreenProps {
 }
 
 export function SettingsScreen({ onSyncOffline, onLogout, syncMessage, session }: SettingsScreenProps): React.ReactElement {
+  const [cacheTimestamp, setCacheTimestamp] = React.useState<number | null>(null);
+  
+  React.useEffect(() => {
+    void getDashboardOfflineTimestamp().then(setCacheTimestamp);
+  }, []);
+
   const handleLogout = (): void => {
     Alert.alert(
       t('settings.logoutConfirmTitle'),
@@ -33,7 +39,6 @@ export function SettingsScreen({ onSyncOffline, onLogout, syncMessage, session }
     );
   };
 
-  const cacheTimestamp = getDashboardOfflineTimestamp();
   const isCacheStale = cacheTimestamp ? Date.now() - cacheTimestamp > 24 * 60 * 60 * 1000 : true;
 
   return (

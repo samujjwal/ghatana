@@ -5,7 +5,6 @@ import { t } from './i18n/phrI18n';
 export interface PhrRouteContract extends ProductRouteCapability {
   readonly personas?: readonly string[];
   readonly tiers?: readonly string[];
-  readonly emergencyAction?: boolean;
   /**
    * When present and set to `true`, this route is behind a feature flag and
    * is not yet production-ready. The router renders a `FeatureFlagPage`
@@ -293,7 +292,6 @@ export const phrRouteContracts = [
     actions: ["break-glass-review"],
     cards: ["override-audit-timeline"],
     stability: 'stable',
-    emergencyAction: true,
     apiEndpoint: '/api/v1/emergency/access',
     policyId: 'phr.emergency.break-glass',
     testId: 'phr-emergency-break-glass-001'
@@ -378,8 +376,8 @@ export const phrRouteContracts = [
     label: t('route.fchv/dashboard.label'),
     description: t('route.fchv/dashboard.description'),
     group: t('route.group.fchv'),
-    minimumRole: 'caregiver',
-    personas: ["caregiver","admin"],
+    minimumRole: 'fchv',
+    personas: ["fchv","admin"],
     tiers: ["core"],
     actions: ["view-fchv-dashboard"],
     cards: ["community-health-summary"],

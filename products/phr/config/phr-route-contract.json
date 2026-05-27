@@ -1,13 +1,6 @@
 {
   "schemaVersion": "1.0.0",
   "product": "phr",
-  "roleOrder": {
-    "patient": 0,
-    "caregiver": 1,
-    "clinician": 2,
-    "fchv": 3,
-    "admin": 4
-  },
   "routes": [
     {
       "path": "/dashboard",
@@ -251,7 +244,6 @@
       "minimumRole": "clinician",
       "personas": ["clinician", "admin"],
       "tiers": ["emergency"],
-      "emergencyAction": true,
       "actions": ["break-glass-review"],
       "cards": ["override-audit-timeline"],
       "stability": "stable",
@@ -339,8 +331,8 @@
       "label": "FCHV Dashboard",
       "description": "FCHV community health dashboard",
       "group": "fchv",
-      "minimumRole": "caregiver",
-      "personas": ["caregiver", "admin"],
+      "minimumRole": "fchv",
+      "personas": ["fchv", "admin"],
       "tiers": ["core"],
       "actions": ["view-fchv-dashboard"],
       "cards": ["community-health-summary"],

@@ -56,10 +56,27 @@ public final class KernelHealthSnapshotService {
     private final KernelLifecycleTruthSource truthSource;
 
     /**
+     * Creates a dev/test-only health snapshot service backed by local manifest truth.
+     */
+    public static KernelHealthSnapshotService forLocalDevelopment() {
+        return new KernelHealthSnapshotService();
+    }
+
+    /**
+     * Creates a dev/test-only health snapshot service backed by local ingest wiring.
+     *
+     * @param ingestService local filesystem ingest service
+     */
+    public static KernelHealthSnapshotService forLocalDevelopment(@NotNull KernelLifecycleEventIngestService ingestService) {
+        return new KernelHealthSnapshotService(ingestService);
+    }
+
+    /**
      * Constructs a new KernelHealthSnapshotService with default local manifest truth source.
      */
+    @Deprecated(since = "2026-05", forRemoval = false)
     public KernelHealthSnapshotService() {
-        this(new LocalKernelManifestTruthSource());
+        this(LocalKernelManifestTruthSource.forLocalDevelopment());
     }
 
     /**
@@ -89,8 +106,9 @@ public final class KernelHealthSnapshotService {
      *
      * @param ingestService local filesystem ingest service
      */
+    @Deprecated(since = "2026-05", forRemoval = false)
     public KernelHealthSnapshotService(@NotNull KernelLifecycleEventIngestService ingestService) {
-        this(new LocalKernelManifestTruthSource(ingestService));
+        this(LocalKernelManifestTruthSource.forLocalDevelopment(ingestService));
     }
 
     /**

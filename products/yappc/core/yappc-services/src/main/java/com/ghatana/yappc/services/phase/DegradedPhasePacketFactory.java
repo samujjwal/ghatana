@@ -102,6 +102,23 @@ public final class DegradedPhasePacketFactory {
                 ),
                 List.of(),
                 new PhasePacket.DashboardActionClassification(null, List.of("all"), List.of(), List.of()),
+                List.of(
+                        new PhasePacket.PhasePanelView(
+                                "generate",
+                                "degraded",
+                                "Phase panel data is degraded because lifecycle dependencies are unavailable.",
+                                "Restore dependency health and retry packet retrieval.",
+                                "backend:degraded-factory",
+                                0.2,
+                                correlationId,
+                                List.of(
+                                        new PhasePacket.PhasePanelCard(
+                                                "degraded-dependency",
+                                                "Dependency health",
+                                                reason,
+                                                "degraded",
+                                                correlationId,
+                                                java.util.Map.of("dependency", degradedDetails.dependency()))))),
                 healthSignals,
                 degradedDetails,
                 Instant.now().toEpochMilli(),

@@ -59,10 +59,18 @@ public final class KernelActionRecommendationService {
     private final KernelHealthSnapshotService healthService;
 
     /**
+     * Creates a dev/test-only recommendation service backed by local manifest truth.
+     */
+    public static KernelActionRecommendationService forLocalDevelopment() {
+        return new KernelActionRecommendationService();
+    }
+
+    /**
      * Constructs a new KernelActionRecommendationService with default health service.
      */
+    @Deprecated(since = "2026-05", forRemoval = false)
     public KernelActionRecommendationService() {
-        this(new KernelHealthSnapshotService());
+        this(KernelHealthSnapshotService.forLocalDevelopment());
     }
 
     /**
