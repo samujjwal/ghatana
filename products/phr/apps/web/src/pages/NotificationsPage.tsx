@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { Card, CardContent, CardHeader, Badge } from '@ghatana/design-system';
 import { fetchNotifications } from '../api/phrApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
+import { logError } from '../utils/safeLogger';
 import type { PhrMessageKey } from '../i18n/phrI18n';
 import type { NotificationSummary } from '../types';
 
@@ -35,8 +36,8 @@ export function NotificationsPage(): React.ReactElement {
   // title and body fields never contain PHI (patient names, record IDs, etc.).
   // Frontend displays notifications as-is; PHI redaction is enforced server-side.
 
-  if (loading) return <div className="loading">{t('notifications.loading')}</div>;
-  if (error) return <div className="error">{t('notifications.error')}: {error}</div>;
+  if (loading) return <div className="loading" role="status" aria-live="polite">{t('notifications.loading')}</div>;
+  if (error) return <div className="error" role="alert">{t('notifications.error')}: {error}</div>;
 
   return (
     <Card>
@@ -53,16 +54,16 @@ export function NotificationsPage(): React.ReactElement {
                 aria-label={`${notificationTypeLabel(n.type)}: ${n.title}`}
               >
                 <div className="stack gap-xs">
-                  <span className="badge">{notificationTypeLabel(n.type)}</span>
+                  <Badge variant="default">{notificationTypeLabel(n.type)}</Badge>
                   {!n.readAt && (
-                    <span className="badge badge--accent" aria-label={t('notifications.unread')}>
+                    <Badge variant="destructive" aria-label={t('notifications.unread')}>
                       {t('notifications.unread')}
-                    </span>
+                    </Badge>
                   )}
                 </div>
                 <strong>{n.title}</strong>
                 <p>{n.body}</p>
-                <small>{n.createdAt}</small>
+                <small>{new Date(n.createdAt).toLocaleString()}</small>
               </div>
             ))}
           </div>

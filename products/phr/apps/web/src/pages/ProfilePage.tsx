@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { Card, CardContent, CardHeader, Button, TextField, Select, FormControl, InputLabel } from '@ghatana/design-system';
 import { fetchPatientProfile, updatePatientProfile } from '../api/phrApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
+import { logError } from '../utils/safeLogger';
 import type { PatientProfileExtended, PatientProfileUpdateRequest } from '../types';
 
 export function ProfilePage(): React.ReactElement {
@@ -65,9 +66,9 @@ export function ProfilePage(): React.ReactElement {
     }
   };
 
-  if (loading) return <div className="loading">{t('profile.loading')}</div>;
-  if (error) return <div className="error">{t('profile.error')}: {error}</div>;
-  if (!data) return <div className="error">{t('profile.error')}</div>;
+  if (loading) return <div className="loading" role="status" aria-live="polite">{t('profile.loading')}</div>;
+  if (error) return <div className="error" role="alert">{t('profile.error')}: {error}</div>;
+  if (!data) return <div className="error" role="alert">{t('profile.error')}</div>;
 
   return (
     <div className="stack gap-lg">
@@ -86,41 +87,44 @@ export function ProfilePage(): React.ReactElement {
                 <div>
                   <dt><label htmlFor="emergencyContact">{t('profile.emergencyContact')}</label></dt>
                   <dd>
-                    <input
+                    <TextField
                       id="emergencyContact"
-                      type="text"
                       value={draft.emergencyContact ?? ''}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setDraft((prev) => ({ ...prev, emergencyContact: e.target.value }))
                       }
+                      aria-label={t('profile.emergencyContact')}
                     />
                   </dd>
                 </div>
                 <div>
                   <dt><label htmlFor="preferredLanguage">{t('profile.language')}</label></dt>
                   <dd>
-                    <select
-                      id="preferredLanguage"
-                      value={draft.preferredLanguage ?? ''}
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                        setDraft((prev) => ({ ...prev, preferredLanguage: e.target.value }))
-                      }
-                    >
-                      <option value="en">English</option>
-                      <option value="ne">नेपाली</option>
-                    </select>
+                    <FormControl fullWidth>
+                      <Select
+                        id="preferredLanguage"
+                        value={draft.preferredLanguage ?? ''}
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                          setDraft((prev) => ({ ...prev, preferredLanguage: e.target.value }))
+                        }
+                        aria-label={t('profile.language')}
+                      >
+                        <option value="en">English</option>
+                        <option value="ne">नेपाली</option>
+                      </Select>
+                    </FormControl>
                   </dd>
                 </div>
                 <div>
                   <dt><label htmlFor="facilityId">{t('profile.facilityId')}</label></dt>
                   <dd>
-                    <input
+                    <TextField
                       id="facilityId"
-                      type="text"
                       value={draft.facilityId ?? ''}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setDraft((prev) => ({ ...prev, facilityId: e.target.value }))
                       }
+                      aria-label={t('profile.facilityId')}
                     />
                   </dd>
                 </div>
@@ -137,15 +141,15 @@ export function ProfilePage(): React.ReactElement {
           <div className="stack gap-sm" style={{ marginTop: '1rem' }}>
             {editing ? (
               <>
-                <button onClick={() => void handleSave()} disabled={saving} aria-busy={saving}>
+                <Button onClick={() => void handleSave()} disabled={saving} aria-busy={saving}>
                   {saving ? t('profile.saving') : t('profile.save')}
-                </button>
-                <button onClick={handleCancel} disabled={saving}>
+                </Button>
+                <Button onClick={handleCancel} disabled={saving} variant="outlined">
                   {t('profile.cancel')}
-                </button>
+                </Button>
               </>
             ) : (
-              <button onClick={handleEdit}>{t('profile.edit')}</button>
+              <Button onClick={handleEdit}>{t('profile.edit')}</Button>
             )}
           </div>
         </CardContent>

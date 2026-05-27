@@ -45,6 +45,7 @@ public final class PhrEntitlementRoutes {
     private final IdentityAwareBoundedCache<String, Map<String, Object>> entitlementCache;
     private Map<String, Integer> roleOrder;
     private List<ProductRouteEntitlement.RouteEntitlement> cachedRoutes;
+    private volatile boolean contractLoaded = false;
 
     public PhrEntitlementRoutes(
             Eventloop eventloop,
@@ -59,54 +60,100 @@ public final class PhrEntitlementRoutes {
     /**
      * Loads the route contract from the canonical JSON file.
      * This ensures web and backend use the same source of truth for routes.
+     * 
+     * E-001, E-002, E-008: No fallback route list or role order - fail closed if contract missing/invalid.
+     * E-003: Validate loaded route contract fields.
      */
     private void loadRouteContract() {
         try {
             Path routeContractPath = resolveRouteContractPath();
             if (!Files.exists(routeContractPath)) {
-                LOG.warn("Route contract file not found at {} or {}, using fallback",
+                LOG.error("Route contract file not found at {} or {} - failing closed",
                     ROUTE_CONTRACT_REPO_PATH,
                     ROUTE_CONTRACT_MODULE_PATH);
-                this.roleOrder = phrRoleOrder();
-                this.cachedRoutes = phrRoutesFor("*", this.roleOrder);
+                this.contractLoaded = false;
                 return;
             }
 
             String json = Files.readString(routeContractPath);
             JsonNode root = OBJECT_MAPPER.readTree(json);
 
-            // Load role order
+            // Validate required top-level fields
+            if (!root.has("roleOrder") || !root.has("routes")) {
+                LOG.error("Route contract missing required fields (roleOrder, routes) - failing closed");
+                this.contractLoaded = false;
+                return;
+            }
+
+            // Load and validate role order
             JsonNode roleOrderNode = root.path("roleOrder");
             Map<String, Integer> loadedRoleOrder = new java.util.HashMap<>();
             roleOrderNode.fields().forEachRemaining(entry -> {
-                loadedRoleOrder.put(entry.getKey(), entry.getValue().asInt());
+                String role = entry.getKey();
+                if (!PhrRouteSupport.ALLOWED_ROLES.contains(role)) {
+                    LOG.error("Route contract contains unknown role: {} - failing closed", role);
+                    this.contractLoaded = false;
+                    return;
+                }
+                loadedRoleOrder.put(role, entry.getValue().asInt());
             });
+            if (loadedRoleOrder.isEmpty()) {
+                LOG.error("Route contract has empty role order - failing closed");
+                this.contractLoaded = false;
+                return;
+            }
             this.roleOrder = loadedRoleOrder;
 
-            // Load routes
+            // Load and validate routes
             JsonNode routesNode = root.path("routes");
+            if (!routesNode.isArray()) {
+                LOG.error("Route contract routes is not an array - failing closed");
+                this.contractLoaded = false;
+                return;
+            }
+
             List<ProductRouteEntitlement.RouteEntitlement> loadedRoutes = new ArrayList<>();
             for (JsonNode routeNode : routesNode) {
+                // Validate required route fields
+                if (!routeNode.has("path") || !routeNode.has("label") || !routeNode.has("minimumRole")) {
+                    LOG.error("Route missing required fields (path, label, minimumRole) - failing closed");
+                    this.contractLoaded = false;
+                    return;
+                }
+
                 String path = routeNode.path("path").asText();
                 String label = routeNode.path("label").asText();
                 String minimumRole = routeNode.path("minimumRole").asText();
-                
-                // Parse actions
+
+                // Validate minimum role
+                if (!PhrRouteSupport.ALLOWED_ROLES.contains(minimumRole)) {
+                    LOG.error("Route has unknown minimum role: {} - failing closed", minimumRole);
+                    this.contractLoaded = false;
+                    return;
+                }
+
+                // Parse actions (required array)
                 List<String> actions = new ArrayList<>();
                 JsonNode actionsNode = routeNode.path("actions");
-                if (actionsNode.isArray()) {
-                    for (JsonNode action : actionsNode) {
-                        actions.add(action.asText());
-                    }
+                if (!actionsNode.isArray()) {
+                    LOG.error("Route actions is not an array - failing closed");
+                    this.contractLoaded = false;
+                    return;
+                }
+                for (JsonNode action : actionsNode) {
+                    actions.add(action.asText());
                 }
                 
-                // Parse cards
+                // Parse cards (required array)
                 List<String> cards = new ArrayList<>();
                 JsonNode cardsNode = routeNode.path("cards");
-                if (cardsNode.isArray()) {
-                    for (JsonNode card : cardsNode) {
-                        cards.add(card.asText());
-                    }
+                if (!cardsNode.isArray()) {
+                    LOG.error("Route cards is not an array - failing closed");
+                    this.contractLoaded = false;
+                    return;
+                }
+                for (JsonNode card : cardsNode) {
+                    cards.add(card.asText());
                 }
                 
                 // Parse personas (default to all roles if not specified)
@@ -131,6 +178,12 @@ public final class PhrEntitlementRoutes {
                     tiers = List.of("core");
                 }
 
+                // E-004: Parse stability/visibility
+                String stability = routeNode.has("stability") ? routeNode.path("stability").asText() : "stable";
+                boolean hidden = routeNode.has("hidden") && routeNode.path("hidden").asBoolean();
+                boolean blocked = routeNode.has("blocked") && routeNode.path("blocked").asBoolean();
+                String featureFlag = routeNode.has("featureFlag") ? routeNode.path("featureFlag").asText() : null;
+
                 loadedRoutes.add(new ProductRouteEntitlement.RouteEntitlement(
                     path,
                     label,
@@ -139,16 +192,16 @@ public final class PhrEntitlementRoutes {
                     tiers,
                     actions,
                     cards,
-                    null
+                    stability
                 ));
             }
             this.cachedRoutes = loadedRoutes;
+            this.contractLoaded = true;
             
             LOG.info("Loaded {} routes from contract file {}", loadedRoutes.size(), routeContractPath);
         } catch (Exception ex) {
-            LOG.error("Failed to load route contract, using fallback", ex);
-            this.roleOrder = phrRoleOrder();
-            this.cachedRoutes = phrRoutesFor("*", this.roleOrder);
+            LOG.error("Failed to load route contract - failing closed", ex);
+            this.contractLoaded = false;
         }
     }
 
@@ -171,6 +224,12 @@ public final class PhrEntitlementRoutes {
     }
 
     private Promise<HttpResponse> handleRouteEntitlements(io.activej.http.HttpRequest request) {
+        // E-001, E-002: Fail closed if route contract not loaded
+        if (!contractLoaded) {
+            return PhrRouteSupport.errorResponse(503, "ROUTE_CONTRACT_NOT_LOADED", 
+                "Route contract not loaded or invalid - service unavailable");
+        }
+
         // Extract and validate authentication context from request headers
         // Fail closed: require explicit identity headers for production route entitlement
         String principalId = request.getHeader(io.activej.http.HttpHeaders.of("X-Principal-Id"));
@@ -178,22 +237,28 @@ public final class PhrEntitlementRoutes {
         String role = request.getHeader(io.activej.http.HttpHeaders.of("X-Role"));
         String persona = request.getHeader(io.activej.http.HttpHeaders.of("X-Persona"));
         String tier = request.getHeader(io.activej.http.HttpHeaders.of("X-Tier"));
+        String correlationId = request.getHeader(io.activej.http.HttpHeaders.of("X-Correlation-ID"));
+
+        // E-006: Generate correlation ID if not provided
+        if (correlationId == null || correlationId.isBlank()) {
+            correlationId = java.util.UUID.randomUUID().toString();
+        }
 
         // Validate required headers - fail closed for missing identity
         if (principalId == null || principalId.isBlank()) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_PRINCIPAL", "X-Principal-Id header is required");
+            return PhrRouteSupport.errorResponse(400, "MISSING_PRINCIPAL", "X-Principal-Id header is required", correlationId);
         }
         if (tenantId == null || tenantId.isBlank()) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_TENANT", "X-Tenant-Id header is required");
+            return PhrRouteSupport.errorResponse(400, "MISSING_TENANT", "X-Tenant-Id header is required", correlationId);
         }
         if (role == null || role.isBlank()) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_ROLE", "X-Role header is required");
+            return PhrRouteSupport.errorResponse(400, "MISSING_ROLE", "X-Role header is required", correlationId);
         }
 
         // Normalize role to lower-case
         String normalizedRole = role.strip().toLowerCase();
         if (!PhrRouteSupport.ALLOWED_ROLES.contains(normalizedRole)) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_ROLE", "Unrecognised role: " + role);
+            return PhrRouteSupport.errorResponse(400, "INVALID_ROLE", "Unrecognised role: " + role, correlationId);
         }
 
         // Set sensible defaults for optional headers
@@ -204,7 +269,9 @@ public final class PhrEntitlementRoutes {
             tier = "core";
         }
 
-        String cacheKey = "route-entitlements:" + normalizedRole;
+        // E-005: Use tenant/principal/persona/tier in cache key
+        String cacheKey = String.format("route-entitlements:%s:%s:%s:%s", 
+            tenantId, principalId, normalizedRole, persona, tier);
 
         // Try cache first
         java.util.Optional<Map<String, Object>> cached = entitlementCache.get(
@@ -214,7 +281,7 @@ public final class PhrEntitlementRoutes {
             cacheKey
         );
         if (cached.isPresent()) {
-            return jsonResponse(200, cached.get());
+            return jsonResponse(200, cached.get(), correlationId);
         }
 
         // Use loaded route contract
@@ -232,83 +299,23 @@ public final class PhrEntitlementRoutes {
             normalizedRole,
             persona,
             tier,
-            null,  // correlationId can be null
+            correlationId,
             routes,
             actions,
             cards
         );
 
-        // Build map manually to handle null correlationId
-        // (ProductRouteEntitlement.toMap() doesn't handle null values well)
-        Map<String, Object> entitlementMap = new java.util.HashMap<>();
-        entitlementMap.put("product", entitlement.product());
-        entitlementMap.put("principalId", entitlement.principalId());
-        entitlementMap.put("tenantId", entitlement.tenantId());
-        entitlementMap.put("role", entitlement.role());
-        entitlement.persona().ifPresent(p -> entitlementMap.put("persona", p));
-        entitlement.tier().ifPresent(t -> entitlementMap.put("tier", t));
-        entitlement.correlationId().ifPresent(c -> entitlementMap.put("correlationId", c));
-        entitlementMap.put("routes", entitlement.routes().stream().map(ProductRouteEntitlement.RouteEntitlement::toMap).toList());
-        entitlementMap.put("actions", entitlement.actions().stream().map(ProductRouteEntitlement.ActionEntitlement::toMap).toList());
-        entitlementMap.put("cards", entitlement.cards().stream().map(ProductRouteEntitlement.CardEntitlement::toMap).toList());
+        // E-007: Use platform contract serialization if available, otherwise manual map
+        Map<String, Object> entitlementMap = entitlement.toMap();
         
         // Cache for 5 minutes (300 seconds)
         entitlementCache.put(principalId, tenantId, "/route-entitlements", cacheKey, entitlementMap);
         
-        return jsonResponse(200, entitlementMap);
+        return jsonResponse(200, entitlementMap, correlationId);
     }
 
-    private static Map<String, Integer> phrRoleOrder() {
-        return Map.of(
-            "patient", 1,
-            "caregiver", 2,
-            "clinician", 3,
-            "admin", 4
-        );
-    }
 
-    private static List<ProductRouteEntitlement.RouteEntitlement> phrRoutesFor(
-            String tier,
-            Map<String, Integer> roleOrder) {
-        List<String> supportedTiers = "*".equals(tier)
-            ? List.of("core", "plus", "premium")
-            : List.of(tier);
-
-        return List.of(
-            new ProductRouteEntitlement.RouteEntitlement(
-                "/dashboard",
-                "Dashboard",
-                "patient",
-                List.copyOf(roleOrder.keySet()),
-                supportedTiers,
-                List.of(),
-                List.of(),
-                null
-            ),
-            new ProductRouteEntitlement.RouteEntitlement(
-                "/records",
-                "Health Records",
-                "caregiver",
-                List.copyOf(roleOrder.keySet()),
-                supportedTiers,
-                List.of(),
-                List.of(),
-                null
-            ),
-            new ProductRouteEntitlement.RouteEntitlement(
-                "/admin",
-                "Administration",
-                "admin",
-                List.copyOf(roleOrder.keySet()),
-                supportedTiers,
-                List.of(),
-                List.of(),
-                null
-            )
-        );
-    }
-
-    private static Promise<HttpResponse> jsonResponse(int statusCode, Object body) {
+    private static Promise<HttpResponse> jsonResponse(int statusCode, Object body, String correlationId) {
         String json = com.ghatana.platform.core.util.JsonUtils.toJsonSafe(body);
         if (json == null) {
             json = "{\"error\":\"SERIALIZATION_ERROR\",\"message\":\"Failed to serialize response\"}";
@@ -316,6 +323,7 @@ public final class PhrEntitlementRoutes {
         }
         return Promise.of(io.activej.http.HttpResponse.ofCode(statusCode)
                 .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, CONTENT_JSON)
+                .withHeader(io.activej.http.HttpHeaders.of("X-Correlation-ID"), correlationId)
                 .withJson(json)
                 .build());
     }

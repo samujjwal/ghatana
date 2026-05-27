@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-05-27T19:50:43.728Z",
+  "generatedAt": "2026-05-27T19:55:59.460Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/check-agent-capability-duplicates.mjs",
     "source": "scripts/check-agent-capability-duplicates.mjs",
     "command": "pnpm check:agent-capability-duplicates",
-    "commit": "9e370000b856df0a93f05731a452972c368f083b"
+    "commit": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05"
   },
   "summary": {
     "scannedScopes": 15,

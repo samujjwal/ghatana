@@ -21,23 +21,23 @@ export function RecordDetailScreen({ record, onBack }: RecordDetailScreenProps):
       <Text style={styles.title}>{t('records.detail')}</Text>
 
       <View style={styles.fieldRow}>
-        <Text style={styles.label}>{t('records.type')}</Text>
-        <Text style={styles.value}>{record.title}</Text>
+        <Text style={styles.label} accessibilityLabel={t('records.type')}>{t('records.type')}</Text>
+        <Text style={styles.value} accessibilityLabel={`${t('records.type')}: ${record.title}`}>{record.title}</Text>
       </View>
 
       <View style={styles.fieldRow}>
-        <Text style={styles.label}>{t('records.recordId')}</Text>
-        <Text style={styles.value}>{record.id}</Text>
+        <Text style={styles.label} accessibilityLabel={t('records.recordId')}>{t('records.recordId')}</Text>
+        <Text style={styles.value} accessibilityLabel={`${t('records.recordId')}: ${record.id}`}>{record.id}</Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Summary</Text>
-        <Text style={styles.body}>{record.summary}</Text>
+        <Text style={styles.sectionTitle} accessibilityLabel={t('records.summary')}>Summary</Text>
+        <Text style={styles.body} accessibilityLabel={t('records.summary')}>{record.summary}</Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('records.fhirResource')}</Text>
-        <Text style={styles.code}>{record.fhirPreview}</Text>
+        <Text style={styles.sectionTitle} accessibilityLabel={t('records.fhirResource')}>{t('records.fhirResource')}</Text>
+        <Text style={styles.code} accessibilityLabel={`${t('records.fhirResource')}: ${record.fhirPreview}`}>{record.fhirPreview}</Text>
       </View>
     </ScrollView>
   );

@@ -65,6 +65,6 @@ public final class PhrConditionRoutes {
                 "status", "active",
                 "onsetDate", "2018-03-01"
             )
-        )).then(conditions -> PhrRouteSupport.jsonResponse(200, conditions, context.correlationId()));
+        )).then(conditions -> PhrRouteSupport.jsonResponseWithCorrelation(200, conditions, context.correlationId()));
     }
 }

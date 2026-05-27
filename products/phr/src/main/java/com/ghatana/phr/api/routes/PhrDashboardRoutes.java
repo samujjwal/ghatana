@@ -116,6 +116,6 @@ public final class PhrDashboardRoutes {
         // Freshness timestamp
         dashboard.put("generatedAt", Instant.now().toString());
 
-        return PhrRouteSupport.jsonResponse(200, dashboard, context.correlationId());
+        return PhrRouteSupport.jsonResponseWithCorrelation(200, dashboard, context.correlationId());
     }
 }

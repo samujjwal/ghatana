@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { Card, CardContent, CardHeader, Badge } from '@ghatana/design-system';
 import { fetchImmunizations } from '../api/phrApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
+import { logError } from '../utils/safeLogger';
 import type { ImmunizationSummary } from '../types';
 
 export function ImmunizationsPage(): React.ReactElement {
@@ -23,9 +24,9 @@ export function ImmunizationsPage(): React.ReactElement {
       .finally(() => setLoading(false));
   }, [session]);
 
-  if (loading) return <div className="loading">Loading immunizations...</div>;
-  if (error) return <div className="error">Error: {error}</div>;
-  if (!immunizations.length) return <div className="empty">No immunizations recorded</div>;
+  if (loading) return <div className="loading" role="status" aria-live="polite">Loading immunizations...</div>;
+  if (error) return <div className="error" role="alert">Error: {error}</div>;
+  if (!immunizations.length) return <div className="empty" role="status">No immunizations recorded</div>;
 
   // Group by status
   const complete = immunizations.filter((imm) => imm.status === 'complete');
@@ -55,20 +56,23 @@ export function ImmunizationsPage(): React.ReactElement {
             {complete.length > 0 && (
               <>
                 <h3>Complete</h3>
-                <ul className="stack gap-sm">
+                <ul className="stack gap-sm" role="list">
                   {complete.map((imm) => {
                     const retention = getRetentionStatus(imm);
                     return (
-                      <li key={imm.id} className="immunization-entry">
+                      <li key={imm.id} className="immunization-entry" role="listitem">
                         <strong>{imm.vaccine}</strong>
-                        <span className={`badge badge--${retention}`}>
+                        <Badge 
+                          variant={retention === 'expired' ? 'destructive' : retention === 'expiring' ? 'secondary' : 'default'}
+                          aria-label={`Retention status: ${retention}`}
+                        >
                           {retention === 'current' && 'Current'}
                           {retention === 'valid' && 'Valid'}
                           {retention === 'expiring' && 'Expiring Soon'}
                           {retention === 'expired' && 'Expired'}
                           {retention === 'unknown' && 'Unknown'}
-                        </span>
-                        <time dateTime={imm.occurrenceDate}>{new Date(imm.occurrenceDate).toLocaleDateString()}</time>
+                        </Badge>
+                        <time dateTime={imm.occurrenceDate} aria-label={`Administered date: ${new Date(imm.occurrenceDate).toLocaleDateString()}`}>{new Date(imm.occurrenceDate).toLocaleDateString()}</time>
                         {imm.lotNumber != null && <span className="muted">Lot: {imm.lotNumber}</span>}
                         {imm.cvxCode != null && <span className="muted">CVX: {imm.cvxCode}</span>}
                       </li>
@@ -82,11 +86,11 @@ export function ImmunizationsPage(): React.ReactElement {
             {due.length > 0 && (
               <>
                 <h3>Due</h3>
-                <ul className="stack gap-sm">
+                <ul className="stack gap-sm" role="list">
                   {due.map((imm) => (
-                    <li key={imm.id} className="immunization-entry">
+                    <li key={imm.id} className="immunization-entry" role="listitem">
                       <strong>{imm.vaccine}</strong>
-                      <span className="badge badge--due">Due</span>
+                      <Badge variant="destructive" aria-label="Status: Due">Due</Badge>
                       {imm.lotNumber != null && <span className="muted">Last Lot: {imm.lotNumber}</span>}
                       {imm.cvxCode != null && <span className="muted">CVX: {imm.cvxCode}</span>}
                     </li>
@@ -99,12 +103,12 @@ export function ImmunizationsPage(): React.ReactElement {
             {other.length > 0 && (
               <>
                 <h3>Other</h3>
-                <ul className="stack gap-sm">
+                <ul className="stack gap-sm" role="list">
                   {other.map((imm) => (
-                    <li key={imm.id} className="immunization-entry">
+                    <li key={imm.id} className="immunization-entry" role="listitem">
                       <strong>{imm.vaccine}</strong>
-                      {imm.status && <span className="badge badge--other">{imm.status}</span>}
-                      <time dateTime={imm.occurrenceDate}>{new Date(imm.occurrenceDate).toLocaleDateString()}</time>
+                      {imm.status && <Badge variant="secondary" aria-label={`Status: ${imm.status}`}>{imm.status}</Badge>}
+                      <time dateTime={imm.occurrenceDate} aria-label={`Administered date: ${new Date(imm.occurrenceDate).toLocaleDateString()}`}>{new Date(imm.occurrenceDate).toLocaleDateString()}</time>
                       {imm.lotNumber != null && <span className="muted">Lot: {imm.lotNumber}</span>}
                     </li>
                   ))}

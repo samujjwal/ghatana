@@ -1,0 +1,43 @@
+{
+  "generatedAt": "2026-05-27T19:53:54.129Z",
+  "pass": true,
+  "evidenceRun": {
+    "generatedBy": "scripts/check-data-cloud-operations-readiness.mjs",
+    "source": "scripts/check-data-cloud-operations-readiness.mjs",
+    "command": "pnpm check:data-cloud-operations-readiness",
+    "commit": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05"
+  },
+  "summary": {
+    "requiredFileCount": 15,
+    "presentFileCount": 15,
+    "readinessAreaCount": 7,
+    "violationCount": 0
+  },
+  "readinessAreas": [
+    "runtime truth",
+    "health checks",
+    "backup/restore drill",
+    "SLO budget",
+    "cost budget",
+    "alerting",
+    "deployment manifests and Helm/k8s render inputs"
+  ],
+  "presentFiles": [
+    "products/data-cloud/planes/operations/config/src/main/java/com/ghatana/datacloud/config/RuntimeTruthService.java",
+    "products/data-cloud/planes/operations/config/src/main/java/com/ghatana/datacloud/config/PlaneHealthChecker.java",
+    "products/data-cloud/planes/operations/config/src/main/java/com/ghatana/datacloud/config/BackupRestoreService.java",
+    "products/data-cloud/planes/operations/config/src/test/java/com/ghatana/datacloud/config/RuntimeTruthServiceTest.java",
+    "products/data-cloud/planes/operations/config/src/test/java/com/ghatana/datacloud/config/PlaneHealthCheckerTest.java",
+    "products/data-cloud/planes/operations/config/src/test/java/com/ghatana/datacloud/config/BackupRestoreServiceTest.java",
+    "products/data-cloud/docs/operations/README.md",
+    "products/data-cloud/docs/operations/RUNBOOK.md",
+    "products/data-cloud/docs/operations/PRODUCTION_PROFILE_CHECKLIST.md",
+    "products/data-cloud/deploy/helm/data-cloud/Chart.yaml",
+    "products/data-cloud/deploy/k8s/deployment.yaml",
+    "release-evidence/backup/backup-drill-report.json",
+    ".kernel/evidence/product-slo-budgets.json",
+    ".kernel/evidence/product-cost-budgets.json",
+    ".kernel/evidence/data-cloud-release-runtime-profile.json"
+  ],
+  "violations": []
+}

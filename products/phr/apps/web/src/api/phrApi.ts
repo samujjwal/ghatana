@@ -11,6 +11,7 @@ import type {
   ConsentRevokeResult,
   DashboardData,
   DependentEntry,
+  DocumentDetail,
   DocumentSummary,
   DocumentUploadResult,
   EmergencyAccessEvent,
@@ -35,32 +36,34 @@ import type {
 } from '../types';
 import { t } from '../i18n/phrI18n';
 
-// â”€â”€â”€ Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Config ---
 
 export const API_BASE_URL: string = import.meta.env.VITE_PHR_API_URL ?? 'http://localhost:8080';
-const USE_MOCK: boolean = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+// A-009: Mock data only allowed in development/test environments
+const USE_MOCK: boolean = import.meta.env.MODE === 'development' && import.meta.env.VITE_USE_MOCK_DATA === 'true';
 
-// â”€â”€â”€ Error type â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Error type ---
 
 export class PhrApiError extends Error {
   constructor(
     message: string,
     public readonly statusCode: number,
     public readonly resourceType?: string,
+    public readonly correlationId?: string,
   ) {
     super(message);
     this.name = 'PhrApiError';
   }
 }
 
-// â”€â”€â”€ Correlation ID helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Correlation ID helper ---
 
 /** Returns a new RFC 4122 v4 UUID to be sent as the X-Correlation-ID header. */
 function newCorrelationId(): string {
   return crypto.randomUUID();
 }
 
-// â”€â”€â”€ Shared FHIR sub-schemas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Shared FHIR sub-schemas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const FhirCodingSchema = z.object({
   system: z.string().optional(),
@@ -80,7 +83,7 @@ const FhirBundleSchema = z.object({
   entry: z.array(FhirBundleEntrySchema).optional(),
 });
 
-// â”€â”€â”€ Per-resource FHIR R4 schemas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Per-resource FHIR R4 schemas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const FhirPatientSchema = z.object({
   resourceType: z.literal('Patient'),
@@ -158,7 +161,7 @@ const FhirAppointmentSchema = z.object({
   comment: z.string().optional(),
 }).passthrough();
 
-// â”€â”€â”€ Mock data validation schema (used when USE_MOCK=true) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Mock data validation schema (used when USE_MOCK=true) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const dashboardSchema = z.object({
   patient: z.object({
@@ -207,7 +210,7 @@ const dashboardSchema = z.object({
   })),
 });
 
-// â”€â”€â”€ FHIR â†’ UI type transformations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- FHIR â†’ UI type transformations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function fhirPatientToProfile(raw: z.infer<typeof FhirPatientSchema>): PatientProfile {
   const firstName = raw.name?.[0]?.given?.join(' ') ?? '';
@@ -300,14 +303,97 @@ function fhirAppointmentToSummary(raw: z.infer<typeof FhirAppointmentSchema>): A
   return { id: raw.id, provider, specialty, startsAt: raw.start ?? '', location };
 }
 
-// â”€â”€â”€ HTTP helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- HTTP helpers ---
 
 type SessionContext = {
   tenantId?: string;
   principalId?: string;
   role?: string;
+  persona?: string;
+  tier?: string;
   correlationId?: string;
+  idempotencyKey?: string;
 };
+
+/**
+ * A-002: Centralized header builder for PHR API requests.
+ * Ensures consistent tenant/principal/role/persona/tier/correlation/idempotency headers.
+ */
+export function buildPhrHeaders(context: SessionContext = {}): Record<string, string> {
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    'X-Correlation-ID': context.correlationId ?? newCorrelationId(),
+  };
+
+  if (context.tenantId) {
+    headers['X-Tenant-Id'] = context.tenantId;
+  }
+  if (context.principalId) {
+    headers['X-Principal-Id'] = context.principalId;
+  }
+  if (context.role) {
+    headers['X-Role'] = context.role;
+  }
+  if (context.persona) {
+    headers['X-Persona'] = context.persona;
+  }
+  if (context.tier) {
+    headers['X-Tier'] = context.tier;
+  }
+  if (context.idempotencyKey) {
+    headers['X-Idempotency-Key'] = context.idempotencyKey;
+  }
+
+  return headers;
+}
+
+/**
+ * A-003: Safe JSON fetch with schema validation.
+ * Every PHI response validates against schema to ensure type safety.
+ */
+export async function safeFetchJson<T>(
+  path: string,
+  schema: z.ZodType<T>,
+  options: {
+    method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+    body?: BodyInit | null;
+    context?: SessionContext;
+    accept?: string;
+    contentType?: string;
+  } = {},
+): Promise<T> {
+  const {
+    method = 'GET',
+    body = null,
+    context = {},
+    accept = 'application/json',
+    contentType = 'application/json',
+  } = options;
+
+  const headers = buildPhrHeaders(context);
+  if (contentType && body !== null) {
+    headers['Content-Type'] = contentType;
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    headers,
+    body,
+  });
+
+  if (!response.ok) {
+    const correlationId = headers['X-Correlation-ID'];
+    throw new PhrApiError(
+      `PHR request failed: ${method} ${path} returned ${response.status}`,
+      response.status,
+      undefined,
+      correlationId,
+    );
+  }
+
+  const data = await response.json() as unknown;
+  return schema.parse(data);
+}
 
 /**
  * PHR-P1-004: Central request client with consistent authenticated context.
@@ -381,7 +467,7 @@ function extractBundleEntries(bundle: z.infer<typeof FhirBundleSchema>): Record<
   return (bundle.entry ?? []).map(e => e.resource);
 }
 
-// â”€â”€â”€ Public API functions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Public API functions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function fetchDashboardData(context?: SessionContext): Promise<DashboardData> {
   if (USE_MOCK) {
@@ -464,7 +550,7 @@ export async function fetchReleaseReadiness(options: {
   return response.json() as Promise<PhrReleaseReadiness>;
 }
 
-// â”€â”€â”€ Audit events API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Audit events API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const AuditEventSchema = z.object({
   id: z.string(),
@@ -484,6 +570,90 @@ const AuditEventsPageSchema = z.object({
   page: z.number(),
   pageSize: z.number(),
 });
+
+// A-004: Add Zod schemas for all newly added DTOs
+const ConditionSummarySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  display: z.string(),
+  code: z.string(),
+  status: z.enum(['active', 'resolved', 'chronic']),
+  onsetDate: z.string(),
+}).passthrough();
+
+const ObservationSummarySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  value: z.string(),
+  unit: z.string(),
+  status: z.enum(['normal', 'attention', 'critical']),
+  effectiveDate: z.string(),
+  recordedAt: z.string(),
+  loincCode: z.string().optional(),
+}).passthrough();
+
+const ImmunizationSummarySchema = z.object({
+  id: z.string(),
+  vaccine: z.string(),
+  date: z.string(),
+  occurrenceDate: z.string(),
+  status: z.enum(['completed', 'not-done', 'entered-in-error']),
+  lotNumber: z.string().optional(),
+  cvxCode: z.string().optional(),
+}).passthrough();
+
+const DocumentSummarySchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  contentType: z.string(),
+  uploadedAt: z.string(),
+  status: z.enum(['pending', 'processing', 'ready', 'failed']).optional(),
+  ocrStatus: z.enum(['pending', 'processing', 'ready', 'failed']).optional(),
+}).passthrough();
+
+const MedicationSummarySchema = z.object({
+  id: z.string(),
+  medication: z.string(),
+  dosage: z.string(),
+  schedule: z.string(),
+  adherence: z.number(),
+}).passthrough();
+
+const AppointmentSummarySchema = z.object({
+  id: z.string(),
+  provider: z.string(),
+  specialty: z.string(),
+  startsAt: z.string(),
+  location: z.string(),
+}).passthrough();
+
+const NotificationSummarySchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  message: z.string(),
+  createdAt: z.string(),
+  read: z.boolean(),
+}).passthrough();
+
+const DependentEntrySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  relationship: z.string(),
+  status: z.enum(['active', 'inactive']),
+}).passthrough();
+
+const FchvPatientEntrySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  community: z.string(),
+  lastVisit: z.string(),
+}).passthrough();
+
+const PatientRosterEntrySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  status: z.enum(['active', 'inactive']),
+}).passthrough();
 
 export async function fetchAuditEvents(options: {
   patientId?: string;
@@ -511,7 +681,7 @@ export async function fetchAuditEvents(options: {
   });
 }
 
-// â”€â”€â”€ Consent management API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Consent management API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const ConsentGrantRequestSchema = z.object({
   patientId: z.string().min(1),
@@ -526,9 +696,20 @@ const ConsentGrantRequestSchema = z.object({
   expiresAt: z.string().min(1),
 }).strict();
 
+// A-005: Backend-aligned consent grant schema with exact field names
+const BackendConsentGrantRequestSchema = z.object({
+  patientId: z.string().min(1),
+  recipientId: z.string().min(1),
+  scope: z.object({
+    resourceTypes: z.array(z.string()).min(1),
+    actions: z.array(z.string()).optional(),
+  }),
+  expiresAt: z.string().min(1),
+}).strict();
+
 export async function createConsentGrant(
   request: ConsentGrantRequest,
-  context: { tenantId: string; principalId: string; role: string },
+  context: { tenantId: string; principalId: string; role: string; idempotencyKey?: string },
 ): Promise<ConsentGrant> {
   const validated = ConsentGrantRequestSchema.parse(request);
   const raw = await phrFetch('/consents/grants', {
@@ -557,7 +738,7 @@ export async function revokeConsentGrant(
   }) as Promise<ConsentRevokeResult>;
 }
 
-// â”€â”€â”€ Appointment API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Appointment API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const AppointmentRequestSchema = z.object({
   specialty: z.string().min(1, 'Specialty is required'),
@@ -567,7 +748,7 @@ const AppointmentRequestSchema = z.object({
 
 export async function createAppointmentRequest(
   request: AppointmentRequest,
-  context: { tenantId: string; principalId: string; role: string },
+  context: { tenantId: string; principalId: string; role: string; idempotencyKey?: string },
 ): Promise<AppointmentCreateResult> {
   const validated = AppointmentRequestSchema.parse(request);
   return phrFetch('/appointments', {
@@ -577,7 +758,7 @@ export async function createAppointmentRequest(
   }) as Promise<AppointmentCreateResult>;
 }
 
-// â”€â”€â”€ Emergency access API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Emergency access API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const EmergencyAccessRequestSchema = z.object({
   patientId: z.string().min(1, 'Patient ID is required'),
@@ -587,7 +768,7 @@ const EmergencyAccessRequestSchema = z.object({
 
 export async function requestEmergencyAccess(
   request: EmergencyAccessRequest,
-  context: { tenantId: string; principalId: string; role: string },
+  context: { tenantId: string; principalId: string; role: string; idempotencyKey?: string },
 ): Promise<EmergencyAccessEvent> {
   const validated = EmergencyAccessRequestSchema.parse(request);
   return phrFetch('/emergency/access', {
@@ -608,7 +789,7 @@ export async function reviewEmergencyAccess(
   }) as Promise<EmergencyAccessEvent>;
 }
 
-// â”€â”€â”€ Auth session API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Auth session API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const PhrSessionSchema = z.object({
   principalId: z.string(),
@@ -640,7 +821,7 @@ export async function logoutSession(context: {
   });
 }
 
-// â”€â”€â”€ Patient profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Patient profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function fetchPatientProfile(context?: SessionContext): Promise<PatientProfileExtended> {
   return phrFetch('/profile', { context }) as Promise<PatientProfileExtended>;
@@ -648,7 +829,7 @@ export async function fetchPatientProfile(context?: SessionContext): Promise<Pat
 
 export async function updatePatientProfile(
   update: PatientProfileUpdateRequest,
-  context: { tenantId: string; principalId: string; correlationId?: string },
+  context: { tenantId: string; principalId: string; correlationId?: string; idempotencyKey?: string },
 ): Promise<PatientProfileExtended> {
   return phrFetch('/profile', {
     method: 'PUT',
@@ -657,7 +838,7 @@ export async function updatePatientProfile(
   }) as Promise<PatientProfileExtended>;
 }
 
-// â”€â”€â”€ Timeline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Timeline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function fetchTimeline(
   principalId: string,
@@ -713,7 +894,7 @@ export async function fetchTimeline(
   }));
 }
 
-// â”€â”€â”€ Conditions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Conditions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function fetchConditions(principalId: string, context?: SessionContext): Promise<ConditionSummary[]> {
   if (USE_MOCK) {
@@ -750,7 +931,23 @@ export async function fetchConditions(principalId: string, context?: SessionCont
   return body.items;
 }
 
-// â”€â”€â”€ Observations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export async function fetchConditionDetail(conditionId: string, principalId: string, context?: SessionContext): Promise<ConditionSummary> {
+  if (USE_MOCK) {
+    // Mock data for development
+    return {
+      id: conditionId,
+      name: 'Hypertension',
+      display: 'Hypertension',
+      code: 'I10',
+      status: 'active',
+      onsetDate: '2023-01-15',
+    };
+  }
+
+  return phrFetch(`/conditions/${encodeURIComponent(conditionId)}?patientId=${encodeURIComponent(principalId)}`, { context }) as unknown as ConditionSummary;
+}
+
+// --- Observations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function fetchObservations(principalId: string, context?: SessionContext): Promise<ObservationSummary[]> {
   if (USE_MOCK) {
@@ -853,7 +1050,25 @@ export async function fetchObservations(principalId: string, context?: SessionCo
   return body.items;
 }
 
-// â”€â”€â”€ Immunizations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export async function fetchObservationDetail(observationId: string, principalId: string, context?: SessionContext): Promise<ObservationSummary> {
+  if (USE_MOCK) {
+    // Mock data for development
+    return {
+      id: observationId,
+      name: 'Blood Pressure Systolic',
+      value: '120',
+      unit: 'mmHg',
+      status: 'normal',
+      effectiveDate: '2024-01-15',
+      recordedAt: '2024-01-15T10:00:00Z',
+      loincCode: '8480-6',
+    };
+  }
+
+  return phrFetch(`/clinical/labs/observations/${encodeURIComponent(observationId)}?patientId=${encodeURIComponent(principalId)}`, { context }) as unknown as ObservationSummary;
+}
+
+// --- Immunizations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function fetchImmunizations(principalId: string, context?: SessionContext): Promise<ImmunizationSummary[]> {
   if (USE_MOCK) {
@@ -902,7 +1117,7 @@ export async function fetchImmunizations(principalId: string, context?: SessionC
   return body.items;
 }
 
-// â”€â”€â”€ Documents â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Documents â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function fetchDocuments(principalId: string, context?: SessionContext): Promise<DocumentSummary[]> {
   if (USE_MOCK) {
@@ -947,21 +1162,63 @@ export async function fetchDocuments(principalId: string, context?: SessionConte
   return body.items;
 }
 
+export async function fetchDocumentDetail(documentId: string, principalId: string, context?: SessionContext): Promise<DocumentDetail> {
+  if (USE_MOCK) {
+    // Mock data for development
+    return {
+      id: documentId,
+      title: 'Lab Results - Blood Work',
+      category: 'lab',
+      mimeType: 'application/pdf',
+      contentType: 'application/pdf',
+      uploadedAt: '2024-01-15T10:00:00Z',
+      ocrStatus: 'ready',
+      sizeKb: 1024,
+      description: 'Complete blood work results including CBC, lipid panel, and metabolic panel.',
+      uploadedBy: 'Dr. Sharma',
+      versions: [
+        {
+          versionId: 'v1',
+          versionNumber: 1,
+          createdAt: '2024-01-15T10:00:00Z',
+          createdBy: 'Dr. Sharma',
+        },
+      ],
+      auditLog: [
+        {
+          id: 'audit-1',
+          action: 'uploaded',
+          timestamp: '2024-01-15T10:00:00Z',
+          performedBy: 'Dr. Sharma',
+        },
+      ],
+    };
+  }
+
+  return phrFetch(`/documents/${encodeURIComponent(documentId)}?patientId=${encodeURIComponent(principalId)}`, { context }) as unknown as DocumentDetail;
+}
+
+/**
+ * A-006: Secure document download with audit trail.
+ * Returns a download URL with proper audit logging instead of direct blob.
+ */
 export async function downloadDocument(
   documentId: string,
   patientId: string,
   context?: SessionContext,
-): Promise<Blob> {
+): Promise<{ downloadUrl: string; expiresAt: string }> {
   if (USE_MOCK) {
-    // Return a mock blob for development
-    return new Blob(['Mock document content'], { type: 'application/pdf' });
+    return {
+      downloadUrl: `blob:${documentId}`,
+      expiresAt: new Date(Date.now() + 3600000).toISOString(),
+    };
   }
 
   const response = await phrFetch(`/documents/${encodeURIComponent(documentId)}/download?patientId=${encodeURIComponent(patientId)}`, {
+    method: 'POST',
     context,
-    headers: { Accept: 'application/octet-stream' },
-  });
-  return response as Blob;
+  }) as { downloadUrl: string; expiresAt: string };
+  return response;
 }
 
 export async function uploadDocument(
@@ -991,7 +1248,7 @@ export async function uploadDocument(
   }) as Promise<{ id: string; status: string; ocrStatus: string }>;
 }
 
-// â”€â”€â”€ Medications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Medications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function fetchMedications(principalId: string, context?: SessionContext): Promise<MedicationSummary[]> {
   if (USE_MOCK) {
@@ -1063,7 +1320,7 @@ export async function fetchMedicationDetail(
   };
 }
 
-// â”€â”€â”€ Appointments â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Appointments â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function fetchAppointments(principalId: string, context?: SessionContext): Promise<AppointmentSummary[]> {
   if (USE_MOCK) {
@@ -1189,7 +1446,7 @@ export async function rescheduleAppointment(
   }) as Promise<{ id: string; status: string }>;
 }
 
-// â”€â”€â”€ Records â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Records â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function fetchRecords(
   patientId: string,
@@ -1365,14 +1622,14 @@ export async function rejectOcrDocument(
   }) as Promise<{ documentId: string; rejected: boolean }>;
 }
 
-// â”€â”€â”€ Notifications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Notifications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function fetchNotifications(principalId: string, context?: SessionContext): Promise<NotificationSummary[]> {
   const body = await phrFetch(`/notifications?principalId=${encodeURIComponent(principalId)}`, { context }) as { items: NotificationSummary[] };
   return body.items;
 }
 
-// â”€â”€â”€ Provider â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Provider â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function fetchProviderPatients(
   context: { tenantId: string; principalId: string; role: string },
@@ -1381,14 +1638,14 @@ export async function fetchProviderPatients(
   return body.items;
 }
 
-// â”€â”€â”€ Caregiver â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Caregiver â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function fetchCaregiverDependents(context?: SessionContext): Promise<DependentEntry[]> {
   const body = await phrFetch('/caregiver/dependents', { context }) as { items: DependentEntry[] };
   return body.items;
 }
 
-// â”€â”€â”€ FCHV â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- FCHV â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function fetchFchvDashboard(context?: SessionContext): Promise<FchvPatientEntry[]> {
   const body = await phrFetch('/fchv/dashboard', { context }) as { items: FchvPatientEntry[] };

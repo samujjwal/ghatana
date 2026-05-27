@@ -9,6 +9,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { DocumentsPage } from './pages/DocumentsPage';
 import { DocumentUploadPage } from './pages/DocumentUploadPage';
 import { EmergencyAccessPage } from './pages/EmergencyAccessPage';
+import { EmergencyReviewsPage } from './pages/EmergencyReviewsPage';
 import { FchvDashboardPage } from './pages/FchvDashboardPage';
 import { FeatureFlagPage } from './pages/FeatureFlagPage';
 import { ForbiddenPage } from './pages/ForbiddenPage';
@@ -40,7 +41,7 @@ const routeElements: Record<PhrRoutePath, React.ReactElement> = {
   '/labs': <LabsPage />,
   '/medications': <MedicationsPage />,
   '/emergency': <EmergencyAccessPage />,
-  '/emergency/reviews': <EmergencyAccessPage />,
+  '/emergency/reviews': <EmergencyReviewsPage />,
   '/release-readiness': <ReleaseCockpitPage />,
   '/audit': <AuditPage />,
   '/settings': <SettingsPage />,
@@ -60,6 +61,7 @@ const routeElements: Record<PhrRoutePath, React.ReactElement> = {
   '/provider/patients': <ProviderPatientsPage />,
   '/caregiver/dependents': <CaregiverDependentsPage />,
   '/fchv/dashboard': <FchvDashboardPage />,
+  '/mobile/dashboard': <DashboardPage />,
 };
 
 export function attachPhrRouteElement(route: PhrRouteContract): PhrRouteManifestEntry {
@@ -68,9 +70,14 @@ export function attachPhrRouteElement(route: PhrRouteContract): PhrRouteManifest
     throw new Error(`PHR route element is missing for path ${route.path}`);
   }
 
+  // R-010: Enforce feature visibility centrally
   // Feature-flagged routes render a placeholder instead of the actual page
+  // Blocked routes render forbidden page
+  // Hidden routes are excluded from navigation but still accessible
   const finalElement = route.featureFlag
     ? <FeatureFlagPage routePath={route.path} />
+    : route.stability === 'blocked'
+    ? <ForbiddenPage />
     : element;
 
   return {

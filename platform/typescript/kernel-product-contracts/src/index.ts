@@ -1,5 +1,162 @@
 import { isProductUnit as isProductUnitContract } from "./product-unit/ProductUnit.js";
 
+// Route contracts (K-001)
+export type {
+  ProductRoute,
+  ProductRouteContract,
+  RouteStability,
+  RouteGroup,
+  RouteAction,
+  RouteCard,
+  RouteMetadata,
+} from "./route/ProductRouteContract.js";
+export {
+  RouteStabilityValues,
+  RouteGroupValues,
+  isRouteStability,
+  isRouteGroup,
+  validateProductRouteContract,
+} from "./route/ProductRouteContract.js";
+
+// Route contract generator (K-002)
+export type {
+  GeneratedTSManifest,
+  GeneratedBackendEntitlement,
+  GeneratedRouteDocs,
+} from "./route/RouteContractGenerator.js";
+export {
+  RouteContractGenerator,
+  createRouteContractGenerator,
+} from "./route/RouteContractGenerator.js";
+
+// Route lifecycle mode (K-005)
+export type {
+  RouteLifecycleMode,
+  DeprecatedRouteState,
+  RouteLifecycleConfig,
+} from "./route/RouteLifecycleMode.js";
+export {
+  createFixForwardLifecycleConfig,
+  createLegacyCompatibleLifecycleConfig,
+  validateRouteLifecycleConfig,
+  isRouteAllowedInLifecycle,
+} from "./route/RouteLifecycleMode.js";
+
+// Policy contracts (K-003)
+export type {
+  PolicyDecision,
+  PolicyReasonCode,
+  PolicyRequirement,
+  ConsentPolicy,
+  TreatmentRelationshipPolicy,
+  FacilityScopePolicy,
+  EmergencyPolicy,
+  FchvCommunityPolicy,
+  ProductPolicy,
+  ProductPolicyEvaluationRequest,
+  ProductPolicyEvaluationResult,
+} from "./policy/ProductPolicyContract.js";
+export {
+  createPolicyDecision,
+  createDefaultPolicyRequirements,
+  isPolicyDecisionAllowed,
+  isPolicyDecisionDenied,
+} from "./policy/ProductPolicyContract.js";
+
+// Mobile PHI policy contracts (K-004)
+export type {
+  PhiStoragePolicy,
+  PhiCachePolicy,
+  PhiFieldPolicy,
+  MobilePhiPolicy,
+  MobilePhiPolicyCheckRequest,
+  MobilePhiPolicyCheckResult,
+} from "./policy/MobilePhiPolicyContract.js";
+export {
+  createDefaultPhiStoragePolicy,
+  createDefaultPhiCachePolicy,
+  validatePhiStoragePolicy,
+  validatePhiCachePolicy,
+} from "./policy/MobilePhiPolicyContract.js";
+
+// Correlation contracts (K-006)
+export type {
+  CorrelationId,
+  CorrelationContext,
+  CorrelationHeaders,
+} from "./correlation/CorrelationContract.js";
+export {
+  generateCorrelationId,
+  createCorrelationContext,
+  correlationContextToHeaders,
+  headersToCorrelationContext,
+  isValidCorrelationId,
+} from "./correlation/CorrelationContract.js";
+
+// Action contracts (K-007)
+export type {
+  HttpMethod,
+  ActionVisibility,
+  ActionConfirmation,
+  ProductAction,
+  ProductActionContract,
+} from "./action/ProductActionContract.js";
+export {
+  createAction,
+  validateProductAction,
+  isActionIdempotent,
+  isActionDangerous,
+  isActionPhiAccess,
+} from "./action/ProductActionContract.js";
+
+// UI state contracts (K-008)
+export type {
+  UIStateType,
+  UIStateRequirement,
+  ProductUIState,
+  ProductUIStateContract,
+} from "./ui/ProductUIStateContract.js";
+export {
+  createUIStateRequirement,
+  createProductUIState,
+  validateProductUIState,
+  getStateRequirement,
+} from "./ui/ProductUIStateContract.js";
+
+// i18n/a11y contracts (K-009)
+export type {
+  I18nKey,
+  I18nEntry,
+  A11yLabel,
+  A11yRequirement,
+  ProductI18nA11yContract,
+} from "./i18n/ProductI18nA11yContract.js";
+export {
+  createI18nEntry,
+  createA11yLabel,
+  createA11yRequirement,
+  validateI18nEntry,
+  validateA11yLabel,
+  hasI18nKey,
+  getI18nEntry,
+} from "./i18n/ProductI18nA11yContract.js";
+
+// Artifact cleanup contracts (K-010)
+export type {
+  CleanupArtifactType,
+  ArtifactCleanupMode,
+  CleanupArtifactMetadata,
+  ArtifactCleanupPolicy,
+  ArtifactCleanupResult,
+} from "./artifact/ArtifactCleanupContract.js";
+export {
+  createArtifactCleanupPolicy,
+  isArtifactStale,
+  isArtifactProtected,
+  shouldDeleteArtifact,
+  createArtifactCleanupResult,
+} from "./artifact/ArtifactCleanupContract.js";
+
 // Existing lifecycle contracts
 export type { ProductLifecyclePhase } from "./lifecycle/ProductLifecyclePhase.js";
 export type {

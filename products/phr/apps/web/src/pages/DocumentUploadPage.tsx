@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react';
-import { Card, CardContent, CardHeader, Input } from '@ghatana/design-system';
+import { Card, CardContent, CardHeader, Input, Button, Select, Progress, TextField } from '@ghatana/design-system';
 import { uploadDocument } from '../api/phrApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
+import { logError } from '../utils/safeLogger';
 
 // File size limit: 10MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -23,6 +24,7 @@ export function DocumentUploadPage(): React.ReactElement {
   const [category, setCategory] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [uploading, setUploading] = useState<boolean>(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -93,10 +95,16 @@ export function DocumentUploadPage(): React.ReactElement {
     }
 
     setUploading(true);
+    setUploadProgress(0);
     setError(null);
     setValidationError(null);
     
     try {
+      // Simulate progress for upload
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + 10, 90));
+      }, 200);
+
       const res = await uploadDocument(
         session.principalId,
         selectedFile,
@@ -111,6 +119,9 @@ export function DocumentUploadPage(): React.ReactElement {
           role: session.role,
         },
       );
+      
+      clearInterval(progressInterval);
+      setUploadProgress(100);
       setResult(`Document uploaded successfully (ID: ${res.id}, OCR Status: ${res.ocrStatus})`);
       setSelectedFile(null);
       setTitle('');
@@ -119,8 +130,10 @@ export function DocumentUploadPage(): React.ReactElement {
       if (inputRef.current) inputRef.current.value = '';
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to upload document');
+      logError('Failed to upload document', undefined, { error: err });
     } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   }
 
@@ -145,22 +158,24 @@ export function DocumentUploadPage(): React.ReactElement {
 
             <div>
               <label htmlFor="doc-title" className="form-label">Title *</label>
-              <Input
+              <TextField
                 id="doc-title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Document title"
                 maxLength={200}
                 required
+                aria-label="Document title"
               />
             </div>
 
             <div>
               <label htmlFor="doc-category" className="form-label">Category</label>
-              <select
+              <Select
                 id="doc-category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
+                aria-label="Document category"
               >
                 <option value="">Select category (optional)</option>
                 <option value="lab-results">Lab Results</option>
@@ -168,19 +183,24 @@ export function DocumentUploadPage(): React.ReactElement {
                 <option value="discharge-summary">Discharge Summary</option>
                 <option value="insurance">Insurance</option>
                 <option value="other">Other</option>
-              </select>
+              </Select>
             </div>
 
             <div>
               <label htmlFor="doc-description" className="form-label">Description</label>
-              <Input
+              <TextField
                 id="doc-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Optional description"
                 maxLength={500}
+                aria-label="Document description"
               />
             </div>
+
+            {uploading && (
+              <Progress value={uploadProgress} aria-label="Upload progress" />
+            )}
 
             {validationError != null && (
               <p id="validation-error" role="alert" className="error">{validationError}</p>
@@ -192,13 +212,13 @@ export function DocumentUploadPage(): React.ReactElement {
               <p role="status" className="success">{result}</p>
             )}
             
-            <button 
+            <Button 
               type="submit" 
               disabled={selectedFile == null || uploading || !title.trim()} 
-              className="btn btn--primary"
+              aria-busy={uploading}
             >
               {uploading ? 'Uploading...' : 'Upload Document'}
-            </button>
+            </Button>
           </form>
         </CardContent>
       </Card>

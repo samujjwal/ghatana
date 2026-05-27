@@ -1,0 +1,19 @@
+{
+  "productId": "digital-marketing",
+  "evidenceType": "kernel-bridge-release-gates",
+  "generatedAt": "2026-05-27T19:58:28.453Z",
+  "sourceCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
+  "targetCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
+  "targetEnvironment": "staging",
+  "validationStatus": "validated",
+  "pass": true,
+  "evidenceRun": {
+    "generatedBy": "scripts/check-product-family-asset-registry.mjs",
+    "command": "node scripts/check-product-family-asset-registry.mjs",
+    "source": "scripts/check-product-family-asset-registry.mjs",
+    "commit": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
+    "sourceCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
+    "targetCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
+    "targetEnvironment": "staging"
+  }
+}

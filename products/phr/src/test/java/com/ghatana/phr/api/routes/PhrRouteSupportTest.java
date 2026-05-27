@@ -126,7 +126,7 @@ class PhrRouteSupportTest {
     @DisplayName("hasClinicalRole returns true for clinician and admin")
     void hasClinicalRoleForClinicianAndAdmin() {
         for (String role : new String[]{"admin", "clinician"}) {
-            PhrRouteSupport.PhrRequestContext ctx = new PhrRouteSupport.PhrRequestContext("t1", "p1", role, "corr");
+            PhrRouteSupport.PhrRequestContext ctx = new PhrRouteSupport.PhrRequestContext("t1", "p1", role, "corr", role, "core", null);
             assertThat(PhrRouteSupport.hasClinicalRole(ctx)).isTrue();
         }
     }
@@ -135,7 +135,7 @@ class PhrRouteSupportTest {
     @DisplayName("hasClinicalRole returns false for patient and caregiver")
     void hasClinicalRoleReturnsFalseForNonClinical() {
         for (String role : new String[]{"patient", "caregiver"}) {
-            PhrRouteSupport.PhrRequestContext ctx = new PhrRouteSupport.PhrRequestContext("t1", "p1", role, "corr");
+            PhrRouteSupport.PhrRequestContext ctx = new PhrRouteSupport.PhrRequestContext("t1", "p1", role, "corr", role, "core", null);
             assertThat(PhrRouteSupport.hasClinicalRole(ctx)).isFalse();
         }
     }
@@ -143,7 +143,7 @@ class PhrRouteSupportTest {
     @Test
     @DisplayName("canAccessPatientRecordForRole — patient may only access own record")
     void patientCanOnlyAccessOwnRecord() {
-        PhrRouteSupport.PhrRequestContext ctx = new PhrRouteSupport.PhrRequestContext("t1", "patient-42", "patient", "corr");
+        PhrRouteSupport.PhrRequestContext ctx = new PhrRouteSupport.PhrRequestContext("t1", "patient-42", "patient", "corr", "patient", "core", null);
         assertThat(PhrRouteSupport.canAccessPatientRecordForRole(ctx, "patient-42")).isTrue();
         assertThat(PhrRouteSupport.canAccessPatientRecordForRole(ctx, "patient-99")).isFalse();
     }
@@ -152,7 +152,7 @@ class PhrRouteSupportTest {
     @DisplayName("canAccessPatientRecordForRole — clinician and admin access any record")
     void clinicianAndAdminAccessAnyRecord() {
         for (String role : new String[]{"clinician", "admin"}) {
-            PhrRouteSupport.PhrRequestContext ctx = new PhrRouteSupport.PhrRequestContext("t1", "p1", role, "corr");
+            PhrRouteSupport.PhrRequestContext ctx = new PhrRouteSupport.PhrRequestContext("t1", "p1", role, "corr", role, "core", null);
             assertThat(PhrRouteSupport.canAccessPatientRecordForRole(ctx, "any-patient")).isTrue();
         }
     }

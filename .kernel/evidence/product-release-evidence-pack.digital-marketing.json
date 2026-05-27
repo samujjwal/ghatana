@@ -1,0 +1,55 @@
+{
+  "generatedAt": "2026-05-27T20:45:06.741Z",
+  "productId": "digital-marketing",
+  "status": "passed",
+  "categories": {
+    "build-test": {
+      "refs": [
+        "products/digital-marketing/dm-application/build.gradle.kts",
+        "products/digital-marketing/dm-persistence/build.gradle.kts"
+      ],
+      "missing": [],
+      "status": "passed"
+    },
+    "api-parity": {
+      "refs": [
+        "products/digital-marketing/dm-api/src/main/resources/openapi.json",
+        "products/digital-marketing/lifecycle/gate-packs/contract-test-coverage.yaml"
+      ],
+      "missing": [],
+      "status": "passed"
+    },
+    "tenant-isolation-and-auth": {
+      "refs": [
+        "products/digital-marketing/dm-api/src/main/java/com/ghatana/digitalmarketing/api/security/DmosHttpContextFactory.java",
+        "products/digital-marketing/lifecycle/gate-packs/non-regulated-customer-data-minimization.yaml"
+      ],
+      "missing": [],
+      "status": "passed"
+    },
+    "policy-gates-and-audit": {
+      "refs": [
+        "products/digital-marketing/lifecycle/gate-packs/marketing-consent-boundary.yaml",
+        "products/digital-marketing/lifecycle/gate-packs/bridge-compliance.yaml"
+      ],
+      "missing": [],
+      "status": "passed"
+    },
+    "observability-i18n-a11y": {
+      "refs": [
+        "products/digital-marketing/dm-application/src/main/java/com/ghatana/digitalmarketing/application/metrics/MicrometerDmosMetricsCollector.java",
+        "products/digital-marketing/ui/e2e/accessibility.spec.ts"
+      ],
+      "missing": [],
+      "status": "passed"
+    },
+    "deployment-rollback": {
+      "refs": [
+        "products/digital-marketing/kernel-product.yaml",
+        ".kernel/evidence/digital-marketing/digital-marketing-lifecycle-evidence-pack.json"
+      ],
+      "missing": [],
+      "status": "passed"
+    }
+  }
+}

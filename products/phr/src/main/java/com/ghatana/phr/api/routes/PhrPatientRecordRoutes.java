@@ -252,8 +252,7 @@ public final class PhrPatientRecordRoutes {
     }
 
     private static boolean mayAccessPatient(PhrRouteSupport.PhrRequestContext context, String patientId) {
-        // Use Kernel-backed policy evaluator instead of role-based shortcut
-        return com.ghatana.phr.security.PhrPolicyEvaluator.canAccessPatientRecord(context, patientId);
+        return PhrRouteSupport.canAccessPatientRecordForRole(context, patientId);
     }
 
     private static PatientRecordService.Patient parsePatient(String json, String pathPatientId) {

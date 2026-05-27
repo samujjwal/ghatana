@@ -1,0 +1,145 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PHR Route Contract Schema",
+  "description": "Schema for validating PHR route contract JSON",
+  "type": "object",
+  "required": ["schemaVersion", "product", "roleOrder", "routes"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Schema version in semver format"
+    },
+    "product": {
+      "type": "string",
+      "const": "phr",
+      "description": "Product identifier"
+    },
+    "roleOrder": {
+      "type": "object",
+      "description": "Role ordering for UI display and entitlement evaluation",
+      "properties": {
+        "patient": { "type": "integer", "minimum": 0 },
+        "caregiver": { "type": "integer", "minimum": 0 },
+        "clinician": { "type": "integer", "minimum": 0 },
+        "admin": { "type": "integer", "minimum": 0 },
+        "fchv": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "routes": {
+      "type": "array",
+      "description": "Route definitions",
+      "items": {
+        "type": "object",
+        "required": ["path", "label", "description", "group", "minimumRole", "actions", "cards", "lifecycle"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^/[a-zA-Z0-9\\-/:]+$",
+            "description": "Route path"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Display label"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Route description"
+          },
+          "group": {
+            "type": "string",
+            "enum": ["care", "clinical", "governance", "provider", "caregiver", "fchv"],
+            "description": "Route group for UI organization"
+          },
+          "minimumRole": {
+            "type": "string",
+            "enum": ["patient", "caregiver", "clinician", "admin", "fchv"],
+            "description": "Minimum role required to access this route"
+          },
+          "personas": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["patient", "caregiver", "clinician", "admin", "fchv"]
+            },
+            "description": "Personas that can access this route"
+          },
+          "tiers": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["core", "clinical", "emergency", "plus", "premium"]
+            },
+            "description": "Product tiers that include this route"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9\\-]*$"
+            },
+            "description": "Available actions on this route"
+          },
+          "cards": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9\\-]*$"
+            },
+            "description": "Cards to display on this route"
+          },
+          "lifecycle": {
+            "type": "object",
+            "required": ["introducedAt", "stability"],
+            "properties": {
+              "introducedAt": {
+                "type": "string",
+                "pattern": "^\\d+\\.\\d+\\.\\d+$",
+                "description": "Version when route was introduced"
+              },
+              "stability": {
+                "type": "string",
+                "enum": ["stable", "preview", "blocked", "hidden"],
+                "description": "Route stability status"
+              }
+            },
+            "additionalProperties": false
+          },
+          "featureFlag": {
+            "type": "string",
+            "description": "Feature flag name for conditional visibility"
+          },
+          "hidden": {
+            "type": "boolean",
+            "description": "Whether route is hidden from navigation"
+          },
+          "blocked": {
+            "type": "boolean",
+            "description": "Whether route is blocked from access"
+          },
+          "emergencyAction": {
+            "type": "boolean",
+            "description": "Whether this is an emergency action route"
+          },
+          "apiEndpoint": {
+            "type": "string",
+            "description": "Backend API endpoint for this route"
+          },
+          "policyId": {
+            "type": "string",
+            "description": "Policy ID for access control"
+          },
+          "testId": {
+            "type": "string",
+            "description": "Test ID for route verification"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

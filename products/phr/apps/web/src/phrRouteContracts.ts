@@ -13,22 +13,32 @@ export interface PhrRouteContract extends ProductRouteCapability {
    */
   readonly featureFlag?: boolean;
   /**
-   * Route lifecycle metadata for tracking introduction, deprecation, and removal.
+   * Route stability status - only stable, preview, blocked, or hidden allowed.
+   * No deprecated or removed states per fix-forward policy.
    */
-  readonly lifecycle?: {
-    readonly introducedAt: string; // Version or date when route was introduced
-    readonly stability: 'stable' | 'experimental' | 'deprecated';
-    readonly deprecatedAt?: string; // Version or date when route was deprecated
-    readonly removedAt?: string; // Version or date when route was removed
-    readonly migrationNotes?: string; // Notes for migrating from this route
-  };
+  readonly stability?: 'stable' | 'preview' | 'blocked' | 'hidden';
+  /**
+   * Backend API endpoint for this route.
+   */
+  readonly apiEndpoint?: string;
+  /**
+   * Policy ID for access control.
+   */
+  readonly policyId?: string;
+  /**
+   * Test ID for route verification.
+   */
+  readonly testId?: string;
 }
+
+export type PhrRole = 'patient' | 'caregiver' | 'clinician' | 'admin' | 'fchv';
 
 export const PHR_ROLE_ORDER: Readonly<Record<PhrRole, number>> = {
   patient: 0,
   caregiver: 1,
   clinician: 2,
   admin: 3,
+  fchv: 4,
 };
 
 export const phrRouteAccess = createRouteAccessEvaluator(PHR_ROLE_ORDER);
@@ -48,10 +58,10 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['view-patient-summary'],
     cards: ['patient-summary', 'care-plan', 'emergency-readiness'],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
+    stability: 'stable',
+    apiEndpoint: '/api/v1/patients/{patientId}/summary',
+    policyId: 'phr.patient.summary',
+    testId: 'phr-dashboard-access',
   },
   {
     path: '/records',
@@ -63,10 +73,10 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['view-records'],
     cards: ['record-highlights', 'interop-status'],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
+    stability: 'stable',
+    apiEndpoint: '/api/v1/patients/{patientId}/records',
+    policyId: 'phr.patient.records',
+    testId: 'phr-records-access',
   },
   {
     path: '/consents',
@@ -78,10 +88,7 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['manage-consent'],
     cards: ['active-consent-grants', 'expiring-consents'],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
+    stability: 'stable',
   },
   {
     path: '/appointments',
@@ -93,10 +100,7 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['schedule-visit'],
     cards: ['upcoming-appointments'],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
+    stability: 'stable',
   },
   {
     path: '/labs',
@@ -108,10 +112,7 @@ export const phrRouteContracts = [
     tiers: ['clinical'],
     actions: ['review-lab-results'],
     cards: ['recent-lab-results'],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
+    stability: 'stable',
   },
   {
     path: '/medications',
@@ -123,10 +124,7 @@ export const phrRouteContracts = [
     tiers: ['clinical'],
     actions: ['review-medications'],
     cards: ['medication-adherence'],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
+    stability: 'stable',
   },
   {
     path: '/emergency',
@@ -139,25 +137,25 @@ export const phrRouteContracts = [
     emergencyAction: true,
     actions: ['break-glass-review'],
     cards: ['override-audit-timeline'],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
+    stability: 'stable',
+    apiEndpoint: '/api/v1/emergency/access',
+    policyId: 'phr.emergency.break-glass',
+    testId: 'phr-emergency-access',
   },
   {
     path: '/emergency/reviews',
-    label: t('route.emergency.label'),
-    description: t('route.emergency.description'),
+    label: t('route.emergencyReviews.label'),
+    description: t('route.emergencyReviews.description'),
     group: t('route.group.governance'),
     minimumRole: 'admin',
     personas: ['admin'],
     tiers: ['emergency'],
     actions: ['review-emergency-access'],
     cards: ['pending-reviews', 'overdue-reviews'],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
+    stability: 'stable',
+    apiEndpoint: '/api/v1/emergency/reviews',
+    policyId: 'phr.emergency.reviews',
+    testId: 'phr-emergency-reviews',
   },
   {
     path: '/release-readiness',
@@ -169,10 +167,7 @@ export const phrRouteContracts = [
     tiers: ['clinical'],
     actions: ['view-release-readiness'],
     cards: ['evidence-freshness', 'fhir-runtime', 'consent-cache-proof', 'rollback-proof'],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
+    stability: 'stable',
   },
   {
     path: '/audit',
@@ -184,10 +179,7 @@ export const phrRouteContracts = [
     tiers: ['clinical'],
     actions: ['view-audit-trail'],
     cards: ['audit-trail'],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
+    stability: 'stable',
   },
   {
     path: '/settings',
@@ -199,55 +191,7 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['manage-profile-settings'],
     cards: ['profile-controls', 'integration-status'],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
-  },
-  {
-    path: '/records/:recordId',
-    label: t('route.recordDetail.label'),
-    description: t('route.recordDetail.description'),
-    group: t('route.group.care'),
-    minimumRole: 'patient',
-    personas: ['patient', 'caregiver', 'clinician', 'admin'],
-    tiers: ['core'],
-    actions: ['view-records'],
-    cards: [],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
-  },
-  {
-    path: '/profile',
-    label: t('route.profile.label'),
-    description: t('route.profile.description'),
-    group: t('route.group.care'),
-    minimumRole: 'patient',
-    personas: ['patient', 'caregiver', 'clinician', 'admin'],
-    tiers: ['core'],
-    actions: ['view-profile', 'edit-profile'],
-    cards: ['profile-summary'],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
-  },
-  {
-    path: '/timeline',
-    label: t('route.timeline.label'),
-    description: t('route.timeline.description'),
-    group: t('route.group.care'),
-    minimumRole: 'patient',
-    personas: ['patient', 'caregiver', 'clinician', 'admin'],
-    tiers: ['core'],
-    actions: ['view-timeline'],
-    cards: ['health-timeline'],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
+    stability: 'stable',
   },
   {
     path: '/conditions',
@@ -259,10 +203,7 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['view-conditions'],
     cards: ['condition-list'],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
+    stability: 'stable',
   },
   {
     path: '/observations',
@@ -274,10 +215,7 @@ export const phrRouteContracts = [
     tiers: ['clinical'],
     actions: ['view-observations'],
     cards: ['observation-trends'],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
+    stability: 'stable',
   },
   {
     path: '/immunizations',
@@ -289,10 +227,7 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['view-immunizations'],
     cards: ['immunization-schedule'],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
+    stability: 'stable',
   },
   {
     path: '/documents',
@@ -304,10 +239,7 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['view-documents', 'upload-document'],
     cards: ['document-list'],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
+    stability: 'stable',
   },
   {
     path: '/documents/upload',
@@ -319,10 +251,7 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['upload-document'],
     cards: [],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
+    stability: 'stable',
   },
   {
     path: '/documents/:docId/ocr',
@@ -334,10 +263,43 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['review-ocr'],
     cards: [],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
+    stability: 'stable',
+  },
+  {
+    path: '/timeline',
+    label: t('route.timeline.label'),
+    description: t('route.timeline.description'),
+    group: t('route.group.care'),
+    minimumRole: 'patient',
+    personas: ['patient', 'caregiver', 'clinician', 'admin'],
+    tiers: ['core'],
+    actions: ['view-timeline'],
+    cards: ['health-timeline'],
+    stability: 'stable',
+  },
+  {
+    path: '/profile',
+    label: t('route.profile.label'),
+    description: t('route.profile.description'),
+    group: t('route.group.care'),
+    minimumRole: 'patient',
+    personas: ['patient', 'caregiver', 'clinician', 'admin'],
+    tiers: ['core'],
+    actions: ['view-profile', 'edit-profile'],
+    cards: ['profile-summary'],
+    stability: 'stable',
+  },
+  {
+    path: '/records/:recordId',
+    label: t('route.recordDetail.label'),
+    description: t('route.recordDetail.description'),
+    group: t('route.group.care'),
+    minimumRole: 'patient',
+    personas: ['patient', 'caregiver', 'clinician', 'admin'],
+    tiers: ['core'],
+    actions: ['view-records'],
+    cards: [],
+    stability: 'stable',
   },
   {
     path: '/notifications',
@@ -349,10 +311,7 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['view-notifications'],
     cards: ['notification-feed'],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
+    stability: 'stable',
   },
   {
     path: '/forbidden',
@@ -364,10 +323,7 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: [],
     cards: [],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
+    stability: 'stable',
   },
   {
     path: '/not-found',
@@ -379,10 +335,31 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: [],
     cards: [],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'stable',
-    },
+    stability: 'stable',
+  },
+  {
+    path: '/appointments',
+    label: t('route.appointments.label'),
+    description: t('route.appointments.description'),
+    group: t('route.group.care'),
+    minimumRole: 'patient',
+    personas: ['patient', 'caregiver', 'clinician', 'admin'],
+    tiers: ['core'],
+    actions: ['schedule-visit'],
+    cards: ['upcoming-appointments'],
+    stability: 'stable',
+  },
+  {
+    path: '/mobile/dashboard',
+    label: 'Mobile Dashboard',
+    description: 'Mobile-specific dashboard',
+    group: t('route.group.care'),
+    minimumRole: 'patient',
+    personas: ['patient'],
+    tiers: ['core'],
+    actions: ['view-mobile-dashboard'],
+    cards: ['mobile-patient-summary'],
+    stability: 'stable',
   },
 
   // ── Feature-flagged routes (not yet production-ready) ──────────────────────
@@ -399,10 +376,8 @@ export const phrRouteContracts = [
     tiers: ['clinical'],
     actions: ['view-provider-dashboard'],
     cards: ['provider-panel'],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'experimental',
-    },
+    featureFlag: true,
+    stability: 'preview',
   },
   {
     path: '/provider/patients',
@@ -414,10 +389,8 @@ export const phrRouteContracts = [
     tiers: ['clinical'],
     actions: ['view-patient-list'],
     cards: ['patient-roster'],
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'experimental',
-    },
+    featureFlag: true,
+    stability: 'preview',
   },
   {
     path: '/caregiver/dependents',
@@ -430,26 +403,20 @@ export const phrRouteContracts = [
     actions: ['view-dependents'],
     cards: ['dependent-summaries'],
     featureFlag: true,
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'experimental',
-    },
+    stability: 'preview',
   },
   {
     path: '/fchv/dashboard',
     label: t('route.fchv.dashboard.label'),
     description: t('route.fchv.dashboard.description'),
     group: t('route.group.fchv'),
-    minimumRole: 'caregiver',
-    personas: ['caregiver', 'admin'],
+    minimumRole: 'fchv',
+    personas: ['fchv', 'admin'],
     tiers: ['core'],
     actions: ['view-fchv-dashboard'],
     cards: ['community-health-summary'],
     featureFlag: true,
-    lifecycle: {
-      introducedAt: '1.0.0',
-      stability: 'experimental',
-    },
+    stability: 'preview',
   },
 ] as const satisfies readonly PhrRouteContract[];
 

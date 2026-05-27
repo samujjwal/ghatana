@@ -54,6 +54,7 @@ import com.ghatana.phr.kernel.service.EmergencyAccessLogService;
 import com.ghatana.phr.kernel.service.EmergencyAccessNotificationSender;
 import com.ghatana.phr.kernel.service.EmergencyAccessReviewAuditLogger;
 import com.ghatana.phr.kernel.service.EmergencyAccessReviewWorkflow;
+import com.ghatana.phr.kernel.service.FchvCommunityAssignmentService;
 import com.ghatana.phr.kernel.service.ImagingService;
 import com.ghatana.phr.kernel.service.ImmunizationService;
 import com.ghatana.phr.kernel.service.KernelEventEmergencyAccessNotificationSender;
@@ -398,11 +399,13 @@ public class PhrKernelModule implements KernelModule {
         TelemedicineService telemedicine = new TelemedicineService(context);
         CaregiverService caregivers = new CaregiverService(context);
         TreatmentRelationshipService treatmentRelationship = new TreatmentRelationshipService(context);
+        FchvCommunityAssignmentService fchvAssignment = new FchvCommunityAssignmentService(context);
         EmergencyAccessReviewWorkflow emergencyReview = EmergencyAccessReviewWorkflow.fromContext(context);
         EmergencyAccessLogService emergencyAccess = new EmergencyAccessLogService(context, emergencyReview);
         
-        // Initialize policy evaluator with required services
-        PhrPolicyEvaluator.initialize(consent, treatmentRelationship);
+        // Create policy evaluator with required services (injected, not static)
+        PhrPolicyEvaluator policyEvaluator = new PhrPolicyEvaluator(consent, treatmentRelationship, fchvAssignment);
+        context.registerService(PhrPolicyEvaluator.class, policyEvaluator);
         
         // Create route objects with eventloop
         Eventloop eventloop = context.getEventloop();
@@ -509,6 +512,7 @@ public class PhrKernelModule implements KernelModule {
         services.add(telemedicine);
         services.add(caregivers);
         services.add(treatmentRelationship);
+        services.add(fchvAssignment);
         services.add(emergencyAccess);
     }
 

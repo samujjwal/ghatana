@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { fetchDocuments, downloadDocument } from '../api/phrApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
+import { t } from '../i18n/phrI18n';
+import { logError } from '../utils/safeLogger';
+import { DocumentViewer } from '../components/DocumentViewer';
 import type { DocumentSummary } from '../types';
 
 export function DocumentsPage(): React.ReactElement {
@@ -13,6 +16,13 @@ export function DocumentsPage(): React.ReactElement {
   const [downloading, setDownloading] = useState<Set<string>>(new Set());
   const [previewing, setPreviewing] = useState<string | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [previewDocument, setPreviewDocument] = useState<{
+    documentId: string;
+    title: string;
+    downloadUrl: string;
+    contentType: string;
+    expiresAt: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!session) return;
@@ -22,7 +32,7 @@ export function DocumentsPage(): React.ReactElement {
       role: session.role,
     })
       .then(setDocuments)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load documents'))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('documents.error.load')))
       .finally(() => setLoading(false));
   }, [session]);
 
@@ -30,21 +40,15 @@ export function DocumentsPage(): React.ReactElement {
     if (!session) return;
     setDownloading(prev => new Set(prev).add(documentId));
     try {
-      const blob = await downloadDocument(documentId, session.principalId, {
+      const result = await downloadDocument(documentId, session.principalId, {
         tenantId: session.tenantId,
         principalId: session.principalId,
         role: session.role,
       });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = title;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // result is now { downloadUrl, expiresAt }
+      window.open(result.downloadUrl, '_blank');
     } catch (err) {
-      console.error('Failed to download document:', err);
+      logError(t('documents.error.download'), undefined, { error: err });
     } finally {
       setDownloading(prev => {
         const next = new Set(prev);
@@ -54,20 +58,27 @@ export function DocumentsPage(): React.ReactElement {
     }
   };
 
-  const handlePreview = async (documentId: string, contentType: string): Promise<void> => {
+  const handlePreview = async (documentId: string, title: string, contentType: string): Promise<void> => {
     if (!session) return;
     setPreviewing(documentId);
     setPreviewError(null);
     try {
-      const blob = await downloadDocument(documentId, session.principalId, {
+      const result = await downloadDocument(documentId, session.principalId, {
         tenantId: session.tenantId,
         principalId: session.principalId,
         role: session.role,
       });
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
+      // result is now { downloadUrl, expiresAt }
+      setPreviewDocument({
+        documentId,
+        title,
+        downloadUrl: result.downloadUrl,
+        contentType,
+        expiresAt: result.expiresAt,
+      });
     } catch (err) {
-      setPreviewError(err instanceof Error ? err.message : 'Failed to preview document');
+      setPreviewError(err instanceof Error ? err.message : t('documents.error.preview'));
+      logError(t('documents.error.preview'), undefined, { error: err });
     } finally {
       setPreviewing(null);
     }
@@ -79,8 +90,8 @@ export function DocumentsPage(): React.ReactElement {
            contentType === 'text/plain';
   };
 
-  if (loading) return <div className="loading">Loading documents...</div>;
-  if (error) return <div className="error">Error: {error}</div>;
+  if (loading) return <div className="loading">{t('documents.loading')}</div>;
+  if (error) return <div className="error">{t('documents.error')}: {error}</div>;
 
   // Filter documents by content type (as a proxy for category)
   const filteredDocuments = categoryFilter
@@ -91,8 +102,18 @@ export function DocumentsPage(): React.ReactElement {
 
   return (
     <div className="stack gap-lg">
+      {previewDocument && (
+        <DocumentViewer
+          documentId={previewDocument.documentId}
+          title={previewDocument.title}
+          downloadUrl={previewDocument.downloadUrl}
+          contentType={previewDocument.contentType}
+          expiresAt={previewDocument.expiresAt}
+          onClose={() => setPreviewDocument(null)}
+        />
+      )}
       <Card>
-        <CardHeader title="Documents" subheader="Your medical documents and records" />
+        <CardHeader title={t('documents.title')} subheader={t('documents.subheader')} />
         <CardContent>
           {/* Category filter */}
           <div className="filter-bar">
@@ -101,7 +122,7 @@ export function DocumentsPage(): React.ReactElement {
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="filter-select"
             >
-              <option value="">All types</option>
+              <option value="">{t('documents.filter.all')}</option>
               {categories.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
@@ -111,45 +132,49 @@ export function DocumentsPage(): React.ReactElement {
                 onClick={() => setCategoryFilter('')}
                 className="filter-clear"
               >
-                Clear filter
+                {t('documents.filter.clear')}
               </button>
             )}
           </div>
 
           <ul className="stack gap-sm" aria-label="Documents">
             {filteredDocuments.length === 0 ? (
-              <p className="empty">No documents found</p>
+              <p className="empty" role="status">{t('documents.empty')}</p>
             ) : (
               filteredDocuments.map((doc) => (
-                <li key={doc.id} className="document-entry">
-                  <span className="document-title">{doc.title}</span>
-                  <span className="muted">{doc.contentType}</span>
-                  {doc.sizeKb && <span className="muted">{doc.sizeKb.toFixed(1)} KB</span>}
-                  <time dateTime={doc.uploadedAt}>{new Date(doc.uploadedAt).toLocaleDateString()}</time>
+                <li key={doc.id} className="document-entry" role="listitem">
+                  <span className="document-title" aria-label={`Document title: ${doc.title}`}>{doc.title}</span>
+                  <span className="muted" aria-label={`Content type: ${doc.contentType}`}>{doc.contentType}</span>
+                  {doc.sizeKb && <span className="muted" aria-label={`File size: ${doc.sizeKb.toFixed(1)} KB`}>{doc.sizeKb.toFixed(1)} KB</span>}
+                  <time dateTime={doc.uploadedAt} aria-label={`Uploaded: ${new Date(doc.uploadedAt).toLocaleDateString()}`}>{new Date(doc.uploadedAt).toLocaleDateString()}</time>
                   {doc.ocrStatus && (
-                    <span className={`badge badge--ocr-${doc.ocrStatus}`}>
-                      {doc.ocrStatus === 'ready' && 'OCR Complete'}
-                      {doc.ocrStatus === 'pending' && 'OCR Pending'}
-                      {doc.ocrStatus === 'processing' && 'OCR Processing'}
-                      {doc.ocrStatus === 'failed' && 'OCR Failed'}
+                    <span className={`badge badge--ocr-${doc.ocrStatus}`} role="status" aria-label={`OCR status: ${doc.ocrStatus}`}>
+                      {doc.ocrStatus === 'ready' && t('documents.ocr.ready')}
+                      {doc.ocrStatus === 'pending' && t('documents.ocr.pending')}
+                      {doc.ocrStatus === 'processing' && t('documents.ocr.processing')}
+                      {doc.ocrStatus === 'failed' && t('documents.ocr.failed')}
                     </span>
                   )}
-                  <div className="row gap-sm">
+                  <div className="row gap-sm" role="group" aria-label={`Actions for ${doc.title}`}>
                     {canPreview(doc.contentType || '') && (
                       <Button
                         size="small"
-                        onClick={() => handlePreview(doc.id, doc.contentType || '')}
+                        onClick={() => handlePreview(doc.id, doc.title, doc.contentType || '')}
                         disabled={previewing === doc.id}
+                        aria-label={previewing === doc.id ? t('documents.previewing') : `${t('documents.preview')} ${doc.title}`}
+                        aria-busy={previewing === doc.id}
                       >
-                        {previewing === doc.id ? 'Previewing...' : 'Preview'}
+                        {previewing === doc.id ? t('documents.previewing') : t('documents.preview')}
                       </Button>
                     )}
                     <Button
                       size="small"
                       onClick={() => handleDownload(doc.id, doc.title)}
                       disabled={downloading.has(doc.id)}
+                      aria-label={downloading.has(doc.id) ? t('documents.downloading') : `${t('documents.download')} ${doc.title}`}
+                      aria-busy={downloading.has(doc.id)}
                     >
-                      {downloading.has(doc.id) ? 'Downloading...' : 'Download'}
+                      {downloading.has(doc.id) ? t('documents.downloading') : t('documents.download')}
                     </Button>
                   </div>
                 </li>

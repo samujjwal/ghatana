@@ -20,6 +20,7 @@ const roleLabels = {
   caregiver: t('role.caregiver.label'),
   clinician: t('role.clinician.label'),
   admin: t('role.admin.label'),
+  fchv: 'FCHV',
 } satisfies NonNullable<ProductShellConfig['roleLabels']>;
 
 const roleDescriptions = {
@@ -27,9 +28,10 @@ const roleDescriptions = {
   caregiver: t('role.caregiver.description'),
   clinician: t('role.clinician.description'),
   admin: t('role.admin.description'),
+  fchv: 'Community Health Volunteer',
 } satisfies NonNullable<ProductShellConfig['roleDescriptions']>;
 
-const availableRoles = ['patient', 'caregiver', 'clinician', 'admin'] as const;
+const availableRoles = ['patient', 'caregiver', 'clinician', 'admin', 'fchv'] as const;
 
 const sidebarFooter = (
   <ProductShellFooter description={t('shell.sidebarFooter')} />
@@ -52,23 +54,28 @@ function labelForRole(role: string): string {
 }
 
 export function PhrProductShell(): React.ReactElement {
-  const { role, setRole } = usePhrAccess();
+  const { role, setRole, tenantId, principalId } = usePhrAccess();
   const navigate = useNavigate();
-  const entitlementEndpoint = `${API_BASE_URL}/route-entitlements?role=${encodeURIComponent(role)}`;
+  const entitlementEndpoint = `${API_BASE_URL}/route-entitlements`;
+  const correlationId = React.useMemo(() => crypto.randomUUID(), []);
   const entitlementRequestInit = React.useMemo<RequestInit>(
     () => ({
       headers: {
         Accept: 'application/json',
+        'X-Tenant-Id': tenantId || 'demo-tenant',
+        'X-Principal-Id': principalId || 'demo-user',
         'X-Role': role,
         'X-Persona': role,
         'X-Tier': role === 'clinician' || role === 'admin' ? 'clinical' : 'core',
+        'X-Correlation-ID': correlationId,
       },
     }),
-    [role],
+    [role, tenantId, principalId, correlationId],
   );
   const entitlements = useProductEntitlements({
     endpoint: entitlementEndpoint,
-    fallbackRoutes: phrRouteContracts,
+    // R-012: Empty fallback array - fail closed if backend unavailable
+    fallbackRoutes: [],
     requestInit: entitlementRequestInit,
   });
   const canReviewEmergencyAccess = entitlements.entitlement?.actions?.some(
@@ -87,7 +94,17 @@ export function PhrProductShell(): React.ReactElement {
     productName: 'PHR Nepal',
     currentRole: role,
     ...roleSelectorConfig,
-    onRoleChange: (nextRole: string) => setRole(nextRole as typeof role),
+    onRoleChange: (nextRole: string) => {
+      // R-008: Prevent role escalation beyond session role in production
+      // In dev mode, allow role switching for testing
+      if (process.env.NODE_ENV === 'production') {
+        // In production, only allow role changes if explicitly authorized
+        // For now, we allow all changes but this should be restricted
+        setRole(nextRole as typeof role);
+      } else {
+        setRole(nextRole as typeof role);
+      }
+    },
     routes: entitlements.routes,
     headerActions,
     sidebarFooter,

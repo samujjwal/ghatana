@@ -22,13 +22,13 @@ export function TimelinePage(): React.ReactElement {
       category: categoryFilter || undefined,
     })
       .then(setEvents)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load timeline'))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('timeline.error.load')))
       .finally(() => setLoading(false));
   }, [session, categoryFilter]);
 
-  if (loading) return <div className="loading">Loading timeline...</div>;
-  if (error) return <div className="error">Error: {error}</div>;
-  if (!events.length) return <div className="empty">No timeline events found</div>;
+  if (loading) return <div className="loading" role="status" aria-live="polite">{t('timeline.loading')}</div>;
+  if (error) return <div className="error" role="alert">{t('timeline.error')}: {error}</div>;
+  if (!events.length) return <div className="empty" role="status">{t('timeline.empty')}</div>;
 
   // Group events by category
   const groupedEvents = events.reduce((acc, event) => {
@@ -44,16 +44,19 @@ export function TimelinePage(): React.ReactElement {
   return (
     <div className="stack gap-lg">
       <Card>
-        <CardHeader title="Health Timeline" subheader="Your health events over time" />
+        <CardHeader title={t('timeline.title')} subheader={t('timeline.subheader')} />
         <CardContent>
           {/* Category filter */}
-          <div className="filter-bar">
+          <div className="filter-bar" role="search">
+            <label htmlFor="category-filter" className="visually-hidden">Filter by category</label>
             <select
+              id="category-filter"
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="filter-select"
+              aria-label="Filter by category"
             >
-              <option value="">All categories</option>
+              <option value="">{t('timeline.filter.all')}</option>
               {categories.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
@@ -62,8 +65,9 @@ export function TimelinePage(): React.ReactElement {
               <button
                 onClick={() => setCategoryFilter('')}
                 className="filter-clear"
+                aria-label={t('timeline.filter.clear')}
               >
-                Clear filter
+                {t('timeline.filter.clear')}
               </button>
             )}
           </div>
@@ -73,12 +77,24 @@ export function TimelinePage(): React.ReactElement {
             {Object.entries(groupedEvents).map(([category, categoryEvents]) => (
               <div key={category} className="timeline-category">
                 <h3 className="category-header">{category}</h3>
-                <ol className="timeline-list stack gap-sm">
+                <ol className="timeline-list stack gap-sm" role="list">
                   {categoryEvents.map((ev) => (
-                    <li key={ev.id} className="timeline-event">
-                      <time dateTime={ev.occurredAt}>{new Date(ev.occurredAt).toLocaleDateString()}</time>
-                      <strong>{ev.title}</strong>
-                      {ev.description != null && <p className="muted">{ev.description}</p>}
+                    <li key={ev.id} className="timeline-event" role="listitem">
+                      <button
+                        className="timeline-event-button"
+                        onClick={() => {
+                          if (ev.resourceId) {
+                            // Navigate to detail page based on resource type
+                            // This would typically use React Router navigation
+                            console.log('Navigate to detail:', ev.resourceId, ev.type);
+                          }
+                        }}
+                        aria-label={`View details for ${ev.title}`}
+                      >
+                        <time dateTime={ev.occurredAt} aria-label={`Date: ${new Date(ev.occurredAt).toLocaleDateString()}`}>{new Date(ev.occurredAt).toLocaleDateString()}</time>
+                        <strong aria-label={`Title: ${ev.title}`}>{ev.title}</strong>
+                        {ev.description != null && <p className="muted" aria-label={`Description: ${ev.description}`}>{ev.description}</p>}
+                      </button>
                     </li>
                   ))}
                 </ol>

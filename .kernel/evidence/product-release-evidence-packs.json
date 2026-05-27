@@ -1,0 +1,17 @@
+{
+  "generatedAt": "2026-05-27T20:45:06.741Z",
+  "status": "passed",
+  "products": [
+    {
+      "productId": "phr",
+      "status": "passed",
+      "categoryCount": 6
+    },
+    {
+      "productId": "digital-marketing",
+      "status": "passed",
+      "categoryCount": 6
+    }
+  ],
+  "violations": []
+}

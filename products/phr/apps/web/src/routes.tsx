@@ -6,6 +6,7 @@ import { usePhrSession } from './auth/PhrSessionContext';
 import { isRouteAllowedForRole, phrRouteContracts } from './routeManifest';
 import { attachPhrRouteElement, type PhrRouteManifestEntry } from './phrRouteElements';
 import { LoginPage } from './pages/LoginPage';
+import { NotFoundPage } from './pages/NotFoundPage';
 
 /**
  * Guards a route by checking the session is authenticated and the role
@@ -43,6 +44,8 @@ export const router = createBrowserRouter([
     element: <AppShell />,
     children: [
       ...phrRouteManifest.map(protectedRoute),
+      // R-009: Catch-all route for unknown paths
+      { path: '*', element: <NotFoundPage /> },
     ],
   },
 ]);

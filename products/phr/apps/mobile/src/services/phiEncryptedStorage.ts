@@ -67,7 +67,7 @@ function base64ToUint8Array(b64: string): Uint8Array {
 async function generateAesKey(): Promise<CryptoKey> {
   return crypto.subtle.generateKey(
     { name: ALGORITHM, length: KEY_LENGTH_BITS },
-    false, // non-extractable for security - key stays in secure enclave
+    true, // extractable so we can store it in SecureStore
     ['encrypt', 'decrypt'],
   );
 }
@@ -96,10 +96,12 @@ async function getOrCreateKey(): Promise<CryptoKey> {
 
   // Verify device install integrity before key access
   if (!(await verifyDeviceInstallIntegrity())) {
-    console.warn('Device install integrity check failed - clearing encrypted storage');
+    // Use safe logger instead of console.warn
+    await logSecurityEvent('DEVICE_INTEGRITY_CHECK_FAILED');
     await phiClearAll();
     await clearKey();
-    return getOrCreateKey(); // Recursive call to generate fresh key
+    // Bounded retry: attempt fresh initialization once
+    return initializeFreshKey();
   }
 
   const stored = await SecureStore.getItemAsync(KEY_SECURE_STORE_NAME);
@@ -110,27 +112,27 @@ async function getOrCreateKey(): Promise<CryptoKey> {
   if (stored) {
     // Verify tamper detection before using cached key
     if (!(await verifyTamperDetection())) {
-      console.warn('Tamper detection failed - clearing encrypted storage');
+      await logSecurityEvent('TAMPER_DETECTION_FAILED');
       await phiClearAll();
       await clearKey();
-      return getOrCreateKey(); // Recursive call to generate fresh key
+      return initializeFreshKey();
     }
 
     // Verify integrity check
     if (!(await verifyIntegrityCheck())) {
-      console.warn('Integrity check failed - clearing encrypted storage');
+      await logSecurityEvent('INTEGRITY_CHECK_FAILED');
       await phiClearAll();
       await clearKey();
-      return getOrCreateKey();
+      return initializeFreshKey();
     }
 
     // Verify tamper detection version matches expected
     const tamperVersion = await SecureStore.getItemAsync(TAMPER_DETECTION_VERSION);
     if (tamperVersion !== '1') {
-      console.warn('Tamper detection version mismatch - reinitializing');
+      await logSecurityEvent('TAMPER_VERSION_MISMATCH');
       await phiClearAll();
       await clearKey();
-      return getOrCreateKey();
+      return initializeFreshKey();
     }
 
     // Require biometric authentication if policy is enabled
@@ -156,6 +158,10 @@ async function getOrCreateKey(): Promise<CryptoKey> {
   }
 
   // First launch: generate and persist a new key.
+  return initializeFreshKey();
+}
+
+async function initializeFreshKey(): Promise<CryptoKey> {
   const key = await generateAesKey();
   const exported = await exportKey(key);
   const createdAt = Date.now().toString();
@@ -327,13 +333,13 @@ async function authenticateWithBiometrics(): Promise<boolean> {
   try {
     const hasHardware = await LocalAuthentication.hasHardwareAsync();
     if (!hasHardware) {
-      console.warn('Biometric hardware not available');
+      await logSecurityEvent('BIOMETRIC_HARDWARE_UNAVAILABLE');
       return false;
     }
 
     const isEnrolled = await LocalAuthentication.isEnrolledAsync();
     if (!isEnrolled) {
-      console.warn('No biometrics enrolled');
+      await logSecurityEvent('BIOMETRIC_NOT_ENROLLED');
       return false;
     }
 
@@ -344,11 +350,27 @@ async function authenticateWithBiometrics(): Promise<boolean> {
       disableDeviceFallback: false,
     });
 
+    if (result.success) {
+      await logSecurityEvent('BIOMETRIC_AUTH_SUCCESS');
+    } else {
+      await logSecurityEvent('BIOMETRIC_AUTH_FAILED');
+    }
+    
     return result.success;
   } catch (error) {
-    console.error('Biometric authentication failed:', error);
+    await logSecurityEvent('BIOMETRIC_AUTH_ERROR');
     return false;
   }
+}
+
+async function logSecurityEvent(event: string): Promise<void> {
+  // In production, this would send to a secure logging service
+  // For now, we use a minimal safe log without PHI details
+  const timestamp = Date.now();
+  const logEntry = `${timestamp}:${event}`;
+  await SecureStore.setItemAsync('phr-security-log', logEntry, {
+    keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
+  });
 }
 
 // ─── Device install ID tracking ──────────────────────────────────────────────────
@@ -498,10 +520,24 @@ export async function phiRemove(key: string): Promise<void> {
  * Must be called on consent revocation, logout, session expiry, and role/persona change.
  */
 export async function phiClearAll(): Promise<void> {
+  // Clear all keys with the PHI prefix
   const keys = await AsyncStorage.getAllKeys();
   const phiKeys = keys.filter((k) => k.startsWith(CIPHERTEXT_STORAGE_PREFIX));
   
   for (const key of phiKeys) {
+    await AsyncStorage.removeItem(key);
+  }
+  
+  // Also clear any keys that might have been stored without prefix (legacy cleanup)
+  // This ensures we don't miss any PHI due to prefix inconsistencies
+  const potentialPhiKeys = keys.filter((k) => 
+    k.includes('dashboard') || 
+    k.includes('patient') || 
+    k.includes('record') ||
+    k.includes('consent')
+  );
+  
+  for (const key of potentialPhiKeys) {
     await AsyncStorage.removeItem(key);
   }
 }
@@ -513,6 +549,7 @@ export async function phiClearAll(): Promise<void> {
  */
 export async function phiEnableBiometricPolicy(): Promise<void> {
   await enableBiometricPolicy();
+  await logSecurityEvent('BIOMETRIC_POLICY_ENABLED');
 }
 
 /**
@@ -521,6 +558,19 @@ export async function phiEnableBiometricPolicy(): Promise<void> {
  */
 export async function phiDisableBiometricPolicy(): Promise<void> {
   await disableBiometricPolicy();
+  await logSecurityEvent('BIOMETRIC_POLICY_DISABLED');
+}
+
+/**
+ * Enables biometric policy by default for new installations.
+ * This is the secure default posture.
+ */
+export async function phiEnableDefaultBiometricPolicy(): Promise<void> {
+  const policyEnabled = await isBiometricPolicyEnabled();
+  if (!policyEnabled) {
+    await enableBiometricPolicy();
+    await logSecurityEvent('BIOMETRIC_POLICY_DEFAULT_ENABLED');
+  }
 }
 
 /**

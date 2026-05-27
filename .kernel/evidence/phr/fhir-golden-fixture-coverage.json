@@ -1,0 +1,23 @@
+{
+  "productId": "phr",
+  "evidenceType": "fhir-golden-fixture-coverage",
+  "generatedAt": "2026-05-27T19:56:31.422Z",
+  "sourceCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
+  "targetCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
+  "targetEnvironment": "staging",
+  "validationStatus": "validated",
+  "pass": true,
+  "fixtures": [
+    "products/phr/src/test/java/com/ghatana/phr/fhir/FhirGoldenFixturesTest.java",
+    "products/phr/src/test/java/com/ghatana/phr/fhir/FhirR4ContractTest.java"
+  ],
+  "evidenceRun": {
+    "generatedBy": "scripts/check-phr-fhir-validation.mjs",
+    "command": "node scripts/check-phr-fhir-validation.mjs",
+    "source": "scripts/check-phr-fhir-validation.mjs",
+    "commit": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
+    "sourceCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
+    "targetCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
+    "targetEnvironment": "staging"
+  }
+}

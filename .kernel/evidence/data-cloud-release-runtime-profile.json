@@ -1,0 +1,65 @@
+{
+  "generatedAt": "2026-05-27T20:45:54.951Z",
+  "evidenceRun": {
+    "generatedBy": "scripts/check-data-cloud-release-runtime-profile.mjs",
+    "command": "pnpm check:data-cloud-release-runtime-profile",
+    "source": "scripts/check-data-cloud-release-runtime-profile.mjs",
+    "commit": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
+    "sourceCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
+    "targetCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
+    "targetEnvironment": "staging"
+  },
+  "sourceCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
+  "targetCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
+  "targetEnvironment": "staging",
+  "validationStatus": "validated",
+  "reviewDueAt": "2026-05-28T20:45:54.951Z",
+  "expiresAt": "2026-05-29T20:45:54.951Z",
+  "checks": [
+    {
+      "check": "Runtime failure-injection posture",
+      "ok": true
+    },
+    {
+      "check": "Atomic workflow proof",
+      "ok": true
+    },
+    {
+      "check": "Data Cloud maturity proof",
+      "ok": true
+    },
+    {
+      "check": "AI governance conformance",
+      "ok": true
+    },
+    {
+      "check": "i18n conformance",
+      "ok": true
+    },
+    {
+      "check": "Route entitlement contracts",
+      "ok": true
+    },
+    {
+      "check": "Action Plane route lifecycle",
+      "ok": true
+    },
+    {
+      "check": "OpenAPI canonical alignment",
+      "ok": true
+    },
+    {
+      "check": "Observability conformance",
+      "ok": true
+    }
+  ],
+  "bootstrapMode": true,
+  "skippedChecks": [
+    "Runtime dependency failure-injection executable",
+    "Atomic workflow failure-injection executable",
+    "AI governance behavioral proof",
+    "i18n behavioral proof",
+    "a11y behavioral proof"
+  ],
+  "pass": true
+}

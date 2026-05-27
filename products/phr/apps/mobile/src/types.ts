@@ -41,4 +41,6 @@ export interface MobileSession {
   role: 'patient' | 'caregiver' | 'clinician' | 'admin';
   name: string;
   expiresAt: string;
+  persona?: string;
+  tier?: string;
 }

@@ -291,6 +291,29 @@ export interface OcrReviewDocument {
   status: 'pending_review' | 'confirmed' | 'rejected';
 }
 
+export interface DocumentDetail extends DocumentSummary {
+  description?: string;
+  uploadedBy: string;
+  versions?: DocumentVersion[];
+  auditLog?: AuditEntry[];
+}
+
+export interface DocumentVersion {
+  versionId: string;
+  versionNumber: number;
+  createdAt: string;
+  createdBy: string;
+  changeNote?: string;
+}
+
+export interface AuditEntry {
+  id: string;
+  action: string;
+  timestamp: string;
+  performedBy: string;
+  details?: Record<string, unknown>;
+}
+
 // ─── Notifications ────────────────────────────────────────────────────────────
 
 export interface NotificationSummary {

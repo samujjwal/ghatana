@@ -96,7 +96,7 @@ public final class PhrPatientProfileRoutes {
         profile.put("gender", "");
         profile.put("location", "");
 
-        return PhrRouteSupport.jsonResponse(200, profile, context.correlationId());
+        return PhrRouteSupport.jsonResponseWithCorrelation(200, profile, context.correlationId());
     }
 
     private Promise<HttpResponse> handleUpdateProfile(HttpRequest request) {
@@ -155,7 +155,7 @@ public final class PhrPatientProfileRoutes {
                     response.put("principalId", context.principalId());
                     response.put("updatedFields", validatedUpdates.keySet());
                     
-                    return PhrRouteSupport.jsonResponse(200, response, context.correlationId());
+                    return PhrRouteSupport.jsonResponseWithCorrelation(200, response, context.correlationId());
                 } catch (Exception ex) {
                     return PhrRouteSupport.errorResponse(400, "INVALID_JSON", 
                         "Request body must be valid JSON: " + ex.getMessage(), context.correlationId());

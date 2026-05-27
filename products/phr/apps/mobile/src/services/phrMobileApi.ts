@@ -1,6 +1,7 @@
 import type { MobileDashboard, MobileSession } from '../types';
-import { clearDashboardOffline, loadDashboardOffline, saveDashboardOffline } from './offlineStore';
+import { clearDashboardOffline, loadDashboardOffline, saveDashboardOffline, type SessionIdentity } from './offlineStore';
 import { clearMobileSession } from './mobileSessionStore';
+import { phiClearAll } from './phiEncryptedStorage';
 import { t } from '../i18n/phrMobileI18n';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_PHR_API_URL ?? process.env.PHR_API_URL ?? '';
@@ -78,12 +79,20 @@ async function fetchDashboardFromApi(session: MobileSession): Promise<MobileDash
     throw new Error(t('api.apiNotConfigured'));
   }
 
+  const sessionIdentity: SessionIdentity = {
+    tenantId: session.tenantId,
+    principalId: session.principalId,
+    role: session.role,
+  };
+
   const response = await fetch(`${API_BASE_URL}${DASHBOARD_PATH}`, {
     headers: {
       Accept: 'application/json',
       'X-Tenant-Id': session.tenantId,
       'X-Principal-Id': session.principalId,
       'X-Role': session.role,
+      'X-Persona': session.persona || 'default',
+      'X-Tier': session.tier || 'standard',
       'X-Correlation-ID': crypto.randomUUID(),
     },
   });
@@ -95,12 +104,18 @@ async function fetchDashboardFromApi(session: MobileSession): Promise<MobileDash
 }
 
 export async function fetchMobileDashboard(session: MobileSession): Promise<MobileDashboard> {
+  const sessionIdentity: SessionIdentity = {
+    tenantId: session.tenantId,
+    principalId: session.principalId,
+    role: session.role,
+  };
+
   try {
     const dashboard = await fetchDashboardFromApi(session);
-    await saveDashboardOffline(dashboard);
+    await saveDashboardOffline(dashboard, undefined, sessionIdentity);
     return dashboard;
   } catch (error) {
-    const cached = await loadDashboardOffline();
+    const cached = await loadDashboardOffline(sessionIdentity);
     if (cached) {
       return cached;
     }
@@ -110,8 +125,14 @@ export async function fetchMobileDashboard(session: MobileSession): Promise<Mobi
 }
 
 export async function syncOfflineDashboard(session: MobileSession): Promise<string> {
+  const sessionIdentity: SessionIdentity = {
+    tenantId: session.tenantId,
+    principalId: session.principalId,
+    role: session.role,
+  };
+
   const dashboard = await fetchDashboardFromApi(session);
-  await saveDashboardOffline(dashboard);
+  await saveDashboardOffline(dashboard, undefined, sessionIdentity);
   return t('api.offlineCacheRefreshed');
 }
 
@@ -124,6 +145,7 @@ export async function syncOfflineDashboard(session: MobileSession): Promise<stri
 export async function logoutMobile(session: MobileSession): Promise<void> {
   if (!API_BASE_URL) {
     // Even if API is not configured, clear local PHI and session.
+    await phiClearAll();
     await clearDashboardOffline();
     await clearMobileSession();
     return;
@@ -138,6 +160,8 @@ export async function logoutMobile(session: MobileSession): Promise<void> {
         'X-Tenant-Id': session.tenantId,
         'X-Principal-Id': session.principalId,
         'X-Role': session.role,
+        'X-Persona': session.persona || 'default',
+        'X-Tier': session.tier || 'standard',
         'X-Correlation-ID': crypto.randomUUID(),
       },
     });
@@ -145,6 +169,7 @@ export async function logoutMobile(session: MobileSession): Promise<void> {
     // Network failure — continue with local cleanup.
   }
   // Clear encrypted PHI cache and session on logout
+  await phiClearAll();
   await clearDashboardOffline();
   await clearMobileSession();
 }
@@ -211,6 +236,7 @@ export async function loginMobile(nationalId: string, password: string): Promise
  * Revokes an active consent grant for the authenticated patient.
  *
  * @param grantId   The consent grant identifier to revoke.
+ * @param patientId The patient ID whose consent is being revoked.
  * @param session   The current mobile session context.
  * @returns         Resolves when revocation is confirmed.
  * @throws          Error with a user-facing message on failure.
@@ -227,12 +253,15 @@ export async function revokeConsentGrant(grantId: string, patientId: string, ses
       'X-Tenant-Id': session.tenantId,
       'X-Principal-Id': session.principalId,
       'X-Role': session.role,
+      'X-Persona': session.persona || 'default',
+      'X-Tier': session.tier || 'standard',
       'X-Correlation-ID': crypto.randomUUID(),
     },
   });
   if (!response.ok) {
     throw new Error(t('api.consentRevokeFailed', { status: String(response.status) }));
   }
-  // Clear encrypted PHI cache on consent revocation
+  // Clear all encrypted PHI cache on consent revocation
+  await phiClearAll();
   await clearDashboardOffline();
 }

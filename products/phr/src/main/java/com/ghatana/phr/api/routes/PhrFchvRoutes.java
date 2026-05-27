@@ -189,7 +189,7 @@ public final class PhrFchvRoutes {
                 "riskLevel", "medium",
                 "lastContact", "2026-05-21"
             )
-        ).then(patient -> PhrRouteSupport.jsonResponse(200, patient, context.correlationId()));
+        ).then(patient -> PhrRouteSupport.jsonResponseWithCorrelation(200, patient, context.correlationId()));
     }
 
     private Promise<HttpResponse> handleRecordVitals(HttpRequest request) {
@@ -214,7 +214,7 @@ public final class PhrFchvRoutes {
                 "status", "RECORDED",
                 "timestamp", java.time.Instant.now().toString()
             )
-        ).then(result -> PhrRouteSupport.jsonResponse(201, result, context.correlationId()));
+        ).then(result -> PhrRouteSupport.jsonResponseWithCorrelation(201, result, context.correlationId()));
     }
 
     private Promise<HttpResponse> handleGetSyncStatus(HttpRequest request) {

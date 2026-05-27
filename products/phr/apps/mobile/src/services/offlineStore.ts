@@ -14,6 +14,8 @@
  *   genetic info, reproductive health, HIV status) are never cached.
  *   Identifiable fields (patient ID, name, DOB) are encrypted at rest.
  *   Sensitive PHI fields (diagnosis, medication, lab results) are encrypted.
+ * - Session binding: Cache envelope includes tenantId, principalId, role
+ *   to reject cache if session differs.
  *
  * NEVER call `AsyncStorage.setItem` with PHI outside this module.
  */
@@ -26,32 +28,55 @@ const SCHEMA_VERSION = 1;
 /** Default cache lifetime: 8 hours (one clinical shift). */
 const DEFAULT_TTL_MS = 8 * 60 * 60 * 1000;
 
+/** Restricted PHI fields that must never be cached */
+const RESTRICTED_FIELDS = new Set([
+  'mentalHealth',
+  'substanceUse',
+  'geneticInfo',
+  'reproductiveHealth',
+  'hivStatus',
+  'psychiatricHistory',
+  'substanceAbuseHistory',
+]);
+
 interface DashboardCacheEnvelope {
   schemaVersion: number;
   savedAt: number;
   ttlMs: number;
+  tenantId: string;
+  principalId: string;
+  role: string;
   data: MobileDashboard;
 }
 
 export async function saveDashboardOffline(
   dashboard: MobileDashboard,
   ttlMs: number = DEFAULT_TTL_MS,
+  sessionIdentity: SessionIdentity,
 ): Promise<void> {
+  // Sanitize restricted fields before caching
+  const sanitizedDashboard = sanitizeRestrictedFields(dashboard);
+  
   const envelope: DashboardCacheEnvelope = {
     schemaVersion: SCHEMA_VERSION,
     savedAt: Date.now(),
     ttlMs,
-    data: dashboard,
+    tenantId: sessionIdentity.tenantId,
+    principalId: sessionIdentity.principalId,
+    role: sessionIdentity.role,
+    data: sanitizedDashboard,
   };
   await phiSet(DASHBOARD_KEY, JSON.stringify(envelope));
 }
 
 /**
  * Loads the cached dashboard. Returns `null` if the cache is absent,
- * has an unknown schema version, or has expired — forcing a fresh fetch.
+ * has an unknown schema version, has expired, or session mismatch — forcing a fresh fetch.
  * Callers must not use a `null` result to serve stale PHI.
  */
-export async function loadDashboardOffline(): Promise<MobileDashboard | null> {
+export async function loadDashboardOffline(
+  sessionIdentity: SessionIdentity,
+): Promise<MobileDashboard | null> {
   const raw = await phiGet(DASHBOARD_KEY);
   if (!raw) return null;
 
@@ -66,6 +91,12 @@ export async function loadDashboardOffline(): Promise<MobileDashboard | null> {
 
   if (envelope.schemaVersion !== SCHEMA_VERSION) {
     // Schema mismatch — discard so stale structure is not used.
+    await clearDashboardOffline();
+    return null;
+  }
+
+  // Check session binding - reject cache if session differs
+  if (!sessionMatches(envelope, sessionIdentity)) {
     await clearDashboardOffline();
     return null;
   }
@@ -104,4 +135,64 @@ export async function getDashboardOfflineTimestamp(): Promise<number | null> {
   }
 
   return envelope.savedAt;
+}
+
+// ==================== Helper Functions ====================
+
+/**
+ * Sanitizes restricted fields from dashboard data before caching.
+ * Restricted fields are never cached per security policy.
+ */
+function sanitizeRestrictedFields(dashboard: MobileDashboard): MobileDashboard {
+  // Deep clone to avoid mutating original
+  const sanitized = JSON.parse(JSON.stringify(dashboard)) as MobileDashboard;
+  
+  // Remove restricted fields recursively
+  return removeRestrictedFields(sanitized);
+}
+
+function removeRestrictedFields(obj: any): any {
+  if (!obj || typeof obj !== 'object') {
+    return obj;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(removeRestrictedFields);
+  }
+  
+  const result: any = {};
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      if (RESTRICTED_FIELDS.has(key)) {
+        // Skip restricted field
+        continue;
+      }
+      result[key] = removeRestrictedFields(obj[key]);
+    }
+  }
+  
+  return result;
+}
+
+/**
+ * Checks if the cached session matches the current session.
+ */
+function sessionMatches(
+  envelope: DashboardCacheEnvelope,
+  currentSession: SessionIdentity,
+): boolean {
+  return (
+    envelope.tenantId === currentSession.tenantId &&
+    envelope.principalId === currentSession.principalId &&
+    envelope.role === currentSession.role
+  );
+}
+
+/**
+ * Session identity for cache binding.
+ */
+export interface SessionIdentity {
+  tenantId: string;
+  principalId: string;
+  role: string;
 }

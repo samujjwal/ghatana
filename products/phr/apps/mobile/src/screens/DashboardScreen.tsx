@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { t } from '../i18n/phrMobileI18n';
 import type { MobileDashboard } from '../types';
 
 interface DashboardScreenProps {
@@ -9,12 +10,25 @@ interface DashboardScreenProps {
 export function DashboardScreen({ dashboard }: DashboardScreenProps): React.ReactElement {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{dashboard.patient.name}</Text>
-      <Text style={styles.subtitle}>{dashboard.patient.district} · Blood group {dashboard.patient.bloodType}</Text>
+      <Text style={styles.title} accessibilityLabel={`${t('dashboard.patientName')}: ${dashboard.patient.name}`}>
+        {dashboard.patient.name}
+      </Text>
+      <Text style={styles.subtitle} accessibilityLabel={`${t('dashboard.location')}: ${dashboard.patient.district}, ${t('dashboard.bloodType')}: ${dashboard.patient.bloodType}`}>
+        {dashboard.patient.district} · {t('dashboard.bloodType')} {dashboard.patient.bloodType}
+      </Text>
       <View style={styles.metrics}>
-        <View style={styles.metricCard}><Text style={styles.metricValue}>{dashboard.records.length}</Text><Text>Records</Text></View>
-        <View style={styles.metricCard}><Text style={styles.metricValue}>{dashboard.consents.length}</Text><Text>Consents</Text></View>
-        <View style={styles.metricCard}><Text style={styles.metricValue}>{dashboard.notifications.length}</Text><Text>Alerts</Text></View>
+        <View style={styles.metricCard} accessibilityLabel={`${t('dashboard.records')}: ${dashboard.records.length}`}>
+          <Text style={styles.metricValue}>{dashboard.records.length}</Text>
+          <Text>{t('dashboard.records')}</Text>
+        </View>
+        <View style={styles.metricCard} accessibilityLabel={`${t('dashboard.consents')}: ${dashboard.consents.length}`}>
+          <Text style={styles.metricValue}>{dashboard.consents.length}</Text>
+          <Text>{t('dashboard.consents')}</Text>
+        </View>
+        <View style={styles.metricCard} accessibilityLabel={`${t('dashboard.alerts')}: ${dashboard.notifications.length}`}>
+          <Text style={styles.metricValue}>{dashboard.notifications.length}</Text>
+          <Text>{t('dashboard.alerts')}</Text>
+        </View>
       </View>
     </View>
   );

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Button, Card, CardContent, CardHeader, Input } from '@ghatana/design-system';
-import { requestEmergencyAccess, reviewEmergencyAccess } from '../api/phrApi';
+import { requestEmergencyAccess } from '../api/phrApi';
 import { t } from '../i18n/phrI18n';
+import { logError } from '../utils/safeLogger';
 import type { EmergencyAccessEvent } from '../types';
 
 // Hard-coded context for demo; production wires from auth session.
@@ -15,13 +16,6 @@ export function EmergencyAccessPage(): React.ReactElement {
   const [requesting, setRequesting] = useState<boolean>(false);
   const [requestError, setRequestError] = useState<string | null>(null);
   const [requestResult, setRequestResult] = useState<EmergencyAccessEvent | null>(null);
-
-  // Review fields
-  const [reviewEventId, setReviewEventId] = useState<string>('');
-  const [reviewNote, setReviewNote] = useState<string>('');
-  const [reviewing, setReviewing] = useState<boolean>(false);
-  const [reviewError, setReviewError] = useState<string | null>(null);
-  const [reviewResult, setReviewResult] = useState<EmergencyAccessEvent | null>(null);
 
   const handleRequestAccess = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -49,39 +43,14 @@ export function EmergencyAccessPage(): React.ReactElement {
       setClinicianId('');
     } catch (err: unknown) {
       setRequestError(err instanceof Error ? err.message : t('emergency.error.request'));
+      logError('Failed to request emergency access', undefined, { error: err });
     } finally {
       setRequesting(false);
     }
   };
 
-  const handleReview = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
-    event.preventDefault();
-    setReviewError(null);
-    setReviewResult(null);
-
-    if (!reviewEventId.trim() || !reviewNote.trim()) {
-      setReviewError(t('validation.required', { field: 'Event ID and review note' }));
-      return;
-    }
-
-    setReviewing(true);
-    try {
-      const result = await reviewEmergencyAccess(
-        { eventId: reviewEventId.trim(), reviewNote: reviewNote.trim(), reviewerId: DEMO_CONTEXT.principalId },
-        DEMO_CONTEXT,
-      );
-      setReviewResult(result);
-      setReviewEventId('');
-      setReviewNote('');
-    } catch (err: unknown) {
-      setReviewError(err instanceof Error ? err.message : t('emergency.error.review'));
-    } finally {
-      setReviewing(false);
-    }
-  };
-
   return (
-    <div className="two-column-layout">
+    <div className="single-column-layout">
       <Card>
         <CardHeader title={t('emergency.title')} subheader={t('emergency.subheader')} />
         <CardContent>
@@ -125,41 +94,8 @@ export function EmergencyAccessPage(): React.ReactElement {
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setReason(e.target.value)}
               required
             />
-            <Button type="submit" className="danger-button" disabled={requesting}>
+            <Button type="submit" className="danger-button" disabled={requesting} aria-busy={requesting}>
               {requesting ? t('emergency.requesting') : t('emergency.request')}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader title={t('emergency.review.title')} subheader={t('emergency.review.subheader')} />
-        <CardContent>
-          {reviewResult && (
-            <div role="status" className="success-message mb-4">
-              {t('emergency.success.review', { id: reviewResult.id })}
-            </div>
-          )}
-          {reviewError && (
-            <div role="alert" className="error mb-4">{reviewError}</div>
-          )}
-          <form onSubmit={(e) => void handleReview(e)} className="stack gap-md" noValidate>
-            <Input
-              aria-label={t('emergency.reviewEventId.label')}
-              placeholder={t('emergency.reviewEventId.placeholder')}
-              value={reviewEventId}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setReviewEventId(e.target.value)}
-              required
-            />
-            <Input
-              aria-label={t('emergency.review.note.label')}
-              placeholder={t('emergency.review.note.placeholder')}
-              value={reviewNote}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setReviewNote(e.target.value)}
-              required
-            />
-            <Button type="submit" className="secondary-button" disabled={reviewing}>
-              {reviewing ? t('emergency.review.submitting') : t('emergency.review.submit')}
             </Button>
           </form>
         </CardContent>

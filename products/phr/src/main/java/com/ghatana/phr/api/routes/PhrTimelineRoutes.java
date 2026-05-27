@@ -90,7 +90,7 @@ public final class PhrTimelineRoutes {
                 response.put("count", items.size());
                 response.put("generatedAt", timeline.generatedAt());
                 
-                return PhrRouteSupport.jsonResponse(200, response, context.correlationId());
+                return PhrRouteSupport.jsonResponseWithCorrelation(200, response, context.correlationId());
             });
     }
 
@@ -139,7 +139,7 @@ public final class PhrTimelineRoutes {
                 response.put("items", items);
                 response.put("count", items.size());
                 
-                return PhrRouteSupport.jsonResponse(200, response, context.correlationId());
+                return PhrRouteSupport.jsonResponseWithCorrelation(200, response, context.correlationId());
             });
     }
 }

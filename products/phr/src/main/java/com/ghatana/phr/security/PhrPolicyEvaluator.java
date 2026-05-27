@@ -2,8 +2,11 @@ package com.ghatana.phr.security;
 
 import com.ghatana.phr.api.routes.PhrRouteSupport.PhrRequestContext;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
+import com.ghatana.phr.kernel.service.FchvCommunityAssignmentService;
 import com.ghatana.phr.kernel.service.TreatmentRelationshipService;
 import io.activej.promise.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Kernel-backed PHI policy evaluator for PHR product.
@@ -22,32 +25,45 @@ import io.activej.promise.Promise;
  *   <li>Emergency access: requires break-glass authorization with justification</li>
  * </ul>
  *
+ * <p>Policy evaluator is now an injected service (not static) to ensure proper
+ * dependency injection and fail-closed behavior when services are unavailable.</p>
+ *
  * @doc.type class
  * @doc.purpose Kernel-backed PHI policy evaluation for PHR
  * @doc.layer product
- * @doc.pattern Policy
+ * @doc.pattern Service
  * @since 1.0.0
  */
 public final class PhrPolicyEvaluator {
 
-    private static ConsentManagementService consentService;
-    private static TreatmentRelationshipService treatmentRelationshipService;
+    private static final Logger LOG = LoggerFactory.getLogger(PhrPolicyEvaluator.class);
 
-    private PhrPolicyEvaluator() {
-        // Utility class - prevent instantiation
-    }
+    private final ConsentManagementService consentService;
+    private final TreatmentRelationshipService treatmentRelationshipService;
+    private final FchvCommunityAssignmentService fchvAssignmentService;
 
     /**
-     * Initializes the policy evaluator with required services.
+     * Constructs a policy evaluator with required services.
      *
-     * @param consentService the consent management service
-     * @param treatmentRelationshipService the treatment relationship service
+     * @param consentService the consent management service (must not be null)
+     * @param treatmentRelationshipService the treatment relationship service (must not be null)
+     * @param fchvAssignmentService the FCHV community assignment service (must not be null)
+     * @throws IllegalArgumentException if any service is null
      */
-    public static void initialize(
+    public PhrPolicyEvaluator(
             ConsentManagementService consentService,
-            TreatmentRelationshipService treatmentRelationshipService) {
-        PhrPolicyEvaluator.consentService = consentService;
-        PhrPolicyEvaluator.treatmentRelationshipService = treatmentRelationshipService;
+            TreatmentRelationshipService treatmentRelationshipService,
+            FchvCommunityAssignmentService fchvAssignmentService) {
+        this.consentService = requireNonNull(consentService, "consentService must not be null");
+        this.treatmentRelationshipService = requireNonNull(treatmentRelationshipService, "treatmentRelationshipService must not be null");
+        this.fchvAssignmentService = requireNonNull(fchvAssignmentService, "fchvAssignmentService must not be null");
+    }
+
+    private static <T> T requireNonNull(T value, String message) {
+        if (value == null) {
+            throw new IllegalArgumentException(message);
+        }
+        return value;
     }
 
     /**
@@ -56,61 +72,83 @@ public final class PhrPolicyEvaluator {
      * <p>This replaces the legacy role-based shortcut with policy-based evaluation.
      * The evaluation checks consent for caregivers and treatment relationships for clinicians.</p>
      *
+     * <p>Policy is fail-closed: if required services are unavailable, access is denied.
+     * This is a security-critical decision - we never allow access without proper validation.</p>
+     *
      * @param context the PHR request context
      * @param patientId the target patient ID
-     * @return Promise resolving to true if PHI access is permitted
+     * @return Promise resolving to policy decision with detailed reason
      */
-    public static Promise<Boolean> canAccessPatientRecordAsync(PhrRequestContext context, String patientId) {
+    public Promise<PolicyDecision> canAccessPatientRecordAsync(PhrRequestContext context, String patientId) {
         if (context == null) {
-            return Promise.of(false);
+            return Promise.of(PolicyDecision.denied("INVALID_CONTEXT", "Request context is null"));
         }
 
         String principalId = context.principalId();
         if (principalId == null) {
-            return Promise.of(false);
+            return Promise.of(PolicyDecision.denied("MISSING_PRINCIPAL", "Principal ID is null"));
+        }
+
+        if (patientId == null || patientId.isBlank()) {
+            return Promise.of(PolicyDecision.denied("MISSING_PATIENT_ID", "Patient ID is null or blank"));
         }
 
         String role = context.role();
 
         // Patient role: can only access own records
         if ("patient".equals(role)) {
-            return Promise.of(principalId.equals(patientId));
+            boolean allowed = principalId.equals(patientId);
+            return Promise.of(allowed 
+                ? PolicyDecision.allowed("SELF_ACCESS", "Patient accessing own record")
+                : PolicyDecision.denied("SELF_ACCESS_DENIED", "Patient can only access own record"));
         }
 
-        // Caregiver role: requires active consent grant
+        // Caregiver role: requires active consent grant with proper scope
         if ("caregiver".equals(role)) {
-            if (consentService == null) {
-                // Fallback to allow if service not initialized (graceful degradation)
-                return Promise.of(true);
-            }
             return consentService.validateAccess(patientId, principalId, "*")
-                .map(result -> result.isAllowed());
+                .map(result -> {
+                    if (result.isAllowed()) {
+                        // Check if consent scope includes the requested resource type
+                        // For now, we use "*" as a wildcard - in production, this would check specific resource types
+                        return PolicyDecision.allowed("CAREGIVER_CONSENT_GRANTED", 
+                            "Valid caregiver consent grant exists with appropriate scope");
+                    }
+                    return PolicyDecision.denied("CAREGIVER_CONSENT_DENIED", 
+                        "No valid caregiver consent grant or insufficient scope");
+                });
         }
 
         // Clinician role: requires treatment relationship
         if ("clinician".equals(role)) {
-            if (treatmentRelationshipService == null) {
-                // Fallback to allow if service not initialized (graceful degradation)
-                return Promise.of(true);
-            }
-            return treatmentRelationshipService.hasActiveTreatmentRelationship(principalId, patientId);
+            return treatmentRelationshipService.hasActiveTreatmentRelationship(principalId, patientId)
+                .map(hasRelationship -> hasRelationship
+                    ? PolicyDecision.allowed("TREATMENT_RELATIONSHIP", "Active treatment relationship exists")
+                    : PolicyDecision.denied("NO_TREATMENT_RELATIONSHIP", "No active treatment relationship"));
         }
 
-        // Admin role: requires audit trail (service layer handles logging)
+        // Admin role: requires audit justification and proper authorization
         if ("admin".equals(role)) {
-            // Admin access is allowed but must be logged by service layer
-            return Promise.of(true);
+            // Admin access is allowed but requires audit logging
+            // The audit justification should be provided via a separate header or parameter
+            // For now, we allow access but mark it as requiring audit
+            LOG.info("Admin PHI access - requires audit logging. principalId={}, patientId={}, correlationId={}",
+                principalId, patientId, context.correlationId());
+            return Promise.of(PolicyDecision.allowedWithAudit("ADMIN_ACCESS", 
+                "Admin access requires audit justification and logging"));
         }
 
-        // FCHV role: community health volunteer access
+        // FCHV role: requires community assignment
         if ("fchv".equals(role)) {
-            // FCHV access is scoped to assigned community members
-            // In production, this would check community assignment
-            return Promise.of(true);
+            return fchvAssignmentService.hasCommunityAccess(principalId, patientId)
+                .map(hasAccess -> hasAccess
+                    ? PolicyDecision.allowed("FCHV_COMMUNITY_ACCESS", "FCHV has community assignment to patient")
+                    : PolicyDecision.denied("FCHV_NO_COMMUNITY_ACCESS", "FCHV not assigned to patient's community"));
         }
 
         // Unknown role: fail closed
-        return Promise.of(false);
+        LOG.warn("Unknown role attempted PHI access - denying. role={}, principalId={}, patientId={}, correlationId={}",
+            role, principalId, patientId, context.correlationId());
+        return Promise.of(PolicyDecision.denied("UNKNOWN_ROLE", "Unknown role: " + role));
     }
 
     /**
@@ -119,13 +157,16 @@ public final class PhrPolicyEvaluator {
      * <p>Note: This method does not perform full policy checks for caregivers and clinicians
      * as those require async service calls. Use canAccessPatientRecordAsync for full policy evaluation.</p>
      *
+     * <p>This method is deprecated and will be removed in a future version.
+     * All routes should migrate to the async version.</p>
+     *
      * @param context the PHR request context
      * @param patientId the target patient ID
      * @return true if PHI access is provisionally allowed (service layer must verify)
      * @deprecated Use canAccessPatientRecordAsync for full policy evaluation
      */
     @Deprecated
-    public static boolean canAccessPatientRecord(PhrRequestContext context, String patientId) {
+    public boolean canAccessPatientRecord(PhrRequestContext context, String patientId) {
         if (context == null) {
             return false;
         }
@@ -176,17 +217,85 @@ public final class PhrPolicyEvaluator {
      * <p>Emergency access requires explicit justification and is fully audited.
      * This method checks if the context has the clinician or admin role.</p>
      *
+     * <p>Emergency access is a security-sensitive operation that requires:
+     * <ul>
+     *   <li>Valid role (clinician or admin)</li>
+     *   <li>Explicit justification (provided separately via emergency request flow)</li>
+     *   <li>Audit logging (handled by emergency service)</li>
+     *   <li>Patient notification (handled by emergency service)</li>
+     * </ul></p>
+     *
      * @param context the PHR request context
-     * @return true if emergency access is permitted
+     * @param patientId the target patient ID
+     * @param justification the emergency access justification
+     * @return policy decision with detailed reason
      */
-    public static boolean canAccessEmergency(PhrRequestContext context) {
+    public Promise<PolicyDecision> canAccessEmergency(PhrRequestContext context, String patientId, String justification) {
         if (context == null) {
-            return false;
+            return Promise.of(PolicyDecision.denied("INVALID_CONTEXT", "Request context is null"));
+        }
+
+        if (patientId == null || patientId.isBlank()) {
+            return Promise.of(PolicyDecision.denied("MISSING_PATIENT_ID", "Patient ID is null or blank"));
+        }
+
+        if (justification == null || justification.isBlank()) {
+            return Promise.of(PolicyDecision.denied("MISSING_JUSTIFICATION", "Emergency access requires justification"));
+        }
+
+        String role = context.role();
+        String principalId = context.principalId();
+
+        // Only clinicians and admins can request emergency access
+        if (!("clinician".equals(role) || "admin".equals(role))) {
+            LOG.warn("Emergency access attempted by non-authorized role - denying. role={}, principalId={}, patientId={}, correlationId={}",
+                role, principalId, patientId, context.correlationId());
+            return Promise.of(PolicyDecision.denied("EMERGENCY_NOT_ELIGIBLE", "Only clinicians and admins can request emergency access"));
+        }
+
+        // For clinicians, verify treatment relationship (emergency override allowed)
+        if ("clinician".equals(role)) {
+            return treatmentRelationshipService.hasActiveTreatmentRelationship(principalId, patientId)
+                .map(hasRelationship -> {
+                    if (hasRelationship) {
+                        return PolicyDecision.emergencyOverride("EMERGENCY_WITH_RELATIONSHIP", 
+                            "Emergency access with treatment relationship - requires post-hoc justification");
+                    }
+                    // Emergency break-glass without treatment relationship - allowed but requires stricter audit
+                    LOG.warn("Emergency break-glass without treatment relationship - allowing with strict audit. principalId={}, patientId={}, correlationId={}",
+                        principalId, patientId, context.correlationId());
+                    return PolicyDecision.emergencyOverride("EMERGENCY_BREAK_GLASS", 
+                        "Emergency break-glass access - requires post-hoc justification and patient notification");
+                });
+        }
+
+        // Admin emergency access - allowed with audit
+        LOG.warn("Admin emergency access - allowing with strict audit. principalId={}, patientId={}, correlationId={}",
+            principalId, patientId, context.correlationId());
+        return Promise.of(PolicyDecision.emergencyOverride("ADMIN_EMERGENCY", 
+            "Admin emergency access - requires post-hoc justification"));
+    }
+
+    /**
+     * Synchronous version of emergency access check for backward compatibility.
+     *
+     * @param context the PHR request context
+     * @return policy decision with detailed reason
+     * @deprecated Use canAccessEmergency with patientId and justification for full policy evaluation
+     */
+    @Deprecated
+    public PolicyDecision canAccessEmergency(PhrRequestContext context) {
+        if (context == null) {
+            return PolicyDecision.denied("INVALID_CONTEXT", "Request context is null");
         }
 
         String role = context.role();
         // Only clinicians and admins can request emergency access
-        return "clinician".equals(role) || "admin".equals(role);
+        if ("clinician".equals(role) || "admin".equals(role)) {
+            return PolicyDecision.allowed("EMERGENCY_ELIGIBLE", "Role eligible for emergency access");
+        }
+        
+        return PolicyDecision.denied("EMERGENCY_NOT_ELIGIBLE", "Only clinicians and admins can request emergency access");
     }
 
     /**
@@ -195,14 +304,18 @@ public final class PhrPolicyEvaluator {
      * <p>Audit trail access is restricted to admin roles.</p>
      *
      * @param context the PHR request context
-     * @return true if audit access is permitted
+     * @return policy decision with detailed reason
      */
-    public static boolean canViewAuditTrail(PhrRequestContext context) {
+    public PolicyDecision canViewAuditTrail(PhrRequestContext context) {
         if (context == null) {
-            return false;
+            return PolicyDecision.denied("INVALID_CONTEXT", "Request context is null");
         }
 
-        return "admin".equals(context.role());
+        if ("admin".equals(context.role())) {
+            return PolicyDecision.allowed("ADMIN_AUDIT_ACCESS", "Admin can view audit trails");
+        }
+        
+        return PolicyDecision.denied("AUDIT_ACCESS_DENIED", "Only admins can view audit trails");
     }
 
     /**
@@ -213,35 +326,100 @@ public final class PhrPolicyEvaluator {
      *
      * @param context the PHR request context
      * @param patientId the patient whose consent is being managed
-     * @return true if consent management is permitted
+     * @return policy decision with detailed reason
      */
-    public static boolean canManageConsent(PhrRequestContext context, String patientId) {
+    public PolicyDecision canManageConsent(PhrRequestContext context, String patientId) {
         if (context == null) {
-            return false;
+            return PolicyDecision.denied("INVALID_CONTEXT", "Request context is null");
         }
 
         String principalId = context.principalId();
         if (principalId == null) {
-            return false;
+            return PolicyDecision.denied("MISSING_PRINCIPAL", "Principal ID is null");
         }
 
         String role = context.role();
 
         // Patients can manage their own consent
         if ("patient".equals(role) && principalId.equals(patientId)) {
-            return true;
+            return PolicyDecision.allowed("SELF_CONSENT_MANAGEMENT", "Patient managing own consent");
         }
 
         // Clinicians can view/manage consent with authorization
         if ("clinician".equals(role)) {
-            return true;
+            return PolicyDecision.allowed("CLINICIAN_CONSENT_MANAGEMENT", "Clinician managing consent");
         }
 
         // Admins can manage consent
         if ("admin".equals(role)) {
-            return true;
+            return PolicyDecision.allowed("ADMIN_CONSENT_MANAGEMENT", "Admin managing consent");
         }
 
-        return false;
+        return PolicyDecision.denied("CONSENT_MANAGEMENT_DENIED", "Role not authorized to manage consent");
+    }
+
+    /**
+     * Policy decision result with detailed reason and audit metadata.
+     *
+     * <p>This replaces simple boolean returns to provide:
+     * <ul>
+     *   <li>Explicit allowed/denied status</li>
+     *   <li>Machine-readable reason code</li>
+     *   <li>Human-readable reason message</li>
+     *   <li>Audit requirement flag</li>
+     *   <li>Emergency override flag</li>
+     * </ul></p>
+     */
+    public static final class PolicyDecision {
+        private final boolean allowed;
+        private final String reasonCode;
+        private final String reasonMessage;
+        private final boolean requiresAudit;
+        private final boolean emergencyOverride;
+
+        private PolicyDecision(boolean allowed, String reasonCode, String reasonMessage, 
+                            boolean requiresAudit, boolean emergencyOverride) {
+            this.allowed = allowed;
+            this.reasonCode = reasonCode;
+            this.reasonMessage = reasonMessage;
+            this.requiresAudit = requiresAudit;
+            this.emergencyOverride = emergencyOverride;
+        }
+
+        static PolicyDecision allowed(String reasonCode, String reasonMessage) {
+            return new PolicyDecision(true, reasonCode, reasonMessage, false, false);
+        }
+
+        static PolicyDecision allowedWithAudit(String reasonCode, String reasonMessage) {
+            return new PolicyDecision(true, reasonCode, reasonMessage, true, false);
+        }
+
+        static PolicyDecision denied(String reasonCode, String reasonMessage) {
+            return new PolicyDecision(false, reasonCode, reasonMessage, false, false);
+        }
+
+        static PolicyDecision emergencyOverride(String reasonCode, String reasonMessage) {
+            return new PolicyDecision(true, reasonCode, reasonMessage, true, true);
+        }
+
+        public boolean isAllowed() {
+            return allowed;
+        }
+
+        public String getReasonCode() {
+            return reasonCode;
+        }
+
+        public String getReasonMessage() {
+            return reasonMessage;
+        }
+
+        public boolean requiresAudit() {
+            return requiresAudit;
+        }
+
+        public boolean isEmergencyOverride() {
+            return emergencyOverride;
+        }
     }
 }

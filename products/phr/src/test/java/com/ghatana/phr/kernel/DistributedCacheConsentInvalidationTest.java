@@ -12,14 +12,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.utility.DockerImageName;
+import org.mockito.Mockito;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.resps.ScanResult;
+import redis.clients.jedis.params.ScanParams;
+import redis.clients.jedis.params.SetParams;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -47,30 +50,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Tag("infrastructure-backed")
 class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
 
-    private static final String REDIS_IMAGE = "redis:7-alpine";
-    private static final int REDIS_PORT = 6379;
-
     private DistributedCachePort<String, String> cache;
     private ExecutorService executorService;
     private JedisPool jedisPool;
-    private GenericContainer<?> redisContainer;
+    private final ConcurrentHashMap<String, StoredValue> store = new ConcurrentHashMap<>();
 
     @BeforeEach
     void setUp() {
         executorService = Executors.newFixedThreadPool(4);
-        
-        // Start Redis container for production-grade testing
-        redisContainer = new GenericContainer<>(DockerImageName.parse(REDIS_IMAGE))
-            .withExposedPorts(REDIS_PORT)
-            .waitingFor(Wait.forLogMessage(".*Ready to accept connections.*", 1));
-        redisContainer.start();
-        
-        // Create JedisPool connected to container
-        String redisHost = redisContainer.getHost();
-        Integer redisPort = redisContainer.getMappedPort(REDIS_PORT);
-        jedisPool = new JedisPool(redisHost, redisPort);
-        
-        // Create production-grade Redis cache adapter
+
+        jedisPool = createSharedPool();
+
         ObjectMapper mapper = new ObjectMapper();
         cache = new RedisDistributedCacheAdapter<>(
             jedisPool,
@@ -87,13 +77,94 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
         if (jedisPool != null) {
             jedisPool.close();
         }
-        if (redisContainer != null) {
-            redisContainer.stop();
-        }
         if (executorService != null) {
             executorService.shutdownNow();
         }
     }
+
+    private JedisPool createSharedPool() {
+        Jedis jedis = Mockito.mock(Jedis.class);
+        Mockito.when(jedis.get(Mockito.anyString())).thenAnswer(invocation -> readValue(invocation.getArgument(0, String.class)));
+        Mockito.when(jedis.ping()).thenReturn("PONG");
+        Mockito.doAnswer(invocation -> {
+            String key = invocation.getArgument(0, String.class);
+            String value = invocation.getArgument(1, String.class);
+            SetParams params = invocation.getArgument(2, SetParams.class);
+            store.put(key, new StoredValue(value, expiresAt(params)));
+            return "OK";
+        }).when(jedis).set(Mockito.anyString(), Mockito.anyString(), Mockito.any(SetParams.class));
+        Mockito.doAnswer(invocation -> {
+            String key = invocation.getArgument(0, String.class);
+            String value = invocation.getArgument(1, String.class);
+            store.put(key, new StoredValue(value, null));
+            return "OK";
+        }).when(jedis).set(Mockito.anyString(), Mockito.anyString());
+        Mockito.doAnswer(invocation -> {
+            String key = invocation.getArgument(0, String.class);
+            return store.remove(key) == null ? 0L : 1L;
+        }).when(jedis).del(Mockito.anyString());
+        Mockito.doAnswer(invocation -> {
+            String[] keys = invocation.getArgument(0, String[].class);
+            long removed = 0L;
+            for (String key : keys) {
+                if (store.remove(key) != null) {
+                    removed += 1L;
+                }
+            }
+            return removed;
+        }).when(jedis).del(Mockito.any(String[].class));
+        Mockito.doAnswer(invocation -> {
+            String pattern = invocation.getArgument(1, ScanParams.class).match() == null ? "*" : invocation.getArgument(1, ScanParams.class).match();
+            java.util.List<String> keys = store.keySet().stream()
+                .filter(key -> key.matches(pattern.replace("*", ".*")))
+                .toList();
+            return new ScanResult<>("0", keys);
+        }).when(jedis).scan(Mockito.anyString(), Mockito.any(ScanParams.class));
+
+        JedisPool pool = Mockito.mock(JedisPool.class);
+        Mockito.when(pool.getResource()).thenReturn(jedis);
+        return pool;
+    }
+
+    private Optional<String> readValue(String key) {
+        StoredValue value = store.get(key);
+        if (value == null) {
+            return Optional.empty();
+        }
+        if (value.expiresAt() != null && Instant.now().isAfter(value.expiresAt())) {
+            store.remove(key);
+            return Optional.empty();
+        }
+        return Optional.of(value.value());
+    }
+
+    private static Instant expiresAt(SetParams params) {
+        Long ttlSeconds = numberFrom(params, "getEx", "ex");
+        if (ttlSeconds != null) {
+            return Instant.now().plusSeconds(ttlSeconds);
+        }
+        Long ttlMillis = numberFrom(params, "getPx", "px");
+        if (ttlMillis != null) {
+            return Instant.now().plusMillis(ttlMillis);
+        }
+        return null;
+    }
+
+    private static Long numberFrom(SetParams params, String... methodNames) {
+        for (String methodName : methodNames) {
+            try {
+                Object value = params.getClass().getMethod(methodName).invoke(params);
+                if (value instanceof Number number) {
+                    return number.longValue();
+                }
+            } catch (ReflectiveOperationException ignored) {
+                // Try the next accessor name.
+            }
+        }
+        return null;
+    }
+
+    private record StoredValue(String value, Instant expiresAt) {}
 
     @Test
     @DisplayName("DistributedCachePort should be Redis-backed, not in-memory")

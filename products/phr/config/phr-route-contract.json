@@ -5,7 +5,8 @@
     "patient": 0,
     "caregiver": 1,
     "clinician": 2,
-    "admin": 3
+    "fchv": 3,
+    "admin": 4
   },
   "routes": [
     {
@@ -18,10 +19,10 @@
       "tiers": ["core"],
       "actions": ["view-patient-summary"],
       "cards": ["patient-summary", "care-plan", "emergency-readiness"],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/dashboard",
+      "policyId": "phr.dashboard.view",
+      "testId": "phr-dashboard-view-001"
     },
     {
       "path": "/records",
@@ -33,10 +34,10 @@
       "tiers": ["core"],
       "actions": ["view-records"],
       "cards": ["record-highlights", "interop-status"],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/records",
+      "policyId": "phr.records.view",
+      "testId": "phr-records-view-001"
     },
     {
       "path": "/consents",
@@ -48,10 +49,7 @@
       "tiers": ["core"],
       "actions": ["manage-consent"],
       "cards": ["active-consent-grants", "expiring-consents"],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable"
     },
     {
       "path": "/appointments",
@@ -63,10 +61,7 @@
       "tiers": ["core"],
       "actions": ["schedule-visit"],
       "cards": ["upcoming-appointments"],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable"
     },
     {
       "path": "/settings",
@@ -78,10 +73,7 @@
       "tiers": ["core"],
       "actions": ["manage-profile-settings"],
       "cards": ["profile-controls", "integration-status"],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable"
     },
     {
       "path": "/labs",
@@ -93,10 +85,7 @@
       "tiers": ["clinical"],
       "actions": ["review-lab-results"],
       "cards": ["recent-lab-results"],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable"
     },
     {
       "path": "/medications",
@@ -108,10 +97,7 @@
       "tiers": ["clinical"],
       "actions": ["review-medications"],
       "cards": ["medication-adherence"],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable"
     },
     {
       "path": "/conditions",
@@ -123,10 +109,7 @@
       "tiers": ["core"],
       "actions": ["view-conditions"],
       "cards": ["condition-list"],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable"
     },
     {
       "path": "/observations",
@@ -138,10 +121,7 @@
       "tiers": ["clinical"],
       "actions": ["view-observations"],
       "cards": ["observation-trends"],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable"
     },
     {
       "path": "/immunizations",
@@ -153,10 +133,7 @@
       "tiers": ["core"],
       "actions": ["view-immunizations"],
       "cards": ["immunization-schedule"],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable"
     },
     {
       "path": "/documents",
@@ -168,10 +145,7 @@
       "tiers": ["core"],
       "actions": ["view-documents", "upload-document"],
       "cards": ["document-list"],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable"
     },
     {
       "path": "/documents/upload",
@@ -183,10 +157,7 @@
       "tiers": ["core"],
       "actions": ["upload-document"],
       "cards": [],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable"
     },
     {
       "path": "/documents/:docId/ocr",
@@ -198,10 +169,7 @@
       "tiers": ["core"],
       "actions": ["review-ocr"],
       "cards": [],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable"
     },
     {
       "path": "/timeline",
@@ -213,10 +181,7 @@
       "tiers": ["core"],
       "actions": ["view-timeline"],
       "cards": ["health-timeline"],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable"
     },
     {
       "path": "/profile",
@@ -228,10 +193,7 @@
       "tiers": ["core"],
       "actions": ["view-profile", "edit-profile"],
       "cards": ["profile-summary"],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable"
     },
     {
       "path": "/records/:recordId",
@@ -243,10 +205,7 @@
       "tiers": ["core"],
       "actions": ["view-records"],
       "cards": [],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable"
     },
     {
       "path": "/notifications",
@@ -258,10 +217,7 @@
       "tiers": ["core"],
       "actions": ["view-notifications"],
       "cards": ["notification-feed"],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable"
     },
     {
       "path": "/forbidden",
@@ -273,10 +229,7 @@
       "tiers": ["core"],
       "actions": [],
       "cards": [],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable"
     },
     {
       "path": "/not-found",
@@ -288,10 +241,7 @@
       "tiers": ["core"],
       "actions": [],
       "cards": [],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable"
     },
     {
       "path": "/emergency",
@@ -304,10 +254,10 @@
       "emergencyAction": true,
       "actions": ["break-glass-review"],
       "cards": ["override-audit-timeline"],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/emergency/access",
+      "policyId": "phr.emergency.break-glass",
+      "testId": "phr-emergency-break-glass-001"
     },
     {
       "path": "/emergency/reviews",
@@ -319,10 +269,10 @@
       "tiers": ["emergency"],
       "actions": ["review-emergency-access"],
       "cards": ["pending-reviews", "overdue-reviews"],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/emergency/reviews",
+      "policyId": "phr.emergency.review",
+      "testId": "phr-emergency-review-001"
     },
     {
       "path": "/release-readiness",
@@ -334,10 +284,7 @@
       "tiers": ["clinical"],
       "actions": ["view-release-readiness"],
       "cards": ["evidence-freshness", "fhir-runtime", "consent-cache-proof", "rollback-proof"],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable"
     },
     {
       "path": "/audit",
@@ -349,10 +296,7 @@
       "tiers": ["clinical"],
       "actions": ["view-audit-trail"],
       "cards": ["audit-trail"],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable"
     },
     {
       "path": "/provider/dashboard",
@@ -364,11 +308,7 @@
       "tiers": ["clinical"],
       "actions": ["view-provider-dashboard"],
       "cards": ["provider-panel"],
-      "featureFlag": true,
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "experimental"
-      }
+      "stability": "hidden"
     },
     {
       "path": "/provider/patients",
@@ -380,11 +320,7 @@
       "tiers": ["clinical"],
       "actions": ["view-patient-list"],
       "cards": ["patient-roster"],
-      "featureFlag": true,
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "experimental"
-      }
+      "stability": "hidden"
     },
     {
       "path": "/caregiver/dependents",
@@ -396,11 +332,7 @@
       "tiers": ["core"],
       "actions": ["view-dependents"],
       "cards": ["dependent-summaries"],
-      "featureFlag": true,
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "experimental"
-      }
+      "stability": "hidden"
     },
     {
       "path": "/fchv/dashboard",
@@ -412,11 +344,7 @@
       "tiers": ["core"],
       "actions": ["view-fchv-dashboard"],
       "cards": ["community-health-summary"],
-      "featureFlag": true,
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "experimental"
-      }
+      "stability": "hidden"
     },
     {
       "path": "/mobile/dashboard",
@@ -428,10 +356,7 @@
       "tiers": ["core"],
       "actions": ["view-mobile-dashboard"],
       "cards": ["mobile-patient-summary"],
-      "lifecycle": {
-        "introducedAt": "1.0.0",
-        "stability": "stable"
-      }
+      "stability": "stable"
     }
   ]
 }
