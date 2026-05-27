@@ -1,20 +1,20 @@
 {
-  "generatedAt": "2026-05-27T20:45:56.162Z",
+  "generatedAt": "2026-05-27T21:17:23.851Z",
   "evidenceRun": {
     "generatedBy": "scripts/check-product-release-readiness.mjs",
     "command": "pnpm check:product-release-readiness",
     "source": "scripts/check-product-release-readiness.mjs",
-    "commit": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
-    "sourceCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
-    "targetCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
+    "commit": "ade746204919f9e006690c30371a82028f77ed93",
+    "sourceCommitSha": "ade746204919f9e006690c30371a82028f77ed93",
+    "targetCommitSha": "ade746204919f9e006690c30371a82028f77ed93",
     "targetEnvironment": "staging"
   },
-  "sourceCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
-  "targetCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
+  "sourceCommitSha": "ade746204919f9e006690c30371a82028f77ed93",
+  "targetCommitSha": "ade746204919f9e006690c30371a82028f77ed93",
   "targetEnvironment": "staging",
   "validationStatus": "failed",
-  "reviewDueAt": "2026-05-28T20:45:56.197Z",
-  "expiresAt": "2026-05-29T20:45:56.197Z",
+  "reviewDueAt": "2026-05-28T21:17:23.886Z",
+  "expiresAt": "2026-05-29T21:17:23.886Z",
   "pass": false,
   "reason": "script-failure",
   "failedScript": "./scripts/check-phr-consent-cache.mjs",
@@ -22,157 +22,157 @@
     {
       "script": "pnpm:build:kernel-lifecycle-platform",
       "status": 0,
-      "durationMs": 18985
+      "durationMs": 17605
     },
     {
       "script": "pnpm:check:aggregate-gate-integrity",
       "status": 0,
-      "durationMs": 834
+      "durationMs": 746
     },
     {
       "script": "./scripts/check-release-profile-local-targets.mjs",
       "status": 0,
-      "durationMs": 58
+      "durationMs": 56
     },
     {
       "script": "./scripts/check-product-family-asset-registry.mjs",
       "status": 0,
-      "durationMs": 102
+      "durationMs": 100
     },
     {
       "script": "./scripts/check-affected-product-strict-release-profile.mjs",
       "status": 0,
-      "durationMs": 65
+      "durationMs": 64
     },
     {
       "script": "./scripts/check-kernel-platform-lifecycle.mjs",
       "status": 0,
-      "durationMs": 71307
+      "durationMs": 70225
     },
     {
       "script": "./scripts/check-kernel-lifecycle-truth.mjs",
       "status": 0,
-      "durationMs": 84
+      "durationMs": 82
     },
     {
       "script": "./scripts/check-toolchain-adapter-contracts.mjs",
       "status": 0,
-      "durationMs": 74
+      "durationMs": 75
     },
     {
       "script": "./scripts/check-product-artifact-contracts.mjs",
       "status": 0,
-      "durationMs": 182
+      "durationMs": 180
     },
     {
       "script": "./scripts/check-product-deployment-contracts.mjs",
       "status": 0,
-      "durationMs": 184
+      "durationMs": 174
     },
     {
       "script": "./scripts/check-product-environment-contracts.mjs",
       "status": 0,
-      "durationMs": 56
+      "durationMs": 55
     },
     {
       "script": "./scripts/check-product-shape-capability-matrix.mjs",
       "status": 0,
-      "durationMs": 63
+      "durationMs": 71
     },
     {
       "script": "./scripts/check-product-registry-drift.mjs",
       "status": 0,
-      "durationMs": 65
+      "durationMs": 61
     },
     {
       "script": "./scripts/check-product-release-evidence-packs.mjs",
       "status": 0,
-      "durationMs": 63
+      "durationMs": 66
     },
     {
       "script": "./scripts/check-product-ci-matrices.mjs",
       "status": 0,
-      "durationMs": 61
+      "durationMs": 64
     },
     {
       "script": "./scripts/check-product-slo-budgets.mjs",
       "status": 0,
-      "durationMs": 64
+      "durationMs": 66
     },
     {
       "script": "./scripts/check-product-cost-budgets.mjs",
       "status": 0,
-      "durationMs": 66
+      "durationMs": 71
     },
     {
       "script": "./scripts/check-product-domain-invariants.mjs",
       "status": 0,
-      "durationMs": 619
+      "durationMs": 620
     },
     {
       "script": "./scripts/check-product-a11y-route-matrix.mjs",
       "status": 0,
-      "durationMs": 71
+      "durationMs": 76
     },
     {
       "script": "./scripts/check-openapi-release-quality.mjs",
       "status": 0,
-      "durationMs": 69
+      "durationMs": 87
     },
     {
       "script": "./scripts/check-openapi-breaking-changes.mjs",
       "status": 0,
-      "durationMs": 631
+      "durationMs": 681
     },
     {
       "script": "./scripts/check-data-cloud-platform-provider-readiness.mjs",
       "status": 0,
-      "durationMs": 231
+      "durationMs": 244
     },
     {
       "script": "./scripts/check-data-cloud-release-runtime-profile.mjs",
       "status": 0,
-      "durationMs": 46452
+      "durationMs": 101937
     },
     {
       "script": "./scripts/check-phr-lifecycle-readiness.mjs",
       "status": 0,
-      "durationMs": 258
+      "durationMs": 215
     },
     {
       "script": "./scripts/check-phr-lifecycle-pilot.mjs",
       "status": 0,
-      "durationMs": 396
+      "durationMs": 302
     },
     {
       "script": "./scripts/check-phr-kernel-context.mjs",
       "status": 0,
-      "durationMs": 79
+      "durationMs": 63
     },
     {
       "script": "./scripts/check-phr-data-cloud-rls.mjs",
       "status": 0,
-      "durationMs": 68
+      "durationMs": 66
     },
     {
       "script": "./scripts/check-phr-emergency-access-audit.mjs",
       "status": 0,
-      "durationMs": 68
+      "durationMs": 66
     },
     {
       "script": "./scripts/check-phr-fhir-validation.mjs",
       "status": 0,
-      "durationMs": 106
+      "durationMs": 102
     },
     {
       "script": "./scripts/check-phr-hipaa-compliance.mjs",
       "status": 0,
-      "durationMs": 64
+      "durationMs": 58
     },
     {
       "script": "./scripts/check-phr-consent-cache.mjs",
       "status": 1,
-      "durationMs": 106
+      "durationMs": 108
     }
   ],
   "journeyMatrix": [

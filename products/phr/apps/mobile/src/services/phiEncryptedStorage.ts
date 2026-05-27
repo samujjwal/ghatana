@@ -64,17 +64,21 @@ function base64ToUint8Array(b64: string): Uint8Array {
   return bytes;
 }
 
-async function generateAesKey(): Promise<CryptoKey> {
-  return crypto.subtle.generateKey(
+async function generateAesKey(): Promise<{ rawKey: string; cryptoKey: CryptoKey }> {
+  // Generate raw key bytes directly for storage
+  const rawKeyBytes = crypto.getRandomValues(new Uint8Array(KEY_LENGTH_BITS / 8));
+  const rawKeyBase64 = uint8ArrayToBase64(rawKeyBytes);
+  
+  // Import as non-extractable CryptoKey for crypto operations
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    rawKeyBytes.buffer,
     { name: ALGORITHM, length: KEY_LENGTH_BITS },
-    true, // extractable so we can store it in SecureStore
-    ['encrypt', 'decrypt'],
+    false, // non-extractable for security
+    ['encrypt', 'decrypt']
   );
-}
-
-async function exportKey(key: CryptoKey): Promise<string> {
-  const raw = await crypto.subtle.exportKey('raw', key);
-  return uint8ArrayToBase64(new Uint8Array(raw));
+  
+  return { rawKey: rawKeyBase64, cryptoKey };
 }
 
 async function importKey(b64: string): Promise<CryptoKey> {
@@ -96,7 +100,6 @@ async function getOrCreateKey(): Promise<CryptoKey> {
 
   // Verify device install integrity before key access
   if (!(await verifyDeviceInstallIntegrity())) {
-    // Use safe logger instead of console.warn
     await logSecurityEvent('DEVICE_INTEGRITY_CHECK_FAILED');
     await phiClearAll();
     await clearKey();
@@ -162,11 +165,10 @@ async function getOrCreateKey(): Promise<CryptoKey> {
 }
 
 async function initializeFreshKey(): Promise<CryptoKey> {
-  const key = await generateAesKey();
-  const exported = await exportKey(key);
+  const { rawKey, cryptoKey } = await generateAesKey();
   const createdAt = Date.now().toString();
   
-  await SecureStore.setItemAsync(KEY_SECURE_STORE_NAME, exported, {
+  await SecureStore.setItemAsync(KEY_SECURE_STORE_NAME, rawKey, {
     keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
   });
   await SecureStore.setItemAsync(KEY_VERSION_STORE_NAME, '1');
@@ -181,7 +183,7 @@ async function initializeFreshKey(): Promise<CryptoKey> {
   // Initialize device install ID
   await getOrCreateDeviceInstallId();
   
-  cachedKey = key;
+  cachedKey = cryptoKey;
   cachedKeyVersion = 1;
   return cachedKey;
 }
@@ -199,7 +201,7 @@ async function shouldRotateKey(createdAtStr: string): Promise<boolean> {
 }
 
 async function rotateKey(): Promise<void> {
-  const newKey = await generateAesKey();
+  const { rawKey: newRawKey, cryptoKey: newCryptoKey } = await generateAesKey();
   const newVersion = cachedKeyVersion + 1;
   const newCreatedAt = Date.now().toString();
   
@@ -215,16 +217,15 @@ async function rotateKey(): Promise<void> {
         const reencrypted = await encrypt(decrypted);
         await AsyncStorage.setItem(key, reencrypted);
       } catch (e) {
-        // If re-encryption fails, log and continue - the item will be inaccessible
-        console.error(`Failed to re-encrypt key ${key}:`, e);
+        // If re-encryption fails, log security event and continue - the item will be inaccessible
+        await logSecurityEvent('KEY_ROTATION_REENCRYPT_FAILED');
         await AsyncStorage.removeItem(key);
       }
     }
   }
   
   // Replace old key with new key
-  const exported = await exportKey(newKey);
-  await SecureStore.setItemAsync(KEY_SECURE_STORE_NAME, exported, {
+  await SecureStore.setItemAsync(KEY_SECURE_STORE_NAME, newRawKey, {
     keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
   });
   await SecureStore.setItemAsync(KEY_VERSION_STORE_NAME, newVersion.toString());
@@ -233,7 +234,7 @@ async function rotateKey(): Promise<void> {
   // Update tamper detection with new key
   await initializeTamperDetection();
   
-  cachedKey = newKey;
+  cachedKey = newCryptoKey;
   cachedKeyVersion = newVersion;
 }
 
@@ -528,18 +529,8 @@ export async function phiClearAll(): Promise<void> {
     await AsyncStorage.removeItem(key);
   }
   
-  // Also clear any keys that might have been stored without prefix (legacy cleanup)
-  // This ensures we don't miss any PHI due to prefix inconsistencies
-  const potentialPhiKeys = keys.filter((k) => 
-    k.includes('dashboard') || 
-    k.includes('patient') || 
-    k.includes('record') ||
-    k.includes('consent')
-  );
-  
-  for (const key of potentialPhiKeys) {
-    await AsyncStorage.removeItem(key);
-  }
+  // Clear PHI key registry
+  await SecureStore.deleteItemAsync('phr-phi-key-registry');
 }
 
 /**

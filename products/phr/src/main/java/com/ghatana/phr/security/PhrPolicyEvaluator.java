@@ -359,6 +359,27 @@ public final class PhrPolicyEvaluator {
     }
 
     /**
+     * Checks if a PHI field is restricted and requires explicit policy.
+     *
+     * <p>Restricted fields include mental health, substance use, genetic info,
+     * reproductive health, HIV status, and psychiatric history. These fields
+     * should never be cached, exported, or displayed without explicit policy.</p>
+     *
+     * @param fieldName the field name to check
+     * @return true if the field is restricted
+     */
+    public static boolean isRestrictedField(String fieldName) {
+        if (fieldName == null) {
+            return false;
+        }
+        String lower = fieldName.toLowerCase();
+        return lower.contains("mental") || lower.contains("psychiatric") ||
+               lower.contains("substance") || lower.contains("abuse") ||
+               lower.contains("genetic") || lower.contains("reproductive") ||
+               lower.contains("hiv") || lower.contains("std");
+    }
+
+    /**
      * Policy decision result with detailed reason and audit metadata.
      *
      * <p>This replaces simple boolean returns to provide:

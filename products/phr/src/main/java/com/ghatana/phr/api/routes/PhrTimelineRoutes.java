@@ -2,6 +2,7 @@ package com.ghatana.phr.api.routes;
 
 import com.ghatana.phr.application.patient.PatientOperationContext;
 import com.ghatana.phr.application.record.RecordService;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -27,12 +28,16 @@ import java.util.Objects;
  */
 public final class PhrTimelineRoutes {
 
+    private static final String RESOURCE_TYPE = "timeline";
+
     private final Eventloop eventloop;
     private final RecordService recordService;
+    private final PhrPolicyEvaluator policyEvaluator;
 
-    public PhrTimelineRoutes(Eventloop eventloop, RecordService recordService) {
+    public PhrTimelineRoutes(Eventloop eventloop, RecordService recordService, PhrPolicyEvaluator policyEvaluator) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.recordService = Objects.requireNonNull(recordService, "recordService must not be null");
+        this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 
     /**
@@ -57,41 +62,41 @@ public final class PhrTimelineRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        if (!PhrRouteSupport.canAccessPatientRecordForRole(context, patientId)) {
-            return PhrRouteSupport.errorResponse(403, "TIMELINE_ACCESS_DENIED",
-                "Access denied to timeline for patient " + patientId,
-                context.correlationId());
-        }
+        return policyEvaluator.canAccessPatientRecordAsync(context, patientId).then(decision -> {
+            if (!decision.isAllowed()) {
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+            }
 
-        PatientOperationContext opCtx = new PatientOperationContext(
-            context.tenantId(),
-            "default",
-            context.principalId(),
-            patientId,
-            context.correlationId()
-        );
+            PatientOperationContext opCtx = new PatientOperationContext(
+                context.tenantId(),
+                "default",
+                context.principalId(),
+                patientId,
+                context.correlationId()
+            );
 
-        return recordService.getRecordTimeline(opCtx, patientId)
-            .then(timeline -> {
-                List<Map<String, Object>> items = timeline.entries().stream()
-                    .map(entry -> Map.of(
-                        "id", entry.entryId(),
-                        "occurredAt", entry.timestamp(),
-                        "eventType", entry.category(),
-                        "title", entry.type(),
-                        "description", entry.description(),
-                        "details", entry.details()
-                    ))
-                    .toList();
-                
-                Map<String, Object> response = new java.util.LinkedHashMap<>();
-                response.put("patientId", patientId);
-                response.put("items", items);
-                response.put("count", items.size());
-                response.put("generatedAt", timeline.generatedAt());
-                
-                return PhrRouteSupport.jsonResponseWithCorrelation(200, response, context.correlationId());
-            });
+            return recordService.getRecordTimeline(opCtx, patientId)
+                .then(timeline -> {
+                    List<Map<String, Object>> items = timeline.entries().stream()
+                        .map(entry -> Map.of(
+                            "id", entry.entryId(),
+                            "occurredAt", entry.timestamp(),
+                            "eventType", entry.category(),
+                            "title", entry.type(),
+                            "description", entry.description(),
+                            "details", entry.details()
+                        ))
+                        .toList();
+                    
+                    Map<String, Object> response = new java.util.LinkedHashMap<>();
+                    response.put("patientId", patientId);
+                    response.put("items", items);
+                    response.put("count", items.size());
+                    response.put("generatedAt", timeline.generatedAt());
+                    
+                    return PhrRouteSupport.jsonResponseWithCorrelation(200, response, context.correlationId());
+                });
+        });
     }
 
     private Promise<HttpResponse> handleGetTimelineByCategory(HttpRequest request) {

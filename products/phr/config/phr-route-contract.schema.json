@@ -32,7 +32,7 @@
       "description": "Route definitions",
       "items": {
         "type": "object",
-        "required": ["path", "label", "description", "group", "minimumRole", "actions", "cards", "lifecycle"],
+        "required": ["path", "label", "description", "group", "minimumRole", "actions", "cards", "stability"],
         "properties": {
           "path": {
             "type": "string",
@@ -91,22 +91,10 @@
             },
             "description": "Cards to display on this route"
           },
-          "lifecycle": {
-            "type": "object",
-            "required": ["introducedAt", "stability"],
-            "properties": {
-              "introducedAt": {
-                "type": "string",
-                "pattern": "^\\d+\\.\\d+\\.\\d+$",
-                "description": "Version when route was introduced"
-              },
-              "stability": {
-                "type": "string",
-                "enum": ["stable", "preview", "blocked", "hidden"],
-                "description": "Route stability status"
-              }
-            },
-            "additionalProperties": false
+          "stability": {
+            "type": "string",
+            "enum": ["stable", "preview", "blocked", "hidden"],
+            "description": "Route stability status - only these values allowed per fix-forward policy"
           },
           "featureFlag": {
             "type": "string",

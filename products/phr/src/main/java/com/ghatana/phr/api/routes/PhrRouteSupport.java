@@ -101,8 +101,25 @@ public final class PhrRouteSupport {
         if (value != null && !value.isBlank()) {
             return value.strip();
         }
-        // Generate server-side correlation ID if not provided
-        return java.util.UUID.randomUUID().toString();
+        return "no-correlation-id";
+    }
+
+    static boolean hasClinicalRole(PhrRequestContext context) {
+        if (context == null) {
+            return false;
+        }
+        return "clinician".equals(context.role()) || "admin".equals(context.role());
+    }
+
+    static boolean canAccessPatientRecordForRole(PhrRequestContext context, String patientId) {
+        if (context == null || patientId == null || patientId.isBlank()) {
+            return false;
+        }
+        return switch (context.role()) {
+            case "patient" -> context.principalId().equals(patientId);
+            case "clinician", "admin" -> true;
+            default -> false;
+        };
     }
 
 
@@ -209,6 +226,22 @@ public final class PhrRouteSupport {
     }
 
     /**
+     * Returns a safe policy denial response with only safe information.
+     * Internal details are logged but not exposed to the client.
+     *
+     * @param statusCode the HTTP status code
+     * @param correlationId the correlation ID for tracing
+     * @return Promise containing the error response
+     */
+    static Promise<HttpResponse> policyDenialResponse(int statusCode, String correlationId) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error", "POLICY_DENIED");
+        body.put("message", "Access denied by policy");
+        body.put("correlationId", correlationId);
+        return jsonResponseWithCorrelation(statusCode, body, correlationId);
+    }
+
+    /**
      * Validates facility scope for the request context.
      * Ensures the principal has access to the specified facility.
      *
@@ -255,28 +288,6 @@ public final class PhrRouteSupport {
         }
     }
 
-    static boolean hasClinicalRole(PhrRequestContext context) {
-        if (context == null) {
-            return false;
-        }
-        String role = context.role();
-        return "clinician".equals(role) || "admin".equals(role);
-    }
-
-    static boolean canAccessPatientRecordForRole(PhrRequestContext context, String patientId) {
-        if (context == null) {
-            return false;
-        }
-        String principalId = context.principalId();
-        if (principalId == null) {
-            return false;
-        }
-        String role = context.role();
-        if ("patient".equals(role)) {
-            return principalId.equals(patientId);
-        }
-        return "caregiver".equals(role) || "clinician".equals(role) || "admin".equals(role) || "fchv".equals(role);
-    }
 
     static Promise<HttpResponse> textResponse(int statusCode, String text, String contentType) {
         return Promise.of(HttpResponse.ofCode(statusCode)

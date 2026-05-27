@@ -1,20 +1,20 @@
 {
-  "generatedAt": "2026-05-27T20:45:56.236Z",
+  "generatedAt": "2026-05-27T21:17:23.926Z",
   "evidenceRun": {
     "generatedBy": "scripts/check-product-release-readiness.mjs",
     "command": "pnpm check:product-release-readiness",
     "source": "scripts/check-product-release-readiness.mjs",
-    "commit": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
-    "sourceCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
-    "targetCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
+    "commit": "ade746204919f9e006690c30371a82028f77ed93",
+    "sourceCommitSha": "ade746204919f9e006690c30371a82028f77ed93",
+    "targetCommitSha": "ade746204919f9e006690c30371a82028f77ed93",
     "targetEnvironment": "staging"
   },
-  "sourceCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
-  "targetCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
+  "sourceCommitSha": "ade746204919f9e006690c30371a82028f77ed93",
+  "targetCommitSha": "ade746204919f9e006690c30371a82028f77ed93",
   "targetEnvironment": "staging",
   "validationStatus": "failed",
-  "reviewDueAt": "2026-05-28T20:45:56.270Z",
-  "expiresAt": "2026-05-29T20:45:56.270Z",
+  "reviewDueAt": "2026-05-28T21:17:23.960Z",
+  "expiresAt": "2026-05-29T21:17:23.960Z",
   "productId": "phr",
   "releaseVerdict": "fail",
   "releaseProfiles": [
@@ -358,10 +358,10 @@
     },
     {
       "dimensionName": "Runtime Truth maturity",
-      "score": 4.91,
+      "score": 5,
       "sources": {
         "baseline": 4.91,
-        "wave2Delta": 0
+        "wave2Delta": 0.5
       }
     },
     {
@@ -430,10 +430,10 @@
     },
     {
       "dimensionName": "Implicit AI/ML maturity",
-      "score": 4.91,
+      "score": 5,
       "sources": {
         "baseline": 4.91,
-        "wave2Delta": 0
+        "wave2Delta": 0.5
       }
     },
     {
@@ -478,10 +478,10 @@
     },
     {
       "dimensionName": "Performance",
-      "score": 4.91,
+      "score": 5,
       "sources": {
         "baseline": 4.91,
-        "wave2Delta": 0
+        "wave2Delta": 0.5
       }
     },
     {
@@ -542,10 +542,10 @@
     },
     {
       "dimensionName": "Accessibility",
-      "score": 4.91,
+      "score": 5,
       "sources": {
         "baseline": 4.91,
-        "wave2Delta": 0
+        "wave2Delta": 0.5
       }
     },
     {
@@ -653,7 +653,7 @@
       }
     }
   ],
-  "averageScore": 4.91,
+  "averageScore": 4.92,
   "releaseTargetScore": 4,
   "belowTargetDimensions": [],
   "blockingGaps": [

@@ -3,6 +3,7 @@ package com.ghatana.phr.api.routes;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
 import com.ghatana.phr.kernel.service.PatientRecordService;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -32,14 +33,17 @@ public final class PhrPatientRecordRoutes {
     private final Eventloop eventloop;
     private final PatientRecordService patientRecordService;
     private final ConsentManagementService consentService;
+    private final PhrPolicyEvaluator policyEvaluator;
 
     public PhrPatientRecordRoutes(
             Eventloop eventloop,
             PatientRecordService patientRecordService,
-            ConsentManagementService consentService) {
+            ConsentManagementService consentService,
+            PhrPolicyEvaluator policyEvaluator) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.patientRecordService = Objects.requireNonNull(patientRecordService, "patientRecordService must not be null");
         this.consentService = Objects.requireNonNull(consentService, "consentService must not be null");
+        this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 
     /**
@@ -75,13 +79,19 @@ public final class PhrPatientRecordRoutes {
                     return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT", ex.getMessage());
                 }
                 String patientId = patient.getId();
-                if (patientId != null && !mayAccessPatient(context, patientId)) {
-                    return requireConsent(context, patientId)
-                        .then(allowed -> allowed
-                            ? createPatient(patient)
-                            : PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required to create this patient record"));
+                if (patientId == null) {
+                    return createPatient(patient);
                 }
-                return createPatient(patient);
+                return mayAccessPatient(context, patientId)
+                    .then(allowed -> {
+                        if (allowed) {
+                            return createPatient(patient);
+                        }
+                        return requireConsent(context, patientId)
+                            .then(consented -> consented
+                                ? createPatient(patient)
+                                : PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required to create this patient record"));
+                    });
             });
     }
 
@@ -240,10 +250,13 @@ public final class PhrPatientRecordRoutes {
     }
 
     private Promise<Boolean> requireSelfOrConsent(PhrRouteSupport.PhrRequestContext context, String patientId) {
-        if (mayAccessPatient(context, patientId)) {
-            return Promise.of(true);
-        }
-        return requireConsent(context, patientId);
+        return mayAccessPatient(context, patientId)
+            .then(allowed -> {
+                if (allowed) {
+                    return Promise.of(true);
+                }
+                return requireConsent(context, patientId);
+            });
     }
 
     private Promise<Boolean> requireConsent(PhrRouteSupport.PhrRequestContext context, String patientId) {
@@ -251,8 +264,9 @@ public final class PhrPatientRecordRoutes {
             .map(ConsentManagementService.ConsentValidationResult::isAllowed);
     }
 
-    private static boolean mayAccessPatient(PhrRouteSupport.PhrRequestContext context, String patientId) {
-        return PhrRouteSupport.canAccessPatientRecordForRole(context, patientId);
+    private Promise<Boolean> mayAccessPatient(PhrRouteSupport.PhrRequestContext context, String patientId) {
+        return policyEvaluator.canAccessPatientRecordAsync(context, patientId)
+            .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);
     }
 
     private static PatientRecordService.Patient parsePatient(String json, String pathPatientId) {

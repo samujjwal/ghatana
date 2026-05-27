@@ -2,12 +2,12 @@
   "productId": "phr",
   "environment": "prod",
   "evidenceType": "bootstrap-evidence",
-  "generatedAt": "2025-06-01T00:00:00Z",
-  "targetCommitSha": "test-evidence-commit-001",
-  "sourceCommitSha": "test-evidence-commit-001",
+  "generatedAt": "2026-05-27T21:18:08.609Z",
+  "targetCommitSha": "ade746204919f9e006690c30371a82028f77ed93",
+  "sourceCommitSha": "ade746204919f9e006690c30371a82028f77ed93",
   "bootstrap": {
     "validated": true,
-    "validatedAt": "2025-06-01T00:00:00Z",
+    "validatedAt": "2026-05-27T21:18:08.609Z",
     "distributedCache": {
       "status": "ready",
       "type": "redis",
@@ -20,7 +20,7 @@
     }
   },
   "executabilityProof": {
-    "validatedAt": "2025-06-01T00:00:00Z",
+    "validatedAt": "2026-05-27T21:18:08.609Z",
     "components": {
       "distributedCache": {
         "executable": true,
@@ -30,5 +30,6 @@
       }
     }
   },
-  "description": "Production environment bootstrap evidence for PHR distributed consent cache"
+  "description": "Production environment bootstrap evidence for PHR distributed consent cache",
+  "commitSha": "ade746204919f9e006690c30371a82028f77ed93"
 }

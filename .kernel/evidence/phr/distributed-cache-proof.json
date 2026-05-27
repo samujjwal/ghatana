@@ -1,9 +1,9 @@
 {
   "productId": "phr",
   "evidenceType": "distributed-cache-proof",
-  "generatedAt": "2025-06-01T00:00:00Z",
-  "targetCommitSha": "test-evidence-commit-001",
-  "sourceCommitSha": "test-evidence-commit-001",
+  "generatedAt": "2026-05-27T21:18:08.609Z",
+  "targetCommitSha": "ade746204919f9e006690c30371a82028f77ed93",
+  "sourceCommitSha": "ade746204919f9e006690c30371a82028f77ed93",
   "cacheType": "redis",
   "multiNodeInvalidation": true,
   "description": "PHR consent cache backed by Redis with multi-node invalidation proof",
@@ -16,13 +16,13 @@
     "ttlSeconds": 300
   },
   "executableProof": {
-    "command": "./gradlew :products:phr:test -DincludeIntegrationTests=true --rerun-tasks --tests *DistributedCacheConsentInvalidationTest --tests *PhrDistributedCacheProofTest",
+    "validatedAt": "2026-05-27T21:18:08.609Z",
+    "command": "node ./scripts/run-gradle-wrapper.mjs :products:phr:test -DincludeIntegrationTests=true --rerun-tasks --tests *DistributedCacheConsentInvalidationTest --tests *PhrDistributedCacheProofTest",
     "tests": [
       "products/phr/src/test/java/com/ghatana/phr/cache/PhrDistributedCacheProofTest.java",
       "products/phr/src/test/java/com/ghatana/phr/kernel/DistributedCacheConsentInvalidationTest.java"
     ],
-    "passed": true,
-    "validatedAt": "2025-06-01T00:00:00Z"
+    "passed": true
   },
   "evidenceRefs": [
     ".kernel/evidence/phr/staging-bootstrap-evidence.json",
@@ -33,5 +33,6 @@
   "implementationRefs": [
     "products/phr/src/main/java/com/ghatana/phr/cache/",
     "products/phr/src/main/java/com/ghatana/phr/kernel/"
-  ]
+  ],
+  "commitSha": "ade746204919f9e006690c30371a82028f77ed93"
 }

@@ -13,7 +13,8 @@ const RELEASE_READINESS_PATH = resolve('.kernel/evidence/phr/phr-release-readine
 const STAGING_BOOTSTRAP_PATH = resolve('.kernel/evidence/phr/staging-bootstrap-evidence.json');
 const PROD_BOOTSTRAP_PATH = resolve('.kernel/evidence/phr/prod-bootstrap-evidence.json');
 const RUNTIME_PROOF_COMMAND = [
-  './gradlew',
+  'node',
+  './scripts/run-gradle-wrapper.mjs',
   ':products:phr:test',
   '-DincludeIntegrationTests=true',
   '--rerun-tasks',

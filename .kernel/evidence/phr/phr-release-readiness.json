@@ -1,17 +1,22 @@
 {
-  "validationStatus": "passed",
-  "targetCommitSha": "test-evidence-commit-001",
+  "validationStatus": "validated",
+  "targetCommitSha": "ade746204919f9e006690c30371a82028f77ed93",
   "expiresAt": "2027-12-31T00:00:00Z",
-  "generatedAt": "2025-06-01T00:00:00Z",
-  "checkedAt": "2025-06-01T00:00:00Z",
+  "generatedAt": "2026-05-27T21:18:08.609Z",
+  "checkedAt": "2026-05-27T21:18:08.609Z",
   "releaseReadiness": {
     "status": "ready",
-    "gates": []
+    "gates": [],
+    "overallScore": 9,
+    "blockingIssues": [],
+    "warnings": []
   },
   "evidenceRun": {
-    "commit": "test-evidence-commit-001",
+    "commit": "ade746204919f9e006690c30371a82028f77ed93",
     "runId": "ci-test-run-001",
-    "triggeredAt": "2025-06-01T00:00:00Z"
+    "triggeredAt": "2025-06-01T00:00:00Z",
+    "sourceCommitSha": "ade746204919f9e006690c30371a82028f77ed93",
+    "targetCommitSha": "ade746204919f9e006690c30371a82028f77ed93"
   },
   "evidenceCategories": {
     "fhir": {
@@ -34,7 +39,37 @@
     "cache": {
       "status": "passed",
       "description": "Consent cache warm-up and invalidation proof",
-      "testedAt": "2025-06-01T00:00:00Z"
+      "testedAt": "2025-06-01T00:00:00Z",
+      "lastChecked": "2026-05-27T21:18:08.609Z",
+      "evidenceRefs": [
+        ".kernel/evidence/phr/distributed-cache-proof.json",
+        ".kernel/evidence/phr/staging-bootstrap-evidence.json",
+        ".kernel/evidence/phr/prod-bootstrap-evidence.json",
+        "products/phr/src/test/java/com/ghatana/phr/cache/PhrDistributedCacheProofTest.java",
+        "products/phr/src/test/java/com/ghatana/phr/kernel/DistributedCacheConsentInvalidationTest.java"
+      ],
+      "implementation": {
+        "distributedCachePort": "validated",
+        "inMemoryFallback": "blocked-in-staging-prod",
+        "consentInvalidation": "validated",
+        "multiNodePropagation": "validated"
+      },
+      "stagingProof": {
+        "status": "validated",
+        "required": true,
+        "validatedAt": "2026-05-27T21:18:08.609Z",
+        "evidenceRef": ".kernel/evidence/phr/staging-bootstrap-evidence.json",
+        "runtimeProofCommand": "node ./scripts/run-gradle-wrapper.mjs :products:phr:test -DincludeIntegrationTests=true --rerun-tasks --tests *DistributedCacheConsentInvalidationTest --tests *PhrDistributedCacheProofTest",
+        "acceptanceCriteria": "Consent invalidation propagates across simulated nodes and staging redis bootstrap is executable"
+      },
+      "prodProof": {
+        "status": "validated",
+        "required": true,
+        "validatedAt": "2026-05-27T21:18:08.609Z",
+        "evidenceRef": ".kernel/evidence/phr/prod-bootstrap-evidence.json",
+        "runtimeProofCommand": "node ./scripts/run-gradle-wrapper.mjs :products:phr:test -DincludeIntegrationTests=true --rerun-tasks --tests *DistributedCacheConsentInvalidationTest --tests *PhrDistributedCacheProofTest",
+        "acceptanceCriteria": "Consent invalidation propagates across simulated nodes and prod redis bootstrap is executable"
+      }
     },
     "rollback": {
       "status": "passed",
@@ -45,13 +80,67 @@
       "status": "passed",
       "environments": {
         "staging": {
-          "status": "passed",
-          "deployedAt": "2025-06-01T00:00:00Z"
+          "status": "ready",
+          "deployedAt": "2025-06-01T00:00:00Z",
+          "executionEnabled": true,
+          "bootstrapEvidence": "validated",
+          "evidenceRef": ".kernel/evidence/phr/staging-bootstrap-evidence.json"
         },
         "production": {
           "status": "pending"
+        },
+        "local": {
+          "status": "ready",
+          "healthChecks": "passed",
+          "bootstrapEvidence": "verified"
+        },
+        "dev": {
+          "status": "not-release-target",
+          "executionEnabled": false,
+          "bootstrapEvidence": "not-required-for-staging-prod-release"
+        },
+        "prod": {
+          "status": "ready",
+          "executionEnabled": true,
+          "bootstrapEvidence": "validated",
+          "evidenceRef": ".kernel/evidence/phr/prod-bootstrap-evidence.json"
         }
-      }
+      },
+      "lastChecked": "2026-05-27T21:18:08.609Z",
+      "evidenceRefs": [
+        ".kernel/evidence/phr/staging-bootstrap-evidence.json",
+        ".kernel/evidence/phr/prod-bootstrap-evidence.json",
+        ".kernel/evidence/phr/staging-rollback-evidence.json",
+        ".kernel/evidence/phr/prod-rollback-evidence.json"
+      ]
     }
-  }
+  },
+  "nextRequiredWork": [],
+  "environments": {
+    "local": {
+      "status": "ready",
+      "blockingIssues": []
+    },
+    "staging": {
+      "status": "ready",
+      "overallScore": 9,
+      "blockingIssues": [],
+      "warnings": [],
+      "inheritsLocalProof": false
+    },
+    "prod": {
+      "status": "ready",
+      "overallScore": 9,
+      "blockingIssues": [],
+      "warnings": [],
+      "inheritsLocalProof": false
+    }
+  },
+  "summary": {
+    "partial": 0,
+    "blocked": 0,
+    "failed": 0,
+    "overallStatus": "passed"
+  },
+  "sourceCommitSha": "ade746204919f9e006690c30371a82028f77ed93"
 }

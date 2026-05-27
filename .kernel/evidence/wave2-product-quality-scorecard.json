@@ -1,0 +1,208 @@
+{
+  "generatedAt": "generated-on-demand",
+  "artifactAuthoringGateScripts": {
+    "sourceAcquisition": [
+      "check:studio-source-acquisition-worker",
+      "check:studio-production-profile:strict"
+    ],
+    "compilerDecompilerFidelity": [
+      "check:artifact-roundtrip",
+      "check:kernel-authoring-pipeline"
+    ],
+    "studioWorkflow": [
+      "check:studio-artifact-workflow-e2e",
+      "check:studio-deep-interactions"
+    ],
+    "generatedValidation": [
+      "check:generated-artifact-validation-pipeline",
+      "check:artifact-roundtrip"
+    ],
+    "evidencePersistence": [
+      "check:studio-workflow-persistence-contracts"
+    ]
+  },
+  "platformGateMap": {
+    "a11y": true,
+    "productA11yRouteMatrix": true,
+    "i18n": true,
+    "aiGovernance": true,
+    "performanceSlo": true,
+    "runtimeTruth": true,
+    "artifactSourceAcquisition": true,
+    "artifactCompilerDecompilerFidelity": true,
+    "artifactStudioWorkflow": true,
+    "artifactGeneratedValidation": true,
+    "artifactEvidencePersistence": true
+  },
+  "productCount": 6,
+  "scoreRows": [
+    {
+      "productId": "dcmaar",
+      "webSurface": true,
+      "area": {
+        "a11y": true,
+        "i18n": true,
+        "aiGovernance": true,
+        "performanceSlo": true,
+        "runtimeTruth": true,
+        "artifactSourceAcquisition": true,
+        "artifactCompilerDecompilerFidelity": true,
+        "artifactStudioWorkflow": true,
+        "artifactGeneratedValidation": true,
+        "artifactEvidencePersistence": true
+      },
+      "artifactAuthoring": {
+        "sourceAcquisition": true,
+        "compilerDecompilerFidelity": true,
+        "studioWorkflow": true,
+        "generatedValidation": true,
+        "evidencePersistence": true
+      },
+      "score": {
+        "passedAreas": 10,
+        "totalAreas": 10,
+        "ratio": 1
+      }
+    },
+    {
+      "productId": "digital-marketing",
+      "webSurface": true,
+      "area": {
+        "a11y": true,
+        "i18n": true,
+        "aiGovernance": true,
+        "performanceSlo": true,
+        "runtimeTruth": true,
+        "artifactSourceAcquisition": true,
+        "artifactCompilerDecompilerFidelity": true,
+        "artifactStudioWorkflow": true,
+        "artifactGeneratedValidation": true,
+        "artifactEvidencePersistence": true
+      },
+      "artifactAuthoring": {
+        "sourceAcquisition": true,
+        "compilerDecompilerFidelity": true,
+        "studioWorkflow": true,
+        "generatedValidation": true,
+        "evidencePersistence": true
+      },
+      "score": {
+        "passedAreas": 10,
+        "totalAreas": 10,
+        "ratio": 1
+      }
+    },
+    {
+      "productId": "finance",
+      "webSurface": false,
+      "area": {
+        "a11y": true,
+        "i18n": true,
+        "aiGovernance": true,
+        "performanceSlo": true,
+        "runtimeTruth": true,
+        "artifactSourceAcquisition": true,
+        "artifactCompilerDecompilerFidelity": true,
+        "artifactStudioWorkflow": true,
+        "artifactGeneratedValidation": true,
+        "artifactEvidencePersistence": true
+      },
+      "artifactAuthoring": {
+        "sourceAcquisition": true,
+        "compilerDecompilerFidelity": true,
+        "studioWorkflow": true,
+        "generatedValidation": true,
+        "evidencePersistence": true
+      },
+      "score": {
+        "passedAreas": 10,
+        "totalAreas": 10,
+        "ratio": 1
+      }
+    },
+    {
+      "productId": "flashit",
+      "webSurface": true,
+      "area": {
+        "a11y": true,
+        "i18n": true,
+        "aiGovernance": true,
+        "performanceSlo": true,
+        "runtimeTruth": true,
+        "artifactSourceAcquisition": true,
+        "artifactCompilerDecompilerFidelity": true,
+        "artifactStudioWorkflow": true,
+        "artifactGeneratedValidation": true,
+        "artifactEvidencePersistence": true
+      },
+      "artifactAuthoring": {
+        "sourceAcquisition": true,
+        "compilerDecompilerFidelity": true,
+        "studioWorkflow": true,
+        "generatedValidation": true,
+        "evidencePersistence": true
+      },
+      "score": {
+        "passedAreas": 10,
+        "totalAreas": 10,
+        "ratio": 1
+      }
+    },
+    {
+      "productId": "phr",
+      "webSurface": true,
+      "area": {
+        "a11y": true,
+        "i18n": true,
+        "aiGovernance": true,
+        "performanceSlo": true,
+        "runtimeTruth": true,
+        "artifactSourceAcquisition": true,
+        "artifactCompilerDecompilerFidelity": true,
+        "artifactStudioWorkflow": true,
+        "artifactGeneratedValidation": true,
+        "artifactEvidencePersistence": true
+      },
+      "artifactAuthoring": {
+        "sourceAcquisition": true,
+        "compilerDecompilerFidelity": true,
+        "studioWorkflow": true,
+        "generatedValidation": true,
+        "evidencePersistence": true
+      },
+      "score": {
+        "passedAreas": 10,
+        "totalAreas": 10,
+        "ratio": 1
+      }
+    },
+    {
+      "productId": "tutorputor",
+      "webSurface": true,
+      "area": {
+        "a11y": true,
+        "i18n": true,
+        "aiGovernance": true,
+        "performanceSlo": true,
+        "runtimeTruth": true,
+        "artifactSourceAcquisition": true,
+        "artifactCompilerDecompilerFidelity": true,
+        "artifactStudioWorkflow": true,
+        "artifactGeneratedValidation": true,
+        "artifactEvidencePersistence": true
+      },
+      "artifactAuthoring": {
+        "sourceAcquisition": true,
+        "compilerDecompilerFidelity": true,
+        "studioWorkflow": true,
+        "generatedValidation": true,
+        "evidencePersistence": true
+      },
+      "score": {
+        "passedAreas": 10,
+        "totalAreas": 10,
+        "ratio": 1
+      }
+    }
+  ]
+}

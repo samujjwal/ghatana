@@ -1,5 +1,6 @@
 package com.ghatana.phr.api.routes;
 
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -25,10 +26,14 @@ import java.util.Objects;
  */
 public final class PhrConditionRoutes {
 
-    private final Eventloop eventloop;
+    private static final String RESOURCE_TYPE = "conditions";
 
-    public PhrConditionRoutes(Eventloop eventloop) {
+    private final Eventloop eventloop;
+    private final PhrPolicyEvaluator policyEvaluator;
+
+    public PhrConditionRoutes(Eventloop eventloop, PhrPolicyEvaluator policyEvaluator) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
+        this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 
     /**
@@ -51,20 +56,20 @@ public final class PhrConditionRoutes {
         }
 
         String patientId = request.getPathParameter("patientId");
-        if (!PhrRouteSupport.canAccessPatientRecordForRole(context, patientId)) {
-            return PhrRouteSupport.errorResponse(403, "CONDITIONS_ACCESS_DENIED",
-                "Access denied to conditions for patient " + patientId,
-                context.correlationId());
-        }
+        return policyEvaluator.canAccessPatientRecordAsync(context, patientId).then(decision -> {
+            if (!decision.isAllowed()) {
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+            }
 
-        return Promise.of(List.of(
-            Map.of(
-                "id", "cond-1",
-                "code", "E11",
-                "display", "Type 2 diabetes mellitus",
-                "status", "active",
-                "onsetDate", "2018-03-01"
-            )
-        )).then(conditions -> PhrRouteSupport.jsonResponseWithCorrelation(200, conditions, context.correlationId()));
+            return Promise.of(List.of(
+                Map.of(
+                    "id", "cond-1",
+                    "code", "E11",
+                    "display", "Type 2 diabetes mellitus",
+                    "status", "active",
+                    "onsetDate", "2018-03-01"
+                )
+            )).then(conditions -> PhrRouteSupport.jsonResponseWithCorrelation(200, conditions, context.correlationId()));
+        });
     }
 }

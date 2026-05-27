@@ -10,6 +10,7 @@ import { RecordsScreen } from './screens/RecordsScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { authenticateBiometric } from './services/biometricAuth';
 import { fetchMobileDashboard, loginMobile, logoutMobile, syncOfflineDashboard } from './services/phrMobileApi';
+import { clearDashboardOffline } from './services/offlineStore';
 import { clearMobileSession, loadMobileSession, saveMobileSession } from './services/mobileSessionStore';
 import { registerForPushNotificationsAsync } from './services/pushNotifications';
 import { t } from './i18n/phrMobileI18n';
@@ -131,7 +132,8 @@ export default function App(): React.ReactElement {
           // Session was cleared (expired or revoked)
           await handleLogout();
         } else if (currentSession.role !== session.role || currentSession.principalId !== session.principalId) {
-          // Role or principal changed - update session and clear UI state
+          // Role or principal changed - clear offline cache and update session
+          await clearDashboardOffline();
           setSession(currentSession);
           setDashboard(null);
           setConsents([]);

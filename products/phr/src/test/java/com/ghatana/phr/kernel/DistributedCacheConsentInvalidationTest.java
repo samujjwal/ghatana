@@ -126,42 +126,62 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
         return pool;
     }
 
-    private Optional<String> readValue(String key) {
+    private String readValue(String key) {
         StoredValue value = store.get(key);
         if (value == null) {
-            return Optional.empty();
+            return null;
         }
         if (value.expiresAt() != null && Instant.now().isAfter(value.expiresAt())) {
             store.remove(key);
-            return Optional.empty();
+            return null;
         }
-        return Optional.of(value.value());
+        return value.value();
     }
 
     private static Instant expiresAt(SetParams params) {
-        Long ttlSeconds = numberFrom(params, "getEx", "ex");
+        Long ttlSeconds = expirationValue(params, "EX", "EXAT");
         if (ttlSeconds != null) {
-            return Instant.now().plusSeconds(ttlSeconds);
+            return "EXAT".equals(expirationKeyword(params))
+                ? Instant.ofEpochSecond(ttlSeconds)
+                : Instant.now().plusSeconds(ttlSeconds);
         }
-        Long ttlMillis = numberFrom(params, "getPx", "px");
+        Long ttlMillis = expirationValue(params, "PX", "PXAT");
         if (ttlMillis != null) {
-            return Instant.now().plusMillis(ttlMillis);
+            return "PXAT".equals(expirationKeyword(params))
+                ? Instant.ofEpochMilli(ttlMillis)
+                : Instant.now().plusMillis(ttlMillis);
         }
         return null;
     }
 
-    private static Long numberFrom(SetParams params, String... methodNames) {
-        for (String methodName : methodNames) {
-            try {
-                Object value = params.getClass().getMethod(methodName).invoke(params);
-                if (value instanceof Number number) {
-                    return number.longValue();
-                }
-            } catch (ReflectiveOperationException ignored) {
-                // Try the next accessor name.
+    private static String expirationKeyword(SetParams params) {
+        Object value = fieldValue(params, "expiration");
+        return value == null ? null : value.toString();
+    }
+
+    private static Long expirationValue(SetParams params, String... expectedKeywords) {
+        Object expiration = fieldValue(params, "expiration");
+        Object value = fieldValue(params, "expirationValue");
+        if (expiration == null || value == null) {
+            return null;
+        }
+        String keyword = expiration.toString();
+        for (String expectedKeyword : expectedKeywords) {
+            if (expectedKeyword.equals(keyword) && value instanceof Number number) {
+                return number.longValue();
             }
         }
         return null;
+    }
+
+    private static Object fieldValue(SetParams params, String fieldName) {
+        try {
+            java.lang.reflect.Field field = params.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.get(params);
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
     }
 
     private record StoredValue(String value, Instant expiresAt) {}

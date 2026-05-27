@@ -410,7 +410,7 @@ public class PhrKernelModule implements KernelModule {
         // Create route objects with eventloop
         Eventloop eventloop = context.getEventloop();
         PhrFhirRoutes fhirRoutes = new PhrFhirRoutes(eventloop, fhirController);
-        PhrPatientRecordRoutes patientRecordRoutes = new PhrPatientRecordRoutes(eventloop, patientRecords, consent);
+        PhrPatientRecordRoutes patientRecordRoutes = new PhrPatientRecordRoutes(eventloop, patientRecords, consent, policyEvaluator);
         PhrConsentRoutes consentRoutes = new PhrConsentRoutes(eventloop, consent);
         PhrClinicalRoutes clinicalRoutes = new PhrClinicalRoutes(
             eventloop,
