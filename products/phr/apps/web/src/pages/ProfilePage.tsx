@@ -16,7 +16,8 @@ export function ProfilePage(): React.ReactElement {
   const [draft, setDraft] = useState<PatientProfileUpdateRequest>({});
 
   useEffect(() => {
-    fetchPatientProfile()
+    if (!session) return;
+    fetchPatientProfile({ tenantId: session.tenantId, principalId: session.principalId })
       .then((profile) => {
         setData(profile);
         setDraft({
@@ -27,7 +28,7 @@ export function ProfilePage(): React.ReactElement {
       })
       .catch((err: unknown) => setError(err instanceof Error ? err.message : t('profile.error')))
       .finally(() => setLoading(false));
-  }, []);
+  }, [session]);
 
   const handleEdit = (): void => {
     setSaveError(null);

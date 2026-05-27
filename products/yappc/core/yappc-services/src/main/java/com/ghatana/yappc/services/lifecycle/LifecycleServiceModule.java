@@ -27,6 +27,7 @@ import com.ghatana.yappc.api.GenerationRunRepository;
 import com.ghatana.yappc.api.AdminAbTestingController;
 import com.ghatana.yappc.api.AdminObservabilityController;
 import com.ghatana.yappc.api.AdminFeatureFlagController;
+import com.ghatana.yappc.api.AdminPromptVersionController;
 import com.ghatana.yappc.api.ProductFamilyControlPlaneController;
 import com.ghatana.yappc.ai.PromptLifecycleService;
 import com.ghatana.yappc.ai.PromptTemplateRegistry;
@@ -782,6 +783,16 @@ public class LifecycleServiceModule extends AbstractModule {
         return new PromptLifecycleService(registry, auditLogger);
     }
 
+    /** Provides admin prompt version lifecycle APIs. */
+    @Provides
+    AdminPromptVersionController adminPromptVersionController(
+            DataCloudClient dataCloudClient,
+            ObjectMapper objectMapper,
+            PromptLifecycleService promptLifecycleService) {
+        logger.info("Creating AdminPromptVersionController");
+        return new AdminPromptVersionController(dataCloudClient, objectMapper, promptLifecycleService);
+    }
+
     // ========== Artifact Compiler (YAPPC-ArtifactCompiler) ==========
 
     /** Provides the durable {@link ArtifactGraphRepository} for artifact graph persistence. */
@@ -981,6 +992,37 @@ public class LifecycleServiceModule extends AbstractModule {
 
     // ========== Phase Cockpit Packet (Task 5.A.1) ==========
 
+    @Provides
+    com.ghatana.platform.audit.AuditService phasePacketAuditService() {
+        return new com.ghatana.yappc.services.phase.DegradedAuditService("PLATFORM_AUDIT_SERVICE_UNAVAILABLE");
+    }
+
+    @Provides
+    com.ghatana.core.runtime.PreviewRuntimeService phasePacketPreviewRuntimeService() {
+        return new com.ghatana.yappc.services.phase.DegradedPreviewRuntimeService("PREVIEW_RUNTIME_SERVICE_UNAVAILABLE");
+    }
+
+    @Provides
+    com.ghatana.yappc.services.phase.PlatformRunStatusService platformRunStatusService(DataCloudClient dataCloudClient) {
+        return new com.ghatana.yappc.services.phase.DataCloudPlatformRunStatusService(dataCloudClient);
+    }
+
+    @Provides
+    com.ghatana.yappc.services.phase.PhaseActionAuthorizationService phaseActionAuthorizationService() {
+        return new com.ghatana.yappc.services.phase.PhaseActionAuthorizationService();
+    }
+
+    @Provides
+    com.ghatana.yappc.services.phase.PhaseRequiredArtifactProvider phaseRequiredArtifactProvider(
+            StageConfigLoader stageConfigLoader) {
+        return new com.ghatana.yappc.services.phase.PhaseRequiredArtifactProvider(stageConfigLoader);
+    }
+
+    @Provides
+    com.ghatana.yappc.services.phase.DegradedPhasePacketFactory degradedPhasePacketFactory() {
+        return new com.ghatana.yappc.services.phase.DegradedPhasePacketFactory();
+    }
+
     /**
      * Provides PhasePacketService for canonical phase cockpit read model.
      *
@@ -997,12 +1039,30 @@ public class LifecycleServiceModule extends AbstractModule {
             TransitionConfigLoader transitionConfigLoader,
             PlatformIntegrationClient platformIntegrationClient,
             @Nullable BusinessMetrics metrics,
+            com.ghatana.platform.audit.AuditService phasePacketAuditService,
+            com.ghatana.core.runtime.PreviewRuntimeService phasePacketPreviewRuntimeService,
+            com.ghatana.yappc.services.phase.PlatformRunStatusService platformRunStatusService,
+            com.ghatana.yappc.services.phase.PhaseActionAuthorizationService phaseActionAuthorizationService,
+            com.ghatana.yappc.services.phase.PhaseRequiredArtifactProvider phaseRequiredArtifactProvider,
+            com.ghatana.yappc.services.phase.DegradedPhasePacketFactory degradedPhasePacketFactory,
             AuditLogger auditLogger) {
         logger.info("Creating PhasePacketService (canonical cockpit read model)");
-        // Phase 3.5/3.6: Pass null for platform AuditService and PreviewRuntimeService
-        // These will be wired in when platform services are fully integrated
         return new com.ghatana.yappc.services.phase.PhasePacketServiceImpl(
-            dataCloudClient, artifactRepository, phaseGateValidator, policyEngine, capabilityEvaluationService, transitionConfigLoader, platformIntegrationClient, metrics, null, null, auditLogger);
+                dataCloudClient,
+                artifactRepository,
+                phaseGateValidator,
+                policyEngine,
+                capabilityEvaluationService,
+                transitionConfigLoader,
+                platformIntegrationClient,
+                metrics,
+                phasePacketAuditService,
+                phasePacketPreviewRuntimeService,
+                platformRunStatusService,
+                phaseActionAuthorizationService,
+                phaseRequiredArtifactProvider,
+                degradedPhasePacketFactory,
+                auditLogger);
     }
 
     // ========== Lifecycle Transitions ==========
@@ -1017,6 +1077,12 @@ public class LifecycleServiceModule extends AbstractModule {
         return new TransitionConfigLoader();
     }
 
+    @Provides
+    PhaseActionIdempotencyStore phaseActionIdempotencyStore() {
+        logger.info("Creating PhaseActionIdempotencyStore");
+        return new InMemoryPhaseActionIdempotencyStore();
+    }
+
     /**
      * Provides AdvancePhaseUseCase — core use case for lifecycle phase transitions.
      * Validates transition rules, checks required artifacts, evaluates policy gates,
@@ -1028,7 +1094,9 @@ public class LifecycleServiceModule extends AbstractModule {
             com.ghatana.governance.PolicyEngine policyEngine,
             YappcArtifactRepository artifactRepository,
             DlqPublisher dlqPublisher,
-            CapabilityEvaluationService capabilityEvaluationService) {
+            CapabilityEvaluationService capabilityEvaluationService,
+            com.ghatana.yappc.services.phase.PhaseActionAuthorizationService phaseActionAuthorizationService,
+            PhaseActionIdempotencyStore phaseActionIdempotencyStore) {
         logger.info("Creating AdvancePhaseUseCase");
         return new AdvancePhaseUseCase(
                 transitionConfigLoader,
@@ -1036,7 +1104,8 @@ public class LifecycleServiceModule extends AbstractModule {
                 artifactRepository,
                 dlqPublisher,
                 capabilityEvaluationService,
-                new com.ghatana.yappc.services.phase.PhaseActionAuthorizationService(),
+                phaseActionAuthorizationService,
+                phaseActionIdempotencyStore,
                 null);
     }
 

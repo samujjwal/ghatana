@@ -54,7 +54,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("com.ghatana.tts.core.grpc.TtsGrpcServer")
+    mainClass.set("com.ghatana.tts.grpc.TtsGrpcServer")
 }
 
 java {
@@ -75,7 +75,7 @@ tasks.register<JavaExec>("runTtsService") {
     group = "application"
     description = "Run the TTS gRPC service"
     classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set("com.ghatana.tts.core.grpc.TtsGrpcServer")
+    mainClass.set("com.ghatana.tts.grpc.TtsGrpcServer")
     environment("TTS_GRPC_PORT", ttsPort)
 }
 

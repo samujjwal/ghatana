@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from '@/test-utils/test-utils';
 import { currentUserAtom } from '@/stores/user.store';
 import type { User } from '@/types/dashboard';
+import type { DegradedPacketDetails, HealthSignals, PhaseEvidence } from '@/types/phasePacket';
 
 const { mockNavigate, mockGetNextPhase, mockGetPhasePacket } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
@@ -129,6 +130,9 @@ function mockPhaseBootstrap({
       success: true,
     },
   ],
+  degradedDetails,
+  evidence: evidenceOverride,
+  healthSignals: healthSignalsOverride,
 }: {
   readonly lifecyclePhase?: string;
   readonly nextPhase?: string;
@@ -160,7 +164,30 @@ function mockPhaseBootstrap({
     readonly severity?: string | null;
     readonly success?: boolean | null;
   }[];
+  readonly degradedDetails?: DegradedPacketDetails;
+  readonly evidence?: readonly PhaseEvidence[];
+  readonly healthSignals?: Partial<HealthSignals>;
 } = {}) {
+  const defaultHealthSignals: HealthSignals = {
+    preview: {
+      isHealthy: true,
+      status: 'healthy',
+      issues: [],
+    },
+    generation: {
+      isHealthy: true,
+      status: 'ready',
+      lastGeneratedAt: '2026-04-21T11:00:00.000Z',
+      issues: [],
+    },
+    runtime: {
+      isHealthy: true,
+      status: 'ready',
+      lastDeployedAt: '2026-04-21T11:00:00.000Z',
+      issues: [],
+    },
+  };
+
   mockGetPhasePacket.mockImplementation((phase: string) => Promise.resolve({
     phase,
     projectId: 'proj-42',
@@ -213,9 +240,11 @@ function mockPhaseBootstrap({
     completedArtifacts: ['Intent brief'].map((artifact, index) => ({
       artifactId: `completed-${index + 1}`,
       artifactType: 'document',
+      version: '1.0.0',
       title: artifact,
       completedAt: '2026-04-21T11:00:00.000Z',
       completedBy: 'user-1',
+      evidenceId: `completed-evidence-${index + 1}`,
     })),
     activityFeed: activity.map((event) => ({
       id: event.id,
@@ -226,7 +255,7 @@ function mockPhaseBootstrap({
       timestamp: event.timestamp,
       severity: event.severity ?? 'INFO',
     })),
-    evidence: activity.map((event) => ({
+    evidence: evidenceOverride ?? activity.map((event) => ({
       id: `evidence-${event.id}`,
       type: 'artifact',
       title: event.summary,
@@ -251,6 +280,11 @@ function mockPhaseBootstrap({
       enabled: canAdvance && !(projectAccess.readOnly ?? false),
       disabledReason: projectAccess.readOnly ? 'You have view-only access to this project.' : undefined,
       requiredPermission: 'update',
+      category: 'phase-transition',
+      severity: 'high',
+      confirmationRequired: true,
+      idempotencyKey: `${phase}-primary`,
+      auditType: `phase.${phase}.primary.requested`,
       parameters: {},
     }],
     dashboardActions: {
@@ -260,24 +294,10 @@ function mockPhaseBootstrap({
       safeToContinueActions: canAdvance ? [`${phase}-primary`] : [],
     },
     healthSignals: {
-      preview: {
-        isHealthy: true,
-        status: 'healthy',
-        issues: [],
-      },
-      generation: {
-        isHealthy: true,
-        status: 'ready',
-        lastGeneratedAt: '2026-04-21T11:00:00.000Z',
-        issues: [],
-      },
-      runtime: {
-        isHealthy: true,
-        status: 'ready',
-        lastDeployedAt: '2026-04-21T11:00:00.000Z',
-        issues: [],
-      },
+      ...defaultHealthSignals,
+      ...healthSignalsOverride,
     },
+    degradedDetails,
     timestamp: Date.parse('2026-04-21T11:05:00.000Z'),
   }));
 
@@ -718,6 +738,97 @@ describe('phase cockpit routes', () => {
     expect(screen.getByText('You have view-only access to this project.')).toBeInTheDocument();
     expect(
       vi.mocked(fetch).mock.calls.some(([input]) => String(input).includes('/api/v1/yappc/generate')),
+    ).toBe(false);
+  });
+
+  it('shows Data Cloud degraded packet recovery details and blocks stale enabled actions', async () => {
+    mockPhaseBootstrap({
+      lifecyclePhase: 'SHAPE',
+      nextPhase: 'VALIDATE',
+      canAdvance: true,
+      degradedDetails: {
+        dependency: 'DATA_CLOUD',
+        reason: 'PROJECT_STATE_QUERY_FAILED',
+        truthSource: 'projects',
+        recoveryAction: 'Restore Data Cloud project state access before phase actions run.',
+        impactedFeatures: ['phase-actions', 'artifact-status'],
+      },
+    });
+
+    renderRoute(<ShapeRoute />);
+
+    expect(await screen.findByTestId('shape-cockpit')).toBeInTheDocument();
+    expect(screen.getByTestId('phase-degraded-details')).toHaveTextContent('Dependency degraded');
+    expect(screen.getByTestId('phase-degraded-dependency')).toHaveTextContent('DATA_CLOUD');
+    expect(screen.getByTestId('phase-degraded-truth-source')).toHaveTextContent('projects');
+    expect(screen.getByTestId('phase-degraded-reason')).toHaveTextContent('PROJECT_STATE_QUERY_FAILED');
+    expect(screen.getByTestId('phase-degraded-recovery')).toHaveTextContent('Restore Data Cloud project state access');
+    expect(screen.getByTestId('phase-degraded-impacted-features')).toHaveTextContent('phase-actions, artifact-status');
+    expect(screen.getByTestId('add-components')).toBeDisabled();
+    expect(screen.getAllByText('Restore Data Cloud project state access before phase actions run.').length).toBeGreaterThan(0);
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+  });
+
+  it('shows AEP evidence degradation and keeps unsafe validation advance disabled', async () => {
+    mockPhaseBootstrap({
+      lifecyclePhase: 'VALIDATE',
+      nextPhase: 'GENERATE',
+      canAdvance: false,
+      readiness: 41,
+      requiredArtifacts: ['Phase evidence unavailable'],
+      evidence: [{
+        id: 'EVIDENCE_QUERY_FAILED',
+        type: 'SYSTEM_DEGRADED',
+        title: 'Phase evidence unavailable',
+        description: 'AEP evidence unavailable. Retry evidence sync before advancing.',
+        timestamp: '2026-04-21T11:03:00.000Z',
+        metadata: { dependency: 'AEP' },
+        evidenceId: 'EVIDENCE_QUERY_FAILED',
+      }],
+    });
+
+    renderRoute(<ValidateRoute />);
+
+    expect(await screen.findByTestId('validate-cockpit')).toBeInTheDocument();
+    expect(screen.getAllByText('Phase evidence unavailable').length).toBeGreaterThan(0);
+    expect(screen.getByText('AEP evidence unavailable. Retry evidence sync before advancing.')).toBeInTheDocument();
+    expect(screen.getByTestId('approve-changes')).toBeDisabled();
+    expect(
+      vi.mocked(fetch).mock.calls.some(([input]) => String(input).includes('/api/v1/lifecycle/advance')),
+    ).toBe(false);
+  });
+
+  it('shows Kernel degraded runtime details and blocks Run controls before handoff', async () => {
+    mockPhaseBootstrap({
+      lifecyclePhase: 'RUN',
+      nextPhase: 'OBSERVE',
+      canAdvance: true,
+      degradedDetails: {
+        dependency: 'KERNEL',
+        reason: 'MALFORMED_KERNEL_LIFECYCLE_TRUTH',
+        truthSource: 'kernel_lifecycle_truth',
+        recoveryAction: 'Repair Kernel lifecycle truth records and replay the latest lifecycle event.',
+        impactedFeatures: ['kernel-health', 'run-promote', 'observe-handoff'],
+      },
+      healthSignals: {
+        runtime: {
+          isHealthy: false,
+          status: 'degraded',
+          lastDeployedAt: '2026-04-21T11:00:00.000Z',
+          issues: ['Kernel lifecycle truth is malformed'],
+        },
+      },
+    });
+
+    renderRoute(<RunRoute />);
+
+    expect(await screen.findByTestId('run-cockpit')).toBeInTheDocument();
+    expect(screen.getByTestId('phase-degraded-dependency')).toHaveTextContent('KERNEL');
+    expect(screen.getByTestId('phase-degraded-truth-source')).toHaveTextContent('kernel_lifecycle_truth');
+    expect(screen.getByTestId('phase-degraded-recovery')).toHaveTextContent('Repair Kernel lifecycle truth records');
+    expect(screen.getByTestId('check-readiness')).toBeDisabled();
+    expect(
+      vi.mocked(fetch).mock.calls.some(([input]) => String(input).includes('/api/v1/workflows/yappc-run/start')),
     ).toBe(false);
   });
 

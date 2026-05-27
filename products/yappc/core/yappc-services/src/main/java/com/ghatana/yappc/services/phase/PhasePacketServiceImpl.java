@@ -32,6 +32,7 @@ import java.util.LinkedHashSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -64,6 +65,8 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
     private final PreviewRuntimeService previewRuntimeService;
     private final PlatformRunStatusService platformRunStatusService;
     private final PhaseActionAuthorizationService phaseActionAuthorizationService;
+    private final PhaseRequiredArtifactProvider requiredArtifactProvider;
+    private final DegradedPhasePacketFactory degradedPhasePacketFactory;
     @Nullable
     private final com.ghatana.audit.AuditLogger auditLogger;
 
@@ -75,100 +78,29 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             @NotNull CapabilityEvaluationService capabilityEvaluationService,
             @NotNull TransitionConfigLoader transitionConfigLoader,
             @NotNull PlatformIntegrationClient platformIntegrationClient,
-            @Nullable BusinessMetrics metrics
-    ) {
-        this(dataCloudClient, artifactRepository, phaseGateValidator, policyEngine, capabilityEvaluationService, transitionConfigLoader, platformIntegrationClient, metrics, null, null, null);
-    }
-
-    public PhasePacketServiceImpl(
-            @NotNull DataCloudClient dataCloudClient,
-            @NotNull YappcArtifactRepository artifactRepository,
-            @NotNull PhaseGateValidator phaseGateValidator,
-            @NotNull PolicyEngine policyEngine,
-            @NotNull CapabilityEvaluationService capabilityEvaluationService,
-            @NotNull TransitionConfigLoader transitionConfigLoader,
-            @NotNull PlatformIntegrationClient platformIntegrationClient,
             @Nullable BusinessMetrics metrics,
-            @Nullable com.ghatana.audit.AuditLogger auditLogger
-    ) {
-        this(dataCloudClient, artifactRepository, phaseGateValidator, policyEngine, capabilityEvaluationService, transitionConfigLoader, platformIntegrationClient, metrics, null, null, auditLogger);
-    }
-
-    public PhasePacketServiceImpl(
-            @NotNull DataCloudClient dataCloudClient,
-            @NotNull YappcArtifactRepository artifactRepository,
-            @NotNull PhaseGateValidator phaseGateValidator,
-            @NotNull PolicyEngine policyEngine,
-            @NotNull CapabilityEvaluationService capabilityEvaluationService,
-            @NotNull TransitionConfigLoader transitionConfigLoader,
-            @NotNull PlatformIntegrationClient platformIntegrationClient,
-            @Nullable BusinessMetrics metrics,
-            @Nullable AuditService auditService,
-            @Nullable com.ghatana.audit.AuditLogger auditLogger
-    ) {
-        this(dataCloudClient, artifactRepository, phaseGateValidator, policyEngine, capabilityEvaluationService, transitionConfigLoader, platformIntegrationClient, metrics, auditService, null, auditLogger);
-    }
-
-    public PhasePacketServiceImpl(
-            @NotNull DataCloudClient dataCloudClient,
-            @NotNull YappcArtifactRepository artifactRepository,
-            @NotNull PhaseGateValidator phaseGateValidator,
-            @NotNull PolicyEngine policyEngine,
-            @NotNull CapabilityEvaluationService capabilityEvaluationService,
-            @NotNull TransitionConfigLoader transitionConfigLoader,
-            @NotNull PlatformIntegrationClient platformIntegrationClient,
-            @Nullable BusinessMetrics metrics,
-            @Nullable AuditService auditService,
-            @Nullable PreviewRuntimeService previewRuntimeService,
-            @Nullable com.ghatana.audit.AuditLogger auditLogger
-    ) {
-        this.dataCloudClient = dataCloudClient;
-        this.artifactRepository = artifactRepository;
-        this.phaseGateValidator = phaseGateValidator;
-        this.capabilityEvaluationService = capabilityEvaluationService;
-        this.transitionConfigLoader = transitionConfigLoader;
-        this.platformIntegrationClient = platformIntegrationClient;
-        this.metrics = metrics;
-        this.auditService = auditService != null
-            ? auditService
-            : new DegradedAuditService("PLATFORM_AUDIT_SERVICE_UNAVAILABLE");
-        this.previewRuntimeService = previewRuntimeService != null
-            ? previewRuntimeService
-            : new DegradedPreviewRuntimeService("PREVIEW_RUNTIME_SERVICE_UNAVAILABLE");
-        this.platformRunStatusService = new DataCloudPlatformRunStatusService(dataCloudClient);
-        this.phaseActionAuthorizationService = new PhaseActionAuthorizationService();
-        this.auditLogger = auditLogger;
-    }
-
-    public PhasePacketServiceImpl(
-            @NotNull DataCloudClient dataCloudClient,
-            @NotNull YappcArtifactRepository artifactRepository,
-            @NotNull PhaseGateValidator phaseGateValidator,
-            @NotNull PolicyEngine policyEngine,
-            @NotNull CapabilityEvaluationService capabilityEvaluationService,
-            @NotNull TransitionConfigLoader transitionConfigLoader,
-            @NotNull PlatformIntegrationClient platformIntegrationClient,
-            @Nullable BusinessMetrics metrics,
-            @Nullable AuditService auditService,
-            @Nullable PreviewRuntimeService previewRuntimeService,
+            @NotNull AuditService auditService,
+            @NotNull PreviewRuntimeService previewRuntimeService,
             @NotNull PlatformRunStatusService platformRunStatusService,
+            @NotNull PhaseActionAuthorizationService phaseActionAuthorizationService,
+            @NotNull PhaseRequiredArtifactProvider requiredArtifactProvider,
+            @NotNull DegradedPhasePacketFactory degradedPhasePacketFactory,
             @Nullable com.ghatana.audit.AuditLogger auditLogger
     ) {
-        this.dataCloudClient = dataCloudClient;
-        this.artifactRepository = artifactRepository;
-        this.phaseGateValidator = phaseGateValidator;
-        this.capabilityEvaluationService = capabilityEvaluationService;
-        this.transitionConfigLoader = transitionConfigLoader;
-        this.platformIntegrationClient = platformIntegrationClient;
+        this.dataCloudClient = Objects.requireNonNull(dataCloudClient, "dataCloudClient");
+        this.artifactRepository = Objects.requireNonNull(artifactRepository, "artifactRepository");
+        this.phaseGateValidator = Objects.requireNonNull(phaseGateValidator, "phaseGateValidator");
+        Objects.requireNonNull(policyEngine, "policyEngine");
+        this.capabilityEvaluationService = Objects.requireNonNull(capabilityEvaluationService, "capabilityEvaluationService");
+        this.transitionConfigLoader = Objects.requireNonNull(transitionConfigLoader, "transitionConfigLoader");
+        this.platformIntegrationClient = Objects.requireNonNull(platformIntegrationClient, "platformIntegrationClient");
         this.metrics = metrics;
-        this.auditService = auditService != null
-            ? auditService
-            : new DegradedAuditService("PLATFORM_AUDIT_SERVICE_UNAVAILABLE");
-        this.previewRuntimeService = previewRuntimeService != null
-            ? previewRuntimeService
-            : new DegradedPreviewRuntimeService("PREVIEW_RUNTIME_SERVICE_UNAVAILABLE");
-        this.platformRunStatusService = platformRunStatusService;
-        this.phaseActionAuthorizationService = new PhaseActionAuthorizationService();
+        this.auditService = Objects.requireNonNull(auditService, "auditService");
+        this.previewRuntimeService = Objects.requireNonNull(previewRuntimeService, "previewRuntimeService");
+        this.platformRunStatusService = Objects.requireNonNull(platformRunStatusService, "platformRunStatusService");
+        this.phaseActionAuthorizationService = Objects.requireNonNull(phaseActionAuthorizationService, "phaseActionAuthorizationService");
+        this.requiredArtifactProvider = Objects.requireNonNull(requiredArtifactProvider, "requiredArtifactProvider");
+        this.degradedPhasePacketFactory = Objects.requireNonNull(degradedPhasePacketFactory, "degradedPhasePacketFactory");
         this.auditLogger = auditLogger;
     }
 
@@ -195,7 +127,10 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                     log.warn("Project in degraded state: projectId={}, reason={}", projectId, degradedReason);
                     
                     // Return degraded packet with explicit degradation reason
-                    return Promise.of(buildDegradedPhasePacket(
+                    if (metrics != null) {
+                        metrics.recordPhaseGateValidation(principal.getTenantId(), phase, "DEGRADED", System.currentTimeMillis() - startTime);
+                    }
+                    return Promise.of(degradedPhasePacketFactory.build(
                         phase,
                         projectId,
                         workspaceId,
@@ -206,7 +141,8 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                 }
                 PhasePacket.TenantTier tier = determineTenantTier(projectState, principal);
                 Set<String> enabledFlags = determineEnabledFlags(projectState, principal);
-                List<PhasePacket.RequiredArtifact> requiredArtifacts = queryRequiredArtifacts(phase, projectId);
+                List<PhasePacket.RequiredArtifact> requiredArtifacts =
+                        requiredArtifactProvider.queryRequiredArtifacts(phase, projectId);
                 List<PhasePacket.PhaseEvidence> evidence =
                         queryPhaseEvidence(phase, projectId, workspaceId, principal.getTenantId());
                 List<PhasePacket.GovernanceRecord> governance =
@@ -891,51 +827,6 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
     }
 
     /**
-     * Queries required artifacts for the phase.
-     */
-    private List<PhasePacket.RequiredArtifact> queryRequiredArtifacts(
-            String phase,
-            String projectId
-    ) {
-        try {
-            // Use StageConfigLoader to get required artifacts for the phase
-            com.ghatana.yappc.domain.PhaseType phaseType;
-            try {
-                phaseType = com.ghatana.yappc.domain.PhaseType.valueOf(phase.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                log.warn("Invalid phase type: {}, defaulting to INTENT", phase);
-                phaseType = com.ghatana.yappc.domain.PhaseType.INTENT;
-            }
-            
-            // Get stage spec from StageConfigLoader
-            var stageConfig = new com.ghatana.yappc.services.lifecycle.StageConfigLoader();
-            var stageOpt = stageConfig.findById(phaseType.name().toLowerCase());
-            
-            if (stageOpt.isEmpty()) {
-                log.warn("No stage spec found for phase: {}", phase);
-                return List.of();
-            }
-            
-            var stage = stageOpt.get();
-            List<String> requiredArtifactKeys = stage.getArtifacts() != null ? stage.getArtifacts() : List.of();
-            
-            // Convert to RequiredArtifact records
-            return requiredArtifactKeys.stream()
-                .<PhasePacket.RequiredArtifact>map(artifactKey -> new PhasePacket.RequiredArtifact(
-                    artifactKey,
-                    artifactKey,
-                    artifactKey,
-                    "Required lifecycle artifact: " + artifactKey,
-                    false
-                ))
-                .toList();
-        } catch (Exception e) {
-            log.error("Error querying required artifacts: phase={}, projectId={}", phase, projectId, e);
-            return List.of();
-        }
-    }
-
-    /**
      * Queries completed artifacts for the phase.
      */
         private Promise<List<PhasePacket.CompletedArtifact>> queryCompletedArtifacts(
@@ -1289,144 +1180,6 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             role,
             isAdmin,
             isAdmin
-        );
-    }
-
-    /**
-     * Builds a degraded phase packet when Data Cloud is unavailable.
-     *
-     * @param phase the phase name
-     * @param projectId the project ID
-     * @param workspaceId the workspace ID
-     * @param principal the authenticated principal
-     * @param correlationId the correlation ID for tracing
-     * @param degradedReason the reason for degradation
-     * @return a degraded phase packet
-     */
-    private PhasePacket buildDegradedPhasePacket(
-            String phase,
-            String projectId,
-            String workspaceId,
-            Principal principal,
-            String correlationId,
-            String degradedReason
-    ) {
-        PhasePacket.DegradedPacketDetails degradedDetails = buildDegradedPacketDetails(degradedReason);
-        // Build actor context
-        PhasePacket.ActorContext actor = buildActorContext(principal, Map.of());
-        
-        // Build degraded capability model (read-only)
-        PhasePacket.CapabilityModel capabilities = new PhasePacket.CapabilityModel(
-            true,  // canRead - allow read even in degraded state
-            false, // canCreate - no create in degraded state
-            false, // canUpdate - no update in degraded state
-            false, // canDelete - no delete in degraded state
-            false, // canApprove - no approve in degraded state
-            false, // canReject - no reject in degraded state
-            false  // canRollback - no rollback in degraded state
-        );
-        
-        // Build degraded blocker
-        List<PhasePacket.PhaseBlocker> blockers = List.of(
-            new PhasePacket.PhaseBlocker(
-                "data-cloud-degraded",
-                "SYSTEM",
-                "Data Cloud Service Unavailable",
-                degradedReason,
-                "CRITICAL",
-                projectId,
-                false
-            )
-        );
-        
-        // Build degraded readiness
-        PhasePacket.PhaseReadiness readiness = new PhasePacket.PhaseReadiness(
-            false, // canAdvance - cannot advance in degraded state
-            null,  // nextPhase - unknown in degraded state
-            List.of("Data Cloud service unavailable"),
-            0.0,   // completeness score - 0 in degraded state
-            true   // isDegraded - explicitly marked as degraded
-        );
-        
-        // Build degraded health signals
-        PhasePacket.HealthSignals healthSignals = new PhasePacket.HealthSignals(
-            new PhasePacket.PreviewHealth(false, "degraded", List.of(degradedReason)),
-            new PhasePacket.GenerationHealth(false, "degraded", null, List.of(degradedReason)),
-            new PhasePacket.RuntimeHealth(false, "degraded", null, List.of(degradedReason))
-        );
-        
-        // Record metrics if available
-        if (metrics != null) {
-            metrics.recordPhaseGateValidation(principal.getTenantId(), phase, "DEGRADED", System.currentTimeMillis() - 0);
-        }
-        
-        return new PhasePacket(
-            phase,
-            projectId,
-            "degraded-project", // explicit degraded sentinel
-            principal.getTenantId(),
-            workspaceId,
-            "degraded-workspace", // explicit degraded sentinel
-            actor,
-            phase,
-            PhasePacket.TenantTier.FREE, // fail-closed default in degraded state
-            Set.of(), // no feature flags in degraded state
-            capabilities,
-            blockers,
-            readiness,
-            List.of(), // no required artifacts in degraded state
-            List.of(), // no completed artifacts in degraded state
-            List.of(), // no activity feed in degraded state
-            List.of(), // no evidence in degraded state
-            List.of(), // no governance records in degraded state
-            new PhasePacket.PlatformRunStatus(
-                "unavailable-" + projectId,
-                "NOT_READY",
-                "data-cloud-aep",
-                Instant.now(),
-                null,
-                correlationId,
-                List.of()
-            ),
-            List.of(), // no actions in degraded state
-            new PhasePacket.DashboardActionClassification(null, List.of("all"), List.of(), List.of()),
-            healthSignals,
-            degradedDetails,
-            Instant.now().toEpochMilli(),
-            correlationId
-        );
-    }
-
-    private PhasePacket.DegradedPacketDetails buildDegradedPacketDetails(String degradedReason) {
-        String reason = degradedReason == null || degradedReason.isBlank()
-                ? "PHASE_PACKET_DEPENDENCY_UNAVAILABLE"
-                : degradedReason;
-        String upperReason = reason.toUpperCase();
-        if (upperReason.contains("KERNEL")) {
-            return new PhasePacket.DegradedPacketDetails(
-                    "KERNEL",
-                    reason,
-                    "kernel_lifecycle_truth",
-                    "Restore Kernel lifecycle truth ingestion and retry phase packet retrieval.",
-                    List.of("kernel-health", "phase-readiness", "phase-actions", "runtime-observe")
-            );
-        }
-        if (upperReason.contains("AEP") || upperReason.contains("EVIDENCE") || upperReason.contains("GOVERNANCE")
-                || upperReason.contains("POLICY")) {
-            return new PhasePacket.DegradedPacketDetails(
-                    "AEP",
-                    reason,
-                    "aep_evidence_and_policy",
-                    "Restore AEP evidence or governance policy access before allowing lifecycle advancement.",
-                    List.of("evidence", "governance", "phase-actions", "safe-advance")
-            );
-        }
-        return new PhasePacket.DegradedPacketDetails(
-                "DATA_CLOUD",
-                reason,
-                "projects",
-                "Restore Data Cloud project state access and retry phase packet retrieval.",
-                List.of("phase-readiness", "phase-actions", "artifact-status", "activity-feed")
         );
     }
 

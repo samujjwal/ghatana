@@ -1,43 +1,62 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
-import { fetchDashboardData } from '../api/phrApi';
-import { formatPhrDate, t } from '../i18n/phrI18n';
-import type { LabResultSummary } from '../types';
+import { Link } from 'react-router-dom';
+import { fetchObservations } from '../api/phrApi';
+import { usePhrSession } from '../auth/PhrSessionContext';
+import { formatPhrDate } from '../i18n/phrI18n';
+import type { ObservationSummary } from '../types';
 
 export function LabsPage(): React.ReactElement {
-  const [labs, setLabs] = useState<LabResultSummary[]>([]);
+  const { session } = usePhrSession();
+  const [labs, setLabs] = useState<ObservationSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchDashboardData()
-      .then((data) => setLabs(data.labs))
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('error.labsLoad')))
+    if (!session) return;
+    fetchObservations(session.principalId, {
+      tenantId: session.tenantId,
+      principalId: session.principalId,
+      role: session.role,
+    })
+      .then(setLabs)
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load lab results'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [session]);
 
-  if (loading) return <div className="loading">{t('labs.loading')}</div>;
-  if (error) return <div className="error">{t('dashboard.errorPrefix')}: {error}</div>;
+  if (loading) return <div className="loading">Loading lab results...</div>;
+  if (error) return <div className="error">Error: {error}</div>;
 
   return (
-    <Card>
-      <CardHeader title={t('labs.title')} subheader={t('labs.subheader')} />
-      <CardContent>
-        <div className="stack gap-md">
-          {labs.map((lab) => (
-            <div key={lab.id} className="data-card">
-              <div>
-                <strong>{lab.name}</strong>
-                <p className="muted">{t('labs.collected', { date: formatPhrDate(lab.collectedAt) })}</p>
-              </div>
-              <div className="row gap-sm align-center">
-                <span className={`pill ${lab.status === 'attention' ? 'warning' : ''}`}>{lab.status}</span>
-                <strong>{lab.value}</strong>
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="stack gap-lg">
+      <Card>
+        <CardHeader title="Lab Results" subheader="Recent laboratory test results" />
+        <CardContent>
+          <div className="info-banner">
+            <p className="muted">
+              For detailed clinical trends and historical data, visit the <Link to="/observations">Observations</Link> page.
+            </p>
+          </div>
+          <div className="stack gap-md">
+            {labs.length === 0 ? (
+              <p className="empty">No lab results found</p>
+            ) : (
+              labs.map((lab) => (
+                <div key={lab.id} className="data-card">
+                  <div>
+                    <strong>{lab.name}</strong>
+                    <p className="muted">{formatPhrDate(lab.effectiveDate)}</p>
+                  </div>
+                  <div className="row gap-sm align-center">
+                    <span className={`pill ${lab.status === 'abnormal' ? 'warning' : ''}`}>{lab.status}</span>
+                    <strong>{lab.value}{lab.unit && <span className="muted"> {lab.unit}</span>}</strong>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

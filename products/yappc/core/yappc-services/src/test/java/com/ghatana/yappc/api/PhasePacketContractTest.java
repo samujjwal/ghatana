@@ -61,7 +61,20 @@ class PhasePacketContractTest {
                         "trace-1",
                         List.of("evidence-1")
                 ),
-                List.of(),
+                List.of(new PhasePacket.PhaseAction(
+                        "advance-phase",
+                        "phaseAction.advancePhase.label",
+                        "phaseAction.advancePhase.description",
+                        false,
+                        "phaseAction.disabled.blockersMustResolve",
+                        "phase:advance",
+                        "phase-transition",
+                        "high",
+                        true,
+                        "phase.advance",
+                        "phase.advance.requested",
+                        java.util.Map.of("nextPhase", "run")
+                )),
                 new PhasePacket.DashboardActionClassification(null, List.of("all"), List.of(), List.of()),
                 new PhasePacket.HealthSignals(
                         new PhasePacket.PreviewHealth(false, "degraded", List.of("Data Cloud service unavailable")),
@@ -94,6 +107,11 @@ class PhasePacketContractTest {
         assertThat(json.at("/degradedDetails/impactedFeatures/0").asText()).isEqualTo("phase-readiness");
         assertThat(json.at("/completedArtifacts/0/version").asText()).isEqualTo("v1");
         assertThat(json.at("/completedArtifacts/0/evidenceId").asText()).isEqualTo("evidence-1");
+        assertThat(json.at("/availableActions/0/category").asText()).isEqualTo("phase-transition");
+        assertThat(json.at("/availableActions/0/severity").asText()).isEqualTo("high");
+        assertThat(json.at("/availableActions/0/confirmationRequired").asBoolean()).isTrue();
+        assertThat(json.at("/availableActions/0/idempotencyKey").asText()).isEqualTo("phase.advance");
+        assertThat(json.at("/availableActions/0/auditType").asText()).isEqualTo("phase.advance.requested");
         assertThat(json.at("/correlationId").asText()).isEqualTo("corr-1");
         assertThat(json.at("/healthSignals/runtime/status").asText()).isEqualTo("degraded");
         assertThat(json.at("/healthSignals/agentGovernance/governanceState").asText()).isEqualTo("policy-approved");

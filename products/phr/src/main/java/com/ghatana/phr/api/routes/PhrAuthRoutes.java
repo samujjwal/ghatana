@@ -72,6 +72,7 @@ public final class PhrAuthRoutes {
         return RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/login", this::handleLogin)
             .with(HttpMethod.POST, "/logout", this::handleLogout)
+            .with(HttpMethod.GET, "/me", this::handleMe)
             .build();
     }
 
@@ -141,6 +142,75 @@ public final class PhrAuthRoutes {
                 .info("PHR session logout: principalId={}", principalId);
         }
         return Promise.of(HttpResponse.ofCode(204).build());
+    }
+
+    private Promise<HttpResponse> handleMe(HttpRequest request) {
+        // Validate required identity headers
+        String principalId = request.getHeader(io.activej.http.HttpHeaders.of("X-Principal-ID"));
+        String tenantId = request.getHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"));
+        String role = request.getHeader(io.activej.http.HttpHeaders.of("X-Role"));
+
+        if (principalId == null || principalId.isBlank()) {
+            return PhrRouteSupport.errorResponse(401, "MISSING_PRINCIPAL", "X-Principal-ID header is required");
+        }
+        if (tenantId == null || tenantId.isBlank()) {
+            return PhrRouteSupport.errorResponse(401, "MISSING_TENANT", "X-Tenant-ID header is required");
+        }
+        if (role == null || role.isBlank()) {
+            return PhrRouteSupport.errorResponse(401, "MISSING_ROLE", "X-Role header is required");
+        }
+
+        // Validate role
+        String normalizedRole = role.strip().toLowerCase();
+        if (!VALID_ROLES.contains(normalizedRole)) {
+            return PhrRouteSupport.errorResponse(401, "INVALID_ROLE", "Unrecognised role: " + role);
+        }
+
+        // Fetch user to validate session and return current actor info
+        Optional<PHRUser> userOpt = userRepository.findByUserId(principalId);
+        if (userOpt.isEmpty()) {
+            return PhrRouteSupport.errorResponse(401, "INVALID_SESSION", "Session principal not found");
+        }
+
+        PHRUser user = userOpt.get();
+        String name = user.getUsername() != null ? user.getUsername() : principalId;
+        String resolvedRole = resolveRole(user.getRoles());
+
+        Map<String, Object> actor = new LinkedHashMap<>();
+        actor.put("principalId", user.getUserId());
+        actor.put("tenantId", tenantId);
+        actor.put("role", resolvedRole);
+        actor.put("name", name);
+        actor.put("permissions", getPermissionsForRole(resolvedRole));
+
+        return PhrRouteSupport.jsonResponse(200, actor);
+    }
+
+    /**
+     * Returns permission list for a given role.
+     * This is a simplified implementation; production should use Kernel policy evaluator.
+     */
+    private java.util.List<String> getPermissionsForRole(String role) {
+        return switch (role) {
+            case "admin" -> java.util.List.of(
+                "view-release-readiness", "view-audit-trail", "view-provider-dashboard",
+                "view-patient-list", "break-glass-review"
+            );
+            case "clinician" -> java.util.List.of(
+                "view-provider-dashboard", "view-patient-list", "review-lab-results",
+                "review-medications", "view-observations", "break-glass-review"
+            );
+            case "caregiver" -> java.util.List.of(
+                "view-dependents", "review-lab-results", "review-medications",
+                "view-observations", "view-fchv-dashboard"
+            );
+            case "patient" -> java.util.List.of(
+                "view-patient-summary", "view-records", "manage-consent",
+                "schedule-visit", "manage-profile-settings", "view-notifications",
+                "upload-document", "review-ocr"
+            );
+            default -> java.util.List.of();
+        };
     }
 
     /**

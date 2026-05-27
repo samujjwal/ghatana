@@ -928,6 +928,8 @@ export interface components {
             conditions?: {
                 [key: string]: boolean;
             };
+            /** @description Caller-supplied retry key for idempotent primary phase action execution */
+            idempotencyKey?: string;
         };
         PhaseTransitionResult: {
             success?: boolean;

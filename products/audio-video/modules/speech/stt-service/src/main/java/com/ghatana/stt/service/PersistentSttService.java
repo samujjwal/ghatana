@@ -20,8 +20,12 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HexFormat;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -30,6 +34,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * @doc.type class
@@ -49,8 +56,8 @@ public class PersistentSttService {
     private static final Set<String> SUPPORTED_FORMATS = Set.of("wav", "mp3", "flac", "ogg", "m4a");
     private static final Set<String> SUPPORTED_LANGUAGES = Set.of("en", "ne", "hi", "es", "fr", "de", "ja", "zh");
     
-    // AV-P1-008: Timeout and degraded mode constants
-    private static final long DEFAULT_TRANSCRIPTION_TIMEOUT_MS = 300000; // 5 minutes
+    // AV-P1-005: Timeout constants
+    private static final long BATCH_TRANSCRIPTION_TIMEOUT_MS = 30_000; // 30 seconds
     private volatile boolean degraded = false;
     private volatile String degradationReason = null;
 
@@ -110,8 +117,19 @@ public class PersistentSttService {
         Objects.requireNonNull(userId, "userId cannot be null");
         Objects.requireNonNull(audioBytes, "audioBytes cannot be null");
 
-        // AV-P1-006: Validate input before processing
-        validateSttInput(audioBytes, fileName, format, sampleRate, language);
+        // AV-P1-004: Validate input before processing (validation failures are surfaced via exception)
+        try {
+            validateSttInput(audioBytes, fileName, format, sampleRate, language);
+        } catch (IllegalArgumentException e) {
+            emitSttAudit(tenantId, userId.toString(), "stt.transcribe", "VALIDATION_FAILURE",
+                Map.of("error", e.getMessage(), "audioSizeBytes", String.valueOf(audioBytes.length)));
+            throw e;
+        }
+
+        // AV-P1-002: Compute SHA-256 of audio bytes for integrity tracking
+        String inputHash = sha256Hex(audioBytes);
+        // AV-P1-002: Generate a per-request correlation ID for end-to-end tracing
+        String requestId = UUID.randomUUID().toString();
 
         long startTime = System.currentTimeMillis();
 
@@ -125,47 +143,51 @@ public class PersistentSttService {
                 return performTranscription(audioBytes, sampleRate, language)
                     .then(transcriptionResult -> {
                         // Step 3: Persist transcription result
-                        return persistTranscription(tenantId, userId, audioFile.getId(), transcriptionResult)
+                        return persistTranscription(tenantId, userId, audioFile.getId(), transcriptionResult, requestId, inputHash)
                             .map(transcription -> {
                                 long elapsedMs = System.currentTimeMillis() - startTime;
                                 transcribeTimer.record(Duration.ofMillis(elapsedMs));
 
-                                LOG.info("[tenant={}] Transcription completed: audioId={}, transcriptionId={}, " +
+                                LOG.info("[tenant={} requestId={}] Transcription completed: audioId={}, transcriptionId={}, " +
                                     "confidence={}, elapsedMs={}",
-                                    tenantId, audioFile.getId(), transcription.getId(),
+                                    tenantId, requestId, audioFile.getId(), transcription.getId(),
                                     transcriptionResult.confidence(), elapsedMs);
 
-                                // AV-P1-007: Emit audit event for successful transcription
+                                // AV-P1-003: Emit audit event for successful transcription
                                 emitSttAudit(tenantId, userId.toString(), "stt.transcribe", "SUCCESS",
-                                    Map.of("audioFileId", audioFile.getId().toString(),
+                                    Map.of("requestId", requestId,
+                                           "audioFileId", audioFile.getId().toString(),
                                            "transcriptionId", transcription.getId().toString(),
                                            "confidence", String.valueOf(transcriptionResult.confidence()),
                                            "language", transcriptionResult.language() != null ? transcriptionResult.language() : "unknown",
                                            "processingTimeMs", String.valueOf(elapsedMs),
-                                           "audioSizeBytes", String.valueOf(audioBytes.length)));
+                                           "audioSizeBytes", String.valueOf(audioBytes.length),
+                                           "inputHash", inputHash));
 
                                 return transcriptionResult;
                             });
                     })
                     .whenException(e -> {
-                        // AV-P1-004: Update audio file status to FAILED on transcription error with reason
-                        LOG.error("[tenant={}] Transcription failed for audioId={}: {}",
-                            tenantId, audioFile.getId(), e.getMessage(), e);
+                        LOG.error("[tenant={} requestId={}] Transcription failed for audioId={}: {}",
+                            tenantId, requestId, audioFile.getId(), e.getMessage(), e);
                         updateAudioFileStatus(tenantId, audioFile.getId(),
                             AudioFileEntity.ProcessingStatus.FAILED, e.getMessage());
 
-                        // AV-P1-007: Emit audit event for transcription failure
-                        emitSttAudit(tenantId, userId.toString(), "stt.transcribe", "FAILED",
-                            Map.of("audioFileId", audioFile.getId().toString(),
+                        // AV-P1-003: Granular audit for inference vs. timeout vs. degraded failures
+                        String auditOutcome = resolveFailureOutcome(e);
+                        emitSttAudit(tenantId, userId.toString(), "stt.transcribe", auditOutcome,
+                            Map.of("requestId", requestId,
+                                   "audioFileId", audioFile.getId().toString(),
                                    "error", e.getMessage(),
                                    "audioSizeBytes", String.valueOf(audioBytes.length)));
                     });
             })
             .whenException(e -> {
-                // AV-P1-007: Emit audit event for validation or persistence failure
-                LOG.error("[tenant={}] STT request failed: {}", tenantId, e.getMessage(), e);
-                emitSttAudit(tenantId, userId.toString(), "stt.transcribe", "ERROR",
-                    Map.of("error", e.getMessage(), "audioSizeBytes", String.valueOf(audioBytes.length)));
+                LOG.error("[tenant={} requestId={}] STT request failed: {}", tenantId, requestId, e.getMessage(), e);
+                emitSttAudit(tenantId, userId.toString(), "stt.transcribe", resolveFailureOutcome(e),
+                    Map.of("requestId", requestId,
+                           "error", e.getMessage(),
+                           "audioSizeBytes", String.valueOf(audioBytes.length)));
             });
     }
 
@@ -263,9 +285,17 @@ public class PersistentSttService {
                 "STT service is degraded: " + degradationReason));
         }
 
-        return Promise.ofBlocking(blockingExecutor, () -> {
+        // AV-P1-005: Submit transcription to a bounded-time Future and enforce the timeout.
+        // The future runs on blockingExecutor; if it exceeds BATCH_TRANSCRIPTION_TIMEOUT_MS the
+        // Promise is completed with a TimeoutException so callers see DEADLINE_EXCEEDED.
+        java.util.concurrent.ExecutorService singleUse =
+            java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+                Thread t = new Thread(r, "stt-transcribe-timeout");
+                t.setDaemon(true);
+                return t;
+            });
+        Future<TranscriptionResult> future = singleUse.submit(() -> {
             AudioData audio = new AudioData(audioBytes, sampleRate, 1, 16, Duration.ZERO, AudioFormat.PCM);
-
             try (SttEngine stt = library.getSttEngine()) {
                 TranscriptionOptions options = TranscriptionOptions.builder()
                     .language(language != null && !language.isBlank()
@@ -275,13 +305,31 @@ public class PersistentSttService {
                 return stt.transcribe(audio, options);
             }
         });
+        return Promise.ofBlocking(blockingExecutor, () -> {
+            try {
+                return future.get(BATCH_TRANSCRIPTION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException e) {
+                future.cancel(true);
+                singleUse.shutdownNow();
+                throw new TimeoutException("STT transcription timed out after "
+                    + BATCH_TRANSCRIPTION_TIMEOUT_MS + " ms");
+            } catch (java.util.concurrent.ExecutionException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof RuntimeException re) throw re;
+                throw new RuntimeException(cause);
+            } finally {
+                singleUse.shutdown();
+            }
+        });
     }
 
     private Promise<TranscriptionEntity> persistTranscription(
             String tenantId,
             UUID userId,
             UUID audioFileId,
-            TranscriptionResult result) {
+            TranscriptionResult result,
+            String requestId,
+            String inputHashSha256) {
 
         TranscriptionEntity entity = new TranscriptionEntity(
             UUID.randomUUID(),
@@ -297,6 +345,15 @@ public class PersistentSttService {
         entity.setProcessingTimeMs(result.processingTime().toMillis());
         entity.setCreatedAt(Instant.now());
         entity.setUpdatedAt(Instant.now());
+
+        // AV-P1-002: Persist requestId and input hash for traceability
+        TranscriptionEntity.TranscriptionMetadata meta = new TranscriptionEntity.TranscriptionMetadata();
+        meta.setRequestId(requestId);
+        meta.setInputHashSha256(inputHashSha256);
+        if (result.modelId() != null) {
+            meta.setEngineVersion(result.modelId());
+        }
+        entity.setMetadata(meta);
 
         return transcriptionService.save(tenantId, entity)
             .then(transcription -> {
@@ -369,20 +426,44 @@ public class PersistentSttService {
     }
 
     /**
-     * AV-P1-007: Emit audit event for STT operations.
-     *
-     * @param tenantId the tenant ID
-     * @param userId the user ID
-     * @param operation the operation type
-     * @param status the operation status
-     * @param details additional details
+     * AV-P1-003: Classify a failure exception into the canonical audit outcome label.
      */
-    private void emitSttAudit(String tenantId, String userId, String operation, 
+    private static String resolveFailureOutcome(Throwable e) {
+        if (e instanceof TimeoutException) {
+            return "TIMEOUT";
+        }
+        if (e instanceof IllegalStateException && e.getMessage() != null
+                && e.getMessage().startsWith("STT service is degraded")) {
+            return "DEGRADED_PROVIDER_FAILURE";
+        }
+        if (e instanceof com.ghatana.media.common.InferenceError) {
+            return "INFERENCE_FAILURE";
+        }
+        return "FAILED";
+    }
+
+    /**
+     * AV-P1-002: Compute SHA-256 hex digest of the given bytes.
+     */
+    private static String sha256Hex(byte[] data) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(data);
+            return HexFormat.of().formatHex(digest);
+        } catch (NoSuchAlgorithmException e) {
+            // SHA-256 is mandated by the JDK spec — this cannot happen.
+            throw new IllegalStateException("SHA-256 not available", e);
+        }
+    }
+
+    /**
+     * AV-P1-003: Emit audit event for STT operations.
+     */
+    private void emitSttAudit(String tenantId, String userId, String operation,
                                String status, Map<String, String> details) {
         if (auditService == null) {
-            return; // Audit service not configured
+            return;
         }
-        
         try {
             AuditEvent event = AuditEvent.builder()
                 .tenantId(tenantId != null ? tenantId : "unknown")
@@ -395,7 +476,6 @@ public class PersistentSttService {
                 .detail("operation", operation)
                 .details(Map.copyOf(details))
                 .build();
-            
             auditService.record(event);
         } catch (Exception e) {
             LOG.warn("Failed to emit audit event for STT operation {}: {}", operation, e.getMessage());

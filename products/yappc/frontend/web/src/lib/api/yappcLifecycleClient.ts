@@ -108,6 +108,7 @@ export interface LifecycleAdvanceRequest {
   readonly targetPhase: string;
   readonly bypass?: boolean;
   readonly bypassReason?: string;
+  readonly idempotencyKey?: string;
 }
 
 export interface LifecycleAdvanceResponse {

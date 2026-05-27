@@ -292,6 +292,11 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                   <div className="text-xs text-fg-muted">
                     Created: {new Date(experiment.createdAt).toLocaleString()}
                     {experiment.endedAt && ` – Ended: ${new Date(experiment.endedAt).toLocaleString()}`}
+                    {experiment.reversible && experiment.rollbackTargetWinnerId && (
+                      <span className="ml-3" data-testid={`rollback-target-${experiment.id}`}>
+                        Rollback: {experiment.variants.find((variant) => variant.variantId === experiment.rollbackTargetWinnerId)?.variantName ?? experiment.rollbackTargetWinnerId}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
@@ -371,6 +376,15 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                     {selectedExperiment.status}
                   </span>
                 </div>
+                {selectedExperiment.reversible && selectedExperiment.rollbackTargetWinnerId && (
+                  <div>
+                    <span className="text-fg-muted">Rollback:</span>
+                    <span className="ml-2 text-fg-muted">
+                      {selectedExperiment.variants.find((variant) => variant.variantId === selectedExperiment.rollbackTargetWinnerId)?.variantName
+                        ?? selectedExperiment.rollbackTargetWinnerId}
+                    </span>
+                  </div>
+                )}
               </div>
               <div>
                 <h3 className="text-base font-semibold text-fg-muted mb-3">Variant Performance</h3>

@@ -35,9 +35,6 @@ final class PhrRouteSupport {
     /** Roles permitted to call PHR routes. */
     static final Set<String> ALLOWED_ROLES = Set.of("patient", "caregiver", "clinician", "admin");
 
-    /** Roles with elevated access beyond basic patient operations. */
-    private static final Set<String> PRIVILEGED_ROLES = Set.of("admin", "clinician");
-
     private PhrRouteSupport() {}
 
     /**
@@ -79,16 +76,6 @@ final class PhrRouteSupport {
     static String extractCorrelationId(HttpRequest request) {
         String value = firstHeader(request, "X-Correlation-ID", "X-Correlation-Id", "X-Request-ID");
         return (value != null && !value.isBlank()) ? value.strip() : "no-correlation-id";
-    }
-
-    /**
-     * Returns true if the context holder has elevated (clinician/admin) access.
-     *
-     * @deprecated Prefer explicit policy methods such as hasClinicalRole.
-     */
-    @Deprecated(forRemoval = true)
-    static boolean isPrivileged(PhrRequestContext context) {
-        return PRIVILEGED_ROLES.contains(context.role());
     }
 
     /**

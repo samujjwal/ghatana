@@ -9,6 +9,11 @@ export type PhaseAction = {
     enabled: boolean;
     disabledReason?: string;
     requiredPermission: string;
+    category: string;
+    severity: string;
+    confirmationRequired: boolean;
+    idempotencyKey: string;
+    auditType: string;
     parameters: Record<string, any>;
 };
 

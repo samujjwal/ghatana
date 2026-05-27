@@ -32,7 +32,7 @@ import type {
   PhaseTransitionPreviewSnapshot,
 } from '../../../services/phase';
 import { currentUserAtom } from '../../../stores/user.store';
-import type { PhaseCockpitPacket, PhaseAction } from '../../../types/phasePacket';
+import type { PhaseCockpitPacket, PhaseAction, DegradedPacketDetails } from '../../../types/phasePacket';
 
 import { PhaseEmbeddedSurface } from './PhaseEmbeddedSurface';
 import { PhaseStatusPanels } from './PhaseStatusPanels';
@@ -234,6 +234,54 @@ function PhasePacketErrorPanel({ error, onRetry }: { readonly error: Error | nul
       >
         {t('phaseCockpit.error.retry')}
       </Button>
+    </section>
+  );
+}
+
+function PhaseDegradedPacketPanel({ details }: { readonly details: DegradedPacketDetails | undefined }) {
+  const { t } = useTranslation('common');
+  if (!details) {
+    return null;
+  }
+
+  return (
+    <section
+      className="rounded-2xl border border-warning-border bg-warning-bg p-4 text-sm text-warning-color"
+      data-testid="phase-degraded-details"
+      aria-label={t('phaseCockpit.degraded.aria')}
+    >
+      <p className="font-semibold text-warning-color">{t('phaseCockpit.degraded.title')}</p>
+      <dl className="mt-3 grid gap-3 md:grid-cols-2">
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">
+            {t('phaseCockpit.degraded.dependency')}
+          </dt>
+          <dd className="mt-1 text-fg" data-testid="phase-degraded-dependency">{details.dependency}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">
+            {t('phaseCockpit.degraded.truthSource')}
+          </dt>
+          <dd className="mt-1 text-fg" data-testid="phase-degraded-truth-source">{details.truthSource}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">
+            {t('phaseCockpit.degraded.reason')}
+          </dt>
+          <dd className="mt-1 text-fg" data-testid="phase-degraded-reason">{details.reason}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">
+            {t('phaseCockpit.degraded.recoveryAction')}
+          </dt>
+          <dd className="mt-1 text-fg" data-testid="phase-degraded-recovery">{details.recoveryAction}</dd>
+        </div>
+      </dl>
+      {details.impactedFeatures.length > 0 ? (
+        <p className="mt-3 text-xs text-fg-muted" data-testid="phase-degraded-impacted-features">
+          {t('phaseCockpit.degraded.impactedFeatures', { features: details.impactedFeatures.join(', ') })}
+        </p>
+      ) : null}
     </section>
   );
 }
@@ -559,6 +607,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   const primaryPacketAction = packet.availableActions.find(
     (action) => action.actionId === packet.dashboardActions.primaryAction
   ) ?? packet.availableActions[0] ?? null;
+  const isDependencyDegraded = packet.readiness.isDegraded || Boolean(packet.degradedDetails);
   const advancedDetails = (
     <div
       id={`${phase}-supporting-surface`}
@@ -582,6 +631,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   );
 
   const isCtaDisabled = !primaryPacketAction?.enabled
+    || isDependencyDegraded
     || actionMutation.isPending;
   const showGenerateReviewActions = phase === 'generate'
     && actionResult?.kind === 'generate-review'
@@ -596,9 +646,12 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     ? t('phaseCockpit.disabled.running')
     : primaryPacketAction?.disabledReason
       ? actionText(primaryPacketAction.disabledReason)
+    : isDependencyDegraded
+      ? packet.degradedDetails?.recoveryAction ?? t('phaseCockpit.disabled.degradedDependency')
     : !primaryPacketAction
       ? t('phaseCockpit.disabled.noBackendAction')
       : undefined;
+  const canExecutePrimaryAction = Boolean(primaryPacketAction?.enabled) && !isDependencyDegraded;
 
   return (
     <div className="p-6 space-y-6">
@@ -610,8 +663,8 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
           <PhasePrimaryActionCard
             title={actionText(primaryPacketAction?.label) ?? t('phaseCockpit.primary.title', { phase })}
             description={actionText(primaryPacketAction?.description) ?? t('phaseCockpit.primary.description')}
-            actionLabel={primaryPacketAction?.enabled ? actionText(primaryPacketAction.label) ?? primaryPacketAction.actionId : t('phaseCockpit.primary.viewBlockers')}
-            onAction={primaryPacketAction?.enabled ? handlePrimaryAction : scrollToBlockerPanel}
+            actionLabel={canExecutePrimaryAction ? actionText(primaryPacketAction?.label) ?? primaryPacketAction?.actionId ?? t('phaseCockpit.primary.viewBlockers') : t('phaseCockpit.primary.viewBlockers')}
+            onAction={canExecutePrimaryAction ? handlePrimaryAction : scrollToBlockerPanel}
             secondaryActionLabel={t('phaseCockpit.primary.reviewDetails')}
             onSecondaryAction={handleSecondaryAction}
             icon={resolvePhaseIcon(PHASE_ICON_IDS[phase])}
@@ -639,6 +692,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
             }}
           />
           <PhasePacketSummary packet={packet} />
+          <PhaseDegradedPacketPanel details={packet.degradedDetails} />
           {feedback ? (
             <div className="rounded-xl border border-info-border bg-info-bg p-4 text-sm text-info-color">
               {feedback}

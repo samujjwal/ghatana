@@ -114,7 +114,7 @@ const CAPABILITY_REGISTRY: Readonly<Record<CapabilityName, CapabilityConfig>> = 
   'ops:metrics':      { enabled: false, requiredRoles: ['OWNER', 'ADMIN', 'LEAD', 'DEVELOPER'] },
   'ops:logs':         { enabled: false, requiredRoles: ['OWNER', 'ADMIN', 'LEAD', 'DEVELOPER'] },
   'ops:dashboards':   { enabled: false, requiredRoles: ['OWNER', 'ADMIN', 'LEAD', 'DEVELOPER'] },
-  'product-family:control-plane': { enabled: true, requiredRoles: ['OWNER', 'ADMIN', 'LEAD', 'DEVELOPER'] },
+  'product-family:control-plane': { enabled: true, requiredRoles: ['OWNER', 'ADMIN', 'LEAD', 'DEVELOPER', 'EDITOR'] },
 
   // ── Admin surfaces (F-Y013) ───────────────────────────────────────────────
   // Billing requires the billing integration backend. Flip `enabled: true` when

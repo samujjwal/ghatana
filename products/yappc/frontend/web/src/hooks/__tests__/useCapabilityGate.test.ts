@@ -8,6 +8,7 @@ import { renderHook } from '@testing-library/react';
 import { createStore, Provider } from 'jotai';
 import { useCapabilityGate } from '../useCapabilityGate';
 import { workspaceAtom, type WorkspaceState } from '../../state/atoms/workspaceAtom';
+import type { WorkspaceRole } from '../../services/workspace/accessControl';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mock useAuth
@@ -204,6 +205,72 @@ describe('useCapabilityGate', () => {
 
     expect(result.current).toEqual({ granted: false, reason: 'insufficient-role' });
   });
+
+  it.each([
+    ['OWNER', true],
+    ['ADMIN', true],
+    ['EDITOR', false],
+    ['VIEWER', false],
+  ] satisfies ReadonlyArray<readonly [WorkspaceRole, boolean]>)(
+    'evaluates admin feature flag capability for %s workspace role',
+    (role, shouldGrant) => {
+      mockUseAuth.isAuthenticated = true;
+      mockUseAuth.hasRole.mockReturnValue(false);
+
+      const { result } = renderHook(() => useCapabilityGate('admin:feature-flags'), {
+        wrapper: createWorkspaceWrapper({
+          role,
+          isOwner: role === 'OWNER',
+          capabilities: {
+            read: true,
+            create: role !== 'VIEWER',
+            update: role === 'OWNER' || role === 'ADMIN',
+            delete: role === 'OWNER',
+            comment: true,
+          },
+        }),
+      });
+
+      expect(result.current).toEqual(
+        shouldGrant
+          ? { granted: true, reason: undefined }
+          : { granted: false, reason: 'insufficient-role' },
+      );
+    },
+  );
+
+  it.each([
+    ['OWNER', true],
+    ['ADMIN', true],
+    ['EDITOR', true],
+    ['VIEWER', false],
+  ] satisfies ReadonlyArray<readonly [WorkspaceRole, boolean]>)(
+    'evaluates product-family control plane capability for %s workspace role',
+    (role, shouldGrant) => {
+      mockUseAuth.isAuthenticated = true;
+      mockUseAuth.hasRole.mockImplementation((candidateRole: string) => candidateRole === role);
+
+      const { result } = renderHook(() => useCapabilityGate('product-family:control-plane'), {
+        wrapper: createWorkspaceWrapper({
+          role,
+          isOwner: role === 'OWNER',
+          capabilities: {
+            read: true,
+            create: role !== 'VIEWER',
+            update: role !== 'VIEWER',
+            delete: role === 'OWNER' || role === 'ADMIN',
+            comment: true,
+          },
+        }),
+      });
+
+      expect(result.current).toEqual(
+        shouldGrant
+          ? { granted: true, reason: undefined }
+          : { granted: false, reason: 'insufficient-role' },
+      );
+    },
+  );
 });
 
 function createWorkspaceWrapper(

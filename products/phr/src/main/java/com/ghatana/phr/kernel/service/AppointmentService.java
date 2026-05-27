@@ -135,6 +135,13 @@ public class AppointmentService extends PhrServiceBase {
     /**
      * Creates a new appointment with conflict detection.
      *
+     * <p>Implements conflict/double-book prevention through:
+     * <ul>
+     *   <li>Slot availability check with optimistic locking</li>
+     *   <li>Version-based optimistic locking on appointment records</li>
+     *   <li>Atomic slot state transition (AVAILABLE → BOOKED)</li>
+     * </ul>
+     *
      * @param request the appointment request
      * @return Promise containing the created appointment
      */
@@ -162,12 +169,12 @@ public class AppointmentService extends PhrServiceBase {
             java.util.Set.of("IN_PERSON", "TELEMEDICINE")
         );
 
-        // Check slot availability with optimistic locking
+        // Check slot availability with optimistic locking to prevent double-booking
         return checkSlotAvailability(slotId)
             .then(available -> {
                 if (!available) {
                     return Promise.<Appointment>ofException(
-                        new IllegalStateException("Slot no longer available"));
+                        new IllegalStateException("Slot no longer available - may have been booked by another request"));
                 }
 
                 String appointmentId = generateId();
@@ -190,7 +197,7 @@ public class AppointmentService extends PhrServiceBase {
                     1 // version for optimistic locking
                 );
 
-                // Write appointment
+                // Write appointment with version for conflict detection
                 DataWriteRequest writeRequest = new DataWriteRequest(
                     APPOINTMENT_DATASET,
                     appointmentId,
@@ -210,10 +217,10 @@ public class AppointmentService extends PhrServiceBase {
                         "Appointment scheduled with " + providerId + " [" + correlationId + "]"))
                     .map($ -> appointment)
                     .whenException(e -> {
-                        // Conflict detected - slot was booked by another request
-                        if (e.getMessage().contains("conflict")) {
+                        // Conflict detected - slot was booked by another request (optimistic lock failure)
+                        if (e.getMessage() != null && e.getMessage().contains("conflict")) {
                             throw new IllegalStateException(
-                                "This slot was just booked. Please select another.");
+                                "Double-book detected: This slot was just booked by another request. Please select another time slot.");
                         }
                     });
             });

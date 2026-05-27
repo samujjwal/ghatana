@@ -337,6 +337,33 @@ yappc-services:
     operationId: pauseAdminAbExperiment
     auditEventType: ADMIN_AB_EXPERIMENT_PAUSED
     privacyClassification: RESTRICTED
+  - method: GET
+    path: /api/admin/prompt-versions
+    auth: required
+    scopes: [admin]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: listAdminPromptVersions
+    auditEventType: ADMIN_PROMPT_VERSIONS_LIST
+    privacyClassification: CONFIDENTIAL
+  - method: POST
+    path: /api/admin/prompt-versions/{versionId}/rollback
+    auth: required
+    scopes: [admin]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: rollbackAdminPromptVersion
+    auditEventType: ADMIN_PROMPT_VERSION_ROLLED_BACK
+    privacyClassification: RESTRICTED
+  - method: PATCH
+    path: /api/admin/prompt-versions/weights
+    auth: required
+    scopes: [admin]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: updateAdminPromptVersionWeights
+    auditEventType: ADMIN_PROMPT_VERSION_WEIGHTS_REBALANCED
+    privacyClassification: RESTRICTED
   - method: POST
     path: /api/v1/yappc/intent/capture
     auth: required

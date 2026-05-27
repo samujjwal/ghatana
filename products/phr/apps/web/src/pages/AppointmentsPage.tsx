@@ -1,125 +1,256 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Button, Card, CardContent, CardHeader, Input } from '@ghatana/design-system';
-import { createAppointmentRequest, fetchDashboardData } from '../api/phrApi';
-import { formatPhrDateTime, t } from '../i18n/phrI18n';
-import type { AppointmentCreateResult, AppointmentSummary } from '../types';
-
-// Hard-coded context for demo; production wires from auth session.
-const DEMO_CONTEXT = { tenantId: 'tenant-health-1', principalId: 'current', role: 'patient' };
+import { fetchAppointments, fetchProviders, bookAppointment, cancelAppointment, rescheduleAppointment } from '../api/phrApi';
+import { usePhrSession } from '../auth/PhrSessionContext';
+import type { AppointmentSummary } from '../types';
 
 export function AppointmentsPage(): React.ReactElement {
+  const { session } = usePhrSession();
   const [appointments, setAppointments] = useState<AppointmentSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
 
-  // Scheduling form state
-  const [specialty, setSpecialty] = useState<string>('');
-  const [preferredDate, setPreferredDate] = useState<string>('');
+  // Booking form state
+  const [selectedSpecialty, setSelectedSpecialty] = useState<string>('');
+  const [selectedProvider, setSelectedProvider] = useState<string>('');
+  const [selectedSlot, setSelectedSlot] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [submitResult, setSubmitResult] = useState<AppointmentCreateResult | null>(null);
+  const [submitResult, setSubmitResult] = useState<string | null>(null);
+
+  // Provider and slot data
+  const [providers, setProviders] = useState<Array<{ id: string; name: string; specialty: string; availableSlots: string[] }>>([]);
+  const [loadingProviders, setLoadingProviders] = useState<boolean>(false);
 
   const loadAppointments = useCallback((): void => {
+    if (!session) return;
     setLoading(true);
     setLoadError(null);
-    fetchDashboardData()
-      .then((data) => setAppointments(data.appointments))
-      .catch((err: unknown) => setLoadError(err instanceof Error ? err.message : t('error.appointmentsLoad')))
+    fetchAppointments(session.principalId, {
+      tenantId: session.tenantId,
+      principalId: session.principalId,
+      role: session.role,
+    })
+      .then(setAppointments)
+      .catch((err: unknown) => setLoadError(err instanceof Error ? err.message : 'Failed to load appointments'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [session]);
+
+  const loadProviders = useCallback((): void => {
+    if (!session) return;
+    setLoadingProviders(true);
+    fetchProviders({
+      tenantId: session.tenantId,
+      principalId: session.principalId,
+      role: session.role,
+    })
+      .then(setProviders)
+      .catch((err: unknown) => console.error('Failed to load providers:', err))
+      .finally(() => setLoadingProviders(false));
+  }, [session]);
 
   useEffect(() => {
     loadAppointments();
-  }, [loadAppointments]);
+    loadProviders();
+  }, [loadAppointments, loadProviders]);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
+  const handleBook = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
     setSubmitError(null);
     setSubmitResult(null);
 
-    if (!specialty.trim()) {
-      setSubmitError(t('validation.required', { field: t('appointments.specialty.label') }));
-      return;
-    }
-    if (!preferredDate.trim()) {
-      setSubmitError(t('validation.required', { field: t('appointments.preferredDate.label') }));
+    if (!session || !selectedProvider || !selectedSlot) {
+      setSubmitError('Please select a provider and time slot');
       return;
     }
 
     setSubmitting(true);
     try {
-      const result = await createAppointmentRequest(
-        { specialty: specialty.trim(), preferredDate: preferredDate.trim(), notes: notes.trim() || undefined },
-        DEMO_CONTEXT,
+      const result = await bookAppointment(
+        session.principalId,
+        selectedProvider,
+        selectedSlot,
+        notes.trim() || undefined,
+        {
+          tenantId: session.tenantId,
+          principalId: session.principalId,
+          role: session.role,
+        },
       );
-      setSubmitResult(result);
-      setSpecialty('');
-      setPreferredDate('');
+      setSubmitResult(`Appointment booked successfully: ${result.id}`);
+      setSelectedSpecialty('');
+      setSelectedProvider('');
+      setSelectedSlot('');
       setNotes('');
       loadAppointments();
     } catch (err: unknown) {
-      setSubmitError(err instanceof Error ? err.message : t('appointments.error.submit'));
+      setSubmitError(err instanceof Error ? err.message : 'Failed to book appointment');
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) return <div className="loading">{t('appointments.loading')}</div>;
-  if (loadError) return <div role="alert" className="error">{t('dashboard.errorPrefix')}: {loadError}</div>;
+  const handleCancel = async (appointmentId: string): Promise<void> => {
+    if (!session) return;
+    try {
+      await cancelAppointment(appointmentId, session.principalId, {
+        tenantId: session.tenantId,
+        principalId: session.principalId,
+        role: session.role,
+      });
+      loadAppointments();
+    } catch (err: unknown) {
+      console.error('Failed to cancel appointment:', err);
+    }
+  };
+
+  const handleReschedule = async (appointmentId: string, newSlot: string): Promise<void> => {
+    if (!session) return;
+    try {
+      await rescheduleAppointment(appointmentId, session.principalId, newSlot, {
+        tenantId: session.tenantId,
+        principalId: session.principalId,
+        role: session.role,
+      });
+      loadAppointments();
+    } catch (err: unknown) {
+      console.error('Failed to reschedule appointment:', err);
+    }
+  };
+
+  if (loading) return <div className="loading">Loading appointments...</div>;
+  if (loadError) return <div role="alert" className="error">Error: {loadError}</div>;
+
+  const now = new Date();
+  const upcoming = appointments.filter(apt => new Date(apt.startsAt) >= now);
+  const past = appointments.filter(apt => new Date(apt.startsAt) < now);
+
+  const displayedAppointments = activeTab === 'upcoming' ? upcoming : past;
+
+  // Filter providers by specialty
+  const filteredProviders = selectedSpecialty
+    ? providers.filter(p => p.specialty === selectedSpecialty)
+    : providers;
+
+  const selectedProviderData = providers.find(p => p.id === selectedProvider);
 
   return (
-    <div className="two-column-layout">
+    <div className="stack gap-lg">
       <Card>
-        <CardHeader title={t('appointments.title')} subheader={t('appointments.subheader')} />
+        <CardHeader title="Appointments" subheader="Your scheduled appointments" />
         <CardContent>
+          <div className="tabs">
+            <button
+              className={`tab ${activeTab === 'upcoming' ? 'active' : ''}`}
+              onClick={() => setActiveTab('upcoming')}
+            >
+              Upcoming ({upcoming.length})
+            </button>
+            <button
+              className={`tab ${activeTab === 'past' ? 'active' : ''}`}
+              onClick={() => setActiveTab('past')}
+            >
+              Past ({past.length})
+            </button>
+          </div>
           <div className="stack gap-md">
-            {appointments.map((appointment) => (
-              <div key={appointment.id} className="data-card">
-                <div>
-                  <strong>{appointment.provider}</strong>
-                  <p className="muted">{appointment.specialty} - {appointment.location}</p>
+            {displayedAppointments.length === 0 ? (
+              <p className="empty">No {activeTab} appointments</p>
+            ) : (
+              displayedAppointments.map((appointment) => (
+                <div key={appointment.id} className="data-card">
+                  <div>
+                    <strong>{appointment.provider}</strong>
+                    <p className="muted">{appointment.specialty} - {appointment.location}</p>
+                  </div>
+                  <div className="row gap-sm align-center">
+                    <span className="pill">{new Date(appointment.startsAt).toLocaleString()}</span>
+                    <span className={`badge badge--${appointment.status}`}>{appointment.status}</span>
+                    {appointment.reminderSent && <span className="muted">Reminder sent</span>}
+                  </div>
+                  {activeTab === 'upcoming' && appointment.status === 'confirmed' && (
+                    <div className="row gap-sm">
+                      <Button size="small" onClick={() => handleCancel(appointment.id)}>Cancel</Button>
+                    </div>
+                  )}
                 </div>
-                <span className="pill">{formatPhrDateTime(appointment.startsAt)}</span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
+
       <Card>
-        <CardHeader title={t('appointments.request.title')} subheader={t('appointments.request.subheader')} />
+        <CardHeader title="Book New Appointment" subheader="Schedule with a provider" />
         <CardContent>
           {submitResult && (
-            <div role="status" className="success-message mb-4">
-              {t('appointments.success', { id: submitResult.id })}
-            </div>
+            <div role="status" className="success-message mb-4">{submitResult}</div>
           )}
           {submitError && (
             <div role="alert" className="error mb-4">{submitError}</div>
           )}
-          <form onSubmit={(e) => void handleSubmit(e)} className="stack gap-md" noValidate>
-            <Input
-              aria-label={t('appointments.specialty.label')}
-              placeholder={t('appointments.specialty.placeholder')}
-              value={specialty}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSpecialty(e.target.value)}
-              required
-            />
-            <Input
-              aria-label={t('appointments.preferredDate.label')}
-              type="date"
-              value={preferredDate}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPreferredDate(e.target.value)}
-              required
-            />
-            <Input
-              aria-label={t('appointments.notes.label')}
-              placeholder={t('appointments.notes.placeholder')}
-              value={notes}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNotes(e.target.value)}
-            />
-            <Button type="submit" className="primary-cta" disabled={submitting}>
-              {submitting ? t('appointments.submitting') : t('appointments.submit')}
+          <form onSubmit={(e) => void handleBook(e)} className="stack gap-md" noValidate>
+            <div>
+              <label htmlFor="specialty">Specialty</label>
+              <select
+                id="specialty"
+                value={selectedSpecialty}
+                onChange={(e) => {
+                  setSelectedSpecialty(e.target.value);
+                  setSelectedProvider('');
+                  setSelectedSlot('');
+                }}
+              >
+                <option value="">Select specialty</option>
+                {Array.from(new Set(providers.map(p => p.specialty))).map(specialty => (
+                  <option key={specialty} value={specialty}>{specialty}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="provider">Provider</label>
+              <select
+                id="provider"
+                value={selectedProvider}
+                onChange={(e) => {
+                  setSelectedProvider(e.target.value);
+                  setSelectedSlot('');
+                }}
+                disabled={!selectedSpecialty}
+              >
+                <option value="">Select provider</option>
+                {filteredProviders.map(provider => (
+                  <option key={provider.id} value={provider.id}>{provider.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="slot">Available Time Slots</label>
+              <select
+                id="slot"
+                value={selectedSlot}
+                onChange={(e) => setSelectedSlot(e.target.value)}
+                disabled={!selectedProvider}
+              >
+                <option value="">Select time slot</option>
+                {selectedProviderData?.availableSlots.map(slot => (
+                  <option key={slot} value={slot}>{new Date(slot).toLocaleString()}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="notes">Notes (optional)</label>
+              <Input
+                id="notes"
+                value={notes}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNotes(e.target.value)}
+                placeholder="Reason for visit or special requests"
+              />
+            </div>
+            <Button type="submit" className="primary-cta" disabled={submitting || !selectedSlot}>
+              {submitting ? 'Booking...' : 'Book Appointment'}
             </Button>
           </form>
         </CardContent>

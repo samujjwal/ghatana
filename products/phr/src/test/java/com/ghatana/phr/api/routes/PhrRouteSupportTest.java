@@ -157,26 +157,6 @@ class PhrRouteSupportTest {
         }
     }
 
-    @Test
-    @SuppressWarnings("deprecation")
-    @DisplayName("isPrivileged returns true for clinician and admin (deprecated bridge)")
-    void isPrivilegedForAdminAndClinician() {
-        for (String role : new String[]{"admin", "clinician"}) {
-            PhrRouteSupport.PhrRequestContext ctx = new PhrRouteSupport.PhrRequestContext("t1", "p1", role, "corr");
-            assertThat(PhrRouteSupport.isPrivileged(ctx)).isTrue();
-        }
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    @DisplayName("isPrivileged returns false for patient and caregiver (deprecated bridge)")
-    void isNotPrivilegedForPatientAndCaregiver() {
-        for (String role : new String[]{"patient", "caregiver"}) {
-            PhrRouteSupport.PhrRequestContext ctx = new PhrRouteSupport.PhrRequestContext("t1", "p1", role, "corr");
-            assertThat(PhrRouteSupport.isPrivileged(ctx)).isFalse();
-        }
-    }
-
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /**

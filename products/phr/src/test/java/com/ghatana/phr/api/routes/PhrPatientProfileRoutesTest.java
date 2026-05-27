@@ -1,5 +1,6 @@
 package com.ghatana.phr.api.routes;
 
+import com.ghatana.phr.repository.UserRepository;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
@@ -30,10 +31,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PhrPatientProfileRoutesTest extends EventloopTestBase {
 
     private AsyncServlet servlet;
+    private UserRepository userRepository;
 
     @BeforeEach
     void setUp() {
-        servlet = new PhrPatientProfileRoutes(eventloop()).getServlet();
+        userRepository = new UserRepository();
+        servlet = new PhrPatientProfileRoutes(eventloop(), userRepository).getServlet();
     }
 
     @Test

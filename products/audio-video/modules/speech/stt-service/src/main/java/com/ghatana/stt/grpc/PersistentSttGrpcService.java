@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -36,6 +37,13 @@ public class PersistentSttGrpcService extends STTServiceGrpc.STTServiceImplBase 
             MeterRegistry metrics) {
         this.persistentSttService = new PersistentSttService(
             library, audioFileService, transcriptionService, metrics);
+    }
+
+    /**
+     * Package-private constructor for unit testing — supply a pre-built service.
+     */
+    PersistentSttGrpcService(PersistentSttService persistentSttService) {
+        this.persistentSttService = Objects.requireNonNull(persistentSttService);
     }
 
     @Override
@@ -83,17 +91,20 @@ public class PersistentSttGrpcService extends STTServiceGrpc.STTServiceImplBase 
                     .build());
                 responseObserver.onCompleted();
             }).whenException(e -> {
-                LOG.error("[{}] Transcription failed: {}", cid, e.getMessage(), e);
-                responseObserver.onError(io.grpc.Status.INTERNAL
-                    .withDescription("Transcription failed: " + e.getMessage())
-                    .asRuntimeException());
+                // AV-P1-004: Map exception types to appropriate gRPC status codes
+                io.grpc.Status grpcStatus = toGrpcStatus(cid, e);
+                responseObserver.onError(grpcStatus.asRuntimeException());
             });
 
+        } catch (IllegalArgumentException e) {
+            // AV-P1-004: Validation threw synchronously (before Promise was returned)
+            LOG.warn("[{}] Validation error: {}", cid, e.getMessage());
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription(e.getMessage()).asRuntimeException());
         } catch (Exception e) {
             LOG.error("[{}] Unexpected error: {}", cid, e.getMessage(), e);
             responseObserver.onError(io.grpc.Status.INTERNAL
-                .withDescription("Internal error")
-                .asRuntimeException());
+                .withDescription("Internal error").asRuntimeException());
         } finally {
             MDC.clear();
         }
@@ -110,6 +121,30 @@ public class PersistentSttGrpcService extends STTServiceGrpc.STTServiceImplBase 
 
     private String cid() {
         return java.util.UUID.randomUUID().toString().substring(0, 8);
+    }
+
+    /**
+     * AV-P1-004: Map exception types to canonical gRPC status codes.
+     */
+    private io.grpc.Status toGrpcStatus(String cid, Throwable e) {
+        if (e instanceof IllegalArgumentException) {
+            LOG.warn("[{}] Validation error: {}", cid, e.getMessage());
+            return io.grpc.Status.INVALID_ARGUMENT.withDescription(e.getMessage());
+        }
+        if (e instanceof java.util.concurrent.TimeoutException) {
+            LOG.warn("[{}] Transcription timed out: {}", cid, e.getMessage());
+            return io.grpc.Status.DEADLINE_EXCEEDED.withDescription(e.getMessage());
+        }
+        if (e instanceof com.ghatana.media.common.InferenceError ie && !ie.isRetryable()) {
+            LOG.error("[{}] Non-retryable inference error: {}", cid, e.getMessage());
+            return io.grpc.Status.INTERNAL.withDescription("Inference failed: " + e.getMessage());
+        }
+        if (e instanceof com.ghatana.media.common.InferenceError) {
+            LOG.warn("[{}] Retryable inference error: {}", cid, e.getMessage());
+            return io.grpc.Status.UNAVAILABLE.withDescription("Transcription temporarily unavailable");
+        }
+        LOG.error("[{}] Unexpected async error: {}", cid, e.getMessage(), e);
+        return io.grpc.Status.INTERNAL.withDescription("Transcription failed");
     }
 
 }

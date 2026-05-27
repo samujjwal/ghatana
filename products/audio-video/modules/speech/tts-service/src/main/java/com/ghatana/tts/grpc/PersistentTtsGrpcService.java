@@ -5,14 +5,17 @@ import com.ghatana.audio.video.infrastructure.persistence.service.AudioFileServi
 import com.ghatana.media.AudioVideoLibrary;
 import com.ghatana.tts.core.grpc.proto.*;
 import com.ghatana.tts.service.PersistentTtsService;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeoutException;
 
 /**
  * @doc.type class
@@ -36,6 +39,12 @@ public class PersistentTtsGrpcService extends TTSServiceGrpc.TTSServiceImplBase 
         this.streamingDelegate = new TtsGrpcService(library, metrics);
     }
 
+    /** Package-private constructor for unit testing — supply a pre-wired PersistentTtsService. */
+    PersistentTtsGrpcService(PersistentTtsService persistentTtsService) {
+        this.persistentTtsService = Objects.requireNonNull(persistentTtsService);
+        this.streamingDelegate = null; // streaming not under test via this path
+    }
+
     @Override
     public void synthesize(SynthesizeRequest request, StreamObserver<SynthesizeResponse> responseObserver) {
         String cid = cid();
@@ -49,7 +58,7 @@ public class PersistentTtsGrpcService extends TTSServiceGrpc.TTSServiceImplBase 
             return;
         }
 
-        UUID userId = userIdStr != null ? UUID.fromString(userIdStr) : UUID.randomUUID();
+        UUID userId = parseUserId(userIdStr);
 
         try {
             MDC.put("tenantId", tenantId);
@@ -95,11 +104,14 @@ public class PersistentTtsGrpcService extends TTSServiceGrpc.TTSServiceImplBase 
                 responseObserver.onCompleted();
             }).whenException(e -> {
                 LOG.error("[{}] TTS synthesis failed: {}", cid, e.getMessage(), e);
-                responseObserver.onError(io.grpc.Status.INTERNAL
-                    .withDescription("TTS synthesis failed: " + e.getMessage())
-                    .asRuntimeException());
+                responseObserver.onError(toGrpcStatus(cid, e).asRuntimeException());
             });
 
+        } catch (IllegalArgumentException e) {
+            LOG.warn("[{}] TTS validation error: {}", cid, e.getMessage());
+            responseObserver.onError(Status.INVALID_ARGUMENT
+                .withDescription(e.getMessage())
+                .asRuntimeException());
         } catch (Exception e) {
             LOG.error("[{}] Unexpected error: {}", cid, e.getMessage(), e);
             responseObserver.onError(io.grpc.Status.INTERNAL
@@ -141,7 +153,28 @@ public class PersistentTtsGrpcService extends TTSServiceGrpc.TTSServiceImplBase 
         return JwtServerInterceptor.CTX_SUBJECT.get();
     }
 
+    private static UUID parseUserId(String userIdStr) {
+        if (userIdStr == null) return UUID.randomUUID();
+        try {
+            return UUID.fromString(userIdStr);
+        } catch (IllegalArgumentException e) {
+            // Subject is not UUID-formatted (e.g. opaque token ID) — generate a stable random UUID.
+            return UUID.randomUUID();
+        }
+    }
+
+    private Status toGrpcStatus(String cid, Throwable e) {
+        if (e instanceof IllegalArgumentException) {
+            return Status.INVALID_ARGUMENT.withDescription(e.getMessage());
+        }
+        if (e instanceof TimeoutException) {
+            LOG.warn("[{}] TTS synthesis timed out", cid);
+            return Status.DEADLINE_EXCEEDED.withDescription("TTS synthesis timed out");
+        }
+        return Status.INTERNAL.withDescription("TTS synthesis failed");
+    }
+
     private String cid() {
-        return java.util.UUID.randomUUID().toString().substring(0, 8);
+        return UUID.randomUUID().toString().substring(0, 8);
     }
 }

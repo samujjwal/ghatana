@@ -74,6 +74,10 @@ public class UserRepository {
         return users.get(userId);
     }
 
+    public Optional<PHRUser> findByUserId(String userId) {
+        return Optional.ofNullable(findById(userId));
+    }
+
     public Optional<PHRUser> findByUsername(String username) {
         if (dataSource != null) {
             return Optional.ofNullable(findByUsernameJdbc(username));

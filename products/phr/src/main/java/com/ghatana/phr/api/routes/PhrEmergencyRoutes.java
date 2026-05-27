@@ -62,6 +62,12 @@ public final class PhrEmergencyRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
+        // Policy gate: emergency access requires clinical role or admin
+        if (!PhrRouteSupport.hasClinicalRole(context)) {
+            return PhrRouteSupport.errorResponse(403, "EMERGENCY_ACCESS_FORBIDDEN",
+                "Emergency break-glass access requires clinician or admin role");
+        }
+
         return request.loadBody()
             .then(body -> {
                 EmergencyAccessLogService.EmergencyAccessEvent event;
@@ -70,6 +76,19 @@ public final class PhrEmergencyRoutes {
                 } catch (IllegalArgumentException ex) {
                     return PhrRouteSupport.errorResponse(400, "INVALID_EMERGENCY_ACCESS", ex.getMessage());
                 }
+                
+                // Policy gate: validate justification is provided and non-empty
+                if (event.justification() == null || event.justification().isBlank()) {
+                    return PhrRouteSupport.errorResponse(400, "INVALID_JUSTIFICATION",
+                        "Emergency access requires a documented justification");
+                }
+                
+                // Policy gate: validate at least one resource is being accessed
+                if (event.resourcesAccessed() == null || event.resourcesAccessed().isEmpty()) {
+                    return PhrRouteSupport.errorResponse(400, "INVALID_RESOURCES",
+                        "Emergency access must specify at least one resource being accessed");
+                }
+                
                 return emergencyAccessLogService.logAccess(event)
                     .then(stored -> PhrRouteSupport.jsonResponse(201, stored));
             });
@@ -154,6 +173,8 @@ public final class PhrEmergencyRoutes {
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
+        
+        // Policy gate: only administrators can review emergency access
         if (!PhrRouteSupport.canPerformAdminOperation(context)) {
             return PhrRouteSupport.errorResponse(403, "REVIEWER_REQUIRED", "Only administrators can review emergency access");
         }
@@ -166,6 +187,14 @@ public final class PhrEmergencyRoutes {
                 } catch (IllegalArgumentException ex) {
                     return PhrRouteSupport.errorResponse(400, "INVALID_EMERGENCY_REVIEW", ex.getMessage());
                 }
+                
+                // Policy gate: require notes for denied reviews
+                if (payload.status() == EmergencyAccessLogService.ReviewStatus.DENIED 
+                    && (payload.notes() == null || payload.notes().isBlank())) {
+                    return PhrRouteSupport.errorResponse(400, "REVIEW_NOTES_REQUIRED",
+                        "Denied emergency access reviews require documented notes");
+                }
+                
                 return emergencyAccessLogService.markReviewed(
                         request.getPathParameter("eventId"),
                         context.principalId(),

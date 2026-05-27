@@ -48,6 +48,7 @@ public class YappcHttpServer extends HttpServerLauncher {
             AdminObservabilityController adminObservabilityController,
             AdminFeatureFlagController adminFeatureFlagController,
             AdminAbTestingController adminAbTestingController,
+            AdminPromptVersionController adminPromptVersionController,
             ProductFamilyControlPlaneController productFamilyControlPlaneController) {
 
         ApiVersionPolicy versionPolicy = new ApiVersionPolicy();
@@ -155,6 +156,9 @@ public class YappcHttpServer extends HttpServerLauncher {
                 .with(HttpMethod.POST, "/api/admin/ab-experiments", secureVersioned(authenticationFilter, routeAuthorizationFilter, adminAbTestingController::createExperiment, versionPolicy))
                 .with(HttpMethod.POST, "/api/admin/ab-experiments/:experimentId/promote", secureVersioned(authenticationFilter, routeAuthorizationFilter, adminAbTestingController::promoteWinner, versionPolicy))
                 .with(HttpMethod.POST, "/api/admin/ab-experiments/:experimentId/pause", secureVersioned(authenticationFilter, routeAuthorizationFilter, adminAbTestingController::pauseExperiment, versionPolicy))
+                .with(HttpMethod.GET, "/api/admin/prompt-versions", secureVersioned(authenticationFilter, routeAuthorizationFilter, adminPromptVersionController::listVersions, versionPolicy))
+                .with(HttpMethod.POST, "/api/admin/prompt-versions/:versionId/rollback", secureVersioned(authenticationFilter, routeAuthorizationFilter, adminPromptVersionController::rollbackVersion, versionPolicy))
+                .with(HttpMethod.PATCH, "/api/admin/prompt-versions/weights", secureVersioned(authenticationFilter, routeAuthorizationFilter, adminPromptVersionController::updateWeights, versionPolicy))
 
                 // Capabilities and dashboard actions
                 .with(HttpMethod.GET, "/api/v1/capabilities", secureVersioned(authenticationFilter, routeAuthorizationFilter, capabilityController::getCapabilities, versionPolicy))

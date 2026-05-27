@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
-import { confirmOcrDocument, fetchOcrDocument } from '../api/phrApi';
+import { confirmOcrDocument, fetchOcrDocument, rejectOcrDocument } from '../api/phrApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import type { OcrReviewDocument } from '../types';
@@ -15,7 +15,9 @@ export function OcrReviewPage(): React.ReactElement {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<boolean>(false);
+  const [rejecting, setRejecting] = useState<boolean>(false);
   const [confirmed, setConfirmed] = useState<boolean>(false);
+  const [rejected, setRejected] = useState<boolean>(false);
   const [correctedText, setCorrectedText] = useState<string>('');
 
   useEffect(() => {
@@ -58,6 +60,26 @@ export function OcrReviewPage(): React.ReactElement {
     }
   }
 
+  async function handleReject(): Promise<void> {
+    if (!documentId || !session) return;
+    setRejecting(true);
+    try {
+      await rejectOcrDocument(
+        documentId,
+        {
+          tenantId: session.tenantId,
+          principalId: session.principalId,
+          role: session.role,
+        },
+      );
+      setRejected(true);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t('documents.ocr.error'));
+    } finally {
+      setRejecting(false);
+    }
+  }
+
   if (loading) return <div className="loading">{t('documents.ocr.loading')}</div>;
   if (error) return <div className="error">{t('documents.ocr.error')}: {error}</div>;
   if (!doc) return <div className="error">{t('documents.ocr.error')}</div>;
@@ -80,18 +102,31 @@ export function OcrReviewPage(): React.ReactElement {
             rows={10}
             aria-label={t('ocr.corrected')}
           />
-          {!confirmed ? (
-            <button
-              type="button"
-              className="btn btn--primary"
-              onClick={() => void handleConfirm()}
-              disabled={confirming}
-              aria-busy={confirming}
-            >
-              {t('documents.ocr.confirm')}
-            </button>
-          ) : (
+          {confirmed ? (
             <p role="status" className="success">{t('documents.upload.success')}</p>
+          ) : rejected ? (
+            <p role="status" className="warning">{t('documents.ocr.error')}</p>
+          ) : (
+            <div className="stack gap-sm" style={{ marginTop: '1rem' }}>
+              <button
+                type="button"
+                className="btn btn--primary"
+                onClick={() => void handleConfirm()}
+                disabled={confirming || rejecting}
+                aria-busy={confirming}
+              >
+                {confirming ? 'Confirming...' : t('documents.ocr.confirm')}
+              </button>
+              <button
+                type="button"
+                className="btn btn--secondary"
+                onClick={() => void handleReject()}
+                disabled={confirming || rejecting}
+                aria-busy={rejecting}
+              >
+                {rejecting ? 'Rejecting...' : 'Reject'}
+              </button>
+            </div>
           )}
         </CardContent>
       </Card>

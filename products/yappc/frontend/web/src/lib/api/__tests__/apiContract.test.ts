@@ -409,6 +409,40 @@ describe('Phase cockpit generated client parity', () => {
     expect(generatedDetailsSource).toContain("DATA_CLOUD = 'DATA_CLOUD'");
     expect(generatedDetailsSource).toContain("KERNEL = 'KERNEL'");
   });
+
+  it('keeps canonical phase action safety metadata in OpenAPI and generated frontend contracts', () => {
+    const openApiSource = fs.readFileSync(openApiPath, 'utf8');
+    const domainTypeSource = fs.readFileSync(
+      path.join(repoRoot, 'products/yappc/frontend/web/src/types/phasePacket.ts'),
+      'utf8'
+    );
+    const generatedActionSource = fs.readFileSync(
+      path.join(repoRoot, 'products/yappc/frontend/web/src/clients/generated/api/models/PhaseAction.ts'),
+      'utf8'
+    );
+
+    expect(openApiSource).toContain('confirmationRequired:');
+    expect(openApiSource).toContain('idempotencyKey:');
+    expect(openApiSource).toContain('auditType:');
+    expect(domainTypeSource).toContain('readonly category: string');
+    expect(domainTypeSource).toContain('readonly confirmationRequired: boolean');
+    expect(domainTypeSource).toContain('readonly idempotencyKey: string');
+    expect(generatedActionSource).toContain('category: string');
+    expect(generatedActionSource).toContain('confirmationRequired: boolean');
+    expect(generatedActionSource).toContain('auditType: string');
+  });
+
+  it('keeps phase advance idempotency in OpenAPI and generated frontend contracts', () => {
+    const openApiSource = fs.readFileSync(openApiPath, 'utf8');
+    const generatedAdvanceSource = fs.readFileSync(
+      path.join(repoRoot, 'products/yappc/frontend/web/src/clients/generated/api/models/AdvancePhaseRequest.ts'),
+      'utf8'
+    );
+
+    expect(openApiSource).toContain('AdvancePhaseRequest:');
+    expect(openApiSource).toContain('Caller-supplied retry key for idempotent primary phase action execution');
+    expect(generatedAdvanceSource).toContain('idempotencyKey?: string');
+  });
 });
 
 describe('Generate Kernel ProductUnitIntent client parity', () => {

@@ -42,6 +42,7 @@ import com.ghatana.yappc.services.learn.DataCloudLearningEvidenceRepository;
 import com.ghatana.yappc.services.learn.LearningEvidenceService;
 import com.ghatana.yappc.services.learn.LearningEvidenceServiceImpl;
 import com.ghatana.yappc.services.lifecycle.JdbcAuditLogger;
+import com.ghatana.yappc.services.lifecycle.StageConfigLoader;
 import com.ghatana.yappc.services.lifecycle.TransitionConfigLoader;
 import com.ghatana.yappc.services.lifecycle.gate.PhaseGateValidator;
 import com.ghatana.yappc.services.platform.PlatformIntegrationClient;
@@ -54,6 +55,11 @@ import com.ghatana.yappc.services.phase.PhasePacketService;
 import com.ghatana.yappc.services.phase.PhasePacketServiceImpl;
 import com.ghatana.yappc.services.phase.DegradedAuditService;
 import com.ghatana.yappc.services.phase.DegradedPreviewRuntimeService;
+import com.ghatana.yappc.services.phase.DataCloudPlatformRunStatusService;
+import com.ghatana.yappc.services.phase.DegradedPhasePacketFactory;
+import com.ghatana.yappc.services.phase.PhaseActionAuthorizationService;
+import com.ghatana.yappc.services.phase.PlatformRunStatusService;
+import com.ghatana.yappc.services.phase.PhaseRequiredArtifactProvider;
 import com.ghatana.yappc.services.run.CiCdPort;
 import com.ghatana.yappc.services.run.GitHubActionsCiCdAdapter;
 import com.ghatana.yappc.services.run.RunService;
@@ -429,6 +435,14 @@ public class YappcApiModule extends AbstractModule {
     }
 
     @Provides
+    AdminPromptVersionController adminPromptVersionController(
+            DataCloudClient dataCloudClient,
+            ObjectMapper objectMapper,
+            PromptLifecycleService promptLifecycleService) {
+        return new AdminPromptVersionController(dataCloudClient, objectMapper, promptLifecycleService);
+    }
+
+    @Provides
     RouteAuthorizationRegistry routeAuthorizationRegistry(YappcAuthorizationService yappcAuthorizationService) {
         return new RouteAuthorizationRegistry(yappcAuthorizationService);
     }
@@ -466,6 +480,26 @@ public class YappcApiModule extends AbstractModule {
     }
 
     @Provides
+    PlatformRunStatusService platformRunStatusService(DataCloudClient dataCloudClient) {
+        return new DataCloudPlatformRunStatusService(dataCloudClient);
+    }
+
+    @Provides
+    PhaseActionAuthorizationService phaseActionAuthorizationService() {
+        return new PhaseActionAuthorizationService();
+    }
+
+    @Provides
+    PhaseRequiredArtifactProvider phaseRequiredArtifactProvider(StageConfigLoader stageConfigLoader) {
+        return new PhaseRequiredArtifactProvider(stageConfigLoader);
+    }
+
+    @Provides
+    DegradedPhasePacketFactory degradedPhasePacketFactory() {
+        return new DegradedPhasePacketFactory();
+    }
+
+    @Provides
     PhasePacketService phasePacketService(
             DataCloudClient dataCloudClient,
             YappcArtifactRepository artifactRepository,
@@ -477,6 +511,10 @@ public class YappcApiModule extends AbstractModule {
             @Nullable BusinessMetrics metrics,
             AuditService phasePacketAuditService,
             com.ghatana.core.runtime.PreviewRuntimeService phasePacketPreviewRuntimeService,
+            PlatformRunStatusService platformRunStatusService,
+            PhaseActionAuthorizationService phaseActionAuthorizationService,
+            PhaseRequiredArtifactProvider phaseRequiredArtifactProvider,
+            DegradedPhasePacketFactory degradedPhasePacketFactory,
             @Nullable com.ghatana.audit.AuditLogger auditLogger) {
         return new PhasePacketServiceImpl(
             dataCloudClient,
@@ -489,6 +527,10 @@ public class YappcApiModule extends AbstractModule {
             metrics,
             phasePacketAuditService,
             phasePacketPreviewRuntimeService,
+            platformRunStatusService,
+            phaseActionAuthorizationService,
+            phaseRequiredArtifactProvider,
+            degradedPhasePacketFactory,
             auditLogger
         );
     }

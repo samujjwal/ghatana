@@ -20,8 +20,8 @@ const importMetaEnv = import.meta as ImportMeta & {
 };
 
 const API_BASE_URL = importMetaEnv.env?.DEV
-  ? `${importMetaEnv.env.VITE_API_ORIGIN ?? 'http://localhost:7002'}/api/v1`
-  : '/api/v1';
+  ? (importMetaEnv.env.VITE_API_ORIGIN ?? 'http://localhost:7002')
+  : '';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -86,7 +86,7 @@ async function handleErrorResponse(response: Response): Promise<never> {
 export async function listPromptVersions(
   promptName?: string
 ): Promise<PromptVersionListResponse> {
-  const url = new URL(`${API_BASE_URL}/admin/prompt-versions`, window.location.origin);
+  const url = new URL(`${API_BASE_URL}/api/admin/prompt-versions`, window.location.origin);
   if (promptName) {
     url.searchParams.set('promptName', promptName);
   }
@@ -104,7 +104,7 @@ export async function rollbackPromptVersion(
   reason: string
 ): Promise<PromptVersion> {
   const response = await fetch(
-    `${API_BASE_URL}/admin/prompt-versions/${encodeURIComponent(versionId)}/rollback`,
+    `${API_BASE_URL}/api/admin/prompt-versions/${encodeURIComponent(versionId)}/rollback`,
     {
       method: 'POST',
       headers: {
@@ -123,7 +123,7 @@ export async function rollbackPromptVersion(
 export async function updatePromptWeights(
   weights: Record<string, number>
 ): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/admin/prompt-versions/weights`, {
+  const response = await fetch(`${API_BASE_URL}/api/admin/prompt-versions/weights`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',

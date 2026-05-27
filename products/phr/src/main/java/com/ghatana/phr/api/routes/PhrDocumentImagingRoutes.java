@@ -16,9 +16,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Document and imaging API routes for the PHR product.
+ *
+ * <p>Provides document upload with server-side validation for file type and size.
+ * Allowed content types: PDF, JPEG, PNG, TIFF, DOC, DOCX. Maximum file size: 10MB.
  *
  * @doc.type class
  * @doc.purpose ActiveJ route adapter for document reference and imaging journeys
@@ -26,6 +30,17 @@ import java.util.Objects;
  * @doc.pattern Controller, Adapter
  */
 public final class PhrDocumentImagingRoutes {
+
+    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
+        "application/pdf",
+        "image/jpeg",
+        "image/png",
+        "image/tiff",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    );
+
+    private static final long MAX_FILE_SIZE_BYTES = 10L * 1024L * 1024L; // 10MB
 
     private final Eventloop eventloop;
     private final DocumentService documentService;
@@ -232,9 +247,20 @@ public final class PhrDocumentImagingRoutes {
                     return PhrRouteSupport.errorResponse(400, "INVALID_DOCUMENT_UPLOAD", ex.getMessage());
                 }
                 return requireAccess(finalContext, value.getPatientId(), "documents")
-                    .then(allowed -> allowed
-                        ? handler.apply(value).then(stored -> PhrRouteSupport.jsonResponse(201, stored))
-                        : PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required for documents"));
+                    .then(allowed -> {
+                        if (!allowed) {
+                            return PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required for documents");
+                        }
+                        // Add audit event for document upload
+                        String correlationId = PhrTraceContext.newCorrelationId("phr_document_upload");
+                        return handler.apply(value)
+                            .then(stored -> {
+                                // Audit the successful upload
+                                auditDocumentUpload(finalContext, value.getPatientId(), stored.getDocumentId(), 
+                                    value.getDocumentType(), value.getContentType(), correlationId);
+                                return PhrRouteSupport.jsonResponse(201, stored);
+                            });
+                    });
             });
     }
 
@@ -298,13 +324,28 @@ public final class PhrDocumentImagingRoutes {
     private static DocumentService.DocumentUploadRequest parseUpload(String json) throws java.io.IOException {
         JsonNode node = PhrRouteSupport.JSON.readTree(json);
         String encodedContent = requiredText(node, "content");
+        String contentType = requiredText(node, "contentType");
+        
+        // Validate content type
+        if (!ALLOWED_CONTENT_TYPES.contains(contentType)) {
+            throw new IllegalArgumentException(
+                "Invalid content type: " + contentType + ". Allowed types: " + ALLOWED_CONTENT_TYPES);
+        }
+        
+        // Decode and validate file size
+        byte[] content = Base64.getDecoder().decode(encodedContent);
+        if (content.length > MAX_FILE_SIZE_BYTES) {
+            throw new IllegalArgumentException(
+                "File size exceeds maximum allowed size of 10MB. Actual size: " + (content.length / 1024 / 1024) + "MB");
+        }
+        
         return new DocumentService.DocumentUploadRequest(
             requiredText(node, "patientId"),
             requiredText(node, "documentType"),
             requiredText(node, "title"),
             text(node, "description", null),
-            requiredText(node, "contentType"),
-            Base64.getDecoder().decode(encodedContent),
+            contentType,
+            content,
             requiredText(node, "contentHash"),
             requiredText(node, "visibility")
         );
@@ -326,5 +367,27 @@ public final class PhrDocumentImagingRoutes {
     private static String text(JsonNode node, String fieldName, String defaultValue) {
         JsonNode value = node.path(fieldName);
         return value.isMissingNode() || value.isNull() || value.asText().isBlank() ? defaultValue : value.asText();
+    }
+
+    private Promise<Void> auditDocumentUpload(
+            PhrRouteSupport.PhrRequestContext context,
+            String patientId,
+            String documentId,
+            String documentType,
+            String contentType,
+            String correlationId) {
+        // Audit event for document upload (PHI-safe - no document content logged)
+        Map<String, Object> auditMetadata = Map.of(
+            "patientId", patientId,
+            "documentId", documentId,
+            "documentType", documentType,
+            "contentType", contentType,
+            "principalId", context.principalId(),
+            "tenantId", context.tenantId(),
+            "role", context.role()
+        );
+        return PhrRouteSupport.audit("DOCUMENT_UPLOAD", patientId, 
+            "Document uploaded: " + documentType + " [" + correlationId + "]", 
+            auditMetadata, context.correlationId());
     }
 }

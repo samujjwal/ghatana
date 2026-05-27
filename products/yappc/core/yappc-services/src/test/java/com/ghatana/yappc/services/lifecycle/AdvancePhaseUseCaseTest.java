@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -151,6 +152,49 @@ class AdvancePhaseUseCaseTest extends EventloopTestBase {
         verify(dlqPublisher, never()).publish(any(), any(), any(), any(), anyMap(), any(), any());
     }
 
+    @Test
+    @DisplayName("replays matching idempotent phase advance without re-running gates")
+    void replaysMatchingIdempotentPhaseAdvance() {
+        TransitionSpec spec = transition("GENERATE", "RUN", List.of("generated-artifact"));
+        when(capabilityEvaluationService.evaluate(any()))
+                .thenReturn(Promise.of(CapabilityEvaluationService.CapabilityModel.allGranted()));
+        when(transitionConfigLoader.findTransition("GENERATE", "RUN")).thenReturn(Optional.of(spec));
+        when(artifactRepository.list("project-1/generated-artifact"))
+                .thenReturn(Promise.of(List.of("project-1/generated-artifact/v1")));
+        when(policyEngine.evaluate(eq("phase_advance_policy"), anyMap())).thenReturn(Promise.of(true));
+        AdvancePhaseUseCase useCase = useCase();
+        TransitionRequest request = requestWithKey("GENERATE", "RUN", "retry-1");
+
+        TransitionResult first = runPromise(() -> useCase.execute(request));
+        TransitionResult second = runPromise(() -> useCase.execute(request));
+
+        assertThat(first.isSuccess()).isTrue();
+        assertThat(second).isEqualTo(first);
+        verify(transitionConfigLoader, times(1)).findTransition("GENERATE", "RUN");
+        verify(policyEngine, times(1)).evaluate(eq("phase_advance_policy"), anyMap());
+    }
+
+    @Test
+    @DisplayName("returns conflict when an idempotency key is reused for a different phase action request")
+    void returnsConflictForReusedIdempotencyKeyWithDifferentRequest() {
+        TransitionSpec spec = transition("GENERATE", "RUN", List.of());
+        when(capabilityEvaluationService.evaluate(any()))
+                .thenReturn(Promise.of(CapabilityEvaluationService.CapabilityModel.allGranted()));
+        when(transitionConfigLoader.findTransition("GENERATE", "RUN")).thenReturn(Optional.of(spec));
+        when(policyEngine.evaluate(eq("phase_advance_policy"), anyMap())).thenReturn(Promise.of(true));
+        AdvancePhaseUseCase useCase = useCase();
+
+        TransitionResult first = runPromise(() -> useCase.execute(requestWithKey("GENERATE", "RUN", "retry-2")));
+        TransitionResult conflict = runPromise(() -> useCase.execute(requestWithKey("GENERATE", "OBSERVE", "retry-2")));
+
+        assertThat(first.isSuccess()).isTrue();
+        assertThat(conflict.isSuccess()).isFalse();
+        assertThat(conflict.blockCode()).isEqualTo("IDEMPOTENCY_CONFLICT");
+        assertThat(conflict.blockReason()).isEqualTo("phaseAction.disabled.idempotencyConflict");
+        verify(transitionConfigLoader, times(1)).findTransition(any(), any());
+        verify(policyEngine, times(1)).evaluate(eq("phase_advance_policy"), anyMap());
+    }
+
     private AdvancePhaseUseCase useCase() {
         return new AdvancePhaseUseCase(
                 transitionConfigLoader,
@@ -159,6 +203,7 @@ class AdvancePhaseUseCaseTest extends EventloopTestBase {
                 dlqPublisher,
                 capabilityEvaluationService,
                 new PhaseActionAuthorizationService(),
+                new InMemoryPhaseActionIdempotencyStore(),
                 null);
     }
 
@@ -172,6 +217,19 @@ class AdvancePhaseUseCaseTest extends EventloopTestBase {
                 "workspace-1",
                 PhasePacket.TenantTier.PRO,
                 java.util.Set.of("phase.advance"));
+    }
+
+    private static TransitionRequest requestWithKey(String from, String to, String idempotencyKey) {
+        return new TransitionRequest(
+                "project-1",
+                from,
+                to,
+                "tenant-1",
+                "user-1",
+                "workspace-1",
+                PhasePacket.TenantTier.PRO,
+                java.util.Set.of("phase.advance"),
+                idempotencyKey);
     }
 
     private static TransitionSpec transition(String from, String to, List<String> requiredArtifacts) {

@@ -1,5 +1,6 @@
 import type { MobileDashboard, MobileSession } from '../types';
 import { clearDashboardOffline, loadDashboardOffline, saveDashboardOffline } from './offlineStore';
+import { clearMobileSession } from './mobileSessionStore';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_PHR_API_URL ?? process.env.PHR_API_URL ?? '';
 const DASHBOARD_PATH = '/mobile/dashboard';
@@ -121,8 +122,9 @@ export async function syncOfflineDashboard(session: MobileSession): Promise<stri
  */
 export async function logoutMobile(session: MobileSession): Promise<void> {
   if (!API_BASE_URL) {
-    // Even if API is not configured, clear local PHI.
+    // Even if API is not configured, clear local PHI and session.
     await clearDashboardOffline();
+    await clearMobileSession();
     return;
   }
   // Best-effort server notification; failure must not block local cleanup.
@@ -141,7 +143,9 @@ export async function logoutMobile(session: MobileSession): Promise<void> {
   } catch {
     // Network failure — continue with local cleanup.
   }
+  // Clear encrypted PHI cache and session on logout
   await clearDashboardOffline();
+  await clearMobileSession();
 }
 
 // ─── Auth ──────────────────────────────────────────────────────────────────
@@ -210,11 +214,11 @@ export async function loginMobile(nationalId: string, password: string): Promise
  * @returns         Resolves when revocation is confirmed.
  * @throws          Error with a user-facing message on failure.
  */
-export async function revokeConsentGrant(grantId: string, session: MobileSession): Promise<void> {
+export async function revokeConsentGrant(grantId: string, patientId: string, session: MobileSession): Promise<void> {
   if (!API_BASE_URL) {
     throw new Error('PHR mobile API base URL is not configured.');
   }
-  const response = await fetch(`${API_BASE_URL}/consents/${encodeURIComponent(grantId)}/revoke`, {
+  const response = await fetch(`${API_BASE_URL}/consents/grants/${encodeURIComponent(grantId)}/revoke?patientId=${encodeURIComponent(patientId)}`, {
     method: 'POST',
     headers: {
       Accept: 'application/json',
@@ -228,4 +232,6 @@ export async function revokeConsentGrant(grantId: string, session: MobileSession
   if (!response.ok) {
     throw new Error(`Consent revocation failed with status ${response.status}.`);
   }
+  // Clear encrypted PHI cache on consent revocation
+  await clearDashboardOffline();
 }

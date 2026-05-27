@@ -630,6 +630,106 @@ paths:
         "503":
           description: A/B testing service unavailable
 
+  /api/admin/prompt-versions:
+    get:
+      tags: [admin]
+      summary: List prompt versions
+      operationId: listAdminPromptVersions
+      parameters:
+        - name: promptName
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Prompt version list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                  total:
+                    type: integer
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          description: Prompt version service unavailable
+
+  /api/admin/prompt-versions/{versionId}/rollback:
+    post:
+      tags: [admin]
+      summary: Roll back to prompt version
+      operationId: rollbackAdminPromptVersion
+      parameters:
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+      responses:
+        "200":
+          description: Rolled back prompt version
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          description: Prompt version service unavailable
+
+  /api/admin/prompt-versions/weights:
+    patch:
+      tags: [admin]
+      summary: Update prompt version weights
+      operationId: updateAdminPromptVersionWeights
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [weights]
+              properties:
+                weights:
+                  type: object
+                  additionalProperties:
+                    type: number
+                    minimum: 0
+                    maximum: 1
+      responses:
+        "200":
+          description: Prompt weights updated and rebalanced
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          description: Prompt version service unavailable
+
   /api/v1/yappc/product-family/assets/{assetId}/promotions:
     post:
       tags: [product-family]
@@ -6251,7 +6351,7 @@ components:
 
     PhaseAction:
       type: object
-      required: [actionId, label, description, enabled, requiredPermission, parameters]
+      required: [actionId, label, description, enabled, requiredPermission, category, severity, confirmationRequired, idempotencyKey, auditType, parameters]
       properties:
         actionId:
           type: string
@@ -6264,6 +6364,16 @@ components:
         disabledReason:
           type: string
         requiredPermission:
+          type: string
+        category:
+          type: string
+        severity:
+          type: string
+        confirmationRequired:
+          type: boolean
+        idempotencyKey:
+          type: string
+        auditType:
           type: string
         parameters:
           type: object
@@ -7003,6 +7113,9 @@ components:
           additionalProperties:
             type: boolean
           description: Gate condition verdicts keyed by criterion ID
+        idempotencyKey:
+          type: string
+          description: Caller-supplied retry key for idempotent primary phase action execution
 
     PhaseTransitionResult:
       type: object

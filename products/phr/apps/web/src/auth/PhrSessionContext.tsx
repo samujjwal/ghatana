@@ -9,6 +9,7 @@
  * @doc.pattern Context
  */
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { phrFetch } from '../api/phrApi';
 import type { PhrSession } from '../types';
 
 interface PhrSessionContextValue {
@@ -16,6 +17,7 @@ interface PhrSessionContextValue {
   setSession: (session: PhrSession) => void;
   clearSession: () => void;
   isAuthenticated: boolean;
+  sessionValidating: boolean;
 }
 
 const SESSION_STORAGE_KEY = 'phr.session';
@@ -41,6 +43,7 @@ function loadStoredSession(): PhrSession | null {
 
 export function PhrSessionProvider({ children }: { children: React.ReactNode }): React.ReactElement {
   const [session, setSessionState] = useState<PhrSession | null>(loadStoredSession);
+  const [sessionValidating, setSessionValidating] = useState<boolean>(false);
 
   const setSession = useCallback((nextSession: PhrSession): void => {
     setSessionState(nextSession);
@@ -60,6 +63,42 @@ export function PhrSessionProvider({ children }: { children: React.ReactNode }):
     }
   }, []);
 
+  // Validate stored session with backend on mount
+  useEffect(() => {
+    const validateSession = async (): Promise<void> => {
+      const stored = loadStoredSession();
+      if (!stored) return;
+
+      setSessionValidating(true);
+      try {
+        const response = await phrFetch('/auth/me', {
+          headers: {
+            'X-Principal-ID': stored.principalId,
+            'X-Tenant-ID': stored.tenantId,
+            'X-Role': stored.role,
+          },
+        }) as { principalId: string; tenantId: string; role: string; name: string; permissions: string[] };
+
+        // If backend validation succeeds, update session with fresh data
+        setSessionState({
+          principalId: response.principalId,
+          tenantId: response.tenantId,
+          role: response.role as 'patient' | 'caregiver' | 'clinician' | 'admin',
+          name: response.name,
+          expiresAt: stored.expiresAt, // Keep existing expiry
+        });
+      } catch (error) {
+        // Backend validation failed - clear session
+        console.error('Session validation failed:', error);
+        clearSession();
+      } finally {
+        setSessionValidating(false);
+      }
+    };
+
+    validateSession();
+  }, [clearSession]);
+
   // Auto-expire the session if the expiry timestamp is reached during active use.
   useEffect(() => {
     if (!session) return;
@@ -75,8 +114,8 @@ export function PhrSessionProvider({ children }: { children: React.ReactNode }):
   }, [session, clearSession]);
 
   const value = useMemo<PhrSessionContextValue>(
-    () => ({ session, setSession, clearSession, isAuthenticated: session !== null }),
-    [session, setSession, clearSession],
+    () => ({ session, setSession, clearSession, isAuthenticated: session !== null, sessionValidating }),
+    [session, setSession, clearSession, sessionValidating],
   );
 
   return <PhrSessionContext.Provider value={value}>{children}</PhrSessionContext.Provider>;

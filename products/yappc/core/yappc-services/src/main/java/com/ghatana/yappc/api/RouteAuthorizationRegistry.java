@@ -68,7 +68,7 @@ public final class RouteAuthorizationRegistry {
      */
     public void authorize(@NotNull HttpRequest request) {
         HttpMethod method = request.getMethod();
-        String path = firstNonBlank(request.getRelativePath(), request.getPath());
+        String path = normalizePath(firstNonBlank(request.getRelativePath(), request.getPath()));
         
         // Try exact match first
         RouteKey key = new RouteKey(method, path);
@@ -356,6 +356,13 @@ public final class RouteAuthorizationRegistry {
         return "";
     }
 
+    private String normalizePath(String path) {
+        if (path == null || path.isBlank()) {
+            return "";
+        }
+        return path.startsWith("/") ? path : "/" + path;
+    }
+
     /**
      * Finds a matching route pattern for the given method and path.
      *
@@ -389,6 +396,7 @@ public final class RouteAuthorizationRegistry {
      */
     @Nullable
     public RouteDefinition getRouteDefinition(@NotNull HttpMethod method, @NotNull String path) {
+        path = normalizePath(path);
         // Try exact match first
         RouteKey key = new RouteKey(method, path);
         RouteDefinition definition = routes.get(key);

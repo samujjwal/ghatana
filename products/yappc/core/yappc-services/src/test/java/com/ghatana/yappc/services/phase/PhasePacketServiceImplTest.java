@@ -10,6 +10,7 @@ import com.ghatana.yappc.api.AdminFeatureFlagController;
 import com.ghatana.yappc.api.PhasePacket;
 import com.ghatana.yappc.domain.PhaseType;
 import com.ghatana.yappc.services.capability.CapabilityEvaluationService;
+import com.ghatana.yappc.services.lifecycle.StageConfigLoader;
 import com.ghatana.yappc.services.lifecycle.TransitionConfigLoader;
 import com.ghatana.yappc.services.lifecycle.gate.PhaseGateValidator;
 import com.ghatana.yappc.services.metrics.BusinessMetrics;
@@ -63,6 +64,7 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
     @Mock private PlatformRunStatusService platformRunStatusService;
     @Mock private BusinessMetrics metrics;
     @Mock private AuditService auditService;
+    @Mock private StageConfigLoader stageConfigLoader;
 
     private static final String TENANT_ID = "tenant-test";
     private static final String PROJECT_ID = "project-test";
@@ -72,10 +74,16 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
 
     private Principal testPrincipal;
     private PhasePacketServiceImpl service;
+    private PhaseActionAuthorizationService phaseActionAuthorizationService;
+    private PhaseRequiredArtifactProvider requiredArtifactProvider;
+    private DegradedPhasePacketFactory degradedPhasePacketFactory;
 
     @BeforeEach
     void setUp() {
         testPrincipal = new Principal("test-user", List.of("EDITOR"), TENANT_ID);
+        phaseActionAuthorizationService = new PhaseActionAuthorizationService();
+        requiredArtifactProvider = new PhaseRequiredArtifactProvider(stageConfigLoader);
+        degradedPhasePacketFactory = new DegradedPhasePacketFactory();
 
         service = new PhasePacketServiceImpl(
                 dataCloudClient,
@@ -87,8 +95,11 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
                 platformIntegrationClient,
                 metrics,
                 auditService,
-                null,
+                new DegradedPreviewRuntimeService("PREVIEW_RUNTIME_SERVICE_UNAVAILABLE"),
                 platformRunStatusService,
+                phaseActionAuthorizationService,
+                requiredArtifactProvider,
+                degradedPhasePacketFactory,
                 null
         );
 
@@ -120,6 +131,8 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
                 .thenReturn(Promise.of(Optional.empty()));
         lenient().when(dataCloudClient.query(eq(TENANT_ID), eq(AdminFeatureFlagController.FLAG_COLLECTION), any()))
                 .thenReturn(Promise.of(List.of()));
+        lenient().when(stageConfigLoader.findById(anyString()))
+                .thenReturn(Optional.empty());
     }
 
     // ─── Happy path ────────────────────────────────────────────────────────────
@@ -318,8 +331,8 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
     // ─── Optional dependency fallbacks ────────────────────────────────────────
 
     @Test
-    @DisplayName("Null auditService: DegradedAuditService used — no NullPointerException thrown")
-    void nullAuditService_degradedAuditServiceUsed_noException() {
+    @DisplayName("Injected degraded audit service keeps activity lookup explicit and non-fatal")
+    void injectedDegradedAuditService_noException() {
         PhasePacketServiceImpl serviceWithoutAudit = new PhasePacketServiceImpl(
                 dataCloudClient,
                 artifactRepository,
@@ -329,9 +342,12 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
                 transitionConfigLoader,
                 platformIntegrationClient,
                 metrics,
-                null,  // auditService null → DegradedAuditService wired
-                null,
+                new DegradedAuditService("PLATFORM_AUDIT_SERVICE_UNAVAILABLE"),
+                new DegradedPreviewRuntimeService("PREVIEW_RUNTIME_SERVICE_UNAVAILABLE"),
                 platformRunStatusService,
+                phaseActionAuthorizationService,
+                requiredArtifactProvider,
+                degradedPhasePacketFactory,
                 null
         );
 
@@ -343,9 +359,8 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Null previewRuntimeService: DegradedPreviewRuntimeService used — health signals reflect degraded state")
-    void nullPreviewRuntimeService_degradedHealthSignals_inPacket() {
-        // service fixture already has null previewRuntimeService (set in @BeforeEach)
+    @DisplayName("Injected degraded preview runtime service surfaces degraded health signals")
+    void injectedDegradedPreviewRuntimeService_degradedHealthSignals_inPacket() {
         PhasePacket packet = runPromise(() ->
                 service.buildPhasePacket(PHASE, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
 
@@ -409,6 +424,9 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
                 auditService,
                 healthyPreviewRuntime,
                 platformRunStatusService,
+                phaseActionAuthorizationService,
+                requiredArtifactProvider,
+                degradedPhasePacketFactory,
                 null
         );
 

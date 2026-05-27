@@ -58,6 +58,11 @@ class PhaseActionAuthorizationServiceTest {
         assertThat(advance.label()).isEqualTo("phaseAction.advancePhase.label");
         assertThat(advance.description()).isEqualTo("phaseAction.advancePhase.description");
         assertThat(advance.disabledReason()).isEqualTo("phaseAction.disabled.policyDeniedTransition");
+        assertThat(advance.category()).isEqualTo("phase-transition");
+        assertThat(advance.severity()).isEqualTo("high");
+        assertThat(advance.confirmationRequired()).isTrue();
+        assertThat(advance.idempotencyKey()).isEqualTo("phase.advance");
+        assertThat(advance.auditType()).isEqualTo("phase.advance.requested");
     }
 
     @Test
@@ -139,5 +144,8 @@ class PhaseActionAuthorizationServiceTest {
 
         assertThat(proReport.enabled()).isFalse();
         assertThat(enterpriseReport.enabled()).isTrue();
+        assertThat(enterpriseReport.category()).isEqualTo("report");
+        assertThat(enterpriseReport.confirmationRequired()).isFalse();
+        assertThat(enterpriseReport.auditType()).isEqualTo("phase.report.exported");
     }
 }

@@ -78,7 +78,7 @@ export async function loadDashboardOffline(): Promise<MobileDashboard | null> {
 
 /**
  * Clears the offline PHI cache unconditionally.
- * Must be called on consent revocation or session termination.
+ * Must be called on consent revocation, logout, session expiry, and role/persona change.
  */
 export async function clearDashboardOffline(): Promise<void> {
   await phiRemove(DASHBOARD_KEY);

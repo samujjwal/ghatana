@@ -107,13 +107,22 @@ public class TranscriptionEntity implements Serializable {
     }
 
     /**
-     * Metadata container for transcription attributes
+     * Metadata container for transcription attributes.
+     *
+     * <p>Serialized as JSONB. Fields added here do not require schema migrations
+     * (existing rows retain their stored JSON; new fields default to null on read).
      */
     public static class TranscriptionMetadata implements Serializable {
         private Boolean enablePunctuation;
         private Boolean enableSpeakerDiarization;
         private Integer speakerCount;
         private String engineVersion;
+
+        /** Correlation/request ID that originated this transcription job. */
+        private String requestId;
+
+        /** SHA-256 hex digest of the raw audio bytes used for this transcription. */
+        private String inputHashSha256;
 
         public TranscriptionMetadata() {}
 
@@ -125,6 +134,10 @@ public class TranscriptionEntity implements Serializable {
         public void setSpeakerCount(Integer speakerCount) { this.speakerCount = speakerCount; }
         public String getEngineVersion() { return engineVersion; }
         public void setEngineVersion(String engineVersion) { this.engineVersion = engineVersion; }
+        public String getRequestId() { return requestId; }
+        public void setRequestId(String requestId) { this.requestId = requestId; }
+        public String getInputHashSha256() { return inputHashSha256; }
+        public void setInputHashSha256(String inputHashSha256) { this.inputHashSha256 = inputHashSha256; }
     }
 
     // Constructors

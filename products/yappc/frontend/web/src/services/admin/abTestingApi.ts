@@ -51,6 +51,9 @@ export interface Experiment {
   endedAt?: string;
   variants: VariantMetrics[];
   winnerId?: string;
+  previousWinnerId?: string;
+  rollbackTargetWinnerId?: string;
+  reversible?: boolean;
 }
 
 export interface ExperimentListResponse {

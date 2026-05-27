@@ -61,7 +61,7 @@ export async function loadMobileSession(): Promise<MobileSession | null> {
 
 /**
  * Removes the mobile session from the OS keychain.
- * Must be called on logout, consent revocation, and role change.
+ * Must be called on logout, consent revocation, session expiry, and role/persona change.
  */
 export async function clearMobileSession(): Promise<void> {
   await SecureStore.deleteItemAsync(SESSION_KEY);

@@ -154,6 +154,83 @@ public final class GeneratedRouteRegistry {
             PrivacyClassification.CONFIDENTIAL
         ));
         MANIFEST.addRoute("yappc-services", new RouteEntry(
+            "GET",
+            "/api/admin/ab-experiments",
+            AuthMode.REQUIRED,
+            Set.of("admin"),
+            "yappc-services",
+            Boundary.YAPPC,
+            "listAdminAbExperiments",
+            "ADMIN_AB_EXPERIMENTS_LIST",
+            PrivacyClassification.CONFIDENTIAL
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
+            "POST",
+            "/api/admin/ab-experiments",
+            AuthMode.REQUIRED,
+            Set.of("admin"),
+            "yappc-services",
+            Boundary.YAPPC,
+            "createAdminAbExperiment",
+            "ADMIN_AB_EXPERIMENT_CREATED",
+            PrivacyClassification.RESTRICTED
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
+            "POST",
+            "/api/admin/ab-experiments/{experimentId}/promote",
+            AuthMode.REQUIRED,
+            Set.of("admin"),
+            "yappc-services",
+            Boundary.YAPPC,
+            "promoteAdminAbExperimentWinner",
+            "ADMIN_AB_EXPERIMENT_WINNER_PROMOTED",
+            PrivacyClassification.RESTRICTED
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
+            "POST",
+            "/api/admin/ab-experiments/{experimentId}/pause",
+            AuthMode.REQUIRED,
+            Set.of("admin"),
+            "yappc-services",
+            Boundary.YAPPC,
+            "pauseAdminAbExperiment",
+            "ADMIN_AB_EXPERIMENT_PAUSED",
+            PrivacyClassification.RESTRICTED
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
+            "GET",
+            "/api/admin/prompt-versions",
+            AuthMode.REQUIRED,
+            Set.of("admin"),
+            "yappc-services",
+            Boundary.YAPPC,
+            "listAdminPromptVersions",
+            "ADMIN_PROMPT_VERSIONS_LIST",
+            PrivacyClassification.CONFIDENTIAL
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
+            "POST",
+            "/api/admin/prompt-versions/{versionId}/rollback",
+            AuthMode.REQUIRED,
+            Set.of("admin"),
+            "yappc-services",
+            Boundary.YAPPC,
+            "rollbackAdminPromptVersion",
+            "ADMIN_PROMPT_VERSION_ROLLED_BACK",
+            PrivacyClassification.RESTRICTED
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
+            "PATCH",
+            "/api/admin/prompt-versions/weights",
+            AuthMode.REQUIRED,
+            Set.of("admin"),
+            "yappc-services",
+            Boundary.YAPPC,
+            "updateAdminPromptVersionWeights",
+            "ADMIN_PROMPT_VERSION_WEIGHTS_REBALANCED",
+            PrivacyClassification.RESTRICTED
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/intent/capture",
             AuthMode.REQUIRED,

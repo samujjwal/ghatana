@@ -303,6 +303,11 @@ public final class PhasePacket {
             boolean enabled,
             String disabledReason,
             String requiredPermission,
+            String category,
+            String severity,
+            boolean confirmationRequired,
+            String idempotencyKey,
+            String auditType,
             Map<String, Object> parameters
     ) {}
 

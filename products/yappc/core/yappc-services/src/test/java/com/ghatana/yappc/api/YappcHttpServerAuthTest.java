@@ -144,6 +144,14 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
                     event -> Promise.complete()
                 )
             ),
+            new AdminPromptVersionController(
+                mock(com.ghatana.datacloud.DataCloudClient.class),
+                new ObjectMapper(),
+                new com.ghatana.yappc.ai.PromptLifecycleService(
+                    new com.ghatana.yappc.ai.PromptTemplateRegistry(),
+                    event -> Promise.complete()
+                )
+            ),
             new ProductFamilyControlPlaneController(
                 mock(com.ghatana.datacloud.DataCloudClient.class),
                 new ObjectMapper()

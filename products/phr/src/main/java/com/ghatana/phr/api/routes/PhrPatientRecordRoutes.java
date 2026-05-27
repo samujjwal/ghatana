@@ -54,6 +54,7 @@ public final class PhrPatientRecordRoutes {
             .with(HttpMethod.GET, "/:patientId/history", this::handlePatientHistory)
             .with(HttpMethod.GET, "/:patientId", this::handleGetPatient)
             .with(HttpMethod.PUT, "/:patientId", this::handleUpdatePatient)
+            .with(HttpMethod.GET, "/:patientId/records/:recordId", this::handleGetRecordDetail)
             .build();
     }
 
@@ -197,6 +198,39 @@ public final class PhrPatientRecordRoutes {
                             return PhrRouteSupport.jsonResponse(200, response);
                         })
                         .orElseGet(() -> PhrRouteSupport.errorResponse(404, "PATIENT_NOT_FOUND", "Patient record not found")));
+            });
+    }
+
+    private Promise<HttpResponse> handleGetRecordDetail(HttpRequest request) {
+        PhrRouteSupport.PhrRequestContext context;
+        String patientId;
+        String recordId;
+        try {
+            context = PhrRouteSupport.requireContext(request);
+            patientId = request.getPathParameter("patientId");
+            recordId = request.getPathParameter("recordId");
+        } catch (IllegalArgumentException ex) {
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+        }
+
+        return requireSelfOrConsent(context, patientId)
+            .then(allowed -> {
+                if (!allowed) {
+                    return PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required to read this record detail");
+                }
+                
+                // For now, return a placeholder response - in production this would fetch
+                // the specific FHIR resource by recordId and return it with PHI redaction
+                Map<String, Object> response = new java.util.LinkedHashMap<>();
+                response.put("patientId", patientId);
+                response.put("recordId", recordId);
+                response.put("resourceType", "Observation");
+                response.put("status", "active");
+                response.put("accessedAt", Instant.now().toString());
+                response.put("accessedBy", context.principalId());
+                response.put("accessReason", "Patient record detail view");
+                
+                return PhrRouteSupport.jsonResponse(200, response);
             });
     }
 

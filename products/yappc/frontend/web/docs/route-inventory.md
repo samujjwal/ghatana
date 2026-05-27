@@ -1,22 +1,38 @@
 # YAPPC Route Inventory
 
-> Auto-generated from `src/routes.ts` on 2026-04-25.
+> Auto-generated from `src/routes.ts` on 2026-05-26.
 > Run `node scripts/generate-route-inventory.mjs` to regenerate.
 
-| # | URL Path | Route File |
-|---|----------|------------|
-| 1 | `/` | `routes/dashboard.tsx` |
-| 2 | `login` | `routes/login.tsx` |
-| 3 | `onboarding` | `routes/onboarding.tsx` |
-| 4 | `workspaces` | `routes/app/workspaces.tsx` |
-| 5 | `projects` | `routes/app/projects.tsx` |
-| 6 | `profile` | `routes/profile.tsx` |
-| 7 | `settings` | `routes/settings.tsx` |
-| 8 | `p/:projectId` | `routes/app/project/_shell.tsx` |
-| 9 | `p/:projectId` | `routes/app/project/index.tsx` |
-| 10 | `p/:projectId/canvas` | `routes/app/project/canvas.tsx` |
-| 11 | `p/:projectId/preview` | `routes/app/project/preview.tsx` |
-| 12 | `p/:projectId/deploy` | `routes/app/project/deploy.tsx` |
-| 13 | `p/:projectId/settings` | `routes/app/project/settings.tsx` |
-| 14 | `p/:projectId/lifecycle` | `routes/app/project/lifecycle.tsx` |
-| 15 | `/*` | `routes/not-found.tsx` |
+| # | URL Path | Route File | Owner | Auth | Nav | Feature Flag | Expected User Actions | Coverage |
+|---|----------|------------|-------|------|-----|--------------|-----------------------|----------|
+| 1 | `preview/builder` | `routes/preview-builder.tsx` | Preview runtime | Public iframe runtime | Hidden | None | Render generated builder preview | `src/routes/preview-builder.tsx` |
+| 2 | `/` | `routes/dashboard.tsx` | Lifecycle dashboard | Public shell entry | Primary entry | None | Open dashboard<br>Start or resume workspace flow | `src/__tests__/routes.spec.ts` |
+| 3 | `login` | `routes/login.tsx` | Auth | Guest | Auth entry | None | Sign in<br>Recover authenticated session | `src/__tests__/routes.spec.ts` |
+| 4 | `onboarding` | `routes/onboarding.tsx` | Onboarding | Authenticated | Post-login flow | None | Complete onboarding checklist<br>Choose workspace/project starting point | `src/components/onboarding/__tests__/EndToEndOnboarding.test.tsx` |
+| 5 | `workspaces` | `routes/app/workspaces.tsx` | Workspace | Authenticated | App shell | None | Create workspace<br>Select workspace | `src/components/workspace/__tests__/CreateWorkspaceDialog.test.tsx` |
+| 6 | `projects` | `routes/app/projects.tsx` | Project | Authenticated | App shell | None | Create project<br>Open project | `src/components/workspace/__tests__/CreateProjectDialog.test.tsx` |
+| 7 | `profile` | `routes/profile.tsx` | User settings | Authenticated | User menu | None | View profile<br>Update profile settings | `src/__tests__/routes.spec.ts` |
+| 8 | `settings` | `routes/settings.tsx` | Workspace settings | Authenticated | User menu | None | Open workspace settings<br>Update workspace preferences | `src/__tests__/routes.spec.ts` |
+| 9 | `p/:projectId` | `routes/app/project/_shell.tsx` | Project shell | Authenticated project access | Project shell | Phase-specific flags | Navigate phase tabs<br>Open project settings<br>Open intent drawer | `src/routes/app/project/__tests__/shell.test.tsx` |
+| 10 | `p/:projectId` | `routes/app/project/index.tsx` | Project shell | Authenticated project access | Redirect/default | None | Redirect to Intent phase | `src/routes/app/project/__tests__/index.test.tsx` |
+| 11 | `p/:projectId/intent` | `routes/app/project/intent.tsx` | Intent phase | Authenticated project access | Project phase tab | intent | Capture intent notes<br>Open intent workspace<br>Define requirements | `src/routes/app/project/__tests__/phase-cockpit-routes.test.tsx` |
+| 12 | `p/:projectId/shape` | `routes/app/project/shape.tsx` | Shape phase | Authenticated project access | Project phase tab | shape | Open canvas workspace<br>Review shape contract<br>Start builder review | `src/routes/app/project/__tests__/phase-cockpit-routes.test.tsx` |
+| 13 | `p/:projectId/validate` | `routes/app/project/validate.tsx` | Validate phase | Authenticated project access | Project phase tab | validate | Review approval gates<br>Approve lifecycle transition | `src/routes/app/project/__tests__/phase-cockpit-routes.test.tsx` |
+| 14 | `p/:projectId/generate` | `routes/app/project/generate.tsx` | Generate phase | Authenticated project access | Project phase tab | generate | Start generation<br>Review diff<br>Apply/reject/rollback generated changes | `src/routes/app/project/__tests__/phase-cockpit-routes.test.tsx` |
+| 15 | `p/:projectId/run` | `routes/app/project/run.tsx` | Run phase | Authenticated project access | Project phase tab | run | Start run workflow<br>Retry run<br>Rollback run<br>Promote run | `src/routes/app/project/__tests__/phase-cockpit-routes.test.tsx` |
+| 16 | `p/:projectId/observe` | `routes/app/project/observe.tsx` | Observe phase | Authenticated project access | Project phase tab | observe | Inspect preview diagnostics<br>Review runtime health<br>Review recommendations | `src/routes/app/project/__tests__/phase-cockpit-routes.test.tsx` |
+| 17 | `p/:projectId/learn` | `routes/app/project/learn.tsx` | Learn phase | Authenticated project access | Project phase tab | learn | Review learning evidence<br>Inspect agent governance state | `src/routes/app/project/__tests__/PhaseStatusPanels.test.tsx` |
+| 18 | `p/:projectId/evolve` | `routes/app/project/evolve.tsx` | Evolve phase | Authenticated project access | Project phase tab | evolve | Review evolution proposal<br>Inspect impact analysis<br>Approve or reject diff | `src/routes/app/project/__tests__/PhaseStatusPanels.test.tsx` |
+| 19 | `p/:projectId/settings` | `routes/app/project/settings.tsx` | Project settings | Authenticated project access | Project settings action | None | Update project metadata<br>Manage project access settings | `src/routes/app/project/__tests__/settings.test.tsx` |
+| 20 | `p/:projectId/canvas` | `routes/app/project/canvas.tsx` | Legacy Shape canvas | Authenticated project access | Deep link only | legacy route policy | Open compatibility canvas surface | `src/routes/app/project/__tests__/canvas.integration.test.tsx` |
+| 21 | `p/:projectId/preview` | `routes/app/project/preview.tsx` | Legacy preview | Authenticated project access | Deep link only | legacy route policy | Open compatibility preview surface | `src/routes/app/project/__tests__/preview.test.tsx` |
+| 22 | `p/:projectId/deploy` | `routes/app/project/deploy.tsx` | Legacy deploy | Authenticated project access | Deep link only | legacy route policy | Open compatibility deploy surface | `src/routes/app/project/__tests__/deploy.test.tsx` |
+| 23 | `p/:projectId/lifecycle` | `routes/app/project/lifecycle.tsx` | Legacy lifecycle | Authenticated project access | Deep link only | legacy route policy | Open compatibility lifecycle explorer | `src/routes/app/project/__tests__/lifecycle.test.tsx` |
+| 24 | `kernel-health` | `routes/app/kernel-health.tsx` | Kernel visibility | OWNER/ADMIN capability | Capability-gated app route | kernel visibility | Review ProductUnit health<br>Open product detail | `src/pages/kernel-health/__tests__/KernelHealthDashboardPage.test.tsx` |
+| 25 | `kernel-health/products/:productUnitId` | `routes/app/kernel-health-product.tsx` | Kernel visibility | OWNER/ADMIN capability | Kernel health detail | kernel visibility | Inspect lifecycle timeline<br>Inspect gates/artifacts/deployment details | `src/pages/kernel-health/__tests__/KernelHealthDashboardPage.test.tsx` |
+| 26 | `product-family` | `routes/app/product-family.tsx` | Product-family control plane | product-family:control-plane capability | Capability-gated app route | product family | Review assets/releases<br>Promote product-family asset | `src/routes/app/__tests__/product-family-gate.test.tsx` |
+| 27 | `admin/prompt-versions` | `routes/app/admin/prompt-versions.tsx` | Prompt admin | OWNER/ADMIN capability | Admin route | admin prompts | View prompt versions<br>Rollback prompt<br>Rebalance weights | `src/components/admin/__tests__/PromptVersionsPage.test.tsx` |
+| 28 | `admin/ab-testing` | `routes/app/admin/ab-testing.tsx` | Experiment admin | OWNER/ADMIN capability | Admin route | admin experiments | Create experiment<br>Promote winner<br>Pause experiment | `src/components/admin/__tests__/ABTestingDashboardPage.test.tsx` |
+| 29 | `admin/feature-flags` | `routes/app/admin/feature-flags.tsx` | Feature flag admin | OWNER/ADMIN capability | Admin route | admin feature flags | List flags<br>Update tenant flag<br>Review flag audit | `src/components/admin/__tests__/FeatureFlagsPage.test.tsx` |
+| 30 | `admin/observability` | `routes/app/admin/observability.tsx` | Admin observability | OWNER/ADMIN capability | Admin route | admin observability | Review SLO/cost/domain/OpenAPI release gates | `src/components/admin/__tests__/ObservabilityDashboard.test.tsx` |
+| 31 | `/*` | `routes/not-found.tsx` | Error handling | Public | Catch-all | None | Show not-found recovery navigation | `src/__tests__/routes.spec.ts` |

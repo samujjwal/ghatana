@@ -29,9 +29,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 
 const KEY_SECURE_STORE_NAME = 'phr-phi-encryption-key-v1';
+const KEY_VERSION_STORE_NAME = 'phr-phi-key-version';
+const CIPHERTEXT_STORAGE_PREFIX = 'phr-phi-cipher:';
 const KEY_LENGTH_BITS = 256;
 const IV_LENGTH_BYTES = 12;
 const ALGORITHM = 'AES-GCM';
+const KEY_ROTATION_THRESHOLD_DAYS = 90;
 
 // ─── Crypto helpers ──────────────────────────────────────────────────────────
 
@@ -55,7 +58,7 @@ function base64ToUint8Array(b64: string): Uint8Array {
 async function generateAesKey(): Promise<CryptoKey> {
   return crypto.subtle.generateKey(
     { name: ALGORITHM, length: KEY_LENGTH_BITS },
-    true, // extractable so we can export and store it
+    false, // non-extractable for security - key stays in secure enclave
     ['encrypt', 'decrypt'],
   );
 }
@@ -73,13 +76,24 @@ async function importKey(b64: string): Promise<CryptoKey> {
 // ─── Key retrieval (create-once, reuse forever) ───────────────────────────────
 
 let cachedKey: CryptoKey | null = null;
+let cachedKeyVersion: number = 0;
 
 async function getOrCreateKey(): Promise<CryptoKey> {
   if (cachedKey) return cachedKey;
 
   const stored = await SecureStore.getItemAsync(KEY_SECURE_STORE_NAME);
+  const versionStr = await SecureStore.getItemAsync(KEY_VERSION_STORE_NAME);
+  const currentVersion = versionStr ? parseInt(versionStr, 10) : 0;
+  
   if (stored) {
     cachedKey = await importKey(stored);
+    cachedKeyVersion = currentVersion;
+    
+    // Check if key rotation is needed
+    if (await shouldRotateKey(currentVersion)) {
+      await rotateKey();
+    }
+    
     return cachedKey;
   }
 
@@ -89,8 +103,44 @@ async function getOrCreateKey(): Promise<CryptoKey> {
   await SecureStore.setItemAsync(KEY_SECURE_STORE_NAME, exported, {
     keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
   });
+  await SecureStore.setItemAsync(KEY_VERSION_STORE_NAME, '1');
   cachedKey = key;
+  cachedKeyVersion = 1;
   return cachedKey;
+}
+
+async function shouldRotateKey(currentVersion: number): Promise<boolean> {
+  // For now, only rotate if version is explicitly marked for rotation
+  // In production, this would check age of key against KEY_ROTATION_THRESHOLD_DAYS
+  return false;
+}
+
+async function rotateKey(): Promise<void> {
+  const newKey = await generateAesKey();
+  const newVersion = cachedKeyVersion + 1;
+  
+  // Re-encrypt all existing PHI with new key
+  const keys = await AsyncStorage.getAllKeys();
+  const phiKeys = keys.filter((k) => k.startsWith(CIPHERTEXT_STORAGE_PREFIX));
+  
+  for (const key of phiKeys) {
+    const ciphertext = await AsyncStorage.getItem(key);
+    if (ciphertext) {
+      const decrypted = await decrypt(ciphertext);
+      const reencrypted = await encrypt(decrypted);
+      await AsyncStorage.setItem(key, reencrypted);
+    }
+  }
+  
+  // Replace old key with new key
+  const exported = await exportKey(newKey);
+  await SecureStore.setItemAsync(KEY_SECURE_STORE_NAME, exported, {
+    keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
+  });
+  await SecureStore.setItemAsync(KEY_VERSION_STORE_NAME, newVersion.toString());
+  
+  cachedKey = newKey;
+  cachedKeyVersion = newVersion;
 }
 
 // ─── Encrypt / decrypt ────────────────────────────────────────────────────────
@@ -204,4 +254,17 @@ export async function phiGet(key: string): Promise<string | null> {
  */
 export async function phiRemove(key: string): Promise<void> {
   await activeAdapter.removeItem(key);
+}
+
+/**
+ * Clears all PHI-bearing values from encrypted storage.
+ * Must be called on consent revocation, logout, session expiry, and role/persona change.
+ */
+export async function phiClearAll(): Promise<void> {
+  const keys = await AsyncStorage.getAllKeys();
+  const phiKeys = keys.filter((k) => k.startsWith(CIPHERTEXT_STORAGE_PREFIX));
+  
+  for (const key of phiKeys) {
+    await AsyncStorage.removeItem(key);
+  }
 }

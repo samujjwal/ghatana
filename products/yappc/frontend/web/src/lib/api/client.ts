@@ -963,6 +963,7 @@ export interface LifecycleAdvanceRequest {
   userId: string;
   bypass?: boolean;
   bypassReason?: string;
+  idempotencyKey?: string;
 }
 export interface LifecycleAdvanceResponse {
   success: boolean;

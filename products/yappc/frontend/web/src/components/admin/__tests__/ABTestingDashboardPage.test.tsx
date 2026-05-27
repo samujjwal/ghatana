@@ -227,6 +227,8 @@ describe('ABTestingDashboardPage', () => {
           id: 'exp-003',
           status: 'completed',
           winnerId: 'var-a',
+          rollbackTargetWinnerId: 'var-b',
+          reversible: true,
           variants: [makeVariant({ variantId: 'var-a', variantName: 'Variant A' })],
         }),
       ],
@@ -235,5 +237,6 @@ describe('ABTestingDashboardPage', () => {
     renderPage();
     await screen.findByTestId('experiment-row-exp-003');
     expect(screen.getByText(/Winner.*Variant A/)).toBeInTheDocument();
+    expect(screen.getByTestId('rollback-target-exp-003')).toHaveTextContent('Rollback: var-b');
   });
 });

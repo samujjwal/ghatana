@@ -148,4 +148,58 @@ export class AdminService {
             },
         });
     }
+    /**
+     * List prompt versions
+     * @param promptName
+     * @returns any Prompt version list
+     * @throws ApiError
+     */
+    public static listAdminPromptVersions(
+        promptName?: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/admin/prompt-versions',
+            query: {
+                'promptName': promptName,
+            },
+        });
+    }
+    /**
+     * Roll back to prompt version
+     * @param versionId
+     * @param requestBody
+     * @returns any Rolled back prompt version
+     * @throws ApiError
+     */
+    public static rollbackAdminPromptVersion(
+        versionId: string,
+        requestBody: Record<string, any>,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/admin/prompt-versions/{versionId}/rollback',
+            path: {
+                'versionId': versionId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * Update prompt version weights
+     * @param requestBody
+     * @returns any Prompt weights updated and rebalanced
+     * @throws ApiError
+     */
+    public static updateAdminPromptVersionWeights(
+        requestBody: Record<string, any>,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/admin/prompt-versions/weights',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
 }

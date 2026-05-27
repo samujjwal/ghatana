@@ -137,16 +137,20 @@ public final class AdminAbTestingController {
                 Map<String, Object> payload = objectMapper.readValue(body.asString(StandardCharsets.UTF_8), Map.class);
                 String variantId = stringValue(payload.get("variantId")).trim();
                 String reason = stringValue(payload.get("reason")).trim();
-                if (variantId.isBlank() || reason.isBlank()) {
-                    return badRequest("variantId and reason are required");
+                if (variantId.isBlank()) {
+                    return badRequest("variantId is required");
                 }
+                if (reason.isBlank()) {
+                    reason = "Promoted from admin A/B testing dashboard";
+                }
+                String promotionReason = reason;
                 return dataCloudClient.findById(tenantId, EXPERIMENT_COLLECTION, experimentId)
                         .then(existing -> promoteExistingWinner(
                                 tenantId,
                                 actorId,
                                 experimentId,
                                 variantId,
-                                reason,
+                                promotionReason,
                                 request,
                                 existing));
             } catch (Exception error) {

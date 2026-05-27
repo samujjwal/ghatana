@@ -10,6 +10,10 @@ export type AdvancePhaseRequest = {
      * Gate condition verdicts keyed by criterion ID
      */
     conditions?: Record<string, boolean>;
+    /**
+     * Caller-supplied retry key for idempotent primary phase action execution
+     */
+    idempotencyKey?: string;
 };
 export namespace AdvancePhaseRequest {
     export enum targetPhase {

@@ -352,7 +352,10 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                                         (String) json.get("requestedBy"),
                                         (String) json.get("workspaceId"),
                                         parseTenantTier(json.get("tenantTier")),
-                                        parseStringSet(json.get("enabledPhaseFlags")));
+                                        parseStringSet(json.get("enabledPhaseFlags")),
+                                        resolveIdempotencyKey(
+                                                request.getHeader(io.activej.http.HttpHeaders.of("Idempotency-Key")),
+                                                json.get("idempotencyKey")));
                                 if (tr.tenantId() == null || tr.tenantId().isBlank()) {
                                     return Promise.of(HttpResponse.ofCode(400)
                                             .withJson("{\"error\":\"Missing required tenantId field\"}")
@@ -602,6 +605,16 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
             }
         }
         return com.ghatana.yappc.api.PhasePacket.TenantTier.PRO;
+    }
+
+    private static String resolveIdempotencyKey(String headerValue, Object bodyValue) {
+        if (headerValue != null && !headerValue.isBlank()) {
+            return headerValue.trim();
+        }
+        if (bodyValue instanceof String text && !text.isBlank()) {
+            return text.trim();
+        }
+        return null;
     }
 
     private static Set<String> parseStringSet(Object value) {

@@ -66,7 +66,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("com.ghatana.stt.core.grpc.SttGrpcServer")
+    mainClass.set("com.ghatana.stt.grpc.SttGrpcServer")
 }
 
 java {
@@ -87,7 +87,7 @@ tasks.register<JavaExec>("runSttService") {
     group = "application"
     description = "Run the STT gRPC service"
     classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set("com.ghatana.stt.core.grpc.SttGrpcServer")
+    mainClass.set("com.ghatana.stt.grpc.SttGrpcServer")
     environment("STT_GRPC_PORT", sttPort)
 }
 

@@ -57,32 +57,40 @@ public final class PhrEntitlementRoutes {
     }
 
     private Promise<HttpResponse> handleRouteEntitlements(io.activej.http.HttpRequest request) {
-        // Extract authentication context from request headers
+        // Extract and validate authentication context from request headers
+        // Fail closed: require explicit identity headers for production route entitlement
         String principalId = request.getHeader(io.activej.http.HttpHeaders.of("X-Principal-Id"));
         String tenantId = request.getHeader(io.activej.http.HttpHeaders.of("X-Tenant-Id"));
         String role = request.getHeader(io.activej.http.HttpHeaders.of("X-Role"));
         String persona = request.getHeader(io.activej.http.HttpHeaders.of("X-Persona"));
         String tier = request.getHeader(io.activej.http.HttpHeaders.of("X-Tier"));
 
-        // For test scenarios, only use defaults if headers are completely missing
-        // If headers are present (even empty), use them as-is
-        if (principalId == null) {
-            principalId = "anonymous";
+        // Validate required headers - fail closed for missing identity
+        if (principalId == null || principalId.isBlank()) {
+            return errorResponse(400, "MISSING_PRINCIPAL", "X-Principal-Id header is required");
         }
-        if (tenantId == null) {
-            tenantId = "default";
+        if (tenantId == null || tenantId.isBlank()) {
+            return errorResponse(400, "MISSING_TENANT", "X-Tenant-Id header is required");
         }
-        if (role == null) {
-            role = "patient";
+        if (role == null || role.isBlank()) {
+            return errorResponse(400, "MISSING_ROLE", "X-Role header is required");
         }
-        if (persona == null) {
-            persona = "patient";
+
+        // Normalize role to lower-case
+        String normalizedRole = role.strip().toLowerCase();
+        if (!PhrRouteSupport.ALLOWED_ROLES.contains(normalizedRole)) {
+            return errorResponse(400, "INVALID_ROLE", "Unrecognised role: " + role);
         }
-        if (tier == null) {
+
+        // Set sensible defaults for optional headers
+        if (persona == null || persona.isBlank()) {
+            persona = normalizedRole;
+        }
+        if (tier == null || tier.isBlank()) {
             tier = "core";
         }
 
-        String cacheKey = "route-entitlements:" + role;
+        String cacheKey = "route-entitlements:" + normalizedRole;
 
         // Try cache first
         java.util.Optional<Map<String, Object>> cached = entitlementCache.get(
@@ -96,17 +104,17 @@ public final class PhrEntitlementRoutes {
         }
 
         Map<String, Integer> roleOrder = phrRoleOrder();
-        List<ProductRouteEntitlement.RouteEntitlement> routes = phrRoutesFor(role, roleOrder);
+        List<ProductRouteEntitlement.RouteEntitlement> routes = phrRoutesFor(normalizedRole, roleOrder);
         List<ProductRouteEntitlement.ActionEntitlement> actions =
-            routeEntitlementEvaluator.filterActionsByRole(routes, role, roleOrder);
+            routeEntitlementEvaluator.filterActionsByRole(routes, normalizedRole, roleOrder);
         List<ProductRouteEntitlement.CardEntitlement> cards =
-            routeEntitlementEvaluator.filterCardsByRole(routes, role, roleOrder);
+            routeEntitlementEvaluator.filterCardsByRole(routes, normalizedRole, roleOrder);
 
         ProductRouteEntitlement entitlement = new ProductRouteEntitlement(
             "phr",
             principalId,
             tenantId,
-            role,
+            normalizedRole,
             persona,
             tier,
             null,  // correlationId can be null
@@ -146,17 +154,52 @@ public final class PhrEntitlementRoutes {
 
     private List<ProductRouteEntitlement.RouteEntitlement> phrRoutesFor(String role, Map<String, Integer> roleOrder) {
         List<ProductRouteEntitlement.RouteEntitlement> allRoutes = List.of(
-            route("/dashboard", "Dashboard", "patient", List.of("view-patient-summary"), List.of("patient-summary")),
-            route("/records", "Records", "patient", List.of("view-records"), List.of("record-highlights")),
-            route("/consents", "Consents", "patient", List.of("manage-consent"), List.of("active-consent-grants")),
+            // Core patient routes
+            route("/dashboard", "Dashboard", "patient", List.of("view-patient-summary"), List.of("patient-summary", "care-plan", "emergency-readiness")),
+            route("/records", "Records", "patient", List.of("view-records"), List.of("record-highlights", "interop-status")),
+            route("/consents", "Consents", "patient", List.of("manage-consent"), List.of("active-consent-grants", "expiring-consents")),
             route("/appointments", "Appointments", "patient", List.of("schedule-visit"), List.of("upcoming-appointments")),
-            route("/settings", "Settings", "patient", List.of("manage-profile-settings"), List.of("profile-controls")),
+            route("/settings", "Settings", "patient", List.of("manage-profile-settings"), List.of("profile-controls", "integration-status")),
+            
+            // Clinical routes
             route("/labs", "Labs", "caregiver", List.of("review-lab-results"), List.of("recent-lab-results")),
             route("/medications", "Medications", "caregiver", List.of("review-medications"), List.of("medication-adherence")),
+            route("/conditions", "Conditions", "patient", List.of("view-conditions"), List.of("condition-list")),
+            route("/observations", "Observations", "caregiver", List.of("view-observations"), List.of("observation-trends")),
+            route("/immunizations", "Immunizations", "patient", List.of("view-immunizations"), List.of("immunization-schedule")),
+            
+            // Document routes
+            route("/documents", "Documents", "patient", List.of("view-documents", "upload-document"), List.of("document-list")),
+            route("/documents/upload", "Document Upload", "patient", List.of("upload-document"), List.of()),
+            route("/documents/:docId/ocr", "OCR Review", "patient", List.of("review-ocr"), List.of()),
+            
+            // Timeline and profile
+            route("/timeline", "Timeline", "patient", List.of("view-timeline"), List.of("health-timeline")),
+            route("/profile", "Profile", "patient", List.of("view-profile", "edit-profile"), List.of("profile-summary")),
+            route("/records/:recordId", "Record Detail", "patient", List.of("view-records"), List.of()),
+            
+            // Notifications
+            route("/notifications", "Notifications", "patient", List.of("view-notifications"), List.of("notification-feed")),
+            
+            // Error pages
+            route("/forbidden", "Forbidden", "patient", List.of(), List.of()),
+            route("/not-found", "Not Found", "patient", List.of(), List.of()),
+            
+            // Emergency and governance
             route("/emergency", "Emergency", "clinician", List.of("break-glass-review"), List.of("override-audit-timeline")),
-            route("/release-readiness", "Release cockpit", "admin", List.of("view-release-readiness"),
+            route("/release-readiness", "Release Readiness", "admin", List.of("view-release-readiness"),
                 List.of("evidence-freshness", "fhir-runtime", "consent-cache-proof", "rollback-proof")),
-            route("/audit", "Audit", "admin", List.of("view-audit-trail"), List.of("audit-trail"))
+            route("/audit", "Audit", "admin", List.of("view-audit-trail"), List.of("audit-trail")),
+            
+            // Feature-flagged provider routes
+            route("/provider/dashboard", "Provider Dashboard", "clinician", List.of("view-provider-dashboard"), List.of("provider-panel")),
+            route("/provider/patients", "Provider Patients", "clinician", List.of("view-patient-list"), List.of("patient-roster")),
+            
+            // Feature-flagged caregiver routes
+            route("/caregiver/dependents", "Caregiver Dependents", "caregiver", List.of("view-dependents"), List.of("dependent-summaries")),
+            
+            // Feature-flagged FCHV routes
+            route("/fchv/dashboard", "FCHV Dashboard", "caregiver", List.of("view-fchv-dashboard"), List.of("community-health-summary"))
         );
 
         List<ProductRouteEntitlement.RouteEntitlement> filtered = routeEntitlementEvaluator.filterByRole(allRoutes, role, roleOrder);

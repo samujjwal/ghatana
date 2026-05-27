@@ -56,6 +56,11 @@ public final class PhaseActionAuthorizationService {
                         enabledFlags.contains("phase.advance") ? null : "phaseAction.disabled.phaseAdvanceEntitlementMissing"
                 ),
                 "phase:advance",
+                "phase-transition",
+                "high",
+                true,
+                "phase.advance",
+                "phase.advance.requested",
                 Map.of("nextPhase", Optional.ofNullable(readiness.nextPhase()).orElse(""))
         ));
 
@@ -70,6 +75,11 @@ public final class PhaseActionAuthorizationService {
                         enabledFlags.contains("phase.governance.configure") ? null : "phaseAction.disabled.governanceConfigurationEntitlementMissing"
                 ),
                 "phase:configure",
+                "governance",
+                "medium",
+                true,
+                "phase.configure",
+                "phase.governance.configure.requested",
                 Map.of()
         ));
 
@@ -87,6 +97,11 @@ public final class PhaseActionAuthorizationService {
                         enabledFlags.contains("phase.report.export") ? null : "phaseAction.disabled.reportExportEntitlementMissing"
                 ),
                 "report:export",
+                "report",
+                "low",
+                false,
+                "phase.report.export",
+                "phase.report.exported",
                 Map.of()
         ));
 

@@ -19,7 +19,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -60,6 +62,7 @@ public class AdvancePhaseUseCase {
     private final DlqPublisher dlqPublisher;
     private final CapabilityEvaluationService capabilityEvaluationService;
     private final PhaseActionAuthorizationService phaseActionAuthorizationService;
+    private final PhaseActionIdempotencyStore idempotencyStore;
     /** Optional AI readiness assessor; if null, AI gate is skipped. */
     private final @Nullable AIReadinessAssessor readinessAssessor;
 
@@ -84,6 +87,7 @@ public class AdvancePhaseUseCase {
                 request -> Promise.of(CapabilityEvaluationService.CapabilityModel.allDenied(
                         "CapabilityEvaluationService is not configured")),
                 new PhaseActionAuthorizationService(),
+                new InMemoryPhaseActionIdempotencyStore(),
                 null);
     }
 
@@ -110,6 +114,7 @@ public class AdvancePhaseUseCase {
                 request -> Promise.of(CapabilityEvaluationService.CapabilityModel.allDenied(
                         "CapabilityEvaluationService is not configured")),
                 new PhaseActionAuthorizationService(),
+                new InMemoryPhaseActionIdempotencyStore(),
                 readinessAssessor);
     }
 
@@ -122,6 +127,7 @@ public class AdvancePhaseUseCase {
      * @param dlqPublisher DLQ sink for blocked / invalid transitions
      * @param capabilityEvaluationService backend capability evaluator
      * @param phaseActionAuthorizationService phase action authorization contract service
+     * @param idempotencyStore scoped phase action idempotency store
      * @param readinessAssessor AI readiness assessor; {@code null} to skip AI gate
      */
     public AdvancePhaseUseCase(
@@ -131,14 +137,35 @@ public class AdvancePhaseUseCase {
             DlqPublisher dlqPublisher,
             CapabilityEvaluationService capabilityEvaluationService,
             PhaseActionAuthorizationService phaseActionAuthorizationService,
+            PhaseActionIdempotencyStore idempotencyStore,
             @Nullable AIReadinessAssessor readinessAssessor) {
-        this.transitionConfig    = transitionConfig;
-        this.policyEngine        = policyEngine;
-        this.artifactRepository  = artifactRepository;
-        this.dlqPublisher        = dlqPublisher;
-        this.capabilityEvaluationService = capabilityEvaluationService;
-        this.phaseActionAuthorizationService = phaseActionAuthorizationService;
+        this.transitionConfig    = Objects.requireNonNull(transitionConfig, "transitionConfig");
+        this.policyEngine        = Objects.requireNonNull(policyEngine, "policyEngine");
+        this.artifactRepository  = Objects.requireNonNull(artifactRepository, "artifactRepository");
+        this.dlqPublisher        = Objects.requireNonNull(dlqPublisher, "dlqPublisher");
+        this.capabilityEvaluationService = Objects.requireNonNull(capabilityEvaluationService, "capabilityEvaluationService");
+        this.phaseActionAuthorizationService = Objects.requireNonNull(phaseActionAuthorizationService, "phaseActionAuthorizationService");
+        this.idempotencyStore = Objects.requireNonNull(idempotencyStore, "idempotencyStore");
         this.readinessAssessor   = readinessAssessor;
+    }
+
+    public AdvancePhaseUseCase(
+            TransitionConfigLoader transitionConfig,
+            PolicyEngine policyEngine,
+            YappcArtifactRepository artifactRepository,
+            DlqPublisher dlqPublisher,
+            CapabilityEvaluationService capabilityEvaluationService,
+            PhaseActionAuthorizationService phaseActionAuthorizationService,
+            @Nullable AIReadinessAssessor readinessAssessor) {
+        this(
+                transitionConfig,
+                policyEngine,
+                artifactRepository,
+                dlqPublisher,
+                capabilityEvaluationService,
+                phaseActionAuthorizationService,
+                new InMemoryPhaseActionIdempotencyStore(),
+                readinessAssessor);
     }
 
     /**
@@ -154,6 +181,39 @@ public class AdvancePhaseUseCase {
         log.info("AdvancePhaseUseCase: {} â†’ {} for project={} tenant={}",
             request.fromPhase(), request.toPhase(), request.projectId(), request.tenantId());
 
+        String scopedIdempotencyKey = scopedIdempotencyKey(request);
+        if (scopedIdempotencyKey == null) {
+            return executeWithoutIdempotency(request);
+        }
+
+        String requestFingerprint = requestFingerprint(request);
+        return idempotencyStore.find(scopedIdempotencyKey)
+                .then(existing -> {
+                    if (existing.isPresent()) {
+                        PhaseActionIdempotencyStore.PhaseActionIdempotencyRecord record = existing.get();
+                        if (record.requestFingerprint().equals(requestFingerprint)) {
+                            log.info("AdvancePhaseUseCase: replaying idempotent phase action key={} project={} tenant={}",
+                                    scopedIdempotencyKey, request.projectId(), request.tenantId());
+                            return Promise.of(record.result());
+                        }
+                        log.warn("AdvancePhaseUseCase: idempotency conflict key={} project={} tenant={}",
+                                scopedIdempotencyKey, request.projectId(), request.tenantId());
+                        return Promise.of(TransitionResult.blocked(
+                                "IDEMPOTENCY_CONFLICT",
+                                "phaseAction.disabled.idempotencyConflict"));
+                    }
+                    return executeWithoutIdempotency(request)
+                            .then(result -> idempotencyStore.save(
+                                            new PhaseActionIdempotencyStore.PhaseActionIdempotencyRecord(
+                                                    scopedIdempotencyKey,
+                                                    requestFingerprint,
+                                                    result,
+                                                    java.time.Instant.now()))
+                                    .map($ -> result));
+                });
+    }
+
+    private Promise<TransitionResult> executeWithoutIdempotency(TransitionRequest request) {
         return authorizePhaseAdvance(request)
                 .then(authorizationResult -> authorizationResult
                         .map(result -> {
@@ -161,6 +221,41 @@ public class AdvancePhaseUseCase {
                             return Promise.of(result);
                         })
                         .orElseGet(() -> executeAuthorizedTransition(request)));
+    }
+
+    private static @Nullable String scopedIdempotencyKey(TransitionRequest request) {
+        if (request.idempotencyKey() == null) {
+            return null;
+        }
+        return String.join(":",
+                request.tenantId(),
+                nullToToken(request.workspaceId()),
+                request.projectId(),
+                "advance-phase",
+                request.idempotencyKey());
+    }
+
+    private static String requestFingerprint(TransitionRequest request) {
+        return String.join("|",
+                nullToToken(request.tenantId()),
+                nullToToken(request.workspaceId()),
+                nullToToken(request.projectId()),
+                normalized(request.fromPhase()),
+                normalized(request.toPhase()),
+                nullToToken(request.requestedBy()),
+                String.valueOf(request.tenantTier()),
+                request.enabledPhaseFlags().stream()
+                        .sorted()
+                        .reduce((left, right) -> left + "," + right)
+                        .orElse(""));
+    }
+
+    private static String normalized(String value) {
+        return value == null ? "" : value.toUpperCase(Locale.ROOT);
+    }
+
+    private static String nullToToken(String value) {
+        return value == null ? "" : value;
     }
 
     private Promise<Optional<TransitionResult>> authorizePhaseAdvance(TransitionRequest request) {
