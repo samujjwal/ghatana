@@ -13,7 +13,7 @@ import com.ghatana.yappc.domain.run.RunResult;
 import com.ghatana.yappc.domain.run.RunStatus;
 import com.ghatana.yappc.domain.shape.ShapeSpec;
 import com.ghatana.yappc.services.intent.IntentService;
-import com.ghatana.yappc.services.intent.IntentServiceImpl;
+import com.ghatana.yappc.services.intent.IntentServiceTestFactory;
 import com.ghatana.yappc.services.learn.LearningService;
 import com.ghatana.yappc.services.learn.LearningServiceImpl;
 import com.ghatana.yappc.services.observe.ObserveService;
@@ -99,7 +99,7 @@ class YappcLifecycleObservabilityTest extends EventloopTestBase {
 
         @BeforeEach
         void wire() {
-            service = new IntentServiceImpl(aiService, auditLogger, metrics);
+            service = IntentServiceTestFactory.create(aiService, auditLogger, metrics);
         }
 
         @Test
@@ -160,7 +160,7 @@ class YappcLifecycleObservabilityTest extends EventloopTestBase {
 
         @BeforeEach
         void wire() {
-            intentService = new IntentServiceImpl(aiService, auditLogger, metrics);
+            intentService = IntentServiceTestFactory.create(aiService, auditLogger, metrics);
             shapeService  = new ShapeServiceImpl(aiService, auditLogger, metrics);
         }
 
@@ -212,7 +212,7 @@ class YappcLifecycleObservabilityTest extends EventloopTestBase {
 
         @BeforeEach
         void wire() {
-            intentService    = new IntentServiceImpl(aiService, auditLogger, metrics);
+            intentService    = IntentServiceTestFactory.create(aiService, auditLogger, metrics);
             shapeService     = new ShapeServiceImpl(aiService, auditLogger, metrics);
             validationService = new ValidationServiceImpl(policyEngine, auditLogger, metrics);
         }

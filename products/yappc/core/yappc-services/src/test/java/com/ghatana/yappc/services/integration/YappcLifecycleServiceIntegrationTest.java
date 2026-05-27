@@ -25,9 +25,9 @@ import com.ghatana.yappc.domain.evolve.EvolutionPlan;
 import com.ghatana.yappc.services.evolve.EvolutionService;
 import com.ghatana.yappc.services.evolve.EvolutionServiceImpl;
 import com.ghatana.yappc.services.generate.GenerationService;
-import com.ghatana.yappc.services.generate.GenerationServiceImpl;
+import com.ghatana.yappc.services.generate.GenerationServiceTestFactory;
 import com.ghatana.yappc.services.intent.IntentService;
-import com.ghatana.yappc.services.intent.IntentServiceImpl;
+import com.ghatana.yappc.services.intent.IntentServiceTestFactory;
 import com.ghatana.yappc.services.learn.LearningService;
 import com.ghatana.yappc.services.learn.LearningServiceImpl;
 import com.ghatana.yappc.services.observe.ObserveService;
@@ -111,9 +111,14 @@ class YappcLifecycleServiceIntegrationTest extends EventloopTestBase {
 
         CiCdPort ciCdPort = new NoOpCiCdAdapter();
         GenerationRunRepository generationRunRepository = mock(GenerationRunRepository.class);
-        intentService    = new IntentServiceImpl(completionService, auditLogger, metrics);
+        intentService    = IntentServiceTestFactory.create(completionService, auditLogger, metrics);
         shapeService     = new ShapeServiceImpl(completionService, auditLogger, metrics);
-        generationService = new GenerationServiceImpl(completionService, auditLogger, metrics, generationRunRepository, new ObjectMapper());
+        generationService = GenerationServiceTestFactory.create(
+            completionService,
+            auditLogger,
+            metrics,
+            generationRunRepository,
+            new ObjectMapper());
         runService       = new RunServiceImpl(auditLogger, metrics, ciCdPort);
         observeService   = new ObserveServiceImpl(metrics, auditLogger);
         learningService  = new LearningServiceImpl(completionService, auditLogger, metrics);

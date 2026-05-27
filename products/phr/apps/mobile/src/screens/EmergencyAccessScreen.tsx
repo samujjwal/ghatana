@@ -90,34 +90,34 @@ export function EmergencyAccessScreen({ onAuthenticate, session }: EmergencyAcce
           </View>
 
           <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Blood Type</Text>
+            <Text style={styles.dataLabel}>{t('emergency.bloodType')}</Text>
             <Text style={styles.dataValue}>{emergencyData.bloodType}</Text>
           </View>
 
           <View style={styles.dataSection}>
-            <Text style={styles.dataLabel}>Allergies</Text>
+            <Text style={styles.dataLabel}>{t('emergency.allergies')}</Text>
             {emergencyData.allergies.length > 0 ? (
               emergencyData.allergies.map((allergy, index) => (
                 <Text key={index} style={styles.dataValue}>{allergy}</Text>
               ))
             ) : (
-              <Text style={styles.dataValue}>None reported</Text>
+              <Text style={styles.dataValue}>{t('emergency.noneReported')}</Text>
             )}
           </View>
 
           <View style={styles.dataSection}>
-            <Text style={styles.dataLabel}>Current Medications</Text>
+            <Text style={styles.dataLabel}>{t('emergency.medications')}</Text>
             {emergencyData.medications.length > 0 ? (
               emergencyData.medications.map((med, index) => (
                 <Text key={index} style={styles.dataValue}>{med}</Text>
               ))
             ) : (
-              <Text style={styles.dataValue}>None reported</Text>
+              <Text style={styles.dataValue}>{t('emergency.noneReported')}</Text>
             )}
           </View>
 
           <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Emergency Contact</Text>
+            <Text style={styles.dataLabel}>{t('emergency.emergencyContact')}</Text>
             <Text style={styles.dataValue}>{emergencyData.emergencyContact}</Text>
           </View>
         </View>

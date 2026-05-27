@@ -26,6 +26,77 @@ import java.util.Objects;
 public final class ProductContract extends KernelContract {
 
     /**
+     * Route lifecycle state for no-legacy/no-deprecation mode.
+     */
+    public enum RouteState {
+        /**
+         * Route is active and stable.
+         */
+        ACTIVE,
+        /**
+         * Route is deprecated and will be removed in a future version.
+         */
+        DEPRECATED,
+        /**
+         * Route has been removed and should not be used.
+         */
+        REMOVED,
+        /**
+         * Route is in migration and temporarily available.
+         */
+        MIGRATION
+    }
+
+    /**
+     * UI state requirements for a route.
+     */
+    public record UIStateDeclaration(
+            boolean requiresLoading,
+            boolean requiresError,
+            boolean requiresEmpty,
+            boolean requiresForbidden,
+            String loadingMessageKey,
+            String errorMessageKey,
+            String emptyMessageKey,
+            String forbiddenMessageKey) {
+        public UIStateDeclaration {
+            if (requiresLoading && loadingMessageKey == null || loadingMessageKey.isBlank()) {
+                throw new IllegalArgumentException("loadingMessageKey required when requiresLoading is true");
+            }
+            if (requiresError && errorMessageKey == null || errorMessageKey.isBlank()) {
+                throw new IllegalArgumentException("errorMessageKey required when requiresError is true");
+            }
+            if (requiresEmpty && emptyMessageKey == null || emptyMessageKey.isBlank()) {
+                throw new IllegalArgumentException("emptyMessageKey required when requiresEmpty is true");
+            }
+            if (requiresForbidden && forbiddenMessageKey == null || forbiddenMessageKey.isBlank()) {
+                throw new IllegalArgumentException("forbiddenMessageKey required when requiresForbidden is true");
+            }
+        }
+    }
+
+    /**
+     * Accessibility and i18n metadata for a route.
+     */
+    public record AccessibilityDeclaration(
+            String titleKey,
+            String descriptionKey,
+            String ariaLabelKey,
+            boolean keyboardNavigable,
+            boolean screenReaderAnnounce) {
+        public AccessibilityDeclaration {
+            Objects.requireNonNull(titleKey, "titleKey required");
+            Objects.requireNonNull(descriptionKey, "descriptionKey required");
+            if (titleKey.isBlank()) {
+                throw new IllegalArgumentException("titleKey cannot be blank");
+            }
+            if (descriptionKey.isBlank()) {
+                throw new IllegalArgumentException("descriptionKey cannot be blank");
+            }
+        }
+    }
+
+    /**
      * Declares a product route with entitlement metadata.
      */
     public record RouteDeclaration(
@@ -34,11 +105,17 @@ public final class ProductContract extends KernelContract {
             String method,
             List<String> requiredRoles,
             List<String> requiredCapabilities,
-            Map<String, String> metadata) {
+            Map<String, String> metadata,
+            RouteState state,
+            UIStateDeclaration uiState,
+            AccessibilityDeclaration accessibility) {
         public RouteDeclaration {
             Objects.requireNonNull(id, "id required");
             Objects.requireNonNull(path, "path required");
             Objects.requireNonNull(method, "method required");
+            Objects.requireNonNull(state, "state required");
+            Objects.requireNonNull(uiState, "uiState required");
+            Objects.requireNonNull(accessibility, "accessibility required");
             if (requiredRoles == null) requiredRoles = List.of();
             if (requiredCapabilities == null) requiredCapabilities = List.of();
             if (metadata == null) metadata = Map.of();
@@ -84,6 +161,7 @@ public final class ProductContract extends KernelContract {
     private final List<CapabilityDeclaration> capabilities;
     private final List<PersonaDeclaration> personas;
     private final String productId;
+    private final boolean noLegacyMode;
 
     private ProductContract(Builder builder) {
         super(builder.contractId, builder.name, builder.version,
@@ -92,6 +170,7 @@ public final class ProductContract extends KernelContract {
         this.capabilities = builder.capabilities != null ? List.copyOf(builder.capabilities) : List.of();
         this.personas = builder.personas != null ? List.copyOf(builder.personas) : List.of();
         this.productId = builder.productId;
+        this.noLegacyMode = builder.noLegacyMode;
         validate();
     }
 
@@ -99,6 +178,7 @@ public final class ProductContract extends KernelContract {
     public List<CapabilityDeclaration> getCapabilities() { return capabilities; }
     public List<PersonaDeclaration> getPersonas() { return personas; }
     public String getProductId() { return productId; }
+    public boolean isNoLegacyMode() { return noLegacyMode; }
 
     @Override
     protected void validate() {
@@ -114,6 +194,13 @@ public final class ProductContract extends KernelContract {
             if (!List.of("GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS")
                       .contains(upper)) {
                 throw new IllegalArgumentException("Invalid HTTP method: " + route.method());
+            }
+            // In no-legacy mode, reject deprecated/removed/migration states
+            if (noLegacyMode && route.state() != RouteState.ACTIVE) {
+                throw new IllegalArgumentException(
+                    "No-legacy mode enabled: route " + route.id() + " has state " + route.state() +
+                    ", only ACTIVE state is allowed"
+                );
             }
         }
         for (CapabilityDeclaration capability : capabilities) {
@@ -142,6 +229,7 @@ public final class ProductContract extends KernelContract {
         private List<RouteDeclaration> routes = List.of();
         private List<CapabilityDeclaration> capabilities = List.of();
         private List<PersonaDeclaration> personas = List.of();
+        private boolean noLegacyMode = false;
 
         private Builder(String contractId, String name, String version, String productId) {
             this.contractId = contractId;
@@ -154,6 +242,7 @@ public final class ProductContract extends KernelContract {
         public Builder routes(List<RouteDeclaration> routes) { this.routes = routes; return this; }
         public Builder capabilities(List<CapabilityDeclaration> capabilities) { this.capabilities = capabilities; return this; }
         public Builder personas(List<PersonaDeclaration> personas) { this.personas = personas; return this; }
+        public Builder noLegacyMode(boolean noLegacyMode) { this.noLegacyMode = noLegacyMode; return this; }
 
         public ProductContract build() { return new ProductContract(this); }
     }

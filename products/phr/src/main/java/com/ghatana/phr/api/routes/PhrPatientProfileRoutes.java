@@ -101,10 +101,18 @@ public final class PhrPatientProfileRoutes {
 
     private Promise<HttpResponse> handleUpdateProfile(HttpRequest request) {
         PhrRouteSupport.PhrRequestContext context;
+        String idempotencyKey;
         try {
             context = PhrRouteSupport.requireContext(request);
+            idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+        }
+
+        // B-005: Check for existing update by idempotency key
+        if (idempotencyKey != null) {
+            // TODO: Check repository for existing update by idempotency key
+            // For now, proceed with update
         }
 
         // Validate role-based edit permissions

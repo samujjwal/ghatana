@@ -5,6 +5,8 @@
  * Falls back to the English locale when a key is absent from the active locale.
  *
  * Locale preference is persisted in AsyncStorage for survival across app restarts.
+ *
+ * Supports pseudo-locale (en-XA) for layout expansion testing, matching web behavior.
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,6 +22,7 @@ type DotPath<T, Prefix extends string = ''> = {
 }[keyof T];
 
 export type I18nKey = DotPath<LocaleDict>;
+export type PhrLocale = 'en' | 'ne' | 'en-XA';
 
 const locales: Record<string, LocaleShape> = { en, ne };
 const LOCALE_STORAGE_KEY = 'phr-mobile-locale';
@@ -47,7 +50,7 @@ export async function initializeLocale(): Promise<void> {
 }
 
 export async function setLocale(locale: string): Promise<void> {
-  const normalizedLocale = locale in locales ? locale : 'en';
+  const normalizedLocale = locale === 'en-XA' ? 'en-XA' : (locale in locales ? locale : 'en');
   activeLocale = normalizedLocale;
   
   try {
@@ -72,6 +75,25 @@ function getNestedValue(obj: Record<string, unknown>, keyPath: string): string |
 }
 
 /**
+ * Pseudo-localizes a message by expanding vowels and wrapping in brackets.
+ * Matches web behavior for layout expansion testing.
+ */
+function pseudoLocalize(message: string): string {
+  const expanded = message
+    .split('a').join('aa')
+    .split('e').join('ee')
+    .split('i').join('ii')
+    .split('o').join('oo')
+    .split('u').join('uu')
+    .split('A').join('AA')
+    .split('E').join('EE')
+    .split('I').join('II')
+    .split('O').join('OO')
+    .split('U').join('UU');
+  return `[${expanded}]`;
+}
+
+/**
  * Translate a key to the active locale string, with optional parameter interpolation.
  *
  * @param key    Dot-path key from the locale dictionary (e.g. 'tabs.home')
@@ -79,11 +101,20 @@ function getNestedValue(obj: Record<string, unknown>, keyPath: string): string |
  * @returns      Translated string; falls back to English, then to the key itself
  */
 export function t(key: string, params?: Record<string, string>): string {
-  const dict = locales[activeLocale] ?? en;
-  let value =
-    getNestedValue(dict as unknown as Record<string, unknown>, key) ??
-    getNestedValue(en as unknown as Record<string, unknown>, key) ??
-    key;
+  let value: string;
+  
+  if (activeLocale === 'en-XA') {
+    // Pseudo-locale: expand English text
+    const enValue = getNestedValue(en as unknown as Record<string, unknown>, key) ?? key;
+    value = pseudoLocalize(enValue);
+  } else {
+    // Normal locale: use active locale dict, fall back to English
+    const dict = locales[activeLocale] ?? en;
+    value =
+      getNestedValue(dict as unknown as Record<string, unknown>, key) ??
+      getNestedValue(en as unknown as Record<string, unknown>, key) ??
+      key;
+  }
 
   if (params != null) {
     for (const [placeholder, replacement] of Object.entries(params)) {

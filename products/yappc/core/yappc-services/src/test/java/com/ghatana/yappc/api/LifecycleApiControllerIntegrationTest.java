@@ -14,9 +14,9 @@ import com.ghatana.yappc.domain.intent.IntentInput;
 import com.ghatana.yappc.services.evolve.EvolutionService;
 import com.ghatana.yappc.services.evolve.EvolutionServiceImpl;
 import com.ghatana.yappc.services.generate.GenerationService;
-import com.ghatana.yappc.services.generate.GenerationServiceImpl;
+import com.ghatana.yappc.services.generate.GenerationServiceTestFactory;
 import com.ghatana.yappc.services.intent.IntentService;
-import com.ghatana.yappc.services.intent.IntentServiceImpl;
+import com.ghatana.yappc.services.intent.IntentServiceTestFactory;
 import com.ghatana.yappc.services.learn.LearningService;
 import com.ghatana.yappc.services.learn.LearningServiceImpl;
 import com.ghatana.yappc.services.observe.ObserveService;
@@ -85,10 +85,15 @@ class LifecycleApiControllerIntegrationTest extends EventloopTestBase {
         PolicyEngine policyEngine = new InMemoryAllowPolicyEngine();
         GenerationRunRepository generationRunRepository = mock(GenerationRunRepository.class);
 
-        IntentService intentService = new IntentServiceImpl(completionService, auditLogger, metrics);
+        IntentService intentService = IntentServiceTestFactory.create(completionService, auditLogger, metrics);
         ShapeService shapeService = new ShapeServiceImpl(completionService, auditLogger, metrics);
         ValidationService validationService = new ValidationServiceImpl(policyEngine, auditLogger, metrics);
-        GenerationService generationService = new GenerationServiceImpl(completionService, auditLogger, metrics, generationRunRepository, new ObjectMapper());
+        GenerationService generationService = GenerationServiceTestFactory.create(
+          completionService,
+          auditLogger,
+          metrics,
+          generationRunRepository,
+          new ObjectMapper());
         CiCdPort ciCdPort = new NoOpCiCdAdapter();
         RunService runService = new RunServiceImpl(auditLogger, metrics, ciCdPort);
         ObserveService observeService = new ObserveServiceImpl(metrics, auditLogger);

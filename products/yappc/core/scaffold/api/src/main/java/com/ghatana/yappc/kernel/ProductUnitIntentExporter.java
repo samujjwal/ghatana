@@ -120,6 +120,7 @@ public final class ProductUnitIntentExporter {
         private final String tenantId;
         private final String workspaceId;
         private final String sourcePhase;
+        private final String correlationId;
         private final Map<String, Object> metadata;
 
         private Request(Builder builder) {
@@ -129,9 +130,10 @@ public final class ProductUnitIntentExporter {
             this.surfaces = builder.surfaces;
             this.runtimeProvider = builder.runtimeProvider;
             this.lifecycleProfile = builder.lifecycleProfile;
-            this.tenantId = builder.tenantId != null ? builder.tenantId : "local-dev-tenant";
+            this.tenantId = builder.tenantId;
             this.workspaceId = builder.workspaceId;
             this.sourcePhase = builder.sourcePhase != null ? builder.sourcePhase : "generate";
+            this.correlationId = builder.correlationId;
             this.metadata = builder.metadata != null ? builder.metadata : new HashMap<>();
         }
 
@@ -144,6 +146,7 @@ public final class ProductUnitIntentExporter {
         public String tenantId() { return tenantId; }
         public String workspaceId() { return workspaceId; }
         public String sourcePhase() { return sourcePhase; }
+        public String correlationId() { return correlationId; }
         public Map<String, Object> metadata() { return metadata; }
 
         /**
@@ -163,6 +166,7 @@ public final class ProductUnitIntentExporter {
             private String tenantId;
             private String workspaceId;
             private String sourcePhase;
+            private String correlationId;
             private Map<String, Object> metadata;
 
             public Builder projectId(String projectId) {
@@ -207,6 +211,11 @@ public final class ProductUnitIntentExporter {
 
             public Builder sourcePhase(String sourcePhase) {
                 this.sourcePhase = sourcePhase;
+                return this;
+            }
+
+            public Builder correlationId(String correlationId) {
+                this.correlationId = correlationId;
                 return this;
             }
 
@@ -324,6 +333,9 @@ public final class ProductUnitIntentExporter {
     }
 
     private Map<String, Object> buildIntent(Request request, String intentId) {
+        String correlationId = request.correlationId() == null || request.correlationId().isBlank()
+            ? intentId
+            : request.correlationId();
         Map<String, Object> metadata = new LinkedHashMap<>(request.metadata());
         metadata.put("producer", PRODUCER_TYPE);
         metadata.put("sourcePhase", request.sourcePhase());
@@ -340,7 +352,7 @@ public final class ProductUnitIntentExporter {
                         "yappc:" + request.workspaceId(),
                         PRODUCER_TYPE,
                         "yappc-product-unit-intent-exporter",
-                        intentId),
+                    correlationId),
                 new TargetProvidersDocument(request.runtimeProvider(), "ghatana-file-registry"),
                 new ProductUnitDraftDocument(
                         request.projectId(),

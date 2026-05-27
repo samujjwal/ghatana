@@ -34,7 +34,7 @@ class PhrRouteSupportTest {
         assertThat(ctx.tenantId()).isEqualTo("tenant-1");
         assertThat(ctx.principalId()).isEqualTo("user-42");
         assertThat(ctx.role()).isEqualTo("patient");
-        assertThat(ctx.correlationId()).isEqualTo("no-correlation-id");
+        assertThat(ctx.correlationId()).matches("^[0-9a-fA-F-]{36}$");
     }
 
     @Test
@@ -51,7 +51,7 @@ class PhrRouteSupportTest {
     @DisplayName("all roles in ALLOWED_ROLES are accepted")
     void allAllowedRolesAreAccepted() {
         for (String role : PhrRouteSupport.ALLOWED_ROLES) {
-            HttpRequest request = requestWithHeaders("t1", "p1", role);
+            HttpRequest request = requestWithHeaders("tenant-1", "principal-1", role);
             assertThat(PhrRouteSupport.requireContext(request).role()).isEqualTo(role);
         }
     }
@@ -115,11 +115,11 @@ class PhrRouteSupportTest {
     }
 
     @Test
-    @DisplayName("correlationId falls back to no-correlation-id when header absent")
+    @DisplayName("correlationId falls back to generated UUID when header absent")
     void correlationIdFallbackWhenAbsent() {
         HttpRequest request = requestWithHeaders("tenant-1", "user-42", "patient");
         PhrRouteSupport.PhrRequestContext ctx = PhrRouteSupport.requireContext(request);
-        assertThat(ctx.correlationId()).isEqualTo("no-correlation-id");
+        assertThat(ctx.correlationId()).matches("^[0-9a-fA-F-]{36}$");
     }
 
     @Test

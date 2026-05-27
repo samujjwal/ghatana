@@ -134,6 +134,24 @@ class ProductUnitIntentExporterTest {
                 .hasMessageContaining("Unknown ProductUnit surface: frontend");
     }
 
+        @Test
+        void rejectsMissingTenantId() {
+                ProductUnitIntentExporter exporter = new ProductUnitIntentExporter();
+                ProductUnitIntentExporter.Request request = ProductUnitIntentExporter.Request.builder()
+                                .projectId("test-project")
+                                .projectName("Test Project")
+                                .targetType("kernel-product-unit")
+                                .surfaces(List.of("backend-api"))
+                                .runtimeProvider("ghatana-file-registry")
+                                .lifecycleProfile("standard-web-api-product")
+                                .workspaceId("workspace-123")
+                                .build();
+
+                assertThatThrownBy(() -> exporter.export(request, Path.of("/tmp/test.yaml")))
+                                .isInstanceOf(ProductUnitIntentExporter.ExportException.class)
+                                .hasMessageContaining("tenantId is required");
+        }
+
     @Test
     void includesCustomMetadata() throws Exception {
         ProductUnitIntentExporter exporter = new ProductUnitIntentExporter();
@@ -162,6 +180,32 @@ class ProductUnitIntentExporterTest {
                 .containsEntry("workspaceId", "workspace-123");
         assertThat(metadata.get("exportedAt")).isNotNull();
     }
+
+        @Test
+        void usesExplicitRequestCorrelationIdWhenProvided() throws Exception {
+                ProductUnitIntentExporter exporter = new ProductUnitIntentExporter(
+                                new ProductUnitKernelContractRegistry(),
+                                Clock.fixed(Instant.parse("2026-05-26T10:15:30Z"), ZoneOffset.UTC),
+                                () -> "intent-123");
+
+                ProductUnitIntentExporter.ExportResult result = exporter.buildIntent(ProductUnitIntentExporter.Request.builder()
+                                .projectId("test-project")
+                                .projectName("Test Project")
+                                .targetType("kernel-product-unit")
+                                .surfaces(List.of("backend-api"))
+                                .runtimeProvider("ghatana-file-registry")
+                                .lifecycleProfile("standard-web-api-product")
+                                .tenantId("tenant-123")
+                                .workspaceId("workspace-123")
+                                .correlationId("req-corr-9")
+                                .build());
+
+                @SuppressWarnings("unchecked")
+                Map<String, Object> producer = (Map<String, Object>) result.intent().get("producer");
+
+                assertThat(result.intentId()).isEqualTo("intent-123");
+                assertThat(producer).containsEntry("correlationId", "req-corr-9");
+        }
 
     private static ProductUnitIntentExporter.Request standardRequest() {
         return ProductUnitIntentExporter.Request.builder()

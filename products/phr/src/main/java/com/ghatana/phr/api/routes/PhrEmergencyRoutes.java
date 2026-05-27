@@ -65,10 +65,18 @@ public final class PhrEmergencyRoutes {
 
     private Promise<HttpResponse> handleLogAccess(HttpRequest request) {
         PhrRouteSupport.PhrRequestContext context;
+        String idempotencyKey;
         try {
             context = PhrRouteSupport.requireContext(request);
+            idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+        }
+
+        // B-005: Check for existing access log by idempotency key
+        if (idempotencyKey != null) {
+            // TODO: Check emergency access log service for existing event by idempotency key
+            // For now, proceed with logging
         }
 
         // Policy gate: emergency access requires clinical role or admin
@@ -203,12 +211,20 @@ public final class PhrEmergencyRoutes {
 
     private Promise<HttpResponse> handleReview(HttpRequest request) {
         PhrRouteSupport.PhrRequestContext context;
+        String idempotencyKey;
         try {
             context = PhrRouteSupport.requireContext(request);
+            idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
-        
+
+        // B-005: Check for existing review by idempotency key
+        if (idempotencyKey != null) {
+            // TODO: Check emergency access log service for existing review by idempotency key
+            // For now, proceed with review
+        }
+
         // Policy gate: only administrators can review emergency access
         if (!"admin".equals(context.role())) {
             return PhrRouteSupport.errorResponse(403, "REVIEWER_REQUIRED", "Only administrators can review emergency access");

@@ -21,7 +21,7 @@ import com.ghatana.yappc.domain.evolve.EvolutionPlan;
 import com.ghatana.yappc.services.evolve.EvolutionService;
 import com.ghatana.yappc.services.evolve.EvolutionServiceImpl;
 import com.ghatana.yappc.services.intent.IntentService;
-import com.ghatana.yappc.services.intent.IntentServiceImpl;
+import com.ghatana.yappc.services.intent.IntentServiceTestFactory;
 import com.ghatana.yappc.services.learn.LearningService;
 import com.ghatana.yappc.services.learn.LearningServiceImpl;
 import com.ghatana.yappc.services.observe.ObserveService;
@@ -92,7 +92,7 @@ class YappcAiPhaseResilienceTest extends EventloopTestBase {
         when(auditLogger.log(anyMap())).thenReturn(Promise.complete());
         when(policyEngine.evaluate(any(), any())).thenReturn(Promise.of(true));
 
-        intentService    = new IntentServiceImpl(aiService, auditLogger, metrics);
+        intentService    = IntentServiceTestFactory.create(aiService, auditLogger, metrics);
         shapeService     = new ShapeServiceImpl(aiService, auditLogger, metrics);
         validationService = new ValidationServiceImpl(policyEngine, auditLogger, metrics);
         observeService   = new ObserveServiceImpl(metrics, auditLogger);

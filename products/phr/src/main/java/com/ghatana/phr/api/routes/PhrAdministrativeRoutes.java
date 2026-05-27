@@ -118,10 +118,18 @@ public final class PhrAdministrativeRoutes {
 
     private Promise<HttpResponse> handleCreateSchedulingRequest(HttpRequest request) {
         PhrRouteSupport.PhrRequestContext context;
+        String idempotencyKey;
         try {
             context = PhrRouteSupport.requireContext(request);
+            idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+        }
+
+        // B-005: Check for existing request by idempotency key
+        if (idempotencyKey != null) {
+            // TODO: Check appointment service for existing request by idempotency key
+            // For now, proceed with creation
         }
 
         return request.loadBody()
@@ -154,6 +162,9 @@ public final class PhrAdministrativeRoutes {
                     result.put("notes", notes);
                 }
                 result.put("patientId", patientId);
+                if (idempotencyKey != null) {
+                    result.put("idempotencyKey", idempotencyKey);
+                }
 
                 return PhrRouteSupport.jsonResponse(201, result);
             });

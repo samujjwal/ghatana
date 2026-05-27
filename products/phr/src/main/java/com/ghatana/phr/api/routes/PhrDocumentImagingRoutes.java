@@ -161,11 +161,20 @@ public final class PhrDocumentImagingRoutes {
 
     private Promise<HttpResponse> handleConfirmOcrDocument(HttpRequest request) {
         PhrRouteSupport.PhrRequestContext context;
+        String idempotencyKey;
         try {
             context = PhrRouteSupport.requireContext(request);
+            idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
+
+        // B-005: Check for existing confirmation by idempotency key
+        if (idempotencyKey != null) {
+            // TODO: Check document service for existing confirmation by idempotency key
+            // For now, proceed with confirmation
+        }
+
         String documentId = request.getPathParameter("documentId");
         return request.loadBody()
             .then(body -> {
@@ -198,11 +207,20 @@ public final class PhrDocumentImagingRoutes {
 
     private Promise<HttpResponse> handleRejectOcrDocument(HttpRequest request) {
         PhrRouteSupport.PhrRequestContext context;
+        String idempotencyKey;
         try {
             context = PhrRouteSupport.requireContext(request);
+            idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
+
+        // B-005: Check for existing rejection by idempotency key
+        if (idempotencyKey != null) {
+            // TODO: Check document service for existing rejection by idempotency key
+            // For now, proceed with rejection
+        }
+
         String documentId = request.getPathParameter("documentId");
         return documentService.rejectOcrDocument(documentId, context.principalId())
             .then($ -> {

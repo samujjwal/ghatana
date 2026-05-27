@@ -15,7 +15,7 @@ import com.ghatana.yappc.domain.run.RunSpec;
 import com.ghatana.yappc.domain.run.RunTask;
 import com.ghatana.yappc.domain.shape.ShapeSpec;
 import com.ghatana.yappc.domain.validate.LifecycleValidationResult;
-import com.ghatana.yappc.services.generate.GenerationServiceImpl;
+import com.ghatana.yappc.services.generate.GenerationServiceTestFactory;
 import com.ghatana.yappc.services.run.NoOpCiCdAdapter;
 import com.ghatana.yappc.services.run.RunServiceImpl;
 import io.activej.promise.Promise;
@@ -80,7 +80,12 @@ class YappcWorkflowPerformanceBaselineTest extends EventloopTestBase {
                 .build()));
         when(auditLogger.log(any(Map.class))).thenReturn(Promise.complete());
 
-        generationService = new GenerationServiceImpl(aiService, auditLogger, metrics, generationRunRepository, new ObjectMapper());
+        generationService = (com.ghatana.yappc.services.generate.GenerationServiceImpl) GenerationServiceTestFactory.create(
+            aiService,
+            auditLogger,
+            metrics,
+            generationRunRepository,
+            new ObjectMapper());
         runService = new RunServiceImpl(auditLogger, metrics, new NoOpCiCdAdapter());
     }
 

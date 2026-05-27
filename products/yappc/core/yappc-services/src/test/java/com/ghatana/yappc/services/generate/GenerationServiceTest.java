@@ -71,7 +71,13 @@ class GenerationServiceTest extends EventloopTestBase {
                 .thenReturn(Promise.complete());
         objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
         aiHealthProvider = new MutableAiHealthProvider(false);
-        service = new GenerationServiceImpl(aiService, auditLogger, metrics, generationRunRepository, objectMapper, aiHealthProvider);
+        service = GenerationServiceTestFactory.create(
+            aiService,
+            auditLogger,
+            metrics,
+            generationRunRepository,
+            objectMapper,
+            aiHealthProvider);
     }
 
     private ValidatedSpec specWithoutEntities() { 
@@ -257,6 +263,20 @@ class GenerationServiceTest extends EventloopTestBase {
             verify(metrics, atLeastOnce()).incrementCounter(contains("error"), any(Map.class));
         }
     }
+
+            @Test
+            @DisplayName("generate: failure persists failed run state with correlation and reason")
+            void shouldPersistFailedRunStateOnGenerationFailure() {
+            when(aiService.complete(any(CompletionRequest.class)))
+                .thenReturn(Promise.ofException(new RuntimeException("Generation failed")));
+
+            assertThrows(Exception.class, () -> runPromise(() -> service.generate(specWithoutEntities(), defaultContext())));
+
+            verify(generationRunRepository, atLeast(2)).save(argThat(run ->
+                run.status() == GenerationRun.RunStatus.FAILED
+                    && "corr-1".equals(run.provenance().get("correlation_id"))
+                    && "Generation failed".equals(run.metadata().get("failure_reason"))));
+            }
 
     @Test
     @DisplayName("generate: metadata contains validation_passed flag")

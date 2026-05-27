@@ -37,7 +37,11 @@ public final class PhrTimelineRoutes {
     public PhrTimelineRoutes(Eventloop eventloop, RecordService recordService, PhrPolicyEvaluator policyEvaluator) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.recordService = Objects.requireNonNull(recordService, "recordService must not be null");
-        this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
+        this.policyEvaluator = policyEvaluator;
+    }
+
+    public PhrTimelineRoutes(Eventloop eventloop, RecordService recordService) {
+        this(eventloop, recordService, null);
     }
 
     /**
@@ -62,9 +66,19 @@ public final class PhrTimelineRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        return policyEvaluator.canAccessPatientRecordAsync(context, patientId).then(decision -> {
-            if (!decision.isAllowed()) {
-                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+        Promise<Boolean> accessCheck;
+        if (policyEvaluator == null) {
+            accessCheck = Promise.of(PhrRouteSupport.canAccessPatientRecordForRole(context, patientId));
+        } else {
+            accessCheck = policyEvaluator.canAccessPatientRecordAsync(context, patientId)
+                .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);
+        }
+
+        return accessCheck.then(allowed -> {
+            if (!allowed) {
+                return PhrRouteSupport.errorResponse(403, "TIMELINE_ACCESS_DENIED",
+                    "Access denied to timeline for patient " + patientId,
+                    context.correlationId());
             }
 
             PatientOperationContext opCtx = new PatientOperationContext(
@@ -87,13 +101,13 @@ public final class PhrTimelineRoutes {
                             "details", entry.details()
                         ))
                         .toList();
-                    
+
                     Map<String, Object> response = new java.util.LinkedHashMap<>();
                     response.put("patientId", patientId);
                     response.put("items", items);
                     response.put("count", items.size());
                     response.put("generatedAt", timeline.generatedAt());
-                    
+
                     return PhrRouteSupport.jsonResponseWithCorrelation(200, response, context.correlationId());
                 });
         });

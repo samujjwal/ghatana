@@ -25,6 +25,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -50,35 +51,16 @@ public class GenerationServiceImpl implements GenerationService {
             AuditLogger auditLogger,
             MetricsCollector metrics,
             @NotNull GenerationRunRepository generationRunRepository,
-            @NotNull ObjectMapper objectMapper) {
-        this(aiService, auditLogger, metrics, generationRunRepository, objectMapper, AiHealthProvider.alwaysHealthy());
-    }
-
-    public GenerationServiceImpl(
-            CompletionService aiService,
-            AuditLogger auditLogger,
-            MetricsCollector metrics,
-            @NotNull GenerationRunRepository generationRunRepository,
-            @NotNull ObjectMapper objectMapper,
-            @NotNull AiHealthProvider aiHealthProvider) {
-        this(aiService, auditLogger, metrics, generationRunRepository, objectMapper, aiHealthProvider, new GenerationAssuranceService());
-    }
-
-    public GenerationServiceImpl(
-            CompletionService aiService,
-            AuditLogger auditLogger,
-            MetricsCollector metrics,
-            @NotNull GenerationRunRepository generationRunRepository,
             @NotNull ObjectMapper objectMapper,
             @NotNull AiHealthProvider aiHealthProvider,
             @NotNull GenerationAssuranceService assuranceService) {
-        this.aiService = aiService;
-        this.auditLogger = auditLogger;
-        this.metrics = metrics;
-        this.generationRunRepository = generationRunRepository;
-        this.objectMapper = objectMapper;
-        this.aiHealthProvider = aiHealthProvider;
-        this.assuranceService = assuranceService;
+        this.aiService = Objects.requireNonNull(aiService, "aiService");
+        this.auditLogger = Objects.requireNonNull(auditLogger, "auditLogger");
+        this.metrics = Objects.requireNonNull(metrics, "metrics");
+        this.generationRunRepository = Objects.requireNonNull(generationRunRepository, "generationRunRepository");
+        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
+        this.aiHealthProvider = Objects.requireNonNull(aiHealthProvider, "aiHealthProvider");
+        this.assuranceService = Objects.requireNonNull(assuranceService, "assuranceService");
     }
 
     @Override
@@ -152,8 +134,39 @@ public class GenerationServiceImpl implements GenerationService {
                     .then(() -> auditLogger.log(ServiceObservability.auditEvent("generate.execute", spec, artifacts))
                         .map(v -> artifacts));
             })
-            .whenException(() -> {
-                log.error("Generation failed");
+            .then((artifacts, error) -> {
+                if (error == null) {
+                    return Promise.of(artifacts);
+                }
+                log.error("Generation failed", error);
+                GenerationRun failedRun = GenerationRun.builder()
+                        .id(runId)
+                        .planId(spec.shapeSpec().id())
+                        .projectId(context.projectId())
+                        .tenantId(context.tenantId())
+                        .workspaceId(context.workspaceId())
+                        .intent(buildIntentRef(context))
+                        .status(GenerationRun.RunStatus.FAILED)
+                        .reviewStatus(GenerationRun.ReviewStatus.REVIEW_PENDING)
+                        .createdAt(createdAt)
+                        .completedAt(Instant.now())
+                        .addProvenance("generator_version", "1.0.0")
+                        .addProvenance("validation_passed", String.valueOf(spec.validationResult().passed()))
+                        .addProvenance("actor_id", context.actorId())
+                        .addProvenance("phase", context.phase())
+                        .addProvenance("correlation_id", context.correlationId())
+                        .addMetadata("spec_ref", spec.shapeSpec().id())
+                        .addMetadata("intent_id", context.intentId())
+                        .addMetadata("shape_id", context.shapeId())
+                        .addMetadata("failure_reason", error.getMessage())
+                        .build();
+                return generationRunRepository.save(failedRun)
+                        .then((ignored, saveError) -> {
+                            if (saveError != null) {
+                                log.error("Failed to persist failed generation run {}", runId, saveError);
+                            }
+                            return Promise.ofException(error);
+                        });
             });
     }
 

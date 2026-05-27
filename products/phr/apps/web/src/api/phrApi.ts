@@ -63,7 +63,7 @@ function newCorrelationId(): string {
   return crypto.randomUUID();
 }
 
-// --- Shared FHIR sub-schemas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Shared FHIR sub-schemas ---------------------------------------------------
 
 const FhirCodingSchema = z.object({
   system: z.string().optional(),
@@ -83,7 +83,7 @@ const FhirBundleSchema = z.object({
   entry: z.array(FhirBundleEntrySchema).optional(),
 });
 
-// --- Per-resource FHIR R4 schemas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Per-resource FHIR R4 schemas ---------------------------------------------------
 
 const FhirPatientSchema = z.object({
   resourceType: z.literal('Patient'),
@@ -161,7 +161,7 @@ const FhirAppointmentSchema = z.object({
   comment: z.string().optional(),
 }).passthrough();
 
-// --- Mock data validation schema (used when USE_MOCK=true) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Mock data validation schema (used when USE_MOCK=true) ------------------------
 
 const dashboardSchema = z.object({
   patient: z.object({
@@ -210,7 +210,7 @@ const dashboardSchema = z.object({
   })),
 });
 
-// --- FHIR â†’ UI type transformations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- FHIR → UI type transformations --------------------------------------------------
 
 function fhirPatientToProfile(raw: z.infer<typeof FhirPatientSchema>): PatientProfile {
   const firstName = raw.name?.[0]?.given?.join(' ') ?? '';
@@ -547,7 +547,8 @@ export async function fetchReleaseReadiness(options: {
   if (!response.ok) {
     throw new PhrApiError(`PHR release readiness failed with status ${response.status}`, response.status);
   }
-  return response.json() as Promise<PhrReleaseReadiness>;
+  const data = await response.json();
+  return PhrReleaseReadinessSchema.parse(data);
 }
 
 // --- Audit events API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -642,6 +643,12 @@ const DependentEntrySchema = z.object({
   status: z.enum(['active', 'inactive']),
 }).passthrough();
 
+const PatientRosterEntrySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  status: z.enum(['active', 'inactive']),
+}).passthrough();
+
 const FchvPatientEntrySchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -649,11 +656,106 @@ const FchvPatientEntrySchema = z.object({
   lastVisit: z.string(),
 }).passthrough();
 
-const PatientRosterEntrySchema = z.object({
+// A-004: Additional Zod schemas for DTOs
+const PhrReleaseReadinessSchema = z.object({
+  product: z.literal('phr'),
+  tenantId: z.string(),
+  principalId: z.string(),
+  role: z.string(),
+  environment: z.string(),
+  generatedAt: z.string(),
+  targetCommitSha: z.string(),
+  runtimeTruthBlocked: z.boolean(),
+  requiredSections: z.array(z.string()),
+  releaseReadiness: z.object({
+    status: z.string().optional(),
+    overallScore: z.number().optional(),
+    blockingIssues: z.array(z.string()).optional(),
+    warnings: z.array(z.string()).optional(),
+  }).optional(),
+  sections: z.record(z.object({
+    label: z.string(),
+    status: z.string(),
+    runtimeProven: z.boolean(),
+    message: z.string(),
+    details: z.unknown().optional(),
+  })),
+}).passthrough();
+
+const ConsentRevokeResultSchema = z.object({
+  grantId: z.string(),
+  status: z.literal('REVOKED'),
+});
+
+const AppointmentCreateResultSchema = z.object({
+  id: z.string(),
+  status: z.enum(['requested', 'confirmed', 'cancelled']),
+  specialty: z.string(),
+  preferredDate: z.string(),
+  createdAt: z.string(),
+});
+
+const EmergencyAccessEventSchema = z.object({
+  id: z.string(),
+  patientId: z.string(),
+  clinicianId: z.string(),
+  reason: z.string(),
+  status: z.enum(['PENDING', 'REVIEWED', 'EXPIRED']),
+  accessedAt: z.string(),
+  reviewedAt: z.string().optional(),
+  reviewedBy: z.string().optional(),
+  reviewNote: z.string().optional(),
+});
+
+const PatientProfileExtendedSchema = z.object({
   id: z.string(),
   name: z.string(),
-  status: z.enum(['active', 'inactive']),
+  age: z.number(),
+  bloodType: z.string(),
+  location: z.string(),
+  emergencyContact: z.string(),
+  birthDate: z.string().optional(),
+  preferredLanguage: z.string().optional(),
+  facilityId: z.string().optional(),
+  mrn: z.string().optional(),
+  gender: z.string().optional(),
 }).passthrough();
+
+const DocumentUploadResultSchema = z.object({
+  id: z.string(),
+  status: z.enum(['pending_ocr', 'processed', 'failed']),
+  ocrAvailable: z.boolean(),
+});
+
+const OcrReviewDocumentSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  ocrText: z.string(),
+  extractedText: z.string(),
+  correctedText: z.string().optional(),
+  confidence: z.number(),
+  status: z.enum(['pending_review', 'confirmed', 'rejected']),
+});
+
+const OcrRejectResultSchema = z.object({
+  documentId: z.string(),
+  rejected: z.boolean(),
+});
+
+const AppointmentBookingResultSchema = z.object({
+  id: z.string(),
+  status: z.string(),
+});
+
+const AppointmentCancelResultSchema = z.object({
+  success: z.boolean(),
+});
+
+const DocumentUploadInitResultSchema = z.object({
+  id: z.string(),
+  status: z.string(),
+  ocrStatus: z.string(),
+});
 
 export async function fetchAuditEvents(options: {
   patientId?: string;
@@ -702,6 +804,8 @@ const BackendConsentGrantRequestSchema = z.object({
   recipientId: z.string().min(1),
   scope: z.object({
     resourceTypes: z.array(z.string()).min(1),
+    allDocuments: z.boolean().optional(),
+    specificDocumentIds: z.array(z.string()).optional(),
     actions: z.array(z.string()).optional(),
   }),
   expiresAt: z.string().min(1),
@@ -711,7 +815,19 @@ export async function createConsentGrant(
   request: ConsentGrantRequest,
   context: { tenantId: string; principalId: string; role: string; idempotencyKey?: string },
 ): Promise<ConsentGrant> {
-  const validated = ConsentGrantRequestSchema.parse(request);
+  // A-005: Transform frontend request to backend-aligned format
+  const backendRequest = {
+    patientId: request.patientId,
+    recipientId: request.recipientId,
+    scope: {
+      resourceTypes: request.scope.resourceTypes,
+      allDocuments: request.scope.allDocuments,
+      specificDocumentIds: request.scope.specificDocumentIds,
+      actions: request.scope.actions,
+    },
+    expiresAt: request.expiresAt,
+  };
+  const validated = BackendConsentGrantRequestSchema.parse(backendRequest);
   const raw = await phrFetch('/consents/grants', {
     method: 'POST',
     body: JSON.stringify(validated),
@@ -725,17 +841,18 @@ export async function createConsentGrant(
 export async function revokeConsentGrant(
   grantId: string,
   patientId: string,
-  context: { tenantId: string; principalId: string; role: string },
+  context: { tenantId: string; principalId: string; role: string; idempotencyKey?: string },
 ): Promise<ConsentRevokeResult> {
   if (!grantId || !patientId) {
     throw new PhrApiError('grantId and patientId are required to revoke consent', 400, 'Consent');
   }
   const url = new URL(`${API_BASE_URL}/consents/grants/${encodeURIComponent(grantId)}/revoke`);
   url.searchParams.set('patientId', patientId);
-  return phrFetch(`${url.pathname}${url.search}`, {
+  const data = await phrFetch(`${url.pathname}${url.search}`, {
     method: 'POST',
     context,
-  }) as Promise<ConsentRevokeResult>;
+  });
+  return ConsentRevokeResultSchema.parse(data);
 }
 
 // --- Appointment API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -751,11 +868,12 @@ export async function createAppointmentRequest(
   context: { tenantId: string; principalId: string; role: string; idempotencyKey?: string },
 ): Promise<AppointmentCreateResult> {
   const validated = AppointmentRequestSchema.parse(request);
-  return phrFetch('/appointments', {
+  const data = await phrFetch('/appointments', {
     method: 'POST',
     body: JSON.stringify(validated),
     context,
-  }) as Promise<AppointmentCreateResult>;
+  });
+  return AppointmentCreateResultSchema.parse(data);
 }
 
 // --- Emergency access API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -771,22 +889,24 @@ export async function requestEmergencyAccess(
   context: { tenantId: string; principalId: string; role: string; idempotencyKey?: string },
 ): Promise<EmergencyAccessEvent> {
   const validated = EmergencyAccessRequestSchema.parse(request);
-  return phrFetch('/emergency/access', {
+  const data = await phrFetch('/emergency/access', {
     method: 'POST',
     body: JSON.stringify(validated),
     context,
-  }) as Promise<EmergencyAccessEvent>;
+  });
+  return EmergencyAccessEventSchema.parse(data);
 }
 
 export async function reviewEmergencyAccess(
   review: EmergencyReviewRequest,
-  context: { tenantId: string; principalId: string; role: string },
+  context: { tenantId: string; principalId: string; role: string; idempotencyKey?: string },
 ): Promise<EmergencyAccessEvent> {
-  return phrFetch(`/emergency/reviews/${encodeURIComponent(review.eventId)}`, {
+  const data = await phrFetch(`/emergency/reviews/${encodeURIComponent(review.eventId)}`, {
     method: 'POST',
     body: JSON.stringify({ reviewNote: review.reviewNote, reviewerId: review.reviewerId }),
     context,
-  }) as Promise<EmergencyAccessEvent>;
+  });
+  return EmergencyAccessEventSchema.parse(data);
 }
 
 // --- Auth session API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -824,18 +944,20 @@ export async function logoutSession(context: {
 // --- Patient profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function fetchPatientProfile(context?: SessionContext): Promise<PatientProfileExtended> {
-  return phrFetch('/profile', { context }) as Promise<PatientProfileExtended>;
+  const data = await phrFetch('/profile', { context });
+  return PatientProfileExtendedSchema.parse(data);
 }
 
 export async function updatePatientProfile(
   update: PatientProfileUpdateRequest,
   context: { tenantId: string; principalId: string; correlationId?: string; idempotencyKey?: string },
 ): Promise<PatientProfileExtended> {
-  return phrFetch('/profile', {
+  const data = await phrFetch('/profile', {
     method: 'PUT',
     body: JSON.stringify(update),
     context,
-  }) as Promise<PatientProfileExtended>;
+  });
+  return PatientProfileExtendedSchema.parse(data);
 }
 
 // --- Timeline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -1225,7 +1347,7 @@ export async function uploadDocument(
   patientId: string,
   file: File,
   metadata: { title: string; category?: string; description?: string },
-  context?: SessionContext,
+  context?: SessionContext & { idempotencyKey?: string },
 ): Promise<{ id: string; status: string; ocrStatus: string }> {
   if (USE_MOCK) {
     return {
@@ -1241,11 +1363,12 @@ export async function uploadDocument(
   if (metadata.category) formData.append('category', metadata.category);
   if (metadata.description) formData.append('description', metadata.description);
 
-  return phrFetch(`/documents?patientId=${encodeURIComponent(patientId)}`, {
+  const data = await phrFetch(`/documents?patientId=${encodeURIComponent(patientId)}`, {
     method: 'POST',
     body: formData,
     context,
-  }) as Promise<{ id: string; status: string; ocrStatus: string }>;
+  });
+  return DocumentUploadInitResultSchema.parse(data);
 }
 
 // --- Medications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -1394,7 +1517,7 @@ export async function bookAppointment(
   providerId: string,
   slot: string,
   notes?: string,
-  context?: SessionContext,
+  context?: SessionContext & { idempotencyKey?: string },
 ): Promise<{ id: string; status: string }> {
   if (USE_MOCK) {
     return {
@@ -1403,34 +1526,36 @@ export async function bookAppointment(
     };
   }
 
-  return phrFetch('/appointments', {
+  const data = await phrFetch('/appointments', {
     method: 'POST',
     body: JSON.stringify({ patientId, providerId, slot, notes }),
     context,
-  }) as Promise<{ id: string; status: string }>;
+  });
+  return AppointmentBookingResultSchema.parse(data);
 }
 
 export async function cancelAppointment(
   appointmentId: string,
   patientId: string,
-  context?: SessionContext,
+  context?: SessionContext & { idempotencyKey?: string },
 ): Promise<{ success: boolean }> {
   if (USE_MOCK) {
     return { success: true };
   }
 
-  return phrFetch(`/appointments/${encodeURIComponent(appointmentId)}/cancel`, {
+  const data = await phrFetch(`/appointments/${encodeURIComponent(appointmentId)}/cancel`, {
     method: 'POST',
     body: JSON.stringify({ patientId }),
     context,
-  }) as Promise<{ success: boolean }>;
+  });
+  return AppointmentCancelResultSchema.parse(data);
 }
 
 export async function rescheduleAppointment(
   appointmentId: string,
   patientId: string,
   newSlot: string,
-  context?: SessionContext,
+  context?: SessionContext & { idempotencyKey?: string },
 ): Promise<{ id: string; status: string }> {
   if (USE_MOCK) {
     return {
@@ -1439,11 +1564,12 @@ export async function rescheduleAppointment(
     };
   }
 
-  return phrFetch(`/appointments/${encodeURIComponent(appointmentId)}/reschedule`, {
+  const data = await phrFetch(`/appointments/${encodeURIComponent(appointmentId)}/reschedule`, {
     method: 'POST',
     body: JSON.stringify({ patientId, newSlot }),
     context,
-  }) as Promise<{ id: string; status: string }>;
+  });
+  return AppointmentBookingResultSchema.parse(data);
 }
 
 // --- Records â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -1568,58 +1694,36 @@ export async function fetchRecordDetail(
   };
 }
 
-export async function uploadDocument(
-  file: File,
-  context?: SessionContext,
-): Promise<DocumentUploadResult> {
-  const formData = new FormData();
-  formData.append('file', file);
-  // FormData requires special handling - skip Content-Type header
-  const headers: Record<string, string> = {
-    'X-Correlation-ID': context?.correlationId ?? newCorrelationId(),
-  };
-  if (context?.tenantId) headers['X-Tenant-Id'] = context.tenantId;
-  if (context?.principalId) headers['X-Principal-Id'] = context.principalId;
-  if (context?.role) headers['X-Role'] = context.role;
-
-  const response = await fetch(`${API_BASE_URL}/documents`, {
-    method: 'POST',
-    headers,
-    body: formData,
-  });
-  if (!response.ok) {
-    throw new PhrApiError(`Document upload failed: ${response.status}`, response.status, 'Documents');
-  }
-  return response.json() as Promise<DocumentUploadResult>;
-}
-
 export async function fetchOcrDocument(
   docId: string,
   context: { tenantId: string; principalId: string; role: string },
 ): Promise<OcrReviewDocument> {
-  return phrFetch(`/documents/${encodeURIComponent(docId)}/ocr`, { context }) as Promise<OcrReviewDocument>;
+  const data = await phrFetch(`/documents/${encodeURIComponent(docId)}/ocr`, { context });
+  return OcrReviewDocumentSchema.parse(data);
 }
 
 export async function confirmOcrDocument(
   docId: string,
-  context: { tenantId: string; principalId: string; role: string; correlationId?: string },
+  context: { tenantId: string; principalId: string; role: string; correlationId?: string; idempotencyKey?: string },
   correctedText?: string,
 ): Promise<OcrReviewDocument> {
-  return phrFetch(`/documents/${encodeURIComponent(docId)}/ocr/confirm`, {
+  const data = await phrFetch(`/documents/${encodeURIComponent(docId)}/ocr/confirm`, {
     method: 'POST',
     body: correctedText ? JSON.stringify({ correctedText }) : undefined,
     context,
-  }) as Promise<OcrReviewDocument>;
+  });
+  return OcrReviewDocumentSchema.parse(data);
 }
 
 export async function rejectOcrDocument(
   docId: string,
-  context: { tenantId: string; principalId: string; role: string; correlationId?: string },
+  context: { tenantId: string; principalId: string; role: string; correlationId?: string; idempotencyKey?: string },
 ): Promise<{ documentId: string; rejected: boolean }> {
-  return phrFetch(`/documents/${encodeURIComponent(docId)}/ocr/reject`, {
+  const data = await phrFetch(`/documents/${encodeURIComponent(docId)}/ocr/reject`, {
     method: 'POST',
     context,
-  }) as Promise<{ documentId: string; rejected: boolean }>;
+  });
+  return OcrRejectResultSchema.parse(data);
 }
 
 // --- Notifications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

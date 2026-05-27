@@ -319,6 +319,25 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
         assertThat(packet.completedArtifacts()).isEmpty();
     }
 
+    @Test
+    @DisplayName("Completed artifact repository failure fails closed with degraded readiness signal")
+    void completedArtifacts_repositoryFailureFailsClosed() {
+        when(artifactRepository.listCompletedArtifactMetadata(PROJECT_ID, PhaseType.INTENT))
+                .thenReturn(Promise.ofException(new RuntimeException("artifact repo unavailable")));
+
+        PhasePacket packet = runPromise(() ->
+                service.buildPhasePacket(PHASE, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+        assertThat(packet.completedArtifacts()).singleElement().satisfies(artifact -> {
+            assertThat(artifact.artifactId()).isEqualTo("COMPLETED_ARTIFACT_QUERY_FAILED");
+            assertThat(artifact.artifactType()).isEqualTo("SYSTEM_DEGRADED");
+            assertThat(artifact.title()).isEqualTo("Completed artifacts unavailable");
+        });
+        assertThat(packet.readiness().missingPrerequisites()).contains("Completed artifacts unavailable");
+        assertThat(packet.readiness().isDegraded()).isTrue();
+        assertThat(packet.readiness().canAdvance()).isFalse();
+    }
+
     // ─── Correlation ID handling ────────────────────────────────────────────────
 
     @Test
@@ -599,6 +618,24 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
         assertThat(packet.readiness().missingPrerequisites()).contains("Policy approval");
     }
 
+        @Test
+        @DisplayName("Activity feed query failure returns explicit degraded activity entry")
+        void activityFeedFailure_returnsExplicitDegradedEntry() {
+                when(auditService.queryByPhase(anyString(), anyString(), any(), any()))
+                                .thenReturn(Promise.ofException(new RuntimeException("audit backend unavailable")));
+
+                PhasePacket packet = runPromise(() ->
+                                service.buildPhasePacket(PHASE, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+                assertThat(packet.activityFeed()).singleElement().satisfies(entry -> {
+                        assertThat(entry.id()).isEqualTo("ACTIVITY_FEED_QUERY_FAILED");
+                        assertThat(entry.type()).isEqualTo("SYSTEM_DEGRADED");
+                        assertThat(entry.summary()).isEqualTo("Activity feed unavailable");
+                        assertThat(entry.success()).isFalse();
+                        assertThat(entry.outcome()).isEqualTo("FAILURE");
+                });
+        }
+
     @Test
     @DisplayName("Project feature flags are surfaced in packet")
     void projectFeatureFlags_areSurfacedInPacket() {
@@ -722,6 +759,32 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
         assertThat(packet.readiness().missingPrerequisites())
                 .contains("Healthy preview, generation, and runtime signals");
     }
+
+        @Test
+        @DisplayName("Production runtime marks missing preview and runtime identifiers as degraded health")
+        void productionRuntime_missingIdentifiersMarksHealthDegraded() {
+                String previousProfile = System.getProperty("ghatana.runtime.profile");
+                System.setProperty("ghatana.runtime.profile", "production");
+                try {
+                        PhasePacket packet = runPromise(() ->
+                                        service.buildPhasePacket(PHASE, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+                        assertThat(packet.healthSignals().preview().isHealthy()).isFalse();
+                        assertThat(packet.healthSignals().generation().isHealthy()).isFalse();
+                        assertThat(packet.healthSignals().runtime().isHealthy()).isFalse();
+                        assertThat(packet.healthSignals().preview().issues())
+                                        .contains("Missing previewId in production project state");
+                        assertThat(packet.readiness().missingPrerequisites())
+                                        .contains("Healthy preview, generation, and runtime signals");
+                        assertThat(packet.readiness().canAdvance()).isFalse();
+                } finally {
+                        if (previousProfile == null) {
+                                System.clearProperty("ghatana.runtime.profile");
+                        } else {
+                                System.setProperty("ghatana.runtime.profile", previousProfile);
+                        }
+                }
+        }
 
     @ParameterizedTest
     @ValueSource(strings = {"INTENT", "SHAPE", "VALIDATE", "GENERATE", "RUN", "OBSERVE", "LEARN", "EVOLVE"})

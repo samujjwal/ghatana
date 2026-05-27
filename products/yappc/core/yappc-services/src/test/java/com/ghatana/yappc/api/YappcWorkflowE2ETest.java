@@ -14,9 +14,9 @@ import com.ghatana.yappc.domain.intent.IntentInput;
 import com.ghatana.yappc.services.evolve.EvolutionService;
 import com.ghatana.yappc.services.evolve.EvolutionServiceImpl;
 import com.ghatana.yappc.services.generate.GenerationService;
-import com.ghatana.yappc.services.generate.GenerationServiceImpl;
+import com.ghatana.yappc.services.generate.GenerationServiceTestFactory;
 import com.ghatana.yappc.services.intent.IntentService;
-import com.ghatana.yappc.services.intent.IntentServiceImpl;
+import com.ghatana.yappc.services.intent.IntentServiceTestFactory;
 import com.ghatana.yappc.services.learn.LearningService;
 import com.ghatana.yappc.services.learn.LearningServiceImpl;
 import com.ghatana.yappc.services.observe.ObserveService;
@@ -98,10 +98,15 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
         CiCdPort ciCd = new NoOpCiCdAdapter();
         GenerationRunRepository generationRunRepository = mock(GenerationRunRepository.class);
 
-        IntentService intentService = new IntentServiceImpl(llm, audit, metrics);
+        IntentService intentService = IntentServiceTestFactory.create(llm, audit, metrics);
         ShapeService shapeService = new ShapeServiceImpl(llm, audit, metrics);
         ValidationService validationService = new ValidationServiceImpl(policy, audit, metrics);
-        GenerationService generationService = new GenerationServiceImpl(llm, audit, metrics, generationRunRepository, new ObjectMapper());
+        GenerationService generationService = GenerationServiceTestFactory.create(
+                llm,
+                audit,
+                metrics,
+                generationRunRepository,
+                new ObjectMapper());
         RunService runService = new RunServiceImpl(audit, metrics, ciCd);
         ObserveService observeService = new ObserveServiceImpl(metrics, audit);
         LearningService learningService = new LearningServiceImpl(llm, audit, metrics);
@@ -270,10 +275,10 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
                 DnsClient.builder(el, InetAddress.getLoopbackAddress()).build());
 
         LifecycleApiController blockingController = new LifecycleApiController(
-                new IntentServiceImpl(llm, audit, metrics),
+                IntentServiceTestFactory.create(llm, audit, metrics),
                 new ShapeServiceImpl(llm, audit, metrics),
                 blockingValidation,
-                new GenerationServiceImpl(llm, audit, metrics, generationRunRepository2, new ObjectMapper()),
+                GenerationServiceTestFactory.create(llm, audit, metrics, generationRunRepository2, new ObjectMapper()),
                 new RunServiceImpl(audit, metrics, ciCd),
                 new ObserveServiceImpl(metrics, audit),
                 new LearningServiceImpl(llm, audit, metrics),

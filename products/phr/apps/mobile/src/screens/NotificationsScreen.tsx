@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { t } from '../i18n/phrMobileI18n';
 import type { MobileNotificationItem } from '../types';
 
 interface NotificationsScreenProps {
@@ -10,11 +11,16 @@ interface NotificationsScreenProps {
 export function NotificationsScreen({ notifications, onEnablePush }: NotificationsScreenProps): React.ReactElement {
   return (
     <View style={styles.container}>
-      <Pressable onPress={onEnablePush} style={styles.button}>
-        <Text style={styles.buttonText}>Enable push notifications</Text>
+      <Pressable 
+        onPress={onEnablePush} 
+        style={styles.button}
+        accessibilityRole="button"
+        accessibilityLabel={t('notifications.enablePush')}
+      >
+        <Text style={styles.buttonText}>{t('notifications.enablePush')}</Text>
       </Pressable>
       {notifications.map((notification) => (
-        <View key={notification.id} style={styles.card}>
+        <View key={notification.id} style={styles.card} accessibilityRole="text" accessibilityLabel={`${notification.title}. ${notification.detail}`}>
           <Text style={styles.title}>{notification.title}</Text>
           <Text style={styles.detail}>{notification.detail}</Text>
         </View>

@@ -20,6 +20,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -38,21 +39,6 @@ public class IntentServiceImpl implements IntentService {
     private final PromptTemplateRegistry promptRegistry;
     private final IntentRepository intentRepository;
     private final IntentEvidenceService intentEvidenceService;
-
-    public IntentServiceImpl(
-            CompletionService aiService,
-            AuditLogger auditLogger,
-            MetricsCollector metrics) {
-        this(aiService, auditLogger, metrics, createDefaultPromptRegistry(), null);
-    }
-
-    public IntentServiceImpl(
-            CompletionService aiService,
-            AuditLogger auditLogger,
-            MetricsCollector metrics,
-            IntentRepository intentRepository) {
-        this(aiService, auditLogger, metrics, createDefaultPromptRegistry(), intentRepository, null);
-    }
 
     public IntentServiceImpl(
             CompletionService aiService,
@@ -87,12 +73,12 @@ public class IntentServiceImpl implements IntentService {
             PromptTemplateRegistry promptRegistry,
             IntentRepository intentRepository,
             IntentEvidenceService intentEvidenceService) {
-        this.aiService = aiService;
-        this.auditLogger = auditLogger;
-        this.metrics = metrics;
-        this.promptRegistry = promptRegistry;
-        this.intentRepository = intentRepository;
-        this.intentEvidenceService = intentEvidenceService;
+        this.aiService = Objects.requireNonNull(aiService, "aiService");
+        this.auditLogger = Objects.requireNonNull(auditLogger, "auditLogger");
+        this.metrics = Objects.requireNonNull(metrics, "metrics");
+        this.promptRegistry = Objects.requireNonNull(promptRegistry, "promptRegistry");
+        this.intentRepository = Objects.requireNonNull(intentRepository, "intentRepository");
+        this.intentEvidenceService = Objects.requireNonNull(intentEvidenceService, "intentEvidenceService");
     }
 
     @Override
@@ -153,9 +139,6 @@ public class IntentServiceImpl implements IntentService {
             String workspaceId,
             String projectId,
             String intentId) {
-        if (intentRepository == null) {
-            return Promise.of(Optional.empty());
-        }
         return intentRepository.findLatest(tenantId, workspaceId, projectId, intentId);
     }
 
@@ -165,25 +148,16 @@ public class IntentServiceImpl implements IntentService {
             String workspaceId,
             String projectId,
             String intentId) {
-        if (intentRepository == null) {
-            return Promise.of(List.of());
-        }
         return intentRepository.history(tenantId, workspaceId, projectId, intentId);
     }
 
     @Override
     public Promise<Long> count() {
-        if (intentRepository == null) {
-            return Promise.of(0L);
-        }
         return Promise.ofException(new IllegalStateException(
                 "Intent count requires a tenant-scoped repository call; use IntentRepository.count(tenantId)."));
     }
 
     private Promise<String> recordCaptureEvidence(IntentInput input, IntentSpec spec) {
-        if (intentEvidenceService == null) {
-            return Promise.of(null);
-        }
         return intentEvidenceService.recordCapture(input, spec);
     }
 
@@ -191,16 +165,10 @@ public class IntentServiceImpl implements IntentService {
             IntentSpec spec,
             IntentAnalysis analysis,
             Map<String, Object> groundingMetadata) {
-        if (intentEvidenceService == null) {
-            return Promise.of(null);
-        }
         return intentEvidenceService.recordAnalysis(spec, analysis, groundingMetadata);
     }
 
     private Promise<IntentVersionRecord> persistCapturedIntent(IntentInput input, IntentSpec spec, String evidenceId) {
-        if (intentRepository == null) {
-            return Promise.of(null);
-        }
         List<String> evidenceIds = evidenceId == null || evidenceId.isBlank() ? List.of() : List.of(evidenceId);
         IntentPersistenceContext context = new IntentPersistenceContext(
                 input.tenantId(),

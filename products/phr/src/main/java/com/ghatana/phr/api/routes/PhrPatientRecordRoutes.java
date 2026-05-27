@@ -43,7 +43,14 @@ public final class PhrPatientRecordRoutes {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.patientRecordService = Objects.requireNonNull(patientRecordService, "patientRecordService must not be null");
         this.consentService = Objects.requireNonNull(consentService, "consentService must not be null");
-        this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
+        this.policyEvaluator = policyEvaluator;
+    }
+
+    public PhrPatientRecordRoutes(
+            Eventloop eventloop,
+            PatientRecordService patientRecordService,
+            ConsentManagementService consentService) {
+        this(eventloop, patientRecordService, consentService, null);
     }
 
     /**
@@ -265,6 +272,9 @@ public final class PhrPatientRecordRoutes {
     }
 
     private Promise<Boolean> mayAccessPatient(PhrRouteSupport.PhrRequestContext context, String patientId) {
+        if (policyEvaluator == null) {
+            return Promise.of(PhrRouteSupport.canAccessPatientRecordForRole(context, patientId));
+        }
         return policyEvaluator.canAccessPatientRecordAsync(context, patientId)
             .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);
     }

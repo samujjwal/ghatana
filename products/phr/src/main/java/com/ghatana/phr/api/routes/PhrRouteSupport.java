@@ -10,6 +10,7 @@ import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -101,7 +102,8 @@ public final class PhrRouteSupport {
         if (value != null && !value.isBlank()) {
             return value.strip();
         }
-        return "no-correlation-id";
+        // B-003: Generate server correlation ID if missing
+        return java.util.UUID.randomUUID().toString();
     }
 
     static boolean hasClinicalRole(PhrRequestContext context) {
@@ -383,6 +385,47 @@ public final class PhrRouteSupport {
             throw new IllegalArgumentException(name + " must be between 0 and " + maxValue);
         }
         return parsed;
+    }
+
+    /**
+     * B-018: Parses JSON body to a DTO and validates it using Bean Validation.
+     *
+     * @param body the HTTP request body as ByteBuf
+     * @param dtoClass the target DTO class
+     * @param dtoName the name of the DTO for error messages
+     * @param <T> the DTO type
+     * @return the validated DTO
+     * @throws IllegalArgumentException if JSON parsing or validation fails
+     */
+    static <T> T parseAndValidateJson(ByteBuf body, Class<T> dtoClass, String dtoName) {
+        String json = body.getString(StandardCharsets.UTF_8);
+        try {
+            T dto = JSON.readValue(json, dtoClass);
+            PhrRequestValidator.validate(dto, dtoName);
+            return dto;
+        } catch (JsonProcessingException ex) {
+            throw new IllegalArgumentException("Invalid JSON in " + dtoName + ": " + ex.getMessage(), ex);
+        }
+    }
+
+    /**
+     * B-018: Parses JSON string to a DTO and validates it using Bean Validation.
+     *
+     * @param json the JSON string
+     * @param dtoClass the target DTO class
+     * @param dtoName the name of the DTO for error messages
+     * @param <T> the DTO type
+     * @return the validated DTO
+     * @throws IllegalArgumentException if JSON parsing or validation fails
+     */
+    static <T> T parseAndValidateJson(String json, Class<T> dtoClass, String dtoName) {
+        try {
+            T dto = JSON.readValue(json, dtoClass);
+            PhrRequestValidator.validate(dto, dtoName);
+            return dto;
+        } catch (JsonProcessingException ex) {
+            throw new IllegalArgumentException("Invalid JSON in " + dtoName + ": " + ex.getMessage(), ex);
+        }
     }
 
     private static String firstHeader(HttpRequest request, String... names) {

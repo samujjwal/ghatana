@@ -47,7 +47,7 @@ class IntentServiceTest extends EventloopTestBase {
         intentRepository = mock(IntentRepository.class);
         intentEvidenceService = mock(IntentEvidenceService.class);
         when(auditLogger.log(anyMap())).thenReturn(Promise.complete()); 
-        service = new IntentServiceImpl(aiService, auditLogger, metrics); 
+        service = IntentServiceTestFactory.create(aiService, auditLogger, metrics); 
     }
 
     private void stubAiSuccess(String text) { 
