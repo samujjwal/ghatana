@@ -117,7 +117,7 @@ export function mapPacketSuggestions(
   };
 
   return packet.availableActions
-    .map((action) => {
+    .map((action): SuggestedStep | null => {
       const metadata = parseSuggestionMetadata(action);
       if (!metadata) {
         return null;
@@ -129,8 +129,10 @@ export function mapPacketSuggestions(
         type: metadata.approvalRequired ? 'review' : (metadata.applyMode === 'manual' ? 'manual' : 'automation'),
         description: actionText(action.description) ?? '',
         ...metadata,
-        onAccept: () => onAccept(action),
-      } satisfies SuggestedStep;
+        onAccept: () => {
+          onAccept(action);
+        },
+      };
     })
     .filter((step): step is SuggestedStep => step != null);
 }

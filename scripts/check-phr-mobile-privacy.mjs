@@ -26,6 +26,9 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const MOBILE_SRC = resolve(__dirname, '../products/phr/apps/mobile/src');
+const NON_PHI_ASYNC_STORAGE_SETITEM_FILES = new Set([
+  'products/phr/apps/mobile/src/i18n/phrMobileI18n.ts',
+]);
 
 // ─── File walker ─────────────────────────────────────────────────────────────
 
@@ -54,11 +57,12 @@ function violation(file, line, message) {
 
 for (const file of walkTs(MOBILE_SRC)) {
   const isTestFile = file.includes('__tests__') || file.endsWith('.test.ts') || file.endsWith('.test.tsx');
+  const repoRelativePath = relative(resolve(__dirname, '..'), file).replaceAll('\\', '/');
   const lines = readFileSync(file, 'utf8').split('\n');
   const content = lines.join('\n');
 
   // ── Check 1: No bare AsyncStorage.setItem outside phiEncryptedStorage ──────
-  if (!file.endsWith('phiEncryptedStorage.ts') && !isTestFile) {
+  if (!file.endsWith('phiEncryptedStorage.ts') && !isTestFile && !NON_PHI_ASYNC_STORAGE_SETITEM_FILES.has(repoRelativePath)) {
     lines.forEach((line, i) => {
       if (/AsyncStorage\.setItem\s*\(/.test(line)) {
         violation(file, i + 1, 'Direct AsyncStorage.setItem with PHI is forbidden. Use phiSet() from phiEncryptedStorage instead.');

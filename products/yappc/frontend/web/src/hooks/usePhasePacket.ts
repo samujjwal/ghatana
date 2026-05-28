@@ -29,8 +29,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { LifecycleService } from '../clients/generated/api';
 import type {
   PhaseCockpitPacket,
+  PhasePanelView,
   PhasePacketRequest,
 } from '../types/phasePacket';
+
+type GeneratedPhaseCockpitPacket = Awaited<ReturnType<typeof LifecycleService.getPhasePacket>>;
 
 export function createPhasePacketCorrelationId(request: PhasePacketRequest): string {
   if (request.correlationId && request.correlationId.trim().length > 0) {
@@ -42,6 +45,33 @@ export function createPhasePacketCorrelationId(request: PhasePacketRequest): str
       ? crypto.randomUUID()
       : Math.random().toString(36).slice(2);
   return `phase-packet:${request.phase}:${request.projectId}:${Date.now()}:${randomPart}`;
+}
+
+function hasPhasePanelViewShape(value: unknown): value is PhasePanelView {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const candidate = value as Record<string, unknown>;
+  return typeof candidate.phase === 'string'
+    && typeof candidate.status === 'string'
+    && typeof candidate.summary === 'string'
+    && typeof candidate.recommendation === 'string'
+    && typeof candidate.owner === 'string'
+    && typeof candidate.confidence === 'number'
+    && typeof candidate.supportTrace === 'string'
+    && Array.isArray(candidate.cards);
+}
+
+export function normalizePhaseCockpitPacket(data: GeneratedPhaseCockpitPacket): PhaseCockpitPacket {
+  const rawPacket = data as GeneratedPhaseCockpitPacket & { readonly phasePanels?: unknown };
+  const phasePanels = Array.isArray(rawPacket.phasePanels)
+    ? rawPacket.phasePanels.filter(hasPhasePanelViewShape)
+    : [];
+
+  return {
+    ...data,
+    phasePanels,
+  };
 }
 
 // ============================================================================
@@ -95,7 +125,7 @@ export function usePhasePacket(request: PhasePacketRequest): UsePhasePacketResul
         request.workspaceId,
         correlationId
       );
-      setPacket(data);
+      setPacket(normalizePhaseCockpitPacket(data));
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch phase packet'));
     } finally {

@@ -68,7 +68,7 @@ class PhrFhirRoutesTest extends EventloopTestBase {
         @Test
         @DisplayName("200 — retrieves a FHIR resource by type and ID")
         void retrievesFhirResourceById() throws Exception {
-            HttpRequest request = HttpRequest.get("http://localhost/Patient/patient-1").build();
+            HttpRequest request = authenticatedGet("http://localhost/Patient/patient-1");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -83,7 +83,7 @@ class PhrFhirRoutesTest extends EventloopTestBase {
         @Test
         @DisplayName("200 — searches FHIR resources of the given type")
         void searchesFhirResources() throws Exception {
-            HttpRequest request = HttpRequest.get("http://localhost/Observation?patient=patient-1").build();
+            HttpRequest request = authenticatedGet("http://localhost/Observation?patient=patient-1");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -100,6 +100,9 @@ class PhrFhirRoutesTest extends EventloopTestBase {
         void createsFhirResource() throws Exception {
             HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/Patient")
                 .withHeader(HttpHeaders.CONTENT_TYPE, "application/fhir+json")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-health-1")
+                .withHeader(HttpHeaders.of("X-Principal-ID"), "patient-1")
+                .withHeader(HttpHeaders.of("X-Role"), "patient")
                 .withBody("{\"resourceType\":\"Patient\"}".getBytes(StandardCharsets.UTF_8))
                 .build();
 
@@ -116,6 +119,9 @@ class PhrFhirRoutesTest extends EventloopTestBase {
 
             HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/Observation")
                 .withHeader(HttpHeaders.CONTENT_TYPE, "application/fhir+json")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-health-1")
+                .withHeader(HttpHeaders.of("X-Principal-ID"), "patient-1")
+                .withHeader(HttpHeaders.of("X-Role"), "patient")
                 .withBody("{\"resourceType\":\"Observation\"}".getBytes(StandardCharsets.UTF_8))
                 .build();
 
@@ -123,5 +129,13 @@ class PhrFhirRoutesTest extends EventloopTestBase {
 
             assertThat(response.getCode()).isEqualTo(422);
         }
+    }
+
+    private static HttpRequest authenticatedGet(String url) {
+        return HttpRequest.get(url)
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-health-1")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "patient-1")
+            .withHeader(HttpHeaders.of("X-Role"), "patient")
+            .build();
     }
 }

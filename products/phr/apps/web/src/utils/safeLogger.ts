@@ -1,6 +1,6 @@
 /**
  * W-009: Safe logger for PHR web application.
- * Replaces console.error/console.log with safe diagnostics that include correlation IDs.
+ * Captures safe diagnostics with correlation IDs without writing PHI to console output.
  */
 
 export type LogLevel = 'info' | 'warn' | 'error';
@@ -33,20 +33,15 @@ export class SafeLogger {
       this.entries.shift();
     }
 
-    // Still log to console for development, but with safe formatting
-    const consoleMessage = `[${entry.timestamp}] [${level.toUpperCase()}] ${entry.message}${entry.correlationId ? ` [${entry.correlationId}]` : ''}`;
-    
-    switch (level) {
-      case 'error':
-        console.error(consoleMessage, context);
-        break;
-      case 'warn':
-        console.warn(consoleMessage, context);
-        break;
-      case 'info':
-      default:
-        console.log(consoleMessage, context);
-        break;
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('phr-diagnostic', {
+        detail: {
+          code: `PHR_WEB_${level.toUpperCase()}`,
+          level,
+          correlationId: entry.correlationId,
+          timestamp: entry.timestamp,
+        },
+      }));
     }
   }
 

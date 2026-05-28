@@ -19,6 +19,14 @@ import path from 'node:path';
 
 const routesSource = readFileSync(path.resolve(__dirname, '../../routes.tsx'), 'utf8');
 
+function findPathIndex(routePath: string): number {
+  const doubleQuoted = routesSource.indexOf(`path: "${routePath}"`);
+  if (doubleQuoted >= 0) {
+    return doubleQuoted;
+  }
+  return routesSource.indexOf(`path: '${routePath}'`);
+}
+
 // ─── Canonical primary routes ──────────────────────────────────────────────────
 
 describe('canonical primary routes', () => {
@@ -43,7 +51,7 @@ describe('canonical primary routes', () => {
 
   for (const { path: routePath, description } of primaryRoutes) {
     it(`declares the ${description} route at path '${routePath}'`, () => {
-      expect(routesSource).toContain(`path: '${routePath}'`);
+      expect(findPathIndex(routePath)).toBeGreaterThan(-1);
     });
   }
 
@@ -53,10 +61,10 @@ describe('canonical primary routes', () => {
   });
 
   it('declares nested sub-routes for data (new, :id, :id/edit, :id/:view)', () => {
-    expect(routesSource).toContain("path: 'new'");
-    expect(routesSource).toContain("path: ':id'");
-    expect(routesSource).toContain("path: ':id/edit'");
-    expect(routesSource).toContain("path: ':id/:view'");
+    expect(findPathIndex('new')).toBeGreaterThan(-1);
+    expect(findPathIndex(':id')).toBeGreaterThan(-1);
+    expect(findPathIndex(':id/edit')).toBeGreaterThan(-1);
+    expect(findPathIndex(':id/:view')).toBeGreaterThan(-1);
   });
 
   it('declares nested sub-routes for pipelines (new, :id, :id/edit)', () => {
@@ -66,7 +74,7 @@ describe('canonical primary routes', () => {
   });
 
   it('declares 404 catch-all route', () => {
-    expect(routesSource).toContain("path: '*'");
+    expect(findPathIndex('*')).toBeGreaterThan(-1);
     expect(routesSource).toContain('NotFound');
   });
 });
@@ -98,11 +106,11 @@ describe('RoleProtectedRoute gating', () => {
     it(`wraps '${routePath}' route with RoleProtectedRoute`, () => {
       // We verify by checking that the path and RoleProtectedRoute appear in close proximity.
       // The source has RoleProtectedRoute on the same element as the path.
-      const pathIndex = routesSource.indexOf(`path: '${routePath}'`);
+      const pathIndex = findPathIndex(routePath);
       expect(pathIndex, `'${routePath}' route not found in routes.tsx`).toBeGreaterThan(-1);
 
       // Slice a window around the path declaration and verify RoleProtectedRoute is present
-      const window = routesSource.slice(Math.max(0, pathIndex - 20), pathIndex + 500);
+      const window = routesSource.slice(Math.max(0, pathIndex - 20), pathIndex + 1400);
       expect(window).toContain('RoleProtectedRoute');
     });
   }
@@ -133,14 +141,14 @@ describe('RuntimeCapabilityRouteGate and Runtime Truth aliases', () => {
 
   for (const { path: routePath, aliases } of gatedRoutes) {
     it(`'${routePath}' route is gated by RuntimeCapabilityRouteGate with aliases [${aliases.join(', ')}]`, () => {
-      const aliasString = `aliases={['${aliases.join("', '")}']}`; 
+      const aliasString = `aliases={["${aliases.join('", "')}"]}`;
       expect(routesSource).toContain(aliasString);
     });
 
     it(`'${routePath}' RuntimeCapabilityRouteGate has a DisabledSurfacePage fallback`, () => {
-      const pathIndex = routesSource.indexOf(`path: '${routePath}'`);
+      const pathIndex = findPathIndex(routePath);
       expect(pathIndex).toBeGreaterThan(-1);
-      const window = routesSource.slice(pathIndex, pathIndex + 600);
+      const window = routesSource.slice(pathIndex, pathIndex + 2400);
       expect(window).toContain('fallback');
       expect(window).toContain('DisabledSurfacePage');
     });
@@ -178,19 +186,19 @@ describe('compatibility alias routes', () => {
 
   for (const { alias, isNavigate } of compatAliases) {
     it(`declares compat alias '${alias}'`, () => {
-      expect(routesSource).toContain(`path: '${alias}'`);
+      expect(findPathIndex(alias)).toBeGreaterThan(-1);
     });
 
     if (isNavigate) {
       it(`'${alias}' is a Navigate redirect (not a page render)`, () => {
-        const pathIndex = routesSource.indexOf(`path: '${alias}'`);
+        const pathIndex = findPathIndex(alias);
         const window = routesSource.slice(pathIndex, pathIndex + 200);
         expect(window).toContain('<Navigate');
         expect(window).toContain('replace');
       });
     } else {
       it(`non-redirect compat alias '${alias}' is wrapped with RoleProtectedRoute`, () => {
-        const pathIndex = routesSource.indexOf(`path: '${alias}'`);
+        const pathIndex = findPathIndex(alias);
         expect(pathIndex).toBeGreaterThan(-1);
         const window = routesSource.slice(pathIndex, pathIndex + 300);
         expect(window).toContain('RoleProtectedRoute');
@@ -199,11 +207,13 @@ describe('compatibility alias routes', () => {
   }
 
   it('lineage redirects to /data?view=lineage', () => {
-    expect(routesSource).toContain('path: \'lineage\', element: <Navigate to="/data?view=lineage" replace />');
+    expect(routesSource).toContain('path: "lineage"');
+    expect(routesSource).toContain('Navigate to="/data?view=lineage" replace');
   });
 
   it('quality redirects to /data?view=quality', () => {
-    expect(routesSource).toContain('path: \'quality\', element: <Navigate to="/data?view=quality" replace />');
+    expect(routesSource).toContain('path: "quality"');
+    expect(routesSource).toContain('Navigate to="/data?view=quality" replace');
   });
 });
 

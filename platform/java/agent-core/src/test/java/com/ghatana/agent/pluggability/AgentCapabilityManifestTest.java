@@ -224,6 +224,45 @@ class AgentCapabilityManifestTest {
         }
 
         @Test
+        @DisplayName("ORCHESTRATOR without explicit supervisionRole produces error")
+        void orchestratorWithoutExplicitRoleProducesError() {
+            AgentCapabilityManifest m = build(
+                    List.of(InteractionMode.ORCHESTRATOR),
+                    null,
+                    HandoffCapability.BIDIRECTIONAL);
+            AgentCapabilityManifestValidator.ValidationResult r =
+                    AgentCapabilityManifestValidator.validate(m);
+            assertThat(r.valid()).isFalse();
+            assertThat(r.errors()).anyMatch(e -> e.contains("explicit supervisionRole"));
+        }
+
+        @Test
+        @DisplayName("SUPERVISOR role without initiator handoff produces error")
+        void supervisorWithoutInitiatorHandoffProducesError() {
+            AgentCapabilityManifest m = build(
+                    List.of(InteractionMode.COLLABORATIVE),
+                    SupervisionRole.SUPERVISOR,
+                    HandoffCapability.RECEIVER_ONLY);
+            AgentCapabilityManifestValidator.ValidationResult r =
+                    AgentCapabilityManifestValidator.validate(m);
+            assertThat(r.valid()).isFalse();
+            assertThat(r.errors()).anyMatch(e -> e.contains("SUPERVISOR role requires INITIATOR_ONLY or BIDIRECTIONAL"));
+        }
+
+        @Test
+        @DisplayName("SUBORDINATE role without receiver handoff produces error")
+        void subordinateWithoutReceiverHandoffProducesError() {
+            AgentCapabilityManifest m = build(
+                    List.of(InteractionMode.SPECIALIST),
+                    SupervisionRole.SUBORDINATE,
+                    HandoffCapability.INITIATOR_ONLY);
+            AgentCapabilityManifestValidator.ValidationResult r =
+                    AgentCapabilityManifestValidator.validate(m);
+            assertThat(r.valid()).isFalse();
+            assertThat(r.errors()).anyMatch(e -> e.contains("SUBORDINATE role requires RECEIVER_ONLY or BIDIRECTIONAL"));
+        }
+
+        @Test
         @DisplayName("null manifest throws NullPointerException")
         void nullManifestThrows() { 
             assertThatThrownBy(() -> AgentCapabilityManifestValidator.validate(null)) 

@@ -443,6 +443,8 @@ final class RouteActionAccessRegistry {
         normalized = normalized.replaceAll("/alerts/[^/]+/(remediate|auto-remediate|escalate|acknowledge|resolve)$", "/alerts/:id/$1");
         normalized = normalized.replaceAll("/models/[^/]+$", "/models/:modelId");
         normalized = normalized.replaceAll("/action/memory/[^/]+/[^/]+", "/action/memory/:agentId/:memoryId");
+        normalized = normalized.replaceAll("/release-readiness/[^/]+/[^/]+/[^/]+$", "/release-readiness/:productId/:productVersion/:releaseTarget");
+        normalized = normalized.replaceAll("/release-readiness/(?!stats$)[^/]+$", "/release-readiness/:id");
         normalized = normalized.replaceAll("/entities/[^/]+/[^/]+$", "/entities/:collection/:id");
         normalized = normalized.replaceAll("/entities/[^/]+$", "/entities/:collection");
         return normalized;

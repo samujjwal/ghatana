@@ -28,6 +28,18 @@ import {
 function entityToCollection(e: BackendEntity): Collection {
     const d = e.data as Record<string, unknown>;
     const schema = d.schema as CollectionSchema | undefined;
+    const storageSizeRaw =
+        d.storageSizeBytes ??
+        d.storageBytes ??
+        d.storageSize ??
+        d.statsStorageBytes ??
+        null;
+    const storageSizeBytes =
+        typeof storageSizeRaw === 'number'
+            ? storageSizeRaw
+            : typeof storageSizeRaw === 'string' && storageSizeRaw.trim().length > 0
+                ? Number(storageSizeRaw)
+                : null;
     return {
         id: e.id,
         name: String(d.name ?? ''),
@@ -49,6 +61,7 @@ function entityToCollection(e: BackendEntity): Collection {
         retentionPolicy: d.retentionPolicy as Record<string, unknown> | undefined,
         lineage: d.lineage as Record<string, unknown> | undefined,
         owner: String(d.owner ?? d.createdBy ?? 'unknown'),
+        storageSizeBytes: Number.isFinite(storageSizeBytes) ? (storageSizeBytes as number) : undefined,
     };
 }
 
@@ -93,6 +106,7 @@ export interface Collection {
     retentionPolicy?: Record<string, unknown>;
     lineage?: Record<string, unknown>;
     owner: string;
+    storageSizeBytes?: number;
 }
 
 /**
@@ -186,23 +200,7 @@ export const collectionsApi = {
             '/entities/dc_collections',
             { ...data } as Record<string, unknown>
         );
-        return {
-            id: saved.id,
-            name: data.name,
-            description: data.description,
-            schemaType: data.schemaType,
-            status: 'draft',
-            isActive: false,
-            entityCount: 0,
-            schema: data.schema,
-            tags: data.tags ?? [],
-            createdAt: saved.createdAt ?? new Date().toISOString(),
-            updatedAt: saved.createdAt ?? new Date().toISOString(),
-            createdBy: 'current-user',
-            lifecycleStatus: 'DRAFT',
-            operationalStatus: 'healthy',
-            owner: 'current-user',
-        };
+        return collectionsApi.get(saved.id);
     },
 
     /**
@@ -242,13 +240,13 @@ export const collectionsApi = {
      */
     getStats: async (id: string): Promise<{
         entityCount: number;
-        storageSize: number;
+        storageSize: number | null;
         lastUpdated: string;
     }> => {
         const col = await collectionsApi.get(id);
         return {
             entityCount: col.entityCount,
-            storageSize: 0,
+            storageSize: col.storageSizeBytes ?? null,
             lastUpdated: col.updatedAt,
         };
     },

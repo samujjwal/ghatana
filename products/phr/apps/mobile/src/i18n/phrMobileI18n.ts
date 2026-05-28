@@ -26,6 +26,7 @@ export type PhrLocale = 'en' | 'ne' | 'en-XA';
 
 const locales: Record<string, LocaleShape> = { en, ne };
 const LOCALE_STORAGE_KEY = 'phr-mobile-locale';
+const I18N_DIAGNOSTIC_EVENT = 'phr-mobile:i18n-diagnostic';
 
 let activeLocale: string = 'en';
 let localeInitialized = false;
@@ -42,9 +43,9 @@ export async function initializeLocale(): Promise<void> {
     if (storedLocale && storedLocale in locales) {
       activeLocale = storedLocale;
     }
-  } catch (error) {
+  } catch {
     // If AsyncStorage fails, default to English
-    console.warn('Failed to load locale from storage, using default');
+    dispatchI18nDiagnostic('PHR_MOBILE_LOCALE_LOAD_FAILED');
   }
   localeInitialized = true;
 }
@@ -55,8 +56,14 @@ export async function setLocale(locale: string): Promise<void> {
   
   try {
     await AsyncStorage.setItem(LOCALE_STORAGE_KEY, normalizedLocale);
-  } catch (error) {
-    console.warn('Failed to persist locale to storage');
+  } catch {
+    dispatchI18nDiagnostic('PHR_MOBILE_LOCALE_PERSIST_FAILED');
+  }
+}
+
+function dispatchI18nDiagnostic(code: string): void {
+  if (typeof globalThis.dispatchEvent === 'function') {
+    globalThis.dispatchEvent(new CustomEvent(I18N_DIAGNOSTIC_EVENT, { detail: { code } }));
   }
 }
 

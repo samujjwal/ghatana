@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
  */
 public final class RouteSecurityRegistry {
 
-    // GENERATED_ROUTER_CHECKSUM: 74666983f8d76e032b50896a5de911eea1819cc93ccc7afe14b18d4e83a6ed8e
+    // GENERATED_ROUTER_CHECKSUM: b0e361ad1d1e37148e6f8aa364ca3e7e025ab06c32d08eee99d44d67fbc5b8d1
 
     private static final Map<String, RouteSecurityMetadata> METADATA_BY_ROUTE;
     private static final Map<String, Pattern> MATCHERS_BY_ROUTE;
@@ -270,6 +270,11 @@ public final class RouteSecurityRegistry {
         route(map, "GET", "/api/v1/reports", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/reports");
         route(map, "POST", "/api/v1/reports", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/reports");
         route(map, "GET", "/api/v1/reports/{reportId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/reports/{reportId}");
+        route(map, "GET", "/api/v1/release-readiness", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "GET /api/v1/release-readiness");
+        route(map, "POST", "/api/v1/release-readiness", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/release-readiness");
+        route(map, "GET", "/api/v1/release-readiness/stats", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "GET /api/v1/release-readiness/stats");
+        route(map, "GET", "/api/v1/release-readiness/{productId}/{productVersion}/{releaseTarget}", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "GET /api/v1/release-readiness/{productId}/{productVersion}/{releaseTarget}");
+        route(map, "DELETE", "/api/v1/release-readiness/{id}", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "DELETE /api/v1/release-readiness/{id}");
         route(map, "GET", "/api/v1/settings", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/settings");
         route(map, "POST", "/api/v1/settings", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/settings");
         route(map, "POST", "/api/v1/settings/approval-request", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/settings/approval-request");

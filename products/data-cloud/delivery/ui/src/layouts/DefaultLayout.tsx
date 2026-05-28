@@ -12,10 +12,10 @@
 import React, { useState } from 'react';
 import { Outlet, NavLink } from 'react-router';
 import {
+    type LucideIcon,
     Database,
     Workflow,
     Shield,
-    Bell,
     Settings,
     Search,
     ChevronLeft,
@@ -23,14 +23,14 @@ import {
     Menu,
     X,
     Home,
-    Brain,
     Terminal,
-    Package,
     Command,
     Activity,
-    Box,
     Network,
-    Bot,
+    BarChart3,
+    ListChecks,
+    ShieldCheck,
+    Settings2,
     ChevronDown,
 } from 'lucide-react';
 import { cn, bgStyles, borderStyles, textStyles } from '../lib/theme';
@@ -89,10 +89,8 @@ function mapProductViewModeToShellRole(mode: ProductViewMode): ShellRole {
  * NOTE: Settings is removed from navigation and only accessible via direct link (/settings)
  * because it's a boundary shell with no writable backed features. See unsupportedSurfaceRegistry.
  *
- * Operator surfaces (Events, Alerts, Memory, Entities, Context, Fabric, Agents)
- * are restored as canonical first-class routes. Navigation is now generated from
- * the canonical RouteSurfaceRegistry to ensure shell disclosure always matches
- * route capability truth (RBAC-001).
+ * Primary navigation stays outcome-first and lightweight. Advanced and preview
+ * surfaces remain directly routable but are intentionally non-discoverable.
  */
 const navSections: NavSection[] = [
     {
@@ -100,29 +98,39 @@ const navSections: NavSection[] = [
         items: [
             { to: '/', label: 'Home', icon: <Home className="h-4 w-4" />, exact: true },
             { to: '/data', label: 'Data', icon: <Database className="h-4 w-4" /> },
-            { to: '/connectors', label: 'Connectors', icon: <Network className="h-4 w-4" />, minimumShellRole: 'operator' },
             { to: '/pipelines', label: 'Pipelines', icon: <Workflow className="h-4 w-4" /> },
             { to: '/query', label: 'Query', icon: <Terminal className="h-4 w-4" /> },
-        ],
-    },
-    {
-        // DC-UX-040: renamed from 'Intelligence' to 'Observability' — these are operational views, not an AI product surface
-        title: 'Observability',
-        items: [
-            { to: '/insights', label: 'Insights', icon: <Brain className="h-4 w-4" />, minimumShellRole: 'operator' },
             { to: '/trust', label: 'Trust', icon: <Shield className="h-4 w-4" />, minimumShellRole: 'operator' },
-            { to: '/events', label: 'Events', icon: <Activity className="h-4 w-4" />, minimumShellRole: 'operator' },
-            { to: '/alerts', label: 'Alerts', icon: <Bell className="h-4 w-4" />, minimumShellRole: 'operator' },
         ],
     },
     {
         title: 'Manage',
         items: [
-            { to: '/plugins', label: 'Plugins', icon: <Package className="h-4 w-4" />, minimumShellRole: 'operator' },
             { to: '/operations', label: 'Operations', icon: <Settings className="h-4 w-4" />, minimumShellRole: 'admin' },
         ],
     },
 ];
+
+const ROUTE_ICON_MAP: Record<string, LucideIcon> = {
+    Home,
+    Database,
+    Network,
+    Workflow,
+    Terminal,
+    BarChart3,
+    Shield,
+    Activity,
+    Settings,
+    ListChecks,
+    ShieldCheck,
+    Settings2,
+};
+
+function getRouteIcon(iconName?: string): React.ReactNode {
+    const Icon = iconName ? ROUTE_ICON_MAP[iconName] : undefined;
+    const ResolvedIcon = Icon ?? Activity;
+    return <ResolvedIcon className="h-4 w-4" />;
+}
 
 /**
  * Build navigation items from canonical route registry for a given role.
@@ -131,25 +139,16 @@ const navSections: NavSection[] = [
 export function buildNavFromRegistry(shellRole: ShellRole): NavSection[] {
     const discoverable = getDiscoverableRouteSurfaces(shellRole);
 
-    const corePaths = new Set(['/', '/data', '/connectors', '/pipelines', '/query']);
-    const intelPaths = new Set(['/insights', '/trust', '/events', '/alerts']);
-    const managePaths = new Set(['/plugins', '/operations']);
+    const corePaths = new Set(['/', '/data', '/pipelines', '/query', '/trust']);
+    const managePaths = new Set(['/operations']);
 
     const coreItems: NavItem[] = discoverable
         .filter((r) => corePaths.has(r.path))
         .map((r) => ({
             to: r.path,
             label: r.label,
-            icon: <Activity className="h-4 w-4" />,
+            icon: getRouteIcon(r.iconName),
             exact: r.path === '/',
-        }));
-
-    const intelItems: NavItem[] = discoverable
-        .filter((r) => intelPaths.has(r.path))
-        .map((r) => ({
-            to: r.path,
-            label: r.label,
-            icon: <Activity className="h-4 w-4" />,
             minimumShellRole: r.minimumShellRole as ShellRole,
         }));
 
@@ -158,13 +157,12 @@ export function buildNavFromRegistry(shellRole: ShellRole): NavSection[] {
         .map((r) => ({
             to: r.path,
             label: r.label,
-            icon: <Activity className="h-4 w-4" />,
+            icon: getRouteIcon(r.iconName),
             minimumShellRole: r.minimumShellRole as ShellRole,
         }));
 
     return [
         ...(coreItems.length > 0 ? [{ title: 'Core', items: coreItems }] : []),
-        ...(intelItems.length > 0 ? [{ title: 'Observability', items: intelItems }] : []),
         ...(manageItems.length > 0 ? [{ title: 'Manage', items: manageItems }] : []),
     ];
 }
@@ -421,10 +419,10 @@ function Header({
                                 <div className="space-y-1">
                                     <div className="px-2 pb-1 pt-2">
                                         <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                            Product mode
+                                            View mode preset
                                         </p>
                                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                            Product mode is a UI focus preset. It does not grant backend permissions.
+                                            View mode presets tune UI focus only. Backend permissions are always enforced independently.
                                         </p>
                                     </div>
                                     {PRODUCT_VIEW_MODES.map((mode) => {

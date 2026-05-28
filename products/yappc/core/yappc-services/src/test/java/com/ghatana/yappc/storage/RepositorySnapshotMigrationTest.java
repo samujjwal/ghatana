@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @Testcontainers
 @DisplayName("Repository Snapshot Migration Tests")
-@Disabled("Requires proper Flyway integration for SQL script execution")
+@Disabled("GH-1201 Requires proper Flyway integration for SQL script execution")
 class RepositorySnapshotMigrationTest {
 
     @Container

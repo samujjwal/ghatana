@@ -74,7 +74,7 @@ export function ObservationsPage(): React.ReactElement {
   return (
     <div className="stack gap-lg">
       <Card>
-        <CardHeader title="Observations" subheader="Clinical trends and lab results" />
+        <CardHeader title={t('observations.title')} subheader={t('observations.subheader')} />
         <CardContent>
           <div className="stack gap-md">
             {/* Observation groups with trend indicators */}

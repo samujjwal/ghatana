@@ -1,834 +1,638 @@
-Below is the full implementation task list grouped to minimize verification rounds. The grouping is based on the YAPPC audit at commit `c2fe33114186370ec5965656ed5c61f60e8176c5`.
+Executed against `samujjwal/ghatana` at commit `2a37e8d0702271a10d47f5707a2720fd657c7f54`.
 
-The most efficient verification order is:
+I audited the full snapshot directionally, not the commit diff. I did not run the build/test commands locally, so the scores below are based on code/docs/registry inspection rather than fresh execution results.
 
-1. **Backend phase packet/action truth**
-2. **Frontend phase cockpit simplification**
-3. **Kernel ProductUnitIntent contract hardening**
-4. **Adapter-seam / reuse-first cleanup**
-5. **Learn/Evolve feature completion**
-6. **Shell/admin/kernel-health/product-family UI consistency**
-7. **Docs and test alignment**
+## 1. Executive Summary
 
-This avoids re-running broad regression checks after every small file change.
+**Overall production-readiness score: 2.8 / 5**
 
-## Execution Update (2026-05-27)
+Data Cloud is now much closer to a coherent product than a loose library set. The strongest evidence is the plane-based product architecture, canonical module mapping, outcome-first navigation model, Action Plane/AEP consolidation direction, route/security registry, and production-oriented security filter. The canonical docs define Data Cloud as one customer-facing product, with the Action Plane formerly AEP integrated under `products/data-cloud/planes/action` for automation, pipelines, patterns, agents, reviews, runs, and learning. 
 
-Completed in current implementation wave:
+However, it is **not production-ready yet**. The main blockers are:
 
-- Kernel verification blocker cleared: `:products:yappc:kernel-bridge:test` now passes after stabilizing `YappcKernelDataCloudE2ETest` mapper stubs.
-- Frontend cockpit action section generalized around backend action metadata:
-	- generic grouped action section rendering in `PhaseCockpitView.tsx`
-	- reusable section model in `PhaseActionSection.tsx`
-	- backend-driven category grouping and run-context fallbacks in `PhaseCockpitContainer.tsx`
-- Frontend verification passed:
-	- `pnpm -C products/yappc/frontend/web type-check`
-	- `pnpm -C products/yappc/frontend/web test:unit -- src/routes/app/project/__tests__/phase-cockpit-routes.test.tsx`
-- Adapter-seam delta completed for runtime module:
-	- removed legacy Data-Cloud SPI constructor path from `EventPublisher.java`
-	- removed direct `:products:data-cloud:planes:shared-spi` dependency from `core/agents/runtime/build.gradle.kts`
-	- removed unused `YappcAepIntegration` facade and isolated test-only coverage to reduce dead direct AEP registry import surface
-	- updated `MODULE_CATALOG.md` pending seam table accordingly
+1. **Data Cloud registry claims implemented surfaces but conformance flags remain false** for manifest, observability, security, data access, bridge, agent definitions, mastery bindings, evaluation packs, and runtime module. 
+2. **AEP/Action Plane boundary is still transitional**: AEP docs say boundary cleanup is in progress and that some AEP implementation modules remain under Data Cloud temporarily. 
+3. **AEP itself declares partially implemented foundations** and explicitly says the unified operator model, PatternSpec compiler, EventCloud SPI, pattern lifecycle, learning loop, replay-safe agent execution, and CI/build gates are not complete. 
+4. **Audio-video is still experimental** in the product registry, with lifecycle execution disabled and missing product manifest/media privacy/content safety/artifact-retention readiness. 
+5. **UI is powerful but still too technical and route-heavy** for “0 cognitive load”; preview surfaces such as Memory, Entities, Context, Fabric, and Agents are discoverable. 
+6. **i18n is incomplete**: an i18n config exists, but major UI/layout/page strings are still hardcoded.  
+7. **Route truth is not fully finished**: route manifest docs say Phase 1 is complete, but UI generation, OpenAPI validation, SDK metadata generation, and route docs are still future phases. 
+8. **API contract tests and integration tests are advisory**, while production readiness needs them to be release-blocking for Data Cloud. 
+9. **Data collection UI still derives important quality advisory logic client-side** instead of relying on a backend-owned quality/intelligence contract. 
+10. **Shared library boundaries are known unresolved work**, with architecture docs explicitly listing platform modules that need re-evaluation/splitting. 
 
-Validation notes for the runtime seam delta:
-
-- Main/runtime compilation is green (`:products:yappc:core:agents:runtime:compileJava`, `:products:yappc:core:agents:runtime:classes`).
-- Runtime governed integration drift fixed (`memoryStore` and release repository stubs), and full runtime tests now pass:
-	- `./gradlew :products:yappc:core:agents:runtime:test` (253 tests, 0 failures)
-
-Additional FE-01 progress completed:
-
-- `usePhaseActionHandlers.ts` now routes auxiliary review/post-run actions through generic `PhaseAction` metadata (`serverOperation` / `actionId`) instead of dedicated phase-specific handlers.
-- `PhaseCockpitContainer.tsx` now uses generic action execution for grouped sections, including compatibility fallback actions.
-- Updated and validated focused frontend tests:
-	- `pnpm vitest src/routes/app/project/__tests__/usePhaseActionHandlers.test.tsx src/routes/app/project/__tests__/phase-cockpit-routes.test.tsx`
-	- `pnpm type-check`
-
-Additional backend/frontend hardening completed:
-
-- BE-02 fail-closed tenant tier parsing enforced in `PhasePacketServiceImpl`:
-	- missing/invalid/unknown tier values now resolve to `FREE` (no permissive fallback to `PRO`)
-	- added regression test: unknown tier string fails closed
-	- validation: `./gradlew :products:yappc:core:yappc-services:test --tests com.ghatana.yappc.services.phase.PhasePacketServiceImplTest`
-- BE-05 alignment continued in cockpit rendering:
-	- removed compatibility fallback section synthesis in `PhaseCockpitContainer.tsx`
-	- route test packet fixtures now provide backend-style `generate.*` and `run.*` actions directly
-	- validation re-run: focused cockpit route + handler tests, plus frontend type-check
-- FE-02 hardening completed in mapper behavior:
-	- `phasePacketMappers.ts` now uses strict metadata parsing for suggestion payloads without synthetic fallback fields
-	- added regression test proving suggestions are omitted when backend recommendation metadata is missing
-	- validation re-run: `phasePacketMappers`, cockpit routes, action handlers, and frontend type-check
-
-## Task Ledger (2026-05-28)
-
-Legend:
-
-- COMPLETE-VERIFIED: implementation and focused verification completed in this workspace state.
-- PARTIAL-VERIFIED: significant implementation exists and validates in focused checks, but one or more acceptance details remain open.
-- OPEN: not yet verified complete.
-
-| Task | Status | Verification / Evidence |
-| --- | --- | --- |
-| BE-01 | COMPLETE-VERIFIED | `PhasePacketServiceImplTest` includes invalid-phase fail-closed case; focused Gradle run passed. |
-| BE-02 | COMPLETE-VERIFIED | `PhasePacketServiceImplTest` tenant-tier fail-closed tests passed. |
-| BE-03 | COMPLETE-VERIFIED | `PhaseActionAuthorizationServiceTest` and `PhasePacketServiceImplTest` dependency-degraded feature flag cases passed. |
-| BE-04 | COMPLETE-VERIFIED | `PhasePacket.PhaseAction` includes target metadata fields; frontend action-handler tests passed with generic metadata flow. |
-| BE-05 | COMPLETE-VERIFIED | Backend action categories/operations validated by phase action tests and cockpit route tests using backend-style actions. |
-| BE-06 | COMPLETE-VERIFIED | `PhaseProjectStateService`, `PhaseEvidenceService`, `PhaseGovernanceService`, `PhaseActivityFeedService` present and used; service tests pass. |
-| BE-07 | COMPLETE-VERIFIED | `PhaseBlockerMapper` extracted and exercised in phase packet test suite. |
-| BE-08 | COMPLETE-VERIFIED | `ProductUnitIntentExporterTest` validates explicit `sourceProvider` and reject-unknown behavior. |
-| FE-01 | COMPLETE-VERIFIED | `usePhaseActionHandlers.test.tsx` and route tests pass with generic action metadata execution. |
-| FE-02 | COMPLETE-VERIFIED | `phasePacketMappers.test.ts` passes with strict backend metadata behavior. |
-| FE-03 | COMPLETE-VERIFIED | `PhaseCurrentStateCard` + cockpit packet tests pass; duplicate summary handling consolidated. |
-| FE-04 | COMPLETE-VERIFIED | `PhaseCockpitView.tsx` extracted; container/view split is present and tested. |
-| FE-05 | COMPLETE-VERIFIED | Phase cockpit path no longer depends on local `components/ui/Button`; phase-focused tests pass. |
-| FE-06 | COMPLETE-VERIFIED | Generic `PhaseActionSection` present and validated by cockpit route/action tests. |
-| FE-07 | COMPLETE-VERIFIED | Degraded recovery-first panel flow present; technical details collapsed behind details block in cockpit view. |
-| KRN-01 | COMPLETE-VERIFIED | `ProductUnitIntentDocument` is now owned by `platform:contracts` (`com.ghatana.contracts.kernel`) and consumed by `ProductUnitIntentExporter`; scaffold API contract tests pass. |
-| KRN-02 | COMPLETE-VERIFIED | Registry and exporter source-provider validation tests pass (`ProductUnitKernelContractRegistryTest`, `ProductUnitIntentExporterTest`). |
-| KRN-03 | COMPLETE-VERIFIED | Exporter validates inferred kind and implementation status against registry; tests pass. |
-| KRN-04 | COMPLETE-VERIFIED | Production truth-source guard tests pass (`YappcEnvironmentConfigTest`, `KernelLifecycleEventIngestServiceTest`). |
-| ARCH-01 | COMPLETE-VERIFIED | `:products:yappc:infrastructure:aep` exists, is wired in settings/dependencies, and tests pass. |
-| ARCH-02 | COMPLETE-VERIFIED | Capability modules in scope are seam-clean, and module catalog is reconciled to adapter-owned Data Cloud/AEP boundaries with no open adapter-seam TODO state. |
-| ARCH-03 | COMPLETE-VERIFIED | Deprecated `core:spi` wrapper references are absent in current codebase search. |
-| UI-01 | COMPLETE-VERIFIED | `YappcPageShell` applied across phase cockpit/kernel-health/product-family/admin routes (search-verified). |
-| UI-02 | COMPLETE-VERIFIED | Typed backend-owned `phasePanels` rendering is canonicalized in `PhaseStatusPanelsCanonical` and tested. |
-| UI-03 | COMPLETE-VERIFIED | Canonical phase cockpit routes/components use backend-driven typed panels and shared shell/design primitives; component inventory checks remain clean. |
-| UI-04 | COMPLETE-VERIFIED | Compatibility/package consolidation guardrails are enforced via inventory checks and module/package docs; no new compat imports in active cockpit/kernel/admin/product-family surfaces. |
-| LE-01 | COMPLETE-VERIFIED | `LearningInsightService` extracted and wired via `PhasePacketAssembler`; focused phase assembler/service tests pass. |
-| LE-02 | COMPLETE-VERIFIED | Learn route cockpit integration with backend-owned panel content is covered by route tests. |
-| EV-01 | COMPLETE-VERIFIED | `EvolutionPlanService` extracted and wired via `PhasePacketAssembler`; focused phase assembler/service tests pass. |
-| EV-02 | COMPLETE-VERIFIED | Guided Evolve phase UI is rendered through canonical typed panel data and covered by focused route/panel integration tests. |
-| DOC-01 | COMPLETE-VERIFIED | `ARCHITECTURE.md` and backlog status docs are reconciled to implemented Learn/Evolve hardening state. |
-| DOC-02 | COMPLETE-VERIFIED | `MODULE_CATALOG.md` adapter-seam section is reconciled to current resolved boundary ownership state. |
-
-Operational note:
-
-- Existing wave runner task command currently fails early with plan parser mismatch (`Expected 64 plan tasks, found 7`), so this ledger is the authoritative state for this implementation wave.
+Highest-leverage next pass: **finish the canonical Data Cloud runtime contract pass**—route truth, runtime truth, backend capability contracts, UI gating, and production test promotion—before adding new features.
 
 ---
 
-# 1. Backend Phase Packet, Action, Readiness, and Degraded-State Group
+## 2. Scope Inspected
 
-## Verification target
+I inspected representative product, architecture, registry, UI, backend, security, AEP, agent, audio-video, and test surfaces, including:
 
-Run one backend-focused verification pass after this group:
+| Area                     | Files / evidence inspected                                                                                                              |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Repo/product registry    | `config/canonical-product-registry.json`, generated Gradle includes, root Gradle settings                                               |
+| Data Cloud docs          | `products/data-cloud/README.md`, `docs/architecture/PLANE_ARCHITECTURE.md`, `docs/ROUTE_MANIFEST_SYSTEM.md`, `docs/aep/README.md`       |
+| Backend routing/security | `DataCloudRouterBuilder.java`, `RouteSecurityRegistry.java`, `DataCloudSecurityFilter.java`, `EntityCrudHandler.java`                   |
+| UI shell/routes          | `delivery/ui/package.json`, `routes.tsx`, `DefaultLayout.tsx`, `RouteCapabilityRegistry.ts`, `RoleProtectedRoute.tsx`, `i18n/config.ts` |
+| UI Data Explorer         | `DataExplorer.tsx`, `collections.ts`                                                                                                    |
+| AEP                      | `products/aep/ARCHITECTURE.md`, Data Cloud AEP boundary docs                                                                            |
+| Agents                   | `docs/agent-system/README.md`, `DataAnomalyDetectorAgent.java`                                                                          |
+| Audio-video              | product registry entry, capability map, Data Cloud Action Plane audio-video capability registration                                     |
+| Tests                    | UI route inventory test, route/security/openapi test references, package scripts                                                        |
 
-```bash
-./gradlew :products:yappc:core:yappc-services:test
-./gradlew :products:yappc:integration:test
-```
-
-Also run any focused tests for:
-
-* phase packet construction
-* phase action authorization
-* phase gate context
-* degraded packet behavior
-* platform run status
-* tenant/feature-flag behavior
-
-## Why group these together
-
-These files all shape the canonical backend-owned `PhasePacket`. The frontend should only render this contract. Fixing these together prevents repeated frontend churn.
+The repository is broad; this was a code-grounded audit of the main product architecture and representative execution paths, not a line-by-line audit of every file.
 
 ---
 
-## Task BE-01 — Replace invalid phase fallback with explicit degraded/invalid phase blocker
+## 3. Current Product Map
 
-| Field               | Details                                                                                                                                                                                                                |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Priority            | P0                                                                                                                                                                                                                     |
-| File                | `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/phase/PhasePacketServiceImpl.java`                                                                                                        |
-| Current issue       | `queryPhaseBlockers` catches an invalid phase and defaults to `PhaseType.INTENT`. This can silently validate the wrong lifecycle phase.                                                                                |
-| Change              | Replace fallback-to-INTENT with explicit invalid-phase degraded behavior. Return a blocker such as `INVALID_PHASE`, severity `CRITICAL`, resolvable `false`, and include phase/project/workspace/correlation metadata. |
-| Why                 | Correctness: invalid input must fail closed, not run intent gates.                                                                                                                                                     |
-| Acceptance criteria | Invalid phase never uses INTENT gates. Packet indicates degraded/blocked state with clear recovery message.                                                                                                            |
-| Tests               | Add/adjust `PhasePacketServiceImplTest` or equivalent: invalid phase returns critical blocker and `readiness.canAdvance=false`.                                                                                        |
+### Data Cloud
 
----
+Data Cloud has a strong plane model: Experience, Contract, Runtime Truth, Data, Event, Context, Intelligence, Governance, Action, and Operations planes. The README defines this as the active product structure and lists the active module map across `planes/*`, `delivery/*`, `extensions/*`, and deployment assets. 
 
-## Task BE-02 — Fail closed on tenant tier parse/lookup failure
+The generated Gradle includes show a large Data Cloud product surface with modules for Data, Event, Intelligence, Governance, API, Launcher, SDK, Contracts, Agent Registry/Catalog, Action Plane runtime, Action security, scaling, observability, orchestration, compliance, kernel bridge, and integration tests. 
 
-| Field               | Details                                                                                                                                                                                      |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Priority            | P0                                                                                                                                                                                           |
-| File                | `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/phase/PhasePacketServiceImpl.java`                                                                              |
-| Current issue       | `determineTenantTier` defaults to `PRO` on exception.                                                                                                                                        |
-| Change              | Replace fallback with `FREE` or a degraded tier state that disables privileged actions. Prefer explicit `FREE` plus governance/degraded record unless the domain supports an `UNKNOWN` tier. |
-| Why                 | Security/correctness: a tier error must not expand permissions.                                                                                                                              |
-| Acceptance criteria | Tier parse failure does not enable PRO/ENTERPRISE actions.                                                                                                                                   |
-| Tests               | Add tenant-tier failure test: malformed tier disables `phase.advance`, `phase.governance.configure`, and report export unless explicitly entitled elsewhere.                                 |
+### AEP / Action Plane
 
----
+The canonical Data Cloud docs say the Action Plane is Data Cloud’s governed automation runtime, but AEP docs still preserve AEP ownership of EventCloud, PatternSpec/EPL, operator runtime, pattern lifecycle, adaptive learning, agent capabilities, and adaptive event governance. 
 
-## Task BE-03 — Make feature flag dependency failure explicit, not silently empty
+This is directionally correct, but implementation is still transitional.
 
-| Field               | Details                                                                                                                                                                                                                                                  |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Priority            | P0                                                                                                                                                                                                                                                       |
-| File                | `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/phase/PhaseFeatureFlagProvider.java`                                                                                                                                        |
-| Current issue       | `queryEnabledTenantFeatureFlags` logs a Data Cloud error and returns an empty list.                                                                                                                                                                      |
-| Change              | Return a typed degraded feature-flag result or annotate project state with `featureFlagsDegraded=true` and `featureFlagsDegradedReason`. Then `PhaseActionAuthorizationService` must disable entitlement-dependent actions with a clear disabled reason. |
-| Why                 | Empty flags can look like normal “not entitled” state; production users need a clear dependency-degraded state.                                                                                                                                          |
-| Acceptance criteria | Data Cloud flag query failure creates deterministic disabled actions with `phaseAction.disabled.featureFlagDependencyUnavailable` or equivalent.                                                                                                         |
-| Tests               | Add feature-flag dependency failure test for PRO/ENTERPRISE user.                                                                                                                                                                                        |
+### Agents
+
+Agents exist across platform and Data Cloud extension layers. The agent-system documentation defines a strong target path from `AgentDefinition` through release, learning contract, mastery, governed dispatch, memory, learning delta, evaluation, promotion, and mastery transition. 
+
+Concrete Data Cloud agent examples exist, such as a statistical anomaly detector agent with a descriptor, typed input/output, confidence, and explanation. 
+
+### Audio-video
+
+Audio-video is registered as an experimental shared service. Registry modules include persistence, security, cache, messaging, integration tests, multimodal, STT, TTS, vision, and common libraries. 
+
+Data Cloud’s Action Plane has audio-video tool registrations for STT, TTS, vision analysis, and multimodal inference, with remote endpoints and policy tags. 
+
+### Shared libraries
+
+Shared platform modules include observability, security, workflow, AI integration, governance, agent-core, audit, runtime, policy, tool-runtime, messaging, data governance, and identity. 
+
+The architecture docs explicitly warn that some shared modules became shared because Data Cloud and AEP boundaries drifted, and they define rules for what should remain platform-level versus move back into Data Cloud or Action Plane. 
 
 ---
 
-## Task BE-04 — Add backend action target metadata so frontend does not special-case intent/validate
+## 4. Readiness Scorecard
 
-| Field               | Details                                                                                                                                                                                                                                                                                                      |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Priority            | P0                                                                                                                                                                                                                                                                                                           |
-| Files               | `PhaseActionAuthorizationService.java`, `PhasePacket.java`, `PhasePacketServiceImpl.java`                                                                                                                                                                                                                    |
-| Current issue       | Frontend special-cases intent by navigating to `?drawer=idea`, and validate by checking lifecycle preview locally.                                                                                                                                                                                           |
-| Change              | Extend `PhasePacket.PhaseAction` with explicit action target metadata if not already enough: `targetType`, `targetRoute`, `targetDrawer`, `requiresPreview`, `serverOperation`, `postSuccessBehavior`. Populate for intent drawer, validate transition, generate review, run retry/rollback/promote/observe. |
-| Why                 | Backend must own lifecycle/action truth. Frontend should only render/dispatch action metadata.                                                                                                                                                                                                               |
-| Acceptance criteria | No phase-specific branching remains in frontend action handlers.                                                                                                                                                                                                                                             |
-| Tests               | Backend action contract tests for each phase action. Frontend tests verify generic action dispatch.                                                                                                                                                                                                          |
-
----
-
-## Task BE-05 — Convert generate review and run post-actions into backend-provided `PhaseAction`s
-
-| Field               | Details                                                                                                                                                                                                                                                   |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Priority            | P1                                                                                                                                                                                                                                                        |
-| Files               | `PhaseActionAuthorizationService.java`, `PhasePacketServiceImpl.java`, `PhasePacket.java`                                                                                                                                                                 |
-| Current issue       | Generate review actions and run retry/rollback/promote are rendered as separate frontend-only blocks.                                                                                                                                                     |
-| Change              | Add action categories and operation IDs for: `generate.apply`, `generate.reject`, `generate.rollback`, `run.retry`, `run.rollback`, `run.promote`, `run.observe`. Add `reviewRequired`, `rollbackSupported`, `dangerLevel`, and `requiresActor` metadata. |
-| Why                 | One canonical action model reduces UI complexity and prevents action drift.                                                                                                                                                                               |
-| Acceptance criteria | Generate/run secondary action panels can be deleted or replaced by one generic action section.                                                                                                                                                            |
-| Tests               | Action authorization tests for generate and run actions under allowed, denied, degraded, and missing-run contexts.                                                                                                                                        |
-
----
-
-## Task BE-06 — Extract project state, evidence, governance, and activity queries from `PhasePacketServiceImpl`
-
-| Field               | Details                                                                                                                                                                                                                             |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Priority            | P1                                                                                                                                                                                                                                  |
-| File                | `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/phase/PhasePacketServiceImpl.java`                                                                                                                     |
-| Add files           | `PhaseProjectStateService.java`, `PhaseEvidenceService.java`, `PhaseGovernanceService.java`, `PhaseActivityFeedService.java` under same package                                                                                     |
-| Current issue       | `PhasePacketServiceImpl` is still a large orchestration class even after collaborator extraction. It owns project lookup, evidence query, governance query, activity mapping, blocker conversion, packet assembly orchestration.    |
-| Change              | Keep `PhasePacketServiceImpl` as a thin orchestrator. Move query/mapping responsibilities into focused services.                                                                                                                    |
-| Why                 | SRP, testability, and fewer regressions.                                                                                                                                                                                            |
-| Acceptance criteria | `PhasePacketServiceImpl` reads as orchestration only; each collaborator has dedicated tests.                                                                                                                                        |
-| Tests               | Move existing tests to collaborator-level tests; keep one high-level assembly test.                                                                                                                                                 |
+| Dimension                            |   Score | Rationale                                                                                                                                |
+| ------------------------------------ | ------: | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Product coherence                    |     3.0 | Strong plane model, but registry conformance gaps and preview surfaces keep it from feeling finished.                                    |
+| Feature completeness                 |     2.5 | Many APIs/routes exist, but key journeys are not proven complete end-to-end.                                                             |
+| End-to-end workflow completeness     |     2.5 | Data, pipelines, events, agents, connectors exist, but integration tests are advisory and several flows rely on compatibility/fallbacks. |
+| Data Cloud core architecture         |     3.5 | Plane architecture is strong and coherent.                                                                                               |
+| AEP architecture/integration         |     2.5 | Correct direction, but AEP architecture itself says foundations are partial.                                                             |
+| Agent architecture/integration       |     2.5 | Strong target model and examples, but safety-critical issues remain documented in agent north-star tasks.                                |
+| Audio-video architecture/integration |     2.0 | Capability map is ambitious, but product registry marks it experimental and lifecycle-disabled.                                          |
+| Shared library quality               |     2.5 | Good platform breadth, but boundary cleanup is explicitly unfinished.                                                                    |
+| UI/UX simplicity and consistency     |     3.0 | Good shell and route gating; still too many technical preview surfaces and hardcoded strings.                                            |
+| Backend/API correctness              |     3.5 | Strong route/security registry and production validations; not all mutating routes have idempotency parity.                              |
+| Plugin/extensibility model           |     3.0 | Plugin routes/tool registration exist; full lifecycle/versioning/sandbox proof remains incomplete.                                       |
+| Security and authorization           |     3.5 | Security filter is strong; startup wiring and full matrix tests still need hardening.                                                    |
+| Privacy and governance               |     3.0 | Governance routes and policy/audit concepts exist; audio-video and agent privacy gates remain incomplete.                                |
+| Observability and operations         |     3.0 | Operations/runtime truth surfaces exist; async/job/action traces need end-to-end proof.                                                  |
+| Reliability/failure handling         |     2.5 | Entity write idempotency/outbox direction is good; parity missing for other mutating routes.                                             |
+| Performance/scalability              |     2.5 | Pagination/sorting exists in places; large dataset/media/backpressure proof remains weak.                                                |
+| i18n readiness                       |     2.0 | i18n config exists, but raw UI strings remain widespread.                                                                                |
+| Accessibility readiness              |     2.5 | Some labels and route tests exist; hover-only actions and visual-only states remain risks.                                               |
+| Test quality and coverage            |     2.5 | Good route inventory tests; contract/integration tests not yet release-blocking.                                                         |
+| Developer experience                 |     3.0 | Scripts exist; dependency sprawl is self-identified in package metadata.                                                                 |
+| Configuration/feature flags          |     3.0 | Feature gates and runtime gating exist; too many compatibility/preview surfaces remain exposed.                                          |
+| Documentation/code alignment         |     2.5 | Docs are strong but contain mismatches and future-phase claims.                                                                          |
+| Production deployment readiness      |     2.5 | Registry says Data Cloud ready as provider, but conformance flags and advisory tests prevent strict readiness.                           |
+| Maintainability/SRP/DRY              |     3.0 | Router extraction and registries help; route/UI/shared-library duplication remains.                                                      |
+| Overall                              | **2.8** | Production-shaped, not production-ready.                                                                                                 |
 
 ---
 
-## Task BE-07 — Normalize phase blocker conversion into a dedicated mapper
+## 5. Feature Completeness Matrix
 
-| Field               | Details                                                                                                                                                            |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Priority            | P1                                                                                                                                                                 |
-| File                | `PhasePacketServiceImpl.java`                                                                                                                                      |
-| Add file            | `PhaseBlockerMapper.java`                                                                                                                                          |
-| Current issue       | Blocker severity/title/type mapping is inline in `queryPhaseBlockers`.                                                                                             |
-| Change              | Create `PhaseBlockerMapper` that maps validator blockers to packet blockers. Use config or structured blocker type where possible instead of string-prefix checks. |
-| Why                 | Avoid brittle string logic.                                                                                                                                        |
-| Acceptance criteria | No string-prefix mapping remains in service.                                                                                                                       |
-| Tests               | Mapper tests for missing artifact, prior exit criterion, entry criterion, policy denied, dependency degraded.                                                      |
-
----
-
-## Task BE-08 — Make source provider explicit and contract-validated in ProductUnitIntent request flow
-
-| Field               | Details                                                                                                                                                       |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Priority            | P1                                                                                                                                                            |
-| File                | `ProductUnitIntentExporter.java`                                                                                                                              |
-| Current issue       | `TargetProvidersDocument` hardcodes source provider as `ghatana-file-registry`.                                                                               |
-| Change              | Add `sourceProvider` to `ProductUnitIntentExporter.Request`, validate it via Kernel contract registry, and require explicit source provider in CLI/API flows. |
-| Why                 | Kernel handoff should support multiple source providers and avoid hidden defaults.                                                                            |
-| Acceptance criteria | Unknown source provider fails validation.                                                                                                                     |
-| Tests               | Exporter tests for valid/invalid source provider.                                                                                                             |
+| Capability            | Current state                                                                          | Gap                                                                                                              | Severity | Recommended action                                                                                |
+| --------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------- |
+| Runtime truth         | `/api/v1/surfaces` is canonical target; compatibility `/api/v1/capabilities` removed.  | UI still has RouteCapability terminology and preview surfaces discoverable.                                      | High     | Finish Runtime Truth naming/model migration and make runtime truth backend-owned.                 |
+| Route/security truth  | `RouteSecurityRegistry` is authoritative and fail-closed in production-like profiles.  | Route manifest generation/OpenAPI/SDK/docs phases incomplete.                                                    | High     | Complete route manifest → UI/OpenAPI/SDK generation and drift checks.                             |
+| Data collections      | UI calls `/entities/dc_collections` and maps backend entities to collections.          | Collection metadata is still modeled as generic entity data; stats return `storageSize: 0`.                      | High     | Promote collection registry to explicit backend contract with stats/quality/ownership fields.     |
+| Data quality          | Data Explorer has quality view and advisory.                                           | Advisory is derived client-side from collections, not from backend quality/intelligence service.                 | Medium   | Move quality advisory to backend-owned quality/intelligence endpoint.                             |
+| Events                | Event append/query/get routes exist.                                                   | Replay, offsets, watermarks, backpressure, and stream guarantees not proven in inspected code.                   | High     | Add Event Plane E2E contract tests and runtime truth status.                                      |
+| Pipelines             | Action pipeline CRUD/execute routes exist.                                             | Workflow handler can be null; run lifecycle needs stronger proof.                                                | High     | Make pipeline execution capability explicit in runtime truth; add run lifecycle E2E.              |
+| AEP patterns/learning | Brain/pattern and learning/review routes exist.                                        | AEP architecture says unified operator model, compiler, EventCloud SPI, lifecycle, and learning loop incomplete. | Critical | Finish Action Plane/AEP pattern lifecycle as one implementation pass.                             |
+| Agents                | Agent catalog/memory routes exist; example agent exists.                               | Agent safety/mastery/tenant issues remain documented.                                                            | Critical | Fix agent-core correctness before expanding agent UX.                                             |
+| Audio-video           | STT/TTS/Vision/Multimodal mapped and registered as tools.                              | Registry still marks product experimental/lifecycle-disabled.                                                    | High     | Convert audio-video from experimental shared service to governed Data Cloud modality integration. |
+| Plugins               | Plugin routes exist under canonical Action Plane namespace.                            | Full sandbox/version/lifecycle proof not established.                                                            | Medium   | Add plugin lifecycle contract tests and policy enforcement.                                       |
+| Governance/security   | Security filter is robust and fail-closed in production-like profiles.                 | Must verify startup validator is always registered and permission matrix covers all routes.                      | High     | Add production-profile startup and permission-matrix tests.                                       |
+| UI shell              | Sidebar/header/global search/AI assistant/notifications exist.                         | Raw strings, UI role switcher, and many technical surfaces add cognitive load.                                   | High     | Outcome-first UI consolidation and i18n/a11y pass.                                                |
+| Tests                 | UI route inventory tests enforce routes/gates.                                         | Test checks source proximity, not full user behavior; API/integration tests advisory.                            | High     | Promote behavior-focused E2E/contract/security tests.                                             |
 
 ---
 
-# 2. Frontend Phase Cockpit, 0 Cognitive Load, and Action UI Group
+## 6. End-to-End Journey Analysis
 
-## Verification target
-
-Run one frontend-focused verification pass after this group:
-
-```bash
-pnpm -C products/yappc/frontend/web type-check
-pnpm -C products/yappc/frontend/web test:unit
-pnpm -C products/yappc/frontend/web test:integration
-pnpm -C products/yappc/frontend/web test:contract
-pnpm -C products/yappc/frontend/web inventory:components:check
-```
-
-## Why group these together
-
-These files make up the same user-facing phase cockpit. Change them together so the UI stabilizes in one pass.
-
----
-
-## Task FE-01 — Remove phase-specific logic from `usePhaseActionHandlers`
-
-| Field               | Details                                                                                                                                                                    |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Priority            | P0                                                                                                                                                                         |
-| File                | `products/yappc/frontend/web/src/routes/app/project/usePhaseActionHandlers.ts`                                                                                             |
-| Depends on          | BE-04, BE-05                                                                                                                                                               |
-| Current issue       | The hook hardcodes intent navigation and validate lifecycle preview checks.                                                                                                |
-| Change              | Replace special cases with a generic executor that reads `PhaseAction` metadata: route target, drawer target, server operation, review operation, post-success navigation. |
-| Why                 | Frontend must not own lifecycle/action truth.                                                                                                                              |
-| Acceptance criteria | `handlePrimaryAction` and related handlers contain no `if (phase === ...)` logic except purely presentational behavior.                                                    |
-| Tests               | Update `usePhaseActionHandlers.test.tsx`: generic route action, drawer action, server action, disabled action, degraded action.                                            |
+| Journey                            | Current implemented path                                                                                        | Missing/broken pieces                                                                                                                                    | Severity |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| Create/connect data source         | Connector routes exist with enable/disable/test/sync/health/schema and compatibility `/data-fabric/*` aliases.  | Needs one canonical UI journey from connector → sync → dataset/collection → quality/trust, without parallel API aliases becoming user-facing complexity. | High     |
+| Ingest dataset/stream              | Entity CRUD/batch and event append/query routes exist.                                                          | Dataset/stream ingestion lifecycle, import status, replay, and durable error handling are not yet cohesive.                                              | High     |
+| Define schema/contract             | Collection schema is stored inside entity metadata and UI updates schema through collection upsert.             | Needs first-class contract/schema lifecycle with compatibility checks and governance state.                                                              | High     |
+| Run quality checks                 | Data quality trust score route exists and UI has quality view.                                                  | Quality logic is not consistently backend-owned; advisory is client-derived.                                                                             | Medium   |
+| Build/run pipeline                 | Pipeline and execution routes exist under `/api/v1/action`.                                                     | Execution trace, retry/cancel/rollback, idempotency, and observability need E2E proof.                                                                   | High     |
+| Detect event patterns              | Brain pattern routes exist.                                                                                     | AEP says PatternSpec compiler/operator model/lifecycle incomplete.                                                                                       | Critical |
+| Use adaptive feedback              | Learning trigger/status/review/approve/reject routes exist.                                                     | Learning-to-recommendation-to-promotion loop not complete.                                                                                               | Critical |
+| Trigger agent workflow             | Agent catalog, memory, autonomy, and plugin routes exist.                                                       | Agent governance/mastery safety issues remain.                                                                                                           | Critical |
+| Process audio/video asset          | Audio-video capabilities mapped and registered to AEP tool catalog.                                             | No clear Data Cloud UI/data-asset lifecycle integration; audio-video remains experimental.                                                               | High     |
+| Search/catalog/discover data       | Data Explorer and semantic/similar search routes exist.                                                         | Needs unified search/catalog model across collections, streams, agents, patterns, media.                                                                 | Medium   |
+| Govern/access/share data           | Governance routes, security filter, and policy engine integration exist.                                        | Needs route-by-route permission matrix and tenant-scoped test coverage.                                                                                  | High     |
+| Observe/debug failed job           | Operations, runtime truth, alerts, job center routes/pages exist.                                               | Async job/run traces and failure recovery need E2E verification.                                                                                         | High     |
+| Administer plugins/configuration   | Plugins and settings routes exist; settings is boundary/not discoverable.                                       | Settings/config model not production-complete.                                                                                                           | Medium   |
+| Use UI with minimal cognitive load | Shell and route registry exist.                                                                                 | Too many preview technical surfaces, role switcher, raw strings, and permanent aliases.                                                                  | High     |
 
 ---
 
-## Task FE-02 — Replace hardcoded suggestion metadata in `phasePacketMappers`
+## 7. UI/UX Findings
 
-| Field               | Details                                                                                                                                     |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Priority            | P1                                                                                                                                          |
-| File                | `products/yappc/frontend/web/src/routes/app/project/phasePacketMappers.ts`                                                                  |
-| Current issue       | `mapPacketSuggestions` hardcodes `confidence: 0.5`, `evidence: []`, `riskLevel`, `applyMode`, `approvalRequired`, and `rollbackSupported`.  |
-| Change              | Consume backend-provided recommendation/action metadata. Do not synthesize confidence/evidence/risk in frontend.                            |
-| Why                 | User trust and correctness. Fake confidence/evidence is misleading.                                                                         |
-| Acceptance criteria | No hardcoded confidence, empty evidence, or rollback flag in mapper.                                                                        |
-| Tests               | Update `phasePacketMappers.test.ts` to assert backend metadata is preserved.                                                                |
+**Strong parts:** The UI has a real shell, route registry, role disclosure, lazy route loading, disabled-surface fallbacks, global search, notifications, AI assistant, and active operations bar.  
 
----
+**Main gaps:**
 
-## Task FE-03 — Merge `PhasePacketSummary` and phase contract summary into one current-state card
+1. **Navigation is not yet 0 cognitive load.** The sidebar exposes Core, Observability, and Manage groups, but also makes technical surfaces discoverable: Events, Alerts, Memory, Entities, Context, Fabric, Agents, Plugins, Operations. 
+   **Fix:** Default mode should show only Home, Data, Query, Pipelines, Trust, Operations. Move Memory, Entities, Context, Fabric, Agents, Plugins, Runtime Truth, Release Truth, and Alerts behind progressive disclosure or contextual cards.
 
-| Field               | Details                                                                                                                                                                             |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Priority            | P1                                                                                                                                                                                  |
-| File                | `products/yappc/frontend/web/src/routes/app/project/PhaseCockpitContainer.tsx`                                                                                                      |
-| Related files       | `PhasePacketSummary.tsx`, possibly add `PhaseCurrentStateCard.tsx`                                                                                                                  |
-| Current issue       | The container renders `PhasePacketSummary`, `PhaseDegradedPacketPanel`, then a separate `phase-contract-summary` card.                                                              |
-| Change              | Create one `PhaseCurrentStateCard` showing: project, readiness, evidence count, governance outcome, primary next action, degraded marker if any. Remove duplicate summary sections. |
-| Why                 | 0 cognitive load. The user should see one state summary, not multiple overlapping cards.                                                                                            |
-| Acceptance criteria | One top state card per phase. Evidence/governance details remain available in lower panels or collapsible sections.                                                                 |
-| Tests               | Update phase cockpit component packet tests and snapshots/assertions.                                                                                                               |
+2. **Preview surfaces are discoverable.** Alerts, Memory, Entities, Context, Fabric, and Agents are marked `preview` and discoverable. 
+   **Fix:** Preview surfaces should not appear in primary nav unless runtime truth says enabled and the user has the proper role/use case.
+
+3. **i18n is incomplete.** The i18n catalog exists, but layout/routes/pages still hardcode labels like “Search…”, “Collapse”, “Product mode”, and route fallback descriptions.  
+   **Fix:** Enforce one i18n path and add raw-string lint/test gates for Data Cloud UI.
+
+4. **UI role switcher can confuse permissions.** The UI explains “Product mode is a UI focus preset” and does not grant backend permissions, but the same menu also allows shell role changes. 
+   **Fix:** Rename to “View mode” and prevent users from thinking they can self-elevate. Backend authorization must remain authoritative.
+
+5. **Data Explorer has hover-only row actions.** Actions become invisible unless hovered, which hurts keyboard discoverability and accessibility. 
+   **Fix:** Use always-available row action affordances or keyboard/focus-visible menus.
+
+6. **Data Explorer quality advisory is client-derived.** It looks AI-like but is derived from local collection state. 
+   **Fix:** Either label it as deterministic data-quality guidance or replace it with backend-owned quality/intelligence advisory.
 
 ---
 
-## Task FE-04 — Extract `PhaseCockpitView` from `PhaseCockpitContainer`
+## 8. Architecture and Boundary Findings
 
-| Field               | Details                                                                                                     |
-| ------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Priority            | P1                                                                                                          |
-| File                | `PhaseCockpitContainer.tsx`                                                                                 |
-| Add file            | `PhaseCockpitView.tsx`                                                                                      |
-| Current issue       | Container still fetches data, handles guards, builds actions, maps data, and assembles large JSX.           |
-| Change              | Keep container responsible for data, guards, and handlers. Move presentational JSX into `PhaseCockpitView`. |
-| Why                 | SRP and easier UI verification.                                                                             |
-| Acceptance criteria | Container <200 lines if practical; view receives typed props and is mostly pure.                            |
-| Tests               | Add `PhaseCockpitView.test.tsx`; simplify container tests to state/guard behavior.                          |
+1. **Plane architecture is strong.** The canonical architecture clearly defines planes, surfaces, modules, runtime truth, and Action Plane as governed automation runtime. 
 
----
+2. **AEP ownership boundary is unresolved.** Data Cloud docs position Action Plane inside Data Cloud, while AEP docs say AEP owns EventCloud, PatternSpec/EPL, operator runtime, learning, governance, and adaptive semantics. This can work, but only if Action Plane is treated as an integration/runtime surface and not as Data Plane-owned behavior. 
 
-## Task FE-05 — Replace local `Button` usage with canonical design-system/YAPPC UI button
+3. **Terminology drift remains.** Plane docs say avoid “capability area”, “AEP capability”, “capability model”, “capability truth”, and “capability registry”, while UI still has `RouteCapabilityRegistry`.  
 
-| Field               | Details                                                                                                                                                                                                  |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Priority            | P1                                                                                                                                                                                                       |
-| Files               | `PhaseCockpitContainer.tsx`, `PhasePacketErrorPanel.tsx`, related phase components                                                                                                                       |
-| Current issue       | Phase cockpit imports local `components/ui/Button`.                                                                                                                                                      |
-| Change              | Replace with canonical component from `@ghatana/design-system` or `yappc-ui`, whichever is the approved project standard. Update styling via tokens/variants, not manual border/background/text classes. |
-| Why                 | Beautiful and consistent modern UI; no duplicate primitives.                                                                                                                                             |
-| Acceptance criteria | No phase cockpit imports from local `components/ui/Button`; visual states remain equivalent or improved.                                                                                                 |
-| Tests               | `inventory:components:check`; component tests for disabled/loading/focus states.                                                                                                                         |
+4. **Route manifest docs and code disagree on path.** Docs list `RouteSecurityRegistry.java` under `.../http/handlers`, but search finds it under `.../http/RouteSecurityRegistry.java`.  
+
+5. **Shared library cleanup is not optional.** The architecture docs explicitly identify platform modules that may have Data Cloud/AEP semantics and need re-evaluation. 
 
 ---
 
-## Task FE-06 — Create one generic backend-driven `PhaseActionSection`
+## 9. Security, Privacy, Governance Findings
 
-| Field               | Details                                                                                                      |
-| ------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Priority            | P1                                                                                                           |
-| Files               | `PhaseCockpitContainer.tsx`, add `PhaseActionSection.tsx`                                                    |
-| Depends on          | BE-05                                                                                                        |
-| Current issue       | Generate review and run post-actions are separate hardcoded UI sections.                                     |
-| Change              | Render all secondary/review/danger/post actions from `packet.availableActions` grouped by category/priority. |
-| Why                 | One consistent mental model for actions.                                                                     |
-| Acceptance criteria | No explicit generate/run action blocks in cockpit container.                                                 |
-| Tests               | Component tests for action categories: primary, review, danger, post-run, disabled.                          |
+Security is one of the strongest areas.
 
----
+The `DataCloudSecurityFilter` establishes a clear enforcement chain: public probes, API key/JWT auth, tenant isolation, policy check for critical routes, and audit emission. 
 
-## Task FE-07 — Collapse degraded dependency UX into one recovery-focused panel
+It rejects unknown route metadata in production-like profiles, requires audit for sensitive/critical routes in non-local profiles, validates JWT tenant claims, rejects tenant mismatch, and has production validation for auth/audit/policy/strict tenant mode.   
 
-| Field               | Details                                                                                                                                                                                            |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Priority            | P2                                                                                                                                                                                                 |
-| Files               | `PhaseDegradedPacketPanel.tsx`, `PhaseCockpitContainer.tsx`, `PhasePacketErrorPanel.tsx`                                                                                                           |
-| Current issue       | Degraded info can appear as degraded panel, blocker, evidence, governance, completed artifact, activity feed, and disabled reason. Backend returns degraded records for multiple dependencies.     |
-| Change              | Top-level `PhaseDegradedPacketPanel` should summarize dependency, impact, safe state, and recovery action. Detail panels should show collapsed technical detail only on demand.                    |
-| Why                 | Failure states must be simple and actionable.                                                                                                                                                      |
-| Acceptance criteria | One visible degraded recovery card; technical records are collapsed.                                                                                                                               |
-| Tests               | Degraded packet render test.                                                                                                                                                                       |
+Remaining gaps:
+
+* Verify the production validator is registered and executed during all startup modes.
+* Add route-by-route permission matrix tests for every sensitive/critical route.
+* Prove break-glass behavior, audit blocking, audit sink failure, and policy engine failure through integration tests.
+* For audio-video, enforce media privacy, content safety, retention, and biometric-risk controls before making it production-facing. Audio-video tool policy tags already flag PII/biometric risk, but access policies are empty in the inspected YAML.  
 
 ---
 
-# 3. Kernel ProductUnitIntent and Contract Hardening Group
+## 10. Observability, Reliability, and Performance Findings
 
-## Verification target
+Strengths:
 
-Run one Kernel-contract-focused pass:
+* Route security emits audit and supports blocking audit for critical production-like routes. 
+* Entity CRUD has production validation for durable idempotency store, transaction manager, audit service, and outbox processor. 
+* Entity batch save/delete uses transaction/outbox/audit patterns. 
 
-```bash
-./gradlew :products:yappc:core:scaffold:api:test
-./gradlew :products:yappc:kernel-bridge:test
-```
+Gaps:
 
-Also run any route/contract parity tasks if they exist.
-
-## Why group these together
-
-These changes affect Kernel handoff and contract validity. Do them together to avoid repeated contract updates.
+* Entity CRUD itself documents that idempotency parity is still needed for pipelines, events, governance, and analytics mutating routes. 
+* Connector routes return 503 fallbacks when unavailable, which is good, but the UX must connect this to runtime truth rather than generic unavailable states. 
+* UI collection list uses fixed `pageSize: 50`; pagination/virtualization behavior was not proven in inspected UI code. 
+* Audio-video large-file processing, queueing, artifact retention, and model availability remain registry/doc-level claims, not proven production readiness.
 
 ---
 
-## Task KRN-01 — Replace local ProductUnitIntent DTO records with generated/imported Kernel Java contracts
+## 11. Test and Verification Gap Analysis
 
-| Field               | Details                                                                                                                                               |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Priority            | P1                                                                                                                                                    |
-| File                | `products/yappc/core/scaffold/api/src/main/java/com/ghatana/yappc/kernel/ProductUnitIntentExporter.java`                                              |
-| Current issue       | Exporter defines local records (`ProductUnitIntentDocument`, `ProductUnitScopeDocument`, `ProducerDocument`, etc.) to mirror Kernel shape.            |
-| Change              | Use generated/imported Java DTOs from Kernel public contracts. If Java DTO does not exist, create a generated contract module and wire it into YAPPC. |
-| Why                 | Prevent contract drift and duplicate schema ownership.                                                                                                |
-| Acceptance criteria | ProductUnitIntent export compiles against Kernel-owned DTOs.                                                                                          |
-| Tests               | Existing `ProductUnitIntentExporterTest`; add contract round-trip test against Kernel schema resource.                                                |
+Existing positive signals:
 
----
+* UI has route inventory tests covering primary routes, preview route gates, compatibility aliases, and route security invariants. 
+* UI package includes scripts for lint, type-check, unit, integration, E2E, E2E a11y, coverage, contract tests, route docs, route manifest, and API type checks. 
+* Route/security/OpenAPI-related tests exist in search results. 
 
-## Task KRN-02 — Add source provider to Kernel contract registry
+Gaps:
 
-| Field               | Details                                                                                                                                                                               |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Priority            | P1                                                                                                                                                                                    |
-| Files               | `ProductUnitKernelContractRegistry.java`, `kernel-product-unit-contract.json`, `ProductUnitIntentExporter.java`                                                                       |
-| Current issue       | Registry validates providers, lifecycle profiles, surfaces, product unit kinds, and implementation statuses, but source provider validation is not explicit in fetched registry API.  |
-| Change              | Extend contract resource and registry with `sourceProviders`. Use it in exporter validation.                                                                                          |
-| Why                 | Hardcoded source provider is still duplicate truth.                                                                                                                                   |
-| Acceptance criteria | Source provider comes from Kernel contract resource.                                                                                                                                  |
-| Tests               | Registry tests for valid/invalid source providers.                                                                                                                                    |
+* Data Cloud README says API contract tests and cross-module integration tests are advisory, not release-blocking. 
+* Route inventory tests are partly source-string tests; they prove route declarations, not full user behavior. 
+* Need real E2E tests for connector → ingest → collection → schema → quality → catalog → pipeline → event → action → observation.
+* Need security matrix tests across viewer/operator/admin, tenant mismatch, audit failure, policy failure, and disabled runtime surfaces.
+* Need i18n raw-string tests and a11y tests for row actions, dialogs, nav, keyboard flows, and disabled surfaces.
+* Need audio-video integration tests tied to Data Cloud catalog/agent tool execution, not just standalone capability mapping.
 
 ---
 
-## Task KRN-03 — Validate ProductUnit kind and implementation status in exporter
+## 12. Consolidated Task Plan Grouped to Minimize Verification Passes
 
-| Field               | Details                                                                                                                      |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Priority            | P1                                                                                                                           |
-| Files               | `ProductUnitIntentExporter.java`, `ProductUnitKernelContractRegistry.java`                                                   |
-| Current issue       | Registry exposes product unit kinds and implementation statuses, but exporter primarily validates surface/provider/profile.  |
-| Change              | Validate inferred `kind` and surface `implementationStatus="planned"` against registry.                                      |
-| Why                 | Full contract correctness.                                                                                                   |
-| Acceptance criteria | Unknown kind/status fails export.                                                                                            |
-| Tests               | Exporter tests for invalid kind/status.                                                                                      |
+### Group 1 — Runtime Truth, Route Truth, and Contract Convergence
 
----
+**Goal:** Make backend route/security/runtime truth the single source for UI, SDK, OpenAPI, and tests.
 
-## Task KRN-04 — Add production wiring assertion for Kernel lifecycle truth provider
+**Change areas:**
 
-| Field               | Details                                                                                                                                       |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| Priority            | P1                                                                                                                                            |
-| Files               | `KernelLifecycleEventIngestService.java`, service module/bootstrap that constructs it                                                         |
-| Current issue       | Local filesystem provider is guarded against production, but production wiring still needs explicit verification.                             |
-| Change              | Add startup assertion: production runtime must inject `DataCloudKernelLifecycleTruthSource` or other production `KernelLifecycleTruthSource`. |
-| Why                 | Prevent accidental local filesystem truth in production.                                                                                      |
-| Acceptance criteria | Production profile fails fast if local provider is configured.                                                                                |
-| Tests               | `YappcEnvironmentConfigTest` / ingest service production profile test.                                                                        |
+* `products/data-cloud/delivery/launcher/.../RouteSecurityRegistry.java`
+* `products/data-cloud/config/route-manifest.json`
+* `products/data-cloud/contracts/openapi/*.yaml`
+* `products/data-cloud/delivery/ui/src/lib/routing/*`
+* `products/data-cloud/docs/ROUTE_MANIFEST_SYSTEM.md`
+* route manifest scripts
 
----
+**Exact changes:**
 
-# 4. Adapter-Seam and Reuse-First Backend Boundary Group
+* Finish route manifest Phase 2–4: manifest → UI runtime truth, OpenAPI validator, SDK metadata.
+* Rename UI `RouteCapabilityRegistry` terminology to `RouteSurfaceRegistry` / runtime truth aligned names.
+* Fix documented `RouteSecurityRegistry.java` path mismatch.
+* Make route aliases explicitly classified as canonical, compatibility, preview, or hidden.
+* Promote API contract and integration test modules from advisory when they validate production routes.
 
-## Verification target
+**Verification:**
 
-Run architecture/boundary verification after this group:
+* UI route inventory tests.
+* OpenAPI parity tests.
+* Route-security drift script.
+* UI type-check/lint/unit tests.
 
-```bash
-./gradlew :products:yappc:build
-./gradlew :products:yappc:tools:validation-tests:test
-```
+**Acceptance criteria:**
 
-Also run import/boundary checks if available.
-
-## Why group these together
-
-Adapter seams touch build files and multiple modules. They should be moved in one pass to avoid broken dependency graphs.
+* No route can be active without security metadata.
+* UI cannot expose a route that backend runtime truth marks disabled/unavailable.
+* OpenAPI, generated UI route truth, and backend registry agree.
 
 ---
 
-## Task ARCH-01 — Create or complete `infrastructure:aep` adapter module
+### Group 2 — Canonical Data Cloud Domain/Journey Pass
 
-| Field               | Details                                                                                                                  |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Priority            | P1                                                                                                                       |
-| Files               | `products/yappc/settings.gradle.kts`, `products/yappc/build.gradle.kts`, new `products/yappc/infrastructure/aep/**`      |
-| Current issue       | Module catalog says an `infrastructure:aep` adapter module should own AEP imports; direct AEP deps are still scattered.  |
-| Change              | Add adapter module for AEP ports, move direct AEP imports from capability modules into adapter implementation.           |
-| Why                 | SRP and boundary correctness.                                                                                            |
-| Acceptance criteria | Capability modules depend on YAPPC ports, not AEP internals.                                                             |
-| Tests               | Adapter tests and architecture import tests.                                                                             |
+**Goal:** Make Data Cloud core journeys backend-owned and coherent.
 
----
+**Change areas:**
 
-## Task ARCH-02 — Remove direct Data Cloud imports from capability modules marked with `TODO(ADAPTER-SEAM)`
+* Entity/collection handlers
+* Collection API/client
+* Data Explorer
+* Data quality/trust APIs
+* Connector handlers
+* Data product/contract handlers
 
-| Field               | Details                                                                                                   |
-| ------------------- | --------------------------------------------------------------------------------------------------------- |
-| Priority            | P1                                                                                                        |
-| Files               | `core/agents/workflow`, `core/knowledge-graph`, related build files                                       |
-| Current issue       | Module catalog marks direct data-cloud deps in workflow and knowledge graph modules.                      |
-| Change              | Define YAPPC port interfaces in contract/domain modules and implement them in `infrastructure/datacloud`. |
-| Why                 | Capability modules should not bind directly to storage product internals.                                 |
-| Acceptance criteria | No direct `products:data-cloud:*` dependency in capability modules except allowed SPI seam.               |
-| Tests               | Build + architecture dependency tests.                                                                    |
+**Exact changes:**
 
----
+* Promote `dc_collections` from generic entity metadata to a typed collection registry contract.
+* Replace `storageSize: 0` and client-derived collection stats with backend-owned stats.
+* Move quality advisory out of client-side heuristic logic into Data Quality/Intelligence endpoint.
+* Connect connector sync results to collection creation/update.
+* Define one journey contract: connector → sync → collection → schema → quality → lineage → trust.
 
-## Task ARCH-03 — Remove or retire `core:spi` compatibility wrapper
+**Verification:**
 
-| Field               | Details                                                                                                            |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Priority            | P2                                                                                                                 |
-| Files               | `products/yappc/core/spi/**`, settings/build files                                                                 |
-| Current issue       | Module catalog lists `core:spi` as a deprecated compatibility wrapper.                                             |
-| Change              | Find imports, migrate to `core:yappc-shared` or correct canonical module, then delete wrapper if no longer needed. |
-| Why                 | Remove duplicate/compat surface.                                                                                   |
-| Acceptance criteria | No active module imports deprecated `core:spi`.                                                                    |
-| Tests               | Build and dependency checks.                                                                                       |
+* API contract tests for collection registry.
+* UI integration tests for Data Explorer.
+* E2E connector-to-collection test.
+
+**Acceptance criteria:**
+
+* Data Explorer values are backend-owned, explainable, and consistent across cards/detail/views.
+* No UI-only quality/ownership/status facts.
 
 ---
 
-# 5. Frontend Reuse, UI Consistency, and Package Consolidation Group
+### Group 3 — Outcome-First UI / 0 Cognitive Load Pass
 
-## Verification target
+**Goal:** Keep the UI powerful, but expose complexity progressively.
 
-Run:
+**Change areas:**
 
-```bash
-pnpm -C products/yappc/frontend/web inventory:components:check
-pnpm -C products/yappc/frontend/web test:regression
-pnpm -C products/yappc/frontend/web test:a11y
-```
+* `DefaultLayout.tsx`
+* `routes.tsx`
+* `RouteSurfaceRegistry`
+* page headers/cards/tables/forms
+* i18n resources
 
-## Why group these together
+**Exact changes:**
 
-These tasks affect visual consistency across the YAPPC app. Verify once through component inventory, regression, and a11y.
+* Default nav: Home, Data, Query, Pipelines, Trust, Operations.
+* Move Agents, Memory, Context, Fabric, Plugins, Runtime Truth, Release Truth, Alerts into role/contextual surfaces.
+* Use route registry icons instead of mapping all generated nav icons to `Activity`.
+* Rename “Product mode” / role switcher to avoid permission confusion.
+* Replace hover-only row actions with keyboard-visible action menus.
+* Replace hardcoded strings with i18n keys.
 
----
+**Verification:**
 
-## Task UI-01 — Standardize top-level page shells
+* UI unit/integration tests.
+* Playwright route traversal.
+* a11y test pass.
+* pseudo-locale pass.
 
-| Field               | Details                                                                                                                                                                                  |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Priority            | P2                                                                                                                                                                                       |
-| Files               | `routes/app/kernel-health.tsx`, `routes/app/kernel-health-product.tsx`, `routes/app/product-family.tsx`, `routes/app/admin/*.tsx`, `routes/app/project/PhaseCockpitContainer.tsx`        |
-| Current issue       | README hardening focus explicitly calls for shell consistency across phase cockpit, kernel health, product-family, and admin surfaces.  Architecture repeats this as a hardening focus.  |
-| Change              | Introduce or reuse a canonical `YappcPageShell` / `YappcPageHeader` / `YappcCardGrid` pattern. Apply to all top-level YAPPC pages.                                                       |
-| Why                 | Beautiful, consistent, modern UI.                                                                                                                                                        |
-| Acceptance criteria | Top-level pages share same title/subtitle/actions/loading/error/empty layout.                                                                                                            |
-| Tests               | Visual regression and component inventory.                                                                                                                                               |
+**Acceptance criteria:**
 
----
-
-## Task UI-02 — Consolidate phase status panel rendering around backend-owned typed panels
-
-| Field               | Details                                                                                                                                    |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Priority            | P1                                                                                                                                         |
-| Files               | `PhaseStatusPanelsCanonical.tsx`, `PhaseEmbeddedSurface.tsx`, phase panel components, `PhasePacket` backend                                |
-| Current issue       | Current focus says backend-owned typed phase panel migration is still a hardening item.                                                    |
-| Change              | Ensure every panel rendered in phase cockpit comes from typed `packet.phasePanels`; delete or quarantine heuristic local status rendering. |
-| Why                 | Backend-owned rendering model and no duplicate UI logic.                                                                                   |
-| Acceptance criteria | No phase status is inferred from frontend-only rules.                                                                                      |
-| Tests               | `PhaseStatusPanelsCanonical.test.tsx`; contract tests for all phase panel types.                                                           |
+* Primary user can understand the app without knowing planes, AEP, memory, agents, runtime truth, or plugins.
+* Operator/admin can still discover advanced surfaces contextually.
 
 ---
 
-## Task UI-03 — Migrate local phase components to canonical YAPPC/shared UI primitives
+### Group 4 — AEP / Action Plane Completion Pass
 
-| Field               | Details                                                                                                                              |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Priority            | P2                                                                                                                                   |
-| Files               | `components/phase/*`, `components/common/*`, `components/ui/*`, `frontend/libs/yappc-ui/*`                                           |
-| Current issue       | Frontend declares canonical shared packages, but local app components still exist and are used.                                      |
-| Change              | Move reusable phase/common components into `frontend/libs/yappc-ui` or shared design-system wrapper. Keep app route components thin. |
-| Why                 | Reuse-first and no duplicates.                                                                                                       |
-| Acceptance criteria | Route-level code imports UI primitives from canonical package, not local duplicate primitives.                                       |
-| Tests               | `inventory:components:check`, unit tests migrated with components.                                                                   |
+**Goal:** Finish AEP as a governed Action Plane without leaking ownership into Data Plane.
 
----
+**Change areas:**
 
-## Task UI-04 — Clean up frontend compatibility packages and product-specific libs
+* `products/data-cloud/planes/action/*`
+* `products/aep/*`
+* action contracts
+* pattern/learning/review/run handlers
+* AEP boundary docs
 
-| Field               | Details                                                                                                                                                                                 |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Priority            | P2                                                                                                                                                                                      |
-| Files               | `frontend/compat/*`, `frontend/libs/*`, package manifests                                                                                                                               |
-| Current issue       | Module catalog lists many compat packages and active product-specific libraries that should eventually consolidate.                                                                     |
-| Change              | Inventory imports. For each compat package, either delete if unused or redirect through canonical package. Consolidate product-specific libraries into canonical packages where reused. |
-| Why                 | Package sprawl creates duplicate abstractions and inconsistent UI/state.                                                                                                                |
-| Acceptance criteria | No new imports from `frontend/compat/*`; active product libs have ownership docs and migration target.                                                                                  |
-| Tests               | Package import check.                                                                                                                                                                   |
+**Exact changes:**
 
----
+* Complete unified operator model.
+* Implement PatternSpec compiler and lifecycle.
+* Complete EventCloud SPI boundary.
+* Implement learning → recommendation → review → promotion → rollback loop.
+* Make replay-safe agent execution mandatory for pattern-linked agents.
+* Retire or hide legacy root action routes behind feature flags.
 
-# 6. Learn and Evolve Product Feature Completion Group
+**Verification:**
 
-## Verification target
+* Action Plane integration tests.
+* Pattern lifecycle tests.
+* Learning/review approval tests.
+* Boundary dependency tests.
 
-Run focused E2E/user journey checks after this group:
+**Acceptance criteria:**
 
-```bash
-pnpm -C products/yappc/frontend/web test:integration
-pnpm -C products/yappc/frontend/web test:e2e
-```
-
-Backend tests depend on touched service files.
-
-## Why group these together
-
-Learn and Evolve should be completed as product journeys, not scattered backend/UI cards.
+* AEP semantics are not imported by Data/Event/Governance planes.
+* Patterns can be created, run in shadow, reviewed, promoted, observed, and rolled back.
 
 ---
 
-## Task LE-01 — Define a backend-owned `LearningInsightPanel` packet model
+### Group 5 — Agent Governance, Mastery, and Safety Pass
 
-| Field               | Details                                                                                                                      |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Priority            | P2                                                                                                                           |
-| Files               | `PhasePacket.java`, `PhasePacketServiceImpl.java`, new `LearningInsightService.java`                                         |
-| Current issue       | Learn route exists and docs claim learning support, but the user-facing Learn phase needs a clear learning-to-action model.  |
-| Change              | Add typed panel(s) for: learned signal, source event, confidence, recommendation, required approval, rollback path.          |
-| Why                 | Learn should be actionable, governed, and understandable.                                                                    |
-| Acceptance criteria | Learn phase shows “what was learned, why it matters, what action is safe.”                                                   |
-| Tests               | Learn phase packet test and UI render test.                                                                                  |
+**Goal:** Make agents safe, tenant-scoped, and governed before expanding UX.
 
----
+**Change areas:**
 
-## Task LE-02 — Implement guided Learn phase UI
+* `platform/java/agent-core`
+* Data Cloud agent registry/catalog
+* governed dispatcher
+* mastery registry
+* memory plane
+* agent runtime routes
 
-| Field               | Details                                                                                          |
-| ------------------- | ------------------------------------------------------------------------------------------------ |
-| Priority            | P2                                                                                               |
-| Files               | `routes/app/project/learn.tsx`, `PhaseStatusPanelsCanonical.tsx`, Learn-specific panel component |
-| Change              | Render learning insights using backend packet panels. Avoid generic status cards only.           |
-| Why                 | Feature completeness for Learn.                                                                  |
-| Acceptance criteria | Learn route has clear empty/loading/insight/approval/degraded states.                            |
-| Tests               | Learn route integration test.                                                                    |
+**Exact changes:**
 
----
+* Fix documented safety issues: approval/verification flag preservation, tenant source correctness, release tenant ID, mastery item state history validation.
+* Separate execution strategy from supervision level.
+* Enforce policy/tool/memory/replay/guardrail declarations for agent capabilities.
+* Add tenant-scoped agent release and mastery queries.
 
-## Task EV-01 — Define an `EvolutionPlanPanel` backend packet model
+**Verification:**
 
-| Field               | Details                                                                                                                          |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Priority            | P2                                                                                                                               |
-| Files               | `PhasePacket.java`, `PhasePacketServiceImpl.java`, new `EvolutionPlanService.java`                                               |
-| Current issue       | Evolve route exists, but impact-analysis/diff-review E2E coverage remains a hardening focus.                                     |
-| Change              | Add typed panel model for proposal, impact, diff summary, validation requirements, approval state, rollback path, re-run target. |
-| Why                 | Evolve needs to be a guided change workflow.                                                                                     |
-| Acceptance criteria | Evolve packet includes enough data to guide proposal → impact → diff → approval → revalidate.                                    |
-| Tests               | Evolve packet test.                                                                                                              |
+* Agent-core unit tests.
+* Dispatcher tests.
+* Agent memory/search tests.
+* Tenant isolation tests.
+
+**Acceptance criteria:**
+
+* Agents may observe/propose freely but act only through governed, tenant-safe, version-compatible mastery.
 
 ---
 
-## Task EV-02 — Implement guided Evolve phase UI
+### Group 6 — Audio-Video Productization and Data Cloud Integration
 
-| Field               | Details                                                                                            |
-| ------------------- | -------------------------------------------------------------------------------------------------- |
-| Priority            | P2                                                                                                 |
-| Files               | `routes/app/project/evolve.tsx`, `PhaseStatusPanelsCanonical.tsx`, Evolve-specific panel component |
-| Change              | Render the evolution workflow as a clear stepper/checklist with one next action.                   |
-| Why                 | 0 cognitive load and feature completeness.                                                         |
-| Acceptance criteria | User sees exactly where they are in the evolution loop and what to do next.                        |
-| Tests               | Evolve route integration test.                                                                     |
+**Goal:** Convert audio-video from experimental shared service into a governed Data Cloud modality.
 
----
+**Change areas:**
 
-# 7. Documentation / Backlog Alignment Group
+* `products/audio-video/*`
+* Data Cloud agent tool catalog
+* media storage/artifact retention
+* Data Cloud catalog/search/lineage
+* operations/runtime truth
 
-## Verification target
+**Exact changes:**
 
-Run docs checks only after code groups stabilize. Since you said not to focus on evidence generation now, this group is lower priority.
+* Add product manifest and lifecycle profile or explicitly keep it hidden as experimental.
+* Enforce media privacy, content safety, artifact retention, biometric-risk, and consent policy.
+* Connect STT/TTS/Vision/Multimodal outputs to Data Cloud datasets/events/catalog.
+* Add runtime truth for each media processing dependency.
+* Add minimal operator UI only after backend lifecycle is coherent.
 
-```bash
-# later iteration
-pnpm check:doc-claims-evidence
-```
+**Verification:**
 
-## Why group these together
+* STT/TTS/Vision/Multimodal contract tests.
+* Media privacy/security tests.
+* Agent tool invocation tests.
+* Data Cloud catalog integration tests.
 
-Docs should reflect implementation after code is stabilized, not drive another implementation loop now.
+**Acceptance criteria:**
 
----
-
-## Task DOC-01 — Update architecture hardening status after code changes
-
-| Field               | Details                                                                                                               |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Priority            | P3                                                                                                                    |
-| Files               | `products/yappc/docs/ARCHITECTURE.md`, `products/yappc/README.md`, `products/yappc/docs/YAPPC_BACKLOG_PROGRESS.md`    |
-| Current issue       | Docs say remaining work includes cockpit decomposition, typed panel migration, shell consistency, and docs cleanup.   |
-| Change              | After code changes, update these statements to reflect actual remaining hardening gaps.                               |
-| Why                 | Prevent future audit confusion.                                                                                       |
-| Acceptance criteria | Docs match code reality.                                                                                              |
+* A media asset can be ingested, processed, governed, searched, audited, and observed.
 
 ---
 
-## Task DOC-02 — Update module catalog after adapter-seam cleanup
+### Group 7 — Shared Library Boundary Cleanup
 
-| Field               | Details                                                                                         |
-| ------------------- | ----------------------------------------------------------------------------------------------- |
-| Priority            | P3                                                                                              |
-| File                | `products/yappc/docs/MODULE_CATALOG.md`                                                         |
-| Current issue       | Catalog still lists `TODO(ADAPTER-SEAM)` and product-specific package consolidation notes.      |
-| Change              | Update module roles after adapters are introduced and compat packages are removed/consolidated. |
-| Why                 | Keeps dependency rules authoritative.                                                           |
-| Acceptance criteria | No stale TODOs remain for completed adapter moves.                                              |
+**Goal:** Prevent Data Cloud/AEP semantics from leaking into generic platform libraries.
 
----
+**Change areas:**
 
-# Minimal Verification Rounds
+* `platform/java/agent-core`
+* `platform/java/workflow`
+* `platform/java/messaging`
+* `platform/java/ai-integration`
+* `platform/java/data-governance`
+* `platform/contracts`
+* Data Cloud plane modules
 
-## Round 1 — Backend phase/action correctness
+**Exact changes:**
 
-Tasks:
+* Apply the architecture rule: keep only primitives used by three or more unrelated products in platform.
+* Move Action Plane runtime semantics to `planes/action`.
+* Move Data Cloud storage-plane event routing to `planes/event`.
+* Move retention/redaction/provenance/evidence implementations to `planes/governance`.
+* Move Data Cloud OpenAPI/schemas into `products/data-cloud/contracts`.
 
-* BE-01
-* BE-02
-* BE-03
-* BE-04
-* BE-05
-* BE-06
-* BE-07
+**Verification:**
 
-Verify:
+* Dependency direction checks.
+* ArchUnit/module-boundary tests.
+* Build all affected products.
 
-```bash
-./gradlew :products:yappc:core:yappc-services:test
-./gradlew :products:yappc:integration:test
-```
+**Acceptance criteria:**
 
-## Round 2 — Frontend cockpit and 0 cognitive load
-
-Tasks:
-
-* FE-01
-* FE-02
-* FE-03
-* FE-04
-* FE-05
-* FE-06
-* FE-07
-
-Verify:
-
-```bash
-pnpm -C products/yappc/frontend/web type-check
-pnpm -C products/yappc/frontend/web test:unit
-pnpm -C products/yappc/frontend/web test:integration
-pnpm -C products/yappc/frontend/web test:contract
-pnpm -C products/yappc/frontend/web inventory:components:check
-```
-
-## Round 3 — Kernel contract and ProductUnitIntent
-
-Tasks:
-
-* KRN-01
-* KRN-02
-* KRN-03
-* KRN-04
-* BE-08
-
-Verify:
-
-```bash
-./gradlew :products:yappc:core:scaffold:api:test
-./gradlew :products:yappc:kernel-bridge:test
-```
-
-## Round 4 — Adapter seams and reuse-first backend boundary
-
-Tasks:
-
-* ARCH-01
-* ARCH-02
-* ARCH-03
-
-Verify:
-
-```bash
-./gradlew :products:yappc:build
-./gradlew :products:yappc:tools:validation-tests:test
-```
-
-## Round 5 — Shared UI / shell consistency / package consolidation
-
-Tasks:
-
-* UI-01
-* UI-02
-* UI-03
-* UI-04
-
-Verify:
-
-```bash
-pnpm -C products/yappc/frontend/web inventory:components:check
-pnpm -C products/yappc/frontend/web test:regression
-pnpm -C products/yappc/frontend/web test:a11y
-```
-
-## Round 6 — Learn/Evolve feature completion
-
-Tasks:
-
-* LE-01
-* LE-02
-* EV-01
-* EV-02
-
-Verify:
-
-```bash
-pnpm -C products/yappc/frontend/web test:integration
-pnpm -C products/yappc/frontend/web test:e2e
-./gradlew :products:yappc:core:yappc-services:test
-```
-
-## Round 7 — Documentation sync
-
-Tasks:
-
-* DOC-01
-* DOC-02
-
-Verify later when evidence work resumes.
+* Platform libraries are generic; Data Cloud product behavior lives in Data Cloud.
 
 ---
 
-# Highest-Value Execution Order
+### Group 8 — Security, Privacy, and Permission Matrix Pass
 
-Start with these 10 tasks first:
+**Goal:** Prove every route and operation is enforced backend-side.
 
-1. **BE-04** — backend action target metadata.
-2. **BE-05** — generate/run actions as backend `PhaseAction`s.
-3. **FE-01** — remove frontend phase-specific branching.
-4. **FE-06** — generic `PhaseActionSection`.
-5. **FE-03** — merge phase summaries into one state card.
-6. **BE-01** — invalid phase fail-closed.
-7. **BE-02** — tenant tier fail-closed.
-8. **FE-02** — remove fake suggestion metadata.
-9. **KRN-01** — Kernel DTO import/generation.
-10. **ARCH-01** — AEP adapter seam.
+**Change areas:**
 
-That order gives the fastest path to **correctness + 0 cognitive load + proper abstraction** without spreading changes across unrelated areas.
+* `DataCloudSecurityFilter`
+* route registry
+* handlers for entities/events/pipelines/governance/agents/plugins/audio-video
+* tests
+
+**Exact changes:**
+
+* Register production validators centrally and prove they execute at startup.
+* Add permission matrix tests for viewer/operator/admin.
+* Add tenant mismatch, missing tenant, missing audit, missing policy, policy denial, audit failure tests.
+* Add audio-video PII/biometric policy enforcement.
+* Add break-glass tests.
+
+**Verification:**
+
+* Backend unit/integration/security tests.
+* Route security drift test.
+* Startup profile tests.
+
+**Acceptance criteria:**
+
+* No sensitive/critical backend route relies on frontend-only gating.
+
+---
+
+### Group 9 — Observability, Reliability, and Idempotency Pass
+
+**Goal:** Make every async/action workflow debuggable and recoverable.
+
+**Change areas:**
+
+* Entity/event/pipeline/agent/plugin/audio-video handlers
+* Operations UI
+* runtime truth
+* outbox/job/run models
+
+**Exact changes:**
+
+* Extend idempotency beyond entity writes to pipelines, events, governance, analytics, plugins, and agent actions.
+* Add correlation IDs to every run/job/action/agent/media flow.
+* Add durable job/run status, retry/cancel/rollback states.
+* Add dead-letter/failure visibility for async workflows.
+* Surface failed jobs in Operations without requiring logs.
+
+**Verification:**
+
+* Idempotency retry tests.
+* Failure injection tests.
+* Operations UI E2E tests.
+
+**Acceptance criteria:**
+
+* A failed pipeline/agent/media operation is visible, explainable, retryable or safely terminal.
+
+---
+
+### Group 10 — Test Consolidation Pass
+
+**Goal:** Minimize repeated verification by adding journey-level suites after Groups 1–9 changes.
+
+**Change areas:**
+
+* Data Cloud integration tests
+* UI Playwright tests
+* API contract tests
+* security/a11y/i18n tests
+
+**Exact changes:**
+
+* Promote API contract and integration tests from advisory to release-blocking once stable.
+* Add one golden path E2E per main journey.
+* Add role/tenant matrix E2E.
+* Add pseudo-locale and raw-string enforcement.
+* Add keyboard/a11y tests for tables, nav, disabled surfaces, dialogs, and row actions.
+
+**Verification:**
+
+* Gradle affected Data Cloud tests.
+* UI lint/type-check/unit/integration/E2E/a11y.
+* Contract/OpenAPI drift tests.
+
+**Acceptance criteria:**
+
+* One verification pass validates product behavior, not only component rendering.
+
+---
+
+## 13. Priority Roadmap
+
+### P0 — Production blockers
+
+* Finish route/runtime truth convergence.
+* Fix Data Cloud conformance gaps.
+* Make API contract/integration tests blocking.
+* Fix agent-core safety-critical issues.
+* Enforce security startup validators.
+* Hide or gate preview/experimental surfaces.
+
+Expected score movement: **2.8 → 3.4**
+
+### P1 — Coherent product completeness
+
+* Typed collection registry.
+* Connector → collection → schema → quality → lineage journey.
+* Action Plane pattern/learning/review lifecycle.
+* Agent governance/memory/mastery integration.
+* Operations visibility for failed async workflows.
+
+Expected score movement: **3.4 → 4.0**
+
+### P2 — Hardening and extensibility
+
+* Plugin lifecycle versioning/sandbox/conformance.
+* Audio-video governed modality integration.
+* Shared library boundary cleanup.
+* Performance/scalability/idempotency parity.
+
+Expected score movement: **4.0 → 4.4**
+
+### P3 — Polish and optimization
+
+* UI visual polish and progressive disclosure.
+* Full i18n/a11y cleanup.
+* Documentation/code path alignment.
+* Developer script/dependency cleanup.
+
+Expected score movement: **4.4 → 4.7+**
+
+---
+
+## 14. Final Recommendation
+
+Data Cloud at this commit is **architecturally promising but not production-ready**.
+
+It has the right direction: plane-based architecture, backend-owned route/security metadata, Action Plane consolidation, UI route gating, and serious security posture. But it still has too many unresolved production blockers: Data Cloud conformance gaps, AEP partial implementation, audio-video experimental status, preview-heavy UI, incomplete route truth generation, incomplete i18n, advisory integration tests, and known shared-library boundary drift.
+
+The next implementation pass should focus on:
+
+**Runtime truth + route truth + backend-owned product contracts + UI simplification.**
+
+Do **not** spend the next pass generating release evidence. Also do **not** add more UI surfaces or agent/audio-video features until the current surfaces are contract-backed, permission-backed, runtime-truth-backed, and verified end-to-end.
+
+Highest-return task group: **Group 1 + Group 2 + Group 3 together**. That pass will reduce architectural drift, simplify the user experience, and make the product verifiable with fewer repeated test rounds.

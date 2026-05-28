@@ -20,6 +20,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -233,7 +234,7 @@ class DataCloudHttpServerLearningTest {
         @Test
         @DisplayName("known review ID → 200 with APPROVED decision")
         void approve_knownItem_returns200() throws Exception { 
-            when(mockBridge.approveReview("rev-abc")).thenReturn(true);
+            when(mockBridge.approveReview(anyString(), anyString(), eq("rev-abc"))).thenReturn(true);
 
             startWithBridge(); 
             HttpResponse<String> resp = post("/api/v1/action/learning/review/rev-abc/approve", ""); 
@@ -247,7 +248,7 @@ class DataCloudHttpServerLearningTest {
         @Test
         @DisplayName("unknown review ID → 404")
         void approve_unknownItem_returns404() throws Exception { 
-            when(mockBridge.approveReview("no-such")).thenReturn(false);
+            when(mockBridge.approveReview(anyString(), anyString(), eq("no-such"))).thenReturn(false);
 
             startWithBridge(); 
             HttpResponse<String> resp = post("/api/v1/action/learning/review/no-such/approve", ""); 
@@ -265,7 +266,7 @@ class DataCloudHttpServerLearningTest {
         @Test
         @DisplayName("known review ID → 200 with REJECTED decision")
         void reject_knownItem_returns200() throws Exception { 
-            when(mockBridge.rejectReview("rev-xyz")).thenReturn(true);
+            when(mockBridge.rejectReview(anyString(), anyString(), eq("rev-xyz"), anyString())).thenReturn(true);
 
             startWithBridge(); 
             HttpResponse<String> resp = post("/api/v1/action/learning/review/rev-xyz/reject", ""); 
@@ -279,7 +280,7 @@ class DataCloudHttpServerLearningTest {
         @Test
         @DisplayName("unknown review ID → 404")
         void reject_unknownItem_returns404() throws Exception { 
-            when(mockBridge.rejectReview("ghost")).thenReturn(false);
+            when(mockBridge.rejectReview(anyString(), anyString(), eq("ghost"), anyString())).thenReturn(false);
 
             startWithBridge(); 
             HttpResponse<String> resp = post("/api/v1/action/learning/review/ghost/reject", ""); 

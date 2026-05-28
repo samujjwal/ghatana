@@ -52,7 +52,7 @@ RouteSecurityRegistry.java (Source of Truth)
 ### Files
 
 **Java Classes**:
-- [`RouteSecurityRegistry.java`](../../delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/RouteSecurityRegistry.java) - Authoritative backend registry
+- [`RouteSecurityRegistry.java`](../../delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java) - Authoritative backend registry
 - [`RouteSecurityMetadata.java`](../../delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/RouteSecurityMetadata.java) - Metadata value object
 - [`RouteManifest.java`](../../delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/RouteManifest.java) - Manifest model (Jackson-serializable)
 
@@ -78,7 +78,7 @@ npm run generate:route-manifest
 
 # Or manually
 node scripts/generate-route-manifest.mjs \
-  --java-registry-path delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/RouteSecurityRegistry.java \
+  --java-registry-path delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java \
   --output-manifest config/route-manifest.json \
   --output-ui-truth web/src/runtime/RuntimeTruthPosture.generated.ts \
   --manifest-schema config/route-manifest-schema.json

@@ -54,7 +54,7 @@ export function getCurrentLocale(): SupportedLocale {
  * Change the current locale
  */
 export function changeLocale(locale: SupportedLocale): Promise<void> {
-  return i18n.changeLanguage(locale);
+  return i18n.changeLanguage(locale).then(() => undefined);
 }
 
 /**

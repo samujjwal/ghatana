@@ -175,7 +175,7 @@ public class PhrKernelPlugin implements KernelPlugin {
     }
 
     private void startMedicationService() {
-        LOGGER.info("Starting PHR medication service");
+        LOGGER.info("Starting PHR clinical therapy service");
     }
 
     private void stopPatientRecordService() {
@@ -195,6 +195,6 @@ public class PhrKernelPlugin implements KernelPlugin {
     }
 
     private void stopMedicationService() {
-        LOGGER.info("Stopping PHR medication service");
+        LOGGER.info("Stopping PHR clinical therapy service");
     }
 }

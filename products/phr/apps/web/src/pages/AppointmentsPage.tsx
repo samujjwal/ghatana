@@ -3,6 +3,7 @@ import { Button, Card, CardContent, CardHeader, Input } from '@ghatana/design-sy
 import { fetchAppointments, fetchProviders, bookAppointment, cancelAppointment, rescheduleAppointment } from '../api/adminApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
+import { logWarn } from '../utils/safeLogger';
 import type { AppointmentSummary } from '../types';
 
 export function AppointmentsPage(): React.ReactElement {
@@ -46,9 +47,9 @@ export function AppointmentsPage(): React.ReactElement {
       tenantId: session.tenantId,
       principalId: session.principalId,
       role: session.role,
-    })
+      })
       .then(setProviders)
-      .catch((err: unknown) => console.error('Failed to load providers:', err))
+      .catch(() => logWarn('Failed to load providers'))
       .finally(() => setLoadingProviders(false));
   }, [session]);
 
@@ -102,8 +103,8 @@ export function AppointmentsPage(): React.ReactElement {
         role: session.role,
       });
       loadAppointments();
-    } catch (err: unknown) {
-      console.error('Failed to cancel appointment:', err);
+    } catch {
+      logWarn('Failed to cancel appointment');
     }
   };
 
@@ -116,8 +117,8 @@ export function AppointmentsPage(): React.ReactElement {
         role: session.role,
       });
       loadAppointments();
-    } catch (err: unknown) {
-      console.error('Failed to reschedule appointment:', err);
+    } catch {
+      logWarn('Failed to reschedule appointment');
     }
   };
 
@@ -140,7 +141,7 @@ export function AppointmentsPage(): React.ReactElement {
   return (
     <div className="stack gap-lg">
       <Card>
-        <CardHeader title="Appointments" subheader="Your scheduled appointments" />
+        <CardHeader title={t('route.appointments.label')} subheader={t('route.appointments.description')} />
         <CardContent>
           <div className="tabs">
             <button
@@ -184,7 +185,7 @@ export function AppointmentsPage(): React.ReactElement {
       </Card>
 
       <Card>
-        <CardHeader title="Book New Appointment" subheader="Schedule with a provider" />
+        <CardHeader title={t('appointments.request.title')} subheader={t('appointments.request.subheader')} />
         <CardContent>
           {submitResult && (
             <div role="status" className="success-message mb-4">{submitResult}</div>

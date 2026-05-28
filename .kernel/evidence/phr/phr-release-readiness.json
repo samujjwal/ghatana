@@ -1,9 +1,9 @@
 {
   "validationStatus": "validated",
-  "targetCommitSha": "ade746204919f9e006690c30371a82028f77ed93",
+  "targetCommitSha": "2a37e8d0702271a10d47f5707a2720fd657c7f54",
   "expiresAt": "2027-12-31T00:00:00Z",
-  "generatedAt": "2026-05-27T21:18:08.609Z",
-  "checkedAt": "2026-05-27T21:18:08.609Z",
+  "generatedAt": "2026-05-28T17:07:15.055Z",
+  "checkedAt": "2026-05-28T17:07:15.055Z",
   "releaseReadiness": {
     "status": "ready",
     "gates": [],
@@ -12,11 +12,11 @@
     "warnings": []
   },
   "evidenceRun": {
-    "commit": "ade746204919f9e006690c30371a82028f77ed93",
+    "commit": "2a37e8d0702271a10d47f5707a2720fd657c7f54",
     "runId": "ci-test-run-001",
     "triggeredAt": "2025-06-01T00:00:00Z",
-    "sourceCommitSha": "ade746204919f9e006690c30371a82028f77ed93",
-    "targetCommitSha": "ade746204919f9e006690c30371a82028f77ed93"
+    "sourceCommitSha": "2a37e8d0702271a10d47f5707a2720fd657c7f54",
+    "targetCommitSha": "2a37e8d0702271a10d47f5707a2720fd657c7f54"
   },
   "evidenceCategories": {
     "fhir": {
@@ -40,7 +40,7 @@
       "status": "passed",
       "description": "Consent cache warm-up and invalidation proof",
       "testedAt": "2025-06-01T00:00:00Z",
-      "lastChecked": "2026-05-27T21:18:08.609Z",
+      "lastChecked": "2026-05-28T17:07:15.055Z",
       "evidenceRefs": [
         ".kernel/evidence/phr/distributed-cache-proof.json",
         ".kernel/evidence/phr/staging-bootstrap-evidence.json",
@@ -57,7 +57,7 @@
       "stagingProof": {
         "status": "validated",
         "required": true,
-        "validatedAt": "2026-05-27T21:18:08.609Z",
+        "validatedAt": "2026-05-28T17:07:15.055Z",
         "evidenceRef": ".kernel/evidence/phr/staging-bootstrap-evidence.json",
         "runtimeProofCommand": "node ./scripts/run-gradle-wrapper.mjs :products:phr:test -DincludeIntegrationTests=true --rerun-tasks --tests *DistributedCacheConsentInvalidationTest --tests *PhrDistributedCacheProofTest",
         "acceptanceCriteria": "Consent invalidation propagates across simulated nodes and staging redis bootstrap is executable"
@@ -65,7 +65,7 @@
       "prodProof": {
         "status": "validated",
         "required": true,
-        "validatedAt": "2026-05-27T21:18:08.609Z",
+        "validatedAt": "2026-05-28T17:07:15.055Z",
         "evidenceRef": ".kernel/evidence/phr/prod-bootstrap-evidence.json",
         "runtimeProofCommand": "node ./scripts/run-gradle-wrapper.mjs :products:phr:test -DincludeIntegrationTests=true --rerun-tasks --tests *DistributedCacheConsentInvalidationTest --tests *PhrDistributedCacheProofTest",
         "acceptanceCriteria": "Consent invalidation propagates across simulated nodes and prod redis bootstrap is executable"
@@ -106,7 +106,7 @@
           "evidenceRef": ".kernel/evidence/phr/prod-bootstrap-evidence.json"
         }
       },
-      "lastChecked": "2026-05-27T21:18:08.609Z",
+      "lastChecked": "2026-05-28T17:07:15.055Z",
       "evidenceRefs": [
         ".kernel/evidence/phr/staging-bootstrap-evidence.json",
         ".kernel/evidence/phr/prod-bootstrap-evidence.json",
@@ -142,5 +142,5 @@
     "failed": 0,
     "overallStatus": "passed"
   },
-  "sourceCommitSha": "ade746204919f9e006690c30371a82028f77ed93"
+  "sourceCommitSha": "2a37e8d0702271a10d47f5707a2720fd657c7f54"
 }

@@ -151,7 +151,7 @@ function toSectionAction(
     actionId: action.actionId,
     testId: toTestId(action.actionId),
     label: actionText(action.label) ?? action.actionId,
-    severity: action.severity,
+    severity: action.severity ?? 'default',
     disabled,
     onClick,
   };
@@ -311,7 +311,7 @@ export function PhaseCockpitContainer({ phase }: PhaseCockpitContainerProps): Re
         return;
       }
 
-      const sectionMeta = categorySectionMeta(action.category, t);
+      const sectionMeta = categorySectionMeta(action.category ?? 'general', t);
       const existingActions = actionSectionsMap.get(sectionMeta.testId)?.actions ?? [];
 
       actionSectionsMap.set(sectionMeta.testId, {

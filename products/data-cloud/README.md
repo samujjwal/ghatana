@@ -128,7 +128,7 @@ UI must use generated clients and frontend adapters, not backend internals.
 Data Cloud modules are classified as either **release-blocking** or **advisory**:
 
 - **Release-blocking modules**: Must pass all checks before any release. These are production-critical surfaces.
-- **Advisory modules**: Compiled and tested in CI but not blocking releases. Used for experimental features, integration tests, or non-production surfaces.
+- **Advisory modules**: Compiled and tested in CI but not blocking releases. Used only for explicitly non-production surfaces.
 
 ### Promotion Process
 
@@ -142,10 +142,7 @@ When an advisory module becomes a production surface, it must be promoted to rel
 
 ### Current Advisory Modules
 
-The following modules are currently advisory and should be promoted when they become production surfaces:
-
-- `:products:data-cloud:delivery:api-contract-tests` - API contract validation tests
-- `:products:data-cloud:integration-tests` - Cross-module integration test suite
+There are currently no active advisory modules in Data Cloud. API contract and integration suites are release-blocking and must pass for release gates.
 
 See `scripts/list-data-cloud-active-modules.mjs` for the authoritative source of truth.
 

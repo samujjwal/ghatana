@@ -120,7 +120,7 @@ class LifecycleApiControllerIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @Disabled("Test failing due to GenerationRunRepository mock configuration issues")
+    @Disabled("GH-1203 GenerationRunRepository configuration must be replaced with production test wiring")
     @DisplayName("executes full lifecycle successfully with concrete services")
     void executesFullLifecycleSuccessfullyWithConcreteServices() throws Exception { 
         String requestJson = JsonMapper.toJson(new LifecycleRequest(

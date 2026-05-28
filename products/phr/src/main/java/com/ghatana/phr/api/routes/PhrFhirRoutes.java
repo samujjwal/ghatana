@@ -52,6 +52,11 @@ public final class PhrFhirRoutes {
     }
 
     private Promise<HttpResponse> handleCreateFhirResource(HttpRequest request) {
+        try {
+            PhrRouteSupport.requireContext(request);
+        } catch (IllegalArgumentException ex) {
+            return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage());
+        }
         String resourceType = request.getPathParameter("resourceType");
         return request.loadBody()
                 .then(body -> {
@@ -65,6 +70,11 @@ public final class PhrFhirRoutes {
     }
 
     private Promise<HttpResponse> handleGetFhirResource(HttpRequest request) {
+        try {
+            PhrRouteSupport.requireContext(request);
+        } catch (IllegalArgumentException ex) {
+            return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage());
+        }
         String resourceType = request.getPathParameter("resourceType");
         String id = request.getPathParameter("id");
         return fhirController.getResource(resourceType, id)
@@ -75,6 +85,11 @@ public final class PhrFhirRoutes {
     }
 
     private Promise<HttpResponse> handleSearchFhirResources(HttpRequest request) {
+        try {
+            PhrRouteSupport.requireContext(request);
+        } catch (IllegalArgumentException ex) {
+            return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage());
+        }
         String resourceType = request.getPathParameter("resourceType");
         var params = request.getQueryParameters();
         return fhirController.searchResources(resourceType, params)

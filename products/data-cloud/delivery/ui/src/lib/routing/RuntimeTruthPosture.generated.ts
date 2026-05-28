@@ -4,7 +4,7 @@
  * Generated from canonical route manifest by generate-route-manifest.mjs
  * To regenerate, run: npm run generate:route-manifest
  *
- * Generated at: 2026-05-23T18:36:20.583Z
+ * Generated at: 2026-05-28T17:25:53.331Z
  * Source: DataCloudRouterBuilder.java + RouteSecurityRegistry.java
  *
  * DC-P0-03: Runtime truth for UI feature gating and route visibility
@@ -866,6 +866,21 @@ export const RUNTIME_TRUTH_POSTURED: RuntimeRoute[] = [
     legacyStatus: 'active',
     idempotent: true,
     description: 'DELETE /api/v1/governance/policies/{id}'
+  },
+  {
+    method: 'DELETE',
+    path: '/api/v1/release-readiness/{id}',
+    operationId: 'deleteApiV1Releasereadiness{id',
+    sensitivity: 'CRITICAL',
+    runtimeTruthSurface: 'VISIBLE',
+    requiresAuth: true,
+    requiresTenant: true,
+    requiresPolicy: true,
+    requiresBlockingAudit: true,
+    requiredAccess: 'ADMIN',
+    legacyStatus: 'active',
+    idempotent: true,
+    description: 'DELETE /api/v1/release-readiness/{id}'
   },
   {
     method: 'DELETE',
@@ -1976,6 +1991,51 @@ export const RUNTIME_TRUTH_POSTURED: RuntimeRoute[] = [
     legacyStatus: 'active',
     idempotent: true,
     description: 'GET /api/v1/queries/estimate'
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/release-readiness',
+    operationId: 'getApiV1Releasereadiness',
+    sensitivity: 'SENSITIVE',
+    runtimeTruthSurface: 'VISIBLE',
+    requiresAuth: true,
+    requiresTenant: true,
+    requiresPolicy: false,
+    requiresBlockingAudit: false,
+    requiredAccess: 'ADMIN',
+    legacyStatus: 'active',
+    idempotent: true,
+    description: 'GET /api/v1/release-readiness'
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/release-readiness/{productId}/{productVersion}/{releaseTarget}',
+    operationId: 'getApiV1Releasereadiness{productId{productVersion{releaseTarget',
+    sensitivity: 'SENSITIVE',
+    runtimeTruthSurface: 'VISIBLE',
+    requiresAuth: true,
+    requiresTenant: true,
+    requiresPolicy: false,
+    requiresBlockingAudit: false,
+    requiredAccess: 'ADMIN',
+    legacyStatus: 'active',
+    idempotent: true,
+    description: 'GET /api/v1/release-readiness/{productId}/{productVersion}/{releaseTarget}'
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/release-readiness/stats',
+    operationId: 'getApiV1ReleasereadinessStats',
+    sensitivity: 'SENSITIVE',
+    runtimeTruthSurface: 'VISIBLE',
+    requiresAuth: true,
+    requiresTenant: true,
+    requiresPolicy: false,
+    requiresBlockingAudit: false,
+    requiredAccess: 'ADMIN',
+    legacyStatus: 'active',
+    idempotent: true,
+    description: 'GET /api/v1/release-readiness/stats'
   },
   {
     method: 'GET',
@@ -3506,6 +3566,21 @@ export const RUNTIME_TRUTH_POSTURED: RuntimeRoute[] = [
     legacyStatus: 'active',
     idempotent: false,
     description: 'POST /api/v1/query/nlq'
+  },
+  {
+    method: 'POST',
+    path: '/api/v1/release-readiness',
+    operationId: 'postApiV1Releasereadiness',
+    sensitivity: 'CRITICAL',
+    runtimeTruthSurface: 'VISIBLE',
+    requiresAuth: true,
+    requiresTenant: true,
+    requiresPolicy: true,
+    requiresBlockingAudit: true,
+    requiredAccess: 'ADMIN',
+    legacyStatus: 'active',
+    idempotent: false,
+    description: 'POST /api/v1/release-readiness'
   },
   {
     method: 'POST',

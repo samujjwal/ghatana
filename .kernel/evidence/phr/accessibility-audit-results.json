@@ -1,0 +1,33 @@
+{
+  "productId": "phr",
+  "evidenceType": "accessibility-audit-results",
+  "generatedAt": "2026-05-28T17:09:12.597Z",
+  "sourceCommitSha": "2a37e8d0702271a10d47f5707a2720fd657c7f54",
+  "targetCommitSha": "2a37e8d0702271a10d47f5707a2720fd657c7f54",
+  "targetEnvironment": "local",
+  "validationStatus": "validated",
+  "pass": true,
+  "checks": [
+    {
+      "command": "node scripts/check-a11y-behavioral-proof.mjs --product=phr-mobile",
+      "status": "passed"
+    },
+    {
+      "command": "node scripts/check-i18n-maturity.mjs",
+      "status": "passed"
+    },
+    {
+      "command": "node scripts/check-phr-mobile-i18n.mjs",
+      "status": "passed"
+    }
+  ],
+  "evidenceRun": {
+    "generatedBy": "codex",
+    "command": "PHR mobile accessibility and i18n gates",
+    "source": "local-validation-session",
+    "commit": "2a37e8d0702271a10d47f5707a2720fd657c7f54",
+    "sourceCommitSha": "2a37e8d0702271a10d47f5707a2720fd657c7f54",
+    "targetCommitSha": "2a37e8d0702271a10d47f5707a2720fd657c7f54",
+    "targetEnvironment": "local"
+  }
+}

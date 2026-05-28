@@ -54,7 +54,7 @@ import static org.mockito.Mockito.*;
 @SuppressWarnings("unchecked")
 @Tag("performance")
 @DisplayName("YAPPC Workflow — Performance Baselines")
-@Disabled("All tests failing due to GenerationRunRepository mock configuration issues")
+@Disabled("GH-1202 GenerationRunRepository configuration must be replaced with production test wiring")
 class YappcWorkflowPerformanceBaselineTest extends EventloopTestBase {
 
     private static final int BATCH_SIZE = 50;

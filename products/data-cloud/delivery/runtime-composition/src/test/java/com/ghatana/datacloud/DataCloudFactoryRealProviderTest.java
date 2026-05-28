@@ -99,7 +99,7 @@ class DataCloudFactoryRealProviderTest extends EventloopTestBase {
     }
 
     @Test
-    @Disabled("Temporarily disabled due to Kafka producer initTransactions() blocking the ActiveJ eventloop. " +
+    @Disabled("GH-1304 Temporarily disabled due to Kafka producer initTransactions() blocking the ActiveJ eventloop. " +
               "The Kafka provider needs to offload blocking operations to a separate thread pool. " +
               "See: KafkaEventLogStore.buildProducer() line 658")
     @DisplayName("production profile persists entities and events across restart with service-loaded providers")

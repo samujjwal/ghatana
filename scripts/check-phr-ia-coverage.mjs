@@ -19,12 +19,10 @@
  */
 
 import { readFileSync, existsSync } from 'node:fs';
-import { createRequire } from 'node:module';
 import { resolve, dirname as pathDirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const require = createRequire(import.meta.url);
 
 // ---------------------------------------------------------------------------
 // Load canonical IA baseline
@@ -62,32 +60,29 @@ const IA_DECLARED_ROUTES = baseline.usecases
   .sort();
 
 // ---------------------------------------------------------------------------
-// Load the compiled route manifest via ts-node / tsx-compatible path
+// Load the canonical route contract.
 // ---------------------------------------------------------------------------
-// We read the contracts file as text and extract paths with a simple regex
-// so this script runs without a TypeScript compilation step.
 const CONTRACT_FILE = resolve(
   __dirname,
-  '../products/phr/apps/web/src/phrRouteContracts.ts',
+  '../products/phr/config/phr-route-contract.json',
 );
 
-let contractSource;
+let routeContract;
 try {
-  contractSource = readFileSync(CONTRACT_FILE, 'utf8');
+  routeContract = JSON.parse(readFileSync(CONTRACT_FILE, 'utf8'));
 } catch (err) {
-  console.error(`[phr-ia-coverage] Cannot read route contracts file: ${CONTRACT_FILE}`);
+  console.error(`[phr-ia-coverage] Cannot read route contract file: ${CONTRACT_FILE}`);
   console.error(err.message);
   process.exit(1);
 }
 
-// Extract all path values from the source: path: '/...',
-const CONTRACT_PATH_RE = /path:\s*'([^']+)'/g;
-const contractPaths = new Set();
-let match;
-while ((match = CONTRACT_PATH_RE.exec(contractSource)) !== null) {
-  // Keep React Router param style (:param) for comparison with normalized IA routes
-  contractPaths.add(match[1]);
+if (!Array.isArray(routeContract.routes)) {
+  console.error('[phr-ia-coverage] Route contract must contain a routes array.');
+  process.exit(1);
 }
+
+const contractRoutes = routeContract.routes;
+const contractPaths = new Set(contractRoutes.map(route => route.path));
 
 // ---------------------------------------------------------------------------
 // Validate
@@ -101,22 +96,22 @@ for (const iaRoute of IA_DECLARED_ROUTES) {
 }
 
 if (missing.length > 0) {
-  console.error('\n[phr-ia-coverage] FAIL: The following IA-declared routes are not in phrRouteContracts:\n');
+  console.error('\n[phr-ia-coverage] FAIL: The following IA-declared routes are not in the canonical route contract:\n');
   for (const route of missing) {
     console.error(`  \u2717  ${route}`);
   }
   console.error(
-    '\nAdd these routes to phrRouteContracts.ts with an appropriate featureFlag or minimumRole entry.\n',
+    '\nAdd these routes to products/phr/config/phr-route-contract.json with appropriate stability and role metadata.\n',
   );
   process.exit(1);
 }
 
 console.log(
-  `[phr-ia-coverage] PASS: All ${IA_DECLARED_ROUTES.length} IA-declared routes are present in phrRouteContracts.`,
+  `[phr-ia-coverage] PASS: All ${IA_DECLARED_ROUTES.length} IA-declared routes are present in the canonical route contract.`,
 );
 
 // ---------------------------------------------------------------------------
-// Phase 2: verify non-feature-flagged routes have registered page components
+// Phase 2: verify stable routes have registered page components
 // ---------------------------------------------------------------------------
 
 const ELEMENTS_FILE = resolve(
@@ -146,19 +141,12 @@ while ((elemMatch = ELEMENTS_PATH_RE.exec(elementsSource)) !== null) {
   }
 }
 
-// Identify non-feature-flagged routes from the contracts source.
-// A route is feature-flagged when `featureFlag: true` appears in the same object block.
-const BLOCK_RE = /\{[^{}]*path:\s*'([^']+)'[^{}]*/g;
 const productionRoutesViolations = [];
-let blockMatch;
-while ((blockMatch = BLOCK_RE.exec(contractSource)) !== null) {
-  const block = blockMatch[0];
-  const path = blockMatch[1];
-  const isFeatureFlagged = /featureFlag:\s*true/.test(block);
-  if (!isFeatureFlagged) {
-    const normPath = path.replace(/:([^/]+)/g, '{$1}');
+for (const route of contractRoutes) {
+  if (route.stability === 'stable' && route.featureFlag !== true) {
+    const normPath = route.path.replace(/:([^/]+)/g, '{$1}');
     if (!registeredPaths.has(normPath)) {
-      productionRoutesViolations.push(path);
+      productionRoutesViolations.push(route.path);
     }
   }
 }
@@ -184,7 +172,7 @@ while ((importMatch = IMPORT_RE.exec(elementsSource)) !== null) {
 const phase2Failures = productionRoutesViolations.length + brokenImports.length;
 if (phase2Failures > 0) {
   if (productionRoutesViolations.length > 0) {
-    console.error('\n[phr-ia-coverage] FAIL: Non-feature-flagged routes missing from phrRouteElements.tsx:\n');
+    console.error('\n[phr-ia-coverage] FAIL: Stable routes missing from phrRouteElements.tsx:\n');
     for (const route of productionRoutesViolations) {
       console.error(`  \u2717  ${route}`);
     }

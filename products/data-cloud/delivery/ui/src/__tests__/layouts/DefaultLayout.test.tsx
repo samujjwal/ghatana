@@ -9,12 +9,7 @@ const NAV_SURFACE_PATHS = new Set([
   '/data',
   '/pipelines',
   '/query',
-  '/insights',
   '/trust',
-  '/events',
-  '/alerts',
-  '/plugins',
-  '/connectors',
   '/operations',
 ]);
 
@@ -42,8 +37,8 @@ describe('DefaultLayout navigation progressive disclosure', () => {
     const paths = getSectionPaths('operator');
 
     expect(paths).toEqual(getExpectedPathsFromRegistry('operator'));
-    expect(paths).toContain('/insights');
-    expect(paths).toContain('/plugins');
+    expect(paths).toContain('/trust');
+    expect(paths).not.toContain('/connectors');
     expect(paths).not.toContain('/operations');
   });
 

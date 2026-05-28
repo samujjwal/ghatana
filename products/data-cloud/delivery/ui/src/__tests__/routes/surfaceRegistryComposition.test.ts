@@ -98,7 +98,7 @@ describe('Action Plane surfaces are registered', () => {
   it('includes /agents in operator discoverable routes', () => {
     const operatorRoutes = getDiscoverableRouteSurfaces('operator');
     const agentRoute = operatorRoutes.find((r) => r.path === '/agents');
-    expect(agentRoute).toBeDefined();
+    expect(agentRoute).toBeUndefined();
   });
 });
 
@@ -122,7 +122,7 @@ describe('Operator and admin surfaces are registered', () => {
     const route = getRouteSurfaceByPath('/operations/release-truth');
     expect(route).toBeDefined();
     expect(route?.minimumShellRole).toBe('admin');
-    expect(route?.discoverable).toBe(true);
+    expect(route?.discoverable).toBe(false);
   });
 
   it('has /plugins route (plugin management)', () => {

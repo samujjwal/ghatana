@@ -34,6 +34,7 @@ import {
 import { cn } from '../lib/theme';
 import { collectionsApi, type Collection } from '../lib/api/collections';
 import { lineageService } from '../api/lineage.service';
+import { useDataQualityTrustScores, type DataQualityTrustScoresResult } from '../api/data-quality.service';
 import { LineageGraph } from '../components/lineage/LineageGraph';
 import { AIAssistSuggestion } from '../components/common/AIAssistSuggestion';
 
@@ -71,53 +72,45 @@ function normalizeViewMode(view: string | null): ViewMode {
     return 'table';
 }
 
-function deriveQualityAdvisory(collections: Collection[]): QualityAdvisory {
-    const scoredCollections = collections.filter((c) => c.qualityScore != null);
-    const lowQuality = scoredCollections.filter((c) => (c.qualityScore ?? 1) < 0.7);
-    const unknownLifecycle = collections.filter((c) => c.lifecycleStatus === 'UNKNOWN').length;
-    const degradedOps = collections.filter((c) => c.operationalStatus === 'degraded' || c.operationalStatus === 'unavailable').length;
+function deriveQualityAdvisory(trustData: DataQualityTrustScoresResult | undefined): QualityAdvisory {
+    const scores = trustData?.scores ?? [];
+    const degraded = scores.filter((s) => {
+        const status = s.operationalStatus.toLowerCase();
+        return status === 'degraded' || status === 'unavailable';
+    });
+    const lowTrust = scores.filter((s) => s.trustScore < 70);
+    const lowQuality = scores.filter((s) => s.qualityScore < 0.7);
 
-    if (degradedOps > 0) {
+    if (degraded.length > 0) {
         return {
-            suggestion: `${degradedOps} collection(s) are in degraded or unavailable operational state. Review lineage and health before running quality checks.`,
-            confidence: 0.88,
-            evidence: [
-                `${degradedOps} collection(s) with degraded/unavailable status.`,
-                `${scoredCollections.length} collection(s) have quality scores.`,
-                'Based on live operational status from the collection registry.',
-            ],
+            suggestion: `${degraded.length} collection(s) are degraded or unavailable per backend trust scoring. Prioritize operational recovery before new quality workflows.`,
+            confidence: 0.9,
+            evidence: degraded.slice(0, 3).map((item) => `${item.collection}: operationalStatus=${item.operationalStatus}, trustScore=${item.trustScore}`),
         };
     }
 
-    if (lowQuality.length > 0) {
+    if (lowTrust.length > 0 || lowQuality.length > 0) {
         return {
-            suggestion: `${lowQuality.length} collection(s) have quality scores below 0.7. Investigate completeness, uniqueness, and validity metrics.`,
-            confidence: 0.82,
-            evidence: lowQuality.map((c) => `${c.name}: ${c.qualityScore?.toFixed(2)} (${Object.entries(c.qualityMetrics ?? {}).map(([k, v]) => `${k}=${v}`).join(', ')})`),
+            suggestion: `${Math.max(lowTrust.length, lowQuality.length)} collection(s) are below quality/trust thresholds from backend scoring. Review metrics and remediation plans.`,
+            confidence: 0.84,
+            evidence: lowTrust.slice(0, 3).map((item) => `${item.collection}: trustScore=${item.trustScore}, qualityScore=${item.qualityScore.toFixed(2)}`),
         };
     }
 
-    if (unknownLifecycle > 0) {
+    if (scores.length === 0) {
         return {
-            suggestion: `${unknownLifecycle} collection(s) have unknown lifecycle status. Set lifecycle and ownership metadata to enable governance.`,
-            confidence: 0.75,
-            evidence: [
-                `${unknownLifecycle} collection(s) without lifecycle metadata.`,
-                `${collections.length} total collection(s).`,
-                'Registry metadata enrichment recommended.',
-            ],
+            suggestion: 'No backend trust-score records available yet. Run quality/trust scoring to populate advisory insights.',
+            confidence: 0.6,
+            evidence: ['No trust-score entries returned by /api/v1/data-quality/trust-scores.'],
         };
     }
 
     return {
-        suggestion: scoredCollections.length > 0
-            ? 'All scored collections meet quality thresholds. Continue monitoring freshness and lineage drift.'
-            : 'No quality scores available yet. Run schema inference or quality pipeline to populate metrics.',
-        confidence: scoredCollections.length > 0 ? 0.92 : 0.55,
+        suggestion: 'Backend trust scores indicate collections are within target quality thresholds. Continue monitoring drift.',
+        confidence: 0.93,
         evidence: [
-            `${scoredCollections.length} of ${collections.length} collection(s) have quality scores.`,
-            `${collections.filter((c) => c.lifecycleStatus === 'PUBLISHED').length} published collection(s).`,
-            'Based on live collection registry data.',
+            `${scores.length} collection(s) scored by backend trust pipeline.`,
+            `${scores.filter((s) => s.lifecycleStatus.toUpperCase() === 'PUBLISHED').length} published collection(s).`,
         ],
     };
 }
@@ -215,8 +208,6 @@ function CollectionRow({
     onEdit: () => void;
     viewMode: ViewMode;
 }) {
-    const [showActions, setShowActions] = useState(false);
-
     return (
         <div
             data-testid="collection-item"
@@ -224,8 +215,6 @@ function CollectionRow({
                 'flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg',
                 'hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer'
             )}
-            onMouseEnter={() => setShowActions(true)}
-            onMouseLeave={() => setShowActions(false)}
             onClick={onView}
         >
             {/* Icon */}
@@ -276,11 +265,12 @@ function CollectionRow({
             </div>
 
             {/* Actions */}
-            <div className={cn('flex items-center gap-1', !showActions && 'invisible')}>
+            <div className="flex items-center gap-1" aria-label={`Actions for ${collection.name}`}>
                 <button
                     onClick={(e) => { e.stopPropagation(); onView(); }}
                     className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
                     title="View"
+                    aria-label={`View ${collection.name}`}
                 >
                     <Eye className="h-4 w-4 text-gray-400" />
                 </button>
@@ -288,10 +278,16 @@ function CollectionRow({
                     onClick={(e) => { e.stopPropagation(); onEdit(); }}
                     className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
                     title="Edit"
+                    aria-label={`Edit ${collection.name}`}
                 >
                     <Edit className="h-4 w-4 text-gray-400" />
                 </button>
-                <button className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded" title="More">
+                <button
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                    title="More actions"
+                    aria-label={`More actions for ${collection.name}`}
+                >
                     <MoreVertical className="h-4 w-4 text-gray-400" />
                 </button>
             </div>
@@ -353,7 +349,8 @@ export function DataExplorer() {
     });
 
     const collections = collectionsPage?.items ?? [];
-    const qualityAdvisory = useMemo(() => deriveQualityAdvisory(collections), [collections]);
+    const { data: trustScores } = useDataQualityTrustScores();
+    const qualityAdvisory = useMemo(() => deriveQualityAdvisory(trustScores), [trustScores]);
 
     const { data: lineageGraph, isLoading: lineageLoading } = useQuery({
         queryKey: ['lineage', selectedCollection?.id, viewMode],

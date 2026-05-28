@@ -6,19 +6,18 @@ import { PhaseEvidencePanel } from '../../../components/phase/PhaseEvidencePanel
 import { PhaseGovernanceTrace } from '../../../components/phase/PhaseGovernanceTrace';
 import { PhasePrimaryActionCard } from '../../../components/phase/PhasePrimaryActionCard';
 import { PhaseSuggestedNextStep } from '../../../components/phase/PhaseSuggestedNextStep';
-import {
-  type BlockerCard,
-  type EvidenceCard,
-  type GovernanceTraceRecord,
-  type SuggestedNextStep,
-} from '../../../services/phase';
+import type { Blocker as BlockerCard } from '../../../components/phase/PhaseBlockerPanel';
+import type { EvidenceItem as EvidenceCard } from '../../../components/phase/PhaseEvidencePanel';
+import type { GovernanceRecord as GovernanceTraceRecord } from '../../../components/phase/PhaseGovernanceTrace';
+import type { SuggestedStep as SuggestedNextStep } from '../../../components/phase/PhaseSuggestedNextStep';
+import type { MountedPhase } from '../../../services/phase';
 
 import { PhaseActionSection, type PhaseActionSectionGroup } from './PhaseActionSection';
 import { PhaseEmbeddedSurface } from './PhaseEmbeddedSurface';
 import { PhasePacketErrorPanel } from './PhasePacketErrorPanel';
 
 interface PhaseCockpitViewProps {
-  readonly phase: string;
+  readonly phase: MountedPhase;
   readonly phaseName: string;
   readonly phaseDescription: string;
   readonly primaryTitle: string;
@@ -139,10 +138,10 @@ export function PhaseCockpitView({
             actionAriaLabel={primaryActionAriaLabel}
           />
         )}
-        blockers={<div id={`${phase}-blocker-panel`}><PhaseBlockerPanel blockers={blockers} /></div>}
-        evidence={<PhaseEvidencePanel evidence={evidence} />}
-        suggestedAutomation={<PhaseSuggestedNextStep steps={suggestions} />}
-        governanceTrace={<PhaseGovernanceTrace records={governance} />}
+        blockers={<div id={`${phase}-blocker-panel`}><PhaseBlockerPanel blockers={[...blockers]} /></div>}
+        evidence={<PhaseEvidencePanel evidence={[...evidence]} />}
+        suggestedAutomation={<PhaseSuggestedNextStep steps={[...suggestions]} />}
+        governanceTrace={<PhaseGovernanceTrace records={[...governance]} />}
         advancedTools={advancedDetails}
         advancedToolsLabel={phaseDetailLabel}
         advancedToolsDescription={phaseDetailDescription}

@@ -141,8 +141,8 @@ export default function App(): React.ReactElement {
         if (restoredSession) {
           setSession(restoredSession);
         }
-      } catch (error) {
-        console.error('Failed to restore session:', error);
+      } catch {
+        dispatchAppDiagnostic('PHR_MOBILE_SESSION_RESTORE_FAILED');
         // Session restore failed - user will need to log in again
       } finally {
         setIsRestoringSession(false);
@@ -359,6 +359,12 @@ export default function App(): React.ReactElement {
       </SafeAreaView>
     </AppErrorBoundary>
   );
+}
+
+function dispatchAppDiagnostic(code: string): void {
+  if (typeof globalThis.dispatchEvent === 'function') {
+    globalThis.dispatchEvent(new CustomEvent(APP_DIAGNOSTIC_EVENT, { detail: { code } }));
+  }
 }
 
 const styles = StyleSheet.create({

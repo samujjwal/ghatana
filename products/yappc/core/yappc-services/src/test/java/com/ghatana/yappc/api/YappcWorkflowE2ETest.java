@@ -127,7 +127,7 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
     // =========================================================================
 
     @Test
-    @Disabled("Test failing due to GenerationRunRepository mock configuration issues")
+    @Disabled("GH-1210 GenerationRunRepository configuration must be replaced with production test wiring")
     @DisplayName("idea → artifact: full 8-phase pipeline produces SUCCESS with all phase outputs")
     void ideaToArtifactFullPipelineSucceeds() throws Exception {
         String json = JsonMapper.toJson(new LifecycleRequest(
@@ -153,7 +153,7 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
     }
 
     @Test
-    @Disabled("Test failing due to GenerationRunRepository mock configuration issues")
+    @Disabled("GH-1211 GenerationRunRepository configuration must be replaced with production test wiring")
     @DisplayName("idea → artifact: executedPhases list covers all 8 lifecycle phases in order")
     void allEightPhasesExecutedInOrder() throws Exception {
         String json = JsonMapper.toJson(new LifecycleRequest(
@@ -182,7 +182,7 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
     // =========================================================================
 
     @Test
-    @Disabled("Test failing due to GenerationRunRepository mock configuration issues")
+    @Disabled("GH-1212 GenerationRunRepository configuration must be replaced with production test wiring")
     @DisplayName("refactor: intent expressing a refactor goal produces an evolution plan")
     void refactorIntentProducesEvolutionPlan() throws Exception {
         String json = JsonMapper.toJson(new LifecycleRequest(
@@ -214,7 +214,7 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
     // =========================================================================
 
     @Test
-    @Disabled("Test failing due to GenerationRunRepository mock configuration issues")
+    @Disabled("GH-1213 GenerationRunRepository configuration must be replaced with production test wiring")
     @DisplayName("preview: intent with dryRun=true returns artifacts without executing RUN")
     void previewDryRunReturnsArtifactsWithoutRun() throws Exception {
         String json = JsonMapper.toJson(new LifecycleRequest(
@@ -242,7 +242,7 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
     // =========================================================================
 
     @Test
-    @Disabled("Test failing due to GenerationRunRepository mock configuration issues")
+    @Disabled("GH-1214 GenerationRunRepository configuration must be replaced with production test wiring")
     @DisplayName("approval gate: policy-blocking intent halts pipeline at VALIDATE with VALIDATION_FAILED status")
     void approvalGateBlocksValidationFailingIntent() throws Exception {
         // Wire a policy engine that blocks all requests
@@ -312,7 +312,7 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
     // =========================================================================
 
     @Test
-    @Disabled("Test failing due to GenerationRunRepository mock configuration issues")
+    @Disabled("GH-1215 GenerationRunRepository configuration must be replaced with production test wiring")
     @DisplayName("rollback: lifecycle with rollback-tagged intent produces evolution plan containing rollback instructions")
     void rollbackIntentProducesEvolutionPlanWithRollbackInstructions() throws Exception {
         String json = JsonMapper.toJson(new LifecycleRequest(
@@ -377,7 +377,7 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
     // =========================================================================
 
     @Test
-    @Disabled("Test failing due to GenerationRunRepository mock configuration issues")
+    @Disabled("GH-1216 GenerationRunRepository configuration must be replaced with production test wiring")
     @DisplayName("phaseDurationsMs is present in pipeline result and all values are >= 0")
     void phaseDurationsArePresentAndNonNegative() throws Exception {
         String json = JsonMapper.toJson(new LifecycleRequest(

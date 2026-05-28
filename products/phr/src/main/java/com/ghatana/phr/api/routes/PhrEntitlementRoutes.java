@@ -236,76 +236,45 @@ public final class PhrEntitlementRoutes {
                 "Route contract not loaded or invalid - service unavailable");
         }
 
-        // Extract and validate authentication context from request headers
-        // Fail closed: require explicit identity headers for production route entitlement
-        String principalId = request.getHeader(io.activej.http.HttpHeaders.of("X-Principal-Id"));
-        String tenantId = request.getHeader(io.activej.http.HttpHeaders.of("X-Tenant-Id"));
-        String role = request.getHeader(io.activej.http.HttpHeaders.of("X-Role"));
-        String persona = request.getHeader(io.activej.http.HttpHeaders.of("X-Persona"));
-        String tier = request.getHeader(io.activej.http.HttpHeaders.of("X-Tier"));
-        String correlationId = request.getHeader(io.activej.http.HttpHeaders.of("X-Correlation-ID"));
-
-        // E-006: Generate correlation ID if not provided
-        if (correlationId == null || correlationId.isBlank()) {
-            correlationId = java.util.UUID.randomUUID().toString();
-        }
-
-        // Validate required headers - fail closed for missing identity
-        if (principalId == null || principalId.isBlank()) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_PRINCIPAL", "X-Principal-Id header is required", correlationId);
-        }
-        if (tenantId == null || tenantId.isBlank()) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_TENANT", "X-Tenant-Id header is required", correlationId);
-        }
-        if (role == null || role.isBlank()) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_ROLE", "X-Role header is required", correlationId);
-        }
-
-        // Normalize role to lower-case
-        String normalizedRole = role.strip().toLowerCase();
-        if (!PhrRouteSupport.ALLOWED_ROLES.contains(normalizedRole)) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_ROLE", "Unrecognised role: " + role, correlationId);
-        }
-
-        // Set sensible defaults for optional headers
-        if (persona == null || persona.isBlank()) {
-            persona = normalizedRole;
-        }
-        if (tier == null || tier.isBlank()) {
-            tier = "core";
+        PhrRouteSupport.PhrRequestContext context;
+        try {
+            context = PhrRouteSupport.requireContext(request);
+        } catch (IllegalArgumentException ex) {
+            String correlationId = PhrRouteSupport.extractCorrelationId(request);
+            return PhrRouteSupport.errorResponse(400, routeContextErrorCode(ex.getMessage()), ex.getMessage(), correlationId);
         }
 
         // E-005: Use tenant/principal/persona/tier in cache key
-        String cacheKey = String.format("route-entitlements:%s:%s:%s:%s:%s", 
-            tenantId, principalId, normalizedRole, persona, tier);
+        String cacheKey = String.format("route-entitlements:%s:%s:%s:%s:%s",
+            context.tenantId(), context.principalId(), context.role(), context.persona(), context.tier());
 
         // Try cache first
         java.util.Optional<Map<String, Object>> cached = entitlementCache.get(
-            principalId,
-            tenantId,
+            context.principalId(),
+            context.tenantId(),
             "/route-entitlements",
             cacheKey
         );
         if (cached.isPresent()) {
-            return jsonResponse(200, cached.get(), correlationId);
+            return jsonResponse(200, cached.get(), context.correlationId());
         }
 
         // Use loaded route contract with built-in role order
         List<ProductRouteEntitlement.RouteEntitlement> routes = routeEntitlementEvaluator.filterByRole(
-            cachedRoutes, normalizedRole, roleOrder);
+            cachedRoutes, context.role(), roleOrder);
         List<ProductRouteEntitlement.ActionEntitlement> actions =
-            routeEntitlementEvaluator.filterActionsByRole(routes, normalizedRole, roleOrder);
+            routeEntitlementEvaluator.filterActionsByRole(routes, context.role(), roleOrder);
         List<ProductRouteEntitlement.CardEntitlement> cards =
-            routeEntitlementEvaluator.filterCardsByRole(routes, normalizedRole, roleOrder);
+            routeEntitlementEvaluator.filterCardsByRole(routes, context.role(), roleOrder);
 
         ProductRouteEntitlement entitlement = new ProductRouteEntitlement(
             "phr",
-            principalId,
-            tenantId,
-            normalizedRole,
-            persona,
-            tier,
-            correlationId,
+            context.principalId(),
+            context.tenantId(),
+            context.role(),
+            context.persona(),
+            context.tier(),
+            context.correlationId(),
             routes,
             actions,
             cards
@@ -315,9 +284,9 @@ public final class PhrEntitlementRoutes {
         Map<String, Object> entitlementMap = entitlement.toMap();
         
         // Cache for 5 minutes (300 seconds)
-        entitlementCache.put(principalId, tenantId, "/route-entitlements", cacheKey, entitlementMap);
+        entitlementCache.put(context.principalId(), context.tenantId(), "/route-entitlements", cacheKey, entitlementMap);
         
-        return jsonResponse(200, entitlementMap, correlationId);
+        return jsonResponse(200, entitlementMap, context.correlationId());
     }
 
 
@@ -332,5 +301,24 @@ public final class PhrEntitlementRoutes {
                 .withHeader(io.activej.http.HttpHeaders.of("X-Correlation-ID"), correlationId)
                 .withJson(json)
                 .build());
+    }
+
+    private static String routeContextErrorCode(String message) {
+        if (message == null) {
+            return "INVALID_ROUTE_CONTEXT";
+        }
+        if (message.startsWith("X-Principal")) {
+            return "MISSING_PRINCIPAL";
+        }
+        if (message.startsWith("X-Tenant")) {
+            return "MISSING_TENANT";
+        }
+        if (message.startsWith("X-Role")) {
+            return "MISSING_ROLE";
+        }
+        if (message.startsWith("Unrecognised role")) {
+            return "INVALID_ROLE";
+        }
+        return "INVALID_ROUTE_CONTEXT";
     }
 }

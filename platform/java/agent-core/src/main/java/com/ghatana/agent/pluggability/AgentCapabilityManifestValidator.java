@@ -84,6 +84,25 @@ public final class AgentCapabilityManifestValidator {
             errors.add("STANDALONE agents cannot declare SPECIALIST interaction mode");
         }
 
+        // Rule 5: Hierarchical interaction modes require explicit supervision role.
+        if (manifest.supervisionRole() == null
+                && (manifest.supports(InteractionMode.ORCHESTRATOR)
+                || manifest.supports(InteractionMode.SPECIALIST))) {
+            errors.add("ORCHESTRATOR/SPECIALIST interaction modes require explicit supervisionRole");
+        }
+
+        // Rule 6: SUPERVISOR role must be able to initiate handoff.
+        if (manifest.supervisionRole() == SupervisionRole.SUPERVISOR
+                && !manifest.canInitiateHandoff()) {
+            errors.add("SUPERVISOR role requires INITIATOR_ONLY or BIDIRECTIONAL handoffCapability");
+        }
+
+        // Rule 7: SUBORDINATE role must be able to receive handoff.
+        if (manifest.supervisionRole() == SupervisionRole.SUBORDINATE
+                && !manifest.canReceiveHandoff()) {
+            errors.add("SUBORDINATE role requires RECEIVER_ONLY or BIDIRECTIONAL handoffCapability");
+        }
+
         boolean valid = errors.isEmpty();
         return new ValidationResult(valid, List.copyOf(errors), List.copyOf(warnings));
     }

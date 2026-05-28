@@ -46,8 +46,6 @@ public final class PhrAuthRoutes {
      */
     private static final long SESSION_TTL_HOURS = 1L;
 
-    private static final Set<String> VALID_ROLES = Set.of("patient", "caregiver", "clinician", "admin");
-
     private final Eventloop eventloop;
     private final KernelSecurityManager securityManager;
     private final UserRepository userRepository;
@@ -191,46 +189,32 @@ public final class PhrAuthRoutes {
             // via AuditTrailService in a dedicated audit middleware; the route
             // simply acknowledges the logout.
             org.slf4j.LoggerFactory.getLogger(PhrAuthRoutes.class)
-                .info("PHR session logout: principalId={}", principalId);
+                .info("PHR session logout acknowledged");
         }
         return Promise.of(HttpResponse.ofCode(204).build());
     }
 
     private Promise<HttpResponse> handleMe(HttpRequest request) {
-        // Validate required identity headers
-        String principalId = request.getHeader(io.activej.http.HttpHeaders.of("X-Principal-ID"));
-        String tenantId = request.getHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"));
-        String role = request.getHeader(io.activej.http.HttpHeaders.of("X-Role"));
-
-        if (principalId == null || principalId.isBlank()) {
-            return PhrRouteSupport.errorResponse(401, "MISSING_PRINCIPAL", "X-Principal-ID header is required");
-        }
-        if (tenantId == null || tenantId.isBlank()) {
-            return PhrRouteSupport.errorResponse(401, "MISSING_TENANT", "X-Tenant-ID header is required");
-        }
-        if (role == null || role.isBlank()) {
-            return PhrRouteSupport.errorResponse(401, "MISSING_ROLE", "X-Role header is required");
-        }
-
-        // Validate role
-        String normalizedRole = role.strip().toLowerCase();
-        if (!VALID_ROLES.contains(normalizedRole)) {
-            return PhrRouteSupport.errorResponse(401, "INVALID_ROLE", "Unrecognised role: " + role);
+        PhrRouteSupport.PhrRequestContext context;
+        try {
+            context = PhrRouteSupport.requireContext(request);
+        } catch (IllegalArgumentException ex) {
+            return PhrRouteSupport.errorResponse(401, "INVALID_SESSION_CONTEXT", ex.getMessage());
         }
 
         // Fetch user to validate session and return current actor info
-        Optional<PHRUser> userOpt = userRepository.findByUserId(principalId);
+        Optional<PHRUser> userOpt = userRepository.findByUserId(context.principalId());
         if (userOpt.isEmpty()) {
             return PhrRouteSupport.errorResponse(401, "INVALID_SESSION", "Session principal not found");
         }
 
         PHRUser user = userOpt.get();
-        String name = user.getUsername() != null ? user.getUsername() : principalId;
+        String name = user.getUsername() != null ? user.getUsername() : context.principalId();
         String resolvedRole = resolveRole(user.getRoles());
 
         Map<String, Object> actor = new LinkedHashMap<>();
         actor.put("principalId", user.getUserId());
-        actor.put("tenantId", tenantId);
+        actor.put("tenantId", context.tenantId());
         actor.put("role", resolvedRole);
         actor.put("name", name);
         actor.put("permissions", getPermissionsForRole(resolvedRole));
@@ -240,7 +224,6 @@ public final class PhrAuthRoutes {
 
     /**
      * Returns permission list for a given role.
-     * This is a simplified implementation; production should use Kernel policy evaluator.
      */
     private java.util.List<String> getPermissionsForRole(String role) {
         return switch (role) {
@@ -255,6 +238,9 @@ public final class PhrAuthRoutes {
             case "caregiver" -> java.util.List.of(
                 "view-dependents", "review-lab-results", "review-medications",
                 "view-observations", "view-fchv-dashboard"
+            );
+            case "fchv" -> java.util.List.of(
+                "view-fchv-dashboard", "capture-community-vitals", "register-community-patient"
             );
             case "patient" -> java.util.List.of(
                 "view-patient-summary", "view-records", "manage-consent",
@@ -274,7 +260,7 @@ public final class PhrAuthRoutes {
             return "patient";
         }
         // Prefer most-privileged valid role
-        for (String preferred : new String[]{"admin", "clinician", "caregiver", "patient"}) {
+        for (String preferred : new String[]{"admin", "clinician", "fchv", "caregiver", "patient"}) {
             for (String role : roles) {
                 if (preferred.equalsIgnoreCase(role)) {
                     return preferred;

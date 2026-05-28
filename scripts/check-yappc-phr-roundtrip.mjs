@@ -101,6 +101,14 @@ runCommand('YAPPC PHR canvas overlay and degraded AI tests', pnpm, [
   'src/lib/phr/__tests__/phrCompletenessOverlay.test.ts',
   'src/components/canvas/__tests__/CanvasOverlays.test.tsx',
   'src/lib/canvas-ai/__tests__/yappc-ai-adapter.test.ts',
+  'src/hooks/__tests__/usePhasePacket.test.ts',
+  'src/routes/app/project/__tests__/phasePacketMappers.test.ts',
+  'src/routes/app/project/__tests__/usePhaseActionHandlers.test.tsx',
+]);
+runCommand('YAPPC web typecheck with generated routes', pnpm, [
+  '--dir',
+  'products/yappc/frontend/web',
+  'typecheck',
 ]);
 
 checker.finish({

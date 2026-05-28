@@ -40,7 +40,7 @@ const provider = {
 };
 
 async function waitForForm(): Promise<void> {
-  await screen.findByText('Book New Appointment');
+  await screen.findByText('appointments.request.title');
 }
 
 async function chooseSlot(): Promise<void> {

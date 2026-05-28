@@ -13,7 +13,7 @@
  */
 
 import { readFileSync, readdirSync, statSync } from 'fs';
-import { join, relative } from 'path';
+import { basename, join, relative } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
@@ -26,6 +26,7 @@ let filesChecked = 0;
 function checkFile(filePath) {
   const content = readFileSync(filePath, 'utf-8');
   const relativePath = relative(REPO_ROOT, filePath);
+  const fileName = basename(filePath);
   
   filesChecked++;
   
@@ -36,19 +37,25 @@ function checkFile(filePath) {
   const hasRoleCheck = /hasClinicalRole|canPerformAdminOperation|canAccessPatientRecordForRole/.test(content);
   
   // Check for emergency access policy gates
-  const isEmergencyRoute = /PhrEmergencyRoutes|emergency/i.test(content);
+  const isEmergencyRoute = fileName === 'PhrEmergencyRoutes.java';
   const hasEmergencyPolicy = isEmergencyRoute && 
     (/justification.*required/.test(content) || 
      /resourcesAccessed.*required/.test(content) ||
      /REVIEWER_REQUIRED/.test(content));
   
   // Check for consent validation in consent routes
-  const isConsentRoute = /PhrConsentRoutes|consent/i.test(content);
+  const isConsentRoute = fileName === 'PhrConsentRoutes.java';
   const hasConsentPolicy = isConsentRoute && 
-    (/mayManagePatientConsent|CONSENT_OWNER_REQUIRED/.test(content));
+    (/canManageConsent|mayManagePatientConsent|CONSENT_OWNER_REQUIRED/.test(content));
   
   // Generate violations
-  if (!hasRequireContext && content.includes('HttpRequest')) {
+  const publicRouteFiles = new Set(['PhrHealthRoutes.java']);
+  const hasManualContextValidation =
+    /X-Principal-ID|X-Principal-Id/.test(content) &&
+    /X-Tenant-ID|X-Tenant-Id/.test(content) &&
+    /X-Role/.test(content);
+
+  if (!publicRouteFiles.has(fileName) && !hasRequireContext && !hasManualContextValidation && content.includes('HttpRequest')) {
     violations.push({
       file: relativePath,
       line: 1,

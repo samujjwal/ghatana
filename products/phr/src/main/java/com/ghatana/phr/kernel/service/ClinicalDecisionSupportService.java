@@ -7,6 +7,8 @@ import com.ghatana.phr.ai.agents.MedicationInteractionAgent;
 import com.ghatana.phr.ai.agents.ReadmissionRiskAgent;
 import com.ghatana.phr.observability.PHRExplainabilityFrameworkImpl;
 import io.activej.promise.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -21,6 +23,8 @@ import java.util.Objects;
  * @doc.pattern Service, Facade
  */
 public final class ClinicalDecisionSupportService implements KernelLifecycleAware {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ClinicalDecisionSupportService.class);
 
     private final LabAnomalyDetectionAgent labAnomalyDetectionAgent;
     private final MedicationInteractionAgent medicationInteractionAgent;
@@ -229,14 +233,8 @@ public final class ClinicalDecisionSupportService implements KernelLifecycleAwar
         Objects.requireNonNull(decision, "decision cannot be null");
         Objects.requireNonNull(reviewerId, "reviewerId cannot be null");
 
-        System.out.println(String.format(
-            "Human review recorded: Patient=%s, Reviewer=%s, Approved=%s, Priority=%s, Comments=%s",
-            decision.patientId(),
-            reviewerId,
-            approved,
-            decision.reviewPriority(),
-            comments != null ? comments : "none"
-        ));
+        LOG.info("Human clinical decision review recorded. approved={}, priority={}",
+            approved, decision.reviewPriority());
 
         return Promise.complete();
     }

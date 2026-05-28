@@ -1,0 +1,24 @@
+{
+  "productId": "phr",
+  "evidenceType": "ia-coverage",
+  "generatedAt": "2026-05-28T17:09:12.597Z",
+  "sourceCommitSha": "2a37e8d0702271a10d47f5707a2720fd657c7f54",
+  "targetCommitSha": "2a37e8d0702271a10d47f5707a2720fd657c7f54",
+  "targetEnvironment": "local",
+  "validationStatus": "validated",
+  "pass": true,
+  "summary": {
+    "iaRoutesCovered": 27,
+    "canonicalContract": "products/phr/config/phr-route-contract.json",
+    "stableRouteElementCoverage": "complete"
+  },
+  "evidenceRun": {
+    "generatedBy": "scripts/check-phr-ia-coverage.mjs",
+    "command": "node scripts/check-phr-ia-coverage.mjs",
+    "source": "scripts/check-phr-ia-coverage.mjs",
+    "commit": "2a37e8d0702271a10d47f5707a2720fd657c7f54",
+    "sourceCommitSha": "2a37e8d0702271a10d47f5707a2720fd657c7f54",
+    "targetCommitSha": "2a37e8d0702271a10d47f5707a2720fd657c7f54",
+    "targetEnvironment": "local"
+  }
+}

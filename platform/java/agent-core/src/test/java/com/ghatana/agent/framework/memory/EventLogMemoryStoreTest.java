@@ -1,5 +1,8 @@
 package com.ghatana.agent.framework.memory;
 
+import com.ghatana.agent.context.version.VersionContext;
+import com.ghatana.agent.context.version.VersionContextCodec;
+import com.ghatana.agent.mastery.MasteryState;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -334,6 +337,119 @@ class EventLogMemoryStoreTest extends EventloopTestBase {
         MemoryStats stats = runPromise(() -> memoryStore.getStats()); 
         assertThat(stats.getEpisodeCount()).isEqualTo(0); 
         assertThat(stats.getFactCount()).isEqualTo(0); 
+    }
+
+    @Test
+    @DisplayName("Should filter negative knowledge by mastery state metadata")
+    void shouldFilterNegativeKnowledgeByMasteryState() {
+        // Given
+        NegativeKnowledge practiced = NegativeKnowledge.builder()
+                .id("nk-practiced")
+                .skillId("skill-1")
+                .failureMode("timeout")
+                .description("Observed timeout under high load")
+                .timestamp(Instant.now().minus(2, ChronoUnit.MINUTES))
+                .tenantId("tenant-a")
+                .metadata(Map.of("masteryState", "PRACTICED"))
+                .build();
+        NegativeKnowledge mastered = NegativeKnowledge.builder()
+                .id("nk-mastered")
+                .skillId("skill-1")
+                .failureMode("schema")
+                .description("Schema drift in mastered flow")
+                .timestamp(Instant.now().minus(1, ChronoUnit.MINUTES))
+                .tenantId("tenant-a")
+                .metadata(Map.of("masteryState", "MASTERED"))
+                .build();
+
+        runPromise(() -> memoryStore.storeNegativeKnowledge(practiced));
+        runPromise(() -> memoryStore.storeNegativeKnowledge(mastered));
+
+        // When
+        List<NegativeKnowledge> results = runPromise(() ->
+                memoryStore.queryNegativeKnowledgeByMasteryState(MasteryState.PRACTICED, 10));
+
+        // Then
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).id()).isEqualTo("nk-practiced");
+    }
+
+    @Test
+    @DisplayName("Should filter negative knowledge by version context digest")
+    void shouldFilterNegativeKnowledgeByVersionContext() {
+        // Given
+        VersionContext matchingContext = VersionContext.of(
+                Map.of("spring", "3.2.0"),
+                Map.of("jvm", "21"),
+                Map.of("gradle", "8.9"),
+                Map.of("data-cloud-api", "v1"),
+                "git:abc123",
+                Instant.now());
+        String matchingDigest = VersionContextCodec.INSTANCE.encodeWithDigest(matchingContext).digest();
+
+        NegativeKnowledge matching = NegativeKnowledge.builder()
+                .id("nk-version-match")
+                .skillId("skill-2")
+                .failureMode("compatibility")
+                .description("Fails with incompatible Spring version")
+                .timestamp(Instant.now().minus(2, ChronoUnit.MINUTES))
+                .tenantId("tenant-a")
+                .metadata(Map.of("versionContextDigest", matchingDigest))
+                .build();
+        NegativeKnowledge nonMatching = NegativeKnowledge.builder()
+                .id("nk-version-miss")
+                .skillId("skill-2")
+                .failureMode("compatibility")
+                .description("Different runtime context")
+                .timestamp(Instant.now().minus(1, ChronoUnit.MINUTES))
+                .tenantId("tenant-a")
+                .metadata(Map.of("versionContextDigest", "0000000000000000"))
+                .build();
+
+        runPromise(() -> memoryStore.storeNegativeKnowledge(matching));
+        runPromise(() -> memoryStore.storeNegativeKnowledge(nonMatching));
+
+        // When
+        List<NegativeKnowledge> results = runPromise(() ->
+                memoryStore.queryNegativeKnowledgeByVersionContext(matchingContext, 10));
+
+        // Then
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).id()).isEqualTo("nk-version-match");
+    }
+
+    @Test
+    @DisplayName("Should filter negative knowledge by tenant")
+    void shouldFilterNegativeKnowledgeByTenant() {
+        // Given
+        NegativeKnowledge tenantA = NegativeKnowledge.builder()
+                .id("nk-tenant-a")
+                .skillId("skill-3")
+                .failureMode("security")
+                .description("Tenant A specific guardrail")
+                .timestamp(Instant.now().minus(2, ChronoUnit.MINUTES))
+                .tenantId("tenant-a")
+                .metadata(Map.of())
+                .build();
+        NegativeKnowledge tenantB = NegativeKnowledge.builder()
+                .id("nk-tenant-b")
+                .skillId("skill-3")
+                .failureMode("security")
+                .description("Tenant B specific guardrail")
+                .timestamp(Instant.now().minus(1, ChronoUnit.MINUTES))
+                .tenantId("tenant-b")
+                .metadata(Map.of())
+                .build();
+
+        runPromise(() -> memoryStore.storeNegativeKnowledge(tenantA));
+        runPromise(() -> memoryStore.storeNegativeKnowledge(tenantB));
+
+        // When
+        List<NegativeKnowledge> results = runPromise(() -> memoryStore.queryNegativeKnowledgeByTenant("tenant-a", 10));
+
+        // Then
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).id()).isEqualTo("nk-tenant-a");
     }
 
     @Test

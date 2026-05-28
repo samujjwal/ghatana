@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, Badge } from '@ghatana/design-system';
 import { fetchImmunizations } from '../api/clinicalApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
-import { logError } from '../utils/safeLogger';
 import type { ImmunizationSummary } from '../types';
 
 export function ImmunizationsPage(): React.ReactElement {
@@ -49,7 +48,7 @@ export function ImmunizationsPage(): React.ReactElement {
   return (
     <div className="stack gap-lg">
       <Card>
-        <CardHeader title="Immunizations" subheader="Your vaccination history and status" />
+        <CardHeader title={t('immunizations.title')} subheader={t('immunizations.subheader')} />
         <CardContent>
           <div className="stack gap-md">
             {/* Complete immunizations */}

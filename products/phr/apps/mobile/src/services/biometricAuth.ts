@@ -1,8 +1,10 @@
 import * as LocalAuthentication from 'expo-local-authentication';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { t } from '../i18n/phrMobileI18n';
-
-const BIOMETRIC_POLICY_KEY = 'phr-biometric-policy-enabled';
+import {
+  phiDisableBiometricPolicy,
+  phiEnableBiometricPolicy,
+  phiIsBiometricPolicyEnabled,
+} from './phiEncryptedStorage';
 
 /**
  * Checks if biometric authentication policy is enabled for PHI access.
@@ -10,26 +12,21 @@ const BIOMETRIC_POLICY_KEY = 'phr-biometric-policy-enabled';
  * before any PHI can be decrypted.
  */
 export async function isBiometricPolicyEnabled(): Promise<boolean> {
-  try {
-    const value = await AsyncStorage.getItem(BIOMETRIC_POLICY_KEY);
-    return value === 'true';
-  } catch {
-    return false;
-  }
+  return phiIsBiometricPolicyEnabled();
 }
 
 /**
  * Enables the biometric authentication policy for PHI access.
  */
 export async function enableBiometricPolicy(): Promise<void> {
-  await AsyncStorage.setItem(BIOMETRIC_POLICY_KEY, 'true');
+  await phiEnableBiometricPolicy();
 }
 
 /**
  * Disables the biometric authentication policy for PHI access.
  */
 export async function disableBiometricPolicy(): Promise<void> {
-  await AsyncStorage.setItem(BIOMETRIC_POLICY_KEY, 'false');
+  await phiDisableBiometricPolicy();
 }
 
 export async function authenticateBiometric(): Promise<boolean> {

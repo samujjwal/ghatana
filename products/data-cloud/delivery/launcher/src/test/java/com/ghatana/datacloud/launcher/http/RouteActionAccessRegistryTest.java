@@ -97,4 +97,19 @@ class RouteActionAccessRegistryTest {
         assertThat(RouteActionAccessRegistry.requiredAccess("POST", "/api/v1/alerts/suggestions/sugg-1/apply"))
             .isEqualTo(DataCloudSecurityFilter.AccessLevel.OPERATOR);
     }
+
+    @Test
+    @DisplayName("release readiness endpoints require ADMIN access")
+    void shouldClassifyReleaseReadinessEndpointsAsAdmin() {
+        assertThat(RouteActionAccessRegistry.requiredAccess("GET", "/api/v1/release-readiness"))
+            .isEqualTo(DataCloudSecurityFilter.AccessLevel.ADMIN);
+        assertThat(RouteActionAccessRegistry.requiredAccess("GET", "/api/v1/release-readiness/stats"))
+            .isEqualTo(DataCloudSecurityFilter.AccessLevel.ADMIN);
+        assertThat(RouteActionAccessRegistry.requiredAccess("GET", "/api/v1/release-readiness/data-cloud/1-0/prod"))
+            .isEqualTo(DataCloudSecurityFilter.AccessLevel.ADMIN);
+        assertThat(RouteActionAccessRegistry.requiredAccess("POST", "/api/v1/release-readiness"))
+            .isEqualTo(DataCloudSecurityFilter.AccessLevel.ADMIN);
+        assertThat(RouteActionAccessRegistry.requiredAccess("DELETE", "/api/v1/release-readiness/record-1"))
+            .isEqualTo(DataCloudSecurityFilter.AccessLevel.ADMIN);
+    }
 }

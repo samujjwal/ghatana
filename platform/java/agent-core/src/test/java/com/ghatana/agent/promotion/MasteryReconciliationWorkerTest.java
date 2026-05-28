@@ -32,7 +32,7 @@ import java.util.Map;
  * @doc.pattern Test
  */
 @DisplayName("MasteryReconciliationWorker Tests")
-@Disabled("Requires InMemoryMasteryRegistry and InMemoryMasteryTransitionRepository implementations")
+@Disabled("GH-1101 Requires InMemoryMasteryRegistry and InMemoryMasteryTransitionRepository implementations")
 class MasteryReconciliationWorkerTest {
 
     private MasteryReconciliationWorker worker;

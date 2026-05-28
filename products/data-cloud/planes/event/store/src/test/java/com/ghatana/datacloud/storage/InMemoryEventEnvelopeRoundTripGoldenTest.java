@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
  * @doc.layer product
  * @doc.pattern GoldenMasterTest
  */
-@Disabled("InMemoryEventLogStore implements the platform EventLogStore API; EventEnvelopeRoundTripTest covers this adapter.")
+@Disabled("GH-1303 InMemoryEventLogStore implements the platform EventLogStore API; EventEnvelopeRoundTripTest covers this adapter.")
 class InMemoryEventEnvelopeRoundTripGoldenTest {
 
     @Test

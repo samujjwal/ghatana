@@ -46,14 +46,13 @@ const MODULE_CLASSIFICATION = {
     ':products:data-cloud:extensions:plugins',
     ':products:data-cloud:extensions:agent-registry',
     ':products:data-cloud:extensions:agent-catalog',
+    ':products:data-cloud:delivery:api-contract-tests',
+    ':products:data-cloud:integration-tests',
     ':products:data-cloud:extensions:kernel-bridge',
   ],
   
   // Advisory modules (checked in CI but not blocking)
-  advisory: [
-    ':products:data-cloud:delivery:api-contract-tests',
-    ':products:data-cloud:integration-tests',
-  ],
+  advisory: [],
   
   // Action Plane modules (AEP co-located - special handling)
   actionPlane: [
@@ -142,7 +141,7 @@ function classifyModule(modulePath) {
   
   // Check advisory
   if (MODULE_CLASSIFICATION.advisory.includes(modulePath)) {
-    return { category: 'advisory', reason: 'Integration tests and contract tests' };
+    return { category: 'advisory', reason: 'Non-production module' };
   }
   
   // Check Action Plane

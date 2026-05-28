@@ -14,8 +14,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OpenAPI, AuthService as GeneratedAuthService, WorkspacesService, ProjectsService } from '../../../clients/generated/api';
 import type { LoginRequest, LoginResponse, Project, Workspace } from '../../../clients/generated/api';
 
-function expectTypeExport<T>(): void {
-  expect(true).toBe(true);
+function expectTypeExport<T>(label: string): void {
+  const contractProbe: { readonly label: string; readonly value: T | null } = {
+    label,
+    value: null,
+  };
+  expect(contractProbe).toMatchObject({ label, value: null });
 }
 
 describe('OpenAPI Client Contract Tests', () => {
@@ -105,19 +109,19 @@ describe('OpenAPI Client Contract Tests', () => {
     it('should export Workspace type from generated client', () => {
       // This test verifies that the type export works correctly
       // The actual type checking happens at compile time
-      expectTypeExport<Workspace>();
+      expectTypeExport<Workspace>('Workspace');
     });
 
     it('should export Project type from generated client', () => {
-      expectTypeExport<Project>();
+      expectTypeExport<Project>('Project');
     });
 
     it('should export LoginRequest type from generated client', () => {
-      expectTypeExport<LoginRequest>();
+      expectTypeExport<LoginRequest>('LoginRequest');
     });
 
     it('should export LoginResponse type from generated client', () => {
-      expectTypeExport<LoginResponse>();
+      expectTypeExport<LoginResponse>('LoginResponse');
     });
   });
 
@@ -150,9 +154,9 @@ describe('OpenAPI Client Contract Tests', () => {
     });
 
     it('should verify adapter types are exported for backward compatibility', () => {
-      expectTypeExport<Workspace>();
-      expectTypeExport<Project>();
-      expectTypeExport<LoginRequest>();
+      expectTypeExport<Workspace>('Workspace');
+      expectTypeExport<Project>('Project');
+      expectTypeExport<LoginRequest>('LoginRequest');
     });
   });
 });

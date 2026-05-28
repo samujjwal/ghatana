@@ -48,13 +48,13 @@ export function TimelinePage(): React.ReactElement {
         <CardContent>
           {/* Category filter */}
           <div className="filter-bar" role="search">
-            <label htmlFor="category-filter" className="visually-hidden">Filter by category</label>
+            <label htmlFor="category-filter" className="visually-hidden">{t('timeline.filter.label')}</label>
             <select
               id="category-filter"
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="filter-select"
-              aria-label="Filter by category"
+              aria-label={t('timeline.filter.label')}
             >
               <option value="">{t('timeline.filter.all')}</option>
               {categories.map(cat => (
@@ -82,13 +82,7 @@ export function TimelinePage(): React.ReactElement {
                     <li key={ev.id} className="timeline-event" role="listitem">
                       <button
                         className="timeline-event-button"
-                        onClick={() => {
-                          if (ev.resourceId) {
-                            // Navigate to detail page based on resource type
-                            // This would typically use React Router navigation
-                            console.log('Navigate to detail:', ev.resourceId, ev.type);
-                          }
-                        }}
+                        onClick={() => undefined}
                         aria-label={`View details for ${ev.title}`}
                       >
                         <time dateTime={ev.occurredAt} aria-label={`Date: ${new Date(ev.occurredAt).toLocaleDateString()}`}>{new Date(ev.occurredAt).toLocaleDateString()}</time>

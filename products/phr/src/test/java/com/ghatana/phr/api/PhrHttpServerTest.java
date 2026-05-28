@@ -1076,6 +1076,9 @@ class PhrHttpServerTest extends EventloopTestBase {
 
     private HttpResponse dispatch(HttpMethod method, String path, String jsonBody)
             throws Exception {
+        if (path.startsWith("/fhir")) {
+            return dispatch(method, path, jsonBody, phrHeaders("patient-1", "patient"));
+        }
         return dispatch(method, path, jsonBody, Map.of());
     }
 

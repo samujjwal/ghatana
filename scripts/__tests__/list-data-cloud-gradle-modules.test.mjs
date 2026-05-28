@@ -121,7 +121,8 @@ describe('list-data-cloud-gradle-modules.mjs', () => {
     const output = execFileSync('node', [SCRIPT_PATH, '--release-blocking'], { cwd: REPO_ROOT, encoding: 'utf8' });
     
     assert.ok(output.includes(':products:data-cloud:planes:shared-spi'), 'Should include release-blocking modules');
-    assert.ok(!output.includes(':products:data-cloud:integration-tests'), 'Should not include advisory modules');
+    assert.ok(output.includes(':products:data-cloud:integration-tests'), 'Should include release-blocking integration tests');
+    assert.ok(output.includes(':products:data-cloud:delivery:api-contract-tests'), 'Should include release-blocking contract tests');
   });
 
   it('should validate classification with --validate flag', () => {

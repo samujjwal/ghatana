@@ -93,7 +93,7 @@ export function useCollectionSchema(
  */
 export function useCollectionStats(
     id: string,
-    options?: Omit<UseQueryOptions<{ entityCount: number; storageSize: number; lastUpdated: string }>, 'queryKey' | 'queryFn'>
+    options?: Omit<UseQueryOptions<{ entityCount: number; storageSize: number | null; lastUpdated: string }>, 'queryKey' | 'queryFn'>
 ) {
     return useQuery({
         queryKey: collectionKeys.stats(id),

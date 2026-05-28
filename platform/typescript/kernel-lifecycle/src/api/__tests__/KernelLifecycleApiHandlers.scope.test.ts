@@ -163,19 +163,19 @@ describe("KernelLifecycleApiHandlers scope validation", () => {
       expect(response.statusCode).toBe(200);
     });
 
-    it.skip("documents expected project ID scope validation (not yet implemented) // GH-KERNEL-001", async () => {
+    it.skip("documents expected project ID scope validation (not yet implemented) // GH-1001", async () => {
       // This test documents that project ID scope should be validated in plan creation
       // TODO: Implement project ID scope validation in plan creation
     });
 
-    it.skip("documents expected tenant mismatch behavior (not yet implemented) // GH-KERNEL-002", async () => {
+    it.skip("documents expected tenant mismatch behavior (not yet implemented) // GH-1002", async () => {
       // This test documents the expected behavior for tenant isolation
       // The actual implementation should validate that the requested product unit
       // belongs to the tenant specified in the scope headers
       // TODO: Implement tenant mismatch validation
     });
 
-    it.skip("documents expected workspace mismatch behavior (not yet implemented) // GH-KERNEL-003", async () => {
+    it.skip("documents expected workspace mismatch behavior (not yet implemented) // GH-1003", async () => {
       // This test documents the expected behavior for workspace isolation
       // The actual implementation should validate that lifecycle execution
       // is scoped to the workspace specified in the headers
@@ -204,12 +204,12 @@ describe("KernelLifecycleApiHandlers scope validation", () => {
       expect(response.statusCode).toBe(200);
     });
 
-    it.skip("documents expected empty tenant ID validation (not yet implemented) // GH-KERNEL-004", async () => {
+    it.skip("documents expected empty tenant ID validation (not yet implemented) // GH-1004", async () => {
       // This test documents that empty tenant IDs should be rejected
       // TODO: Implement empty tenant ID validation
     });
 
-    it.skip("documents expected malformed tenant ID validation (not yet implemented) // GH-KERNEL-005", async () => {
+    it.skip("documents expected malformed tenant ID validation (not yet implemented) // GH-1005", async () => {
       // This test documents that tenant IDs with special characters should be rejected
       // TODO: Implement malformed tenant ID validation
     });

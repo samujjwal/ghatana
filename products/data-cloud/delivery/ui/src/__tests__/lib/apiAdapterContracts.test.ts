@@ -110,6 +110,62 @@ describe('frontend adapter contracts', () => {
       expect(collection.createdAt).toEqual(expect.any(String));
       expect(collection.updatedAt).toEqual(expect.any(String));
     });
+
+    it('create performs backend read-after-write and returns canonical backend fields', async () => {
+      mockApiClient.post.mockResolvedValue({
+        id: 'col-3',
+        collection: 'dc_collections',
+        createdAt: '2026-04-14T10:00:00Z',
+        timestamp: '2026-04-14T10:00:01Z',
+      });
+      mockApiClient.get.mockResolvedValue({
+        id: 'col-3',
+        collection: 'dc_collections',
+        data: {
+          name: 'Orders',
+          description: 'Canonical backend entity after create',
+          schemaType: 'entity',
+          status: 'active',
+          entityCount: 7,
+          schema: { fields: [{ name: 'id', type: 'string', required: true }] },
+          tags: ['core'],
+          createdBy: 'backend-owner',
+          lifecycleStatus: 'PUBLISHED',
+          operationalStatus: 'healthy',
+          owner: 'data-platform',
+          qualityScore: 0.91,
+        },
+        createdAt: '2026-04-14T10:00:00Z',
+        updatedAt: '2026-04-14T10:01:00Z',
+      });
+
+      const created = await collectionsApi.create({
+        name: 'Orders',
+        description: 'Create request payload',
+        schemaType: 'entity',
+        schema: { fields: [{ name: 'id', type: 'string', required: true }] },
+        tags: ['core'],
+      });
+
+      expect(mockApiClient.post).toHaveBeenCalledWith('/entities/dc_collections', {
+        name: 'Orders',
+        description: 'Create request payload',
+        schemaType: 'entity',
+        schema: { fields: [{ name: 'id', type: 'string', required: true }] },
+        tags: ['core'],
+      });
+      expect(mockApiClient.get).toHaveBeenCalledWith('/entities/dc_collections/col-3');
+      expect(created).toMatchObject({
+        id: 'col-3',
+        name: 'Orders',
+        status: 'active',
+        lifecycleStatus: 'PUBLISHED',
+        operationalStatus: 'healthy',
+        owner: 'data-platform',
+        createdBy: 'backend-owner',
+        qualityScore: 0.91,
+      });
+    });
   });
 
   describe('workflowsApi', () => {

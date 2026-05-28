@@ -9,6 +9,7 @@
  */
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { phrFetch } from '../api/phrApi';
+import { logWarn } from '../utils/safeLogger';
 import type { PhrSession } from '../types';
 
 interface PhrSessionContextValue {
@@ -86,9 +87,9 @@ export function PhrSessionProvider({ children }: { children: React.ReactNode }):
           name: response.name,
           expiresAt: stored.expiresAt, // Keep existing expiry
         });
-      } catch (error) {
+      } catch {
         // Backend validation failed - clear session
-        console.error('Session validation failed:', error);
+        logWarn('Session validation failed');
         clearSession();
       } finally {
         setSessionValidating(false);

@@ -171,13 +171,12 @@ public class PatientService {
      * Throws {@link ConsentAccessDeniedException} if access is denied or the consent
      * service returns a deny decision.
      *
-     * <p>When no consent service is wired (legacy callers), access is allowed with a
-     * warning log. This path will be removed once all callers are migrated.</p>
+     * <p>When no consent service is wired, access is allowed with a warning log
+     * that does not include patient identifiers.</p>
      */
     private void enforceConsentForPatientRead(String patientId) {
         if (consentService == null) {
-            logger.warn("[SECURITY] PatientService.getRecords called without ConsentService — " +
-                    "consent gate bypassed for patientId={}. Migrate to 4-arg constructor.", patientId);
+            logger.warn("[SECURITY] PatientService.getRecords called without ConsentService; consent gate bypassed");
             return;
         }
         String tenantId = getCurrentTenantId();
@@ -192,8 +191,8 @@ public class PatientService {
                 ConsentService.PurposeOfUse.CARE_DELIVERY, null);
         ConsentService.ConsentAccessDecision decision = consentService.checkAccess(req).toCompletableFuture().join();
         if (!decision.allowed()) {
-            logger.warn("[SECURITY] Consent denied for patientId={} actor={} reason={}",
-                    patientId, actorId, decision.reasonCode());
+            logger.warn("[SECURITY] Consent denied for patient record access; reasonCode={}",
+                    decision.reasonCode());
             throw new ConsentAccessDeniedException(
                     req.requestId(), tenantId, actorId, patientId, decision);
         }

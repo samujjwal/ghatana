@@ -1,6 +1,6 @@
 import type React from 'react';
 
-import { useCapabilityGate } from '../../../hooks/useCapabilityGate';
+import { useCapabilityGate, type CapabilityName } from '../../../hooks/useCapabilityGate';
 
 interface AdminRouteGateMessages {
   readonly permissionDenied: string;
@@ -15,7 +15,7 @@ const DEFAULT_MESSAGES: AdminRouteGateMessages = {
 };
 
 interface AdminRouteGateProps {
-  readonly capability: string;
+  readonly capability: CapabilityName;
   readonly children: React.ReactNode;
   readonly messages?: AdminRouteGateMessages;
   readonly deniedTestId?: string;

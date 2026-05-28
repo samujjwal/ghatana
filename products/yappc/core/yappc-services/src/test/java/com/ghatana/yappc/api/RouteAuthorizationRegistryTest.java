@@ -285,7 +285,7 @@ class RouteAuthorizationRegistryTest {
     // ─────────────────────────────────────────────────────────────────────────────
 
     @Test
-    @Disabled("RouteEntry validation is in validate() method, not constructor")
+    @Disabled("GH-1204 RouteEntry validation is in validate() method, not constructor")
     void shouldRequireAuditEventTypeInRouteEntry() {
         assertThatThrownBy(() -> new RouteEntry(
             "POST",
@@ -303,7 +303,7 @@ class RouteAuthorizationRegistryTest {
     }
 
     @Test
-    @Disabled("RouteEntry validation is in validate() method, not constructor")
+    @Disabled("GH-1205 RouteEntry validation is in validate() method, not constructor")
     void shouldRequirePrivacyClassificationInRouteEntry() {
         assertThatThrownBy(() -> new RouteEntry(
             "POST",
@@ -341,7 +341,7 @@ class RouteAuthorizationRegistryTest {
     }
 
     @Test
-    @Disabled("RouteEntry validation is in validate() method, not constructor")
+    @Disabled("GH-1206 RouteEntry validation is in validate() method, not constructor")
     void shouldRejectRouteEntryWithBlankAuditEventType() {
         assertThatThrownBy(() -> new RouteEntry(
             "POST",

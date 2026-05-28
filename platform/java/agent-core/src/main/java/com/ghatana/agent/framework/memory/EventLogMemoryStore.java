@@ -1,6 +1,7 @@
 package com.ghatana.agent.framework.memory;
 
 import io.activej.promise.Promise;
+import com.ghatana.agent.context.version.VersionContextCodec;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -374,9 +375,8 @@ public class EventLogMemoryStore implements MemoryStore {
     public Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByMasteryState(
             @NotNull com.ghatana.agent.mastery.MasteryState masteryState, int limit) {
         try {
-            // For this in-memory implementation, return all negative knowledge
-            // In real implementation, would filter by mastery state
             List<NegativeKnowledge> results = negativeKnowledge.values().stream()
+                    .filter(nk -> matchesMasteryState(nk, masteryState))
                     .sorted(Comparator.comparing(NegativeKnowledge::timestamp).reversed())
                     .limit(limit)
                     .collect(Collectors.toList());
@@ -395,9 +395,9 @@ public class EventLogMemoryStore implements MemoryStore {
     public Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByVersionContext(
             @NotNull com.ghatana.agent.context.version.VersionContext versionContext, int limit) {
         try {
-            // For this in-memory implementation, return all negative knowledge
-            // In real implementation, would filter by version context
+            VersionContextCodec.EncodedContext encoded = VersionContextCodec.INSTANCE.encodeWithDigest(versionContext);
             List<NegativeKnowledge> results = negativeKnowledge.values().stream()
+                    .filter(nk -> matchesVersionContext(nk, encoded, versionContext))
                     .sorted(Comparator.comparing(NegativeKnowledge::timestamp).reversed())
                     .limit(limit)
                     .collect(Collectors.toList());
@@ -436,9 +436,8 @@ public class EventLogMemoryStore implements MemoryStore {
     @NotNull
     public Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByTenant(@NotNull String tenantId, int limit) {
         try {
-            // For this in-memory implementation, return all negative knowledge
-            // In real implementation, would filter by tenant
             List<NegativeKnowledge> results = negativeKnowledge.values().stream()
+                    .filter(nk -> tenantId.equals(nk.tenantId()))
                     .sorted(Comparator.comparing(NegativeKnowledge::timestamp).reversed())
                     .limit(limit)
                     .collect(Collectors.toList());
@@ -637,6 +636,37 @@ public class EventLogMemoryStore implements MemoryStore {
         }
 
         return true;
+    }
+
+    private static boolean matchesMasteryState(
+            @NotNull NegativeKnowledge negativeKnowledge,
+            @NotNull com.ghatana.agent.mastery.MasteryState masteryState) {
+        String metadataState = negativeKnowledge.metadata().get("masteryState");
+        if (metadataState == null || metadataState.isBlank()) {
+            return masteryState == com.ghatana.agent.mastery.MasteryState.UNKNOWN;
+        }
+        return metadataState.equalsIgnoreCase(masteryState.name());
+    }
+
+    private static boolean matchesVersionContext(
+            @NotNull NegativeKnowledge negativeKnowledge,
+            @NotNull VersionContextCodec.EncodedContext encodedContext,
+            @NotNull com.ghatana.agent.context.version.VersionContext versionContext) {
+        Map<String, String> metadata = negativeKnowledge.metadata();
+        String metadataDigest = metadata.get("versionContextDigest");
+        if (metadataDigest != null && !metadataDigest.isBlank()) {
+            return metadataDigest.equals(encodedContext.digest());
+        }
+
+        String metadataJson = metadata.get("versionContext");
+        if (metadataJson != null && !metadataJson.isBlank()) {
+            return metadataJson.equals(encodedContext.json());
+        }
+
+        String metadataSourceRef = metadata.get("sourceRef");
+        return metadataSourceRef != null
+                && !metadataSourceRef.isBlank()
+                && metadataSourceRef.equals(versionContext.sourceRef());
     }
 
     /**

@@ -134,8 +134,8 @@ public final class PhrPolicyEvaluator {
 
         // Admin role: requires audit justification and proper authorization
         if ("admin".equals(role)) {
-            LOG.warn("Admin PHI access denied without route-level justification. principalId={}, patientId={}, correlationId={}",
-                principalId, patientId, context.correlationId());
+            LOG.warn("Admin PHI access denied without route-level justification. correlationId={}",
+                context.correlationId());
             return Promise.of(PolicyDecision.denied("ADMIN_JUSTIFICATION_REQUIRED",
                 "Admin PHI access requires explicit justification"));
         }
@@ -149,8 +149,8 @@ public final class PhrPolicyEvaluator {
         }
 
         // Unknown role: fail closed
-        LOG.warn("Unknown role attempted PHI access - denying. role={}, principalId={}, patientId={}, correlationId={}",
-            role, principalId, patientId, context.correlationId());
+        LOG.warn("Unknown role attempted PHI access - denying. role={}, correlationId={}",
+            role, context.correlationId());
         return Promise.of(PolicyDecision.denied("UNKNOWN_ROLE", "Unknown role: " + role));
     }
 
@@ -191,8 +191,8 @@ public final class PhrPolicyEvaluator {
 
         // Only clinicians and admins can request emergency access
         if (!("clinician".equals(role) || "admin".equals(role))) {
-            LOG.warn("Emergency access attempted by non-authorized role - denying. role={}, principalId={}, patientId={}, correlationId={}",
-                role, principalId, patientId, context.correlationId());
+            LOG.warn("Emergency access attempted by non-authorized role - denying. role={}, correlationId={}",
+                role, context.correlationId());
             return Promise.of(PolicyDecision.denied("EMERGENCY_NOT_ELIGIBLE", "Only clinicians and admins can request emergency access"));
         }
 
@@ -205,16 +205,16 @@ public final class PhrPolicyEvaluator {
                             "Emergency access with treatment relationship - requires post-hoc justification");
                     }
                     // Emergency break-glass without treatment relationship - allowed but requires stricter audit
-                    LOG.warn("Emergency break-glass without treatment relationship - allowing with strict audit. principalId={}, patientId={}, correlationId={}",
-                        principalId, patientId, context.correlationId());
+                    LOG.warn("Emergency break-glass without treatment relationship - allowing with strict audit. correlationId={}",
+                        context.correlationId());
                     return PolicyDecision.emergencyOverride("EMERGENCY_BREAK_GLASS", 
                         "Emergency break-glass access - requires post-hoc justification and patient notification");
                 });
         }
 
         // Admin emergency access - allowed with audit
-        LOG.warn("Admin emergency access - allowing with strict audit. principalId={}, patientId={}, correlationId={}",
-            principalId, patientId, context.correlationId());
+        LOG.warn("Admin emergency access - allowing with strict audit. correlationId={}",
+            context.correlationId());
         return Promise.of(PolicyDecision.emergencyOverride("ADMIN_EMERGENCY", 
             "Admin emergency access - requires post-hoc justification"));
     }

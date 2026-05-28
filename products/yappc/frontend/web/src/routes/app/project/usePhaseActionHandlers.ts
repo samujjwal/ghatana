@@ -76,7 +76,7 @@ export function usePhaseActionHandlers({
     return value.startsWith('phaseAction.') ? t(value) : value;
   }, [t]);
 
-  const resolveNavigationPath = useCallback((targetRoute: string | undefined): string | null => {
+  const resolveNavigationPath = useCallback((targetRoute: string | null | undefined): string | null => {
     if (!projectId) {
       return null;
     }
