@@ -63,7 +63,7 @@ export function EmergencyAccessScreen({ onAuthenticate, session }: EmergencyAcce
           <Text style={styles.dataTitle}>{t('emergency.emergencyData')}</Text>
           
           <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>{t('login.title')}</Text>
+            <Text style={styles.dataLabel}>{t('emergency.patientName')}</Text>
             <Text style={styles.dataValue}>{emergencyData.patientName}</Text>
           </View>
 

@@ -1,6 +1,6 @@
 {
   "status": "passed",
-  "generatedAt": "2026-05-27T18:39:00.124Z",
+  "generatedAt": "2026-05-28T21:20:20.240Z",
   "summary": {
     "dimensionCount": 47,
     "coveredDimensions": 47,
@@ -439,11 +439,11 @@
         "runtime-production-evidence"
       ],
       "evidenceFreshness": {
-        "freshEvidenceCount": 0,
+        "freshEvidenceCount": 1,
         "staleEvidenceCount": 0,
-        "missingEvidenceCount": 1,
+        "missingEvidenceCount": 0,
         "totalEvidenceCount": 1,
-        "isFresh": false
+        "isFresh": true
       }
     },
     {
@@ -607,11 +607,11 @@
         "runtime-production-evidence"
       ],
       "evidenceFreshness": {
-        "freshEvidenceCount": 0,
+        "freshEvidenceCount": 1,
         "staleEvidenceCount": 0,
-        "missingEvidenceCount": 1,
+        "missingEvidenceCount": 0,
         "totalEvidenceCount": 1,
-        "isFresh": false
+        "isFresh": true
       }
     },
     {
@@ -690,11 +690,11 @@
         "runtime-production-evidence"
       ],
       "evidenceFreshness": {
-        "freshEvidenceCount": 0,
+        "freshEvidenceCount": 1,
         "staleEvidenceCount": 0,
-        "missingEvidenceCount": 1,
+        "missingEvidenceCount": 0,
         "totalEvidenceCount": 1,
-        "isFresh": false
+        "isFresh": true
       }
     },
     {
@@ -1860,11 +1860,11 @@
         "runtime-production-evidence"
       ],
       "evidenceFreshness": {
-        "freshEvidenceCount": 0,
+        "freshEvidenceCount": 1,
         "staleEvidenceCount": 0,
-        "missingEvidenceCount": 1,
+        "missingEvidenceCount": 0,
         "totalEvidenceCount": 1,
-        "isFresh": false
+        "isFresh": true
       }
     },
     {

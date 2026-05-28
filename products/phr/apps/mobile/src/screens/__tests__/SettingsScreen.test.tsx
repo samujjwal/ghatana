@@ -7,7 +7,7 @@ import { Alert } from 'react-native';
 import { render, waitFor } from '@testing-library/react-native';
 import { SettingsScreen } from '../SettingsScreen';
 import { clearDashboardOffline, loadDashboardOffline, saveDashboardOffline } from '../../services/offlineStore';
-import { phiClearAll, phiGet, phiSet } from '../../services/phiEncryptedStorage';
+import { phiClearAll, phiGet, phiSet, resetPhiStorageAdapter, setPhiStorageAdapter } from '../../services/phiEncryptedStorage';
 import type { MobileSession } from '../../types';
 
 const session: MobileSession = {
@@ -31,9 +31,30 @@ function pressNode(node: TestNodeWithProps): void {
 }
 
 describe('SettingsScreen', () => {
+  const phiItems = new Map<string, string>();
+
   beforeEach(async () => {
+    phiItems.clear();
+    setPhiStorageAdapter({
+      async setItem(key: string, value: string): Promise<void> {
+        phiItems.set(key, value);
+      },
+      async getItem(key: string): Promise<string | null> {
+        return phiItems.get(key) ?? null;
+      },
+      async removeItem(key: string): Promise<void> {
+        phiItems.delete(key);
+      },
+      async clearAllPhi(): Promise<void> {
+        phiItems.clear();
+      },
+    });
     await Promise.all([phiClearAll(), clearDashboardOffline()]);
     jest.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    resetPhiStorageAdapter();
   });
 
   it('renders sync message', () => {
@@ -62,6 +83,22 @@ describe('SettingsScreen', () => {
     );
   });
 
+  it('renders encrypted storage and biometric policy status', async () => {
+    const { toJSON } = render(
+      <SettingsScreen
+        onSyncOffline={() => {}}
+        onLogout={() => {}}
+        syncMessage=""
+        session={session}
+      />,
+    );
+    await waitFor(() => {
+      const serialized = JSON.stringify(toJSON());
+      expect(serialized).toContain('AES-GCM encrypted storage enabled');
+      expect(serialized).toContain('Biometric policy');
+    });
+  });
+
   it('calls onSyncOffline when refresh button pressed', () => {
     const onSyncOffline = jest.fn();
     const { UNSAFE_getByProps } = render(
@@ -69,6 +106,37 @@ describe('SettingsScreen', () => {
     );
     pressNode(UNSAFE_getByProps({ accessibilityLabel: 'Refresh offline cache' }));
     expect(onSyncOffline).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears encrypted offline cache when clear cache is pressed', async () => {
+    await Promise.all([
+      phiSet('dashboard:patient-1', JSON.stringify({ patientId: 'patient-1', restricted: 'diagnosis' })),
+      saveDashboardOffline(
+        {
+          patient: {
+            id: 'patient-1',
+            name: 'Ram Bahadur',
+            age: 44,
+            bloodType: 'O+',
+            district: 'Kathmandu',
+          },
+          records: [],
+          consents: [],
+          notifications: [],
+        },
+        undefined,
+        session,
+      ),
+    ]);
+
+    const { UNSAFE_getByProps, toJSON } = render(
+      <SettingsScreen onSyncOffline={() => {}} onLogout={() => {}} syncMessage="" session={session} />,
+    );
+    pressNode(UNSAFE_getByProps({ accessibilityLabel: 'Clear offline cache' }));
+
+    await waitFor(() => expect(JSON.stringify(toJSON())).toContain('Offline health cache cleared.'));
+    await expect(phiGet('dashboard:patient-1')).resolves.toBeNull();
+    await expect(loadDashboardOffline(session)).resolves.toBeNull();
   });
 
   it('clears PHI caches and calls onLogout when Sign Out is confirmed', async () => {

@@ -112,6 +112,7 @@ export const StorageProfilesList: React.FC<StorageProfilesListProps> = ({
                         onSetDefault(profile.id);
                       }}
                       className="text-xs text-gray-600 hover:text-gray-900 underline"
+                      aria-label={`Set ${profile.name} as default`}
                     >
                       Set as default
                     </button>
@@ -126,6 +127,7 @@ export const StorageProfilesList: React.FC<StorageProfilesListProps> = ({
                       }}
                       className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
                       title="Edit profile"
+                      aria-label={`Edit profile ${profile.name}`}
                     >
                       <Edit size={16} />
                     </button>
@@ -136,6 +138,7 @@ export const StorageProfilesList: React.FC<StorageProfilesListProps> = ({
                       }}
                       className="p-1 text-red-600 hover:text-red-900 hover:bg-red-100 rounded"
                       title="Delete profile"
+                      aria-label={`Delete profile ${profile.name}`}
                     >
                       <Trash2 size={16} />
                     </button>

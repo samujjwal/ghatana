@@ -28,6 +28,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
+import { t } from '../i18n/phrMobileI18n';
 
 const KEY_SECURE_STORE_NAME = 'phr-phi-encryption-key-v1';
 const KEY_VERSION_STORE_NAME = 'phr-phi-key-version';
@@ -46,6 +47,13 @@ const BIOMETRIC_POLICY_KEY = 'phr-phi-biometric-policy-enabled';
 const DEVICE_INSTALL_ID_KEY = 'phr-phi-device-install-id';
 
 // Crypto helpers
+
+class BiometricAuthenticationRequiredError extends Error {
+  constructor() {
+    super(t('biometric.requiredForPhi'));
+    this.name = 'BiometricAuthenticationRequiredError';
+  }
+}
 
 function uint8ArrayToBase64(bytes: Uint8Array): string {
   let binary = '';
@@ -93,6 +101,7 @@ let cachedKeyVersion: number = 0;
 
 async function getOrCreateKey(): Promise<CryptoKey> {
   if (cachedKey) {
+    await requireBiometricIfEnabled();
     // Update last access time on each cache hit
     await updateKeyAccessTime();
     return cachedKey;
@@ -138,13 +147,7 @@ async function getOrCreateKey(): Promise<CryptoKey> {
       return initializeFreshKey();
     }
 
-    // Require biometric authentication if policy is enabled
-    if (await isBiometricPolicyEnabled()) {
-      const authenticated = await authenticateWithBiometrics();
-      if (!authenticated) {
-        throw new Error('Biometric authentication required for PHI access');
-      }
-    }
+    await requireBiometricIfEnabled();
 
     cachedKey = await importKey(stored);
     cachedKeyVersion = currentVersion;
@@ -162,6 +165,14 @@ async function getOrCreateKey(): Promise<CryptoKey> {
 
   // First launch: generate and persist a new key.
   return initializeFreshKey();
+}
+
+async function requireBiometricIfEnabled(): Promise<void> {
+  if (!(await isBiometricPolicyEnabled())) return;
+  const authenticated = await authenticateWithBiometrics();
+  if (!authenticated) {
+    throw new BiometricAuthenticationRequiredError();
+  }
 }
 
 async function initializeFreshKey(): Promise<CryptoKey> {
@@ -344,9 +355,9 @@ async function authenticateWithBiometrics(): Promise<boolean> {
     }
 
     const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: 'Authenticate to access protected health information',
-      fallbackLabel: 'Use passcode',
-      cancelLabel: 'Cancel',
+      promptMessage: t('biometric.protectedHealthPrompt'),
+      fallbackLabel: t('biometric.fallbackLabel'),
+      cancelLabel: t('biometric.cancelLabel'),
       disableDeviceFallback: false,
     });
 
@@ -477,7 +488,6 @@ const productionAdapter: PhiStorageAdapter = {
   async setItem(key: string, value: string): Promise<void> {
     const ciphertext = await encrypt(value);
     await AsyncStorage.setItem(key, ciphertext);
-// PHI key registry for reliable clearing
     await registerPhiKey(key);
   },
 
@@ -486,7 +496,10 @@ const productionAdapter: PhiStorageAdapter = {
     if (ciphertext === null) return null;
     try {
       return await decrypt(ciphertext);
-    } catch {
+    } catch (error) {
+      if (error instanceof BiometricAuthenticationRequiredError) {
+        throw error;
+      }
       // Decryption failure (tampered data, wrong key after reinstall, etc.) is treated as absent.
       await AsyncStorage.removeItem(key);
       await unregisterPhiKey(key);

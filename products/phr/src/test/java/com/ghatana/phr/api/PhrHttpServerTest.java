@@ -230,9 +230,15 @@ class PhrHttpServerTest extends EventloopTestBase {
         PhrEntitlementRoutes entitlementRoutes = new PhrEntitlementRoutes(eventloop(), routeEntitlementEvaluator, entitlementCache);
         PhrAuditRoutes auditRoutes = new PhrAuditRoutes(eventloop(), auditTrailService);
         PhrAuthRoutes authRoutes = new PhrAuthRoutes(eventloop(), securityManager, userRepository, auditTrailService);
-        PhrProviderRoutes providerRoutes = new PhrProviderRoutes(eventloop(), patientRecordService, consentService, clinicalService);
+        PhrProviderRoutes providerRoutes = new PhrProviderRoutes(
+            eventloop(),
+            patientRecordService,
+            consentService,
+            clinicalService,
+            policyEvaluator
+        );
         PhrCaregiverRoutes caregiverRoutes = new PhrCaregiverRoutes(eventloop(), caregiverService, patientRecordService);
-        PhrFchvRoutes fchvRoutes = new PhrFchvRoutes(eventloop());
+        PhrFchvRoutes fchvRoutes = new PhrFchvRoutes(eventloop(), policyEvaluator);
         PhrMobileRoutes mobileRoutes = new PhrMobileRoutes(
             eventloop(),
             patientRecordService,
@@ -698,6 +704,13 @@ class PhrHttpServerTest extends EventloopTestBase {
             HttpResponse history = dispatch(HttpMethod.GET, "/patients/patient-1/history", null, headers);
             assertThat(history.getCode()).isEqualTo(200);
             assertThat(JSON.readTree(bodyString(history)).path("history").isArray()).isTrue();
+
+            HttpResponse records = dispatch(HttpMethod.GET, "/patients/patient-1/records?category=administrative", null, headers);
+            assertThat(records.getCode()).isEqualTo(200);
+            JsonNode recordsBody = JSON.readTree(bodyString(records));
+            assertThat(recordsBody.path("items").get(0).path("resourceType").asText()).isEqualTo("Patient");
+            assertThat(recordsBody.path("items").get(0).path("provenance").path("source").asText())
+                .isEqualTo("phr-patient-record-service");
         }
 
         @Test

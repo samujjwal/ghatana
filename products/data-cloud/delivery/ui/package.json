@@ -22,7 +22,7 @@
     "test:e2e:debug": "playwright test --debug",
     "test": "pnpm run test:readiness",
     "test:coverage": "vitest run --coverage",
-    "test:readiness": "pnpm run check:route-manifest && pnpm run docs:routes:check && pnpm run check:api-types && vitest run src/__tests__/pages/ContractBacked.test.tsx src/__tests__/api/capabilities.service.test.ts src/__tests__/routes/routeTruthMatrix.test.ts src/__tests__/routes/routeInventory.test.ts src/__tests__/routes/routeSurfaceClassification.test.ts src/__tests__/api/analyticsOpenApiAlignment.test.ts src/__tests__/mocks/openApiDrivenMocks.test.ts",
+    "test:readiness": "pnpm run check:route-manifest && pnpm run docs:routes:check && pnpm run check:api-types && vitest run src/__tests__/pages/ContractBacked.test.tsx src/__tests__/api/capabilities.service.test.ts src/__tests__/routes/routeTruthMatrix.test.ts src/__tests__/routes/routeInventory.test.ts src/__tests__/routes/routeSurfaceClassification.test.ts src/__tests__/api/analyticsOpenApiAlignment.test.ts src/__tests__/mocks/openApiDrivenMocks.test.ts tests/contract/critical-journey.contract.test.ts",
     "test:ui": "vitest --ui",
     "test:contract": "vitest run tests/contract",
     "test:contract:watch": "vitest tests/contract",

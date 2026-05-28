@@ -113,9 +113,9 @@ export const DataConnectorsList: React.FC<DataConnectorsListProps> = ({
                       {connector.status}
                     </span>
                     {connector.status === "error" && connector.statusMessage && (
-                      <div className="ml-2 flex items-center group relative">
+                      <div className="ml-2 flex items-center group relative" tabIndex={0}>
                         <AlertCircle size={14} className="text-red-600" />
-                        <div className="hidden group-hover:block absolute bottom-full left-0 mb-2 bg-gray-900 text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10">
+                        <div className="hidden group-hover:block group-focus-within:block absolute bottom-full left-0 mb-2 bg-gray-900 text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10">
                           {connector.statusMessage}
                         </div>
                       </div>
@@ -136,6 +136,7 @@ export const DataConnectorsList: React.FC<DataConnectorsListProps> = ({
                       }}
                       className="p-1 text-blue-600 hover:text-blue-900 hover:bg-blue-100 rounded"
                       title="Trigger sync"
+                      aria-label={`Trigger sync for ${connector.name}`}
                       disabled={!connector.isEnabled}
                     >
                       <Play size={16} />
@@ -147,6 +148,7 @@ export const DataConnectorsList: React.FC<DataConnectorsListProps> = ({
                       }}
                       className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
                       title="Edit connector"
+                      aria-label={`Edit connector ${connector.name}`}
                     >
                       <Edit size={16} />
                     </button>
@@ -157,6 +159,7 @@ export const DataConnectorsList: React.FC<DataConnectorsListProps> = ({
                       }}
                       className="p-1 text-red-600 hover:text-red-900 hover:bg-red-100 rounded"
                       title="Delete connector"
+                      aria-label={`Delete connector ${connector.name}`}
                     >
                       <Trash2 size={16} />
                     </button>

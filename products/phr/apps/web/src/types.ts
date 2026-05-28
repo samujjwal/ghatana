@@ -10,10 +10,12 @@ export interface PatientProfile {
 export interface PatientRecordSummary {
   id: string;
   title: string;
-  category: 'visit' | 'lab' | 'immunization' | 'medication' | 'clinical';
+  category: string;
   updatedAt: string;
   resourceType: string;
-  fhirJson: string;
+  fhirJson?: string;
+  redacted?: boolean;
+  provenance?: Record<string, unknown>;
 }
 
 export interface ConsentGrant {
@@ -324,7 +326,7 @@ export interface NotificationSummary {
   type: 'consent_expiry' | 'appointment_reminder' | 'lab_result' | 'emergency_access' | 'system';
   title: string;
   body: string;
-  readAt?: string;
+  readAt?: string | null;
   createdAt: string;
 }
 

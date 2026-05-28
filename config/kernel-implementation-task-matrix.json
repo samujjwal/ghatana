@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "planPath": "platform-kernel/docs/01-KERNEL_IMPLEMENTATION_PLAN.md",
-  "requiredTaskCount": 64,
+  "requiredTaskCount": 51,
   "defaults": {
     "ownerTeam": "Kernel Release Engineering",
     "ownerModule": "scripts",

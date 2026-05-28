@@ -46,7 +46,7 @@ const waveDefinitions = {
     'pnpm:check:affected-product-strict-release-profile',
     'pnpm:check:product-release-readiness',
     'pnpm:check:validate-release-evidence',
-    'pnpm:check:release-gate',
+    'pnpm:check:data-cloud-release-gate',
   ],
 };
 
@@ -118,6 +118,12 @@ function runCommand(commandRef, options) {
   const scopedProducts = options.scopedProducts ?? [];
   const scopedEnv = { ...process.env };
   if (commandRef === 'pnpm:check:affected-product-strict-release-profile' && scopedProducts.length > 0) {
+    scopedEnv.AFFECTED_PRODUCTS = scopedProducts.join(',');
+  }
+  if (commandRef === 'pnpm:check:product-release-readiness' && scopedProducts.length > 0) {
+    scopedEnv.AFFECTED_PRODUCTS = scopedProducts.join(',');
+  }
+  if (commandRef === 'pnpm:check:data-cloud-release-gate' && scopedProducts.length > 0) {
     scopedEnv.AFFECTED_PRODUCTS = scopedProducts.join(',');
   }
 

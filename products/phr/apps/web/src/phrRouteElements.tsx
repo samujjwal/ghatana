@@ -14,6 +14,7 @@ import { FchvDashboardPage } from './pages/FchvDashboardPage';
 import { ForbiddenPage } from './pages/ForbiddenPage';
 import { ImmunizationsPage } from './pages/ImmunizationsPage';
 import { LabsPage } from './pages/LabsPage';
+import { MedicationDetailPage } from './pages/MedicationDetailPage';
 import { MedicationsPage } from './pages/MedicationsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { NotificationsPage } from './pages/NotificationsPage';
@@ -39,6 +40,7 @@ const routeElements: Record<PhrRoutePath, React.ReactElement> = {
   '/appointments': <AppointmentsPage />,
   '/labs': <LabsPage />,
   '/medications': <MedicationsPage />,
+  '/medications/:medicationId': <MedicationDetailPage />,
   '/emergency': <EmergencyAccessPage />,
   '/emergency/reviews': <EmergencyReviewsPage />,
   '/release-readiness': <ReleaseCockpitPage />,

@@ -2,7 +2,7 @@
  * Tests for MedicationsPage — verifies loading, error, and medication list display.
  */
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { MedicationsPage } from '../MedicationsPage';
@@ -27,11 +27,11 @@ vi.mock('../../auth/PhrSessionContext', () => ({
 
 import { fetchMedications } from '../../api/clinicalApi';
 
-const mockFetch = fetchMedications as ReturnType<typeof vi.fn>;
+const mockFetch = vi.mocked(fetchMedications);
 
 const medications = [
-  { id: 'med-1', medication: 'Metformin', dosage: '500mg', schedule: 'Twice daily', adherence: 0.95 },
-  { id: 'med-2', medication: 'Amlodipine', dosage: '5mg', schedule: 'Once daily', adherence: 0.8 },
+  { id: 'med-1', medication: 'Metformin', dosage: '500mg', schedule: 'Twice daily', adherence: 95, status: 'active' as const },
+  { id: 'med-2', medication: 'Amlodipine', dosage: '5mg', schedule: 'Once daily', adherence: 80, status: 'stopped' as const },
 ];
 
 function renderPage(): void {
@@ -63,7 +63,7 @@ describe('MedicationsPage', () => {
     mockFetch.mockResolvedValue(medications);
     renderPage();
     await waitFor(() => expect(screen.getByText(/Metformin/)).toBeTruthy());
-    expect(screen.getByText(/Amlodipine/)).toBeTruthy();
+    expect(screen.queryByText(/Amlodipine/)).toBeNull();
   });
 
   it('renders the medications title key', async () => {
@@ -76,5 +76,13 @@ describe('MedicationsPage', () => {
     mockFetch.mockResolvedValue([]);
     renderPage();
     await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
+  });
+
+  it('shows historical medications on the history tab', async () => {
+    mockFetch.mockResolvedValue(medications);
+    renderPage();
+    fireEvent.click(await screen.findByRole('tab', { name: 'medications.tabs.history' }));
+    expect(screen.getByText(/Amlodipine/)).toBeTruthy();
+    expect(screen.queryByText(/Metformin/)).toBeNull();
   });
 });

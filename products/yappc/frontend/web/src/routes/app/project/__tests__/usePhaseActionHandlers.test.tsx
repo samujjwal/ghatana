@@ -349,4 +349,193 @@ describe('usePhaseActionHandlers', () => {
       }));
     });
   });
+
+  it('uses packet.platformRunStatus.runId when actionResult.runId is missing', async () => {
+    const packetWithRunStatus = packetFixture({
+      platformRunStatus: {
+        runId: 'platform-run-123',
+        status: 'RUNNING',
+        platform: 'yappc',
+        startedAt: new Date().toISOString(),
+        traceId: 'trace-123',
+        evidenceIds: [],
+      },
+    });
+
+    const reviewAction = {
+      ...packetFixture().availableActions[0],
+      actionId: 'generate.apply',
+      targetType: 'server',
+      serverOperation: 'generate.apply',
+      requiresPreview: false,
+      parameters: {},
+    };
+
+    const { result } = renderHook(() => usePhaseActionHandlers({
+      phase: 'generate',
+      projectId: 'proj-1',
+      packet: packetWithRunStatus,
+      currentUser: { id: 'user-1', tenantId: 'tenant-1', email: 'user-1@example.com' },
+      t: (key: string) => key,
+      navigate: vi.fn(),
+      refetch: vi.fn(async () => undefined),
+      scrollToSupportingSurface: vi.fn(),
+      scrollToBlockerPanel: vi.fn(),
+    }), { wrapper: wrapperFactory() });
+
+    await act(async () => {
+      result.current.handleSuggestionAction(reviewAction);
+    });
+
+    await waitFor(() => {
+      expect(phaseServiceMocks.executeGenerateReviewDecision).toHaveBeenCalled();
+      expect(phaseServiceMocks.executeGenerateReviewDecision.mock.calls[0]?.[0]).toEqual(expect.objectContaining({
+        runId: 'platform-run-123',
+      }));
+    });
+  });
+
+  it('uses action.parameters.runId when available', async () => {
+    const reviewAction = {
+      ...packetFixture().availableActions[0],
+      actionId: 'generate.apply',
+      targetType: 'server',
+      serverOperation: 'generate.apply',
+      requiresPreview: false,
+      parameters: { runId: 'action-param-run-456' },
+    };
+
+    const { result } = renderHook(() => usePhaseActionHandlers({
+      phase: 'generate',
+      projectId: 'proj-1',
+      packet: packetFixture(),
+      currentUser: { id: 'user-1', tenantId: 'tenant-1', email: 'user-1@example.com' },
+      t: (key: string) => key,
+      navigate: vi.fn(),
+      refetch: vi.fn(async () => undefined),
+      scrollToSupportingSurface: vi.fn(),
+      scrollToBlockerPanel: vi.fn(),
+    }), { wrapper: wrapperFactory() });
+
+    await act(async () => {
+      phaseServiceMocks.executePhasePrimaryAction.mockResolvedValueOnce({
+        kind: 'generate-review',
+        message: 'review pending',
+        runId: 'run-1',
+        reviewRequired: true,
+      });
+      result.current.handlePrimaryAction();
+    });
+
+    await waitFor(() => {
+      expect(result.current.actionResult?.runId).toBe('run-1');
+    });
+
+    await act(async () => {
+      result.current.handleSuggestionAction(reviewAction);
+    });
+
+    await waitFor(() => {
+      expect(phaseServiceMocks.executeGenerateReviewDecision).toHaveBeenCalled();
+      expect(phaseServiceMocks.executeGenerateReviewDecision.mock.calls[0]?.[0]).toEqual(expect.objectContaining({
+        runId: 'action-param-run-456',
+      }));
+    });
+  });
+
+  it('passes targetVersion and targetEnvironment from action parameters for run post-actions', async () => {
+    const rollbackAction = {
+      ...packetFixture().availableActions[0],
+      actionId: 'run.rollback',
+      targetType: 'server',
+      serverOperation: 'run.rollback',
+      requiresPreview: false,
+      parameters: { targetVersion: 'v1.2.3', targetEnvironment: 'production' },
+    };
+
+    const { result } = renderHook(() => usePhaseActionHandlers({
+      phase: 'run',
+      projectId: 'proj-1',
+      packet: packetFixture({ phase: 'run', lifecyclePhase: 'RUN' }),
+      currentUser: { id: 'user-1', tenantId: 'tenant-1' },
+      t: (key: string) => key,
+      navigate: vi.fn(),
+      refetch: vi.fn(async () => undefined),
+      scrollToSupportingSurface: vi.fn(),
+      scrollToBlockerPanel: vi.fn(),
+    }), { wrapper: wrapperFactory() });
+
+    await act(async () => {
+      phaseServiceMocks.executePhasePrimaryAction.mockResolvedValueOnce({
+        kind: 'run-workflow',
+        message: 'run started',
+        runId: 'run-1',
+      });
+      result.current.handlePrimaryAction();
+    });
+
+    await waitFor(() => {
+      expect(result.current.actionResult?.runId).toBe('run-1');
+    });
+
+    await act(async () => {
+      result.current.handleSuggestionAction(rollbackAction);
+    });
+
+    await waitFor(() => {
+      expect(phaseServiceMocks.executeRunPostAction).toHaveBeenCalled();
+      expect(phaseServiceMocks.executeRunPostAction.mock.calls[0]?.[0]).toEqual(expect.objectContaining({
+        targetVersion: 'v1.2.3',
+        targetEnvironment: 'production',
+      }));
+    });
+  });
+
+  it('passes undefined targetVersion and targetEnvironment when not in action parameters', async () => {
+    const retryAction = {
+      ...packetFixture().availableActions[0],
+      actionId: 'run.retry',
+      targetType: 'server',
+      serverOperation: 'run.retry',
+      requiresPreview: false,
+      parameters: {},
+    };
+
+    const { result } = renderHook(() => usePhaseActionHandlers({
+      phase: 'run',
+      projectId: 'proj-1',
+      packet: packetFixture({ phase: 'run', lifecyclePhase: 'RUN' }),
+      currentUser: { id: 'user-1', tenantId: 'tenant-1' },
+      t: (key: string) => key,
+      navigate: vi.fn(),
+      refetch: vi.fn(async () => undefined),
+      scrollToSupportingSurface: vi.fn(),
+      scrollToBlockerPanel: vi.fn(),
+    }), { wrapper: wrapperFactory() });
+
+    await act(async () => {
+      phaseServiceMocks.executePhasePrimaryAction.mockResolvedValueOnce({
+        kind: 'run-workflow',
+        message: 'run started',
+        runId: 'run-1',
+      });
+      result.current.handlePrimaryAction();
+    });
+
+    await waitFor(() => {
+      expect(result.current.actionResult?.runId).toBe('run-1');
+    });
+
+    await act(async () => {
+      result.current.handleSuggestionAction(retryAction);
+    });
+
+    await waitFor(() => {
+      expect(phaseServiceMocks.executeRunPostAction).toHaveBeenCalled();
+      expect(phaseServiceMocks.executeRunPostAction.mock.calls[0]?.[0]).toEqual(expect.objectContaining({
+        targetVersion: undefined,
+        targetEnvironment: undefined,
+      }));
+    });
+  });
 });

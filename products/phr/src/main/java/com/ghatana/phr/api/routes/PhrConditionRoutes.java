@@ -33,11 +33,7 @@ public final class PhrConditionRoutes {
 
     public PhrConditionRoutes(Eventloop eventloop, PhrPolicyEvaluator policyEvaluator) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
-        this.policyEvaluator = policyEvaluator;
-    }
-
-    public PhrConditionRoutes(Eventloop eventloop) {
-        this(eventloop, null);
+        this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 
     /**
@@ -60,22 +56,6 @@ public final class PhrConditionRoutes {
         }
 
         String patientId = request.getPathParameter("patientId");
-        if (policyEvaluator == null) {
-            if (!canAccessWithoutPolicyEvaluator(context, patientId)) {
-                return PhrRouteSupport.errorResponse(403, "CONDITION_ACCESS_DENIED",
-                    "Access denied to condition data for patient " + patientId,
-                    context.correlationId());
-            }
-            return Promise.of(List.of(
-                Map.of(
-                    "id", "cond-1",
-                    "code", "E11",
-                    "display", "Type 2 diabetes mellitus",
-                    "status", "active",
-                    "onsetDate", "2018-03-01"
-                )
-            )).then(conditions -> PhrRouteSupport.jsonResponseWithCorrelation(200, conditions, context.correlationId()));
-        }
         return policyEvaluator.canAccessPatientRecordAsync(context, patientId).then(decision -> {
             if (!decision.isAllowed()) {
                 return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
@@ -89,13 +69,7 @@ public final class PhrConditionRoutes {
                     "status", "active",
                     "onsetDate", "2018-03-01"
                 )
-            )).then(conditions -> PhrRouteSupport.jsonResponseWithCorrelation(200, conditions, context.correlationId()));
+            )).then(conditions -> PhrRouteSupport.jsonResponseWithCorrelation(200, Map.of("items", conditions), context.correlationId()));
         });
-    }
-
-    private static boolean canAccessWithoutPolicyEvaluator(PhrRouteSupport.PhrRequestContext context, String patientId) {
-        return ("patient".equals(context.role()) && context.principalId().equals(patientId))
-            || "clinician".equals(context.role())
-            || "admin".equals(context.role());
     }
 }

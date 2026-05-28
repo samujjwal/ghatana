@@ -25,6 +25,67 @@ import {
 // Transformation helpers
 // ---------------------------------------------------------------------------
 
+const collectionSchemaTypes = ['entity', 'event', 'timeseries', 'graph', 'document'] as const;
+const collectionStatuses = ['active', 'draft', 'archived', 'processing'] as const;
+const lifecycleStatuses = ['DRAFT', 'PUBLISHED', 'DEPRECATED', 'ARCHIVED', 'UNKNOWN'] as const;
+const operationalStatuses = ['healthy', 'degraded', 'unavailable', 'maintenance', 'unknown'] as const;
+
+function toStringOrDefault(value: unknown, defaultValue: string): string {
+    return typeof value === 'string' ? value : defaultValue;
+}
+
+function toFiniteNumberOrDefault(value: unknown, defaultValue: number): number {
+    if (typeof value === 'number') {
+        return Number.isFinite(value) ? value : defaultValue;
+    }
+    if (typeof value === 'string' && value.trim().length > 0) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : defaultValue;
+    }
+    return defaultValue;
+}
+
+function toFiniteNumberOrUndefined(value: unknown): number | undefined {
+    if (typeof value === 'number') {
+        return Number.isFinite(value) ? value : undefined;
+    }
+    if (typeof value === 'string' && value.trim().length > 0) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : undefined;
+    }
+    return undefined;
+}
+
+function toStringArray(value: unknown): string[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+    return value.filter((item): item is string => typeof item === 'string');
+}
+
+function normalizeEnumValue<T extends readonly string[]>(
+    value: unknown,
+    allowedValues: T,
+    fallbackValue: T[number]
+): T[number] {
+    return typeof value === 'string' && allowedValues.includes(value as T[number])
+        ? (value as T[number])
+        : fallbackValue;
+}
+
+function normalizeQualityMetrics(value: unknown): Record<string, number> | undefined {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return undefined;
+    }
+    const entries = Object.entries(value as Record<string, unknown>)
+        .map(([key, metric]) => [key, toFiniteNumberOrUndefined(metric)] as const)
+        .filter((entry): entry is readonly [string, number] => typeof entry[1] === 'number');
+    if (entries.length === 0) {
+        return undefined;
+    }
+    return Object.fromEntries(entries);
+}
+
 function entityToCollection(e: BackendEntity): Collection {
     const d = e.data as Record<string, unknown>;
     const schema = d.schema as CollectionSchema | undefined;
@@ -35,32 +96,28 @@ function entityToCollection(e: BackendEntity): Collection {
         d.statsStorageBytes ??
         null;
     const storageSizeBytes =
-        typeof storageSizeRaw === 'number'
-            ? storageSizeRaw
-            : typeof storageSizeRaw === 'string' && storageSizeRaw.trim().length > 0
-                ? Number(storageSizeRaw)
-                : null;
+        toFiniteNumberOrUndefined(storageSizeRaw) ?? null;
     return {
         id: e.id,
-        name: String(d.name ?? ''),
-        description: String(d.description ?? ''),
-        schemaType: (d.schemaType ?? 'entity') as Collection['schemaType'],
-        status: (d.status ?? 'draft') as Collection['status'],
+        name: toStringOrDefault(d.name, ''),
+        description: toStringOrDefault(d.description, ''),
+        schemaType: normalizeEnumValue(d.schemaType, collectionSchemaTypes, 'entity'),
+        status: normalizeEnumValue(d.status, collectionStatuses, 'draft'),
         isActive: Boolean(d.isActive ?? (d.status === 'active')),
-        entityCount: Number(d.entityCount ?? 0),
+        entityCount: toFiniteNumberOrDefault(d.entityCount, 0),
         schema: schema ?? { fields: [] },
-        tags: Array.isArray(d.tags) ? (d.tags as string[]) : [],
+        tags: toStringArray(d.tags),
         createdAt: e.createdAt ?? String(d.createdAt ?? new Date().toISOString()),
         updatedAt: e.updatedAt ?? String(d.updatedAt ?? new Date().toISOString()),
-        createdBy: String(d.createdBy ?? 'unknown'),
+        createdBy: toStringOrDefault(d.createdBy, 'unknown'),
         // P0.2 first-class collection registry fields
-        lifecycleStatus: (d.lifecycleStatus ?? 'UNKNOWN') as Collection['lifecycleStatus'],
-        operationalStatus: (d.operationalStatus ?? 'unknown') as Collection['operationalStatus'],
-        qualityScore: d.qualityScore != null ? Number(d.qualityScore) : undefined,
-        qualityMetrics: d.qualityMetrics as Record<string, number> | undefined,
+        lifecycleStatus: normalizeEnumValue(d.lifecycleStatus, lifecycleStatuses, 'UNKNOWN'),
+        operationalStatus: normalizeEnumValue(d.operationalStatus, operationalStatuses, 'unknown'),
+        qualityScore: toFiniteNumberOrUndefined(d.qualityScore),
+        qualityMetrics: normalizeQualityMetrics(d.qualityMetrics),
         retentionPolicy: d.retentionPolicy as Record<string, unknown> | undefined,
         lineage: d.lineage as Record<string, unknown> | undefined,
-        owner: String(d.owner ?? d.createdBy ?? 'unknown'),
+        owner: toStringOrDefault(d.owner ?? d.createdBy, 'unknown'),
         storageSizeBytes: Number.isFinite(storageSizeBytes) ? (storageSizeBytes as number) : undefined,
     };
 }

@@ -188,6 +188,31 @@
       "testId": "phr-medications-001"
     },
     {
+      "path": "/medications/:medicationId",
+      "label": "Medication detail",
+      "description": "Medication detail, warnings, and history",
+      "group": "clinical",
+      "minimumRole": "caregiver",
+      "personas": [
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "clinical"
+      ],
+      "actions": [
+        "review-medication-detail"
+      ],
+      "cards": [
+        "medication-adherence"
+      ],
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/clinical/medications/prescriptions/:medicationId",
+      "policyId": "phr.medications.access",
+      "testId": "phr-medications-detail-001"
+    },
+    {
       "path": "/conditions",
       "label": "Conditions",
       "description": "Health conditions",

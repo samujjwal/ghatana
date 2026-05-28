@@ -1,4 +1,4 @@
-import { ApiRequestError, yappcApi } from '@/lib/api/client';
+﻿import { ApiRequestError, yappcApi } from '@/lib/api/client';
 import type { GenerateReviewDecision } from '@/lib/api/client';
 
 import type { MountedPhase, PhaseTransitionPreviewSnapshot } from './types';
@@ -27,8 +27,8 @@ export interface ExecuteRunPostActionParams {
   readonly projectId: string;
   readonly runId: string;
   readonly action: RunPostAction;
-  readonly targetVersion?: string;
-  readonly targetEnvironment?: string;
+  readonly targetVersion;
+  readonly targetEnvironment;
 }
 
 export interface PhaseActionResult {
@@ -42,7 +42,10 @@ export interface PhaseActionResult {
   readonly auditEventId?: string;
 }
 
-const RUN_WORKFLOW_TEMPLATE_ID = 'yappc-run';
+
+function createPhaseActionError(code: string, i18nKey: string, message: string, context?: Record<string, unknown>): PhaseActionError {
+  return { code, i18nKey, message, context };
+}const RUN_WORKFLOW_TEMPLATE_ID = 'yappc-run';
 
 interface SurfaceReviewActionConfig {
   readonly auditType: string;
@@ -97,6 +100,11 @@ function getActionErrorMessage(error: unknown): string {
 }
 
 export function describePhaseActionError(error: unknown): string {
+  if (error && typeof error === 'object' && 'i18nKey' in error) {
+    // It's a PhaseActionError - return the i18n key for frontend translation
+    const structuredError = error as PhaseActionError;
+    return structuredError.i18nKey;
+  }
   return getActionErrorMessage(error);
 }
 
@@ -110,7 +118,7 @@ export async function executePhasePrimaryAction({
   const surfaceReviewAction = SURFACE_REVIEW_ACTIONS[phase];
   if (surfaceReviewAction) {
     if (!actorId) {
-      throw new Error(`${phase} review requires an authenticated actor.`);
+      throw createPhaseActionError('AUTH_REQUIRED', 'phaseCockpit.errors.authenticatedActorRequired', phase + ' review requires an authenticated actor.', { phase });
     }
 
     const auditEvent = await yappcApi.audit.emit({
@@ -141,10 +149,10 @@ export async function executePhasePrimaryAction({
     requireReady(preview);
 
     if (!actorId) {
-      throw new Error('Lifecycle approval requires an authenticated reviewer.');
+      throw createPhaseActionError('AUTH_REQUIRED', 'phaseCockpit.errors.authenticatedReviewerRequired', 'Lifecycle approval requires an authenticated reviewer.');
     }
     if (!preview?.currentPhase || !preview.nextPhase) {
-      throw new Error('Lifecycle approval requires a current phase and next phase from the readiness preview.');
+      throw createPhaseActionError('INVALID_CONTEXT', 'phaseCockpit.errors.lifecyclePreviewRequired', 'Lifecycle approval requires a current phase and next phase from the readiness preview.');
     }
 
     // Record audit event before lifecycle transition
@@ -187,7 +195,7 @@ export async function executePhasePrimaryAction({
     requireReady(preview);
 
     if (!actorId) {
-      throw new Error('Generation requires an authenticated actor.');
+      throw createPhaseActionError('AUTH_REQUIRED', 'phaseCockpit.errors.authenticatedActorRequired', 'Generation requires an authenticated actor.');
     }
 
     // Record audit event before generation
@@ -242,10 +250,10 @@ export async function executePhasePrimaryAction({
     requireReady(preview);
 
     if (!tenantId) {
-      throw new Error('Run execution requires an authenticated tenant context.');
+      throw createPhaseActionError('AUTH_REQUIRED', 'phaseCockpit.errors.authenticatedTenantRequired', 'Run execution requires an authenticated tenant context.');
     }
     if (!actorId) {
-      throw new Error('Run execution requires an authenticated actor.');
+      throw createPhaseActionError('AUTH_REQUIRED', 'phaseCockpit.errors.authenticatedActorRequired', 'Run execution requires an authenticated actor.');
     }
 
     // Record audit event before run execution
@@ -303,13 +311,13 @@ export async function executeGenerateReviewDecision({
   reason,
 }: ExecuteGenerateReviewDecisionParams): Promise<PhaseActionResult> {
   if (!runId) {
-    throw new Error('Generation review requires a run id.');
+    throw createPhaseActionError('INVALID_CONTEXT', 'phaseCockpit.errors.missingGenerationRunContext', 'Generation review requires a run id.');
   }
   if (!projectId) {
-    throw new Error('Generation review requires a project id.');
+    throw createPhaseActionError('INVALID_CONTEXT', 'phaseCockpit.errors.missingProjectContext', 'Generation review requires a project id.');
   }
   if (!actorId) {
-    throw new Error('Generation review requires an authenticated reviewer.');
+    throw createPhaseActionError('AUTH_REQUIRED', 'phaseCockpit.errors.authenticatedReviewerRequired', 'Generation review requires an authenticated reviewer.');
   }
 
   // Record audit event before review decision
@@ -349,14 +357,14 @@ export async function executeRunPostAction({
   projectId,
   runId,
   action,
-  targetVersion = 'previous-stable',
-  targetEnvironment = 'staging',
+  targetVersion,
+  targetEnvironment,
 }: ExecuteRunPostActionParams): Promise<PhaseActionResult> {
   if (!projectId) {
-    throw new Error('Run post-action requires a project id.');
+    throw createPhaseActionError('INVALID_CONTEXT', 'phaseCockpit.errors.missingProjectContext', 'Run post-action requires a project id.');
   }
   if (!runId) {
-    throw new Error('Run post-action requires a run id.');
+    throw createPhaseActionError('INVALID_CONTEXT', 'phaseCockpit.errors.missingRunContext', 'Run post-action requires a run id.');
   }
 
   // Record audit event before run post-action
@@ -398,6 +406,9 @@ export async function executeRunPostAction({
   }
 
   if (action === 'rollback') {
+    if (!targetVersion) {
+      throw createPhaseActionError('INVALID_CONTEXT', 'phaseCockpit.errors.missingRollbackTarget', 'Rollback action requires an explicit target version. The backend should provide this in action.parameters.targetVersion.');
+    }
     const result = await yappcApi.run.rollback({
       deploymentId: runId,
       targetVersion,
@@ -412,6 +423,9 @@ export async function executeRunPostAction({
   }
 
   if (action === 'promote') {
+    if (!targetEnvironment) {
+      throw createPhaseActionError('INVALID_CONTEXT', 'phaseCockpit.errors.missingPromoteTarget', 'Promote action requires an explicit target environment. The backend should provide this in action.parameters.targetEnvironment.');
+    }
     const result = await yappcApi.run.promote({
       deploymentId: runId,
       targetEnvironment,

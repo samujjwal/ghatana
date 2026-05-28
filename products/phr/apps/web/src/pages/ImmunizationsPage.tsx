@@ -1,15 +1,31 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, Badge } from '@ghatana/design-system';
+import { Badge, Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { fetchImmunizations } from '../api/clinicalApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
-import { t } from '../i18n/phrI18n';
+import { formatPhrDate, t } from '../i18n/phrI18n';
 import type { ImmunizationSummary } from '../types';
+
+type ImmunizationStatus = NonNullable<ImmunizationSummary['status']>;
+
+function statusLabel(status: ImmunizationStatus): string {
+  return t(`immunizations.status.${status}`);
+}
+
+function statusVariant(status: ImmunizationStatus): 'default' | 'secondary' | 'destructive' {
+  if (status === 'entered-in-error' || status === 'not-done' || status === 'due') return 'destructive';
+  return status === 'completed' ? 'default' : 'secondary';
+}
+
+function groupTitle(status: ImmunizationStatus): string {
+  return t(`immunizations.group.${status}`);
+}
 
 export function ImmunizationsPage(): React.ReactElement {
   const { session } = usePhrSession();
   const [immunizations, setImmunizations] = useState<ImmunizationSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session) return;
@@ -27,23 +43,7 @@ export function ImmunizationsPage(): React.ReactElement {
   if (error) return <div className="error" role="alert">{t('dashboard.errorPrefix')}: {error}</div>;
   if (!immunizations.length) return <div className="empty" role="status">{t('immunizations.empty')}</div>;
 
-  // Group by status
-  const complete = immunizations.filter((imm) => imm.status === 'completed');
-  const due = immunizations.filter((imm) => imm.status === 'due');
-  const other = immunizations.filter((imm) => imm.status !== 'completed' && imm.status !== 'due');
-
-  // Calculate retention status (time since last dose)
-  const getRetentionStatus = (imm: ImmunizationSummary): string => {
-    if (!imm.occurrenceDate) return 'unknown';
-    const date = new Date(imm.occurrenceDate);
-    const now = new Date();
-    const yearsSince = (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24 * 365);
-    
-    if (yearsSince < 1) return 'current';
-    if (yearsSince < 5) return 'valid';
-    if (yearsSince < 10) return 'expiring';
-    return 'expired';
-  };
+  const statuses: ImmunizationStatus[] = ['completed', 'not-done', 'entered-in-error', 'due'];
 
   return (
     <div className="stack gap-lg">
@@ -51,69 +51,68 @@ export function ImmunizationsPage(): React.ReactElement {
         <CardHeader title={t('immunizations.title')} subheader={t('immunizations.subheader')} />
         <CardContent>
           <div className="stack gap-md">
-            {/* Complete immunizations */}
-            {complete.length > 0 && (
-              <>
-                <h3>Complete</h3>
-                <ul className="stack gap-sm" role="list">
-                  {complete.map((imm) => {
-                    const retention = getRetentionStatus(imm);
-                    return (
-                      <li key={imm.id} className="immunization-entry" role="listitem">
-                        <strong>{imm.vaccine}</strong>
-                        <Badge 
-                          variant={retention === 'expired' ? 'destructive' : retention === 'expiring' ? 'secondary' : 'default'}
-                          aria-label={`Retention status: ${retention}`}
-                        >
-                          {retention === 'current' && 'Current'}
-                          {retention === 'valid' && 'Valid'}
-                          {retention === 'expiring' && 'Expiring Soon'}
-                          {retention === 'expired' && 'Expired'}
-                          {retention === 'unknown' && 'Unknown'}
-                        </Badge>
-                        <time dateTime={imm.occurrenceDate} aria-label={`Administered date: ${new Date(imm.occurrenceDate).toLocaleDateString()}`}>{new Date(imm.occurrenceDate).toLocaleDateString()}</time>
-                        {imm.lotNumber != null && <span className="muted">Lot: {imm.lotNumber}</span>}
-                        {imm.cvxCode != null && <span className="muted">CVX: {imm.cvxCode}</span>}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </>
-            )}
+            {statuses.map((status) => {
+              const group = immunizations.filter((immunization) => immunization.status === status);
+              if (group.length === 0) return null;
 
-            {/* Due immunizations */}
-            {due.length > 0 && (
-              <>
-                <h3>Due</h3>
-                <ul className="stack gap-sm" role="list">
-                  {due.map((imm) => (
-                    <li key={imm.id} className="immunization-entry" role="listitem">
-                      <strong>{imm.vaccine}</strong>
-                      <Badge variant="destructive" aria-label={t('immunizations.status.due')}>{t('immunizations.status.due')}</Badge>
-                      {imm.lotNumber != null && <span className="muted">Last Lot: {imm.lotNumber}</span>}
-                      {imm.cvxCode != null && <span className="muted">CVX: {imm.cvxCode}</span>}
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-
-            {/* Other status */}
-            {other.length > 0 && (
-              <>
-                <h3>Other</h3>
-                <ul className="stack gap-sm" role="list">
-                  {other.map((imm) => (
-                    <li key={imm.id} className="immunization-entry" role="listitem">
-                      <strong>{imm.vaccine}</strong>
-                      {imm.status && <Badge variant="secondary" aria-label={`Status: ${imm.status}`}>{imm.status}</Badge>}
-                      <time dateTime={imm.occurrenceDate} aria-label={`Administered date: ${new Date(imm.occurrenceDate).toLocaleDateString()}`}>{new Date(imm.occurrenceDate).toLocaleDateString()}</time>
-                      {imm.lotNumber != null && <span className="muted">Lot: {imm.lotNumber}</span>}
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
+              return (
+                <section key={status} className="stack gap-sm" aria-label={groupTitle(status)}>
+                  <h3>{groupTitle(status)}</h3>
+                  <ul className="stack gap-sm" role="list">
+                    {group.map((immunization) => {
+                      const isSelected = selectedId === immunization.id;
+                      return (
+                        <li key={immunization.id} className="immunization-entry" role="listitem">
+                          <button
+                            type="button"
+                            className="data-card"
+                            aria-expanded={isSelected}
+                            onClick={() => setSelectedId(isSelected ? null : immunization.id)}
+                          >
+                            <div>
+                              <strong>{immunization.vaccine}</strong>
+                              <p className="muted">{t('immunizations.date', { date: formatPhrDate(immunization.occurrenceDate) })}</p>
+                            </div>
+                            <div className="row gap-sm align-center">
+                              <Badge variant={statusVariant(status)} aria-label={statusLabel(status)}>{statusLabel(status)}</Badge>
+                              <Badge variant="secondary" aria-label={t('immunizations.retention.permanent')}>{t('immunizations.retention.permanent')}</Badge>
+                            </div>
+                          </button>
+                          {isSelected && (
+                            <dl className="detail-list">
+                              {immunization.cvxCode != null && (
+                                <>
+                                  <dt>{t('immunizations.cvx')}</dt>
+                                  <dd>{immunization.cvxCode}</dd>
+                                </>
+                              )}
+                              {immunization.lotNumber != null && (
+                                <>
+                                  <dt>{t('immunizations.lot')}</dt>
+                                  <dd>{immunization.lotNumber}</dd>
+                                </>
+                              )}
+                              {immunization.dose != null && (
+                                <>
+                                  <dt>{t('immunizations.doseLabel')}</dt>
+                                  <dd>{immunization.dose}</dd>
+                                </>
+                              )}
+                              {immunization.site != null && (
+                                <>
+                                  <dt>{t('immunizations.site')}</dt>
+                                  <dd>{immunization.site}</dd>
+                                </>
+                              )}
+                            </dl>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              );
+            })}
           </div>
         </CardContent>
       </Card>

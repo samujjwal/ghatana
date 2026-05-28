@@ -36,7 +36,7 @@ export function DocumentsPage(): React.ReactElement {
       .finally(() => setLoading(false));
   }, [session]);
 
-  const handleDownload = async (documentId: string, title: string): Promise<void> => {
+  const handleDownload = async (documentId: string): Promise<void> => {
     if (!session) return;
     setDownloading(prev => new Set(prev).add(documentId));
     try {
@@ -45,7 +45,6 @@ export function DocumentsPage(): React.ReactElement {
         principalId: session.principalId,
         role: session.role,
       });
-      // result is now { downloadUrl, expiresAt }
       window.open(result.downloadUrl, '_blank');
     } catch (err) {
       logError(t('documents.error.download'), undefined, { error: err });
@@ -68,7 +67,6 @@ export function DocumentsPage(): React.ReactElement {
         principalId: session.principalId,
         role: session.role,
       });
-      // result is now { downloadUrl, expiresAt }
       setPreviewDocument({
         documentId,
         title,
@@ -137,16 +135,16 @@ export function DocumentsPage(): React.ReactElement {
             )}
           </div>
 
-          <ul className="stack gap-sm" aria-label="Documents">
+          <ul className="stack gap-sm" aria-label={t('documents.list.label')}>
             {filteredDocuments.length === 0 ? (
               <p className="empty" role="status">{t('documents.empty')}</p>
             ) : (
               filteredDocuments.map((doc) => (
                 <li key={doc.id} className="document-entry" role="listitem">
-                  <span className="document-title" aria-label={`Document title: ${doc.title}`}>{doc.title}</span>
-                  <span className="muted" aria-label={`Content type: ${doc.contentType}`}>{doc.contentType}</span>
-                  {doc.sizeKb && <span className="muted" aria-label={`File size: ${doc.sizeKb.toFixed(1)} KB`}>{doc.sizeKb.toFixed(1)} KB</span>}
-                  <time dateTime={doc.uploadedAt} aria-label={`Uploaded: ${new Date(doc.uploadedAt).toLocaleDateString()}`}>{new Date(doc.uploadedAt).toLocaleDateString()}</time>
+                  <span className="document-title" aria-label={t('documents.title.named', { title: doc.title })}>{doc.title}</span>
+                  <span className="muted" aria-label={t('documents.contentType.named', { contentType: doc.contentType ?? t('common.unknown') })}>{doc.contentType}</span>
+                  {doc.sizeKb && <span className="muted" aria-label={t('documents.fileSize.named', { size: doc.sizeKb.toFixed(1) })}>{doc.sizeKb.toFixed(1)} KB</span>}
+                  <time dateTime={doc.uploadedAt} aria-label={t('documents.uploaded.named', { date: new Date(doc.uploadedAt).toLocaleDateString() })}>{new Date(doc.uploadedAt).toLocaleDateString()}</time>
                   {doc.ocrStatus && (
                     <span className={`badge badge--ocr-${doc.ocrStatus}`} role="status" aria-label={`OCR status: ${doc.ocrStatus}`}>
                       {doc.ocrStatus === 'ready' && t('documents.ocr.ready')}
@@ -155,7 +153,7 @@ export function DocumentsPage(): React.ReactElement {
                       {doc.ocrStatus === 'failed' && t('documents.ocr.failed')}
                     </span>
                   )}
-                  <div className="row gap-sm" role="group" aria-label={`Actions for ${doc.title}`}>
+                  <div className="row gap-sm" role="group" aria-label={t('documents.actions.named', { title: doc.title })}>
                     {canPreview(doc.contentType || '') && (
                       <Button
                         size="small"
@@ -169,7 +167,7 @@ export function DocumentsPage(): React.ReactElement {
                     )}
                     <Button
                       size="small"
-                      onClick={() => handleDownload(doc.id, doc.title)}
+                      onClick={() => handleDownload(doc.id)}
                       disabled={downloading.has(doc.id)}
                       aria-label={downloading.has(doc.id) ? t('documents.downloading') : `${t('documents.download')} ${doc.title}`}
                       aria-busy={downloading.has(doc.id)}

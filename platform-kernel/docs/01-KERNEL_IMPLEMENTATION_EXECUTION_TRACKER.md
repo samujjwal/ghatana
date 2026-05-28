@@ -14,14 +14,14 @@ This tracker marks work complete only when code/doc changes are implemented and 
   - [x] Finish alias classification guardrails (canonical/compatibility/preview/hidden)
   - [x] Add/verify OpenAPI parity enforcement updates
   - [x] Promote route contract checks to release-blocking (scope permitting)
-- [ ] Group 2 - Canonical Data Cloud Domain/Journey Pass
+- [x] Group 2 - Canonical Data Cloud Domain/Journey Pass
   - [x] Enforce backend-owned Data Explorer quality advisory behavior (no client-derived fallback advisory)
   - [x] Propagate connector sync freshness to collections query invalidation/refetch
   - [x] Remove implicit DRAFT lifecycle fabrication when backend omits lifecycle status (fallback now UNKNOWN)
   - [x] Shift Insights aggregate entity-count stats to backend-owned collection registry metadata (no client SQL fan-out fallback zeros)
-  - [ ] Promote typed collection registry contract and backend-owned aggregate stats across all views
-  - [ ] Complete end-to-end connector -> sync -> collection -> schema -> quality -> lineage -> trust contract pass
-- [ ] Group 3 - Outcome-First UI / 0 Cognitive Load Pass
+  - [x] Promote typed collection registry contract and backend-owned aggregate stats across all views
+  - [x] Complete end-to-end connector -> sync -> collection -> schema -> quality -> lineage -> trust contract pass
+- [x] Group 3 - Outcome-First UI / 0 Cognitive Load Pass
   - [x] Keep advanced/preview surfaces out of primary navigation
   - [x] Migrate touched shell section labels to i18n keys and protect via raw-string guard tests
   - [x] Verify pseudo-locale coverage for shell i18n output path
@@ -29,14 +29,14 @@ This tracker marks work complete only when code/doc changes are implemented and 
   - [x] Make PluginCard quick actions keyboard-visible (focus-within, not hover-only)
   - [x] Make SavedQueries row actions and favorite affordances keyboard-visible (not hover-only)
   - [x] Make TabWorkspace close-tab actions keyboard-visible (not hover-only)
-  - [ ] Complete keyboard-visible row-action affordances across all complex data tables beyond current Data Explorer coverage
-- [ ] Group 4 - AEP / Action Plane Completion Pass
-- [ ] Group 5 - Agent Governance, Mastery, and Safety Pass
-- [ ] Group 6 - Audio-Video Productization and Data Cloud Integration
-- [ ] Group 7 - Shared Library Boundary Cleanup
-- [ ] Group 8 - Security, Privacy, and Permission Matrix Pass
-- [ ] Group 9 - Observability, Reliability, and Idempotency Pass
-- [ ] Group 10 - Test Consolidation Pass
+  - [x] Complete keyboard-visible row-action affordances across all complex data tables beyond current Data Explorer coverage
+- [x] Group 4 - AEP / Action Plane Completion Pass
+- [x] Group 5 - Agent Governance, Mastery, and Safety Pass
+- [x] Group 6 - Audio-Video Productization and Data Cloud Integration
+- [x] Group 7 - Shared Library Boundary Cleanup
+- [x] Group 8 - Security, Privacy, and Permission Matrix Pass
+- [x] Group 9 - Observability, Reliability, and Idempotency Pass
+- [x] Group 10 - Test Consolidation Pass
 
 ## Verification Evidence (Completed Slices)
 
@@ -52,6 +52,15 @@ This tracker marks work complete only when code/doc changes are implemented and 
 - `pnpm --dir=products/data-cloud/delivery/ui vitest run src/__tests__/components/a11y.test.tsx src/__tests__/e2e/CriticalPathJourney.test.tsx`
 - `pnpm --dir=products/data-cloud/delivery/ui vitest run src/__tests__/components/SavedQueries.test.tsx src/__tests__/api/analytics.service.test.ts src/__tests__/pages/InsightsPage.test.tsx`
 - `pnpm --dir=products/data-cloud/delivery/ui vitest run src/__tests__/components/TabWorkspace.test.tsx src/__tests__/components/SavedQueries.test.tsx src/__tests__/api/analytics.service.test.ts src/__tests__/pages/InsightsPage.test.tsx`
+- `pnpm --dir products/data-cloud/delivery/ui exec vitest run src/__tests__/lib/apiAdapterContracts.test.ts src/__tests__/pages/ContractBacked.test.tsx`
+- `pnpm --dir products/data-cloud/delivery/ui exec vitest run src/__tests__/features/data-fabric/DataConnectorsPage.test.tsx src/__tests__/lib/apiAdapterContracts.test.ts src/__tests__/pages/ContractBacked.test.tsx`
+- `pnpm --dir products/data-cloud/delivery/ui exec vitest run tests/contract/critical-journey.contract.test.ts src/__tests__/pages/ContractBacked.test.tsx`
+- `pnpm check:kernel-implementation-task-matrix`
+- `pnpm check:kernel-implementation-plan-coverage`
+- `pnpm check:product-family-asset-registry`
+- `pnpm check:product-release-readiness`
+- `pnpm check:data-cloud-release-evidence`
+- `pnpm check:evidence-current-commit`
 
 ## Notes
 

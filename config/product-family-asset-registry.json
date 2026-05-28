@@ -193,7 +193,7 @@
       ],
       "tests": [
         "products/phr/src/test/java/com/ghatana/phr/observability/PHRAuditTrailServiceTest.java",
-        "products/phr/apps/web/src/__tests__/PhrPrivacyHardeningTest.tsx"
+        "products/phr/apps/web/src/__tests__/PhrPrivacyHardening.test.tsx"
       ],
       "dependencies": ["audit-plugin", "data-cloud-runtime-truth", "observability"],
       "requiredFoundations": ["kernel", "data-cloud", "audit", "observability", "tenant-isolation"],

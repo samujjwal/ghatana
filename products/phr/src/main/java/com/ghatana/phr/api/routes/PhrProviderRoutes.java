@@ -7,6 +7,7 @@ import com.ghatana.phr.application.clinical.ClinicalService.PrescribeMedicationR
 import com.ghatana.phr.application.patient.PatientOperationContext;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
 import com.ghatana.phr.kernel.service.PatientRecordService;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -18,8 +19,6 @@ import io.activej.promise.Promise;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
 
 /**
  * Provider (clinician) API for the PHR product.
@@ -39,16 +38,19 @@ public final class PhrProviderRoutes {
     private final PatientRecordService patientRecordService;
     private final ConsentManagementService consentService;
     private final ClinicalService clinicalService;
+    private final PhrPolicyEvaluator policyEvaluator;
 
     public PhrProviderRoutes(
             Eventloop eventloop,
             PatientRecordService patientRecordService,
             ConsentManagementService consentService,
-            ClinicalService clinicalService) {
+            ClinicalService clinicalService,
+            PhrPolicyEvaluator policyEvaluator) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.patientRecordService = Objects.requireNonNull(patientRecordService, "patientRecordService must not be null");
         this.consentService = Objects.requireNonNull(consentService, "consentService must not be null");
         this.clinicalService = Objects.requireNonNull(clinicalService, "clinicalService must not be null");
+        this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 
     /**
@@ -126,35 +128,16 @@ public final class PhrProviderRoutes {
         }
 
         String patientId = request.getPathParameter("patientId");
-        
-        // Check consent/treatment relationship before accessing patient data
-        return consentService.checkAccess(
-            new com.ghatana.phr.kernel.consent.ConsentService.ConsentCheckRequest(
-                UUID.randomUUID().toString(),
-                context.tenantId(),
-                new com.ghatana.phr.kernel.consent.ConsentService.ActorContext(
-                    context.principalId(),
-                    com.ghatana.phr.kernel.consent.ConsentService.ActorType.PROVIDER,
-                    null,
-                    context.principalId(),
-                    null,
-                    Set.of()
-                ),
-                new com.ghatana.phr.kernel.consent.ConsentService.TargetResource(
-                    patientId,
-                    "Patient",
-                    null,
-                    com.ghatana.phr.kernel.policy.PhrDataClassification.C3
-                ),
-                com.ghatana.phr.kernel.consent.ConsentService.ConsentAction.PATIENT_READ,
-                com.ghatana.phr.kernel.consent.ConsentService.PurposeOfUse.CARE_DELIVERY,
-                null
-            )
+        return policyEvaluator.canAccessPhiResourceAsync(
+            context,
+            patientId,
+            "provider-patient-summary",
+            "READ",
+            context.tenantId(),
+            context.facilityId()
         ).then(decision -> {
-            if (!decision.allowed()) {
-                return PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED",
-                    "Patient has not granted consent for this clinician to access their data",
-                    context.correlationId());
+            if (!decision.isAllowed()) {
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
             }
             
             return patientRecordService.getPatient(patientId)
@@ -172,7 +155,7 @@ public final class PhrProviderRoutes {
                         "name", patient.getDemographics().getFullName(),
                         "age", patient.getDemographics().getAge(),
                         "summary", "Clinical summary for patient",
-                        "consentStatus", decision.reasonCode().name()
+                        "policyStatus", decision.getReasonCode()
                     ), context.correlationId());
                 });
         });
@@ -193,35 +176,16 @@ public final class PhrProviderRoutes {
         }
 
         String patientId = request.getPathParameter("patientId");
-        
-        // Check consent/treatment relationship before accessing patient data
-        return consentService.checkAccess(
-            new com.ghatana.phr.kernel.consent.ConsentService.ConsentCheckRequest(
-                UUID.randomUUID().toString(),
-                context.tenantId(),
-                new com.ghatana.phr.kernel.consent.ConsentService.ActorContext(
-                    context.principalId(),
-                    com.ghatana.phr.kernel.consent.ConsentService.ActorType.PROVIDER,
-                    null,
-                    context.principalId(),
-                    null,
-                    Set.of()
-                ),
-                new com.ghatana.phr.kernel.consent.ConsentService.TargetResource(
-                    patientId,
-                    "Patient",
-                    null,
-                    com.ghatana.phr.kernel.policy.PhrDataClassification.C3
-                ),
-                com.ghatana.phr.kernel.consent.ConsentService.ConsentAction.PATIENT_READ,
-                com.ghatana.phr.kernel.consent.ConsentService.PurposeOfUse.CARE_DELIVERY,
-                null
-            )
+        return policyEvaluator.canAccessPhiResourceAsync(
+            context,
+            patientId,
+            "provider-patient-detail",
+            "READ",
+            context.tenantId(),
+            context.facilityId()
         ).then(decision -> {
-            if (!decision.allowed()) {
-                return PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED",
-                    "Patient has not granted consent for this clinician to access their detailed data",
-                    context.correlationId());
+            if (!decision.isAllowed()) {
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
             }
             
             return patientRecordService.getPatient(patientId)
@@ -256,7 +220,7 @@ public final class PhrProviderRoutes {
                             "chronicConditions", medicalHistory.getChronicConditions(),
                             "bloodType", medicalHistory.getBloodType()
                         ) : Map.of(),
-                        "consentStatus", decision.reasonCode().name(),
+                        "policyStatus", decision.getReasonCode(),
                         "lastUpdated", patient.getUpdatedAt() != null ? patient.getUpdatedAt().toString() : ""
                     ), context.correlationId());
                 });
@@ -278,34 +242,16 @@ public final class PhrProviderRoutes {
         }
 
         String patientId = request.getPathParameter("patientId");
-        
-        return consentService.checkAccess(
-            new com.ghatana.phr.kernel.consent.ConsentService.ConsentCheckRequest(
-                UUID.randomUUID().toString(),
-                context.tenantId(),
-                new com.ghatana.phr.kernel.consent.ConsentService.ActorContext(
-                    context.principalId(),
-                    com.ghatana.phr.kernel.consent.ConsentService.ActorType.PROVIDER,
-                    null,
-                    context.principalId(),
-                    null,
-                    Set.of()
-                ),
-                new com.ghatana.phr.kernel.consent.ConsentService.TargetResource(
-                    patientId,
-                    "Encounter",
-                    null,
-                    com.ghatana.phr.kernel.policy.PhrDataClassification.C3
-                ),
-                com.ghatana.phr.kernel.consent.ConsentService.ConsentAction.PATIENT_WRITE,
-                com.ghatana.phr.kernel.consent.ConsentService.PurposeOfUse.CARE_DELIVERY,
-                null
-            )
+        return policyEvaluator.canAccessPhiResourceAsync(
+            context,
+            patientId,
+            "provider-encounter",
+            "WRITE",
+            context.tenantId(),
+            context.facilityId()
         ).then(decision -> {
-            if (!decision.allowed()) {
-                return PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED",
-                    "Patient has not granted consent for this clinician to create encounters",
-                    context.correlationId());
+            if (!decision.isAllowed()) {
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
             }
             
             return request.loadBody()
@@ -366,34 +312,16 @@ public final class PhrProviderRoutes {
 
         String patientId = request.getPathParameter("patientId");
         String encounterId = request.getPathParameter("encounterId");
-        
-        return consentService.checkAccess(
-            new com.ghatana.phr.kernel.consent.ConsentService.ConsentCheckRequest(
-                UUID.randomUUID().toString(),
-                context.tenantId(),
-                new com.ghatana.phr.kernel.consent.ConsentService.ActorContext(
-                    context.principalId(),
-                    com.ghatana.phr.kernel.consent.ConsentService.ActorType.PROVIDER,
-                    null,
-                    context.principalId(),
-                    null,
-                    Set.of()
-                ),
-                new com.ghatana.phr.kernel.consent.ConsentService.TargetResource(
-                    patientId,
-                    "Encounter",
-                    null,
-                    com.ghatana.phr.kernel.policy.PhrDataClassification.C3
-                ),
-                com.ghatana.phr.kernel.consent.ConsentService.ConsentAction.PATIENT_READ,
-                com.ghatana.phr.kernel.consent.ConsentService.PurposeOfUse.CARE_DELIVERY,
-                null
-            )
+        return policyEvaluator.canAccessPhiResourceAsync(
+            context,
+            patientId,
+            "provider-encounter",
+            "READ",
+            context.tenantId(),
+            context.facilityId()
         ).then(decision -> {
-            if (!decision.allowed()) {
-                return PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED",
-                    "Patient has not granted consent for this clinician to view encounters",
-                    context.correlationId());
+            if (!decision.isAllowed()) {
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
             }
             
             PatientOperationContext ctx = new PatientOperationContext(
@@ -442,34 +370,16 @@ public final class PhrProviderRoutes {
 
         String patientId = request.getPathParameter("patientId");
         String encounterId = request.getPathParameter("encounterId");
-        
-        return consentService.checkAccess(
-            new com.ghatana.phr.kernel.consent.ConsentService.ConsentCheckRequest(
-                UUID.randomUUID().toString(),
-                context.tenantId(),
-                new com.ghatana.phr.kernel.consent.ConsentService.ActorContext(
-                    context.principalId(),
-                    com.ghatana.phr.kernel.consent.ConsentService.ActorType.PROVIDER,
-                    null,
-                    context.principalId(),
-                    null,
-                    Set.of()
-                ),
-                new com.ghatana.phr.kernel.consent.ConsentService.TargetResource(
-                    patientId,
-                    "Encounter",
-                    null,
-                    com.ghatana.phr.kernel.policy.PhrDataClassification.C3
-                ),
-                com.ghatana.phr.kernel.consent.ConsentService.ConsentAction.PATIENT_WRITE,
-                com.ghatana.phr.kernel.consent.ConsentService.PurposeOfUse.CARE_DELIVERY,
-                null
-            )
+        return policyEvaluator.canAccessPhiResourceAsync(
+            context,
+            patientId,
+            "provider-encounter",
+            "WRITE",
+            context.tenantId(),
+            context.facilityId()
         ).then(decision -> {
-            if (!decision.allowed()) {
-                return PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED",
-                    "Patient has not granted consent for this clinician to update encounters",
-                    context.correlationId());
+            if (!decision.isAllowed()) {
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
             }
             
             return request.loadBody()
@@ -530,34 +440,16 @@ public final class PhrProviderRoutes {
 
         String patientId = request.getPathParameter("patientId");
         String encounterId = request.getPathParameter("encounterId");
-        
-        return consentService.checkAccess(
-            new com.ghatana.phr.kernel.consent.ConsentService.ConsentCheckRequest(
-                UUID.randomUUID().toString(),
-                context.tenantId(),
-                new com.ghatana.phr.kernel.consent.ConsentService.ActorContext(
-                    context.principalId(),
-                    com.ghatana.phr.kernel.consent.ConsentService.ActorType.PROVIDER,
-                    null,
-                    context.principalId(),
-                    null,
-                    Set.of()
-                ),
-                new com.ghatana.phr.kernel.consent.ConsentService.TargetResource(
-                    patientId,
-                    "Encounter",
-                    null,
-                    com.ghatana.phr.kernel.policy.PhrDataClassification.C3
-                ),
-                com.ghatana.phr.kernel.consent.ConsentService.ConsentAction.PATIENT_WRITE,
-                com.ghatana.phr.kernel.consent.ConsentService.PurposeOfUse.CARE_DELIVERY,
-                null
-            )
+        return policyEvaluator.canAccessPhiResourceAsync(
+            context,
+            patientId,
+            "provider-encounter",
+            "WRITE",
+            context.tenantId(),
+            context.facilityId()
         ).then(decision -> {
-            if (!decision.allowed()) {
-                return PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED",
-                    "Patient has not granted consent for this clinician to complete encounters",
-                    context.correlationId());
+            if (!decision.isAllowed()) {
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
             }
             
             PatientOperationContext ctx = new PatientOperationContext(
@@ -597,34 +489,16 @@ public final class PhrProviderRoutes {
         }
 
         String patientId = request.getPathParameter("patientId");
-        
-        return consentService.checkAccess(
-            new com.ghatana.phr.kernel.consent.ConsentService.ConsentCheckRequest(
-                UUID.randomUUID().toString(),
-                context.tenantId(),
-                new com.ghatana.phr.kernel.consent.ConsentService.ActorContext(
-                    context.principalId(),
-                    com.ghatana.phr.kernel.consent.ConsentService.ActorType.PROVIDER,
-                    null,
-                    context.principalId(),
-                    null,
-                    Set.of()
-                ),
-                new com.ghatana.phr.kernel.consent.ConsentService.TargetResource(
-                    patientId,
-                    "Medication",
-                    null,
-                    com.ghatana.phr.kernel.policy.PhrDataClassification.C3
-                ),
-                com.ghatana.phr.kernel.consent.ConsentService.ConsentAction.MEDICATION_WRITE,
-                com.ghatana.phr.kernel.consent.ConsentService.PurposeOfUse.CARE_DELIVERY,
-                null
-            )
+        return policyEvaluator.canAccessPhiResourceAsync(
+            context,
+            patientId,
+            "provider-medication",
+            "WRITE",
+            context.tenantId(),
+            context.facilityId()
         ).then(decision -> {
-            if (!decision.allowed()) {
-                return PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED",
-                    "Patient has not granted consent for this clinician to prescribe medications",
-                    context.correlationId());
+            if (!decision.isAllowed()) {
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
             }
             
             return request.loadBody()

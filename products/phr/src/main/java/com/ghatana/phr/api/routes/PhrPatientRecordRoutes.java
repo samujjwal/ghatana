@@ -54,6 +54,7 @@ public final class PhrPatientRecordRoutes {
             .with(HttpMethod.GET, "/:patientId/history", this::handlePatientHistory)
             .with(HttpMethod.GET, "/:patientId", this::handleGetPatient)
             .with(HttpMethod.PUT, "/:patientId", this::handleUpdatePatient)
+            .with(HttpMethod.GET, "/:patientId/records", this::handleListRecords)
             .with(HttpMethod.GET, "/:patientId/records/:recordId", this::handleGetRecordDetail)
             .build();
     }
@@ -216,6 +217,70 @@ public final class PhrPatientRecordRoutes {
                         })
                         .orElseGet(() -> PhrRouteSupport.errorResponse(404, "PATIENT_NOT_FOUND", "Patient record not found")));
             });
+    }
+
+    private Promise<HttpResponse> handleListRecords(HttpRequest request) {
+        PhrRouteSupport.PhrRequestContext context;
+        String patientId;
+        int limit;
+        int offset;
+        try {
+            context = PhrRouteSupport.requireContext(request);
+            patientId = request.getPathParameter("patientId");
+            limit = PhrRouteSupport.intQuery(request, "limit", 50, 100);
+            offset = PhrRouteSupport.intQuery(request, "offset", 0, 10_000);
+        } catch (RuntimeException ex) {
+            return PhrRouteSupport.errorResponse(400, "INVALID_RECORD_LIST", ex.getMessage());
+        }
+
+        String category = request.getQueryParameter("category");
+        String resourceType = request.getQueryParameter("resourceType");
+        String dateFrom = request.getQueryParameter("dateFrom");
+        String dateTo = request.getQueryParameter("dateTo");
+
+        return requireSelfOrConsent(context, patientId)
+            .then(allowed -> {
+                if (!allowed) {
+                    return PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required to list patient records");
+                }
+                return patientRecordService.getPatient(patientId)
+                    .then(patient -> patient
+                        .<Promise<HttpResponse>>map(value -> {
+                            Map<String, Object> item = recordSummary(value, context);
+                            boolean matchesCategory = category == null || category.isBlank() || category.equals(item.get("category"));
+                            boolean matchesResource = resourceType == null || resourceType.isBlank() || resourceType.equals(item.get("resourceType"));
+                            boolean matchesFrom = dateFrom == null || dateFrom.isBlank() || item.get("updatedAt").toString().compareTo(dateFrom) >= 0;
+                            boolean matchesTo = dateTo == null || dateTo.isBlank() || item.get("updatedAt").toString().compareTo(dateTo) <= 0;
+                            List<Map<String, Object>> items = matchesCategory && matchesResource && matchesFrom && matchesTo
+                                ? List.of(item)
+                                : List.of();
+                            return PhrRouteSupport.jsonResponse(200, Map.of(
+                                "items", items,
+                                "count", items.size(),
+                                "limit", limit,
+                                "offset", offset,
+                                "patientId", patientId,
+                                "generatedAt", Instant.now().toString()
+                            ));
+                        })
+                        .orElseGet(() -> PhrRouteSupport.errorResponse(404, "PATIENT_NOT_FOUND", "Patient record not found")));
+            });
+    }
+
+    private Map<String, Object> recordSummary(PatientRecordService.Patient patient, PhrRouteSupport.PhrRequestContext context) {
+        Map<String, Object> item = new java.util.LinkedHashMap<>();
+        item.put("id", patient.getId());
+        item.put("title", "Patient profile");
+        item.put("category", "administrative");
+        item.put("updatedAt", patient.getUpdatedAt() != null ? patient.getUpdatedAt().toString() : Instant.now().toString());
+        item.put("resourceType", "Patient");
+        item.put("redacted", false);
+        item.put("provenance", Map.of(
+            "source", "phr-patient-record-service",
+            "accessedBy", context.principalId(),
+            "tenantId", context.tenantId()
+        ));
+        return item;
     }
 
     private Promise<HttpResponse> handleGetRecordDetail(HttpRequest request) {

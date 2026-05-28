@@ -4,7 +4,10 @@ import {
   createConsentGrant,
   exportPatientBundle,
   fetchDashboardData,
+  fetchMedicationDetail,
+  fetchMedications,
   fetchNotifications,
+  fetchRecords,
   logoutSession,
 } from '../api/phrApi';
 
@@ -246,5 +249,114 @@ describe('PHR API integration mapping', () => {
       principalId: 'patient-001',
       role: 'patient',
     })).rejects.toThrow();
+  });
+
+  it('loads patient records from the backend-owned record list endpoint', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = new URL(String(input));
+        expect(url.pathname).toBe('/patients/patient-001/records');
+        expect(url.searchParams.get('category')).toBe('administrative');
+        expect(url.searchParams.get('limit')).toBe('50');
+        const headers = new Headers(init?.headers);
+        expect(headers.get('X-Tenant-Id')).toBe('tenant-health-1');
+        expect(headers.get('X-Principal-Id')).toBe('patient-001');
+        return new Response(JSON.stringify({
+          patientId: 'patient-001',
+          items: [{
+            id: 'patient-001',
+            title: 'Patient profile',
+            category: 'administrative',
+            updatedAt: '2026-05-28T01:00:00Z',
+            resourceType: 'Patient',
+            redacted: false,
+            provenance: {
+              source: 'phr-patient-record-service',
+            },
+          }],
+          count: 1,
+          limit: 50,
+          offset: 0,
+          generatedAt: '2026-05-28T01:00:00Z',
+        }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }),
+    );
+
+    await expect(fetchRecords('patient-001', {
+      tenantId: 'tenant-health-1',
+      principalId: 'patient-001',
+      role: 'patient',
+    }, {
+      category: 'administrative',
+    })).resolves.toEqual([
+      expect.objectContaining({
+        id: 'patient-001',
+        resourceType: 'Patient',
+        category: 'administrative',
+      }),
+    ]);
+  });
+
+  it('loads medications from clinical medication endpoints', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = new URL(String(input));
+        if (url.pathname === '/clinical/medications') {
+          return new Response(JSON.stringify({
+            patientId: 'patient-001',
+            items: [{
+              id: 'rx-1',
+              medicationName: 'Metformin',
+              dosage: '500mg',
+              indication: 'Twice daily',
+              status: 'ACTIVE',
+              prescribedAt: '2026-05-28T01:00:00Z',
+            }],
+            count: 1,
+          }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        if (url.pathname === '/clinical/medications/prescriptions/rx-1') {
+          return new Response(JSON.stringify({
+            id: 'rx-1',
+            medicationName: 'Metformin',
+            dosage: '500mg',
+            indication: 'Twice daily',
+            status: 'ACTIVE',
+            prescribedAt: '2026-05-28T01:00:00Z',
+            refillsRemaining: 0,
+          }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        return new Response('Not found', { status: 404 });
+      }),
+    );
+
+    await expect(fetchMedications('patient-001', {
+      tenantId: 'tenant-health-1',
+      principalId: 'patient-001',
+      role: 'patient',
+    })).resolves.toEqual([
+      expect.objectContaining({ id: 'rx-1', medication: 'Metformin', status: 'active' }),
+    ]);
+
+    await expect(fetchMedicationDetail('patient-001', 'rx-1', {
+      tenantId: 'tenant-health-1',
+      principalId: 'patient-001',
+      role: 'patient',
+    })).resolves.toMatchObject({
+      id: 'rx-1',
+      warnings: ['No refills remain.'],
+      history: [{ action: 'Prescribed' }],
+    });
   });
 });

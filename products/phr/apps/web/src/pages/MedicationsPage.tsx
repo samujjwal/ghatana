@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { Link } from 'react-router-dom';
 import { fetchMedications } from '../api/clinicalApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
@@ -11,6 +11,7 @@ export function MedicationsPage(): React.ReactElement {
   const [medications, setMedications] = useState<MedicationSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
 
   useEffect(() => {
     if (!session) return;
@@ -27,16 +28,42 @@ export function MedicationsPage(): React.ReactElement {
   if (loading) return <div className="loading">{t('medications.loading')}</div>;
   if (error) return <div className="error">{t('dashboard.errorPrefix')}: {error}</div>;
 
+  const visibleMedications = medications.filter((medication) => (
+    activeTab === 'active'
+      ? medication.status == null || medication.status === 'active'
+      : medication.status === 'history' || medication.status === 'stopped'
+  ));
+
   return (
     <div className="stack gap-lg">
       <Card>
         <CardHeader title={t('medications.title')} subheader={t('medications.subheader')} />
         <CardContent>
           <div className="stack gap-md">
-            {medications.length === 0 ? (
+            <div className="row gap-sm" role="tablist" aria-label={t('medications.tabs.label')}>
+              <Button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'active'}
+                variant={activeTab === 'active' ? 'solid' : 'outline'}
+                onClick={() => setActiveTab('active')}
+              >
+                {t('medications.tabs.active')}
+              </Button>
+              <Button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'history'}
+                variant={activeTab === 'history' ? 'solid' : 'outline'}
+                onClick={() => setActiveTab('history')}
+              >
+                {t('medications.tabs.history')}
+              </Button>
+            </div>
+            {visibleMedications.length === 0 ? (
               <p className="empty">{t('medications.empty')}</p>
             ) : (
-              medications.map((medication) => (
+              visibleMedications.map((medication) => (
                 <Link key={medication.id} to={`/medications/${medication.id}`} className="data-card">
                   <div>
                     <strong>{medication.medication} {medication.dosage}</strong>

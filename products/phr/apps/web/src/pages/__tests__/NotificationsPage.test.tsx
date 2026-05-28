@@ -2,12 +2,13 @@
  * Tests for NotificationsPage — verifies loading, error, empty, and notification display.
  */
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { NotificationsPage } from '../NotificationsPage';
 
 vi.mock('../../api/notificationsApi', () => ({
   fetchNotifications: vi.fn(),
+  markNotificationRead: vi.fn(),
 }));
 
 vi.mock('../../i18n/phrI18n', () => ({
@@ -18,9 +19,10 @@ vi.mock('../../auth/PhrSessionContext', () => ({
   usePhrSession: () => ({ session: { principalId: 'patient-42', tenantId: 't1', role: 'patient' as const, name: 'Test Patient', expiresAt: new Date(Date.now() + 3_600_000).toISOString() }, isAuthenticated: true, setSession: vi.fn(), clearSession: vi.fn() }),
 }));
 
-import { fetchNotifications } from '../../api/notificationsApi';
+import { fetchNotifications, markNotificationRead } from '../../api/notificationsApi';
 
-const mockFetch = fetchNotifications as ReturnType<typeof vi.fn>;
+const mockFetch = vi.mocked(fetchNotifications);
+const mockMarkRead = vi.mocked(markNotificationRead);
 
 const notifications = [
   {
@@ -44,6 +46,7 @@ const notifications = [
 describe('NotificationsPage', () => {
   beforeEach(() => {
     mockFetch.mockReset();
+    mockMarkRead.mockReset();
   });
 
   it('shows loading indicator while fetching', () => {
@@ -100,5 +103,21 @@ describe('NotificationsPage', () => {
       principalId: 'patient-42',
       role: 'patient',
     }));
+  });
+
+  it('marks an unread notification as read', async () => {
+    mockFetch.mockResolvedValue(notifications);
+    mockMarkRead.mockResolvedValue({ notificationId: 'n1', read: true });
+    render(<NotificationsPage />);
+
+    const markButton = await screen.findByRole('button', { name: 'notifications.markRead' });
+    fireEvent.click(markButton);
+
+    await waitFor(() => expect(mockMarkRead).toHaveBeenCalledWith('n1', {
+      tenantId: 't1',
+      principalId: 'patient-42',
+      role: 'patient',
+    }));
+    await waitFor(() => expect(screen.getByText('notifications.read')).toBeTruthy());
   });
 });

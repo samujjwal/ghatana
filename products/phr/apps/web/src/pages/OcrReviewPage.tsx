@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, Button, TextArea, Badge } from '@ghatana/design-system';
 import { confirmOcrDocument, fetchOcrDocument, rejectOcrDocument } from '../api/documentsApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
@@ -9,7 +9,8 @@ import type { OcrReviewDocument } from '../types';
 
 export function OcrReviewPage(): React.ReactElement {
   const [params] = useSearchParams();
-  const documentId = params.get('documentId') ?? '';
+  const routeParams = useParams<{ docId?: string }>();
+  const documentId = routeParams.docId ?? params.get('documentId') ?? '';
   const { session } = usePhrSession();
 
   const [doc, setDoc] = useState<OcrReviewDocument | null>(null);
@@ -54,8 +55,9 @@ export function OcrReviewPage(): React.ReactElement {
         correctedText,
       );
       setConfirmed(true);
+      setDoc((current) => current ? { ...current, correctedText, status: 'confirmed' } : current);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to confirm OCR');
+      setError(err instanceof Error ? err.message : t('ocr.error.confirm'));
       logError('Failed to confirm OCR', undefined, { error: err });
     } finally {
       setConfirming(false);
@@ -75,8 +77,9 @@ export function OcrReviewPage(): React.ReactElement {
         },
       );
       setRejected(true);
+      setDoc((current) => current ? { ...current, status: 'rejected' } : current);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to reject OCR');
+      setError(err instanceof Error ? err.message : t('ocr.error.reject'));
       logError('Failed to reject OCR', undefined, { error: err });
     } finally {
       setRejecting(false);
@@ -96,11 +99,15 @@ export function OcrReviewPage(): React.ReactElement {
           <div className="stack gap-sm">
             <Badge 
               variant={doc.confidence > 0.8 ? 'success' : doc.confidence > 0.5 ? 'secondary' : 'destructive'}
-              aria-label={`OCR confidence: ${Math.round(doc.confidence * 100)}%`}
+              aria-label={t('ocr.confidence', { percent: Math.round(doc.confidence * 100) })}
             >
-              Confidence: {Math.round(doc.confidence * 100)}%
+              {t('ocr.confidence', { percent: Math.round(doc.confidence * 100) })}
             </Badge>
           </div>
+          <section aria-label={t('ocr.extracted')}>
+            <h4>{t('ocr.extracted')}</h4>
+            <pre className="data-card">{doc.extractedText}</pre>
+          </section>
           <label htmlFor="ocr-text-edit" className="visually-hidden">
             {t('ocr.corrected')}
           </label>
@@ -112,9 +119,9 @@ export function OcrReviewPage(): React.ReactElement {
             aria-label={t('ocr.corrected')}
           />
           {confirmed ? (
-            <p role="status" className="success">{t('documents.upload.success')}</p>
+            <p role="status" className="success">{t('ocr.success')}</p>
           ) : rejected ? (
-            <p role="status" className="warning">{t('documents.ocr.error')}</p>
+            <p role="status" className="warning">{t('ocr.rejected')}</p>
           ) : (
             <div className="stack gap-sm" style={{ marginTop: '1rem' }}>
               <Button
@@ -122,7 +129,7 @@ export function OcrReviewPage(): React.ReactElement {
                 disabled={confirming || rejecting}
                 aria-busy={confirming}
               >
-                {confirming ? 'Confirming...' : t('documents.ocr.confirm')}
+                {confirming ? t('ocr.confirming') : t('ocr.confirm')}
               </Button>
               <Button
                 onClick={() => void handleReject()}
@@ -130,7 +137,7 @@ export function OcrReviewPage(): React.ReactElement {
                 variant="outlined"
                 aria-busy={rejecting}
               >
-                {rejecting ? 'Rejecting...' : 'Reject'}
+                {rejecting ? t('ocr.rejecting') : t('ocr.reject')}
               </Button>
             </div>
           )}

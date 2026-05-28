@@ -7,11 +7,13 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import * as LocalAuthentication from 'expo-local-authentication';
 import {
   phiSet,
   phiGet,
   phiRemove,
   phiClearAll,
+  phiEnableBiometricPolicy,
   setPhiStorageAdapter,
   resetPhiStorageAdapter,
   type PhiStorageAdapter,
@@ -31,6 +33,16 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(),
   removeItem: jest.fn(),
   getAllKeys: jest.fn(),
+}));
+
+jest.mock('expo-local-authentication', () => ({
+  hasHardwareAsync: jest.fn(),
+  isEnrolledAsync: jest.fn(),
+  authenticateAsync: jest.fn(),
+}));
+
+jest.mock('../../i18n/phrMobileI18n', () => ({
+  t: (key: string) => key,
 }));
 
 describe('phiEncryptedStorage', () => {
@@ -287,6 +299,56 @@ describe('phiEncryptedStorage', () => {
       expect(secureStore.get('phr-phi-tamper-version')).toBe('1');
       expect(secureStore.get('phr-phi-key-registry')).toContain('phr-phi-cipher:patient-summary');
       expect(asyncStore.get('phr-phi-cipher:patient-summary')).not.toBe('encrypted payload source');
+    });
+
+    it('requires biometric authentication before decrypting with a cached key when policy is enabled', async () => {
+      const secureStore = new Map<string, string>();
+      const asyncStore = new Map<string, string>();
+      (SecureStore.getItemAsync as jest.MockedFunction<typeof SecureStore.getItemAsync>).mockImplementation(
+        async (key: string) => secureStore.get(key) ?? null,
+      );
+      (SecureStore.setItemAsync as jest.MockedFunction<typeof SecureStore.setItemAsync>).mockImplementation(
+        async (key: string, value: string) => {
+          secureStore.set(key, value);
+        },
+      );
+      (SecureStore.deleteItemAsync as jest.MockedFunction<typeof SecureStore.deleteItemAsync>).mockImplementation(
+        async (key: string) => {
+          secureStore.delete(key);
+        },
+      );
+      (AsyncStorage.setItem as jest.MockedFunction<typeof AsyncStorage.setItem>).mockImplementation(
+        async (key: string, value: string) => {
+          asyncStore.set(key, value);
+        },
+      );
+      (AsyncStorage.getItem as jest.MockedFunction<typeof AsyncStorage.getItem>).mockImplementation(
+        async (key: string) => asyncStore.get(key) ?? null,
+      );
+      (AsyncStorage.removeItem as jest.MockedFunction<typeof AsyncStorage.removeItem>).mockImplementation(
+        async (key: string) => {
+          asyncStore.delete(key);
+        },
+      );
+      (AsyncStorage.getAllKeys as jest.MockedFunction<typeof AsyncStorage.getAllKeys>).mockImplementation(
+        async () => Array.from(asyncStore.keys()),
+      );
+      (LocalAuthentication.hasHardwareAsync as jest.MockedFunction<typeof LocalAuthentication.hasHardwareAsync>).mockResolvedValue(true);
+      (LocalAuthentication.isEnrolledAsync as jest.MockedFunction<typeof LocalAuthentication.isEnrolledAsync>).mockResolvedValue(true);
+      (LocalAuthentication.authenticateAsync as jest.MockedFunction<typeof LocalAuthentication.authenticateAsync>).mockResolvedValue({ success: false, error: 'user_cancel' });
+
+      resetPhiStorageAdapter();
+
+      await phiSet('patient-summary', 'encrypted payload source');
+      await phiEnableBiometricPolicy();
+
+      await expect(phiGet('patient-summary')).rejects.toThrow('biometric.requiredForPhi');
+      expect(LocalAuthentication.authenticateAsync).toHaveBeenCalledWith({
+        promptMessage: 'biometric.protectedHealthPrompt',
+        fallbackLabel: 'biometric.fallbackLabel',
+        cancelLabel: 'biometric.cancelLabel',
+        disableDeviceFallback: false,
+      });
     });
 
     it('clears key metadata on clearKey', async () => {

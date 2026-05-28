@@ -193,9 +193,9 @@ export function DocumentUploadPage(): React.ReactElement {
               >
                 <option value="">{t('documents.upload.category.placeholder')}</option>
                 <option value="lab-results">{t('documents.category.lab')}</option>
-                <option value="imaging">Imaging</option>
+                <option value="imaging">{t('documents.category.imaging')}</option>
                 <option value="discharge-summary">{t('documents.category.discharge')}</option>
-                <option value="insurance">Insurance</option>
+                <option value="insurance">{t('documents.category.insurance')}</option>
                 <option value="other">{t('documents.category.other')}</option>
               </Select>
             </div>
@@ -234,7 +234,7 @@ export function DocumentUploadPage(): React.ReactElement {
               {canRetry ? t('documents.upload.retry') : uploading ? t('documents.upload.uploading') : t('documents.upload.submit')}
             </Button>
             {uploading ? (
-              <Button type="button" variant="secondary" onClick={handleCancelUpload}>
+              <Button type="button" variant="outline" tone="secondary" onClick={handleCancelUpload}>
                 {t('documents.upload.cancel')}
               </Button>
             ) : null}

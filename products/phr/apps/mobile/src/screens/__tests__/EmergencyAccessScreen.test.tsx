@@ -131,6 +131,34 @@ describe('EmergencyAccessScreen', () => {
       'Cardiac emergency',
       session,
     );
+    expect(renderedText(rendered)).toContain('emergency.patientName');
+    expect(renderedText(rendered)).not.toContain('login.title');
+  });
+
+  it('does not reveal emergency PHI when server authorization fails after biometric success', async () => {
+    mockRequestMobileEmergencyAccess.mockRejectedValue(new Error('server denied'));
+    const onAuthenticate = jest.fn<Promise<boolean>, []>().mockResolvedValue(true);
+    const rendered = render(
+      <EmergencyAccessScreen onAuthenticate={onAuthenticate} session={session} />,
+    );
+
+    act(() => changeTextNode(rendered.getByLabelText('emergency.patientIdLabel'), 'patient-1'));
+    act(() => changeTextNode(rendered.getByLabelText('emergency.reasonLabel'), 'Cardiac emergency'));
+    await waitFor(() => expect(renderedText(rendered)).toContain('Cardiac emergency'));
+    await act(async () => {
+      await pressNode(rendered.UNSAFE_getByProps({ accessibilityLabel: 'emergency.requestButton' }));
+    });
+
+    await waitFor(() => {
+      expect(renderedText(rendered)).toContain('emergency.denied');
+    });
+    expect(renderedText(rendered)).not.toContain('Ram Bahadur');
+    expect(renderedText(rendered)).not.toContain('O+');
+    expect(mockRequestMobileEmergencyAccess).toHaveBeenCalledWith(
+      'patient-1',
+      'Cardiac emergency',
+      session,
+    );
   });
 
   it('shows denied state after failed authentication', async () => {

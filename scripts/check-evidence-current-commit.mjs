@@ -85,6 +85,28 @@ function validateNestedCommit(obj, expectedCommit, path = '') {
   return violations;
 }
 
+function parseAffectedProducts(rawValue = process.env.AFFECTED_PRODUCTS ?? '') {
+  return rawValue
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function isScopedOutProductEvidence(evidenceFile, affectedProducts) {
+  if (!Array.isArray(affectedProducts) || affectedProducts.length === 0) {
+    return false;
+  }
+
+  const normalized = evidenceFile.replaceAll('\\', '/');
+  const folderMatch = /^\.kernel\/evidence\/([^/]+)\//.exec(normalized);
+  if (!folderMatch) {
+    return false;
+  }
+
+  const folderName = folderMatch[1];
+  return !affectedProducts.includes(folderName);
+}
+
 export function findEvidenceCurrentCommitViolations(
   root = process.cwd(),
   {
@@ -92,6 +114,7 @@ export function findEvidenceCurrentCommitViolations(
     expectedCommit = currentGitSha(root),
     skipProductReleaseReadiness = false,
     skipEvidencePaths = [],
+    affectedProducts = [],
   } = {},
 ) {
   const violations = [];
@@ -109,6 +132,9 @@ export function findEvidenceCurrentCommitViolations(
       continue;
     }
     if (skippedPaths.has(evidenceFile)) {
+      continue;
+    }
+    if (isScopedOutProductEvidence(evidenceFile, affectedProducts)) {
       continue;
     }
     const payload = parseJson(path.join(root, evidenceFile));
@@ -136,6 +162,7 @@ function main() {
   const violations = findEvidenceCurrentCommitViolations(root, {
     evidenceRoot,
     skipProductReleaseReadiness: process.env.DATACLOUD_RELEASE_GATE_BOOTSTRAP === 'product-release-readiness',
+    affectedProducts: parseAffectedProducts(),
   });
 
   if (violations.length === 0) {

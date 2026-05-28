@@ -1,37 +1,102 @@
 {
-  "generatedAt": "2026-05-28T16:18:39.300Z",
-  "status": "failed",
+  "generatedAt": "2026-05-28T21:20:59.041Z",
+  "status": "passed",
   "summary": {
-    "requiredTaskCount": 64,
-    "parsedTaskCount": 7,
+    "requiredTaskCount": 51,
+    "parsedTaskCount": 51,
     "statusCounts": {
-      "Partial": 5,
-      "Planned": 2
+      "Partial": 48,
+      "Planned": 3
     },
-    "averageMaturityDepth": 2.71,
-    "warningCount": 7,
-    "violationCount": 1
+    "averageMaturityDepth": 2.08,
+    "warningCount": 37,
+    "violationCount": 0
   },
   "incrementalRoadmap": {
-    "generatedAt": "2026-05-28T16:18:39.301Z",
+    "generatedAt": "2026-05-28T21:20:59.043Z",
     "targetMaturityDepth": 5,
-    "remainingTaskCount": 7,
+    "remainingTaskCount": 51,
     "deferredTaskIds": [],
     "waveBuckets": {
       "wave-1-foundation": [
+        8,
         5,
         7,
+        9,
+        10,
         1,
         2,
         3,
         4,
         6
+      ],
+      "wave-2-runtime-governance": [
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23
+      ],
+      "wave-3-quality-performance": [
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "wave-4-release-ops": [
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51
       ]
     },
     "tasks": [
       {
+        "id": 8,
+        "title": "Canonical Data Cloud Domain/Journey Pass: Move quality advisory out of client-side heuristic logic into Data Quality/Intelligence endpoint.",
+        "status": "Planned",
+        "maturityDepth": 1,
+        "targetDepth": 5,
+        "depthGap": 4,
+        "ownerTeam": "YAPPC Frontend",
+        "ownerModule": "products/yappc/frontend/web",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
         "id": 5,
-        "title": "Learn/Evolve feature completion",
+        "title": "Runtime Truth, Route Truth, and Contract Convergence: Promote API contract and integration test modules from advisory when they validate production routes.",
         "status": "Planned",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -46,7 +111,7 @@
       },
       {
         "id": 7,
-        "title": "Docs and test alignment",
+        "title": "Canonical Data Cloud Domain/Journey Pass: Replace `storageSize: 0` and client-derived collection stats with backend-owned stats.",
         "status": "Planned",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -60,8 +125,653 @@
         "deferReason": null
       },
       {
+        "id": 9,
+        "title": "Canonical Data Cloud Domain/Journey Pass: Connect connector sync results to collection creation/update.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 10,
+        "title": "Canonical Data Cloud Domain/Journey Pass: Define one journey contract: connector → sync → collection → schema → quality → lineage → trust.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 11,
+        "title": "Outcome-First UI / 0 Cognitive Load Pass: Default nav: Home, Data, Query, Pipelines, Trust, Operations.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 12,
+        "title": "Outcome-First UI / 0 Cognitive Load Pass: Move Agents, Memory, Context, Fabric, Plugins, Runtime Truth, Release Truth, Alerts into role/contextual surfaces.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 13,
+        "title": "Outcome-First UI / 0 Cognitive Load Pass: Use route registry icons instead of mapping all generated nav icons to `Activity`.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 14,
+        "title": "Outcome-First UI / 0 Cognitive Load Pass: Rename “Product mode” / role switcher to avoid permission confusion.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 15,
+        "title": "Outcome-First UI / 0 Cognitive Load Pass: Replace hover-only row actions with keyboard-visible action menus.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 16,
+        "title": "Outcome-First UI / 0 Cognitive Load Pass: Replace hardcoded strings with i18n keys.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 17,
+        "title": "AEP / Action Plane Completion Pass: Complete unified operator model.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 18,
+        "title": "AEP / Action Plane Completion Pass: Implement PatternSpec compiler and lifecycle.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 19,
+        "title": "AEP / Action Plane Completion Pass: Complete EventCloud SPI boundary.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 20,
+        "title": "AEP / Action Plane Completion Pass: Implement learning → recommendation → review → promotion → rollback loop.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 21,
+        "title": "AEP / Action Plane Completion Pass: Make replay-safe agent execution mandatory for pattern-linked agents.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 22,
+        "title": "AEP / Action Plane Completion Pass: Retire or hide legacy root action routes behind feature flags.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 23,
+        "title": "Agent Governance, Mastery, and Safety Pass: Fix documented safety issues: approval/verification flag preservation, tenant source correctness, release tenant ID, mastery item state history validation.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 24,
+        "title": "Agent Governance, Mastery, and Safety Pass: Separate execution strategy from supervision level.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 25,
+        "title": "Agent Governance, Mastery, and Safety Pass: Enforce policy/tool/memory/replay/guardrail declarations for agent capabilities.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 26,
+        "title": "Agent Governance, Mastery, and Safety Pass: Add tenant-scoped agent release and mastery queries.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 27,
+        "title": "Audio-Video Productization and Data Cloud Integration: Add product manifest and lifecycle profile or explicitly keep it hidden as experimental.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 28,
+        "title": "Audio-Video Productization and Data Cloud Integration: Enforce media privacy, content safety, artifact retention, biometric-risk, and consent policy.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 29,
+        "title": "Audio-Video Productization and Data Cloud Integration: Connect STT/TTS/Vision/Multimodal outputs to Data Cloud datasets/events/catalog.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 30,
+        "title": "Audio-Video Productization and Data Cloud Integration: Add runtime truth for each media processing dependency.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 31,
+        "title": "Audio-Video Productization and Data Cloud Integration: Add minimal operator UI only after backend lifecycle is coherent.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 32,
+        "title": "Shared Library Boundary Cleanup: Apply the architecture rule: keep only primitives used by three or more unrelated products in platform.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 33,
+        "title": "Shared Library Boundary Cleanup: Move Action Plane runtime semantics to `planes/action`.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 34,
+        "title": "Shared Library Boundary Cleanup: Move Data Cloud storage-plane event routing to `planes/event`.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 35,
+        "title": "Shared Library Boundary Cleanup: Move retention/redaction/provenance/evidence implementations to `planes/governance`.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 36,
+        "title": "Shared Library Boundary Cleanup: Move Data Cloud OpenAPI/schemas into `products/data-cloud/contracts`.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 37,
+        "title": "Security, Privacy, and Permission Matrix Pass: Register production validators centrally and prove they execute at startup.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 38,
+        "title": "Security, Privacy, and Permission Matrix Pass: Add permission matrix tests for viewer/operator/admin.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 39,
+        "title": "Security, Privacy, and Permission Matrix Pass: Add tenant mismatch, missing tenant, missing audit, missing policy, policy denial, audit failure tests.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 40,
+        "title": "Security, Privacy, and Permission Matrix Pass: Add audio-video PII/biometric policy enforcement.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 41,
+        "title": "Security, Privacy, and Permission Matrix Pass: Add break-glass tests.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 42,
+        "title": "Observability, Reliability, and Idempotency Pass: Extend idempotency beyond entity writes to pipelines, events, governance, analytics, plugins, and agent actions.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 43,
+        "title": "Observability, Reliability, and Idempotency Pass: Add correlation IDs to every run/job/action/agent/media flow.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 44,
+        "title": "Observability, Reliability, and Idempotency Pass: Add durable job/run status, retry/cancel/rollback states.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 45,
+        "title": "Observability, Reliability, and Idempotency Pass: Add dead-letter/failure visibility for async workflows.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 46,
+        "title": "Observability, Reliability, and Idempotency Pass: Surface failed jobs in Operations without requiring logs.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 47,
+        "title": "Test Consolidation Pass: Promote API contract and integration tests from advisory to release-blocking once stable.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 48,
+        "title": "Test Consolidation Pass: Add one golden path E2E per main journey.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 49,
+        "title": "Test Consolidation Pass: Add role/tenant matrix E2E.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 50,
+        "title": "Test Consolidation Pass: Add pseudo-locale and raw-string enforcement.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 51,
+        "title": "Test Consolidation Pass: Add keyboard/a11y tests for tables, nav, disabled surfaces, dialogs, and row actions.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
         "id": 1,
-        "title": "Backend phase packet/action truth",
+        "title": "Runtime Truth, Route Truth, and Contract Convergence: Finish route manifest Phase 2–4: manifest → UI runtime truth, OpenAPI validator, SDK metadata.",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -76,7 +786,7 @@
       },
       {
         "id": 2,
-        "title": "Frontend phase cockpit simplification",
+        "title": "Runtime Truth, Route Truth, and Contract Convergence: Rename UI `RouteCapabilityRegistry` terminology to `RouteSurfaceRegistry` / runtime truth aligned names.",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -91,7 +801,7 @@
       },
       {
         "id": 3,
-        "title": "Kernel ProductUnitIntent contract hardening",
+        "title": "Runtime Truth, Route Truth, and Contract Convergence: Fix documented `RouteSecurityRegistry.java` path mismatch.",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -106,7 +816,7 @@
       },
       {
         "id": 4,
-        "title": "Adapter-seam / reuse-first cleanup",
+        "title": "Runtime Truth, Route Truth, and Contract Convergence: Make route aliases explicitly classified as canonical, compatibility, preview, or hidden.",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -121,7 +831,7 @@
       },
       {
         "id": 6,
-        "title": "Shell/admin/kernel-health/product-family UI consistency",
+        "title": "Canonical Data Cloud Domain/Journey Pass: Promote `dc_collections` from generic entity metadata to a typed collection registry contract.",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -145,8 +855,14 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 1,
-      "title": "Backend phase packet/action truth",
-      "whereRefs": []
+      "title": "Runtime Truth, Route Truth, and Contract Convergence: Finish route manifest Phase 2–4: manifest → UI runtime truth, OpenAPI validator, SDK metadata.",
+      "whereRefs": [
+        "products/data-cloud/delivery/launcher/.../RouteSecurityRegistry.java",
+        "products/data-cloud/config/route-manifest.json",
+        "products/data-cloud/contracts/openapi/*.yaml",
+        "products/data-cloud/delivery/ui/src/lib/routing/*",
+        "products/data-cloud/docs/ROUTE_MANIFEST_SYSTEM.md"
+      ]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -156,8 +872,14 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 2,
-      "title": "Frontend phase cockpit simplification",
-      "whereRefs": []
+      "title": "Runtime Truth, Route Truth, and Contract Convergence: Rename UI `RouteCapabilityRegistry` terminology to `RouteSurfaceRegistry` / runtime truth aligned names.",
+      "whereRefs": [
+        "products/data-cloud/delivery/launcher/.../RouteSecurityRegistry.java",
+        "products/data-cloud/config/route-manifest.json",
+        "products/data-cloud/contracts/openapi/*.yaml",
+        "products/data-cloud/delivery/ui/src/lib/routing/*",
+        "products/data-cloud/docs/ROUTE_MANIFEST_SYSTEM.md"
+      ]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -167,8 +889,14 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 3,
-      "title": "Kernel ProductUnitIntent contract hardening",
-      "whereRefs": []
+      "title": "Runtime Truth, Route Truth, and Contract Convergence: Fix documented `RouteSecurityRegistry.java` path mismatch.",
+      "whereRefs": [
+        "products/data-cloud/delivery/launcher/.../RouteSecurityRegistry.java",
+        "products/data-cloud/config/route-manifest.json",
+        "products/data-cloud/contracts/openapi/*.yaml",
+        "products/data-cloud/delivery/ui/src/lib/routing/*",
+        "products/data-cloud/docs/ROUTE_MANIFEST_SYSTEM.md"
+      ]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -178,8 +906,14 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 4,
-      "title": "Adapter-seam / reuse-first cleanup",
-      "whereRefs": []
+      "title": "Runtime Truth, Route Truth, and Contract Convergence: Make route aliases explicitly classified as canonical, compatibility, preview, or hidden.",
+      "whereRefs": [
+        "products/data-cloud/delivery/launcher/.../RouteSecurityRegistry.java",
+        "products/data-cloud/config/route-manifest.json",
+        "products/data-cloud/contracts/openapi/*.yaml",
+        "products/data-cloud/delivery/ui/src/lib/routing/*",
+        "products/data-cloud/docs/ROUTE_MANIFEST_SYSTEM.md"
+      ]
     },
     {
       "ownerTeam": "Product Family Platform",
@@ -189,8 +923,14 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 5,
-      "title": "Learn/Evolve feature completion",
-      "whereRefs": []
+      "title": "Runtime Truth, Route Truth, and Contract Convergence: Promote API contract and integration test modules from advisory when they validate production routes.",
+      "whereRefs": [
+        "products/data-cloud/delivery/launcher/.../RouteSecurityRegistry.java",
+        "products/data-cloud/config/route-manifest.json",
+        "products/data-cloud/contracts/openapi/*.yaml",
+        "products/data-cloud/delivery/ui/src/lib/routing/*",
+        "products/data-cloud/docs/ROUTE_MANIFEST_SYSTEM.md"
+      ]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -200,7 +940,7 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 6,
-      "title": "Shell/admin/kernel-health/product-family UI consistency",
+      "title": "Canonical Data Cloud Domain/Journey Pass: Promote `dc_collections` from generic entity metadata to a typed collection registry contract.",
       "whereRefs": []
     },
     {
@@ -211,20 +951,637 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 7,
-      "title": "Docs and test alignment",
+      "title": "Canonical Data Cloud Domain/Journey Pass: Replace `storageSize: 0` and client-derived collection stats with backend-owned stats.",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "YAPPC Frontend",
+      "ownerModule": "products/yappc/frontend/web",
+      "status": "Planned",
+      "maturityDepth": 1,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 8,
+      "title": "Canonical Data Cloud Domain/Journey Pass: Move quality advisory out of client-side heuristic logic into Data Quality/Intelligence endpoint.",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 9,
+      "title": "Canonical Data Cloud Domain/Journey Pass: Connect connector sync results to collection creation/update.",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 10,
+      "title": "Canonical Data Cloud Domain/Journey Pass: Define one journey contract: connector → sync → collection → schema → quality → lineage → trust.",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 11,
+      "title": "Outcome-First UI / 0 Cognitive Load Pass: Default nav: Home, Data, Query, Pipelines, Trust, Operations.",
+      "whereRefs": [
+        "DefaultLayout.tsx",
+        "routes.tsx",
+        "RouteSurfaceRegistry"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 12,
+      "title": "Outcome-First UI / 0 Cognitive Load Pass: Move Agents, Memory, Context, Fabric, Plugins, Runtime Truth, Release Truth, Alerts into role/contextual surfaces.",
+      "whereRefs": [
+        "DefaultLayout.tsx",
+        "routes.tsx",
+        "RouteSurfaceRegistry"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 13,
+      "title": "Outcome-First UI / 0 Cognitive Load Pass: Use route registry icons instead of mapping all generated nav icons to `Activity`.",
+      "whereRefs": [
+        "DefaultLayout.tsx",
+        "routes.tsx",
+        "RouteSurfaceRegistry"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 14,
+      "title": "Outcome-First UI / 0 Cognitive Load Pass: Rename “Product mode” / role switcher to avoid permission confusion.",
+      "whereRefs": [
+        "DefaultLayout.tsx",
+        "routes.tsx",
+        "RouteSurfaceRegistry"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 15,
+      "title": "Outcome-First UI / 0 Cognitive Load Pass: Replace hover-only row actions with keyboard-visible action menus.",
+      "whereRefs": [
+        "DefaultLayout.tsx",
+        "routes.tsx",
+        "RouteSurfaceRegistry"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 16,
+      "title": "Outcome-First UI / 0 Cognitive Load Pass: Replace hardcoded strings with i18n keys.",
+      "whereRefs": [
+        "DefaultLayout.tsx",
+        "routes.tsx",
+        "RouteSurfaceRegistry"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 17,
+      "title": "AEP / Action Plane Completion Pass: Complete unified operator model.",
+      "whereRefs": [
+        "products/data-cloud/planes/action/*",
+        "products/aep/*"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 18,
+      "title": "AEP / Action Plane Completion Pass: Implement PatternSpec compiler and lifecycle.",
+      "whereRefs": [
+        "products/data-cloud/planes/action/*",
+        "products/aep/*"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 19,
+      "title": "AEP / Action Plane Completion Pass: Complete EventCloud SPI boundary.",
+      "whereRefs": [
+        "products/data-cloud/planes/action/*",
+        "products/aep/*"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 20,
+      "title": "AEP / Action Plane Completion Pass: Implement learning → recommendation → review → promotion → rollback loop.",
+      "whereRefs": [
+        "products/data-cloud/planes/action/*",
+        "products/aep/*"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 21,
+      "title": "AEP / Action Plane Completion Pass: Make replay-safe agent execution mandatory for pattern-linked agents.",
+      "whereRefs": [
+        "products/data-cloud/planes/action/*",
+        "products/aep/*"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 22,
+      "title": "AEP / Action Plane Completion Pass: Retire or hide legacy root action routes behind feature flags.",
+      "whereRefs": [
+        "products/data-cloud/planes/action/*",
+        "products/aep/*"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 23,
+      "title": "Agent Governance, Mastery, and Safety Pass: Fix documented safety issues: approval/verification flag preservation, tenant source correctness, release tenant ID, mastery item state history validation.",
+      "whereRefs": [
+        "platform/java/agent-core"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 24,
+      "title": "Agent Governance, Mastery, and Safety Pass: Separate execution strategy from supervision level.",
+      "whereRefs": [
+        "platform/java/agent-core"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 25,
+      "title": "Agent Governance, Mastery, and Safety Pass: Enforce policy/tool/memory/replay/guardrail declarations for agent capabilities.",
+      "whereRefs": [
+        "platform/java/agent-core"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 26,
+      "title": "Agent Governance, Mastery, and Safety Pass: Add tenant-scoped agent release and mastery queries.",
+      "whereRefs": [
+        "platform/java/agent-core"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 27,
+      "title": "Audio-Video Productization and Data Cloud Integration: Add product manifest and lifecycle profile or explicitly keep it hidden as experimental.",
+      "whereRefs": [
+        "products/audio-video/*"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 28,
+      "title": "Audio-Video Productization and Data Cloud Integration: Enforce media privacy, content safety, artifact retention, biometric-risk, and consent policy.",
+      "whereRefs": [
+        "products/audio-video/*"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 29,
+      "title": "Audio-Video Productization and Data Cloud Integration: Connect STT/TTS/Vision/Multimodal outputs to Data Cloud datasets/events/catalog.",
+      "whereRefs": [
+        "products/audio-video/*"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 30,
+      "title": "Audio-Video Productization and Data Cloud Integration: Add runtime truth for each media processing dependency.",
+      "whereRefs": [
+        "products/audio-video/*"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 31,
+      "title": "Audio-Video Productization and Data Cloud Integration: Add minimal operator UI only after backend lifecycle is coherent.",
+      "whereRefs": [
+        "products/audio-video/*"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 32,
+      "title": "Shared Library Boundary Cleanup: Apply the architecture rule: keep only primitives used by three or more unrelated products in platform.",
+      "whereRefs": [
+        "platform/java/agent-core",
+        "platform/java/workflow",
+        "platform/java/messaging",
+        "platform/java/ai-integration",
+        "platform/java/data-governance",
+        "platform/contracts"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 33,
+      "title": "Shared Library Boundary Cleanup: Move Action Plane runtime semantics to `planes/action`.",
+      "whereRefs": [
+        "platform/java/agent-core",
+        "platform/java/workflow",
+        "platform/java/messaging",
+        "platform/java/ai-integration",
+        "platform/java/data-governance",
+        "platform/contracts"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 34,
+      "title": "Shared Library Boundary Cleanup: Move Data Cloud storage-plane event routing to `planes/event`.",
+      "whereRefs": [
+        "platform/java/agent-core",
+        "platform/java/workflow",
+        "platform/java/messaging",
+        "platform/java/ai-integration",
+        "platform/java/data-governance",
+        "platform/contracts"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 35,
+      "title": "Shared Library Boundary Cleanup: Move retention/redaction/provenance/evidence implementations to `planes/governance`.",
+      "whereRefs": [
+        "platform/java/agent-core",
+        "platform/java/workflow",
+        "platform/java/messaging",
+        "platform/java/ai-integration",
+        "platform/java/data-governance",
+        "platform/contracts"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 36,
+      "title": "Shared Library Boundary Cleanup: Move Data Cloud OpenAPI/schemas into `products/data-cloud/contracts`.",
+      "whereRefs": [
+        "platform/java/agent-core",
+        "platform/java/workflow",
+        "platform/java/messaging",
+        "platform/java/ai-integration",
+        "platform/java/data-governance",
+        "platform/contracts"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 37,
+      "title": "Security, Privacy, and Permission Matrix Pass: Register production validators centrally and prove they execute at startup.",
+      "whereRefs": [
+        "DataCloudSecurityFilter"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 38,
+      "title": "Security, Privacy, and Permission Matrix Pass: Add permission matrix tests for viewer/operator/admin.",
+      "whereRefs": [
+        "DataCloudSecurityFilter"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 39,
+      "title": "Security, Privacy, and Permission Matrix Pass: Add tenant mismatch, missing tenant, missing audit, missing policy, policy denial, audit failure tests.",
+      "whereRefs": [
+        "DataCloudSecurityFilter"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 40,
+      "title": "Security, Privacy, and Permission Matrix Pass: Add audio-video PII/biometric policy enforcement.",
+      "whereRefs": [
+        "DataCloudSecurityFilter"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 41,
+      "title": "Security, Privacy, and Permission Matrix Pass: Add break-glass tests.",
+      "whereRefs": [
+        "DataCloudSecurityFilter"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 42,
+      "title": "Observability, Reliability, and Idempotency Pass: Extend idempotency beyond entity writes to pipelines, events, governance, analytics, plugins, and agent actions.",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 43,
+      "title": "Observability, Reliability, and Idempotency Pass: Add correlation IDs to every run/job/action/agent/media flow.",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 44,
+      "title": "Observability, Reliability, and Idempotency Pass: Add durable job/run status, retry/cancel/rollback states.",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 45,
+      "title": "Observability, Reliability, and Idempotency Pass: Add dead-letter/failure visibility for async workflows.",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 46,
+      "title": "Observability, Reliability, and Idempotency Pass: Surface failed jobs in Operations without requiring logs.",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 47,
+      "title": "Test Consolidation Pass: Promote API contract and integration tests from advisory to release-blocking once stable.",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 48,
+      "title": "Test Consolidation Pass: Add one golden path E2E per main journey.",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 49,
+      "title": "Test Consolidation Pass: Add role/tenant matrix E2E.",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 50,
+      "title": "Test Consolidation Pass: Add pseudo-locale and raw-string enforcement.",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 51,
+      "title": "Test Consolidation Pass: Add keyboard/a11y tests for tables, nav, disabled surfaces, dialogs, and row actions.",
       "whereRefs": []
     }
   ],
   "warnings": [
-    "Task 1 has no parsed Where references in implementation plan",
-    "Task 2 has no parsed Where references in implementation plan",
-    "Task 3 has no parsed Where references in implementation plan",
-    "Task 4 has no parsed Where references in implementation plan",
-    "Task 5 has no parsed Where references in implementation plan",
+    "Task 1 references non-existing path \"products/data-cloud/delivery/launcher/.../RouteSecurityRegistry.java\"",
+    "Task 1 references non-existing path \"products/data-cloud/contracts/openapi/*.yaml\"",
+    "Task 2 references non-existing path \"products/data-cloud/delivery/launcher/.../RouteSecurityRegistry.java\"",
+    "Task 2 references non-existing path \"products/data-cloud/contracts/openapi/*.yaml\"",
+    "Task 3 references non-existing path \"products/data-cloud/delivery/launcher/.../RouteSecurityRegistry.java\"",
+    "Task 3 references non-existing path \"products/data-cloud/contracts/openapi/*.yaml\"",
+    "Task 4 references non-existing path \"products/data-cloud/delivery/launcher/.../RouteSecurityRegistry.java\"",
+    "Task 4 references non-existing path \"products/data-cloud/contracts/openapi/*.yaml\"",
+    "Task 5 references non-existing path \"products/data-cloud/delivery/launcher/.../RouteSecurityRegistry.java\"",
+    "Task 5 references non-existing path \"products/data-cloud/contracts/openapi/*.yaml\"",
     "Task 6 has no parsed Where references in implementation plan",
-    "Task 7 has no parsed Where references in implementation plan"
+    "Task 7 has no parsed Where references in implementation plan",
+    "Task 8 has no parsed Where references in implementation plan",
+    "Task 9 has no parsed Where references in implementation plan",
+    "Task 10 has no parsed Where references in implementation plan",
+    "Task 11 references non-existing path \"DefaultLayout.tsx\"",
+    "Task 11 references non-existing path \"routes.tsx\"",
+    "Task 12 references non-existing path \"DefaultLayout.tsx\"",
+    "Task 12 references non-existing path \"routes.tsx\"",
+    "Task 13 references non-existing path \"DefaultLayout.tsx\"",
+    "Task 13 references non-existing path \"routes.tsx\"",
+    "Task 14 references non-existing path \"DefaultLayout.tsx\"",
+    "Task 14 references non-existing path \"routes.tsx\"",
+    "Task 15 references non-existing path \"DefaultLayout.tsx\"",
+    "Task 15 references non-existing path \"routes.tsx\"",
+    "Task 16 references non-existing path \"DefaultLayout.tsx\"",
+    "Task 16 references non-existing path \"routes.tsx\"",
+    "Task 42 has no parsed Where references in implementation plan",
+    "Task 43 has no parsed Where references in implementation plan",
+    "Task 44 has no parsed Where references in implementation plan",
+    "Task 45 has no parsed Where references in implementation plan",
+    "Task 46 has no parsed Where references in implementation plan",
+    "Task 47 has no parsed Where references in implementation plan",
+    "Task 48 has no parsed Where references in implementation plan",
+    "Task 49 has no parsed Where references in implementation plan",
+    "Task 50 has no parsed Where references in implementation plan",
+    "Task 51 has no parsed Where references in implementation plan"
   ],
-  "violations": [
-    "Expected 64 plan tasks, found 7"
-  ]
+  "violations": []
 }

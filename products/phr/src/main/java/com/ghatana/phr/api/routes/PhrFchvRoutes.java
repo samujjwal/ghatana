@@ -1,5 +1,6 @@
 package com.ghatana.phr.api.routes;
 
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -26,9 +27,11 @@ import java.util.Objects;
 public final class PhrFchvRoutes {
 
     private final Eventloop eventloop;
+    private final PhrPolicyEvaluator policyEvaluator;
 
-    public PhrFchvRoutes(Eventloop eventloop) {
+    public PhrFchvRoutes(Eventloop eventloop, PhrPolicyEvaluator policyEvaluator) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
+        this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 
     /**
@@ -101,7 +104,6 @@ public final class PhrFchvRoutes {
                 context.correlationId());
         }
 
-        // Return list of patients assigned to this FCHV
         return Promise.of(List.of(
             Map.of(
                 "id", "patient-001",
@@ -171,25 +173,35 @@ public final class PhrFchvRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        boolean canRead = "clinician".equals(context.role()) || "admin".equals(context.role())
-            || "caregiver".equals(context.role())
-            || "fchv".equals(context.role());
-        if (!canRead) {
-            return PhrRouteSupport.errorResponse(403, "RECORD_ACCESS_DENIED",
-                "Patient record access requires caregiver, clinician, or admin role",
+        if (!"fchv".equals(context.role()) && !"admin".equals(context.role())) {
+            return PhrRouteSupport.errorResponse(403, "FCHV_ROLE_REQUIRED",
+                "Only FCHV or admin principals may access FCHV patient records",
                 context.correlationId());
         }
 
         String patientId = request.getPathParameter("patientId");
-        return Promise.of(
-            Map.of(
-                "id", patientId,
-                "name", "[REDACTED]",
-                "village", "Sindhuli-3",
-                "riskLevel", "medium",
-                "lastContact", "2026-05-21"
-            )
-        ).then(patient -> PhrRouteSupport.jsonResponseWithCorrelation(200, patient, context.correlationId()));
+        return policyEvaluator.canAccessPhiResourceAsync(
+            context,
+            patientId,
+            "fchv-patient-summary",
+            "READ",
+            context.tenantId(),
+            context.facilityId()
+        ).then(decision -> {
+            if (!decision.isAllowed()) {
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+            }
+
+            return Promise.of(
+                Map.of(
+                    "id", patientId,
+                    "name", "[REDACTED]",
+                    "village", "Sindhuli-3",
+                    "riskLevel", "medium",
+                    "lastContact", "2026-05-21"
+                )
+            ).then(patient -> PhrRouteSupport.jsonResponseWithCorrelation(200, patient, context.correlationId()));
+        });
     }
 
     private Promise<HttpResponse> handleRecordVitals(HttpRequest request) {
@@ -207,14 +219,27 @@ public final class PhrFchvRoutes {
         }
 
         String patientId = request.getPathParameter("patientId");
-        return Promise.of(
-            Map.of(
-                "patientId", patientId,
-                "recordedBy", context.principalId(),
-                "status", "RECORDED",
-                "timestamp", java.time.Instant.now().toString()
-            )
-        ).then(result -> PhrRouteSupport.jsonResponseWithCorrelation(201, result, context.correlationId()));
+        return policyEvaluator.canAccessPhiResourceAsync(
+            context,
+            patientId,
+            "fchv-vitals",
+            "WRITE",
+            context.tenantId(),
+            context.facilityId()
+        ).then(decision -> {
+            if (!decision.isAllowed()) {
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+            }
+
+            return Promise.of(
+                Map.of(
+                    "patientId", patientId,
+                    "recordedBy", context.principalId(),
+                    "status", "RECORDED",
+                    "timestamp", java.time.Instant.now().toString()
+                )
+            ).then(result -> PhrRouteSupport.jsonResponseWithCorrelation(201, result, context.correlationId()));
+        });
     }
 
     private Promise<HttpResponse> handleGetSyncStatus(HttpRequest request) {
@@ -231,7 +256,6 @@ public final class PhrFchvRoutes {
                 context.correlationId());
         }
 
-        // Return sync status for offline queue
         return PhrRouteSupport.jsonResponse(200, Map.of(
             "fchvId", context.principalId(),
             "tenantId", context.tenantId(),
@@ -262,7 +286,6 @@ public final class PhrFchvRoutes {
                     String json = body.getString(java.nio.charset.StandardCharsets.UTF_8);
                     var node = PhrRouteSupport.JSON.readTree(json);
                     
-                    // Process offline queue operations
                     return PhrRouteSupport.jsonResponse(200, Map.of(
                         "fchvId", context.principalId(),
                         "tenantId", context.tenantId(),

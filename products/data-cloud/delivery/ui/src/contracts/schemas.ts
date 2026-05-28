@@ -85,25 +85,43 @@ export const UpdateCollectionRequestSchema = z.object({
   status: z.enum(['active', 'draft', 'archived', 'processing']).optional(),
 });
 
-export const CollectionEntitySchema = z.object({
-  id: z.string(),
-  data: z.object({
-    name: z.unknown().optional(),
-    description: z.unknown().optional(),
-    schemaType: z.unknown().optional(),
-    status: z.unknown().optional(),
-    isActive: z.unknown().optional(),
-    entityCount: z.unknown().optional(),
-    schema: z.object({
-      fields: z.unknown().optional(),
-    }).catchall(z.unknown()).optional(),
-    tags: z.unknown().optional(),
-    createdBy: z.unknown().optional(),
+const CollectionEntityDataSchema = z
+  .object({
+    name: z.string().optional(),
+    description: z.string().optional(),
+    schemaType: z.enum(['entity', 'event', 'timeseries', 'graph', 'document']).optional(),
+    status: z.enum(['active', 'draft', 'archived', 'processing']).optional(),
+    isActive: z.boolean().optional(),
+    entityCount: z.union([z.number(), z.string()]).optional(),
+    schema: z
+      .object({
+        fields: z.array(z.record(z.string(), z.unknown())).optional(),
+      })
+      .catchall(z.unknown())
+      .optional(),
+    tags: z.array(z.string()).optional(),
+    createdBy: z.string().optional(),
     permission: z.unknown().optional(),
     applications: z.unknown().optional(),
-    createdAt: z.unknown().optional(),
-    updatedAt: z.unknown().optional(),
-  }).catchall(z.unknown()),
+    createdAt: z.string().optional(),
+    updatedAt: z.string().optional(),
+    lifecycleStatus: z.enum(['DRAFT', 'PUBLISHED', 'DEPRECATED', 'ARCHIVED', 'UNKNOWN']).optional(),
+    operationalStatus: z.enum(['healthy', 'degraded', 'unavailable', 'maintenance', 'unknown']).optional(),
+    qualityScore: z.union([z.number(), z.string()]).optional(),
+    qualityMetrics: z.record(z.string(), z.union([z.number(), z.string()])).optional(),
+    retentionPolicy: z.record(z.string(), z.unknown()).optional(),
+    lineage: z.record(z.string(), z.unknown()).optional(),
+    owner: z.string().optional(),
+    storageSizeBytes: z.union([z.number(), z.string()]).optional(),
+    storageBytes: z.union([z.number(), z.string()]).optional(),
+    storageSize: z.union([z.number(), z.string()]).optional(),
+    statsStorageBytes: z.union([z.number(), z.string()]).optional(),
+  })
+  .passthrough();
+
+export const CollectionEntitySchema = z.object({
+  id: z.string(),
+  data: CollectionEntityDataSchema,
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
 });

@@ -4,6 +4,7 @@ import com.ghatana.phr.application.clinical.ClinicalService;
 import com.ghatana.phr.kernel.consent.ConsentService;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
 import com.ghatana.phr.kernel.service.PatientRecordService;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
@@ -28,13 +29,15 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
 
 /**
  * Unit tests for {@link PhrProviderRoutes}.
  *
  * @doc.type class
- * @doc.purpose Verifies clinical-role access enforcement for provider patient roster endpoints
+ * @doc.purpose Verifies clinical-role access enforcement and policy-gated provider PHI access
  * @doc.layer product
  * @doc.pattern Test
  */
@@ -51,11 +54,20 @@ class PhrProviderRoutesTest extends EventloopTestBase {
     @Mock
     private ClinicalService clinicalService;
 
+    @Mock
+    private PhrPolicyEvaluator policyEvaluator;
+
     private AsyncServlet servlet;
 
     @BeforeEach
     void setUp() {
-        PhrProviderRoutes routes = new PhrProviderRoutes(eventloop(), patientRecordService, consentService, clinicalService);
+        PhrProviderRoutes routes = new PhrProviderRoutes(
+            eventloop(),
+            patientRecordService,
+            consentService,
+            clinicalService,
+            policyEvaluator
+        );
         servlet = routes.getServlet();
 
         PatientRecordService.Patient patient = PatientRecordService.Patient.builder()
@@ -86,6 +98,9 @@ class PhrProviderRoutesTest extends EventloopTestBase {
                 ConsentService.CacheStatus.MISS,
                 Instant.now().plusSeconds(3600)
             )));
+        lenient().when(policyEvaluator.canAccessPhiResourceAsync(
+                any(), anyString(), anyString(), anyString(), anyString(), any()))
+            .thenReturn(Promise.of(PhrPolicyEvaluator.PolicyDecision.allowed("TEST_ALLOWED", "allowed")));
     }
 
     @Nested
@@ -175,6 +190,8 @@ class PhrProviderRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(200);
+            verify(policyEvaluator).canAccessPhiResourceAsync(
+                any(), eq("p99"), eq("provider-patient-summary"), eq("READ"), eq("t1"), any());
         }
 
         @Test
@@ -186,9 +203,20 @@ class PhrProviderRoutesTest extends EventloopTestBase {
 
             assertThat(response.getCode()).isEqualTo(403);
         }
-    }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
+        @Test
+        @DisplayName("returns 403 when policy denies clinical summary")
+        void returns403WhenPolicyDeniesClinicalSummary() throws Exception {
+            lenient().when(policyEvaluator.canAccessPhiResourceAsync(
+                    any(), eq("p99"), anyString(), anyString(), anyString(), any()))
+                .thenReturn(Promise.of(PhrPolicyEvaluator.PolicyDecision.denied("NO_TREATMENT_RELATIONSHIP", "denied")));
+            HttpRequest request = contextRequest(HttpMethod.GET, "/patient/p99/summary", "t1", "p1", "clinician");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(403);
+        }
+    }
 
     private static HttpRequest contextRequest(
             HttpMethod method, String path, String tenantId, String principalId, String role) {

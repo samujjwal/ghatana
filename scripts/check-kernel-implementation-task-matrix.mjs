@@ -15,6 +15,11 @@ function readJson(filePath) {
 }
 
 function parsePlanTasks(planSource) {
+  const groupedSectionTasks = parsePlanTasksFromGroupedSection(planSource);
+  if (groupedSectionTasks.length > 0) {
+    return groupedSectionTasks;
+  }
+
   const tableTasks = parsePlanTasksFromTodoTable(planSource);
   if (tableTasks.length > 0) {
     return tableTasks;
@@ -61,6 +66,76 @@ function parsePlanTasks(planSource) {
       whereRefs,
     };
   });
+}
+
+function parsePlanTasksFromGroupedSection(planSource) {
+  const sectionStart = planSource.indexOf('## 12. Consolidated Task Plan Grouped to Minimize Verification Passes');
+  if (sectionStart < 0) {
+    return [];
+  }
+
+  const sectionTail = planSource.slice(sectionStart);
+  const sectionEndMatch = /^##\s+13\./m.exec(sectionTail);
+  const sectionEnd = sectionEndMatch ? sectionStart + sectionEndMatch.index : planSource.length;
+  const section = planSource.slice(sectionStart, sectionEnd);
+  const lines = section.split(/\r?\n/);
+
+  const tasks = [];
+  let id = 1;
+  let currentGroup = '';
+  let currentGroupRefs = [];
+  let inChangeArea = false;
+  let inExactChanges = false;
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+
+    const groupMatch = /^###\s+Group\s+\d+\s+—\s+(.+)$/.exec(line);
+    if (groupMatch) {
+      currentGroup = groupMatch[1].trim();
+      currentGroupRefs = [];
+      inChangeArea = false;
+      inExactChanges = false;
+      continue;
+    }
+
+    if (/^\*\*Change areas:\*\*/.test(line)) {
+      inChangeArea = true;
+      inExactChanges = false;
+      continue;
+    }
+
+    if (/^\*\*Exact changes:\*\*/.test(line)) {
+      inExactChanges = true;
+      inChangeArea = false;
+      continue;
+    }
+
+    if (/^\*\*(Verification|Acceptance criteria):\*\*/.test(line) || /^###\s+Group\s+\d+\s+—/.test(line)) {
+      inChangeArea = false;
+      inExactChanges = false;
+    }
+
+    if (inChangeArea && /^\*\s+/.test(line)) {
+      const refs = [...line.matchAll(/`([^`]+)`/g)].map((token) => token[1].trim());
+      if (refs.length > 0) {
+        currentGroupRefs.push(...refs);
+      }
+      continue;
+    }
+
+    if (inExactChanges && /^\*\s+/.test(line)) {
+      const taskTitle = line.replace(/^\*\s+/, '').trim();
+      tasks.push({
+        id,
+        title: currentGroup.length > 0 ? `${currentGroup}: ${taskTitle}` : taskTitle,
+        whereRefs: [...new Set(currentGroupRefs)],
+      });
+      id += 1;
+    }
+  }
+
+  return tasks;
 }
 
 function parsePlanTasksFromPhrPriorityTable(planSource) {

@@ -188,7 +188,7 @@ describe('frontend adapter contracts', () => {
               qualityScore: 0.88,
               qualityMetrics: {
                 completeness: 0.92,
-                timeliness: 0.86,
+                timeliness: '0.86',
               },
               storageSizeBytes: '4096',
             },
@@ -214,6 +214,31 @@ describe('frontend adapter contracts', () => {
         },
         storageSizeBytes: 4096,
       });
+    });
+
+    it('rejects invalid enum metadata values at the contract boundary', async () => {
+      mockApiClient.get.mockResolvedValue({
+        entities: [
+          {
+            id: 'col-4b',
+            collection: 'dc_collections',
+            data: {
+              name: 'Telemetry Legacy',
+              schemaType: 'legacy-entity',
+              status: 'legacy-status',
+              lifecycleStatus: 'LEGACY',
+              operationalStatus: 'broken',
+              qualityScore: 'NaN',
+              qualityMetrics: {
+                completeness: '0.95',
+                timeliness: 'n/a',
+              },
+            },
+          },
+        ],
+      });
+
+      await expect(collectionsApi.list({ page: 1, pageSize: 10 })).rejects.toThrowError(/Invalid option/);
     });
 
     it('getStats reflects backend collection metadata values', async () => {

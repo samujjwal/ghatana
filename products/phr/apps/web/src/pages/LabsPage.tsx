@@ -6,6 +6,16 @@ import { usePhrSession } from '../auth/PhrSessionContext';
 import { formatPhrDate, t } from '../i18n/phrI18n';
 import type { ObservationSummary } from '../types';
 
+function labSeverityClass(status: ObservationSummary['status']): string {
+  if (status === 'critical') return 'danger';
+  if (status === 'attention' || status === 'abnormal') return 'warning';
+  return '';
+}
+
+function labStatusLabel(status: ObservationSummary['status']): string {
+  return t(`observations.status.${status}`);
+}
+
 export function LabsPage(): React.ReactElement {
   const { session } = usePhrSession();
   const [labs, setLabs] = useState<ObservationSummary[]>([]);
@@ -24,31 +34,38 @@ export function LabsPage(): React.ReactElement {
       .finally(() => setLoading(false));
   }, [session]);
 
-  if (loading) return <div className="loading">{t('labs.loading')}</div>;
-  if (error) return <div className="error">{t('dashboard.errorPrefix')}: {error}</div>;
+  if (loading) return <div className="loading" role="status" aria-live="polite">{t('labs.loading')}</div>;
+  if (error) return <div className="error" role="alert">{t('dashboard.errorPrefix')}: {error}</div>;
+
+  const criticalCount = labs.filter((lab) => lab.status === 'critical').length;
+  const attentionCount = labs.filter((lab) => lab.status === 'attention' || lab.status === 'abnormal').length;
 
   return (
     <div className="stack gap-lg">
       <Card>
         <CardHeader title={t('labs.title')} subheader={t('labs.subheader')} />
         <CardContent>
-          <div className="info-banner">
+          <div className="info-banner" role="note">
             <p className="muted">
-              For detailed clinical trends and historical data, visit the <Link to="/observations">Observations</Link> page.
+              {t('labs.trendsPrefix')} <Link to="/observations">{t('labs.trendsLink')}</Link>.
             </p>
+          </div>
+          <div className="row gap-sm wrap" aria-label={t('labs.severitySummary')}>
+            <span className="pill danger">{t('labs.criticalCount', { count: criticalCount })}</span>
+            <span className="pill warning">{t('labs.attentionCount', { count: attentionCount })}</span>
           </div>
           <div className="stack gap-md">
             {labs.length === 0 ? (
-              <p className="empty">{t('labs.empty')}</p>
+              <p className="empty" role="status">{t('labs.empty')}</p>
             ) : (
               labs.map((lab) => (
-                <Link key={lab.id} className="data-card" to={`/labs/${lab.id}`}>
+                <Link key={lab.id} className={`data-card ${labSeverityClass(lab.status)}`} to={`/labs/${lab.id}`}>
                   <div>
                     <strong>{lab.name}</strong>
-                    <p className="muted">{formatPhrDate(lab.effectiveDate)}</p>
+                    <p className="muted">{t('labs.collected', { date: formatPhrDate(lab.effectiveDate) })}</p>
                   </div>
                   <div className="row gap-sm align-center">
-                    <span className={`pill ${lab.status === 'abnormal' ? 'warning' : ''}`}>{lab.status}</span>
+                    <span className={`pill ${labSeverityClass(lab.status)}`}>{labStatusLabel(lab.status)}</span>
                     <strong>{lab.value}{lab.unit && <span className="muted"> {lab.unit}</span>}</strong>
                   </div>
                 </Link>

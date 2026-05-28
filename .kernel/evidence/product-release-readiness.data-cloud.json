@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-28T20:24:30.427Z",
+  "generatedAt": "2026-05-28T20:41:26.484Z",
   "evidenceRun": {
     "generatedBy": "scripts/check-product-release-readiness.mjs",
     "command": "pnpm check:product-release-readiness",
@@ -12,44 +12,85 @@
   "sourceCommitSha": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
   "targetCommitSha": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
   "targetEnvironment": "staging",
-  "validationStatus": "failed",
-  "reviewDueAt": "2026-05-29T20:24:30.473Z",
-  "expiresAt": "2026-05-30T20:24:30.473Z",
-  "productId": "phr",
-  "releaseVerdict": "fail",
+  "validationStatus": "validated",
+  "reviewDueAt": "2026-05-29T20:41:26.519Z",
+  "expiresAt": "2026-05-30T20:41:26.519Z",
+  "productId": "data-cloud",
+  "releaseVerdict": "pass",
   "releaseProfiles": [
     "standard-web-api-release",
     "backend-only-release",
     "polyglot-service-release"
   ],
   "productMetadata": {
-    "id": "phr",
-    "name": "Personal Health Records",
-    "description": "Healthcare patient record management with FHIR R4 and Nepal Directive 2081 support",
+    "id": "data-cloud",
+    "name": "Data Cloud",
+    "description": "Data cloud platform with planes architecture",
     "type": "product",
-    "kind": "business-product",
-    "manifestPath": "products/phr/domain-pack-manifest.yaml",
-    "manifestFormat": "yaml",
-    "buildFile": "products/phr/build.gradle.kts",
+    "kind": "platform-provider",
+    "manifestPath": null,
+    "manifestFormat": null,
     "gradleModules": [
-      ":products:phr",
-      ":products:phr:launcher"
+      ":products:data-cloud:planes:shared-spi",
+      ":products:data-cloud:planes:data:entity",
+      ":products:data-cloud:planes:event:core",
+      ":products:data-cloud:planes:operations:config",
+      ":products:data-cloud:planes:intelligence:analytics",
+      ":products:data-cloud:planes:governance:core",
+      ":products:data-cloud:delivery:runtime-composition",
+      ":products:data-cloud:extensions:plugins",
+      ":products:data-cloud:delivery:api",
+      ":products:data-cloud:delivery:launcher",
+      ":products:data-cloud:delivery:sdk",
+      ":products:data-cloud:contracts",
+      ":products:data-cloud:extensions:agent-registry",
+      ":products:data-cloud:extensions:agent-catalog",
+      ":products:data-cloud:delivery:api-contract-tests",
+      ":products:data-cloud:planes:intelligence:feature-ingest",
+      ":products:data-cloud:planes:event:store",
+      ":products:data-cloud:integration-tests",
+      ":products:data-cloud:planes:action",
+      ":products:data-cloud:planes:action:operator-contracts",
+      ":products:data-cloud:planes:action:central-runtime",
+      ":products:data-cloud:planes:action:engine",
+      ":products:data-cloud:planes:action:registry",
+      ":products:data-cloud:planes:action:analytics",
+      ":products:data-cloud:planes:action:security",
+      ":products:data-cloud:planes:action:event-bridge",
+      ":products:data-cloud:planes:action:agent-runtime",
+      ":products:data-cloud:planes:action:api",
+      ":products:data-cloud:planes:action:scaling",
+      ":products:data-cloud:planes:action:observability",
+      ":products:data-cloud:planes:action:orchestrator",
+      ":products:data-cloud:planes:action:server",
+      ":products:data-cloud:planes:action:identity",
+      ":products:data-cloud:planes:action:compliance",
+      ":products:data-cloud:planes:action:kernel-bridge",
+      ":products:data-cloud:extensions:kernel-bridge"
     ],
     "surfaces": [
       {
         "type": "backend-api",
-        "path": "products/phr",
+        "path": "products/data-cloud/delivery/api",
         "implementationStatus": "implemented"
       },
       {
         "type": "web",
-        "path": "products/phr/apps/web",
-        "packagePath": "products/phr/apps/web/package.json",
+        "path": "products/data-cloud/delivery/ui",
+        "packagePath": "products/data-cloud/delivery/ui/package.json",
+        "implementationStatus": "implemented"
+      },
+      {
+        "type": "sdk",
+        "path": "products/data-cloud/delivery/sdk",
         "implementationStatus": "implemented"
       }
     ],
     "pnpmPackages": [
-      "products/phr/apps/*"
+      "products/data-cloud/delivery/ui",
+      "products/data-cloud/libs/*",
+      "products/data-cloud/planes/action/ui",
+      "products/data-cloud/planes/action/gateway"
     ],
     "ci": {
       "enabled": true,
@@ -57,114 +98,68 @@
         "build",
         "test",
         "manifest-validation",
-        "security-scan"
+        "security-scan",
+        "integration-test"
       ]
     },
     "conformance": {
-      "manifest": true,
-      "observability": true,
-      "security": true,
-      "dataAccess": true,
+      "manifest": false,
+      "observability": false,
+      "security": false,
+      "dataAccess": false,
       "bridge": false,
       "agentDefinitions": false,
       "masteryBindings": false,
       "evaluationPacks": false,
-      "runtimeModule": false
+      "runtimeModule": false,
+      "manifestExemption": "No product manifest is registered yet; manifest conformance is disabled until manifestPath, manifestFormat, and buildFile are declared."
     },
     "metadata": {
-      "owner": "PHR Team",
-      "pilot": true,
-      "lifecycleReadiness": {
-        "reasonCodes": [
-          "validated-phr-lifecycle-pilot",
-          "healthcare-gates-active",
-          "local-package-deploy-verify-ready",
-          "phr-rollback-after-stable-deploy-verify"
-        ],
-        "requiredGates": [
-          "consent",
-          "pii-classification",
-          "audit-evidence",
-          "fhir-contract-validation",
-          "tenant-data-sovereignty"
-        ],
-        "nextRequiredWork": [
-          "Keep healthcare gate packs evidence-backed across validate, build, and deploy phases",
-          "Keep generated lifecycle evidence packs current for validate, test, build, package, deploy, and verify",
-          "Enable PHR rollback only after stable deployment manifest history, artifact selection policy, healthcare post-rollback gates, and approval contract are in place"
-        ],
-        "evidenceRefs": [
-          "products/phr/kernel-product.yaml",
-          "products/phr/schema-packs/schema-registry.yaml",
-          "products/phr/lifecycle/readiness-evidence.yaml",
-          ".kernel/evidence/phr/phr-lifecycle-evidence-pack.json"
-        ]
-      },
+      "owner": "Data Cloud Team",
       "created": "2026-03-19",
-      "documentation": "products/phr/README.md",
+      "documentation": "products/data-cloud/README.md",
       "status": "active",
-      "displayName": "Personal Health Records",
-      "description": "Healthcare patient record management with FHIR R4 and Nepal Directive 2081 support",
-      "category": "healthcare"
-    },
-    "lifecycleProfile": "standard-web-api-product",
-    "lifecycleStatus": "enabled",
-    "lifecycleMigration": {
-      "status": "ready",
-      "readinessReasonCode": "validated-phr-lifecycle-pilot",
-      "notes": "PHR enabled as second parallel lifecycle pilot alongside Digital Marketing. Healthcare-specific gates are active and enforced at execution time."
+      "displayName": "Data Cloud",
+      "description": "Platform data services and data lake infrastructure provider",
+      "category": "platform-infrastructure"
     },
     "lifecycleReadiness": {
       "reasonCodes": [
-        "healthcare-pilot-enabled",
-        "fhir-r4-pilot-surfaces-validated",
-        "consent-gate-active",
-        "pii-classification-active",
-        "phr-rollback-after-stable-deploy-verify"
+        "platform-provider-mode-required",
+        "bootstrap-platform-separation-validated",
+        "platform-provider-health-validated",
+        "runtime-truth-provider-validated",
+        "data-cloud-release-gate-passed"
       ],
       "requiredGates": [
-        "consent",
-        "pii-classification",
-        "audit-evidence",
-        "fhir-contract-validation",
-        "tenant-data-sovereignty"
+        "bootstrap-build-without-platform-providers",
+        "platform-provider-health",
+        "runtime-truth-provider"
       ],
       "nextRequiredWork": [
-        "Develop PHR features in parallel with Digital Marketing under kernel lifecycle",
-        "Validate healthcare-specific gate-packs against real FHIR evidence as features mature"
+        "Keep Data Cloud registered as a platform provider rather than an ordinary Kernel lifecycle product",
+        "Keep bootstrap separation, runtime truth provider, and Action Plane governance evidence current for each release target"
       ],
       "evidenceRefs": [
-        "products/phr/kernel-product.yaml",
-        "products/phr/schema-packs/schema-registry.yaml",
-        "products/phr/lifecycle/readiness-evidence.yaml",
-        "products/phr/lifecycle/gate-packs/consent.yaml",
-        "products/phr/lifecycle/gate-packs/pii-classification.yaml",
-        "products/phr/lifecycle/gate-packs/audit-evidence.yaml",
-        "products/phr/lifecycle/gate-packs/fhir-contract-validation.yaml",
-        "products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml"
+        "products/data-cloud/lifecycle/readiness-evidence.yaml",
+        "products/data-cloud/extensions/kernel-bridge",
+        "products/data-cloud/planes/action/kernel-bridge",
+        ".kernel/evidence/data-cloud/platform-provider-readiness.json"
       ],
       "blockerGateAdapterMatrix": {
         "blockers": [],
         "gates": [
           {
-            "gateId": "consent",
-            "description": "Patient consent management and tracking"
+            "gateId": "bootstrap-build-without-platform-providers",
+            "description": "Bootstrap build must work without Data Cloud providers"
           },
           {
-            "gateId": "pii-classification",
-            "description": "PII data classification and handling"
+            "gateId": "platform-provider-health",
+            "description": "Platform provider health validation"
           },
           {
-            "gateId": "audit-evidence",
-            "description": "Audit trail and evidence logging"
-          },
-          {
-            "gateId": "fhir-contract-validation",
-            "description": "FHIR R4 contract validation"
-          },
-          {
-            "gateId": "tenant-data-sovereignty",
-            "description": "Tenant data sovereignty compliance"
+            "gateId": "runtime-truth-provider",
+            "description": "Runtime truth provider availability"
           }
         ],
         "adapters": [
@@ -175,105 +170,20 @@
           {
             "adapterId": "web",
             "readiness": "ready"
+          },
+          {
+            "adapterId": "sdk",
+            "readiness": "ready"
+          },
+          {
+            "adapterId": "kernel-bridge",
+            "readiness": "ready"
           }
         ]
       },
-      "status": "enabled"
+      "status": "ready"
     },
-    "rollbackReadiness": {
-      "status": "ready-env-specific",
-      "classification": "ready/env-specific",
-      "reasonCode": "phr-rollback-ready-staging-prod-validated",
-      "environmentReadiness": {
-        "local": "ready",
-        "dev": "ready",
-        "staging": "ready",
-        "prod": "ready"
-      },
-      "requiredBeforeEnablement": [
-        "stable-deployment-manifest-history",
-        "previous-artifact-selection-policy",
-        "healthcare-post-rollback-verification-gates",
-        "rollback-approval-contract"
-      ],
-      "evidenceRefs": [
-        "products/phr/kernel-product.yaml",
-        "products/phr/lifecycle/rollback/rollback-readiness-evidence.yaml",
-        "products/phr/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml",
-        "products/phr/lifecycle/rollback/previous-artifact-selection-policy.yaml",
-        "products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml",
-        "products/phr/lifecycle/rollback/rollback-approval-contract.yaml",
-        ".kernel/evidence/phr/phr-lifecycle-evidence-pack.json"
-      ]
-    },
-    "lifecycleConfigPath": "products/phr/kernel-product.yaml",
-    "foundationUsageProfile": "products/phr/lifecycle/foundation-usage-profile.yaml",
-    "lifecycle": {
-      "enabled": true,
-      "phases": {
-        "dev": {
-          "defaultSurfaces": [
-            "backend-api",
-            "web"
-          ],
-          "mode": "parallel"
-        },
-        "build": {
-          "defaultSurfaces": [
-            "backend-api",
-            "web"
-          ],
-          "mode": "sequential"
-        }
-      },
-      "toolchain": {
-        "backend-api": "gradle-java-service",
-        "web": "pnpm-vite-react"
-      }
-    },
-    "toolchain": {
-      "profile": "standard",
-      "adapters": {
-        "backend-api": "gradle-java-service",
-        "web": "pnpm-vite-react"
-      }
-    },
-    "artifacts": {
-      "backend-api": {
-        "type": "jvm-service",
-        "packaging": "jar",
-        "required": true
-      },
-      "web": {
-        "type": "static-web-bundle",
-        "packaging": "static-files",
-        "required": true
-      }
-    },
-    "deployment": {
-      "targets": [
-        "compose-local",
-        "dev",
-        "staging",
-        "prod"
-      ],
-      "defaultEnvironment": "dev",
-      "healthChecks": [
-        "standard-http"
-      ],
-      "rollback": {
-        "strategy": "previous-artifact"
-      }
-    },
-    "environments": {
-      "supported": [
-        "local",
-        "dev",
-        "staging",
-        "prod"
-      ]
-    },
-    "lifecycleExecutionAllowed": true
+    "lifecycleExecutionAllowed": false
   },
   "dimensions": [
     {
@@ -361,7 +271,7 @@
       "score": 5,
       "sources": {
         "baseline": 5,
-        "wave2Delta": 0.5
+        "wave2Delta": 0
       }
     },
     {
@@ -433,7 +343,7 @@
       "score": 5,
       "sources": {
         "baseline": 5,
-        "wave2Delta": 0.5
+        "wave2Delta": 0
       }
     },
     {
@@ -481,7 +391,7 @@
       "score": 5,
       "sources": {
         "baseline": 5,
-        "wave2Delta": 0.5
+        "wave2Delta": 0
       }
     },
     {
@@ -545,7 +455,7 @@
       "score": 5,
       "sources": {
         "baseline": 5,
-        "wave2Delta": 0.5
+        "wave2Delta": 0
       }
     },
     {
@@ -656,55 +566,7 @@
   "averageScore": 5,
   "releaseTargetScore": 4,
   "belowTargetDimensions": [],
-  "blockingGaps": [
-    {
-      "severity": "P0",
-      "gate": "staging-bootstrap-evidence",
-      "reason": "incomplete-bootstrap-evidence",
-      "message": "Product phr staging bootstrap evidence missing required fields: postgres, migrations, secrets, storage",
-      "environment": "staging",
-      "missingFields": [
-        "postgres",
-        "migrations",
-        "secrets",
-        "storage"
-      ]
-    },
-    {
-      "severity": "P0",
-      "gate": "staging-rollback-evidence",
-      "reason": "invalid-rollback-evidence",
-      "message": "Product phr staging rollback evidence exists but is not valid",
-      "environment": "staging"
-    },
-    {
-      "severity": "P0",
-      "gate": "prod-bootstrap-evidence",
-      "reason": "incomplete-bootstrap-evidence",
-      "message": "Product phr prod bootstrap evidence missing required fields: postgres, migrations, secrets, storage",
-      "environment": "prod",
-      "missingFields": [
-        "postgres",
-        "migrations",
-        "secrets",
-        "storage"
-      ]
-    },
-    {
-      "severity": "P0",
-      "gate": "prod-rollback-evidence",
-      "reason": "invalid-rollback-evidence",
-      "message": "Product phr prod rollback evidence exists but is not valid",
-      "environment": "prod"
-    },
-    {
-      "severity": "P0",
-      "gate": "product-specific-release-evidence",
-      "reason": "partial-or-pending-product-proof",
-      "message": "Product phr has partial, pending, blocked, or failed product release proof",
-      "evidencePath": ".kernel\\evidence\\phr\\phr-release-readiness.json"
-    }
-  ],
+  "blockingGaps": [],
   "skippedGates": [],
   "evidencePaths": [
     ".kernel/evidence/product-release-readiness.json",

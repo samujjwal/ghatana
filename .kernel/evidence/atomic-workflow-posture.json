@@ -1,8 +1,8 @@
 {
   "generatedAt": "generated-on-demand",
   "summary": {
-    "mutatingRouteCount": 155,
-    "criticalMutatingRouteCount": 53,
+    "mutatingRouteCount": 157,
+    "criticalMutatingRouteCount": 55,
     "hasRollbackRoute": true,
     "hasRetryRoute": true,
     "violationCount": 0
@@ -210,6 +210,16 @@
     },
     {
       "operation": "POST /api/v1/models/{modelName}/promote",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/release-readiness",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "DELETE /api/v1/release-readiness/{id}",
       "requiresPolicy": true,
       "requiresBlockingAudit": true
     },

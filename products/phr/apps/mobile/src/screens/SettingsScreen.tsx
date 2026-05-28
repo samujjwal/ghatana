@@ -1,7 +1,7 @@
 import React from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { t } from '../i18n/phrMobileI18n';
-import { phiClearAll } from '../services/phiEncryptedStorage';
+import { phiClearAll, phiIsBiometricPolicyEnabled } from '../services/phiEncryptedStorage';
 import { clearDashboardOffline, getDashboardOfflineTimestamp } from '../services/offlineStore';
 import type { MobileSession } from '../types';
 
@@ -14,9 +14,36 @@ interface SettingsScreenProps {
 
 export function SettingsScreen({ onSyncOffline, onLogout, syncMessage, session }: SettingsScreenProps): React.ReactElement {
   const [cacheTimestamp, setCacheTimestamp] = React.useState<number | null>(null);
+  const [cacheActionMessage, setCacheActionMessage] = React.useState<string>('');
+  const [biometricPolicyState, setBiometricPolicyState] = React.useState<'checking' | 'enabled' | 'disabled' | 'unavailable'>('checking');
   
   React.useEffect(() => {
-    void getDashboardOfflineTimestamp().then(setCacheTimestamp);
+    let active = true;
+    void getDashboardOfflineTimestamp()
+      .then((timestamp) => {
+        if (active) {
+          setCacheTimestamp(timestamp);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setCacheTimestamp(null);
+        }
+      });
+    void phiIsBiometricPolicyEnabled()
+      .then((biometricEnabled) => {
+        if (active) {
+          setBiometricPolicyState(biometricEnabled ? 'enabled' : 'disabled');
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setBiometricPolicyState('unavailable');
+        }
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleLogout = (): void => {
@@ -39,7 +66,25 @@ export function SettingsScreen({ onSyncOffline, onLogout, syncMessage, session }
     );
   };
 
+  const handleClearCache = (): void => {
+    void Promise.all([phiClearAll(), clearDashboardOffline()])
+      .then(() => {
+        setCacheTimestamp(null);
+        setCacheActionMessage(t('settings.cacheCleared'));
+      })
+      .catch(() => {
+        setCacheActionMessage(t('settings.cacheClearFailed'));
+      });
+  };
+
   const isCacheStale = cacheTimestamp ? Date.now() - cacheTimestamp > 24 * 60 * 60 * 1000 : true;
+  const biometricPolicyLabelByState: Record<typeof biometricPolicyState, string> = {
+    checking: t('settings.biometricPolicyChecking'),
+    enabled: t('settings.biometricPolicyEnabled'),
+    disabled: t('settings.biometricPolicyDisabled'),
+    unavailable: t('settings.biometricPolicyUnavailable'),
+  };
+  const privacyStatus = biometricPolicyLabelByState[biometricPolicyState];
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -55,10 +100,14 @@ export function SettingsScreen({ onSyncOffline, onLogout, syncMessage, session }
 
       <Text style={styles.sectionTitle}>{t('settings.cacheStatus')}</Text>
       <View style={styles.card}>
-        <Text style={styles.label}>{t('settings.lastSync', { time: cacheTimestamp ? new Date(cacheTimestamp).toLocaleString() : 'Never' })}</Text>
+        <Text style={styles.label}>{t('settings.lastSync', { time: cacheTimestamp ? new Date(cacheTimestamp).toLocaleString() : t('settings.never') })}</Text>
         <Text style={[styles.value, isCacheStale ? styles.stale : styles.fresh]}>
           {isCacheStale ? t('settings.cacheStale') : t('settings.cacheFresh')}
         </Text>
+        <Text style={styles.label}>{t('settings.encryptionStatus')}</Text>
+        <Text style={styles.value}>{t('settings.encryptionEnabled')}</Text>
+        <Text style={styles.label}>{t('settings.biometricPolicyStatus')}</Text>
+        <Text style={styles.value}>{privacyStatus}</Text>
         <Text style={styles.description}>{t('settings.cacheDescription')}</Text>
         <Pressable
           onPress={onSyncOffline}
@@ -69,7 +118,17 @@ export function SettingsScreen({ onSyncOffline, onLogout, syncMessage, session }
         >
           <Text style={styles.buttonText}>{t('settings.refreshCache')}</Text>
         </Pressable>
+        <Pressable
+          onPress={handleClearCache}
+          style={styles.clearButton}
+          accessibilityRole="button"
+          accessibilityLabel={t('settings.clearCache')}
+          accessibilityHint={t('settings.clearCacheHint')}
+        >
+          <Text style={styles.clearButtonText}>{t('settings.clearCache')}</Text>
+        </Pressable>
         <Text style={styles.summary}>{syncMessage}</Text>
+        {cacheActionMessage ? <Text style={styles.summary} accessibilityLiveRegion="polite">{cacheActionMessage}</Text> : null}
       </View>
 
       <Pressable onPress={handleLogout} style={styles.logoutButton} accessibilityRole="button" accessibilityLabel={t('settings.logoutButton')}>
@@ -91,6 +150,8 @@ const styles = StyleSheet.create({
   description: { color: '#4b5c77', fontSize: 13, marginTop: 4 },
   button: { backgroundColor: '#123c84', borderRadius: 16, padding: 14, alignItems: 'center', marginTop: 8 },
   buttonText: { color: '#fff', fontWeight: '700' },
+  clearButton: { backgroundColor: '#fff', borderRadius: 16, padding: 14, alignItems: 'center', marginTop: 8, borderWidth: 1, borderColor: '#7f1d1d' },
+  clearButtonText: { color: '#7f1d1d', fontWeight: '700' },
   summary: { color: '#4b5c77', marginTop: 8, fontSize: 13 },
   logoutButton: { backgroundColor: '#7f1d1d', borderRadius: 16, padding: 14, alignItems: 'center', marginTop: 16 },
   logoutButtonText: { color: '#fff', fontWeight: '700' },

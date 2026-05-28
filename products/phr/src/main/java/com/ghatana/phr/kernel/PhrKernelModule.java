@@ -472,9 +472,9 @@ public class PhrKernelModule implements KernelModule {
         );
         PhrAuditRoutes auditRoutes = new PhrAuditRoutes(eventloop, auditTrailService);
         PhrAuthRoutes authRoutes = new PhrAuthRoutes(eventloop, securityManager, userRepository, auditTrailService);
-        PhrProviderRoutes providerRoutes = new PhrProviderRoutes(eventloop, patientRecords, consent, clinicalService);
+        PhrProviderRoutes providerRoutes = new PhrProviderRoutes(eventloop, patientRecords, consent, clinicalService, policyEvaluator);
         PhrCaregiverRoutes caregiverRoutes = new PhrCaregiverRoutes(eventloop, caregivers, patientRecords);
-        PhrFchvRoutes fchvRoutes = new PhrFchvRoutes(eventloop);
+        PhrFchvRoutes fchvRoutes = new PhrFchvRoutes(eventloop, policyEvaluator);
         PhrNotificationRoutes notificationRoutes = new PhrNotificationRoutes(eventloop, notificationSender);
         PhrPatientProfileRoutes patientProfileRoutes = new PhrPatientProfileRoutes(eventloop, userRepository);
         

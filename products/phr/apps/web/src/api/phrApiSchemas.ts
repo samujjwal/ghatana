@@ -117,7 +117,7 @@ export const ObservationSummarySchema = z.object({
   name: z.string(),
   value: z.string(),
   unit: z.string(),
-  status: z.enum(['normal', 'attention', 'critical']),
+  status: z.enum(['normal', 'attention', 'critical', 'abnormal', 'pending']),
   effectiveDate: z.string(),
   recordedAt: z.string(),
   loincCode: z.string().optional(),
@@ -128,7 +128,7 @@ export const ImmunizationSummarySchema = z.object({
   vaccine: z.string(),
   date: z.string(),
   occurrenceDate: z.string(),
-  status: z.enum(['completed', 'not-done', 'entered-in-error']),
+  status: z.enum(['completed', 'not-done', 'entered-in-error', 'due']),
   lotNumber: z.string().optional(),
   cvxCode: z.string().optional(),
 }).passthrough();
@@ -178,6 +178,17 @@ export const MedicationDetailSchema = MedicationSummarySchema.extend({
   })),
 }).passthrough();
 
+export const BackendMedicationPrescriptionSchema = z.object({
+  id: z.string(),
+  medicationName: z.string(),
+  dosage: z.string(),
+  indication: z.string().optional(),
+  prescribedAt: z.string().optional(),
+  expiresAt: z.string().optional(),
+  refillsRemaining: z.number().optional(),
+  status: z.string().optional(),
+}).passthrough();
+
 export const AppointmentSummarySchema = z.object({
   id: z.string(),
   provider: z.string(),
@@ -192,7 +203,7 @@ export const NotificationSummarySchema = z.object({
   title: z.string(),
   body: z.string(),
   createdAt: z.string(),
-  readAt: z.string().optional(),
+  readAt: z.string().nullable().optional(),
 }).passthrough();
 
 export const DependentEntrySchema = z.object({
@@ -261,6 +272,25 @@ export const PatientRecordAccessSchema = z.object({
   accessedAt: z.string(),
   accessedBy: z.string(),
   accessReason: z.string(),
+});
+
+export const PatientRecordSummarySchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  category: z.string(),
+  updatedAt: z.string(),
+  resourceType: z.string(),
+  redacted: z.boolean().optional(),
+  provenance: z.record(z.string(), z.unknown()).optional(),
+}).passthrough();
+
+export const PatientRecordListSchema = z.object({
+  patientId: z.string(),
+  items: z.array(PatientRecordSummarySchema),
+  count: z.number(),
+  limit: z.number(),
+  offset: z.number(),
+  generatedAt: z.string(),
 });
 
 export const PhrReleaseReadinessSchema = z.object({

@@ -1,19 +1,23 @@
-/**
- * Tests for LabsPage — verifies loading, error, and lab result display.
- */
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { LabsPage } from '../LabsPage';
+import { fetchObservations } from '../../api/clinicalApi';
+import type { ObservationSummary } from '../../types';
 
 vi.mock('../../api/clinicalApi', () => ({
   fetchObservations: vi.fn(),
 }));
 
 vi.mock('../../i18n/phrI18n', () => ({
-  t: (key: string) => key,
-  formatPhrDate: (d: string) => d,
+  t: (key: string, values?: Record<string, string | number>) => {
+    if (key === 'labs.criticalCount') return `${values?.count} critical`;
+    if (key === 'labs.attentionCount') return `${values?.count} attention`;
+    if (key === 'labs.collected') return `Collected ${values?.date}`;
+    return key;
+  },
+  formatPhrDate: (date: string) => date,
 }));
 
 vi.mock('../../auth/PhrSessionContext', () => ({
@@ -25,13 +29,12 @@ vi.mock('../../auth/PhrSessionContext', () => ({
   }),
 }));
 
-import { fetchObservations } from '../../api/clinicalApi';
+const mockFetch = vi.mocked(fetchObservations);
 
-const mockFetch = fetchObservations as ReturnType<typeof vi.fn>;
-
-const labs = [
-  { id: 'lab-1', name: 'Hemoglobin A1c', recordedAt: '2025-01-05', effectiveDate: '2025-01-05', status: 'normal' as const, value: '6.1', unit: '%' },
-  { id: 'lab-2', name: 'Blood Glucose', recordedAt: '2025-01-05', effectiveDate: '2025-01-05', status: 'attention' as const, value: '9.3', unit: 'mmol/L' },
+const labs: ObservationSummary[] = [
+  { id: 'lab-1', name: 'Hemoglobin A1c', recordedAt: '2025-01-05', effectiveDate: '2025-01-05', status: 'normal', value: '6.1', unit: '%' },
+  { id: 'lab-2', name: 'Blood Glucose', recordedAt: '2025-01-05', effectiveDate: '2025-01-05', status: 'attention', value: '9.3', unit: 'mmol/L' },
+  { id: 'lab-3', name: 'Potassium', recordedAt: '2025-01-06', effectiveDate: '2025-01-06', status: 'critical', value: '6.2', unit: 'mmol/L' },
 ];
 
 function renderPage(): void {
@@ -56,25 +59,32 @@ describe('LabsPage', () => {
   it('shows error message when fetch fails', async () => {
     mockFetch.mockRejectedValue(new Error('network'));
     renderPage();
-    await waitFor(() => expect(screen.getByText(/dashboard\.errorPrefix/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/network/)).toBeTruthy());
   });
 
-  it('displays lab names after successful fetch', async () => {
+  it('displays lab names and values after successful fetch', async () => {
     mockFetch.mockResolvedValue(labs);
     renderPage();
     await waitFor(() => expect(screen.getByText('Hemoglobin A1c')).toBeTruthy());
     expect(screen.getByText('Blood Glucose')).toBeTruthy();
+    expect(screen.getByText('Potassium')).toBeTruthy();
+    expect(screen.getByText('6.1')).toBeTruthy();
   });
 
-  it('renders lab values', async () => {
+  it('renders abnormal and critical semantics from observation statuses', async () => {
     mockFetch.mockResolvedValue(labs);
     renderPage();
-    await waitFor(() => expect(screen.getByText('6.1')).toBeTruthy());
+
+    await waitFor(() => expect(screen.getByText('1 critical')).toBeTruthy());
+    expect(screen.getByText('1 attention')).toBeTruthy();
+    expect(screen.getByText('observations.status.critical')).toBeTruthy();
+    expect(screen.getByText('observations.status.attention')).toBeTruthy();
   });
 
-  it('renders labs title key', async () => {
+  it('links patients to the observations trend page', async () => {
     mockFetch.mockResolvedValue(labs);
     renderPage();
-    await waitFor(() => expect(screen.getByText('labs.title')).toBeTruthy());
+    const link = await screen.findByRole('link', { name: 'labs.trendsLink' });
+    expect(link).toHaveAttribute('href', '/observations');
   });
 });

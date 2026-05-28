@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-27T18:41:36.230Z",
+  "generatedAt": "2026-05-28T20:11:00.546Z",
   "status": "failed",
   "mode": "execute",
   "includeHeavy": false,
@@ -38,79 +38,79 @@
     {
       "command": "pnpm:check:data-cloud-ui-a11y",
       "status": 0,
-      "durationMs": 857
+      "durationMs": 1887
     },
     {
       "command": "pnpm:check:product-a11y-route-matrix",
       "status": 0,
-      "durationMs": 1044
+      "durationMs": 2267
     },
     {
       "command": "pnpm:check:i18n-conformance",
       "status": 0,
-      "durationMs": 1433
+      "durationMs": 2216
     },
     {
       "command": "pnpm:check:product-slo-budgets",
       "status": 0,
-      "durationMs": 932
+      "durationMs": 2101
     },
     {
       "command": "pnpm:check:product-cost-budgets",
       "status": 0,
-      "durationMs": 918
+      "durationMs": 3578
     },
     {
       "command": "pnpm:check:product-domain-invariants",
       "status": 0,
-      "durationMs": 1821
+      "durationMs": 3632
     },
     {
       "command": "pnpm:check:openapi-release-quality",
       "status": 0,
-      "durationMs": 1009
+      "durationMs": 1602
     },
     {
       "command": "pnpm:check:openapi-breaking-changes",
       "status": 0,
-      "durationMs": 2041
+      "durationMs": 3498
     },
     {
       "command": "pnpm:check:data-cloud-runbook-smoke",
       "status": 0,
-      "durationMs": 10430
+      "durationMs": 29858
     },
     {
       "command": "pnpm:check:release-rollback-drill",
       "status": 0,
-      "durationMs": 1260
+      "durationMs": 2245
     },
     {
       "command": "pnpm:check:affected-product-strict-release-profile",
       "status": 0,
-      "durationMs": 951
+      "durationMs": 1472
     },
     {
       "command": "pnpm:check:product-release-readiness",
       "status": 1,
-      "durationMs": 2906
+      "durationMs": 5179
     }
   ],
   "taskMatrixSummary": {
-    "requiredTaskCount": 64,
-    "parsedTaskCount": 64,
+    "requiredTaskCount": 51,
+    "parsedTaskCount": 51,
     "statusCounts": {
-      "Partial": 61,
+      "Partial": 48,
       "Planned": 3
     },
-    "averageMaturityDepth": 2.06,
-    "warningCount": 61,
+    "averageMaturityDepth": 2.08,
+    "warningCount": 37,
     "violationCount": 0
   },
   "incrementalRoadmap": {
-    "generatedAt": "2026-05-27T18:41:10.624Z",
+    "generatedAt": "2026-05-28T20:10:01.007Z",
     "targetMaturityDepth": 5,
-    "remainingTaskCount": 64,
+    "remainingTaskCount": 51,
     "deferredTaskIds": [],
     "waveBuckets": {
       "wave-1-foundation": [
@@ -170,26 +170,13 @@
         48,
         49,
         50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
-        64
+        51
       ]
     },
     "tasks": [
       {
         "id": 8,
-        "title": "AV-P1-005",
+        "title": "Canonical Data Cloud Domain/Journey Pass: Move quality advisory out of client-side heuristic logic into Data Quality/Intelligence endpoint.",
         "status": "Planned",
         "maturityDepth": 1,
         "targetDepth": 5,
@@ -204,7 +191,7 @@
       },
       {
         "id": 5,
-        "title": "AV-P1-002",
+        "title": "Runtime Truth, Route Truth, and Contract Convergence: Promote API contract and integration test modules from advisory when they validate production routes.",
         "status": "Planned",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -219,7 +206,7 @@
       },
       {
         "id": 7,
-        "title": "AV-P1-004",
+        "title": "Canonical Data Cloud Domain/Journey Pass: Replace `storageSize: 0` and client-derived collection stats with backend-owned stats.",
         "status": "Planned",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -234,7 +221,7 @@
       },
       {
         "id": 9,
-        "title": "AV-P1-006",
+        "title": "Canonical Data Cloud Domain/Journey Pass: Connect connector sync results to collection creation/update.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -249,7 +236,7 @@
       },
       {
         "id": 10,
-        "title": "AV-P1-007",
+        "title": "Canonical Data Cloud Domain/Journey Pass: Define one journey contract: connector → sync → collection → schema → quality → lineage → trust.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -264,7 +251,7 @@
       },
       {
         "id": 11,
-        "title": "AV-P1-008",
+        "title": "Outcome-First UI / 0 Cognitive Load Pass: Default nav: Home, Data, Query, Pipelines, Trust, Operations.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -279,7 +266,7 @@
       },
       {
         "id": 12,
-        "title": "AV-P1-009",
+        "title": "Outcome-First UI / 0 Cognitive Load Pass: Move Agents, Memory, Context, Fabric, Plugins, Runtime Truth, Release Truth, Alerts into role/contextual surfaces.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -294,7 +281,7 @@
       },
       {
         "id": 13,
-        "title": "AV-P1-010",
+        "title": "Outcome-First UI / 0 Cognitive Load Pass: Use route registry icons instead of mapping all generated nav icons to `Activity`.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -309,7 +296,7 @@
       },
       {
         "id": 14,
-        "title": "DC-P1-001",
+        "title": "Outcome-First UI / 0 Cognitive Load Pass: Rename “Product mode” / role switcher to avoid permission confusion.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -324,7 +311,7 @@
       },
       {
         "id": 15,
-        "title": "DC-P1-002",
+        "title": "Outcome-First UI / 0 Cognitive Load Pass: Replace hover-only row actions with keyboard-visible action menus.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -339,7 +326,7 @@
       },
       {
         "id": 16,
-        "title": "DC-P1-003",
+        "title": "Outcome-First UI / 0 Cognitive Load Pass: Replace hardcoded strings with i18n keys.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -354,7 +341,7 @@
       },
       {
         "id": 17,
-        "title": "DC-P1-004",
+        "title": "AEP / Action Plane Completion Pass: Complete unified operator model.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -369,7 +356,7 @@
       },
       {
         "id": 18,
-        "title": "DC-P1-005",
+        "title": "AEP / Action Plane Completion Pass: Implement PatternSpec compiler and lifecycle.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -384,7 +371,7 @@
       },
       {
         "id": 19,
-        "title": "DC-P1-006",
+        "title": "AEP / Action Plane Completion Pass: Complete EventCloud SPI boundary.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -399,7 +386,7 @@
       },
       {
         "id": 20,
-        "title": "DC-P1-007",
+        "title": "AEP / Action Plane Completion Pass: Implement learning → recommendation → review → promotion → rollback loop.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -414,7 +401,7 @@
       },
       {
         "id": 21,
-        "title": "DC-P1-008",
+        "title": "AEP / Action Plane Completion Pass: Make replay-safe agent execution mandatory for pattern-linked agents.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -429,7 +416,7 @@
       },
       {
         "id": 22,
-        "title": "DC-P1-009",
+        "title": "AEP / Action Plane Completion Pass: Retire or hide legacy root action routes behind feature flags.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -444,7 +431,7 @@
       },
       {
         "id": 23,
-        "title": "DC-P1-010",
+        "title": "Agent Governance, Mastery, and Safety Pass: Fix documented safety issues: approval/verification flag preservation, tenant source correctness, release tenant ID, mastery item state history validation.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -459,7 +446,7 @@
       },
       {
         "id": 24,
-        "title": "DC-P1-011",
+        "title": "Agent Governance, Mastery, and Safety Pass: Separate execution strategy from supervision level.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -474,7 +461,7 @@
       },
       {
         "id": 25,
-        "title": "DC-P2-012",
+        "title": "Agent Governance, Mastery, and Safety Pass: Enforce policy/tool/memory/replay/guardrail declarations for agent capabilities.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -489,7 +476,7 @@
       },
       {
         "id": 26,
-        "title": "DC-P2-013",
+        "title": "Agent Governance, Mastery, and Safety Pass: Add tenant-scoped agent release and mastery queries.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -504,7 +491,7 @@
       },
       {
         "id": 27,
-        "title": "DC-P2-014",
+        "title": "Audio-Video Productization and Data Cloud Integration: Add product manifest and lifecycle profile or explicitly keep it hidden as experimental.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -519,7 +506,7 @@
       },
       {
         "id": 28,
-        "title": "AEP-P1-001",
+        "title": "Audio-Video Productization and Data Cloud Integration: Enforce media privacy, content safety, artifact retention, biometric-risk, and consent policy.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -534,7 +521,7 @@
       },
       {
         "id": 29,
-        "title": "AEP-P1-002",
+        "title": "Audio-Video Productization and Data Cloud Integration: Connect STT/TTS/Vision/Multimodal outputs to Data Cloud datasets/events/catalog.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -549,7 +536,7 @@
       },
       {
         "id": 30,
-        "title": "AEP-P1-003",
+        "title": "Audio-Video Productization and Data Cloud Integration: Add runtime truth for each media processing dependency.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -564,7 +551,7 @@
       },
       {
         "id": 31,
-        "title": "AEP-P1-004",
+        "title": "Audio-Video Productization and Data Cloud Integration: Add minimal operator UI only after backend lifecycle is coherent.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -579,7 +566,7 @@
       },
       {
         "id": 32,
-        "title": "AEP-P1-005",
+        "title": "Shared Library Boundary Cleanup: Apply the architecture rule: keep only primitives used by three or more unrelated products in platform.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -594,7 +581,7 @@
       },
       {
         "id": 33,
-        "title": "AEP-P1-006",
+        "title": "Shared Library Boundary Cleanup: Move Action Plane runtime semantics to `planes/action`.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -609,7 +596,7 @@
       },
       {
         "id": 34,
-        "title": "AEP-P2-007",
+        "title": "Shared Library Boundary Cleanup: Move Data Cloud storage-plane event routing to `planes/event`.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -624,7 +611,7 @@
       },
       {
         "id": 35,
-        "title": "AGENT-P1-001",
+        "title": "Shared Library Boundary Cleanup: Move retention/redaction/provenance/evidence implementations to `planes/governance`.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -639,7 +626,7 @@
       },
       {
         "id": 36,
-        "title": "AGENT-P1-002",
+        "title": "Shared Library Boundary Cleanup: Move Data Cloud OpenAPI/schemas into `products/data-cloud/contracts`.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -654,7 +641,7 @@
       },
       {
         "id": 37,
-        "title": "AGENT-P1-003",
+        "title": "Security, Privacy, and Permission Matrix Pass: Register production validators centrally and prove they execute at startup.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -669,7 +656,7 @@
       },
       {
         "id": 38,
-        "title": "AGENT-P1-004",
+        "title": "Security, Privacy, and Permission Matrix Pass: Add permission matrix tests for viewer/operator/admin.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -684,7 +671,7 @@
       },
       {
         "id": 39,
-        "title": "AGENT-P1-005",
+        "title": "Security, Privacy, and Permission Matrix Pass: Add tenant mismatch, missing tenant, missing audit, missing policy, policy denial, audit failure tests.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -699,7 +686,7 @@
       },
       {
         "id": 40,
-        "title": "AGENT-P2-006",
+        "title": "Security, Privacy, and Permission Matrix Pass: Add audio-video PII/biometric policy enforcement.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -714,7 +701,7 @@
       },
       {
         "id": 41,
-        "title": "YAPPC-P1-001",
+        "title": "Security, Privacy, and Permission Matrix Pass: Add break-glass tests.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -729,7 +716,7 @@
       },
       {
         "id": 42,
-        "title": "YAPPC-P1-002",
+        "title": "Observability, Reliability, and Idempotency Pass: Extend idempotency beyond entity writes to pipelines, events, governance, analytics, plugins, and agent actions.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -744,7 +731,7 @@
       },
       {
         "id": 43,
-        "title": "YAPPC-P1-003",
+        "title": "Observability, Reliability, and Idempotency Pass: Add correlation IDs to every run/job/action/agent/media flow.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -759,7 +746,7 @@
       },
       {
         "id": 44,
-        "title": "YAPPC-P1-004",
+        "title": "Observability, Reliability, and Idempotency Pass: Add durable job/run status, retry/cancel/rollback states.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -774,7 +761,7 @@
       },
       {
         "id": 45,
-        "title": "YAPPC-P1-005",
+        "title": "Observability, Reliability, and Idempotency Pass: Add dead-letter/failure visibility for async workflows.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -789,7 +776,7 @@
       },
       {
         "id": 46,
-        "title": "YAPPC-P2-006",
+        "title": "Observability, Reliability, and Idempotency Pass: Surface failed jobs in Operations without requiring logs.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -804,7 +791,7 @@
       },
       {
         "id": 47,
-        "title": "YAPPC-P2-007",
+        "title": "Test Consolidation Pass: Promote API contract and integration tests from advisory to release-blocking once stable.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -819,7 +806,7 @@
       },
       {
         "id": 48,
-        "title": "XPROD-P1-001",
+        "title": "Test Consolidation Pass: Add one golden path E2E per main journey.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -834,7 +821,7 @@
       },
       {
         "id": 49,
-        "title": "XPROD-P1-002",
+        "title": "Test Consolidation Pass: Add role/tenant matrix E2E.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -849,7 +836,7 @@
       },
       {
         "id": 50,
-        "title": "XPROD-P1-003",
+        "title": "Test Consolidation Pass: Add pseudo-locale and raw-string enforcement.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -864,202 +851,7 @@
       },
       {
         "id": 51,
-        "title": "XPROD-P1-004",
-        "status": "Partial",
-        "maturityDepth": 2,
-        "targetDepth": 5,
-        "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
-        "requiredForRelease": true,
-        "executionWave": "wave-4-release-ops",
-        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 52,
-        "title": "XPROD-P1-005",
-        "status": "Partial",
-        "maturityDepth": 2,
-        "targetDepth": 5,
-        "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
-        "requiredForRelease": true,
-        "executionWave": "wave-4-release-ops",
-        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 53,
-        "title": "TEST-P1-001",
-        "status": "Partial",
-        "maturityDepth": 2,
-        "targetDepth": 5,
-        "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
-        "requiredForRelease": true,
-        "executionWave": "wave-4-release-ops",
-        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 54,
-        "title": "TEST-P1-002",
-        "status": "Partial",
-        "maturityDepth": 2,
-        "targetDepth": 5,
-        "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
-        "requiredForRelease": true,
-        "executionWave": "wave-4-release-ops",
-        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 55,
-        "title": "TEST-P1-003",
-        "status": "Partial",
-        "maturityDepth": 2,
-        "targetDepth": 5,
-        "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
-        "requiredForRelease": true,
-        "executionWave": "wave-4-release-ops",
-        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 56,
-        "title": "TEST-P2-004",
-        "status": "Partial",
-        "maturityDepth": 2,
-        "targetDepth": 5,
-        "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
-        "requiredForRelease": true,
-        "executionWave": "wave-4-release-ops",
-        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 57,
-        "title": "TEST-P2-005",
-        "status": "Partial",
-        "maturityDepth": 2,
-        "targetDepth": 5,
-        "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
-        "requiredForRelease": true,
-        "executionWave": "wave-4-release-ops",
-        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 58,
-        "title": "TEST-P2-006",
-        "status": "Partial",
-        "maturityDepth": 2,
-        "targetDepth": 5,
-        "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
-        "requiredForRelease": true,
-        "executionWave": "wave-4-release-ops",
-        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 59,
-        "title": "QUAL-P2-001",
-        "status": "Partial",
-        "maturityDepth": 2,
-        "targetDepth": 5,
-        "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
-        "requiredForRelease": true,
-        "executionWave": "wave-4-release-ops",
-        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 60,
-        "title": "QUAL-P2-002",
-        "status": "Partial",
-        "maturityDepth": 2,
-        "targetDepth": 5,
-        "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
-        "requiredForRelease": true,
-        "executionWave": "wave-4-release-ops",
-        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 61,
-        "title": "QUAL-P2-003",
-        "status": "Partial",
-        "maturityDepth": 2,
-        "targetDepth": 5,
-        "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
-        "requiredForRelease": true,
-        "executionWave": "wave-4-release-ops",
-        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 62,
-        "title": "QUAL-P2-004",
-        "status": "Partial",
-        "maturityDepth": 2,
-        "targetDepth": 5,
-        "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
-        "requiredForRelease": true,
-        "executionWave": "wave-4-release-ops",
-        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 63,
-        "title": "QUAL-P2-005",
-        "status": "Partial",
-        "maturityDepth": 2,
-        "targetDepth": 5,
-        "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
-        "requiredForRelease": true,
-        "executionWave": "wave-4-release-ops",
-        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 64,
-        "title": "QUAL-P3-006",
+        "title": "Test Consolidation Pass: Add keyboard/a11y tests for tables, nav, disabled surfaces, dialogs, and row actions.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -1074,7 +866,7 @@
       },
       {
         "id": 1,
-        "title": "AV-P0-001",
+        "title": "Runtime Truth, Route Truth, and Contract Convergence: Finish route manifest Phase 2–4: manifest → UI runtime truth, OpenAPI validator, SDK metadata.",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -1089,7 +881,7 @@
       },
       {
         "id": 2,
-        "title": "AV-P0-002",
+        "title": "Runtime Truth, Route Truth, and Contract Convergence: Rename UI `RouteCapabilityRegistry` terminology to `RouteSurfaceRegistry` / runtime truth aligned names.",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -1104,7 +896,7 @@
       },
       {
         "id": 3,
-        "title": "AV-P0-003",
+        "title": "Runtime Truth, Route Truth, and Contract Convergence: Fix documented `RouteSecurityRegistry.java` path mismatch.",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -1119,7 +911,7 @@
       },
       {
         "id": 4,
-        "title": "AV-P1-001",
+        "title": "Runtime Truth, Route Truth, and Contract Convergence: Make route aliases explicitly classified as canonical, compatibility, preview, or hidden.",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -1134,7 +926,7 @@
       },
       {
         "id": 6,
-        "title": "AV-P1-003",
+        "title": "Canonical Data Cloud Domain/Journey Pass: Promote `dc_collections` from generic entity metadata to a typed collection registry contract.",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,

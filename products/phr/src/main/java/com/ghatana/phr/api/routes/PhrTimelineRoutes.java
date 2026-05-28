@@ -19,7 +19,7 @@ import java.util.Objects;
  * Clinical timeline API for the PHR product.
  *
  * <p>Returns a chronological list of health events for a patient.
- * Patients may access their own timeline. Clinical roles may access any patient's timeline.
+ * Access follows the standard patient-record access policy.
  *
  * @doc.type class
  * @doc.purpose ActiveJ route adapter serving the patient health timeline
@@ -37,11 +37,7 @@ public final class PhrTimelineRoutes {
     public PhrTimelineRoutes(Eventloop eventloop, RecordService recordService, PhrPolicyEvaluator policyEvaluator) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.recordService = Objects.requireNonNull(recordService, "recordService must not be null");
-        this.policyEvaluator = policyEvaluator;
-    }
-
-    public PhrTimelineRoutes(Eventloop eventloop, RecordService recordService) {
-        this(eventloop, recordService, null);
+        this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 
     /**
@@ -66,13 +62,8 @@ public final class PhrTimelineRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        Promise<Boolean> accessCheck;
-        if (policyEvaluator == null) {
-            accessCheck = Promise.of(canAccessWithoutPolicyEvaluator(context, patientId));
-        } else {
-            accessCheck = policyEvaluator.canAccessPatientRecordAsync(context, patientId)
-                .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);
-        }
+        Promise<Boolean> accessCheck = policyEvaluator.canAccessPatientRecordAsync(context, patientId)
+            .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);
 
         return accessCheck.then(allowed -> {
             if (!allowed) {
@@ -133,13 +124,8 @@ public final class PhrTimelineRoutes {
             context.correlationId()
         );
 
-        Promise<Boolean> accessCheck;
-        if (policyEvaluator == null) {
-            accessCheck = Promise.of(canAccessWithoutPolicyEvaluator(context, patientId));
-        } else {
-            accessCheck = policyEvaluator.canAccessPatientRecordAsync(context, patientId)
-                .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);
-        }
+        Promise<Boolean> accessCheck = policyEvaluator.canAccessPatientRecordAsync(context, patientId)
+            .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);
 
         return accessCheck.then(allowed -> {
             if (!allowed) {
@@ -169,11 +155,5 @@ public final class PhrTimelineRoutes {
                     return PhrRouteSupport.jsonResponseWithCorrelation(200, response, context.correlationId());
                 });
         });
-    }
-
-    private static boolean canAccessWithoutPolicyEvaluator(PhrRouteSupport.PhrRequestContext context, String patientId) {
-        return ("patient".equals(context.role()) && context.principalId().equals(patientId))
-            || "clinician".equals(context.role())
-            || "admin".equals(context.role());
     }
 }

@@ -1,5 +1,5 @@
 /**
- * Tests for OcrReviewPage — verifies loading, error, confirmed states and edit flow.
+ * Tests for OcrReviewPage: verifies loading, error, confirm, edit, and reject flows.
  */
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
@@ -9,6 +9,7 @@ import { OcrReviewPage } from '../OcrReviewPage';
 vi.mock('../../api/documentsApi', () => ({
   fetchOcrDocument: vi.fn(),
   confirmOcrDocument: vi.fn(),
+  rejectOcrDocument: vi.fn(),
 }));
 
 vi.mock('../../i18n/phrI18n', () => ({
@@ -19,6 +20,7 @@ vi.mock('../../i18n/phrI18n', () => ({
 }));
 
 vi.mock('react-router-dom', () => ({
+  useParams: () => ({ docId: 'doc-001' }),
   useSearchParams: () => [new URLSearchParams('documentId=doc-001')],
 }));
 
@@ -37,22 +39,26 @@ vi.mock('../../auth/PhrSessionContext', () => ({
   }),
 }));
 
-import { fetchOcrDocument, confirmOcrDocument } from '../../api/documentsApi';
+import { fetchOcrDocument, confirmOcrDocument, rejectOcrDocument } from '../../api/documentsApi';
 
-const mockFetch = fetchOcrDocument as ReturnType<typeof vi.fn>;
-const mockConfirm = confirmOcrDocument as ReturnType<typeof vi.fn>;
+const mockFetch = vi.mocked(fetchOcrDocument);
+const mockConfirm = vi.mocked(confirmOcrDocument);
+const mockReject = vi.mocked(rejectOcrDocument);
 
 const ocrDoc = {
   id: 'doc-001',
   title: 'Lab Report 2025',
   confidence: 0.92,
   extractedText: 'Hemoglobin: 12.5 g/dL\nGlucose: 98 mg/dL',
+  ocrText: 'Hemoglobin: 12.5 g/dL\nGlucose: 98 mg/dL',
+  status: 'pending_review' as const,
 };
 
 describe('OcrReviewPage', () => {
   beforeEach(() => {
     mockFetch.mockReset();
     mockConfirm.mockReset();
+    mockReject.mockReset();
   });
 
   it('shows loading indicator while fetching', () => {
@@ -84,25 +90,59 @@ describe('OcrReviewPage', () => {
 
   it('calls confirmOcrDocument on confirm button click', async () => {
     mockFetch.mockResolvedValue(ocrDoc);
-    mockConfirm.mockResolvedValue(undefined);
+    mockConfirm.mockResolvedValue({ ...ocrDoc, status: 'confirmed' });
     render(<OcrReviewPage />);
-    await waitFor(() => screen.getByText('documents.ocr.confirm'));
-    fireEvent.click(screen.getByText('documents.ocr.confirm'));
+    await waitFor(() => screen.getByText('ocr.confirm'));
+    fireEvent.click(screen.getByText('ocr.confirm'));
     await waitFor(() =>
       expect(mockConfirm).toHaveBeenCalledWith(
         'doc-001',
         { tenantId: 't1', principalId: 'patient-42', role: 'patient' },
         ocrDoc.extractedText,
-      )
+      ),
     );
   });
 
   it('shows success status after confirm', async () => {
     mockFetch.mockResolvedValue(ocrDoc);
-    mockConfirm.mockResolvedValue(undefined);
+    mockConfirm.mockResolvedValue({ ...ocrDoc, status: 'confirmed' });
     render(<OcrReviewPage />);
-    await waitFor(() => screen.getByText('documents.ocr.confirm'));
-    fireEvent.click(screen.getByText('documents.ocr.confirm'));
-    await waitFor(() => expect(screen.getByRole('status')).toBeTruthy());
+    await waitFor(() => screen.getByText('ocr.confirm'));
+    fireEvent.click(screen.getByText('ocr.confirm'));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('ocr.success'));
+  });
+
+  it('sends edited OCR text on confirm', async () => {
+    mockFetch.mockResolvedValue(ocrDoc);
+    mockConfirm.mockResolvedValue({ ...ocrDoc, status: 'confirmed' });
+    render(<OcrReviewPage />);
+
+    const textarea = await screen.findByRole('textbox') as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: 'Corrected hemoglobin value' } });
+    fireEvent.click(screen.getByText('ocr.confirm'));
+
+    await waitFor(() =>
+      expect(mockConfirm).toHaveBeenCalledWith(
+        'doc-001',
+        { tenantId: 't1', principalId: 'patient-42', role: 'patient' },
+        'Corrected hemoglobin value',
+      ),
+    );
+  });
+
+  it('rejects OCR review', async () => {
+    mockFetch.mockResolvedValue(ocrDoc);
+    mockReject.mockResolvedValue({ documentId: 'doc-001', rejected: true });
+    render(<OcrReviewPage />);
+
+    fireEvent.click(await screen.findByText('ocr.reject'));
+
+    await waitFor(() =>
+      expect(mockReject).toHaveBeenCalledWith(
+        'doc-001',
+        { tenantId: 't1', principalId: 'patient-42', role: 'patient' },
+      ),
+    );
+    expect(await screen.findByRole('status')).toHaveTextContent('ocr.rejected');
   });
 });

@@ -81,7 +81,7 @@ public final class PhrNotificationRoutes {
                     .map(entry -> {
                         Map<String, Object> map = new java.util.HashMap<>();
                         map.put("id", entry.id());
-                        map.put("type", entry.notificationType());
+                        map.put("type", notificationContractType(entry.notificationType()));
                         // Apply PHI redaction to notification title and body
                         String title = getNotificationTitle(entry.notificationType());
                         String body = getNotificationBody(entry.notificationType());
@@ -178,6 +178,16 @@ public final class PhrNotificationRoutes {
             case "LAB_RESULT_AVAILABLE" -> "Lab Result Available";
             case "SYSTEM" -> "System Notification";
             default -> "Notification";
+        };
+    }
+
+    private String notificationContractType(String notificationType) {
+        return switch (notificationType) {
+            case "CONSENT_CHANGE_GRANTED", "CONSENT_CHANGE_REVOKED", "CONSENT_EXPIRY" -> "consent_expiry";
+            case "APPOINTMENT_REMINDER_SCHEDULED", "APPOINTMENT_REMINDER_CANCELLED" -> "appointment_reminder";
+            case "LAB_RESULT_AVAILABLE" -> "lab_result";
+            case "EMERGENCY_ACCESS_GRANTED", "EMERGENCY_ACCESS_REVIEW_REQUIRED" -> "emergency_access";
+            default -> "system";
         };
     }
 

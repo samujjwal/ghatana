@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, Badge } from '@ghatana/design-system';
-import { fetchNotifications } from '../api/notificationsApi';
+import { Card, CardContent, CardHeader, Badge, Button } from '@ghatana/design-system';
+import { fetchNotifications, markNotificationRead } from '../api/notificationsApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import { logError } from '../utils/safeLogger';
@@ -23,6 +23,7 @@ export function NotificationsPage(): React.ReactElement {
   const [notifications, setNotifications] = useState<NotificationSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [markingId, setMarkingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session) return;
@@ -36,9 +37,27 @@ export function NotificationsPage(): React.ReactElement {
       .finally(() => setLoading(false));
   }, [session]);
 
-  // PHI safety: Backend notification service must ensure that notification
-  // title and body fields never contain PHI (patient names, record IDs, etc.).
-  // Frontend displays notifications as-is; PHI redaction is enforced server-side.
+  async function handleMarkRead(notificationId: string): Promise<void> {
+    if (!session) return;
+    setMarkingId(notificationId);
+    setError(null);
+    try {
+      await markNotificationRead(notificationId, {
+        tenantId: session.tenantId,
+        principalId: session.principalId,
+        role: session.role,
+      });
+      const readAt = new Date().toISOString();
+      setNotifications((current) => current.map((notification) => (
+        notification.id === notificationId ? { ...notification, readAt } : notification
+      )));
+    } catch (err: unknown) {
+      logError('Failed to mark notification as read', undefined, { notificationId, error: err });
+      setError(err instanceof Error ? err.message : t('notifications.markReadError'));
+    } finally {
+      setMarkingId(null);
+    }
+  }
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('notifications.loading')}</div>;
   if (error) return <div className="error" role="alert">{t('notifications.error')}: {error}</div>;
@@ -68,6 +87,19 @@ export function NotificationsPage(): React.ReactElement {
                 <strong>{n.title}</strong>
                 <p>{n.body}</p>
                 <small>{new Date(n.createdAt).toLocaleString()}</small>
+                {!n.readAt ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={markingId === n.id}
+                    onClick={() => void handleMarkRead(n.id)}
+                  >
+                    {markingId === n.id ? t('notifications.markingRead') : t('notifications.markRead')}
+                  </Button>
+                ) : (
+                  <small>{t('notifications.read')}</small>
+                )}
               </div>
             ))}
           </div>

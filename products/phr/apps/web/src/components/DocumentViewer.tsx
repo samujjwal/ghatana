@@ -83,7 +83,7 @@ export function DocumentViewer({
           title={title}
           className="document-viewer-iframe"
           sandbox="allow-same-origin allow-scripts"
-          aria-label={`Document preview: ${title}`}
+          aria-label={t('documents.preview.named', { title })}
         />
         
         <div className="document-viewer-footer">

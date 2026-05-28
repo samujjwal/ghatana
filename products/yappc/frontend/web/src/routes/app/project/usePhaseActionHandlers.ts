@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+﻿import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import type { NavigateFunction } from 'react-router';
 
@@ -53,7 +53,49 @@ const RUN_OPERATION_MAP: Record<string, RunPostDecision> = {
   'run.observe': 'observe',
 };
 
-export function usePhaseActionHandlers({
+
+/**
+ * Resolves the run context from multiple sources in priority order.
+ *
+ * Priority:
+ * 1. action.parameters.runId (backend-provided run ID for this specific action)
+ * 2. action.parameters.latestRunId (backend-provided latest run ID)
+ * 3. packet.platformRunStatus?.runId (backend packet platform run status)
+ * 4. actionResult?.runId (frontend action result fallback)
+ *
+ * This ensures that backend-provided run context is used when available,
+ * allowing actions to work correctly after page refresh when the backend
+ * packet contains the platform run status.
+ */
+function resolveRunContext(
+  action: PhaseAction,
+  packet: PhaseCockpitPacket | null,
+  actionResult: PhaseActionResult | null,
+): string | null {
+  // Priority 1: Backend action parameter runId
+  const actionRunId = action.parameters.runId as string | undefined;
+  if (actionRunId) {
+    return actionRunId;
+  }
+
+  // Priority 2: Backend action parameter latestRunId
+  const latestRunId = action.parameters.latestRunId as string | undefined;
+  if (latestRunId) {
+    return latestRunId;
+  }
+
+  // Priority 3: Backend packet platform run status
+  if (packet?.platformRunStatus?.runId) {
+    return packet.platformRunStatus.runId;
+  }
+
+  // Priority 4: Frontend action result fallback
+  if (actionResult?.runId) {
+    return actionResult.runId;
+  }
+
+  return null;
+}export function usePhaseActionHandlers({
   phase,
   projectId,
   packet,
@@ -145,7 +187,7 @@ export function usePhaseActionHandlers({
     const operation = action.serverOperation ?? action.actionId;
     const generateDecision = GENERATE_OPERATION_MAP[operation];
     if (generateDecision) {
-      if (!projectId || !actionResult?.runId) {
+      if (!projectId || !resolveRunContext(action, packet, actionResult)) {
         setActionError(t('phaseCockpit.errors.missingGenerationRunContext'));
         return true;
       }
@@ -156,7 +198,7 @@ export function usePhaseActionHandlers({
 
       generateReviewMutation.mutate({
         projectId,
-        runId: actionResult.runId,
+        runId: resolveRunContext(action, packet, actionResult) ?? '',
         decision: generateDecision,
         actorId: currentUser.id,
         reason: t('phaseCockpit.generateReview.reason', { reviewer: currentUser.email ?? currentUser.id }),
@@ -166,21 +208,23 @@ export function usePhaseActionHandlers({
 
     const runDecision = RUN_OPERATION_MAP[operation];
     if (runDecision) {
-      if (!projectId || !actionResult?.runId) {
+      if (!projectId || !resolveRunContext(action, packet, actionResult)) {
         setActionError(t('phaseCockpit.errors.missingRunContext'));
         return true;
       }
 
       runPostActionMutation.mutate({
         projectId,
-        runId: actionResult.runId,
+        runId: resolveRunContext(action, packet, actionResult) ?? '',
         action: runDecision,
+        targetVersion: action.parameters.targetVersion as string | undefined,
+        targetEnvironment: action.parameters.targetEnvironment as string | undefined,
       });
       return true;
     }
 
     return false;
-  }, [actionResult?.runId, currentUser?.email, currentUser?.id, generateReviewMutation, projectId, runPostActionMutation, t]);
+  }, [actionResult, currentUser?.email, currentUser?.id, generateReviewMutation, packet, projectId, runPostActionMutation, t]);
 
   const isActionPending = useCallback((action: PhaseAction): boolean => {
     const operation = action.serverOperation ?? action.actionId;

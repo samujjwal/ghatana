@@ -30,6 +30,13 @@ const violations = [];
 const warnings = [];
 const evidence = [];
 
+function parseAffectedProducts(rawValue = process.env.AFFECTED_PRODUCTS ?? '') {
+  return rawValue
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
 function logError(message) {
   violations.push(message);
   console.error(`❌ ERROR: ${message}`);
@@ -80,6 +87,7 @@ function validateRequiredEvidenceFiles() {
 function validateEvidenceFreshness() {
   const freshnessViolations = findEvidenceCurrentCommitViolations(repoRoot, {
     skipProductReleaseReadiness: process.env.DATACLOUD_RELEASE_GATE_BOOTSTRAP === 'product-release-readiness',
+    affectedProducts: parseAffectedProducts(),
   });
   if (freshnessViolations.length > 0) {
     for (const violation of freshnessViolations) {

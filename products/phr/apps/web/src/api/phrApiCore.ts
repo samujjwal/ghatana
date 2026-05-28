@@ -36,20 +36,8 @@ import type {
 } from '../types';
 import { t } from '../i18n/phrI18n';
 import {
-  extractBundleEntries,
-  FhirAppointmentSchema,
-  FhirBundleSchema,
   FhirConsentSchema,
-  FhirMedicationRequestSchema,
-  FhirObservationSchema,
-  FhirPatientSchema,
-  fhirAppointmentToSummary,
   fhirConsentToGrant,
-  fhirMedicationRequestToRecord,
-  fhirMedicationRequestToSummary,
-  fhirObservationToLabResult,
-  fhirObservationToRecord,
-  fhirPatientToProfile,
 } from './fhirMappers';
 import {
   AppointmentBookingResultSchema,
@@ -60,6 +48,7 @@ import {
   AuditEventsPageSchema,
   BackendConsentGrantRequestSchema,
   BackendDashboardSchema,
+  BackendMedicationPrescriptionSchema,
   ConditionSummarySchema,
   ConsentGrantSchema,
   ConsentRevokeResultSchema,
@@ -82,6 +71,7 @@ import {
   OcrRejectResultSchema,
   OcrReviewDocumentSchema,
   PatientProfileExtendedSchema,
+  PatientRecordListSchema,
   PatientRecordAccessSchema,
   PatientRosterEntrySchema,
   PhrReleaseReadinessSchema,
@@ -300,7 +290,7 @@ export async function fetchPatientProfile(context: SessionContext): Promise<Pati
 
 export async function updatePatientProfile(
   update: PatientProfileUpdateRequest,
-  context: { tenantId: string; principalId: string; correlationId?: string; idempotencyKey?: string },
+  context: { tenantId: string; principalId: string; role?: string; correlationId?: string; idempotencyKey?: string },
 ): Promise<PatientProfileExtended> {
   const data = await phrFetch('/profile', {
     method: 'PUT',
@@ -506,9 +496,9 @@ function uploadDocumentWithProgress(
 // --- Medications ---
 
 export async function fetchMedications(principalId: string, context: SessionContext): Promise<MedicationSummary[]> {
-  const body = z.object({ items: z.array(MedicationSummarySchema) })
-    .parse(await phrFetch(`/medications?patientId=${encodeURIComponent(principalId)}`, { context }));
-  return body.items;
+  const body = z.object({ items: z.array(BackendMedicationPrescriptionSchema) })
+    .parse(await phrFetch(`/clinical/medications?patientId=${encodeURIComponent(principalId)}`, { context }));
+  return body.items.map(toMedicationSummary);
 }
 
 export async function fetchMedicationDetail(
@@ -516,19 +506,28 @@ export async function fetchMedicationDetail(
   medicationId: string,
   context: SessionContext,
 ): Promise<MedicationSummary & { interactions: string[]; warnings: string[]; history: Array<{ date: string; action: string }> }> {
-  const response = z.object({
-    medication: MedicationSummarySchema,
-    interactions: z.array(z.string()),
-    warnings: z.array(z.string()),
-    history: z.array(z.object({ date: z.string(), action: z.string() })),
-  }).parse(await phrFetch(`/medications/${encodeURIComponent(medicationId)}?patientId=${encodeURIComponent(patientId)}`, { context }));
+  const prescription = BackendMedicationPrescriptionSchema.parse(
+    await phrFetch(`/clinical/medications/prescriptions/${encodeURIComponent(medicationId)}?patientId=${encodeURIComponent(patientId)}`, { context }),
+  );
+  const medication = toMedicationSummary(prescription);
 
   return MedicationDetailSchema.parse({
-    ...response.medication,
-    interactions: response.interactions,
-    warnings: response.warnings,
-    history: response.history,
+    ...medication,
+    interactions: [],
+    warnings: prescription.refillsRemaining === 0 ? [t('medicationDetail.warning.noRefills')] : [],
+    history: prescription.prescribedAt ? [{ date: prescription.prescribedAt, action: t('medicationDetail.action.prescribed') }] : [],
   });
+}
+
+function toMedicationSummary(prescription: z.infer<typeof BackendMedicationPrescriptionSchema>): MedicationSummary {
+  return {
+    id: prescription.id,
+    medication: prescription.medicationName,
+    dosage: prescription.dosage,
+    schedule: prescription.indication ?? t('common.unknown'),
+    adherence: 100,
+    status: prescription.status?.toLowerCase() === 'discontinued' ? 'stopped' : 'active',
+  };
 }
 
 // --- Appointments ---
@@ -599,40 +598,19 @@ export async function fetchRecords(
     dateTo?: string;
   },
 ): Promise<PatientRecordSummary[]> {
-  const [obsBundle, medBundle] = await Promise.all([
-    fhirGet('Observation', undefined, context),
-    fhirGet('MedicationRequest', undefined, context),
-  ]);
+  const url = new URL(`${API_BASE_URL}/patients/${encodeURIComponent(patientId)}/records`);
+  url.searchParams.set('limit', '50');
+  url.searchParams.set('offset', '0');
+  if (filters?.category) url.searchParams.set('category', filters.category);
+  if (filters?.resourceType) url.searchParams.set('resourceType', filters.resourceType);
+  if (filters?.dateFrom) url.searchParams.set('dateFrom', filters.dateFrom);
+  if (filters?.dateTo) url.searchParams.set('dateTo', filters.dateTo);
 
-  const observations = extractBundleEntries(FhirBundleSchema.parse(obsBundle))
-    .map(r => FhirObservationSchema.parse(r));
-  const obsRecords = observations.map(fhirObservationToRecord);
-
-  const medications_raw = extractBundleEntries(FhirBundleSchema.parse(medBundle))
-    .map(r => FhirMedicationRequestSchema.parse(r));
-  const medRecords = medications_raw.map(fhirMedicationRequestToRecord);
-
-  let records = [...obsRecords, ...medRecords];
-  
-  // Apply filters
-  if (filters) {
-    if (filters.category) {
-      records = records.filter(r => r.category === filters.category);
-    }
-    if (filters.resourceType) {
-      records = records.filter(r => r.resourceType === filters.resourceType);
-    }
-	    if (filters.dateFrom) {
-	      const dateFrom = filters.dateFrom;
-	      records = records.filter(r => new Date(r.updatedAt) >= new Date(dateFrom));
-	    }
-	    if (filters.dateTo) {
-	      const dateTo = filters.dateTo;
-	      records = records.filter(r => new Date(r.updatedAt) <= new Date(dateTo));
-	    }
-  }
-  
-  return records;
+  const body = await phrFetch(`${url.pathname}${url.search}`, {
+    context,
+    expectedSchema: PatientRecordListSchema,
+  });
+  return body.items;
 }
 
 export async function fetchRecordDetail(
@@ -702,6 +680,23 @@ export async function fetchNotifications(principalId: string, context: SessionCo
   const body = z.object({ items: z.array(NotificationSummarySchema) })
     .parse(await phrFetch(`/notifications?principalId=${encodeURIComponent(principalId)}`, { context }));
   return body.items;
+}
+
+export async function markNotificationRead(
+  notificationId: string,
+  context: SessionContext & { idempotencyKey?: string },
+): Promise<{ notificationId: string; read: boolean }> {
+  if (!notificationId.trim()) {
+    throw new PhrApiError('notificationId is required to mark a notification as read', 400, 'Notification');
+  }
+  return phrFetch(`/notifications/${encodeURIComponent(notificationId)}/read`, {
+    method: 'POST',
+    context: withIdempotency(context),
+    expectedSchema: z.object({
+      notificationId: z.string(),
+      read: z.boolean(),
+    }),
+  });
 }
 
 // --- Provider ---
