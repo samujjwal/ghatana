@@ -5,6 +5,7 @@ All notable YAPPC product changes are summarized here. Entries should describe r
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
+- **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`7d8f07d`](https://github.com/samujjwal/ghatana/commit/7d8f07d5bf556c8e8e6300ecaf11920b6ea64d84)
 - **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`2a37e8d`](https://github.com/samujjwal/ghatana/commit/2a37e8d0702271a10d47f5707a2720fd657c7f54)
 - **Changed**: dfa fda fda fda 7 [`597868b`](https://github.com/samujjwal/ghatana/commit/597868bfc2596e046a20f6bdc5733cfb01bcb4ff)
 - **Changed**: dfa fda fda fda 6 [`8f988d4`](https://github.com/samujjwal/ghatana/commit/8f988d48343a0eb386f5631d0d6b3d2f7dad96be)
