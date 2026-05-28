@@ -1,4 +1,4 @@
 export {
   loginWithCredentials,
   logoutSession,
-} from './phrApi';
+} from './phrApiCore';

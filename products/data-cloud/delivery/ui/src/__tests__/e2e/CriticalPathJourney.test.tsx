@@ -10,7 +10,8 @@
  * @doc.layer frontend
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, cleanup } from '@testing-library/react';
+import { render, cleanup, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { TestWrapper } from '../test-utils/wrapper';
 import React from 'react';
 
@@ -80,6 +81,36 @@ vi.mock('../../features/collection/components/CollectionForm', () => ({
     CollectionForm: () => React.createElement('form', { 'data-testid': 'collection-form' }),
 }));
 
+vi.mock('../../features/data-fabric/services/api', () => ({
+    dataConnectorApi: {
+        getAll: vi.fn().mockResolvedValue([
+            {
+                id: 'journey-connector-1',
+                name: 'Journey Connector',
+                sourceType: 'postgres',
+                storageProfileId: 'profile-1',
+                connectionConfig: { host: 'localhost' },
+                syncSchedule: '0 * * * *',
+                status: 'active',
+                isEnabled: true,
+                createdAt: '2026-05-01T00:00:00Z',
+                updatedAt: '2026-05-28T00:00:00Z',
+                tenantId: 'tenant-a',
+            },
+        ]),
+        triggerSync: vi.fn().mockResolvedValue({ jobId: 'journey-job-1' }),
+        getSyncStatistics: vi.fn().mockResolvedValue({
+            connectorId: 'journey-connector-1',
+            totalRecords: 10,
+            lastSyncRecords: 5,
+            totalDuration: 10,
+            lastSyncDuration: 5,
+            errorCount: 0,
+        }),
+        delete: vi.fn(),
+    },
+}));
+
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 vi.mock('@ghatana/canvas/flow', () => ({
@@ -106,6 +137,8 @@ import { TrustCenter } from '../../pages/TrustCenter';
 import { MemoryPlaneViewerPage } from '../../pages/MemoryPlaneViewerPage';
 import { DataFabricPage } from '../../pages/DataFabricPage';
 import { EditCollectionPage } from '../../pages/EditCollectionPage';
+import { DataConnectorsPage } from '../../features/data-fabric/components/DataConnectorsPage';
+import { collectionsApi } from '../../lib/api/collections';
 
 // ── Journey helpers ───────────────────────────────────────────────────────────
 
@@ -174,6 +207,34 @@ describe('CriticalPathJourney', () => {
             expect(document.body).toBeTruthy();
             cleanup();
         });
+
+        it('connector sync invalidates and refreshes active collection queries in the same journey context', async () => {
+            const user = userEvent.setup();
+            const listMock = vi.mocked(collectionsApi.list);
+
+            render(
+                <>
+                    <DataExplorer />
+                    <DataConnectorsPage onCreateClick={vi.fn()} onEditClick={vi.fn()} />
+                </>,
+                { wrapper: TestWrapper },
+            );
+
+            await screen.findByText('Journey Connector');
+
+            await waitFor(() => {
+                expect(listMock.mock.calls.length).toBeGreaterThanOrEqual(1);
+            });
+
+            const callsBeforeSync = listMock.mock.calls.length;
+            await user.click(screen.getByTitle('Trigger sync'));
+
+            await waitFor(() => {
+                expect(listMock.mock.calls.length).toBeGreaterThan(callsBeforeSync);
+            });
+
+            cleanup();
+        });
     });
 
     describe('Step 6 — Monitor Events', () => {
@@ -228,4 +289,5 @@ describe('CriticalPathJourney', () => {
             cleanup();
         });
     });
+
 });

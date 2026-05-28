@@ -40,10 +40,13 @@ for (const route of jsonContract.routes) {
   }
 }
 
-// Check for featureFlag = false (disabled routes)
+// Feature flags are no longer route-state metadata. The canonical contract
+// uses stability plus hidden/blocked booleans so direct-link handling is
+// deterministic and generated from one JSON source.
 for (const route of jsonContract.routes) {
-  if (route.featureFlag === false) {
-    console.warn(`WARNING: Route '${route.path}' has featureFlag = false (disabled)`);
+  if (Object.prototype.hasOwnProperty.call(route, 'featureFlag')) {
+    console.error(`ERROR: Route '${route.path}' uses legacy featureFlag route metadata`);
+    hasErrors = true;
   }
 }
 

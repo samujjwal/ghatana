@@ -250,8 +250,6 @@
   "route.group.provider": "Provider",
   "route.group.caregiver": "Caregiver",
   "route.group.fchv": "Community Health",
-  "featureFlag.comingSoon": "This feature is coming soon.",
-  "featureFlag.deferred": "This area is being built. Check back soon.",
   "route.profile.label": "My Profile",
   "route.profile.description": "Personal health profile and preferences.",
   "route.timeline.label": "Timeline",

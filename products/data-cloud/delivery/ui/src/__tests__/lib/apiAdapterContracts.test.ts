@@ -68,7 +68,7 @@ describe('frontend adapter contracts', () => {
             createdAt: '2026-04-14T10:00:00Z',
             updatedAt: '2026-04-14T10:05:00Z',
             createdBy: 'contract-runner',
-            lifecycleStatus: 'DRAFT',
+            lifecycleStatus: 'UNKNOWN',
             operationalStatus: 'unknown',
             owner: 'contract-runner',
           },
@@ -103,7 +103,7 @@ describe('frontend adapter contracts', () => {
         schema: { fields: [] },
         tags: ['ops'],
         createdBy: 'unknown',
-        lifecycleStatus: 'DRAFT',
+        lifecycleStatus: 'UNKNOWN',
         operationalStatus: 'unknown',
         owner: 'unknown',
       });
@@ -166,6 +166,78 @@ describe('frontend adapter contracts', () => {
         qualityScore: 0.91,
       });
     });
+
+    it('maps backend collection registry stats fields without UI-only fabrication', async () => {
+      mockApiClient.get.mockResolvedValue({
+        entities: [
+          {
+            id: 'col-4',
+            collection: 'dc_collections',
+            data: {
+              name: 'Telemetry',
+              description: 'Registry-backed collection',
+              schemaType: 'timeseries',
+              status: 'active',
+              entityCount: 1200,
+              schema: { fields: [{ name: 'ts', type: 'timestamp' }] },
+              tags: ['ops'],
+              createdBy: 'platform',
+              lifecycleStatus: 'PUBLISHED',
+              operationalStatus: 'healthy',
+              owner: 'platform-ops',
+              qualityScore: 0.88,
+              qualityMetrics: {
+                completeness: 0.92,
+                timeliness: 0.86,
+              },
+              storageSizeBytes: '4096',
+            },
+            createdAt: '2026-04-14T11:00:00Z',
+            updatedAt: '2026-04-14T11:30:00Z',
+          },
+        ],
+        count: 1,
+        tenantId: 'tenant-a',
+        timestamp: '2026-04-14T11:31:00Z',
+      });
+
+      const response = await collectionsApi.list({ page: 1, pageSize: 10 });
+
+      expect(response.items[0]).toMatchObject({
+        id: 'col-4',
+        lifecycleStatus: 'PUBLISHED',
+        operationalStatus: 'healthy',
+        qualityScore: 0.88,
+        qualityMetrics: {
+          completeness: 0.92,
+          timeliness: 0.86,
+        },
+        storageSizeBytes: 4096,
+      });
+    });
+
+    it('getStats reflects backend collection metadata values', async () => {
+      mockApiClient.get.mockResolvedValue({
+        id: 'col-5',
+        collection: 'dc_collections',
+        data: {
+          name: 'Logs',
+          schema: { fields: [] },
+          entityCount: 512,
+          storageSizeBytes: 2048,
+        },
+        createdAt: '2026-04-14T10:00:00Z',
+        updatedAt: '2026-04-14T12:00:00Z',
+      });
+
+      const stats = await collectionsApi.getStats('col-5');
+
+      expect(stats).toEqual({
+        entityCount: 512,
+        storageSize: 2048,
+        lastUpdated: '2026-04-14T12:00:00Z',
+      });
+    });
   });
 
   describe('workflowsApi', () => {
@@ -195,7 +267,7 @@ describe('frontend adapter contracts', () => {
 
       const response = await workflowsApi.list({ page: 1, pageSize: 10, status: 'active' });
 
-      expect(mockApiClient.get).toHaveBeenCalledWith('/pipelines', {
+      expect(mockApiClient.get).toHaveBeenCalledWith('/action/pipelines', {
         params: { limit: 10, status: 'active' },
       });
       expect(response).toEqual({
@@ -263,14 +335,14 @@ describe('frontend adapter contracts', () => {
       expect(created.createdBy).toBe('builder');
       expect(updated.status).toBe('paused');
       expect(updated.description).toBe('Updated pipeline');
-      expect(mockApiClient.post).toHaveBeenCalledWith('/pipelines', {
+      expect(mockApiClient.post).toHaveBeenCalledWith('/action/pipelines', {
         name: 'New Workflow',
         description: 'Saved pipeline',
         nodes: [],
         edges: [],
         tags: ['draft'],
       });
-      expect(mockApiClient.put).toHaveBeenCalledWith('/pipelines/wf-2', {
+      expect(mockApiClient.put).toHaveBeenCalledWith('/action/pipelines/wf-2', {
         status: 'paused',
         description: 'Updated pipeline',
       });
@@ -286,7 +358,7 @@ describe('frontend adapter contracts', () => {
 
       const execution = await workflowsApi.execute('wf-1', { input: { dryRun: true } });
 
-      expect(mockApiClient.post).toHaveBeenCalledWith('/pipelines/wf-1/execute', {
+      expect(mockApiClient.post).toHaveBeenCalledWith('/action/pipelines/wf-1/execute', {
         input: { dryRun: true },
       });
       expect(execution).toMatchObject({

@@ -11,7 +11,7 @@ The PHR (Personal Health Record) product requires a comprehensive Information Ar
 This separation led to several issues:
 - Documentation drift between IA docs and actual implementation
 - No automated validation that implemented features match documented IA
-- Difficulty tracking feature flags and visibility rules
+- Difficulty tracking route state and visibility rules
 - No clear mechanism for Kernel to understand PHR product surface
 - Release readiness checks required manual verification
 
@@ -28,20 +28,20 @@ This JSON file serves as the single source of truth for PHR IA, containing:
 - Web routes and mobile screen mappings
 - Backend API endpoints
 - Kernel capability dependencies
-- Implementation status (implemented, partial, feature_flagged, etc.)
+- Implementation status (implemented, partial, deferred, etc.)
 - Phase assignments (mvp-current, mvp-next, phase-2, deferred, removed)
 - Offline support flags
 - Traceability notes
 
-### 2. Feature Visibility Configuration
+### 2. Canonical Route Contract
 
-**File:** `products/phr/config/phr-feature-visibility.json`
+**File:** `products/phr/config/phr-route-contract.json`
 
-This file controls which IA items are visible per persona and which feature flags gate their visibility. It includes:
-- Feature flag definitions with defaults
-- Visibility rules for IA items by persona
-- Route-level visibility rules
-- Integration with Kernel feature flag system
+This file controls the web route surface and route state. It includes:
+- Route metadata for path, personas, tiers, actions, and cards
+- Route state using `stable`, `preview`, `hidden`, or `blocked`
+- Stable route `apiEndpoint`, `policyId`, and `testId` metadata
+- Integration with backend route entitlements and the generated web route projection
 
 ### 3. Automated Evidence Generation
 
@@ -72,7 +72,7 @@ A comprehensive release checklist that requires:
 - Zero doc/code mismatches
 - All implemented features have corresponding tests
 - Security and privacy gates pass
-- Feature flags properly configured
+- Route states properly configured
 - Sign-off from engineering, product, security, and QA
 
 ## Consequences
@@ -83,12 +83,12 @@ A comprehensive release checklist that requires:
 - **Automated Validation:** Scripts detect mismatches between docs and code automatically
 - **Kernel Alignment:** PHR IA is now a first-class Kernel-managed contract
 - **Release Safety:** Release checklist prevents releases with documentation drift
-- **Feature Flag Clarity:** Visibility rules are explicitly defined and validated
+- **Route State Clarity:** Visibility rules are explicitly defined and validated
 - **Traceability:** Every use case maps to routes, screens, APIs, and capabilities
 
 ### Negative
 
-- **Additional Configuration:** Requires maintaining JSON baseline and visibility files
+- **Additional Configuration:** Requires maintaining JSON baseline and route contract files
 - **Script Maintenance:** Evidence generation scripts need updates as PHR evolves
 - **Learning Curve:** Team must understand the IA contract model
 - **Initial Effort:** Migration from ad-hoc documentation to formal contract requires upfront work
@@ -120,7 +120,7 @@ A comprehensive release checklist that requires:
 
 ### Phase 1 (Complete)
 - Created `phr-usecase-baseline.json` with all use cases
-- Created `phr-feature-visibility.json` with feature flags
+- Created `phr-route-contract.json` with canonical route-state metadata
 - Created evidence generation scripts
 - Created release checklist
 - Updated product vision to reflect current implementation status
@@ -134,14 +134,14 @@ A comprehensive release checklist that requires:
 ### Maintenance
 
 - Update baseline when adding/removing use cases
-- Update visibility when changing feature flags
+- Update `phr-route-contract.json` when changing web route state or metadata
 - Run evidence generation scripts before each release
 - Review checklist items quarterly for relevance
 
 ## References
 
 - `products/phr/config/phr-usecase-baseline.json` - Canonical IA baseline
-- `products/phr/config/phr-feature-visibility.json` - Feature visibility rules
+- `products/phr/config/phr-route-contract.json` - Canonical route contract and route states
 - `scripts/generate-phr-ia-coverage-doc.mjs` - Coverage documentation generator
 - `scripts/generate-phr-doc-code-mismatch-evidence.mjs` - Mismatch evidence generator
 - `scripts/check-phr-ia-coverage.mjs` - CI coverage check

@@ -243,13 +243,28 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
      */
     public Promise<ConsentValidationResult> validateAccess(String patientId, String accessorId,
                                                             String resourceType) {
+        return validateAccess(patientId, accessorId, resourceType, "READ");
+    }
+
+    /**
+     * Validates if access is permitted based on consent resource and action scope.
+     *
+     * @param patientId the patient being accessed
+     * @param accessorId the accessor (provider/caregiver)
+     * @param resourceType the resource type being accessed
+     * @param action the action being performed
+     * @return Promise containing validation result
+     */
+    public Promise<ConsentValidationResult> validateAccess(String patientId, String accessorId,
+                                                            String resourceType, String action) {
         ensureRunning();
 
         // Check cache first
         String sanitizedPatientId = PhrInputSanitizationUtils.requireSafeIdentifier(patientId, "patientId");
         String sanitizedAccessorId = PhrInputSanitizationUtils.requireSafeIdentifier(accessorId, "accessorId");
         String sanitizedResourceType = PhrInputSanitizationUtils.requireSafeCode(resourceType, "resourceType");
-        String cacheKey = sanitizedAccessorId + ":" + sanitizedPatientId + ":" + sanitizedResourceType;
+        String sanitizedAction = PhrInputSanitizationUtils.requireSafeCode(action, "action").toUpperCase();
+        String cacheKey = sanitizedAccessorId + ":" + sanitizedPatientId + ":" + sanitizedResourceType + ":" + sanitizedAction;
         return consentCache.get(cacheKey)
             .then(optCached -> {
                 if (optCached.isPresent()) {
@@ -266,7 +281,7 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
                 return getActiveGrantsForPatient(sanitizedPatientId)
                     .then(grants -> {
                         for (ConsentGrant grant : grants) {
-                            if (grant.covers(sanitizedAccessorId, sanitizedResourceType)) {
+                            if (grant.covers(sanitizedAccessorId, sanitizedResourceType, sanitizedAction)) {
                                 ConsentCacheEntry entry = new ConsentCacheEntry(
                                     grant.getId(), true, grant.getExpiresAt());
                                 return consentCache.put(cacheKey, entry)
@@ -713,6 +728,10 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
 
         public boolean covers(String accessorId, String resourceType) {
             return recipientId.equals(accessorId) && scope.includes(resourceType);
+        }
+
+        public boolean covers(String accessorId, String resourceType, String action) {
+            return recipientId.equals(accessorId) && scope.allowsAction(resourceType, action);
         }
 
         public boolean overlaps(ConsentScope other) {

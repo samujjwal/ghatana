@@ -235,8 +235,6 @@
   "route.group.provider": "प्रदायक",
   "route.group.caregiver": "हेरचाहकर्ता",
   "route.group.fchv": "सामुदायिक स्वास्थ्य",
-  "featureFlag.comingSoon": "यो सुविधा छिट्टै आउँदैछ।",
-  "featureFlag.deferred": "यो क्षेत्र निर्माणाधीन छ। छिट्टै फेरि जाँच गर्नुहोस्।",
   "route.profile.label": "मेरो प्रोफाइल",
   "route.profile.description": "व्यक्तिगत स्वास्थ्य प्रोफाइल र प्राथमिकताहरू।",
   "route.timeline.label": "टाइमलाइन",

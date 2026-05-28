@@ -1,3 +1,3 @@
 export {
   fetchNotifications,
-} from './phrApi';
+} from './phrApiCore';

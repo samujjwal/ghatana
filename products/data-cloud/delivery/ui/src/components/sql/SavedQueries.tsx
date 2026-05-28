@@ -343,11 +343,12 @@ export function SavedQueries({
                                                     toggleFavorite(query.id);
                                                 }}
                                                 className="flex-shrink-0"
+                                                aria-label={`Toggle favorite for ${query.name}`}
                                             >
                                                 {query.isFavorite ? (
                                                     <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                                                 ) : (
-                                                    <StarOff className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100" />
+                                                    <StarOff className="h-4 w-4 text-gray-400" />
                                                 )}
                                             </button>
                                             {renamingId === query.id ? (
@@ -394,7 +395,8 @@ export function SavedQueries({
                                                 e.stopPropagation();
                                                 setActiveMenu(activeMenu === query.id ? null : query.id);
                                             }}
-                                            className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100"
+                                            className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+                                            aria-label={`Query actions for ${query.name}`}
                                         >
                                             <MoreVertical className="h-4 w-4" />
                                         </button>

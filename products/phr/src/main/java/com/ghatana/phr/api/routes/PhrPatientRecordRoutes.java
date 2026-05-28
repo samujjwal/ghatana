@@ -1,7 +1,6 @@
 package com.ghatana.phr.api.routes;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.ghatana.phr.kernel.service.ConsentManagementService;
 import com.ghatana.phr.kernel.service.PatientRecordService;
 import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.eventloop.Eventloop;
@@ -32,25 +31,15 @@ public final class PhrPatientRecordRoutes {
 
     private final Eventloop eventloop;
     private final PatientRecordService patientRecordService;
-    private final ConsentManagementService consentService;
     private final PhrPolicyEvaluator policyEvaluator;
 
     public PhrPatientRecordRoutes(
             Eventloop eventloop,
             PatientRecordService patientRecordService,
-            ConsentManagementService consentService,
             PhrPolicyEvaluator policyEvaluator) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.patientRecordService = Objects.requireNonNull(patientRecordService, "patientRecordService must not be null");
-        this.consentService = Objects.requireNonNull(consentService, "consentService must not be null");
-        this.policyEvaluator = policyEvaluator;
-    }
-
-    public PhrPatientRecordRoutes(
-            Eventloop eventloop,
-            PatientRecordService patientRecordService,
-            ConsentManagementService consentService) {
-        this(eventloop, patientRecordService, consentService, null);
+        this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 
     /**
@@ -90,15 +79,9 @@ public final class PhrPatientRecordRoutes {
                     return createPatient(patient);
                 }
                 return mayAccessPatient(context, patientId)
-                    .then(allowed -> {
-                        if (allowed) {
-                            return createPatient(patient);
-                        }
-                        return requireConsent(context, patientId)
-                            .then(consented -> consented
-                                ? createPatient(patient)
-                                : PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required to create this patient record"));
-                    });
+                    .then(allowed -> allowed
+                        ? createPatient(patient)
+                        : PhrRouteSupport.errorResponse(403, "POLICY_DENIED", "Access denied by policy"));
             });
     }
 
@@ -273,25 +256,17 @@ public final class PhrPatientRecordRoutes {
 
     private Promise<Boolean> requireSelfOrConsent(PhrRouteSupport.PhrRequestContext context, String patientId) {
         return mayAccessPatient(context, patientId)
-            .then(allowed -> {
-                if (allowed) {
-                    return Promise.of(true);
-                }
-                return requireConsent(context, patientId);
-            });
-    }
-
-    private Promise<Boolean> requireConsent(PhrRouteSupport.PhrRequestContext context, String patientId) {
-        return consentService.validateAccess(patientId, context.principalId(), RESOURCE_TYPE)
-            .map(ConsentManagementService.ConsentValidationResult::isAllowed);
+            .map(Boolean::booleanValue);
     }
 
     private Promise<Boolean> mayAccessPatient(PhrRouteSupport.PhrRequestContext context, String patientId) {
-        if (policyEvaluator == null) {
-            return Promise.of(("patient".equals(context.role()) && context.principalId().equals(patientId))
-                || "admin".equals(context.role()));
-        }
-        return policyEvaluator.canAccessPatientRecordAsync(context, patientId)
+        return policyEvaluator.canAccessPhiResourceAsync(
+                context,
+                patientId,
+                RESOURCE_TYPE,
+                "READ",
+                context.tenantId(),
+                context.facilityId())
             .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);
     }
 

@@ -6,7 +6,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { ProfilePage } from '../ProfilePage';
 
-vi.mock('../../api/phrApi', () => ({
+vi.mock('../../api/patientApi', () => ({
   fetchPatientProfile: vi.fn(),
   updatePatientProfile: vi.fn(),
 }));
@@ -19,7 +19,7 @@ vi.mock('../../auth/PhrSessionContext', () => ({
   usePhrSession: () => ({ session: { principalId: 'patient-42', tenantId: 't1', role: 'patient' as const, name: 'Test Patient', expiresAt: new Date(Date.now() + 3_600_000).toISOString() }, isAuthenticated: true, setSession: vi.fn(), clearSession: vi.fn() }),
 }));
 
-import { fetchPatientProfile } from '../../api/phrApi';
+import { fetchPatientProfile } from '../../api/patientApi';
 
 const mockFetch = fetchPatientProfile as ReturnType<typeof vi.fn>;
 

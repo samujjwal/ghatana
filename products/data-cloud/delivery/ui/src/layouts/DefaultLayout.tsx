@@ -11,6 +11,7 @@
 
 import React, { useState } from 'react';
 import { Outlet, NavLink } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import {
     type LucideIcon,
     Database,
@@ -94,7 +95,7 @@ function mapProductViewModeToShellRole(mode: ProductViewMode): ShellRole {
  */
 const navSections: NavSection[] = [
     {
-        title: 'Core',
+        title: 'layout.sectionCore',
         items: [
             { to: '/', label: 'Home', icon: <Home className="h-4 w-4" />, exact: true },
             { to: '/data', label: 'Data', icon: <Database className="h-4 w-4" /> },
@@ -104,7 +105,7 @@ const navSections: NavSection[] = [
         ],
     },
     {
-        title: 'Manage',
+        title: 'layout.sectionManage',
         items: [
             { to: '/operations', label: 'Operations', icon: <Settings className="h-4 w-4" />, minimumShellRole: 'admin' },
         ],
@@ -134,7 +135,7 @@ function getRouteIcon(iconName?: string): React.ReactNode {
 
 /**
  * Build navigation items from canonical route registry for a given role.
- * Ensures navigation always matches route capability truth (RBAC-001).
+ * Ensures navigation always matches route surface truth (RBAC-001).
  */
 export function buildNavFromRegistry(shellRole: ShellRole): NavSection[] {
     const discoverable = getDiscoverableRouteSurfaces(shellRole);
@@ -162,8 +163,8 @@ export function buildNavFromRegistry(shellRole: ShellRole): NavSection[] {
         }));
 
     return [
-        ...(coreItems.length > 0 ? [{ title: 'Core', items: coreItems }] : []),
-        ...(manageItems.length > 0 ? [{ title: 'Manage', items: manageItems }] : []),
+        ...(coreItems.length > 0 ? [{ title: 'layout.sectionCore', items: coreItems }] : []),
+        ...(manageItems.length > 0 ? [{ title: 'layout.sectionManage', items: manageItems }] : []),
     ];
 }
 
@@ -207,6 +208,7 @@ function Sidebar({
     onMobileClose: () => void;
     shellRole: ShellRole;
 }) {
+    const { t } = useTranslation();
     const visibleSections = getNavigationSectionsForShellRole(shellRole);
 
     return (
@@ -265,7 +267,7 @@ function Sidebar({
                         <div key={section.title} className="mb-6">
                             {!isCollapsed && (
                                 <h3 className={cn(textStyles.xs, 'px-3 mb-2 font-semibold uppercase tracking-wider')}>
-                                    {section.title}
+                                    {t(section.title)}
                                 </h3>
                             )}
                             <div className="space-y-1">
@@ -310,7 +312,7 @@ function Sidebar({
                         ) : (
                             <>
                                 <ChevronLeft className="h-4 w-4" />
-                                <span>Collapse</span>
+                                <span>{t('layout.collapse')}</span>
                             </>
                         )}
                     </button>
@@ -340,6 +342,7 @@ function Header({
     productViewMode: ProductViewMode;
     onProductViewModeChange: (mode: ProductViewMode) => void;
 }) {
+    const { t } = useTranslation();
     const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
 
     return (
@@ -368,7 +371,7 @@ function Header({
                         )}
                     >
                         <Search className="h-4 w-4" />
-                        <span className="hidden sm:inline">Search...</span>
+                        <span className="hidden sm:inline">{t('layout.searchPlaceholder')}</span>
                         <kbd className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded">
                             <Command className="h-3 w-3" />K
                         </kbd>
@@ -419,10 +422,10 @@ function Header({
                                 <div className="space-y-1">
                                     <div className="px-2 pb-1 pt-2">
                                         <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                            View mode preset
+                                            {t('layout.viewModePresetTitle')}
                                         </p>
                                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                            View mode presets tune UI focus only. Backend permissions are always enforced independently.
+                                            {t('layout.viewModePresetDescription')}
                                         </p>
                                     </div>
                                     {PRODUCT_VIEW_MODES.map((mode) => {
@@ -496,6 +499,7 @@ function Header({
  * - Global features (search, shortcuts, AI assistant)
  */
 export default function DefaultLayout(): React.ReactElement {
+    const { t } = useTranslation();
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [shellRole, setShellRole] = useState<ShellRole>(() => SessionBootstrap.getShellRole());
@@ -559,7 +563,7 @@ export default function DefaultLayout(): React.ReactElement {
                 {/* Footer */}
                 <footer className={cn('px-6 py-4 border-t', borderStyles.divider)}>
                     <p className={cn(textStyles.small, 'text-center')}>
-                        Data Cloud • Ghatana Platform
+                        {t('layout.footerProduct')}
                     </p>
                 </footer>
             </div>

@@ -7,7 +7,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { EmergencyAccessPage } from '../../pages/EmergencyAccessPage';
 import { EmergencyReviewsPage } from '../../pages/EmergencyReviewsPage';
 
-vi.mock('../../api/phrApi', () => ({
+vi.mock('../../api/emergencyApi', () => ({
   requestEmergencyAccess: vi.fn(),
   reviewEmergencyAccess: vi.fn(),
 }));
@@ -30,7 +30,7 @@ vi.mock('../../auth/PhrAccessContext', () => ({
   }),
 }));
 
-import { requestEmergencyAccess, reviewEmergencyAccess } from '../../api/phrApi';
+import { requestEmergencyAccess, reviewEmergencyAccess } from '../../api/emergencyApi';
 
 const mockRequest = requestEmergencyAccess as ReturnType<typeof vi.fn>;
 const mockReview = reviewEmergencyAccess as ReturnType<typeof vi.fn>;

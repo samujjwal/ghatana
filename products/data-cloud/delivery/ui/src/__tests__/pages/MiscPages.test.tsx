@@ -3,7 +3,7 @@
  * PluginDetailsPage, SmartWorkflowBuilder, IntelligentHub,
  * DataExplorer, CreateCollectionPage
  */
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TestWrapper } from '../test-utils/wrapper';
@@ -14,6 +14,21 @@ import { SmartWorkflowBuilder } from '../../pages/SmartWorkflowBuilder';
 import { IntelligentHub } from '../../pages/IntelligentHub';
 import { DataExplorer } from '../../pages/DataExplorer';
 import { CreateCollectionPage } from '../../pages/CreateCollectionPage';
+
+const { getQualityAdvisoriesMock } = vi.hoisted(() => ({
+  getQualityAdvisoriesMock: vi.fn(),
+}));
+
+vi.mock('../../api/ai-operations.service', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../api/ai-operations.service')>();
+  return {
+    ...actual,
+    aiOperationsService: {
+      ...actual.aiOperationsService,
+      getQualityAdvisories: getQualityAdvisoriesMock,
+    },
+  };
+});
 
 vi.mock('../../api/surfaces.service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../api/surfaces.service')>();
@@ -98,6 +113,50 @@ describe('IntelligentHub', () => {
 // ── DataExplorer ──────────────────────────────────────────────────────────────
 
 describe('DataExplorer', () => {
+  beforeEach(() => {
+    getQualityAdvisoriesMock.mockReset();
+    getQualityAdvisoriesMock.mockRejectedValue({ status: 404 });
+  });
+
+  it('uses backend quality advisory content when advisory payload is available', async () => {
+    getQualityAdvisoriesMock.mockResolvedValueOnce({
+      collectionId: 'products',
+      tenantId: TEST_TENANT_ID,
+      overallScore: 0.72,
+      scoreBand: 'medium',
+      advisories: [
+        {
+          id: 'adv-1',
+          type: 'completeness',
+          title: 'Missing mandatory values',
+          description: 'Critical completeness gaps detected.',
+          affectedCount: 23,
+          confidence: 0.91,
+          suggestedAction: 'Fill required fields for primary key attributes before publishing.',
+        },
+      ],
+      generatedAt: '2026-05-28T10:00:00Z',
+      modelVersion: 'quality-v2',
+    });
+
+    render(<DataExplorer />, { wrapper: TestWrapper });
+
+    expect(
+      await screen.findByText('Fill required fields for primary key attributes before publishing.')
+    ).toBeInTheDocument();
+    expect(getQualityAdvisoriesMock).toHaveBeenCalled();
+  });
+
+  it('shows backend advisory unavailable message instead of deriving client-side heuristic content', async () => {
+    render(<DataExplorer />, { wrapper: TestWrapper });
+
+    expect(
+      await screen.findByText(
+        'No backend quality advisory is currently available for this collection. Retry after the quality advisory pipeline finishes.'
+      )
+    ).toBeInTheDocument();
+  });
+
   it('renders the data explorer shell', () => {
     render(<DataExplorer />, { wrapper: TestWrapper });
 
@@ -127,6 +186,20 @@ describe('DataExplorer', () => {
     });
     await waitFor(() => {
       expect(screen.getByText(/Affected datasets:/i)).toBeInTheDocument();
+    });
+  });
+
+  it('supports keyboard activation for always-visible row actions', async () => {
+    const user = userEvent.setup();
+
+    render(<DataExplorer />, { wrapper: TestWrapper });
+
+    const editButton = await screen.findByRole('button', { name: /Edit Products/i });
+    editButton.focus();
+    await user.keyboard('{Enter}');
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/data/col-001/edit');
     });
   });
 });

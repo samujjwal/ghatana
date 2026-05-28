@@ -52,10 +52,10 @@ function main() {
     byPhase[uc.phase].push(uc);
   });
 
-  let markdown = `# PHR IA Coverage Report
+let markdown = `# PHR IA Coverage Report
 
-**Generated:** ${new Date().toISOString().split('T')[0]}  
-**Baseline Version:** ${baseline.version}  
+**Generated:** ${new Date().toISOString().split('T')[0]}
+**Baseline Version:** ${baseline.version}
 **Total Use Cases:** ${usecases.length}
 
 ## Summary

@@ -65,8 +65,8 @@ describe('Route Alias Security Regression Tests', () => {
     const routesSourcePath = path.join(__dirname, '../../routes.tsx');
     const routesSource = fs.readFileSync(routesSourcePath, 'utf-8');
 
-    // Extract all path: 'xxx' route definitions
-    const canonicalRoutePattern = /path:\s*'([^']+)'/g;
+    // Extract all path: "xxx" or path: 'xxx' route definitions
+    const canonicalRoutePattern = /path:\s*["']([^"']+)["']/g;
     const matches = Array.from(routesSource.matchAll(canonicalRoutePattern));
     
     expect(matches.length).toBeGreaterThan(0);

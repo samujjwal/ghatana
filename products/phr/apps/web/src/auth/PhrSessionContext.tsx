@@ -8,7 +8,7 @@
  * @doc.pattern Context
  */
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { phrFetch } from '../api/phrApi';
+import { phrFetch } from '../api/requestApi';
 import { logWarn } from '../utils/safeLogger';
 import type { PhrSession } from '../types';
 

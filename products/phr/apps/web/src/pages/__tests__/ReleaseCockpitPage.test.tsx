@@ -6,7 +6,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { ReleaseCockpitPage } from '../ReleaseCockpitPage';
 
-vi.mock('../../api/phrApi', () => ({
+vi.mock('../../api/releaseApi', () => ({
   fetchReleaseReadiness: vi.fn(),
 }));
 
@@ -18,7 +18,7 @@ vi.mock('../../auth/PhrAccessContext', () => ({
   usePhrAccess: () => ({ role: 'admin' as const }),
 }));
 
-import { fetchReleaseReadiness } from '../../api/phrApi';
+import { fetchReleaseReadiness } from '../../api/releaseApi';
 
 const mockFetch = fetchReleaseReadiness as ReturnType<typeof vi.fn>;
 

@@ -16,16 +16,24 @@ import { RecordDetailPage } from '../pages/RecordDetailPage';
 import { ReleaseCockpitPage } from '../pages/ReleaseCockpitPage';
 import { ProtectedPhrRoute } from '../routes';
 
-vi.mock('../api/phrApi', async () => {
-  const actual = await vi.importActual<typeof import('../api/phrApi')>('../api/phrApi');
+vi.mock('../api/patientApi', async () => {
+  const actual = await vi.importActual<typeof import('../api/patientApi')>('../api/patientApi');
   return {
     ...actual,
     fetchDashboardData: vi.fn(),
+  };
+});
+
+vi.mock('../api/recordsApi', async () => {
+  const actual = await vi.importActual<typeof import('../api/recordsApi')>('../api/recordsApi');
+  return {
+    ...actual,
     fetchRecordDetail: vi.fn(),
   };
 });
 
-import { fetchDashboardData, fetchRecordDetail } from '../api/phrApi';
+import { fetchDashboardData } from '../api/patientApi';
+import { fetchRecordDetail } from '../api/recordsApi';
 
 function entitlementPayloadFor(role: PhrRole): Record<string, unknown> {
   const allowedRoutes = phrRouteContracts.filter((route) => {

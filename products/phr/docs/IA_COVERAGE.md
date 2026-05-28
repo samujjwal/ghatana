@@ -1,7 +1,7 @@
 # PHR IA Coverage Report
 
-**Generated:** 2026-05-27  
-**Baseline Version:** 2.0.0  
+**Generated:** 2026-05-28
+**Baseline Version:** 2.0.0
 **Total Use Cases:** 27
 
 ## Summary
@@ -10,7 +10,7 @@
 |--------|-------|------------|
 | implemented | 21 | 77.8% |
 | partial | 2 | 7.4% |
-| feature_flagged | 4 | 14.8% |
+| deferred | 4 | 14.8% |
 
 | Phase | Count | Percentage |
 |-------|-------|------------|
@@ -59,16 +59,16 @@
 
 | Use Case | Screen | Route | Status | Notes |
 |----------|--------|-------|--------|-------|
-| uc-provider-dashboard | ProviderDashboardPage | /provider/dashboard | feature_flagged | Route exists but backend implementation incomplete... |
-| uc-provider-patients | ProviderPatientsPage | /provider/patients | feature_flagged | Feature-flagged until backend consent/treatment re... |
+| uc-provider-dashboard | ProviderDashboardPage | /provider/dashboard | deferred | Route exists in the canonical contract as hidden u... |
+| uc-provider-patients | ProviderPatientsPage | /provider/patients | deferred | Route exists in the canonical contract as hidden u... |
 
 
 ### Caregiver
 
 | Use Case | Screen | Route | Status | Notes |
 |----------|--------|-------|--------|-------|
-| uc-caregiver-dependents | CaregiverDependentsPage | /caregiver/dependents | feature_flagged | Placeholder/minimal page exists. Full implementati... |
-| uc-fchv-dashboard | FchvDashboardPage | /fchv/dashboard | feature_flagged | Feature-flagged. May be deferred from MVP dependin... |
+| uc-caregiver-dependents | CaregiverDependentsPage | /caregiver/dependents | deferred | Route exists in the canonical contract as hidden u... |
+| uc-fchv-dashboard | FchvDashboardPage | /fchv/dashboard | deferred | Route exists in the canonical contract as hidden a... |
 
 
 ### Admin
@@ -114,7 +114,7 @@
 - **uc-patient-appointments** (patient): AppointmentsPage - /appointments
 
 
-### Feature_flagged (4)
+### Deferred (4)
 
 - **uc-provider-dashboard** (clinician): ProviderDashboardPage - /provider/dashboard
 - **uc-provider-patients** (clinician): ProviderPatientsPage - /provider/patients
@@ -207,7 +207,7 @@
 
 - GET /consents?patientId=:id
 - POST /consents/grants
-- POST /consents/:grantId/revoke
+- POST /consents/grants/:grantId/revoke
 - GET /consents/check
 
 

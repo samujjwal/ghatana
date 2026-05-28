@@ -49,4 +49,27 @@ describe('DefaultLayout navigation progressive disclosure', () => {
     expect(paths).toContain('/operations');
     expect(paths).not.toContain('/settings');
   });
+
+  it('keeps advanced and preview surfaces out of primary navigation', () => {
+    const paths = getSectionPaths('admin');
+
+    const advancedHiddenPaths = [
+      '/connectors',
+      '/events',
+      '/alerts',
+      '/memory',
+      '/entities',
+      '/context',
+      '/fabric',
+      '/agents',
+      '/plugins',
+      '/operations/jobs',
+      '/operations/release-truth',
+      '/settings',
+    ];
+
+    for (const hiddenPath of advancedHiddenPaths) {
+      expect(paths).not.toContain(hiddenPath);
+    }
+  });
 });

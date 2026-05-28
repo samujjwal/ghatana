@@ -6,6 +6,7 @@ import com.ghatana.phr.kernel.service.BillingService;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
 import com.ghatana.phr.kernel.service.ReferralService;
 import com.ghatana.phr.kernel.service.TelemedicineService;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -34,7 +35,7 @@ public final class PhrAdministrativeRoutes {
     private final TelemedicineService telemedicineService;
     private final ReferralService referralService;
     private final BillingService billingService;
-    private final ConsentManagementService consentService;
+    private final PhrPolicyEvaluator policyEvaluator;
 
     public PhrAdministrativeRoutes(
             Eventloop eventloop,
@@ -42,13 +43,15 @@ public final class PhrAdministrativeRoutes {
             TelemedicineService telemedicineService,
             ReferralService referralService,
             BillingService billingService,
-            ConsentManagementService consentService) {
+            ConsentManagementService consentService,
+            PhrPolicyEvaluator policyEvaluator) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.appointmentService = Objects.requireNonNull(appointmentService, "appointmentService must not be null");
         this.telemedicineService = Objects.requireNonNull(telemedicineService, "telemedicineService must not be null");
         this.referralService = Objects.requireNonNull(referralService, "referralService must not be null");
         this.billingService = Objects.requireNonNull(billingService, "billingService must not be null");
-        this.consentService = Objects.requireNonNull(consentService, "consentService must not be null");
+        Objects.requireNonNull(consentService, "consentService must not be null");
+        this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 
     /**
@@ -460,12 +463,17 @@ public final class PhrAdministrativeRoutes {
     }
 
     private Promise<Boolean> requireAccess(PhrRouteSupport.PhrRequestContext context, String patientId, String resourceType) {
-        if (context.principalId().equals(patientId) || "admin".equals(context.role())) {
-            // Patient accessing their own data, or admin performing a system operation.
+        if ("admin".equals(context.role())) {
             return Promise.of(true);
         }
-        return consentService.validateAccess(patientId, context.principalId(), resourceType)
-            .map(ConsentManagementService.ConsentValidationResult::isAllowed);
+        return policyEvaluator.canAccessPhiResourceAsync(
+                context,
+                patientId,
+                resourceType,
+                "READ",
+                context.tenantId(),
+                context.facilityId())
+            .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);
     }
 
     private static String principalFrom(HttpRequest request) {

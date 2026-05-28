@@ -6,4 +6,4 @@ export {
   fetchOcrDocument,
   rejectOcrDocument,
   uploadDocument,
-} from './phrApi';
+} from './phrApiCore';

@@ -34,7 +34,7 @@ import {
 import { cn } from '../lib/theme';
 import { collectionsApi, type Collection } from '../lib/api/collections';
 import { lineageService } from '../api/lineage.service';
-import { useDataQualityTrustScores, type DataQualityTrustScoresResult } from '../api/data-quality.service';
+import { aiOperationsService, type AiQualityAdvisory } from '../api/ai-operations.service';
 import { LineageGraph } from '../components/lineage/LineageGraph';
 import { AIAssistSuggestion } from '../components/common/AIAssistSuggestion';
 
@@ -62,6 +62,12 @@ interface QualityAdvisory {
     evidence: string[];
 }
 
+const advisoryUnavailable: QualityAdvisory = {
+    suggestion: 'No backend quality advisory is currently available for this collection. Retry after the quality advisory pipeline finishes.',
+    confidence: 0.5,
+    evidence: ['No advisory payload returned by /api/v1/action/ai/quality-advisories.'],
+};
+
 function normalizeViewMode(view: string | null): ViewMode {
     if (view === 'quality' && !QUALITY_VIEW_ENABLED) {
         return 'table';
@@ -72,46 +78,32 @@ function normalizeViewMode(view: string | null): ViewMode {
     return 'table';
 }
 
-function deriveQualityAdvisory(trustData: DataQualityTrustScoresResult | undefined): QualityAdvisory {
-    const scores = trustData?.scores ?? [];
-    const degraded = scores.filter((s) => {
-        const status = s.operationalStatus.toLowerCase();
-        return status === 'degraded' || status === 'unavailable';
-    });
-    const lowTrust = scores.filter((s) => s.trustScore < 70);
-    const lowQuality = scores.filter((s) => s.qualityScore < 0.7);
+function advisoryFromBackend(payload: AiQualityAdvisory): QualityAdvisory {
+    const highestImpact = [...payload.advisories]
+        .sort((a, b) => b.affectedCount - a.affectedCount)
+        .slice(0, 3);
+    const topConfidence = payload.advisories.reduce((max, item) => Math.max(max, item.confidence), 0);
 
-    if (degraded.length > 0) {
+    if (highestImpact.length === 0) {
         return {
-            suggestion: `${degraded.length} collection(s) are degraded or unavailable per backend trust scoring. Prioritize operational recovery before new quality workflows.`,
-            confidence: 0.9,
-            evidence: degraded.slice(0, 3).map((item) => `${item.collection}: operationalStatus=${item.operationalStatus}, trustScore=${item.trustScore}`),
+            suggestion: `AI advisory for collection ${payload.collectionId} reports no active quality remediation items.`,
+            confidence: Math.max(0.65, topConfidence || 0.65),
+            evidence: [
+                `overallScore=${payload.overallScore.toFixed(2)}`,
+                `generatedAt=${payload.generatedAt}`,
+            ],
         };
     }
 
-    if (lowTrust.length > 0 || lowQuality.length > 0) {
-        return {
-            suggestion: `${Math.max(lowTrust.length, lowQuality.length)} collection(s) are below quality/trust thresholds from backend scoring. Review metrics and remediation plans.`,
-            confidence: 0.84,
-            evidence: lowTrust.slice(0, 3).map((item) => `${item.collection}: trustScore=${item.trustScore}, qualityScore=${item.qualityScore.toFixed(2)}`),
-        };
-    }
-
-    if (scores.length === 0) {
-        return {
-            suggestion: 'No backend trust-score records available yet. Run quality/trust scoring to populate advisory insights.',
-            confidence: 0.6,
-            evidence: ['No trust-score entries returned by /api/v1/data-quality/trust-scores.'],
-        };
-    }
+    const primary = highestImpact[0];
+    const evidence = highestImpact.map((item) =>
+        `${item.type}: affected=${item.affectedCount}, confidence=${item.confidence.toFixed(2)}`
+    );
 
     return {
-        suggestion: 'Backend trust scores indicate collections are within target quality thresholds. Continue monitoring drift.',
-        confidence: 0.93,
-        evidence: [
-            `${scores.length} collection(s) scored by backend trust pipeline.`,
-            `${scores.filter((s) => s.lifecycleStatus.toUpperCase() === 'PUBLISHED').length} published collection(s).`,
-        ],
+        suggestion: primary.suggestedAction ?? primary.description,
+        confidence: Math.max(primary.confidence, topConfidence),
+        evidence,
     };
 }
 
@@ -349,8 +341,20 @@ export function DataExplorer() {
     });
 
     const collections = collectionsPage?.items ?? [];
-    const { data: trustScores } = useDataQualityTrustScores();
-    const qualityAdvisory = useMemo(() => deriveQualityAdvisory(trustScores), [trustScores]);
+    const advisoryCollectionId = selectedCollection?.id ?? collections[0]?.id;
+    const { data: backendQualityAdvisory } = useQuery({
+        queryKey: ['quality-advisory', advisoryCollectionId],
+        queryFn: () => aiOperationsService.getQualityAdvisories(advisoryCollectionId as string),
+        enabled: Boolean(advisoryCollectionId),
+        staleTime: 60_000,
+        retry: false,
+    });
+    const qualityAdvisory = useMemo(() => {
+        if (backendQualityAdvisory) {
+            return advisoryFromBackend(backendQualityAdvisory);
+        }
+        return advisoryUnavailable;
+    }, [backendQualityAdvisory]);
 
     const { data: lineageGraph, isLoading: lineageLoading } = useQuery({
         queryKey: ['lineage', selectedCollection?.id, viewMode],

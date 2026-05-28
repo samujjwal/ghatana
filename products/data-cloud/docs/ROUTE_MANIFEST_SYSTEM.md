@@ -1,6 +1,6 @@
 # Route Manifest System (DC-P0-03)
 
-**Status**: Implementation Framework Complete  
+**Status**: Implemented and Enforced  
 **Last Updated**: 2026-05-18
 
 ## Overview
@@ -20,7 +20,7 @@ Before P0-3, three separate "truths" existed for the same routes:
 |--------|--------------|---------|
 | **Backend** | RouteSecurityRegistry.java | Authoritative but Java-only |
 | **OpenAPI** | action-plane.yaml | Drifted from runtime implementation |
-| **UI** | RuntimeTruthPosture.ts (manual) | Stale, missing new routes |
+| **UI** | RuntimeTruthPosture.generated.ts (generated) | Must stay in sync with backend registry |
 
 This created:
 - Inconsistent route definitions
@@ -33,8 +33,9 @@ This created:
 ### Architecture
 
 ```
-RouteSecurityRegistry.java (Source of Truth)
-         ↓ (parse via generate-route-manifest.mjs)
+DataCloudRouterBuilder.java (Runtime route declarations)
+RouteSecurityRegistry.java (Route policy + surface metadata)
+      ↓ (checksum + parity checks in generate-route-manifest.mjs)
     Route Manifest JSON
          ↓ (validate against schema)
     Validation Report
@@ -53,7 +54,7 @@ RouteSecurityRegistry.java (Source of Truth)
 
 **Java Classes**:
 - [`RouteSecurityRegistry.java`](../../delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java) - Authoritative backend registry
-- [`RouteSecurityMetadata.java`](../../delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/RouteSecurityMetadata.java) - Metadata value object
+- [`RouteSecurityMetadata.java`](../../delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityMetadata.java) - Metadata value object
 - [`RouteManifest.java`](../../delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/RouteManifest.java) - Manifest model (Jackson-serializable)
 
 **Configuration**:
@@ -71,16 +72,17 @@ RouteSecurityRegistry.java (Source of Truth)
 cd products/data-cloud
 
 # One-time setup
-npm install
+pnpm install
 
 # Generate canonical manifest
-npm run generate:route-manifest
+pnpm run --dir delivery/ui generate:route-manifest
 
 # Or manually
 node scripts/generate-route-manifest.mjs \
   --java-registry-path delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java \
+  --router-path delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudRouterBuilder.java \
   --output-manifest config/route-manifest.json \
-  --output-ui-truth web/src/runtime/RuntimeTruthPosture.generated.ts \
+  --output-ui-truth delivery/ui/src/lib/routing/RuntimeTruthPosture.generated.ts \
   --manifest-schema config/route-manifest-schema.json
 ```
 
@@ -88,7 +90,7 @@ node scripts/generate-route-manifest.mjs \
 
 ```bash
 # Validate generated manifest against schema
-npm run validate:route-manifest
+pnpm run --dir delivery/ui check:route-manifest
 
 # Or using JSON Schema validator
 npm install -g ajv-cli
@@ -110,19 +112,23 @@ routes.put(
 );
 ```
 
+**Step 1a**: Ensure the route is also declared in `DataCloudRouterBuilder.java`
+
+The generator enforces runtime/registry parity and fails if a route exists in only one source.
+
 **Step 2**: Regenerate manifest
 ```bash
-npm run generate:route-manifest
+pnpm run --dir delivery/ui generate:route-manifest
 ```
 
 **Step 3**: Validate no drift
 ```bash
-npm run validate:route-manifest
+pnpm run --dir delivery/ui check:route-manifest
 ```
 
 **Step 4**: Commit generated files
 ```bash
-git add config/route-manifest.json web/src/runtime/RuntimeTruthPosture.generated.ts
+git add config/route-manifest.json delivery/ui/src/lib/routing/RuntimeTruthPosture.generated.ts
 git commit -m "feat: Add new-feature route (DC-P0-03)"
 ```
 
@@ -156,6 +162,7 @@ Each route entry includes:
 - `requires*`: Auth, tenant, policy requirements
 - `operationId`: OpenAPI unique identifier
 - `runtimeTruthSurface`: VISIBLE/HIDDEN/DEVELOPER_ONLY (UI gating)
+- `legacyStatus`: active/deprecated/compatibility-only lifecycle for migration-safe aliases
 - `metadata`: Route-specific metadata (audit, idempotency, etc.)
 
 ## Generated Artifacts
@@ -173,7 +180,7 @@ Used for:
 
 ### 2. UI RuntimeTruthPosture.generated.ts
 
-**File**: `web/src/runtime/RuntimeTruthPosture.generated.ts`
+**File**: `delivery/ui/src/lib/routing/RuntimeTruthPosture.generated.ts`
 
 TypeScript module providing:
 
@@ -201,19 +208,19 @@ Used for:
 - name: DC-P0-03 Generate Route Manifest
   run: |
     cd products/data-cloud
-    npm run generate:route-manifest
+    pnpm run --dir delivery/ui generate:route-manifest
 
 - name: DC-P0-03 Validate Route Manifest
   run: |
     cd products/data-cloud
-    npm run validate:route-manifest
+    pnpm run --dir delivery/ui check:route-manifest
     git diff --exit-code config/route-manifest.json \
       || (echo "Route manifest drift detected!" && exit 1)
 
 - name: DC-P0-03 Verify UI Truth Sync
   run: |
     cd products/data-cloud
-    git diff --exit-code web/src/runtime/RuntimeTruthPosture.generated.ts \
+    git diff --exit-code delivery/ui/src/lib/routing/RuntimeTruthPosture.generated.ts \
       || (echo "RuntimeTruthPosture out of sync!" && exit 1)
 ```
 
@@ -233,12 +240,12 @@ Used for:
 - [x] generate-route-manifest.mjs (generation script)
 - [x] config/route-manifest.json (example manifest)
 
-### Phase 2: UI Generation (NEXT)
-- [ ] Implement manifest → RuntimeTruthPosture.generated.ts generation
-- [ ] Add UI tests using RuntimeTruthPosture
-- [ ] Update TypeScript strict mode to verify usage
+### Phase 2: UI Generation (COMPLETE ✅)
+- [x] Implement manifest → RuntimeTruthPosture.generated.ts generation
+- [x] Generate RuntimeTruthPosture into `delivery/ui/src/lib/routing`
+- [x] Add parity checks via `--check` mode in route manifest generator
 
-### Phase 3: OpenAPI Validation (FOLLOWING)
+### Phase 3: OpenAPI Validation (IN PROGRESS)
 - [ ] Create OpenAPI → manifest validator
 - [ ] Update action-plane.yaml from manifest
 - [ ] Add OpenAPI spec validation to CI
@@ -272,7 +279,8 @@ void manifestSerializationRoundtrip() {
 @Test
 void manifestValidatesAgainstSchema() {
   // Load schema and manifest
-  // Validate using JSON Schema validator
+**Step 1a**: Ensure the route is also declared in `DataCloudRouterBuilder.java`
+
   // Expect: validation passes
 }
 
@@ -287,7 +295,9 @@ void allRoutesHaveOperationId() {
 
 ### Integration Tests
 
-**File**: `web/__tests__/runtime/RuntimeTruthPosture.generated.test.ts`
+**Files**:
+- `delivery/ui/src/__tests__/api/runtimeTruth.test.ts`
+- `delivery/ui/src/__tests__/routes/routeTruthMatrix.test.ts`
 
 ```typescript
 it('should find route by method and path', () => {

@@ -6,7 +6,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { AuditPage } from '../../pages/AuditPage';
 
-vi.mock('../../api/phrApi', () => ({
+vi.mock('../../api/auditApi', () => ({
   fetchAuditEvents: vi.fn(),
 }));
 
@@ -16,7 +16,7 @@ vi.mock('../../i18n/phrI18n', () => ({
   formatPhrDateTime: (d: string) => d,
 }));
 
-import { fetchAuditEvents } from '../../api/phrApi';
+import { fetchAuditEvents } from '../../api/auditApi';
 
 const mockFetch = fetchAuditEvents as ReturnType<typeof vi.fn>;
 

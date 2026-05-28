@@ -6,7 +6,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { DashboardPage } from '../DashboardPage';
 
-vi.mock('../../api/phrApi', () => ({
+vi.mock('../../api/patientApi', () => ({
   fetchDashboardData: vi.fn(),
 }));
 
@@ -26,7 +26,7 @@ vi.mock('../../auth/PhrSessionContext', () => ({
   }),
 }));
 
-import { fetchDashboardData } from '../../api/phrApi';
+import { fetchDashboardData } from '../../api/patientApi';
 
 const mockFetch = fetchDashboardData as ReturnType<typeof vi.fn>;
 

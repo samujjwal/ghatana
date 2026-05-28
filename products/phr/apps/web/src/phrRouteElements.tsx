@@ -11,7 +11,6 @@ import { DocumentUploadPage } from './pages/DocumentUploadPage';
 import { EmergencyAccessPage } from './pages/EmergencyAccessPage';
 import { EmergencyReviewsPage } from './pages/EmergencyReviewsPage';
 import { FchvDashboardPage } from './pages/FchvDashboardPage';
-import { FeatureFlagPage } from './pages/FeatureFlagPage';
 import { ForbiddenPage } from './pages/ForbiddenPage';
 import { ImmunizationsPage } from './pages/ImmunizationsPage';
 import { LabsPage } from './pages/LabsPage';
@@ -69,9 +68,7 @@ export function attachPhrRouteElement(route: PhrRouteContract): PhrRouteManifest
     throw new Error(`PHR route element is missing for path ${route.path}`);
   }
 
-  const finalElement = route.featureFlag
-    ? <FeatureFlagPage routePath={route.path} />
-    : route.stability === 'blocked'
+  const finalElement = route.stability === 'blocked'
     ? <ForbiddenPage />
     : route.stability === 'hidden'
     ? <NotFoundPage />

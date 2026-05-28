@@ -1,4 +1,4 @@
 export {
   requestEmergencyAccess,
   reviewEmergencyAccess,
-} from './phrApi';
+} from './phrApiCore';

@@ -1,8 +1,8 @@
 package com.ghatana.phr.api.routes;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import com.ghatana.phr.kernel.service.ConsentManagementService;
 import com.ghatana.phr.kernel.service.PatientRecordService;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
@@ -27,6 +27,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.lenient;
 
 /**
@@ -53,7 +54,7 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
     private PatientRecordService patientRecordService;
 
     @Mock
-    private ConsentManagementService consentService;
+    private PhrPolicyEvaluator policyEvaluator;
 
     private AsyncServlet servlet;
 
@@ -69,7 +70,7 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        servlet = new PhrPatientRecordRoutes(eventloop(), patientRecordService, consentService).getServlet();
+        servlet = new PhrPatientRecordRoutes(eventloop(), patientRecordService, policyEvaluator).getServlet();
 
         PatientRecordService.Patient patient = PatientRecordService.Patient.builder()
             .id("patient-1")
@@ -96,9 +97,18 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
             .thenReturn(Promise.of(List.of(patient)));
         lenient().when(patientRecordService.updatePatient(any(PatientRecordService.Patient.class)))
             .thenReturn(Promise.of(patient));
-        lenient().when(consentService.validateAccess(anyString(), anyString(), anyString()))
-            .thenReturn(Promise.of(new ConsentManagementService.ConsentValidationResult(
-                false, "NO_CONSENT", null)));
+        lenient().when(policyEvaluator.canAccessPhiResourceAsync(
+                any(), anyString(), anyString(), anyString(), anyString(), nullable(String.class)))
+            .thenAnswer(invocation -> {
+                PhrRouteSupport.PhrRequestContext context = invocation.getArgument(0);
+                String patientId = invocation.getArgument(1);
+                boolean allowed = ("patient".equals(context.role()) && context.principalId().equals(patientId))
+                    || "admin".equals(context.role());
+                PhrPolicyEvaluator.PolicyDecision decision = allowed
+                    ? PhrPolicyEvaluator.PolicyDecision.allowed("TEST_ALLOW", "Allowed by test policy")
+                    : PhrPolicyEvaluator.PolicyDecision.denied("TEST_DENY", "Denied by test policy");
+                return Promise.of(decision);
+            });
     }
 
     @Nested

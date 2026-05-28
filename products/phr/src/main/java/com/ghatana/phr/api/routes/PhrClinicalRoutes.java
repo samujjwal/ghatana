@@ -5,6 +5,7 @@ import com.ghatana.phr.kernel.service.ConsentManagementService;
 import com.ghatana.phr.kernel.service.ImmunizationService;
 import com.ghatana.phr.kernel.service.LabResultService;
 import com.ghatana.phr.kernel.service.MedicationService;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -31,19 +32,21 @@ public final class PhrClinicalRoutes {
     private final LabResultService labResultService;
     private final MedicationService medicationService;
     private final ImmunizationService immunizationService;
-    private final ConsentManagementService consentService;
+    private final PhrPolicyEvaluator policyEvaluator;
 
     public PhrClinicalRoutes(
             Eventloop eventloop,
             LabResultService labResultService,
             MedicationService medicationService,
             ImmunizationService immunizationService,
-            ConsentManagementService consentService) {
+            ConsentManagementService consentService,
+            PhrPolicyEvaluator policyEvaluator) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.labResultService = Objects.requireNonNull(labResultService, "labResultService must not be null");
         this.medicationService = Objects.requireNonNull(medicationService, "medicationService must not be null");
         this.immunizationService = Objects.requireNonNull(immunizationService, "immunizationService must not be null");
-        this.consentService = Objects.requireNonNull(consentService, "consentService must not be null");
+        Objects.requireNonNull(consentService, "consentService must not be null");
+        this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 
     /**
@@ -260,12 +263,14 @@ public final class PhrClinicalRoutes {
     }
 
     private Promise<Boolean> requireAccess(PhrRouteSupport.PhrRequestContext context, String patientId, String resourceType) {
-        if (context.principalId().equals(patientId) || "admin".equals(context.role())) {
-            // Patient accessing their own data, or admin performing a system operation.
-            return Promise.of(true);
-        }
-        return consentService.validateAccess(patientId, context.principalId(), resourceType)
-            .map(ConsentManagementService.ConsentValidationResult::isAllowed);
+        return policyEvaluator.canAccessPhiResourceAsync(
+                context,
+                patientId,
+                resourceType,
+                "READ",
+                context.tenantId(),
+                context.facilityId())
+            .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);
     }
 
     private static String patientIdFrom(String json) throws java.io.IOException {

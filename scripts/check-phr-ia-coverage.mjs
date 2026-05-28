@@ -3,8 +3,8 @@
  * PHR IA Coverage Gate
  * --------------------
  * Validates that every route defined in the PHR IA baseline has a corresponding
- * entry in `phrRouteContracts` and — for routes that are not feature-flagged —
- * also an element registered in `phrRouteElements`.
+ * entry in the canonical route contract and, for stable routes, also an element
+ * registered in `phrRouteElements`.
  *
  * Reads the canonical IA baseline from `products/phr/config/phr-usecase-baseline.json`
  * instead of hardcoded routes.
@@ -143,7 +143,7 @@ while ((elemMatch = ELEMENTS_PATH_RE.exec(elementsSource)) !== null) {
 
 const productionRoutesViolations = [];
 for (const route of contractRoutes) {
-  if (route.stability === 'stable' && route.featureFlag !== true) {
+  if (route.stability === 'stable') {
     const normPath = route.path.replace(/:([^/]+)/g, '{$1}');
     if (!registeredPaths.has(normPath)) {
       productionRoutesViolations.push(route.path);

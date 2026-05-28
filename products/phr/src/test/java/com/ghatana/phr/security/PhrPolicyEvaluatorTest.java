@@ -2,6 +2,7 @@ package com.ghatana.phr.security;
 
 import com.ghatana.phr.api.routes.PhrRouteSupport;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
+import com.ghatana.phr.kernel.service.ConsentManagementService.ConsentValidationResult;
 import com.ghatana.phr.kernel.service.FchvCommunityAssignmentService;
 import com.ghatana.phr.kernel.service.TreatmentRelationshipService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -15,24 +16,48 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("PHR Policy Evaluator Tests")
 class PhrPolicyEvaluatorTest extends EventloopTestBase {
 
-    private static PhrPolicyEvaluator createEvaluator() {
+    private static PolicyHarness createHarness() {
         ConsentManagementService consentService = Mockito.mock(ConsentManagementService.class);
         TreatmentRelationshipService treatmentRelationshipService = Mockito.mock(TreatmentRelationshipService.class);
         FchvCommunityAssignmentService fchvAssignmentService = Mockito.mock(FchvCommunityAssignmentService.class);
-        Mockito.when(treatmentRelationshipService.hasActiveTreatmentRelationship(Mockito.anyString(), Mockito.anyString()))
+        Mockito.lenient().when(treatmentRelationshipService.hasActiveTreatmentRelationship(Mockito.anyString(), Mockito.anyString()))
             .thenReturn(Promise.of(true));
-        return new PhrPolicyEvaluator(consentService, treatmentRelationshipService, fchvAssignmentService);
+        Mockito.lenient().when(consentService.validateAccess(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
+            .thenReturn(Promise.of(new ConsentValidationResult(true, "Valid grant", "grant-1")));
+        Mockito.lenient().when(fchvAssignmentService.hasCommunityAccess(Mockito.anyString(), Mockito.anyString()))
+            .thenReturn(Promise.of(true));
+        return new PolicyHarness(
+            new PhrPolicyEvaluator(consentService, treatmentRelationshipService, fchvAssignmentService),
+            consentService,
+            treatmentRelationshipService,
+            fchvAssignmentService
+        );
+    }
+
+    private static PhrRouteSupport.PhrRequestContext context(
+            String tenantId,
+            String principalId,
+            String role,
+            String facilityId) {
+        return new PhrRouteSupport.PhrRequestContext(
+            tenantId, principalId, role, "corr-1", role, "core", facilityId);
+    }
+
+    private record PolicyHarness(
+            PhrPolicyEvaluator evaluator,
+            ConsentManagementService consentService,
+            TreatmentRelationshipService treatmentRelationshipService,
+            FchvCommunityAssignmentService fchvAssignmentService) {
     }
 
     @Test
     @DisplayName("Patient can access own record")
     void patientCanAccessOwnRecord() {
-        PhrPolicyEvaluator evaluator = createEvaluator();
-        PhrRouteSupport.PhrRequestContext context = new PhrRouteSupport.PhrRequestContext(
-            "tenant-1", "patient-123", "patient", "corr-1", "patient", "core", null);
+        PolicyHarness harness = createHarness();
+        PhrRouteSupport.PhrRequestContext context = context("tenant-1", "patient-123", "patient", null);
 
         PhrPolicyEvaluator.PolicyDecision decision = runPromise(
-            () -> evaluator.canAccessPatientRecordAsync(context, "patient-123"));
+            () -> harness.evaluator().canAccessPatientRecordAsync(context, "patient-123"));
 
         assertThat(decision.isAllowed()).isTrue();
     }
@@ -40,12 +65,11 @@ class PhrPolicyEvaluatorTest extends EventloopTestBase {
     @Test
     @DisplayName("Patient cannot access another record")
     void patientCannotAccessOtherPatientRecord() {
-        PhrPolicyEvaluator evaluator = createEvaluator();
-        PhrRouteSupport.PhrRequestContext context = new PhrRouteSupport.PhrRequestContext(
-            "tenant-1", "patient-123", "patient", "corr-1", "patient", "core", null);
+        PolicyHarness harness = createHarness();
+        PhrRouteSupport.PhrRequestContext context = context("tenant-1", "patient-123", "patient", null);
 
         PhrPolicyEvaluator.PolicyDecision decision = runPromise(
-            () -> evaluator.canAccessPatientRecordAsync(context, "patient-999"));
+            () -> harness.evaluator().canAccessPatientRecordAsync(context, "patient-999"));
 
         assertThat(decision.isAllowed()).isFalse();
     }
@@ -53,31 +77,154 @@ class PhrPolicyEvaluatorTest extends EventloopTestBase {
     @Test
     @DisplayName("Clinician access requires treatment relationship")
     void clinicianCanAccessPatientRecordWithTreatmentRelationship() {
-        PhrPolicyEvaluator evaluator = createEvaluator();
-        PhrRouteSupport.PhrRequestContext context = new PhrRouteSupport.PhrRequestContext(
-            "tenant-1", "clinician-1", "clinician", "corr-1", "clinician", "core", null);
+        PolicyHarness harness = createHarness();
+        PhrRouteSupport.PhrRequestContext context = context("tenant-1", "clinician-1", "clinician", "facility-1");
 
         PhrPolicyEvaluator.PolicyDecision decision = runPromise(
-            () -> evaluator.canAccessPatientRecordAsync(context, "patient-999"));
+            () -> harness.evaluator().canAccessPatientRecordAsync(context, "patient-999"));
 
         assertThat(decision.isAllowed()).isTrue();
     }
 
     @Test
+    @DisplayName("Caregiver access uses resource and action scoped consent")
+    void caregiverAccessUsesResourceAndActionScopedConsent() {
+        PolicyHarness harness = createHarness();
+        PhrRouteSupport.PhrRequestContext context = context("tenant-1", "caregiver-1", "caregiver", null);
+
+        PhrPolicyEvaluator.PolicyDecision decision = runPromise(
+            () -> harness.evaluator().canAccessPhiResourceAsync(
+                context, "patient-1", "DocumentReference", "READ", "tenant-1", null));
+
+        assertThat(decision.isAllowed()).isTrue();
+        Mockito.verify(harness.consentService())
+            .validateAccess("patient-1", "caregiver-1", "DocumentReference", "READ");
+    }
+
+    @Test
+    @DisplayName("Caregiver resource or action mismatch is denied")
+    void caregiverResourceOrActionMismatchIsDenied() {
+        PolicyHarness harness = createHarness();
+        Mockito.when(harness.consentService().validateAccess("patient-1", "caregiver-1", "Observation", "WRITE"))
+            .thenReturn(Promise.of(new ConsentValidationResult(false, "Action not granted", null)));
+        PhrRouteSupport.PhrRequestContext context = context("tenant-1", "caregiver-1", "caregiver", null);
+
+        PhrPolicyEvaluator.PolicyDecision decision = runPromise(
+            () -> harness.evaluator().canAccessPhiResourceAsync(
+                context, "patient-1", "Observation", "WRITE", "tenant-1", null));
+
+        assertThat(decision.isAllowed()).isFalse();
+        assertThat(decision.getReasonCode()).isEqualTo("CAREGIVER_CONSENT_DENIED");
+    }
+
+    @Test
+    @DisplayName("PHI access denies tenant mismatch and facility mismatch")
+    void deniesTenantAndFacilityMismatch() {
+        PolicyHarness harness = createHarness();
+        PhrRouteSupport.PhrRequestContext context = context("tenant-1", "clinician-1", "clinician", "facility-1");
+
+        PhrPolicyEvaluator.PolicyDecision tenantDecision = runPromise(
+            () -> harness.evaluator().canAccessPhiResourceAsync(
+                context, "patient-1", "Observation", "READ", "tenant-2", "facility-1"));
+        PhrPolicyEvaluator.PolicyDecision facilityDecision = runPromise(
+            () -> harness.evaluator().canAccessPhiResourceAsync(
+                context, "patient-1", "Observation", "READ", "tenant-1", "facility-2"));
+
+        assertThat(tenantDecision.isAllowed()).isFalse();
+        assertThat(tenantDecision.getReasonCode()).isEqualTo("TENANT_SCOPE_MISMATCH");
+        assertThat(facilityDecision.isAllowed()).isFalse();
+        assertThat(facilityDecision.getReasonCode()).isEqualTo("FACILITY_SCOPE_MISMATCH");
+    }
+
+    @Test
+    @DisplayName("PHI access denies missing tenant or action")
+    void deniesMissingTenantOrAction() {
+        PolicyHarness harness = createHarness();
+        PhrRouteSupport.PhrRequestContext context = context("tenant-1", "clinician-1", "clinician", "facility-1");
+
+        PhrPolicyEvaluator.PolicyDecision tenantDecision = runPromise(
+            () -> harness.evaluator().canAccessPhiResourceAsync(
+                context, "patient-1", "Observation", "READ", "", "facility-1"));
+        PhrPolicyEvaluator.PolicyDecision actionDecision = runPromise(
+            () -> harness.evaluator().canAccessPhiResourceAsync(
+                context, "patient-1", "Observation", "", "tenant-1", "facility-1"));
+
+        assertThat(tenantDecision.getReasonCode()).isEqualTo("MISSING_TENANT");
+        assertThat(actionDecision.getReasonCode()).isEqualTo("MISSING_ACTION");
+    }
+
+    @Test
+    @DisplayName("Admin PHI access requires explicit route-level justification")
+    void adminPhiAccessRequiresJustification() {
+        PolicyHarness harness = createHarness();
+        PhrRouteSupport.PhrRequestContext context = context("tenant-1", "admin-1", "admin", "facility-1");
+
+        PhrPolicyEvaluator.PolicyDecision decision = runPromise(
+            () -> harness.evaluator().canAccessPhiResourceAsync(
+                context, "patient-1", "Observation", "READ", "tenant-1", "facility-1"));
+
+        assertThat(decision.isAllowed()).isFalse();
+        assertThat(decision.getReasonCode()).isEqualTo("ADMIN_JUSTIFICATION_REQUIRED");
+    }
+
+    @Test
+    @DisplayName("FCHV access requires community assignment")
+    void fchvAccessRequiresCommunityAssignment() {
+        PolicyHarness harness = createHarness();
+        Mockito.when(harness.fchvAssignmentService().hasCommunityAccess("fchv-1", "patient-1"))
+            .thenReturn(Promise.of(false));
+        PhrRouteSupport.PhrRequestContext context = context("tenant-1", "fchv-1", "fchv", "facility-1");
+
+        PhrPolicyEvaluator.PolicyDecision decision = runPromise(
+            () -> harness.evaluator().canAccessPhiResourceAsync(
+                context, "patient-1", "Observation", "READ", "tenant-1", "facility-1"));
+
+        assertThat(decision.isAllowed()).isFalse();
+        assertThat(decision.getReasonCode()).isEqualTo("FCHV_NO_COMMUNITY_ACCESS");
+    }
+
+    @Test
+    @DisplayName("Unknown role fails closed")
+    void unknownRoleFailsClosed() {
+        PolicyHarness harness = createHarness();
+        PhrRouteSupport.PhrRequestContext context = context("tenant-1", "actor-1", "researcher", "facility-1");
+
+        PhrPolicyEvaluator.PolicyDecision decision = runPromise(
+            () -> harness.evaluator().canAccessPhiResourceAsync(
+                context, "patient-1", "Observation", "READ", "tenant-1", "facility-1"));
+
+        assertThat(decision.isAllowed()).isFalse();
+        assertThat(decision.getReasonCode()).isEqualTo("UNKNOWN_ROLE");
+    }
+
+    @Test
     @DisplayName("Emergency access is limited to clinicians and admins")
     void emergencyAccessIsRoleBound() {
-        PhrPolicyEvaluator evaluator = createEvaluator();
-        PhrRouteSupport.PhrRequestContext clinicianContext = new PhrRouteSupport.PhrRequestContext(
-            "tenant-1", "clinician-1", "clinician", "corr-1", "clinician", "core", null);
-        PhrRouteSupport.PhrRequestContext patientContext = new PhrRouteSupport.PhrRequestContext(
-            "tenant-1", "patient-1", "patient", "corr-1", "patient", "core", null);
+        PolicyHarness harness = createHarness();
+        PhrRouteSupport.PhrRequestContext clinicianContext = context("tenant-1", "clinician-1", "clinician", "facility-1");
+        PhrRouteSupport.PhrRequestContext patientContext = context("tenant-1", "patient-1", "patient", null);
 
         PhrPolicyEvaluator.PolicyDecision clinicianDecision = runPromise(
-            () -> evaluator.canAccessEmergency(clinicianContext, "patient-1", "Emergency treatment"));
+            () -> harness.evaluator().canAccessEmergency(clinicianContext, "patient-1", "Emergency treatment"));
         PhrPolicyEvaluator.PolicyDecision patientDecision = runPromise(
-            () -> evaluator.canAccessEmergency(patientContext, "patient-1", "Emergency treatment"));
+            () -> harness.evaluator().canAccessEmergency(patientContext, "patient-1", "Emergency treatment"));
 
         assertThat(clinicianDecision.isAllowed()).isTrue();
         assertThat(patientDecision.isAllowed()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Emergency access fails closed without patient ID or justification")
+    void emergencyAccessRequiresPatientAndJustification() {
+        PolicyHarness harness = createHarness();
+        PhrRouteSupport.PhrRequestContext clinicianContext = context("tenant-1", "clinician-1", "clinician", "facility-1");
+
+        PhrPolicyEvaluator.PolicyDecision missingPatientDecision = runPromise(
+            () -> harness.evaluator().canAccessEmergency(clinicianContext, "", "Emergency treatment"));
+        PhrPolicyEvaluator.PolicyDecision missingJustificationDecision = runPromise(
+            () -> harness.evaluator().canAccessEmergency(clinicianContext, "patient-1", ""));
+
+        assertThat(missingPatientDecision.getReasonCode()).isEqualTo("MISSING_PATIENT_ID");
+        assertThat(missingJustificationDecision.getReasonCode()).isEqualTo("MISSING_JUSTIFICATION");
     }
 }

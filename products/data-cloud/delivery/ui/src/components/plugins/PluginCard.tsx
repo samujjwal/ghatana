@@ -112,8 +112,8 @@ export function PluginCard({
         className
       )}
     >
-      {/* Quick Actions Overlay - Shows on Hover */}
-      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
+      {/* Quick actions stay keyboard-visible via focus-within, not hover-only. */}
+      <div className="absolute top-2 right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity flex gap-1 z-10">
         {mode === 'installed' && installedPlugin && (
           <>
             <button

@@ -25,31 +25,6 @@ function loadJson(relativePath) {
   }
 }
 
-function loadTs(relativePath) {
-  try {
-    const content = readFileSync(join(REPO_ROOT, relativePath), 'utf-8');
-    return content;
-  } catch (error) {
-    console.error(`Failed to load ${relativePath}:`, error.message);
-    return null;
-  }
-}
-
-function extractRouteContracts(tsContent) {
-  const routes = [];
-  const routePattern = /{\s*path:\s*['"`]([^'"`]+)['"`],\s*label:\s*t\(['"`]([^'"`]+)['"`]\)/g;
-  let match;
-  
-  while ((match = routePattern.exec(tsContent)) !== null) {
-    routes.push({
-      path: match[1],
-      label: match[2]
-    });
-  }
-  
-  return routes;
-}
-
 function generateMarkdown(baseline, webRoutes) {
   const lines = [];
   
@@ -69,13 +44,15 @@ function generateMarkdown(baseline, webRoutes) {
   const totalUsecases = baseline.usecases.length;
   const implemented = baseline.usecases.filter(u => u.status === 'implemented').length;
   const partial = baseline.usecases.filter(u => u.status === 'partial').length;
-  const featureFlagged = baseline.usecases.filter(u => u.status === 'feature_flagged').length;
+  const deferred = baseline.usecases.filter(u => u.status === 'deferred').length;
+  const hiddenRoutes = webRoutes.filter(route => route.stability === 'hidden').length;
   
   lines.push(`- **Total Use Cases:** ${totalUsecases}`);
   lines.push(`- **Fully Implemented:** ${implemented} (${Math.round(implemented/totalUsecases*100)}%)`);
   lines.push(`- **Partial Implementation:** ${partial} (${Math.round(partial/totalUsecases*100)}%)`);
-  lines.push(`- **Feature-Flagged:** ${featureFlagged} (${Math.round(featureFlagged/totalUsecases*100)}%)`);
+  lines.push(`- **Deferred:** ${deferred} (${Math.round(deferred/totalUsecases*100)}%)`);
   lines.push(`- **Web Routes:** ${webRoutes.length}`);
+  lines.push(`- **Hidden Web Routes:** ${hiddenRoutes}`);
   lines.push('');
   lines.push('---');
   lines.push('');
@@ -85,13 +62,13 @@ function generateMarkdown(baseline, webRoutes) {
   lines.push('');
   lines.push('The following routes are currently implemented in the PHR web application:');
   lines.push('');
-  lines.push('| Path | Label | Minimum Role | Status |');
-  lines.push('|------|-------|--------------|--------|');
+  lines.push('| Path | Label | Minimum Role | Route State | Use-Case Status |');
+  lines.push('|------|-------|--------------|-------------|-----------------|');
   
   for (const route of webRoutes) {
     const baselineEntry = baseline.usecases.find(u => u.webRoute === route.path);
     const status = baselineEntry ? baselineEntry.status : 'unknown';
-    lines.push(`| ${route.path} | ${route.label} | patient | ${status} |`);
+    lines.push(`| ${route.path} | ${route.label} | ${route.minimumRole} | ${route.stability} | ${status} |`);
   }
   lines.push('');
   lines.push('---');
@@ -183,14 +160,13 @@ function main() {
     process.exit(1);
   }
   
-  // Load web route contracts
-  const routeContractsTs = loadTs('products/phr/apps/web/src/phrRouteContracts.ts');
-  if (!routeContractsTs) {
-    console.error('Failed to load route contracts');
+  const routeContract = loadJson('products/phr/config/phr-route-contract.json');
+  if (!routeContract || !Array.isArray(routeContract.routes)) {
+    console.error('Failed to load route contract');
     process.exit(1);
   }
   
-  const webRoutes = extractRouteContracts(routeContractsTs);
+  const webRoutes = routeContract.routes;
   
   // Generate markdown
   const markdown = generateMarkdown(baseline, webRoutes);

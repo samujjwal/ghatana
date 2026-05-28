@@ -23,7 +23,7 @@ import { Navigate, Outlet, useLocation } from 'react-router';
 import SessionBootstrap, { type ShellRole } from '../../lib/auth/session';
 import {
   getRouteSurfaceByPath,
-  type RouteCapability,
+  type RouteSurface,
 } from '../../lib/routing/RouteSurfaceRegistry';
 
 interface RoleProtectedRouteProps {
@@ -57,7 +57,7 @@ function shellRoleMeetsMinimum(current: ShellRole, required: ShellRole): boolean
  * Resolve the canonical route from the registry for a given path.
  * Handles parameterized segments (e.g., /operations/jobs/:id → /operations/jobs).
  */
-function resolveRoute(pathname: string): RouteCapability | undefined {
+function resolveRoute(pathname: string): RouteSurface | undefined {
   // Try exact match first
   const exact = getRouteSurfaceByPath(pathname);
   if (exact) return exact;

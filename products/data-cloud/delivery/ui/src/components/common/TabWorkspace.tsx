@@ -196,8 +196,9 @@ export function TabWorkspace({
                                     onClick={(e) => handleClose(e, tab.id)}
                                     className={cn(
                                         'flex-shrink-0 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700',
-                                        'opacity-0 group-hover:opacity-100 transition-opacity'
+                                        'opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity'
                                     )}
+                                    aria-label={`Close tab ${tab.title}`}
                                 >
                                     <X className="h-3.5 w-3.5" />
                                 </button>

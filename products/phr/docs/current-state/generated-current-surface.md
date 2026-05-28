@@ -1,6 +1,6 @@
 # PHR Current Implementation Surface
 
-**Generated:** 2026-05-27T19:30:49.296Z
+**Generated:** 2026-05-28T19:35:13.439Z
 
 This document describes the current implementation surface of the PHR product,
 including web routes, mobile screens, backend APIs, and their implementation status.
@@ -12,8 +12,9 @@ including web routes, mobile screens, backend APIs, and their implementation sta
 - **Total Use Cases:** 27
 - **Fully Implemented:** 21 (78%)
 - **Partial Implementation:** 2 (7%)
-- **Feature-Flagged:** 4 (15%)
+- **Deferred:** 4 (15%)
 - **Web Routes:** 27
+- **Hidden Web Routes:** 4
 
 ---
 
@@ -21,35 +22,35 @@ including web routes, mobile screens, backend APIs, and their implementation sta
 
 The following routes are currently implemented in the PHR web application:
 
-| Path | Label | Minimum Role | Status |
-|------|-------|--------------|--------|
-| /dashboard | route.dashboard.label | patient | implemented |
-| /records | route.records.label | patient | implemented |
-| /consents | route.consents.label | patient | implemented |
-| /appointments | route.appointments.label | patient | partial |
-| /labs | route.labs.label | patient | implemented |
-| /medications | route.medications.label | patient | implemented |
-| /emergency | route.emergency.label | patient | implemented |
-| /emergency/reviews | route.emergency.label | patient | unknown |
-| /release-readiness | route.releaseReadiness.label | patient | implemented |
-| /audit | route.audit.label | patient | implemented |
-| /settings | route.settings.label | patient | implemented |
-| /records/:recordId | route.recordDetail.label | patient | partial |
-| /profile | route.profile.label | patient | implemented |
-| /timeline | route.timeline.label | patient | implemented |
-| /conditions | route.conditions.label | patient | implemented |
-| /observations | route.observations.label | patient | implemented |
-| /immunizations | route.immunizations.label | patient | implemented |
-| /documents | route.documents.label | patient | implemented |
-| /documents/upload | route.documents.upload.label | patient | implemented |
-| /documents/:docId/ocr | route.ocr.label | patient | implemented |
-| /notifications | route.notifications.label | patient | implemented |
-| /forbidden | route.forbidden.label | patient | unknown |
-| /not-found | route.notFound.label | patient | unknown |
-| /provider/dashboard | route.provider.dashboard.label | patient | feature_flagged |
-| /provider/patients | route.provider.patients.label | patient | feature_flagged |
-| /caregiver/dependents | route.caregiver.dependents.label | patient | feature_flagged |
-| /fchv/dashboard | route.fchv.dashboard.label | patient | feature_flagged |
+| Path | Label | Minimum Role | Route State | Use-Case Status |
+|------|-------|--------------|-------------|-----------------|
+| /dashboard | Dashboard | patient | stable | implemented |
+| /records | Records | patient | stable | implemented |
+| /consents | Consents | patient | stable | implemented |
+| /appointments | Appointments | patient | stable | partial |
+| /settings | Settings | patient | stable | implemented |
+| /labs | Labs | caregiver | stable | implemented |
+| /medications | Medications | caregiver | stable | implemented |
+| /conditions | Conditions | patient | stable | implemented |
+| /observations | Observations | caregiver | stable | implemented |
+| /immunizations | Immunizations | patient | stable | implemented |
+| /documents | Documents | patient | stable | implemented |
+| /documents/upload | Document Upload | patient | stable | implemented |
+| /documents/:docId/ocr | OCR Review | patient | stable | implemented |
+| /timeline | Timeline | patient | stable | implemented |
+| /profile | Profile | patient | stable | implemented |
+| /records/:recordId | Record Detail | patient | stable | partial |
+| /notifications | Notifications | patient | stable | implemented |
+| /forbidden | Forbidden | patient | stable | unknown |
+| /not-found | Not Found | patient | stable | unknown |
+| /emergency | Emergency | clinician | stable | implemented |
+| /emergency/reviews | Emergency Reviews | admin | stable | unknown |
+| /release-readiness | Release Readiness | admin | stable | implemented |
+| /audit | Audit | admin | stable | implemented |
+| /provider/dashboard | Provider Dashboard | clinician | hidden | deferred |
+| /provider/patients | Provider Patients | clinician | hidden | deferred |
+| /caregiver/dependents | Caregiver Dependents | caregiver | hidden | deferred |
+| /fchv/dashboard | FCHV Dashboard | fchv | hidden | deferred |
 
 ---
 

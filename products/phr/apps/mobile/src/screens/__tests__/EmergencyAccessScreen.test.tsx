@@ -11,6 +11,12 @@ jest.mock('../../i18n/phrMobileI18n', () => ({
   t: (key: string) => key,
 }));
 
+jest.mock('../../services/phrMobileApi', () => ({
+  requestMobileEmergencyAccess: jest.fn(),
+}));
+
+import { requestMobileEmergencyAccess } from '../../services/phrMobileApi';
+
 const session: MobileSession = {
   principalId: 'patient-1',
   tenantId: 'tenant-np',
@@ -19,8 +25,7 @@ const session: MobileSession = {
   expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
 };
 
-const mockFetch = jest.fn();
-global.fetch = mockFetch as typeof fetch;
+const mockRequestMobileEmergencyAccess = requestMobileEmergencyAccess as jest.MockedFunction<typeof requestMobileEmergencyAccess>;
 
 Object.defineProperty(globalThis, 'crypto', {
   value: {
@@ -54,16 +59,13 @@ function changeTextNode(node: { props: Record<string, unknown> }, value: string)
 
 describe('EmergencyAccessScreen', () => {
   beforeEach(() => {
-    mockFetch.mockReset();
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        patientName: 'Ram Bahadur',
-        bloodType: 'O+',
-        allergies: [],
-        medications: [],
-        emergencyContact: 'Family',
-      }),
+    mockRequestMobileEmergencyAccess.mockReset();
+    mockRequestMobileEmergencyAccess.mockResolvedValue({
+      patientName: 'Ram Bahadur',
+      bloodType: 'O+',
+      allergies: [],
+      medications: [],
+      emergencyContact: 'Family',
     });
   });
 
@@ -78,6 +80,7 @@ describe('EmergencyAccessScreen', () => {
     const { getByLabelText } = render(
       <EmergencyAccessScreen onAuthenticate={jest.fn()} session={session} />,
     );
+    expect(getByLabelText('emergency.patientIdLabel')).toBeTruthy();
     // accessibilityLabel = t('emergency.reasonLabel')
     expect(getByLabelText('emergency.reasonLabel')).toBeTruthy();
     // request button accessibilityLabel = t('emergency.requestButton')
@@ -93,6 +96,7 @@ describe('EmergencyAccessScreen', () => {
       <EmergencyAccessScreen onAuthenticate={onAuthenticate} session={session} />,
     );
 
+    act(() => changeTextNode(rendered.getByLabelText('emergency.patientIdLabel'), 'patient-1'));
     act(() => changeTextNode(rendered.getByLabelText('emergency.reasonLabel'), 'Patient collapsed'));
     await waitFor(() => expect(renderedText(rendered)).toContain('Patient collapsed'));
     await act(async () => {
@@ -112,6 +116,7 @@ describe('EmergencyAccessScreen', () => {
       <EmergencyAccessScreen onAuthenticate={onAuthenticate} session={session} />,
     );
 
+    act(() => changeTextNode(rendered.getByLabelText('emergency.patientIdLabel'), 'patient-1'));
     act(() => changeTextNode(rendered.getByLabelText('emergency.reasonLabel'), 'Cardiac emergency'));
     await waitFor(() => expect(renderedText(rendered)).toContain('Cardiac emergency'));
     await act(async () => {
@@ -121,6 +126,11 @@ describe('EmergencyAccessScreen', () => {
     await waitFor(() => {
       expect(renderedText(rendered)).toContain('emergency.authorized');
     });
+    expect(mockRequestMobileEmergencyAccess).toHaveBeenCalledWith(
+      'patient-1',
+      'Cardiac emergency',
+      session,
+    );
   });
 
   it('shows denied state after failed authentication', async () => {
@@ -129,6 +139,7 @@ describe('EmergencyAccessScreen', () => {
       <EmergencyAccessScreen onAuthenticate={onAuthenticate} session={session} />,
     );
 
+    act(() => changeTextNode(rendered.getByLabelText('emergency.patientIdLabel'), 'patient-1'));
     act(() => changeTextNode(rendered.getByLabelText('emergency.reasonLabel'), 'Emergency reason'));
     await waitFor(() => expect(renderedText(rendered)).toContain('Emergency reason'));
     await act(async () => {
@@ -146,6 +157,7 @@ describe('EmergencyAccessScreen', () => {
       <EmergencyAccessScreen onAuthenticate={onAuthenticate} session={session} />,
     );
 
+    act(() => changeTextNode(rendered.getByLabelText('emergency.patientIdLabel'), 'patient-1'));
     act(() => changeTextNode(rendered.getByLabelText('emergency.reasonLabel'), 'Access needed'));
     await waitFor(() => expect(renderedText(rendered)).toContain('Access needed'));
     await act(async () => {

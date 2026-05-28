@@ -33,6 +33,14 @@ export interface MobileDashboard {
   notifications: MobileNotificationItem[];
 }
 
+export interface MobileEmergencyData {
+  patientName: string;
+  bloodType: string;
+  allergies: string[];
+  medications: string[];
+  emergencyContact: string;
+}
+
 // Auth session
 
 export interface MobileSession {

@@ -4,4 +4,4 @@ export {
   fetchPatientProfile,
   fetchTimeline,
   updatePatientProfile,
-} from './phrApi';
+} from './phrApiCore';

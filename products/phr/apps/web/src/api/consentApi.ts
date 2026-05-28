@@ -1,4 +1,4 @@
 export {
   createConsentGrant,
   revokeConsentGrant,
-} from './phrApi';
+} from './phrApiCore';

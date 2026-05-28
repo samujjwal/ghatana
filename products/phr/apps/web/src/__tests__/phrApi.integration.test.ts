@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createAppointmentRequest, fetchDashboardData, fetchNotifications } from '../api/phrApi';
+import {
+  createAppointmentRequest,
+  createConsentGrant,
+  exportPatientBundle,
+  fetchDashboardData,
+  fetchNotifications,
+  logoutSession,
+} from '../api/phrApi';
 
 describe('PHR API integration mapping', () => {
   afterEach(() => {
@@ -108,6 +115,112 @@ describe('PHR API integration mapping', () => {
         role: 'patient',
       },
     );
+  });
+
+  it('parses native consent grant responses through the schema boundary', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        const headers = new Headers(init?.headers);
+        expect(headers.get('X-Idempotency-Key')).toBeTruthy();
+        return new Response(JSON.stringify({
+          id: 'grant-1',
+          recipient: 'provider-1',
+          purpose: 'Care coordination',
+          status: 'active',
+          expiresAt: '2026-06-30',
+        }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }),
+    );
+
+    await expect(createConsentGrant(
+      {
+        patientId: 'patient-001',
+        recipientId: 'provider-1',
+        purpose: 'Care coordination',
+        scope: { resourceTypes: ['Observation'] },
+        expiresAt: '2026-06-30',
+      },
+      {
+        tenantId: 'tenant-health-1',
+        principalId: 'patient-001',
+        role: 'patient',
+      },
+    )).resolves.toMatchObject({
+      id: 'grant-1',
+      recipient: 'provider-1',
+      status: 'active',
+    });
+  });
+
+  it('maps FHIR consent grant responses through the same consent contract', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(JSON.stringify({
+        resourceType: 'Consent',
+        id: 'consent-1',
+        status: 'active',
+        organization: [{ display: 'Kantipur Clinic' }],
+        purpose: [{ display: 'Referral' }],
+        provision: {
+          period: { end: '2026-07-01T00:00:00Z' },
+        },
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })),
+    );
+
+    await expect(createConsentGrant(
+      {
+        patientId: 'patient-001',
+        recipientId: 'provider-1',
+        purpose: 'Referral',
+        scope: { resourceTypes: ['DocumentReference'] },
+        expiresAt: '2026-07-01',
+      },
+      {
+        tenantId: 'tenant-health-1',
+        principalId: 'patient-001',
+        role: 'patient',
+      },
+    )).resolves.toMatchObject({
+      id: 'consent-1',
+      recipient: 'Kantipur Clinic',
+      purpose: 'Referral',
+    });
+  });
+
+  it('accepts text patient export responses and empty logout responses', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = new URL(String(input));
+        if (url.pathname === '/fhir/Patient/current/$export') {
+          return new Response('Bundle export queued', {
+            status: 200,
+            headers: { 'Content-Type': 'text/plain' },
+          });
+        }
+        if (url.pathname === '/auth/logout') {
+          return new Response(null, { status: 204 });
+        }
+        return new Response('Not found', { status: 404 });
+      }),
+    );
+
+    await expect(exportPatientBundle({
+      tenantId: 'tenant-health-1',
+      principalId: 'patient-001',
+      role: 'patient',
+    })).resolves.toBe('Bundle export queued');
+    await expect(logoutSession({
+      tenantId: 'tenant-health-1',
+      principalId: 'patient-001',
+    })).resolves.toBeUndefined();
   });
 
   it('rejects malformed notification payloads at the API boundary', async () => {

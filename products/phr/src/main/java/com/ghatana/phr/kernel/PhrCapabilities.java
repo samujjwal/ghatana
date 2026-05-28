@@ -9,15 +9,14 @@ import java.util.Map;
  * PHR product capability definitions.
  *
  * <p>This class owns all capability constants declared by the PHR product.
- * Product-specific capabilities must be declared here — not inside the generic
- * {@code KernelCapability.Products} inner class, which is deprecated and will be
- * removed once all products define their own capability constants.</p>
+ * Product-specific capabilities must be declared here, keeping product-owned
+ * capability IDs out of generic Kernel capability containers.</p>
  *
  * <p>Capability ID convention: {@code phr.*} prefix to avoid collision with
  * kernel core capabilities ({@code data.*}, {@code user.*}, etc.).</p>
  *
- * <p>Reference: KERNEL_CANONICALIZATION_DECISIONS.md §D1 — capability purity;
- * CODE_ALIGNMENT_SPECIFICATION.md §2.2 — migration target.</p>
+ * <p>Reference: KERNEL_CANONICALIZATION_DECISIONS.md capability purity and
+ * CODE_ALIGNMENT_SPECIFICATION.md product-owned capability targets.</p>
  *
  * @doc.type class
  * @doc.purpose PHR product-owned capability declarations

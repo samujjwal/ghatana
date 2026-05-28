@@ -6,7 +6,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { ProviderPatientsPage } from '../ProviderPatientsPage';
 
-vi.mock('../../api/phrApi', () => ({
+vi.mock('../../api/adminApi', () => ({
   fetchProviderPatients: vi.fn(),
 }));
 
@@ -33,7 +33,7 @@ vi.mock('../../auth/PhrAccessContext', () => ({
   usePhrAccess: () => ({ role: 'clinician' as const }),
 }));
 
-import { fetchProviderPatients } from '../../api/phrApi';
+import { fetchProviderPatients } from '../../api/adminApi';
 
 const mockFetch = fetchProviderPatients as ReturnType<typeof vi.fn>;
 

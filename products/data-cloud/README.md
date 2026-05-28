@@ -144,6 +144,13 @@ When an advisory module becomes a production surface, it must be promoted to rel
 
 There are currently no active advisory modules in Data Cloud. API contract and integration suites are release-blocking and must pass for release gates.
 
+Data Cloud UI readiness is also release-blocking for route/runtime/OpenAPI parity:
+
+- `check:route-manifest` (backend registry/runtime parity + generated artifact drift)
+- `docs:routes:check` (route truth matrix drift)
+- `check:api-types` (OpenAPI-generated UI types drift)
+- Focused parity tests (`routeTruthMatrix`, `routeInventory`, `routeSurfaceClassification`, `analyticsOpenApiAlignment`, `openApiDrivenMocks`)
+
 See `scripts/list-data-cloud-active-modules.mjs` for the authoritative source of truth.
 
 ## Shared Platform Review

@@ -6,7 +6,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { OcrReviewPage } from '../OcrReviewPage';
 
-vi.mock('../../api/phrApi', () => ({
+vi.mock('../../api/documentsApi', () => ({
   fetchOcrDocument: vi.fn(),
   confirmOcrDocument: vi.fn(),
 }));
@@ -37,7 +37,7 @@ vi.mock('../../auth/PhrSessionContext', () => ({
   }),
 }));
 
-import { fetchOcrDocument, confirmOcrDocument } from '../../api/phrApi';
+import { fetchOcrDocument, confirmOcrDocument } from '../../api/documentsApi';
 
 const mockFetch = fetchOcrDocument as ReturnType<typeof vi.fn>;
 const mockConfirm = confirmOcrDocument as ReturnType<typeof vi.fn>;

@@ -3,7 +3,7 @@
 **Document type:** Security Architecture  
 **Layer:** Product  
 **Last updated:** 2026-05-02  
-**Authoritative source:** This file. Derived from `products/phr/config/phr-feature-visibility.json` and `products/phr/config/phr-usecase-baseline.json`.
+**Authoritative source:** This file. Route state is derived from `products/phr/config/phr-route-contract.json`; use-case traceability is derived from `products/phr/config/phr-usecase-baseline.json`.
 
 ---
 

@@ -88,7 +88,7 @@ class PhrConsentRoutesTest extends EventloopTestBase {
         // not every test invokes every read path.
         lenient().when(consentService.getPatientGrants(anyString()))
             .thenReturn(Promise.of(List.of()));
-        lenient().when(consentService.validateAccess(anyString(), anyString(), anyString()))
+        lenient().when(consentService.validateAccess(anyString(), anyString(), anyString(), anyString()))
             .thenReturn(Promise.of(new ConsentManagementService.ConsentValidationResult(
                 true, "GRANT_VALID", "grant-42")));
     }
@@ -257,6 +257,19 @@ class PhrConsentRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(200);
+        }
+
+        @Test
+        @DisplayName("200 — check uses explicit action scope when provided")
+        void checkUsesExplicitActionScope() throws Exception {
+            HttpRequest request = contextRequest(
+                HttpMethod.GET, "/check?patientId=patient-1&accessorId=clinician-1&resourceType=labs&action=WRITE",
+                "tenant-1", "clinician-1", "clinician");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(200);
+            verify(consentService).validateAccess("patient-1", "clinician-1", "labs", "WRITE");
         }
 
         @Test

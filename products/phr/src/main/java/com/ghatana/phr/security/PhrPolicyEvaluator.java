@@ -81,10 +81,23 @@ public final class PhrPolicyEvaluator {
      * @return Promise resolving to policy decision with detailed reason
      */
     public Promise<PolicyDecision> canAccessPatientRecordAsync(PhrRequestContext context, String patientId) {
-        return canAccessPhiResourceAsync(context, patientId, PATIENT_RECORD_RESOURCE);
+        return canAccessPhiResourceAsync(
+            context,
+            patientId,
+            PATIENT_RECORD_RESOURCE,
+            "READ",
+            context != null ? context.tenantId() : null,
+            context != null ? context.facilityId() : null
+        );
     }
 
-    public Promise<PolicyDecision> canAccessPhiResourceAsync(PhrRequestContext context, String patientId, String resourceType) {
+    public Promise<PolicyDecision> canAccessPhiResourceAsync(
+            PhrRequestContext context,
+            String patientId,
+            String resourceType,
+            String action,
+            String tenantId,
+            String facilityId) {
         if (context == null) {
             return Promise.of(PolicyDecision.denied("INVALID_CONTEXT", "Request context is null"));
         }
@@ -100,8 +113,22 @@ public final class PhrPolicyEvaluator {
         if (resourceType == null || resourceType.isBlank()) {
             return Promise.of(PolicyDecision.denied("MISSING_RESOURCE_TYPE", "Resource type is null or blank"));
         }
+        if (action == null || action.isBlank()) {
+            return Promise.of(PolicyDecision.denied("MISSING_ACTION", "Action is null or blank"));
+        }
+        if (tenantId == null || tenantId.isBlank()) {
+            return Promise.of(PolicyDecision.denied("MISSING_TENANT", "Tenant ID is null or blank"));
+        }
+        if (!context.tenantId().equals(tenantId)) {
+            return Promise.of(PolicyDecision.denied("TENANT_SCOPE_MISMATCH", "Requested tenant does not match request context"));
+        }
+        if (facilityId != null && !facilityId.isBlank()
+                && context.facilityId() != null && !context.facilityId().equals(facilityId)) {
+            return Promise.of(PolicyDecision.denied("FACILITY_SCOPE_MISMATCH", "Requested facility does not match request context"));
+        }
 
         String role = context.role();
+        String normalizedAction = action.strip().toUpperCase();
 
         // Patient role: can only access own records
         if ("patient".equals(role)) {
@@ -113,7 +140,7 @@ public final class PhrPolicyEvaluator {
 
         // Caregiver role: requires active consent grant with proper scope
         if ("caregiver".equals(role)) {
-            return consentService.validateAccess(patientId, principalId, resourceType)
+            return consentService.validateAccess(patientId, principalId, resourceType, normalizedAction)
                 .map(result -> {
                     if (result.isAllowed()) {
                         return PolicyDecision.allowed("CAREGIVER_CONSENT_GRANTED", 
@@ -126,6 +153,14 @@ public final class PhrPolicyEvaluator {
 
         // Clinician role: requires treatment relationship
         if ("clinician".equals(role)) {
+            if (context.facilityId() == null || context.facilityId().isBlank()) {
+                return consentService.validateAccess(patientId, principalId, resourceType, normalizedAction)
+                    .map(result -> result.isAllowed()
+                        ? PolicyDecision.allowed("CLINICIAN_CONSENT_GRANTED",
+                            "Valid clinician consent grant exists with appropriate scope")
+                        : PolicyDecision.denied("CLINICIAN_SCOPE_REQUIRED",
+                            "Clinician PHI access requires facility-scoped treatment relationship or explicit consent"));
+            }
             return treatmentRelationshipService.hasActiveTreatmentRelationship(principalId, patientId)
                 .map(hasRelationship -> hasRelationship
                     ? PolicyDecision.allowed("TREATMENT_RELATIONSHIP", "Active treatment relationship exists")
@@ -331,19 +366,19 @@ public final class PhrPolicyEvaluator {
             this.emergencyOverride = emergencyOverride;
         }
 
-        static PolicyDecision allowed(String reasonCode, String reasonMessage) {
+        public static PolicyDecision allowed(String reasonCode, String reasonMessage) {
             return new PolicyDecision(true, reasonCode, reasonMessage, false, false);
         }
 
-        static PolicyDecision allowedWithAudit(String reasonCode, String reasonMessage) {
+        public static PolicyDecision allowedWithAudit(String reasonCode, String reasonMessage) {
             return new PolicyDecision(true, reasonCode, reasonMessage, true, false);
         }
 
-        static PolicyDecision denied(String reasonCode, String reasonMessage) {
+        public static PolicyDecision denied(String reasonCode, String reasonMessage) {
             return new PolicyDecision(false, reasonCode, reasonMessage, false, false);
         }
 
-        static PolicyDecision emergencyOverride(String reasonCode, String reasonMessage) {
+        public static PolicyDecision emergencyOverride(String reasonCode, String reasonMessage) {
             return new PolicyDecision(true, reasonCode, reasonMessage, true, true);
         }
 

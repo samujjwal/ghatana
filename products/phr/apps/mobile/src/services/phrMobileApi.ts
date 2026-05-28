@@ -1,6 +1,7 @@
 import type {
   MobileConsent,
   MobileDashboard,
+  MobileEmergencyData,
   MobileNotificationItem,
   MobilePatientProfile,
   MobileRecord,
@@ -133,6 +134,32 @@ function assertMobileDashboard(value: unknown): MobileDashboard {
   };
 }
 
+function assertMobileEmergencyData(value: unknown): MobileEmergencyData {
+  const payload = isRecord(value) && isRecord(value.emergencyData) ? value.emergencyData : value;
+  if (!isRecord(payload)) {
+    throw new Error(t('api.emergencyNotObject'));
+  }
+  const { patientName, bloodType, allergies, medications, emergencyContact } = payload;
+  if (
+    !isString(patientName) ||
+    !isString(bloodType) ||
+    !Array.isArray(allergies) ||
+    !allergies.every(isString) ||
+    !Array.isArray(medications) ||
+    !medications.every(isString) ||
+    !isString(emergencyContact)
+  ) {
+    throw new Error(t('api.invalidEmergencyData'));
+  }
+  return {
+    patientName,
+    bloodType,
+    allergies,
+    medications,
+    emergencyContact,
+  };
+}
+
 async function fetchDashboardFromApi(session: MobileSession): Promise<MobileDashboard> {
   const apiBaseUrl = getApiBaseUrl();
   if (!apiBaseUrl) {
@@ -194,6 +221,50 @@ export async function syncOfflineDashboard(session: MobileSession): Promise<stri
   const dashboard = await fetchDashboardFromApi(session);
   await saveDashboardOffline(dashboard, undefined, sessionIdentity);
   return t('api.offlineCacheRefreshed');
+}
+
+export async function requestMobileEmergencyAccess(
+  patientId: string,
+  justification: string,
+  session: MobileSession,
+): Promise<MobileEmergencyData> {
+  const trimmedPatientId = patientId.trim();
+  const trimmedJustification = justification.trim();
+  if (!trimmedPatientId || trimmedJustification.length < 20) {
+    throw new Error(t('api.invalidEmergencyRequest'));
+  }
+
+  const apiBaseUrl = getApiBaseUrl();
+  if (!apiBaseUrl) {
+    throw new Error(t('api.apiNotConfigured'));
+  }
+
+  const response = await fetch(`${apiBaseUrl}/emergency/access`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-Tenant-Id': session.tenantId,
+      'X-Principal-Id': session.principalId,
+      'X-Role': session.role,
+      'X-Persona': session.persona || 'default',
+      'X-Tier': session.tier || 'standard',
+      'X-Correlation-ID': crypto.randomUUID(),
+    },
+    body: JSON.stringify({
+      patientId: trimmedPatientId,
+      accessorId: session.principalId,
+      accessorRole: session.role,
+      justification: trimmedJustification,
+      resourcesAccessed: ['emergency-summary'],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(t('api.emergencyAccessFailed', { status: String(response.status) }));
+  }
+
+  return assertMobileEmergencyData(await response.json());
 }
 
 /**
@@ -274,7 +345,6 @@ function assertMobileSession(value: unknown): MobileSession {
  * @param nationalId The user's national ID or medical record number.
  * @param password   The user's password.
  * @returns          A resolved MobileSession on success.
-    // Network failure; continue with local cleanup.
  */
 export async function loginMobile(nationalId: string, password: string): Promise<MobileSession> {
   if (!nationalId.trim() || !password) {

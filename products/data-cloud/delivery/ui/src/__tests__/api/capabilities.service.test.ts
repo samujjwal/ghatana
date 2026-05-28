@@ -21,14 +21,53 @@ describe('surfaces.service compatibility behavior', () => {
   it('normalizes capability registry statuses and reasons', async () => {
     apiClientGet.mockResolvedValue({
       data: {
-        surfaces: {
-          analytics: 'ACTIVE',
-          trino: 'NOT_CONFIGURED',
-          ai_assist: {
-            status: 'DEGRADED',
-            reason: 'OpenAI API key is not configured for this tenant.',
+        surfaces: [
+          {
+            surfaceId: 'analytics',
+            state: 'ACTIVE',
+            status: 'ACTIVE',
+            ownerPlane: 'intelligence',
+            requiredDependencies: [],
+            dependencyProbes: [],
+            tenantScope: 'tenant',
+            runtimeProfile: 'local',
+            lastCheckedAt: '2026-04-17T10:00:00Z',
+            evidence: {},
+            limitations: '',
+            actionsAllowed: [],
           },
-        },
+          {
+            surfaceId: 'trino',
+            state: 'NOT_CONFIGURED',
+            status: 'NOT_CONFIGURED',
+            ownerPlane: 'data',
+            requiredDependencies: [],
+            dependencyProbes: [],
+            tenantScope: 'tenant',
+            runtimeProfile: 'local',
+            lastCheckedAt: '2026-04-17T10:00:00Z',
+            evidence: {},
+            limitations: '',
+            actionsAllowed: [],
+          },
+          {
+            surfaceId: 'ai_assist',
+            state: 'DEGRADED',
+            status: 'DEGRADED',
+            ownerPlane: 'intelligence',
+            requiredDependencies: ['openai'],
+            dependencyProbes: [],
+            tenantScope: 'tenant',
+            runtimeProfile: 'local',
+            lastCheckedAt: '2026-04-17T10:00:00Z',
+            evidence: {
+              reason: 'OpenAI API key is not configured for this tenant.',
+            },
+            limitations: 'OpenAI API key is not configured for this tenant.',
+            actionsAllowed: [],
+          },
+        ],
+        count: 3,
         generatedAt: '2026-04-17T10:00:00Z',
       },
       meta: {
@@ -52,7 +91,6 @@ describe('surfaces.service compatibility behavior', () => {
           key: 'ai_assist',
           status: 'degraded',
           summary: 'DEGRADED',
-          detail: 'OpenAI API key is not configured for this tenant.',
         }),
       ]),
     );

@@ -188,14 +188,15 @@ class PhrHttpServerTest extends EventloopTestBase {
         PhrFhirRoutes fhirRoutes = new PhrFhirRoutes(eventloop(), controller);
         PhrDashboardRoutes dashboardRoutes = new PhrDashboardRoutes(eventloop(), userRepository);
         PhrPatientRecordRoutes patientRecordRoutes =
-            new PhrPatientRecordRoutes(eventloop(), patientRecordService, consentService);
+            new PhrPatientRecordRoutes(eventloop(), patientRecordService, policyEvaluator);
         PhrConsentRoutes consentRoutes = new PhrConsentRoutes(eventloop(), consentService, policyEvaluator);
         PhrClinicalRoutes clinicalRoutes = new PhrClinicalRoutes(
             eventloop(),
             labResultService,
             medicationService,
             immunizationService,
-            consentService
+            consentService,
+            policyEvaluator
         );
         PhrEmergencyRoutes emergencyRoutes = new PhrEmergencyRoutes(
             eventloop(),
@@ -209,7 +210,8 @@ class PhrHttpServerTest extends EventloopTestBase {
             telemedicineService,
             referralService,
             billingService,
-            consentService
+            consentService,
+            policyEvaluator
         );
         PhrDocumentImagingRoutes documentImagingRoutes = new PhrDocumentImagingRoutes(
             eventloop(),

@@ -6,8 +6,11 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { ConsentPage } from '../../pages/ConsentPage';
 
-vi.mock('../../api/phrApi', () => ({
+vi.mock('../../api/patientApi', () => ({
   fetchDashboardData: vi.fn(),
+}));
+
+vi.mock('../../api/consentApi', () => ({
   createConsentGrant: vi.fn(),
   revokeConsentGrant: vi.fn(),
 }));
@@ -26,7 +29,8 @@ vi.mock('../../auth/PhrAccessContext', () => ({
   }),
 }));
 
-import { createConsentGrant, fetchDashboardData, revokeConsentGrant } from '../../api/phrApi';
+import { fetchDashboardData } from '../../api/patientApi';
+import { createConsentGrant, revokeConsentGrant } from '../../api/consentApi';
 
 const mockFetchDashboard = fetchDashboardData as ReturnType<typeof vi.fn>;
 const mockCreate = createConsentGrant as ReturnType<typeof vi.fn>;

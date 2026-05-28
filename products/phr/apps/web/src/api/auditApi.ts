@@ -1,3 +1,3 @@
 export {
   fetchAuditEvents,
-} from './phrApi';
+} from './phrApiCore';

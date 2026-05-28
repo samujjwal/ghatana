@@ -90,6 +90,8 @@ export const DataConnectorsPage: React.FC<DataConnectorsPageProps> = ({
 
       const stats = await dataConnectorApi.getSyncStatistics(connectorId);
       await updateStatistics(stats);
+      // Keep collection-backed views fresh after ingestion sync.
+      await queryClient.invalidateQueries({ queryKey: ['collections'] });
     } catch (error) {
       toast.error(
         `Failed to trigger sync: ${

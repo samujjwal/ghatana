@@ -13,7 +13,7 @@
 import type { SurfaceSignal } from '@/api/surfaces.service';
 import {
   canonicalRouteSurfaceRegistry,
-  type RouteCapability,
+  type RouteSurface,
   type RouteLifecycle,
 } from './RouteSurfaceRegistry';
 
@@ -29,7 +29,7 @@ export interface GeneratedRouteGate {
   path: string;
   label: string;
   lifecycle: RouteLifecycle;
-  minimumShellRole: RouteCapability['minimumShellRole'];
+  minimumShellRole: RouteSurface['minimumShellRole'];
   discoverable: boolean;
   status: GeneratedGateStatus;
   actions: GeneratedActionGate[];

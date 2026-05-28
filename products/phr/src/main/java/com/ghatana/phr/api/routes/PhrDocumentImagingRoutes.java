@@ -538,7 +538,13 @@ public final class PhrDocumentImagingRoutes {
     }
 
     private Promise<Boolean> requireAccess(PhrRouteSupport.PhrRequestContext context, String patientId, String resourceType) {
-        return policyEvaluator.canAccessPhiResourceAsync(context, patientId, resourceType)
+        return policyEvaluator.canAccessPhiResourceAsync(
+                context,
+                patientId,
+                resourceType,
+                "READ",
+                context.tenantId(),
+                context.facilityId())
             .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);
     }
 

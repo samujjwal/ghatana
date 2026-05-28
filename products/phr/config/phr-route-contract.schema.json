@@ -96,10 +96,6 @@
             "enum": ["stable", "preview", "blocked", "hidden"],
             "description": "Route stability status - only these values allowed per fix-forward policy"
           },
-          "featureFlag": {
-            "type": "string",
-            "description": "Feature flag name for conditional visibility"
-          },
           "hidden": {
             "type": "boolean",
             "description": "Whether route is hidden from navigation"

@@ -20,6 +20,7 @@ const ALLOWED_CONTENT_TYPES = [
 export function DocumentUploadPage(): React.ReactElement {
   const { session } = usePhrSession();
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState<string>('');
   const [category, setCategory] = useState<string>('');
@@ -29,12 +30,14 @@ export function DocumentUploadPage(): React.ReactElement {
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [canRetry, setCanRetry] = useState<boolean>(false);
 
   function handleFileChange(evt: React.ChangeEvent<HTMLInputElement>): void {
     const file = evt.target.files?.[0] ?? null;
     setSelectedFile(file);
     setResult(null);
     setError(null);
+    setCanRetry(false);
     setValidationError(null);
 
     // Client-side file validation
@@ -98,14 +101,12 @@ export function DocumentUploadPage(): React.ReactElement {
     setUploading(true);
     setUploadProgress(0);
     setError(null);
+    setCanRetry(false);
     setValidationError(null);
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
     
     try {
-      // Simulate progress for upload
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => Math.min(prev + 10, 90));
-      }, 200);
-
       const res = await uploadDocument(
         session.principalId,
         selectedFile,
@@ -119,9 +120,12 @@ export function DocumentUploadPage(): React.ReactElement {
           principalId: session.principalId,
           role: session.role,
         },
+        {
+          signal: abortController.signal,
+          onProgress: setUploadProgress,
+        },
       );
       
-      clearInterval(progressInterval);
       setUploadProgress(100);
       setResult(t('documents.upload.successWithOcr', { id: res.id, status: res.ocrStatus }));
       setSelectedFile(null);
@@ -130,12 +134,21 @@ export function DocumentUploadPage(): React.ReactElement {
       setDescription('');
       if (inputRef.current) inputRef.current.value = '';
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t('documents.upload.error'));
-      logError('Failed to upload document', undefined, { error: err });
+      const aborted = err instanceof DOMException && err.name === 'AbortError';
+      setError(aborted ? t('documents.upload.cancelled') : err instanceof Error ? err.message : t('documents.upload.error'));
+      setCanRetry(!aborted);
+      if (!aborted) {
+        logError('Failed to upload document', undefined, { error: err });
+      }
     } finally {
       setUploading(false);
       setUploadProgress(0);
+      abortControllerRef.current = null;
     }
+  }
+
+  function handleCancelUpload(): void {
+    abortControllerRef.current?.abort();
   }
 
   return (
@@ -218,8 +231,13 @@ export function DocumentUploadPage(): React.ReactElement {
               disabled={selectedFile == null || uploading || !title.trim()} 
               aria-busy={uploading}
             >
-              {uploading ? t('documents.upload.uploading') : t('documents.upload.submit')}
+              {canRetry ? t('documents.upload.retry') : uploading ? t('documents.upload.uploading') : t('documents.upload.submit')}
             </Button>
+            {uploading ? (
+              <Button type="button" variant="secondary" onClick={handleCancelUpload}>
+                {t('documents.upload.cancel')}
+              </Button>
+            ) : null}
           </form>
         </CardContent>
       </Card>

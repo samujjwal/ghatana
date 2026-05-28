@@ -132,8 +132,7 @@ describe('PluginCard accessibility (installed mode)', () => {
         onViewDetails={vi.fn()}
       />
     );
-    // The configure button may be hidden (opacity-0) but in the DOM
-    const configBtn = getByRole('button', { name: /Configure Kafka Connector/i, hidden: true });
+    const configBtn = getByRole('button', { name: /Configure Kafka Connector/i });
     expect(configBtn).toBeTruthy();
   });
 
@@ -147,7 +146,7 @@ describe('PluginCard accessibility (installed mode)', () => {
         onViewDetails={vi.fn()}
       />
     );
-    const disableBtn = getByRole('button', { name: /Disable Kafka Connector/i, hidden: true });
+    const disableBtn = getByRole('button', { name: /Disable Kafka Connector/i });
     expect(disableBtn).toBeTruthy();
   });
 

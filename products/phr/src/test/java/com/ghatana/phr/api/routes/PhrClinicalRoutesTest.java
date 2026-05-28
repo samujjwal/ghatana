@@ -5,6 +5,7 @@ import com.ghatana.phr.kernel.service.ConsentManagementService;
 import com.ghatana.phr.kernel.service.ImmunizationService;
 import com.ghatana.phr.kernel.service.LabResultService;
 import com.ghatana.phr.kernel.service.MedicationService;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
@@ -27,6 +28,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.lenient;
 
 /**
@@ -60,17 +62,20 @@ class PhrClinicalRoutesTest extends EventloopTestBase {
     @Mock
     private ConsentManagementService consentService;
 
+    @Mock
+    private PhrPolicyEvaluator policyEvaluator;
+
     private AsyncServlet servlet;
 
     @BeforeEach
     void setUp() {
         servlet = new PhrClinicalRoutes(
-            eventloop(), labResultService, medicationService, immunizationService, consentService
+            eventloop(), labResultService, medicationService, immunizationService, consentService, policyEvaluator
         ).getServlet();
 
-        lenient().when(consentService.validateAccess(anyString(), anyString(), anyString()))
-            .thenReturn(Promise.of(new ConsentManagementService.ConsentValidationResult(
-                true, "GRANT_VALID", "grant-42")));
+        lenient().when(policyEvaluator.canAccessPhiResourceAsync(
+                any(), anyString(), anyString(), anyString(), anyString(), nullable(String.class)))
+            .thenReturn(Promise.of(PhrPolicyEvaluator.PolicyDecision.allowed("TEST_ALLOW", "Allowed by test policy")));
         lenient().when(labResultService.getPatientObservations(anyString()))
             .thenReturn(Promise.of(List.of()));
         lenient().when(labResultService.getObservation(anyString()))

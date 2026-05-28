@@ -46,7 +46,7 @@ interface SearchResult {
     action?: () => void;
     minimumShellRole?: ShellRole;
     /** DC-UX-048: surface lifecycle for boundary annotation in search results */
-    /** DC-UX-048: surface lifecycle aligned with RouteCapability */
+    /** DC-UX-048: surface lifecycle aligned with RouteSurface registry */
     lifecycle?: 'active' | 'preview' | 'boundary' | 'deprecated' | 'redirect' | 'removed';
 }
 

@@ -26,10 +26,10 @@ The PHR web application uses a flat route structure in `phrRouteContracts.ts` ra
 - Each persona has a distinct set of routes with minimal overlap
 - Flat structure with clear naming conventions (`/provider/dashboard`, `/caregiver/dependents`) provides clear ownership
 
-### 3. **Feature Flagging Simplicity**
-- Feature flags are applied at the individual route level
-- Flat structure makes it straightforward to toggle specific features without affecting nested hierarchies
-- `feature-visibility.json` maps directly to route paths without complex traversal logic
+### 3. **Route State Simplicity**
+- Route availability is applied at the individual route level through `phr-route-contract.json`
+- Flat structure makes `stable`, `preview`, `hidden`, and `blocked` states straightforward to validate
+- Hidden and blocked states are enforced consistently for navigation and direct links
 
 ### 4. **Mobile Parity**
 - Mobile app uses a screen-based navigation model that maps naturally to flat routes
@@ -108,7 +108,7 @@ To maintain clarity with flat routing:
 - ✅ Simpler to understand and maintain
 - ✅ Easier to search and grep
 - ✅ Direct mapping to backend routes
-- ✅ Simpler feature flagging
+- ✅ Simpler route-state enforcement
 - ✅ Better mobile parity
 
 ### Disadvantages of Flat Structure
@@ -118,14 +118,14 @@ To maintain clarity with flat routing:
 
 ### Mitigations
 - Use clear naming conventions with persona/resource prefixes
-- Maintain `feature-visibility.json` as source of truth for grouping
+- Maintain `phr-route-contract.json` as the source of truth for grouping and route state
 - Consider module-based code organization even with flat routes
 - Add route metadata (`category`, `module`) for programmatic grouping
 
 ## References
 
-- `products/phr/apps/web/src/phrRouteContracts.ts` - Route contracts
-- `products/phr/config/feature-visibility.json` - Feature visibility configuration
+- `products/phr/apps/web/src/phrRouteContracts.ts` - Generated route contract projection
+- `products/phr/config/phr-route-contract.json` - Canonical route contract and route-state configuration
 - `products/phr/config/phr-usecase-baseline.json` - Use case baseline
 - `docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md` - Implementation tracker (C1-06)
 

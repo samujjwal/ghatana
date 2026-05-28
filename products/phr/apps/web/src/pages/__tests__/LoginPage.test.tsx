@@ -8,7 +8,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { LoginPage } from '../../pages/LoginPage';
 import { PhrSessionProvider } from '../../auth/PhrSessionContext';
 
-vi.mock('../../api/phrApi', () => ({
+vi.mock('../../api/authApi', () => ({
   loginWithCredentials: vi.fn(),
 }));
 
@@ -24,7 +24,7 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-import { loginWithCredentials } from '../../api/phrApi';
+import { loginWithCredentials } from '../../api/authApi';
 
 const mockLogin = loginWithCredentials as ReturnType<typeof vi.fn>;
 

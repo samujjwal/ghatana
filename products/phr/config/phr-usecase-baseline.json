@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "lastUpdated": "2026-05-26",
   "description": "Canonical PHR use-case baseline: maps personas, IA routes/screens, backend APIs, and implementation status.",
-  "statusValues": ["implemented", "partial", "feature_flagged", "backend_only", "ui_only", "missing", "deferred", "removed"],
+  "statusValues": ["implemented", "partial", "backend_only", "ui_only", "missing", "deferred", "removed"],
   "phaseValues": ["mvp-current", "mvp-next", "phase-2", "deferred", "removed"],
   "usecases": [
     {
@@ -312,9 +312,9 @@
       ],
       "kernelCapability": "provider-dashboard",
       "offlineSupport": false,
-      "status": "feature_flagged",
+      "status": "deferred",
       "phase": "phase-2",
-      "notes": "Route exists but backend implementation incomplete. Feature-flagged until production-ready."
+      "notes": "Route exists in the canonical contract as hidden until production-ready."
     },
     {
       "id": "uc-provider-patients",
@@ -329,9 +329,9 @@
       ],
       "kernelCapability": "provider-patient-search",
       "offlineSupport": false,
-      "status": "feature_flagged",
+      "status": "deferred",
       "phase": "phase-2",
-      "notes": "Feature-flagged until backend consent/treatment relationship policy is implemented."
+      "notes": "Route exists in the canonical contract as hidden until backend consent/treatment relationship policy is complete."
     },
     {
       "id": "uc-caregiver-dependents",
@@ -346,9 +346,9 @@
       ],
       "kernelCapability": "caregiver-access",
       "offlineSupport": false,
-      "status": "feature_flagged",
+      "status": "deferred",
       "phase": "phase-2",
-      "notes": "Placeholder/minimal page exists. Full implementation deferred."
+      "notes": "Route exists in the canonical contract as hidden until full implementation is promoted."
     },
     {
       "id": "uc-fchv-dashboard",
@@ -364,9 +364,9 @@
       ],
       "kernelCapability": "fchv-workflow",
       "offlineSupport": false,
-      "status": "feature_flagged",
+      "status": "deferred",
       "phase": "deferred",
-      "notes": "Feature-flagged. May be deferred from MVP depending on Nepal healthcare priorities."
+      "notes": "Route exists in the canonical contract as hidden and may be deferred from MVP depending on Nepal healthcare priorities."
     },
     {
       "id": "uc-admin-audit",

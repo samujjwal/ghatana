@@ -1,5 +1,15 @@
 import React, { type ErrorInfo, type ReactNode } from 'react';
-import { ActivityIndicator, AppState, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  AppState,
+  type AppStateStatus,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { ConsentScreen } from './screens/ConsentScreen';
@@ -17,6 +27,7 @@ import { initializeLocale, t } from './i18n/phrMobileI18n';
 import type { MobileDashboard, MobileSession } from './types';
 
 type ScreenKey = 'dashboard' | 'records' | 'consents' | 'notifications' | 'emergency' | 'settings';
+type SubscriptionCleanup = (() => void) | { remove: () => void };
 const APP_DIAGNOSTIC_EVENT = 'phr-mobile:diagnostic';
 
 const TAB_KEYS: readonly ScreenKey[] = ['dashboard', 'records', 'consents', 'notifications', 'emergency', 'settings'];
@@ -35,6 +46,14 @@ function getTabItems(): TabItem[] {
     hint: getTabHint(key),
     icon: getTabIcon(key),
   }));
+}
+
+function cleanupSubscription(subscription: SubscriptionCleanup): void {
+  if (typeof subscription === 'function') {
+    subscription();
+    return;
+  }
+  subscription.remove();
 }
 
 function getTabLabel(key: ScreenKey): string {
@@ -153,7 +172,7 @@ export default function App(): React.ReactElement {
 
   // Validate session expiry on app foreground/resume
   React.useEffect(() => {
-    const handleAppStateChange = async (nextAppState: string): Promise<void> => {
+    const handleAppStateChange = async (nextAppState: AppStateStatus): Promise<void> => {
       if (nextAppState === 'active' && session) {
         // App came to foreground - validate session is still valid and detect role/persona changes
         const currentSession = await loadMobileSession(session);
@@ -170,24 +189,18 @@ export default function App(): React.ReactElement {
       }
     };
 
-    const subscription = AppState.addEventListener('change', handleAppStateChange) as unknown as
-      | { remove: () => void }
-      | undefined;
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
     return () => {
       subscription?.remove();
     };
   }, [session]);
 
   React.useEffect(() => {
-    const subscription = NetInfo.addEventListener((state: { isConnected: boolean | null }) => {
+    const subscription: SubscriptionCleanup = NetInfo.addEventListener((state: { isConnected: boolean | null }) => {
       setIsConnected(state.isConnected ?? true);
-    }) as unknown as (() => void) | { remove: () => void };
+    });
     return () => {
-      if (typeof subscription === 'function') {
-        subscription();
-        return;
-      }
-      subscription.remove();
+      cleanupSubscription(subscription);
     };
   }, []);
 

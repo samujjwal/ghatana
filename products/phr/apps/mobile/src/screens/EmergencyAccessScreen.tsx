@@ -1,7 +1,8 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { t } from '../i18n/phrMobileI18n';
-import type { MobileSession } from '../types';
+import { requestMobileEmergencyAccess } from '../services/phrMobileApi';
+import type { MobileEmergencyData, MobileSession } from '../types';
 
 interface EmergencyAccessScreenProps {
   onAuthenticate: () => Promise<boolean>;
@@ -10,40 +11,17 @@ interface EmergencyAccessScreenProps {
 
 type EmergencyState = 'locked' | 'verifying' | 'server_approval' | 'authorized' | 'denied';
 
-interface EmergencyData {
-  patientName: string;
-  bloodType: string;
-  allergies: string[];
-  medications: string[];
-  emergencyContact: string;
-}
-
 export function EmergencyAccessScreen({ onAuthenticate, session }: EmergencyAccessScreenProps): React.ReactElement {
   const [state, setState] = React.useState<EmergencyState>('locked');
+  const [patientId, setPatientId] = React.useState('');
   const [reason, setReason] = React.useState('');
-  const [emergencyData, setEmergencyData] = React.useState<EmergencyData | null>(null);
+  const [emergencyData, setEmergencyData] = React.useState<MobileEmergencyData | null>(null);
 
   const requestEmergencyAccess = async (): Promise<void> => {
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_PHR_API_URL ?? process.env.PHR_API_URL ?? ''}/emergency/request`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Tenant-Id': session.tenantId,
-          'X-Principal-Id': session.principalId,
-          'X-Role': session.role,
-          'X-Correlation-ID': crypto.randomUUID(),
-        },
-        body: JSON.stringify({ reason: reason.trim() }),
-      });
-
-      if (response.ok) {
-        const data = await response.json() as EmergencyData;
-        setEmergencyData(data);
-        setState('authorized');
-      } else {
-        setState('denied');
-      }
+      const data = await requestMobileEmergencyAccess(patientId, reason, session);
+      setEmergencyData(data);
+      setState('authorized');
     } catch {
       setState('denied');
     }
@@ -149,6 +127,16 @@ export function EmergencyAccessScreen({ onAuthenticate, session }: EmergencyAcce
       <Text style={styles.summary}>
         {t('emergency.biometricPrompt')}
       </Text>
+      <Text style={styles.label}>{t('emergency.patientIdLabel')}</Text>
+      <TextInput
+        style={styles.reasonInput}
+        placeholder={t('emergency.patientIdPlaceholder')}
+        placeholderTextColor="#9ca3af"
+        value={patientId}
+        onChangeText={setPatientId}
+        accessibilityLabel={t('emergency.patientIdLabel')}
+        accessibilityHint={t('emergency.patientIdPlaceholder')}
+      />
       <Text style={styles.label}>{t('emergency.reasonLabel')}</Text>
       <TextInput
         style={styles.reasonInput}
@@ -162,10 +150,10 @@ export function EmergencyAccessScreen({ onAuthenticate, session }: EmergencyAcce
         accessibilityHint={t('emergency.reasonPlaceholder')}
       />
       <Pressable
-        onPress={() => { if (reason.trim()) { void handleVerify(); } }}
-        style={[styles.button, !reason.trim() && styles.buttonDisabled]}
+        onPress={() => { if (patientId.trim() && reason.trim()) { void handleVerify(); } }}
+        style={[styles.button, (!patientId.trim() || !reason.trim()) && styles.buttonDisabled]}
         accessibilityRole="button"
-        accessibilityState={{ disabled: !reason.trim() }}
+        accessibilityState={{ disabled: !patientId.trim() || !reason.trim() }}
         accessibilityLabel={t('emergency.requestButton')}
       >
         <Text style={styles.buttonText}>{t('emergency.requestButton')}</Text>

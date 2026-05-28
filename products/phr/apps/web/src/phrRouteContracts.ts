@@ -16,7 +16,6 @@ export interface PhrRouteContract extends ProductRouteCapability {
   readonly cards: readonly string[];
   readonly stability: PhrRouteStability;
   readonly emergencyAction?: boolean;
-  readonly featureFlag?: boolean;
   readonly hidden?: boolean;
   readonly blocked?: boolean;
   readonly apiEndpoint?: string;

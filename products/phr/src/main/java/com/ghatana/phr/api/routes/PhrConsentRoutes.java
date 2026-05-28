@@ -126,6 +126,7 @@ public final class PhrConsentRoutes {
         String patientId;
         String accessorId;
         String resourceType;
+        String action;
         try {
             context = PhrRouteSupport.requireContext(request);
             patientId = PhrRouteSupport.requiredQuery(request, "patientId");
@@ -134,15 +135,21 @@ public final class PhrConsentRoutes {
                 accessorId = context.principalId();
             }
             resourceType = PhrRouteSupport.requiredQuery(request, "resourceType");
+            action = request.getQueryParameter("action");
+            if (action == null || action.isBlank()) {
+                action = "READ";
+            }
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "INVALID_CONSENT_CHECK", ex.getMessage());
         }
-        return consentService.validateAccess(patientId, accessorId, resourceType)
+        String requestedAction = action.toUpperCase();
+        return consentService.validateAccess(patientId, accessorId, resourceType, requestedAction)
             .then(result -> {
                 Map<String, Object> response = new java.util.LinkedHashMap<>();
                 response.put("allowed", result.isAllowed());
                 response.put("reason", result.getReason());
                 response.put("grantId", result.getGrantId());
+                response.put("action", requestedAction);
                 return PhrRouteSupport.jsonResponse(200, response);
             });
     }

@@ -64,12 +64,12 @@ This checklist must be completed before any PHR production release. It ensures t
 - [ ] Kernel runtime API integration verified
 - [ ] No deprecated APIs or patterns in use
 
-### Feature Flags
+### Route States
 
-- [ ] Feature visibility configuration reviewed
-- [ ] Feature-flagged routes properly hidden in production
-- [ ] Feature flag defaults appropriate for release environment
-- [ ] Rollback plan documented for each feature flag
+- [ ] `phr-route-contract.json` route states reviewed
+- [ ] Hidden routes render not-found on direct links
+- [ ] Blocked routes render forbidden on direct links
+- [ ] Stable routes include `apiEndpoint`, `policyId`, and `testId`
 
 ## Release-Specific Checks
 
@@ -81,9 +81,9 @@ This checklist must be completed before any PHR production release. It ensures t
 - [ ] Session management tested (login, expiry, logout)
 - [ ] Consent revocation clears PHI cache
 
-### For Feature-Flagged Features
+### For Hidden or Blocked Features
 
-- [ ] Feature flag configuration documented
+- [ ] Route state documented in `phr-route-contract.json`
 - [ ] Rollback procedure tested
 - [ ] User impact assessment completed
 - [ ] Monitoring/alerting configured

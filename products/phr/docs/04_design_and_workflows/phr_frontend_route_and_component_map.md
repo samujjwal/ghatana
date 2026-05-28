@@ -1476,7 +1476,7 @@ Every route should declare:
 - required authentication
 - allowed roles
 - additional scope requirements
-- feature flag if not generally enabled
+- route state if not generally enabled
 
 Suggested metadata shape:
 
@@ -1485,7 +1485,7 @@ type RouteAccessMeta = {
   requiresAuth: boolean;
   allowedRoles?: Array<"PATIENT" | "PROVIDER" | "CAREGIVER" | "ADMIN" | "FCHV">;
   requiresPatientGrant?: boolean;
-  featureFlag?: string;
+  stability?: "stable" | "preview" | "hidden" | "blocked";
 };
 ```
 

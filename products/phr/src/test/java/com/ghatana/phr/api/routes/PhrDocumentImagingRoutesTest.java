@@ -78,7 +78,7 @@ class PhrDocumentImagingRoutesTest extends EventloopTestBase {
             eventloop(), documentService, imagingService, consentService, policyEvaluator
         ).getServlet();
 
-        lenient().when(consentService.validateAccess(anyString(), anyString(), anyString()))
+        lenient().when(consentService.validateAccess(anyString(), anyString(), anyString(), anyString()))
             .thenReturn(Promise.of(new ConsentManagementService.ConsentValidationResult(
                 true, "GRANT_VALID", "grant-42")));
         lenient().when(treatmentRelationshipService.hasActiveTreatmentRelationship(anyString(), anyString()))

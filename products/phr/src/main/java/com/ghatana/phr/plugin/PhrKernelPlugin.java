@@ -19,8 +19,7 @@ import java.util.Set;
  * PHR Kernel Plugin - Canonical Implementation.
  *
  * <p>This plugin registers PHR-specific capabilities with the kernel
- * using the canonical {@link KernelPlugin} interface. It replaces the
- * deprecated {@code ProductPlugin} pattern.</p>
+ * using the canonical {@link KernelPlugin} interface.</p>
  *
  * <p>Key capabilities:
  * <ul>

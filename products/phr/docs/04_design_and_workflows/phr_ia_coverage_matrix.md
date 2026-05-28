@@ -15,7 +15,7 @@ This document provides a human-readable view of the PHR Information Architecture
 | Total Use Cases | 25 |
 | Implemented | 19 |
 | Partial | 3 |
-| Feature-Flagged | 3 |
+| Hidden/Deferred | 4 |
 | MVP-Current | 17 |
 | MVP-Next | 3 |
 | Phase-2 | 3 |
@@ -63,15 +63,15 @@ This document provides a human-readable view of the PHR Information Architecture
 
 | ID | Use Case | Persona | Screen | Status | Notes |
 |----|----------|---------|--------|--------|-------|
-| uc-provider-dashboard | Provider Dashboard | clinician | ProviderDashboardPage | 🔒 Feature-Flagged | Route exists but backend implementation incomplete. Feature-flagged until production-ready. |
-| uc-provider-patients | Provider Patients | clinician | ProviderPatientsPage | 🔒 Feature-Flagged | Feature-flagged until backend consent/treatment relationship policy is implemented. |
-| uc-caregiver-dependents | Caregiver Dependents | caregiver | CaregiverDependentsPage | 🔒 Feature-Flagged | Placeholder/minimal page exists. Full implementation deferred. |
+| uc-provider-dashboard | Provider Dashboard | clinician | ProviderDashboardPage | Hidden/Deferred | Route exists in the canonical contract as hidden until production-ready. |
+| uc-provider-patients | Provider Patients | clinician | ProviderPatientsPage | Hidden/Deferred | Route exists in the canonical contract as hidden until backend consent/treatment relationship policy is complete. |
+| uc-caregiver-dependents | Caregiver Dependents | caregiver | CaregiverDependentsPage | Hidden/Deferred | Route exists in the canonical contract as hidden until full implementation is promoted. |
 
 ### Deferred (1 use case)
 
 | ID | Use Case | Persona | Screen | Status | Notes |
 |----|----------|---------|--------|--------|-------|
-| uc-fchv-dashboard | FCHV Dashboard | caregiver | FchvDashboardPage | 🔒 Feature-Flagged | Feature-flagged. May be deferred from MVP depending on Nepal healthcare priorities. |
+| uc-fchv-dashboard | FCHV Dashboard | caregiver | FchvDashboardPage | Hidden/Deferred | Route exists in the canonical contract as hidden and may be deferred from MVP depending on Nepal healthcare priorities. |
 
 ---
 
@@ -106,15 +106,15 @@ This document provides a human-readable view of the PHR Information Architecture
 
 | Use Case | Status | Phase |
 |----------|--------|-------|
-| Provider Dashboard | 🔒 Feature-Flagged | Phase-2 |
-| Provider Patients | 🔒 Feature-Flagged | Phase-2 |
+| Provider Dashboard | Hidden/Deferred | Phase-2 |
+| Provider Patients | Hidden/Deferred | Phase-2 |
 
 ### Caregiver (2 use cases)
 
 | Use Case | Status | Phase |
 |----------|--------|-------|
-| Caregiver Dependents | 🔒 Feature-Flagged | Phase-2 |
-| FCHV Dashboard | 🔒 Feature-Flagged | Deferred |
+| Caregiver Dependents | Hidden/Deferred | Phase-2 |
+| FCHV Dashboard | Hidden/Deferred | Deferred |
 
 ### Admin (3 use cases)
 
@@ -167,7 +167,7 @@ This document provides a human-readable view of the PHR Information Architecture
 - `GET /emergency/reviews/overdue`
 - `POST /emergency/reviews/:eventId`
 
-### Feature-Flagged APIs
+### Hidden/Deferred APIs
 
 - `GET /provider/patients`
 - `GET /provider/patients/:patientId`
@@ -190,10 +190,10 @@ This document provides a human-readable view of the PHR Information Architecture
 | document-manage | Documents, Document Upload, OCR Review | ✅ Implemented |
 | notification-read | Notifications | ✅ Implemented |
 | emergency-break-glass | Emergency Access | ✅ Implemented |
-| provider-dashboard | Provider Dashboard | 🔒 Feature-Flagged |
-| provider-patient-search | Provider Patients | 🔒 Feature-Flagged |
-| caregiver-access | Caregiver Dependents | 🔒 Feature-Flagged |
-| fchv-workflow | FCHV Dashboard | 🔒 Feature-Flagged |
+| provider-dashboard | Provider Dashboard | Hidden/Deferred |
+| provider-patient-search | Provider Patients | Hidden/Deferred |
+| caregiver-access | Caregiver Dependents | Hidden/Deferred |
+| fchv-workflow | FCHV Dashboard | Hidden/Deferred |
 | audit-read | Admin Audit | ✅ Implemented |
 | release-readiness | Release Readiness | ✅ Implemented |
 | emergency-review | Emergency Review | ✅ Implemented |
@@ -250,7 +250,7 @@ This document provides a human-readable view of the PHR Information Architecture
 
 - ✅ **Implemented** - Fully implemented and production-ready
 - ⚠️ **Partial** - Partially implemented, needs completion
-- 🔒 **Feature-Flagged** - Implemented but hidden behind feature flag
+- **Hidden/Deferred** - Present in the canonical contract as hidden until promoted
 - ❌ **Missing** - Not implemented
 - 📋 **Deferred** - Deferred to future phase
 

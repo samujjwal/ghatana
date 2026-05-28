@@ -52,7 +52,7 @@ export const CollectionSchema = z.object({
   updatedAt: z.string(),
   createdBy: z.string(),
   // P0.2 first-class collection registry fields
-  lifecycleStatus: z.enum(['DRAFT', 'PUBLISHED', 'DEPRECATED', 'ARCHIVED', 'UNKNOWN']).default('DRAFT'),
+  lifecycleStatus: z.enum(['DRAFT', 'PUBLISHED', 'DEPRECATED', 'ARCHIVED', 'UNKNOWN']).default('UNKNOWN'),
   operationalStatus: z.enum(['healthy', 'degraded', 'unavailable', 'maintenance', 'unknown']).default('unknown'),
   qualityScore: z.number().optional(),
   qualityMetrics: z.record(z.string(), z.number()).optional(),

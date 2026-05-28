@@ -6,4 +6,4 @@ export {
   fetchMedications,
   fetchObservationDetail,
   fetchObservations,
-} from './phrApi';
+} from './phrApiCore';

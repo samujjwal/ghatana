@@ -657,8 +657,10 @@ function AnalyticsTab({ collections }: { collections: string[] }) {
   const { data: stats, isLoading: statsLoading } = useCollectionEntityCounts(collections);
   const { data: suggestions, isLoading: suggestionsLoading } = useAnalyticsAiSuggestions();
 
-  const totalEntities = stats?.reduce((sum, s) => sum + s.count, 0) ?? 0;
-  const maxCount = stats ? Math.max(...stats.map((s) => s.count), 1) : 1;
+  const availableStats = (stats ?? []).filter((s) => typeof s.count === 'number');
+  const hasUnavailableCounts = (stats ?? []).some((s) => s.count == null);
+  const totalEntities = availableStats.reduce((sum, s) => sum + (s.count ?? 0), 0);
+  const maxCount = availableStats.length > 0 ? Math.max(...availableStats.map((s) => s.count ?? 0), 1) : 1;
 
   // Surface anomaly and warning suggestions inline within the analytics tab
   const anomalySuggestions = (suggestions ?? []).filter(
@@ -716,21 +718,33 @@ function AnalyticsTab({ collections }: { collections: string[] }) {
         />
         <StatCard
           label="Total Entities"
-          value={statsLoading ? '…' : totalEntities.toLocaleString()}
+          value={
+            statsLoading
+              ? '…'
+              : availableStats.length === 0
+                ? 'Unavailable'
+                : totalEntities.toLocaleString()
+          }
           icon={<Table2 className="h-5 w-5" />}
           color="green"
         />
         <StatCard
           label="Avg per Collection"
           value={
-            statsLoading || collections.length === 0
+            statsLoading || availableStats.length === 0
               ? '–'
-              : Math.round(totalEntities / Math.max(collections.length, 1)).toLocaleString()
+              : Math.round(totalEntities / availableStats.length).toLocaleString()
           }
           icon={<BarChart3 className="h-5 w-5" />}
           color="purple"
         />
       </div>
+
+      {hasUnavailableCounts && (
+        <p className="text-xs text-amber-700 dark:text-amber-300">
+          Some collection counts are unavailable from backend registry metadata right now.
+        </p>
+      )}
 
       {/* Entity Distribution */}
       {!statsLoading && stats && stats.length > 0 && (
@@ -747,13 +761,21 @@ function AnalyticsTab({ collections }: { collections: string[] }) {
                     {collection}
                   </span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {count.toLocaleString()}
+                    {typeof count === 'number' ? count.toLocaleString() : 'Unavailable'}
                   </span>
                 </div>
                 <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-blue-500 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.round((count / maxCount) * 100)}%` }}
+                    className={cn(
+                      'h-full rounded-full transition-all duration-500',
+                      typeof count === 'number' ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
+                    )}
+                    style={{
+                      width:
+                        typeof count === 'number'
+                          ? `${Math.round((count / maxCount) * 100)}%`
+                          : '0%',
+                    }}
                   />
                 </div>
               </div>

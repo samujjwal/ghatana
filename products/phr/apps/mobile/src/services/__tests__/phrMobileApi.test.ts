@@ -21,7 +21,7 @@ jest.mock('../mobileSessionStore', () => ({
 import { clearDashboardOffline } from '../offlineStore';
 import { phiClearAll } from '../phiEncryptedStorage';
 import { clearMobileSession } from '../mobileSessionStore';
-import { loginMobile, logoutMobile, revokeConsentGrant } from '../phrMobileApi';
+import { loginMobile, logoutMobile, requestMobileEmergencyAccess, revokeConsentGrant } from '../phrMobileApi';
 import type { MobileSession } from '../../types';
 
 const mockFetch = jest.fn();
@@ -124,5 +124,56 @@ describe('phrMobileApi', () => {
     expect(phiClearAll).toHaveBeenCalledTimes(1);
     expect(clearDashboardOffline).toHaveBeenCalledTimes(1);
     expect(clearMobileSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('posts emergency access requests to the backend break-glass route with policy fields', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        emergencyData: {
+          patientName: 'Patient One',
+          bloodType: 'O+',
+          allergies: ['Penicillin'],
+          medications: ['Metformin'],
+          emergencyContact: 'Family',
+        },
+      }),
+    });
+
+    await expect(
+      requestMobileEmergencyAccess('patient-1', 'Patient unconscious after road incident', SESSION),
+    ).resolves.toMatchObject({
+      patientName: 'Patient One',
+      allergies: ['Penicillin'],
+    });
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://phr.example.test/emergency/access',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          'X-Tenant-Id': 'tenant-1',
+          'X-Principal-Id': 'patient-1',
+          'X-Role': 'patient',
+          'X-Correlation-ID': 'correlation-1',
+        }),
+        body: JSON.stringify({
+          patientId: 'patient-1',
+          accessorId: 'patient-1',
+          accessorRole: 'patient',
+          justification: 'Patient unconscious after road incident',
+          resourcesAccessed: ['emergency-summary'],
+        }),
+      }),
+    );
+  });
+
+  it('rejects emergency access requests without detailed justification before calling the API', async () => {
+    await expect(
+      requestMobileEmergencyAccess('patient-1', 'too short', SESSION),
+    ).rejects.toThrow('Emergency access requires a patient and detailed justification.');
+
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 });

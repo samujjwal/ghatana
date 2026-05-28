@@ -113,9 +113,8 @@ import java.net.http.HttpClient;
  * Nepal healthcare regulations (Directive 2081, Privacy Act 2075) and
  * FHIR R4 standards.</p>
  *
- * <p>PHR-domain capabilities are declared in {@link PhrCapabilities}, not in
- * {@code KernelCapability.Products} (which is deprecated — per
- * KERNEL_CANONICALIZATION_DECISIONS.md §D1 and CODE_ALIGNMENT_SPECIFICATION §2.2).</p>
+ * <p>PHR-domain capabilities are declared in {@link PhrCapabilities}, keeping
+ * product-owned capability IDs out of generic Kernel capability containers.</p>
  *
  * @doc.type class
  * @doc.purpose PHR product kernel module — healthcare-specific composition root
@@ -431,14 +430,15 @@ public class PhrKernelModule implements KernelModule {
         Eventloop eventloop = context.getEventloop();
         PhrFhirRoutes fhirRoutes = new PhrFhirRoutes(eventloop, fhirController);
         PhrDashboardRoutes dashboardRoutes = new PhrDashboardRoutes(eventloop, userRepository);
-        PhrPatientRecordRoutes patientRecordRoutes = new PhrPatientRecordRoutes(eventloop, patientRecords, consent, policyEvaluator);
+        PhrPatientRecordRoutes patientRecordRoutes = new PhrPatientRecordRoutes(eventloop, patientRecords, policyEvaluator);
         PhrConsentRoutes consentRoutes = new PhrConsentRoutes(eventloop, consent, policyEvaluator);
         PhrClinicalRoutes clinicalRoutes = new PhrClinicalRoutes(
             eventloop,
             labResults,
             medications,
             immunizations,
-            consent
+            consent,
+            policyEvaluator
         );
         PhrEmergencyRoutes emergencyRoutes = new PhrEmergencyRoutes(eventloop, emergencyAccess, treatmentRelationship, policyEvaluator);
         PhrAdministrativeRoutes administrativeRoutes = new PhrAdministrativeRoutes(
@@ -447,7 +447,8 @@ public class PhrKernelModule implements KernelModule {
             telemedicine,
             referrals,
             billing,
-            consent
+            consent,
+            policyEvaluator
         );
         PhrDocumentImagingRoutes documentImagingRoutes = new PhrDocumentImagingRoutes(
             eventloop,

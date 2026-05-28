@@ -12,6 +12,7 @@
 
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiClient } from '../lib/api/client';
+import { collectionsApi } from '../lib/api/collections';
 import SessionBootstrap from '../lib/auth/session';
 import {
   AnalyticsExplainResponseSchema,
@@ -253,9 +254,8 @@ export function useAnalyticsQuery() {
 /**
  * Queries entity counts across a supplied list of collection names.
  *
- * Each collection is queried individually via `SELECT COUNT(*) as total FROM
- * <collection>`. Queries run in parallel and failures are silently treated as
- * zero (the collection may simply be empty or temporarily unavailable).
+ * Counts come from the canonical collection registry metadata instead of
+ * client-side SQL fan-out, so aggregate stats remain backend-owned.
  *
  * Enabled only when the `collections` array is non-empty.
  *
@@ -264,7 +264,7 @@ export function useAnalyticsQuery() {
  */
 export interface CollectionStat {
   collection: string;
-  count: number;
+  count: number | null;
   executionTimeMs: number;
 }
 
@@ -272,24 +272,20 @@ export function useCollectionEntityCounts(collections: string[]) {
   return useQuery<CollectionStat[]>({
     queryKey: ['analytics', 'collection-counts', ...collections],
     queryFn: async () => {
-      // Cap at 10 to avoid flooding the analytics engine
       const targets = collections.slice(0, 10);
-      const results = await Promise.allSettled(
-        targets.map((col) =>
-          executeAnalyticsQuery(`SELECT COUNT(*) as total FROM ${col}`)
-        )
+      const pageSize = Math.max(50, targets.length);
+      const registry = await collectionsApi.list({ page: 1, pageSize });
+      const countsByName = new Map<string, number>(
+        registry.items.map((item) => [item.name.toLowerCase(), item.entityCount])
       );
-      return targets.map((col, i): CollectionStat => {
-        const r = results[i];
-        if (r.status === 'fulfilled') {
-          const total = r.value.rows[0]?.total;
-          return {
-            collection: col,
-            count: typeof total === 'number' ? total : 0,
-            executionTimeMs: r.value.executionTimeMs,
-          };
-        }
-        return { collection: col, count: 0, executionTimeMs: 0 };
+
+      return targets.map((col): CollectionStat => {
+        const count = countsByName.get(col.toLowerCase());
+        return {
+          collection: col,
+          count: typeof count === 'number' && Number.isFinite(count) ? count : null,
+          executionTimeMs: 0,
+        };
       });
     },
     enabled: collections.length > 0,

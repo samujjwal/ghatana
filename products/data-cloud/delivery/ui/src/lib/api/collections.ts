@@ -54,7 +54,7 @@ function entityToCollection(e: BackendEntity): Collection {
         updatedAt: e.updatedAt ?? String(d.updatedAt ?? new Date().toISOString()),
         createdBy: String(d.createdBy ?? 'unknown'),
         // P0.2 first-class collection registry fields
-        lifecycleStatus: (d.lifecycleStatus ?? 'DRAFT') as Collection['lifecycleStatus'],
+        lifecycleStatus: (d.lifecycleStatus ?? 'UNKNOWN') as Collection['lifecycleStatus'],
         operationalStatus: (d.operationalStatus ?? 'unknown') as Collection['operationalStatus'],
         qualityScore: d.qualityScore != null ? Number(d.qualityScore) : undefined,
         qualityMetrics: d.qualityMetrics as Record<string, number> | undefined,

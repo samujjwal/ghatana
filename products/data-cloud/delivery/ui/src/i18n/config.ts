@@ -51,6 +51,16 @@ const enTranslations: TranslationTree = {
     insights: 'Insights',
     operations: 'Operations',
   },
+  // Layout shell strings
+  layout: {
+    searchPlaceholder: 'Search...',
+    collapse: 'Collapse',
+    sectionCore: 'Core',
+    sectionManage: 'Manage',
+    viewModePresetTitle: 'View mode preset',
+    viewModePresetDescription: 'View mode presets tune UI focus only. Backend permissions are always enforced independently.',
+    footerProduct: 'Data Cloud • Ghatana Platform',
+  },
   // Connectors
   connectors: {
     title: 'Data Sources',

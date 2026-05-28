@@ -1,4 +1,4 @@
 export {
   fetchRecordDetail,
   fetchRecords,
-} from './phrApi';
+} from './phrApiCore';

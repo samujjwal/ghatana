@@ -9,8 +9,26 @@ const { mockApiClient } = vi.hoisted(() => ({
   },
 }));
 
+const { mockCollectionsApi } = vi.hoisted(() => ({
+  mockCollectionsApi: {
+    list: vi.fn(),
+    get: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    getSchema: vi.fn(),
+    updateSchema: vi.fn(),
+    getStats: vi.fn(),
+  },
+}));
+
 vi.mock('../../lib/api/client', () => ({
   apiClient: mockApiClient,
+}));
+
+vi.mock('../../lib/api/collections', () => ({
+  collectionsApi: mockCollectionsApi,
+  default: mockCollectionsApi,
 }));
 
 import {
@@ -18,16 +36,89 @@ import {
   explainAnalyticsQuery,
   executeFederatedQuery,
   evaluateQueryPolicy,
+  useCollectionEntityCounts,
   useAnalyticsAiSuggestions,
 } from '../../api/analytics.service';
 import SessionBootstrap from '../../lib/auth/session';
 import { renderHook, waitFor } from '@testing-library/react';
 import { TestWrapper } from '../test-utils/wrapper';
+import type { Collection } from '../../lib/api/collections';
+
+function makeCollection(overrides: Partial<Collection> = {}): Collection {
+  return {
+    id: 'col-1',
+    name: 'events',
+    description: 'Events collection',
+    schemaType: 'event',
+    status: 'active',
+    isActive: true,
+    entityCount: 42,
+    schema: { fields: [] },
+    tags: [],
+    createdAt: '2026-05-28T00:00:00Z',
+    updatedAt: '2026-05-28T00:00:00Z',
+    createdBy: 'system',
+    lifecycleStatus: 'PUBLISHED',
+    operationalStatus: 'healthy',
+    owner: 'system',
+    ...overrides,
+  };
+}
 
 describe('analytics.service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     SessionBootstrap.setTenantId('tenant-a');
+  });
+
+  it('uses backend collection registry counts for analytics summary stats', async () => {
+    mockCollectionsApi.list.mockResolvedValue({
+      items: [
+        makeCollection({ name: 'events', entityCount: 120 }),
+        makeCollection({ id: 'col-2', name: 'users', entityCount: 35 }),
+      ],
+      total: 2,
+      page: 1,
+      pageSize: 50,
+      hasMore: false,
+    });
+
+    const { result } = renderHook(() => useCollectionEntityCounts(['events', 'users']), {
+      wrapper: TestWrapper,
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(result.current.data).toEqual([
+      { collection: 'events', count: 120, executionTimeMs: 0 },
+      { collection: 'users', count: 35, executionTimeMs: 0 },
+    ]);
+    expect(mockApiClient.post).not.toHaveBeenCalledWith(
+      '/analytics/query',
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+
+  it('returns unavailable counts when registry metadata is missing instead of fabricating zero', async () => {
+    mockCollectionsApi.list.mockResolvedValue({
+      items: [makeCollection({ name: 'events', entityCount: 120 })],
+      total: 1,
+      page: 1,
+      pageSize: 50,
+      hasMore: false,
+    });
+
+    const { result } = renderHook(() => useCollectionEntityCounts(['events', 'orders']), {
+      wrapper: TestWrapper,
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(result.current.data).toEqual([
+      { collection: 'events', count: 120, executionTimeMs: 0 },
+      { collection: 'orders', count: null, executionTimeMs: 0 },
+    ]);
   });
 
   it('executes direct analytics queries against the canonical route', async () => {
