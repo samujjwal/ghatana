@@ -8,7 +8,7 @@ import { PhrSessionProvider } from '../auth/PhrSessionContext';
 import type { PhrRole } from '../auth/PhrAccessContext';
 import type { DashboardData } from '../types';
 import { PHR_ROLE_ORDER, phrRouteContracts } from '../routeManifest';
-import { attachPhrRouteElement } from '../phrRouteElements';
+import { attachPhrRouteElement, type PhrRouteManifestEntry } from '../phrRouteElements';
 import { AppShell } from '../layout/AppShell';
 import { DashboardPage } from '../pages/DashboardPage';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
@@ -21,10 +21,11 @@ vi.mock('../api/phrApi', async () => {
   return {
     ...actual,
     fetchDashboardData: vi.fn(),
+    fetchRecordDetail: vi.fn(),
   };
 });
 
-import { fetchDashboardData } from '../api/phrApi';
+import { fetchDashboardData, fetchRecordDetail } from '../api/phrApi';
 
 function entitlementPayloadFor(role: PhrRole): Record<string, unknown> {
   const allowedRoutes = phrRouteContracts.filter((route) => {
@@ -189,31 +190,66 @@ const dashboardFixture: DashboardData = {
 };
 
 function renderDashboardPage(): void {
+  setTestSession();
   render(
     <ThemeProvider>
-      <MemoryRouter>
-        <DashboardPage />
-      </MemoryRouter>
+      <PhrSessionProvider>
+        <MemoryRouter>
+          <DashboardPage />
+        </MemoryRouter>
+      </PhrSessionProvider>
     </ThemeProvider>,
   );
 }
 
-const testSession = {
+function testSessionFor(role: PhrRole = 'patient') {
+  const isClinicalActor = role === 'clinician' || role === 'admin';
+  return {
   principalId: 'principal-test',
   tenantId: 'tenant-test',
-  role: 'patient' as const,
-  name: 'Test User',
+    role,
+    name: isClinicalActor ? 'Test Clinician' : 'Test User',
   expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
-};
+  };
+}
 
-function setTestSession(): void {
-  window.sessionStorage.setItem('phr.session', JSON.stringify(testSession));
+function setTestSession(role: PhrRole = 'patient'): void {
+  window.sessionStorage.setItem('phr.session', JSON.stringify(testSessionFor(role)));
+}
+
+function setTestAccessIdentity(role: PhrRole = 'patient'): void {
+  window.localStorage.setItem('phr.currentRole', role);
+  window.localStorage.setItem('phr.tenantId', 'tenant-test');
+  window.localStorage.setItem('phr.principalId', 'principal-test');
+}
+
+function manifestEntryFor(path: string, element: React.ReactElement): PhrRouteManifestEntry {
+  const route = phrRouteContracts.find((candidate) => candidate.path === path);
+  if (!route) {
+    throw new Error(`Missing PHR route contract for ${path}`);
+  }
+  return { ...route, element };
 }
 
 describe('PHR web app', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(fetchDashboardData).mockResolvedValue(dashboardFixture);
+    vi.mocked(fetchRecordDetail).mockResolvedValue({
+      record: {
+        id: 'record-missing-001',
+        title: 'FHIR resource rendering',
+        category: 'clinical',
+        updatedAt: '2026-05-27T12:00:00Z',
+        resourceType: 'Observation',
+        fhirJson: '{}',
+      },
+      fhirJson: '{}',
+      accessAudit: {
+        accessedAt: '2026-05-27T12:00:00Z',
+        accessedBy: 'principal-test',
+      },
+    });
     mockEntitlementFetch();
     window.localStorage.clear();
     window.sessionStorage.clear();
@@ -265,12 +301,7 @@ describe('PHR web app', () => {
   it('renders a FHIR record detail fallback for unknown records when patient role grants access', async () => {
     window.localStorage.setItem('phr.currentRole', 'patient');
     setTestSession();
-    const caregiverRoute = {
-      path: '/records/:recordId',
-      label: 'Record detail',
-      minimumRole: 'patient' as PhrRole,
-      element: <RecordDetailPage />,
-    };
+    const caregiverRoute = manifestEntryFor('/records/:recordId', <RecordDetailPage />);
 
     render(
       <ThemeProvider>
@@ -291,19 +322,14 @@ describe('PHR web app', () => {
 
     await waitFor(() => {
       expect(screen.getByText('FHIR resource rendering')).toBeInTheDocument();
-      expect(screen.getByText('No record payload is available for the requested identifier.')).toBeInTheDocument();
+      expect(screen.getByText('FHIR Record Detail')).toBeInTheDocument();
     });
   });
 
   it('denies direct URL access to caregiver routes for patient sessions', async () => {
     window.localStorage.setItem('phr.currentRole', 'patient');
     setTestSession();
-    const recordDetailRoute = {
-      path: '/labs',
-      label: 'Labs',
-      minimumRole: 'caregiver' as PhrRole,
-      element: <RecordDetailPage />,
-    };
+    const recordDetailRoute = manifestEntryFor('/labs', <RecordDetailPage />);
 
     render(
       <ThemeProvider>
@@ -329,13 +355,18 @@ describe('PHR web app', () => {
   });
 
   it('hides clinician-only emergency route and header action for patient persona in shell navigation', async () => {
+    setTestAccessIdentity();
+    setTestSession();
+
     render(
       <ThemeProvider>
-        <PhrAccessProvider>
-          <MemoryRouter>
-            <AppShell />
-          </MemoryRouter>
-        </PhrAccessProvider>
+        <PhrSessionProvider>
+          <PhrAccessProvider>
+            <MemoryRouter>
+              <AppShell />
+            </MemoryRouter>
+          </PhrAccessProvider>
+        </PhrSessionProvider>
       </ThemeProvider>,
     );
 
@@ -347,22 +378,24 @@ describe('PHR web app', () => {
   });
 
   it('renders emergency header action only when backend entitles clinician role', async () => {
+    setTestAccessIdentity('clinician');
+    setTestSession('clinician');
+
     render(
       <ThemeProvider>
-        <PhrAccessProvider>
-          <MemoryRouter>
-            <AppShell />
-          </MemoryRouter>
-        </PhrAccessProvider>
+        <PhrSessionProvider>
+          <PhrAccessProvider>
+            <MemoryRouter>
+              <AppShell />
+            </MemoryRouter>
+          </PhrAccessProvider>
+        </PhrSessionProvider>
       </ThemeProvider>,
     );
 
     await waitFor(() => {
       expect(screen.getByText('Dashboard')).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByLabelText('Persona visibility menu'));
-    fireEvent.click(screen.getByText('Clinician'));
-
     await waitFor(() => {
       expect(screen.getByText('Emergency Access Review')).toBeInTheDocument();
     });
@@ -370,7 +403,7 @@ describe('PHR web app', () => {
   });
 
   it('renders release cockpit only when admin entitlements expose the route', async () => {
-    window.localStorage.setItem('phr.currentRole', 'admin');
+    setTestAccessIdentity('admin');
 
     render(
       <ThemeProvider>

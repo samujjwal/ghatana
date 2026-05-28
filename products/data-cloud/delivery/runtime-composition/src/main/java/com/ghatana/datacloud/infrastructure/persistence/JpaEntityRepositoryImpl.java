@@ -5,6 +5,8 @@ import com.ghatana.datacloud.application.QuerySpec;
 import com.ghatana.datacloud.entity.DataCloudColumnNames;
 import com.ghatana.datacloud.entity.Entity;
 import com.ghatana.datacloud.entity.EntityRepository;
+import com.ghatana.datacloud.entity.IdempotencyRecord;
+import com.ghatana.datacloud.entity.IdempotencyRepository;
 import com.ghatana.datacloud.infrastructure.config.JpaThreadPoolConfig;
 import io.activej.promise.Promise;
 import jakarta.persistence.EntityManager;
@@ -85,6 +87,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
         " = :collectionName AND " + DataCloudColumnNames.ACTIVE + " = true";
 
     private final ExecutorService dbExecutor;
+    private final IdempotencyRepository idempotencyRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -94,7 +97,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
      * Uses thread pool configuration from environment variables.
      */
     public JpaEntityRepositoryImpl() {
-        this(JpaThreadPoolConfig.fromEnvironment());
+        this(JpaThreadPoolConfig.fromEnvironment().createExecutorService(), new JpaIdempotencyRepositoryImpl());
     }
 
     /**
@@ -103,7 +106,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
      * @param config thread pool configuration (can be loaded from environment)
      */
     public JpaEntityRepositoryImpl(JpaThreadPoolConfig config) {
-        this(Objects.requireNonNull(config, "config must not be null").createExecutorService());
+        this(Objects.requireNonNull(config, "config must not be null").createExecutorService(), new JpaIdempotencyRepositoryImpl());
     }
 
     /**
@@ -112,7 +115,18 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
      * @param dbExecutor executor used for blocking JPA calls
      */
     public JpaEntityRepositoryImpl(ExecutorService dbExecutor) {
+        this(dbExecutor, new JpaIdempotencyRepositoryImpl());
+    }
+
+    /**
+     * Creates a repository with custom executor and idempotency repository.
+     *
+     * @param dbExecutor executor used for blocking JPA calls
+     * @param idempotencyRepository idempotency repository
+     */
+    public JpaEntityRepositoryImpl(ExecutorService dbExecutor, IdempotencyRepository idempotencyRepository) {
         this.dbExecutor = Objects.requireNonNull(dbExecutor, "dbExecutor must not be null");
+        this.idempotencyRepository = Objects.requireNonNull(idempotencyRepository, "idempotencyRepository must not be null");
     }
 
     /**
@@ -349,6 +363,65 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
             log.debug("save: tenantId={}, collection={}, id={}, version={}",
                 tenantId, saved.getCollectionName(), saved.getId(), saved.getVersion());
             return saved;
+        });
+    }
+
+    /**
+     * Saves an entity with idempotency guarantee.
+     *
+     * <p><b>Idempotency</b><br>
+     * If the same idempotency key is used for the same tenant and collection,
+     * returns the previously saved entity instead of creating a duplicate.
+     *
+     * @param tenantId the tenant identifier (required)
+     * @param entity the entity to save (required)
+     * @param idempotencyKey the idempotency key (required, max 255 chars)
+     * @return Promise of saved entity (new or existing)
+     * @throws IllegalArgumentException if tenantId mismatch or key is null/empty
+     */
+    @Override
+    public Promise<Entity> saveWithIdempotency(String tenantId, Entity entity, String idempotencyKey) {
+        Objects.requireNonNull(tenantId, "Tenant ID must not be null");
+        Objects.requireNonNull(entity, "Entity must not be null");
+        Objects.requireNonNull(idempotencyKey, "Idempotency key must not be null");
+
+        if (idempotencyKey.trim().isEmpty()) {
+            return Promise.ofException(new IllegalArgumentException("Idempotency key must not be empty"));
+        }
+
+        if (idempotencyKey.length() > 255) {
+            return Promise.ofException(new IllegalArgumentException("Idempotency key must not exceed 255 characters"));
+        }
+
+        if (!entity.getTenantId().equals(tenantId)) {
+            return Promise.ofException(new IllegalArgumentException("Entity tenant ID must match request tenant"));
+        }
+
+        return Promise.ofBlocking(dbExecutor, () -> {
+            Optional<IdempotencyRecord> existingRecord = idempotencyRepository.findByKey(tenantId, entity.getCollectionName(), idempotencyKey).getResult();
+            
+            if (existingRecord.isPresent()) {
+                // Idempotency key exists - return the previously saved entity
+                UUID previousEntityId = existingRecord.get().getEntityId();
+                if (previousEntityId == null) {
+                    throw new IllegalStateException("Idempotency record exists but has no entity ID");
+                }
+                log.debug("saveWithIdempotency: returning existing entity for key={}", idempotencyKey);
+                Optional<Entity> optEntity = findById(tenantId, entity.getCollectionName(), previousEntityId).getResult();
+                return optEntity.orElseThrow(() -> new IllegalStateException("Idempotency record references non-existent entity"));
+            } else {
+                // No existing record - save entity and create idempotency record
+                Entity savedEntity = save(tenantId, entity).getResult();
+                IdempotencyRecord record = IdempotencyRecord.builder()
+                    .tenantId(tenantId)
+                    .collectionName(entity.getCollectionName())
+                    .idempotencyKey(idempotencyKey)
+                    .entityId(savedEntity.getId())
+                    .createdBy(entity.getCreatedBy())
+                    .build();
+                idempotencyRepository.save(record).getResult();
+                return savedEntity;
+            }
         });
     }
 

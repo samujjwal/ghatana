@@ -16,8 +16,8 @@ dependencies {
     // Agent Framework
     api(project(":platform:java:agent-core"))
 
-    // AEP Agent Runtime (for MemoryRedactionFilter)
-    implementation(project(":products:data-cloud:planes:action:agent-runtime"))
+    // AEP adapter seam
+    implementation(project(":products:yappc:infrastructure:aep"))
 
     // Platform libs
     implementation(project(":platform:java:observability"))
@@ -31,8 +31,7 @@ dependencies {
     // Domain models
     implementation(project(":products:yappc:libs:java:yappc-domain"))
 
-    // Data-Cloud SPI (for ConversationRepository and PromptVersioningService)
-    implementation(project(":products:data-cloud:planes:shared-spi"))
+    // Data-Cloud adapter seam (for ConversationRepository and PromptVersioningService)
     implementation(project(":products:yappc:infrastructure:datacloud"))
 
     // ActiveJ

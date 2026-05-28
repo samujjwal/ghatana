@@ -115,17 +115,20 @@ class YappcSecurityMatrixTest {
                 false);
 
         PhasePacket.PhaseAction flagBlockedAdvance = advanceAction(service.determineAvailableActions(
+                "GENERATE",
                 capabilities,
                 PhasePacket.TenantTier.PRO,
                 Set.of(),
                 readiness,
                 List.of(),
-                List.of()));
+                List.of(),
+                true));
         assertThat(flagBlockedAdvance.enabled()).isFalse();
         assertThat(flagBlockedAdvance.disabledReason())
                 .isEqualTo("phaseAction.disabled.phaseAdvanceEntitlementMissing");
 
         PhasePacket.PhaseAction policyBlockedAdvance = advanceAction(service.determineAvailableActions(
+                "GENERATE",
                 capabilities,
                 PhasePacket.TenantTier.PRO,
                 Set.of("phase.advance"),
@@ -138,7 +141,8 @@ class YappcSecurityMatrixTest {
                         "system",
                         Instant.parse("2026-05-26T10:15:30Z"),
                         Map.of(),
-                        "decision-1"))));
+                        "decision-1")),
+                true));
         assertThat(policyBlockedAdvance.enabled()).isFalse();
         assertThat(policyBlockedAdvance.disabledReason())
                 .isEqualTo("phaseAction.disabled.policyDeniedTransition");

@@ -109,12 +109,6 @@ public final class PhrPatientProfileRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        // B-005: Check for existing update by idempotency key
-        if (idempotencyKey != null) {
-            // TODO: Check repository for existing update by idempotency key
-            // For now, proceed with update
-        }
-
         // Validate role-based edit permissions
         Set<String> allowedFields = getAllowedFieldsForRole(context.role());
 
@@ -157,7 +151,6 @@ public final class PhrPatientProfileRoutes {
                         }
                     }
 
-                    // Profile update is delegated to the service layer (stub for wiring).
                     Map<String, Object> response = new LinkedHashMap<>();
                     response.put("status", "updated");
                     response.put("principalId", context.principalId());

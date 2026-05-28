@@ -1,13 +1,9 @@
-/**
- * W-010: Document detail page.
- * Shows metadata, versions, provenance, audit/download policy.
- */
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Card, CardContent, CardHeader, Button } from '@ghatana/design-system';
-import { fetchDocumentDetail, downloadDocument } from '../api/phrApi';
+import { Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { downloadDocument, fetchDocumentDetail } from '../api/documentsApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
+import { t } from '../i18n/phrI18n';
 import { logError } from '../utils/safeLogger';
 import type { DocumentDetail } from '../types';
 
@@ -27,7 +23,7 @@ export function DocumentDetailPage(): React.ReactElement {
       role: session.role,
     })
       .then(setDocument)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load document details'))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('documentDetail.error.load')))
       .finally(() => setLoading(false));
   }, [session, documentId]);
 
@@ -48,31 +44,31 @@ export function DocumentDetailPage(): React.ReactElement {
     }
   };
 
-  if (loading) return <div className="loading" role="status" aria-live="polite">Loading document details...</div>;
-  if (error) return <div className="error" role="alert">Failed to load document details: {error}</div>;
-  if (!document) return <div className="error" role="alert">Failed to load document details</div>;
+  if (loading) return <div className="loading" role="status" aria-live="polite">{t('documentDetail.loading')}</div>;
+  if (error) return <div className="error" role="alert">{t('documentDetail.error.load')}: {error}</div>;
+  if (!document) return <div className="error" role="alert">{t('documentDetail.error.load')}</div>;
 
   return (
     <div className="stack gap-lg">
       <Card>
-        <CardHeader title={document.title} subheader="Document metadata and history" />
+        <CardHeader title={document.title} subheader={t('documentDetail.subheader')} />
         <CardContent>
           <dl className="detail-list stack gap-sm">
-            <div><dt>Document ID</dt><dd>{document.id}</dd></div>
-            <div><dt>Content type</dt><dd>{document.contentType}</dd></div>
-            <div><dt>Uploaded at</dt><dd>{new Date(document.uploadedAt).toLocaleString()}</dd></div>
-            <div><dt>Uploaded by</dt><dd>{document.uploadedBy}</dd></div>
-            <div><dt>Size</dt><dd>{document.sizeKb ? `${document.sizeKb.toFixed(1)} KB` : '—'}</dd></div>
+            <div><dt>{t('documentDetail.documentId')}</dt><dd>{document.id}</dd></div>
+            <div><dt>{t('documentDetail.contentType')}</dt><dd>{document.contentType}</dd></div>
+            <div><dt>{t('documentDetail.uploadedAt')}</dt><dd>{new Date(document.uploadedAt).toLocaleString()}</dd></div>
+            <div><dt>{t('documentDetail.uploadedBy')}</dt><dd>{document.uploadedBy}</dd></div>
+            <div><dt>{t('documentDetail.size')}</dt><dd>{document.sizeKb ? `${document.sizeKb.toFixed(1)} KB` : '-'}</dd></div>
             {document.ocrStatus && (
-              <div><dt>OCR status</dt><dd>{document.ocrStatus}</dd></div>
+              <div><dt>{t('documentDetail.ocrStatus')}</dt><dd>{document.ocrStatus}</dd></div>
             )}
             {document.description && (
-              <div><dt>Description</dt><dd>{document.description}</dd></div>
+              <div><dt>{t('documentDetail.description')}</dt><dd>{document.description}</dd></div>
             )}
           </dl>
           <div className="stack gap-sm" style={{ marginTop: '1rem' }}>
-            <Button onClick={handleDownload} disabled={downloading} aria-busy={downloading}>
-              {downloading ? 'Downloading...' : 'Download'}
+            <Button onClick={() => void handleDownload()} disabled={downloading} aria-busy={downloading}>
+              {downloading ? t('documentDetail.downloading') : t('documentDetail.download')}
             </Button>
           </div>
         </CardContent>
@@ -80,14 +76,14 @@ export function DocumentDetailPage(): React.ReactElement {
 
       {document.versions && document.versions.length > 0 && (
         <Card>
-          <CardHeader title="Versions" />
+          <CardHeader title={t('documentDetail.versions')} />
           <CardContent>
             <ul className="stack gap-sm" role="list">
               {document.versions.map((version) => (
                 <li key={version.versionId} role="listitem">
-                  <div><strong>Version: {version.versionNumber}</strong></div>
+                  <div><strong>{t('documentDetail.version')}: {version.versionNumber}</strong></div>
                   <div className="muted">{new Date(version.createdAt).toLocaleString()}</div>
-                  <div className="muted">Created by: {version.createdBy}</div>
+                  <div className="muted">{t('documentDetail.createdBy')}: {version.createdBy}</div>
                 </li>
               ))}
             </ul>
@@ -97,14 +93,14 @@ export function DocumentDetailPage(): React.ReactElement {
 
       {document.auditLog && document.auditLog.length > 0 && (
         <Card>
-          <CardHeader title="Audit log" />
+          <CardHeader title={t('documentDetail.auditLog')} />
           <CardContent>
             <ul className="stack gap-sm" role="list">
               {document.auditLog.map((entry) => (
                 <li key={entry.id} role="listitem">
                   <div><strong>{entry.action}</strong></div>
                   <div className="muted">{new Date(entry.timestamp).toLocaleString()}</div>
-                  <div className="muted">Performed by: {entry.performedBy}</div>
+                  <div className="muted">{t('documentDetail.performedBy')}: {entry.performedBy}</div>
                 </li>
               ))}
             </ul>

@@ -1,83 +1,128 @@
 /**
- * T-011: PHR Mobile API tests.
- * Tests headers, validation, logout cleanup, consent revoke cleanup.
+ * PHR mobile API tests for role validation and privacy cleanup behavior.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { phrFetch, buildPhrHeaders, SessionContext } from '../phrApi';
+process.env.EXPO_PUBLIC_PHR_API_URL = 'https://phr.example.test';
+
+jest.mock('../phiEncryptedStorage', () => ({
+  phiClearAll: jest.fn(() => Promise.resolve()),
+}));
+
+jest.mock('../offlineStore', () => ({
+  clearDashboardOffline: jest.fn(() => Promise.resolve()),
+  loadDashboardOffline: jest.fn(() => Promise.resolve(null)),
+  saveDashboardOffline: jest.fn(() => Promise.resolve()),
+}));
+
+jest.mock('../mobileSessionStore', () => ({
+  clearMobileSession: jest.fn(() => Promise.resolve()),
+}));
+
+import { clearDashboardOffline } from '../offlineStore';
+import { phiClearAll } from '../phiEncryptedStorage';
+import { clearMobileSession } from '../mobileSessionStore';
+import { loginMobile, logoutMobile, revokeConsentGrant } from '../phrMobileApi';
+import type { MobileSession } from '../../types';
+
+const mockFetch = jest.fn();
+global.fetch = mockFetch as typeof fetch;
+
+Object.defineProperty(globalThis, 'crypto', {
+  value: {
+    randomUUID: jest.fn(() => 'correlation-1'),
+  },
+  configurable: true,
+});
+
+const SESSION: MobileSession = {
+  tenantId: 'tenant-1',
+  principalId: 'patient-1',
+  role: 'patient',
+  name: 'Patient One',
+  expiresAt: '2099-01-01T00:00:00.000Z',
+};
 
 describe('phrMobileApi', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
-  describe('buildPhrHeaders', () => {
-    it('should include X-Tenant-ID header', () => {
-      const context: SessionContext = {
-        tenantId: 'tenant-123',
-        principalId: 'principal-123',
-        role: 'patient',
-      };
-      const headers = buildPhrHeaders(context);
-      expect(headers['X-Tenant-ID']).toBe('tenant-123');
+  it('accepts fchv sessions from the shared PHR role contract', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        tenantId: 'tenant-1',
+        principalId: 'fchv-1',
+        role: 'fchv',
+        name: 'FCHV One',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+      }),
     });
 
-    it('should include X-Principal-ID header', () => {
-      const context: SessionContext = {
-        tenantId: 'tenant-123',
-        principalId: 'principal-123',
-        role: 'patient',
-      };
-      const headers = buildPhrHeaders(context);
-      expect(headers['X-Principal-ID']).toBe('principal-123');
-    });
-
-    it('should include X-Role header', () => {
-      const context: SessionContext = {
-        tenantId: 'tenant-123',
-        principalId: 'principal-123',
-        role: 'patient',
-      };
-      const headers = buildPhrHeaders(context);
-      expect(headers['X-Role']).toBe('patient');
-    });
-
-    it('should include X-Correlation-ID header', () => {
-      const context: SessionContext = {
-        tenantId: 'tenant-123',
-        principalId: 'principal-123',
-        role: 'patient',
-      };
-      const headers = buildPhrHeaders(context);
-      expect(headers['X-Correlation-ID']).toBeDefined();
-      expect(typeof headers['X-Correlation-ID']).toBe('string');
-    });
-
-    it('should include X-Idempotency-Key header when provided', () => {
-      const context: SessionContext = {
-        tenantId: 'tenant-123',
-        principalId: 'principal-123',
-        role: 'patient',
-        idempotencyKey: 'uuid-123',
-      };
-      const headers = buildPhrHeaders(context);
-      expect(headers['X-Idempotency-Key']).toBe('uuid-123');
-    });
+    await expect(loginMobile('fchv-1', 'secret')).resolves.toMatchObject({ role: 'fchv' });
   });
 
-  describe('logout cleanup', () => {
-    it('should clear session context on logout', () => {
-      // This test would verify that logout clears stored session data
-      // Implementation depends on actual logout mechanism
-      expect(true).toBe(true); // Placeholder
+  it('rejects roles outside the shared PHR role contract', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        tenantId: 'tenant-1',
+        principalId: 'bad-1',
+        role: 'superuser',
+        name: 'Bad Role',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+      }),
     });
+
+    await expect(loginMobile('bad-1', 'secret')).rejects.toThrow('Login response has an invalid role.');
   });
 
-  describe('consent revoke cleanup', () => {
-    it('should clear consent-related data on revoke', () => {
-      // This test would verify that consent revocation clears related cached data
-      // Implementation depends on actual consent revoke mechanism
-      expect(true).toBe(true); // Placeholder
+  it('clears encrypted PHI and dashboard cache when consent is revoked', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 204,
     });
+
+    await revokeConsentGrant('grant-1', 'patient-1', SESSION);
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://phr.example.test/consents/grants/grant-1/revoke?patientId=patient-1',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          'X-Tenant-Id': 'tenant-1',
+          'X-Principal-Id': 'patient-1',
+          'X-Role': 'patient',
+        }),
+      }),
+    );
+    expect(phiClearAll).toHaveBeenCalledTimes(1);
+    expect(clearDashboardOffline).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears encrypted PHI, dashboard cache, and secure session on logout', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 204,
+    });
+
+    await logoutMobile(SESSION);
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://phr.example.test/auth/logout',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          'X-Tenant-Id': 'tenant-1',
+          'X-Principal-Id': 'patient-1',
+          'X-Role': 'patient',
+        }),
+      }),
+    );
+    expect(phiClearAll).toHaveBeenCalledTimes(1);
+    expect(clearDashboardOffline).toHaveBeenCalledTimes(1);
+    expect(clearMobileSession).toHaveBeenCalledTimes(1);
   });
 });

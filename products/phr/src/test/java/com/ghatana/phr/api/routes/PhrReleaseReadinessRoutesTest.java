@@ -18,7 +18,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
 
 /**
  * Enforcement matrix tests for {@link PhrReleaseReadinessRoutes}.
@@ -45,7 +45,7 @@ class PhrReleaseReadinessRoutesTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        when(releaseReadinessService.getReleaseReadiness(anyString(), anyString()))
+        lenient().when(releaseReadinessService.getReleaseReadiness(anyString(), anyString()))
             .thenReturn(io.activej.promise.Promise.of(Map.of("sections", Map.of("evidenceFreshness", Map.of("runtimeProven", true)))));
         servlet = new PhrReleaseReadinessRoutes(eventloop(), releaseReadinessService)
             .getServlet();

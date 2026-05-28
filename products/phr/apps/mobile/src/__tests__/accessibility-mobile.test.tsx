@@ -1,20 +1,11 @@
-/**
- * PHR Mobile Accessibility Tests
- *
- * These tests verify accessibility of mobile UI components including:
- * - Tab bar accessibility
- * - Button accessibility
- * - Form input accessibility
- * - Screen reader announcements
- * - Touch target sizes
- */
-
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react-native';
+import { render, waitFor } from '@testing-library/react-native';
+import NetInfo from '@react-native-community/netinfo';
 import App from '../App';
-import { t } from '../i18n/phrMobileI18n';
+import { fetchMobileDashboard } from '../services/phrMobileApi';
+import { loadMobileSession } from '../services/mobileSessionStore';
+import type { MobileDashboard, MobileSession } from '../types';
 
-// Mock dependencies
 jest.mock('@react-native-community/netinfo', () => ({
   addEventListener: jest.fn(() => jest.fn()),
 }));
@@ -40,340 +31,111 @@ jest.mock('../services/pushNotifications', () => ({
   registerForPushNotificationsAsync: jest.fn(),
 }));
 
-describe('Mobile Accessibility - Tab Bar', () => {
+const mockSession: MobileSession = {
+  principalId: 'test-principal',
+  tenantId: 'test-tenant',
+  role: 'patient',
+  name: 'Test User',
+  expiresAt: '2026-12-31T23:59:59Z',
+};
+
+const mockDashboard: MobileDashboard = {
+  patient: { id: '1', name: 'Test', age: 30, bloodType: 'O+', district: 'Kathmandu' },
+  records: [],
+  consents: [],
+  notifications: [],
+};
+
+function renderedText(rendered: { toJSON: () => unknown }): string {
+  return JSON.stringify(rendered.toJSON());
+}
+
+function authenticateApp(): void {
+  (loadMobileSession as jest.MockedFunction<typeof loadMobileSession>).mockResolvedValue(mockSession);
+  (fetchMobileDashboard as jest.MockedFunction<typeof fetchMobileDashboard>).mockResolvedValue(mockDashboard);
+}
+
+describe('Mobile accessibility smoke', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (NetInfo.addEventListener as jest.MockedFunction<typeof NetInfo.addEventListener>).mockImplementation(() => jest.fn());
   });
 
-  it('should have accessibilityRole="tabbar" on tab bar container', async () => {
-    const mockSession = {
-      principalId: 'test-principal',
-      tenantId: 'test-tenant',
-      role: 'patient',
-      name: 'Test User',
-      expiresAt: '2026-12-31T23:59:59Z',
-    };
+  it('uses tabbar and tab roles for authenticated navigation', async () => {
+    authenticateApp();
+    const rendered = render(<App />);
 
-    (require('../services/mobileSessionStore').loadMobileSession as jest.Mock).mockResolvedValue(mockSession);
-    (require('../services/phrMobileApi').fetchMobileDashboard as jest.Mock).mockResolvedValue({
-      patient: { id: '1', name: 'Test', age: 30, bloodType: 'O+', district: 'Kathmandu' },
-      records: [],
-      consents: [],
-      notifications: [],
-    });
+    await waitFor(() => expect(rendered.getByLabelText('Home')).toBeTruthy());
 
-    render(<App />);
-
-    // Wait for app to render
-    const tabBar = screen.getByRole('tabbar');
-    expect(tabBar).toBeTruthy();
+    expect(rendered.UNSAFE_getByProps({ accessibilityLabel: 'Home' }).props.accessibilityHint).toBe(
+      'Show the mobile health dashboard.',
+    );
+    expect(rendered.UNSAFE_getByProps({ accessibilityLabel: 'Records' }).props.accessibilityHint).toBe(
+      'Open the offline health record list.',
+    );
+    expect(rendered.UNSAFE_getByProps({ accessibilityLabel: 'Emergency' }).props.accessibilityHint).toBe(
+      'Request audited emergency access.',
+    );
   });
 
-  it('should have accessibilityRole="tab" on each tab item', async () => {
-    const mockSession = {
-      principalId: 'test-principal',
-      tenantId: 'test-tenant',
-      role: 'patient',
-      name: 'Test User',
-      expiresAt: '2026-12-31T23:59:59Z',
-    };
+  it('marks the active tab through accessibility state', async () => {
+    authenticateApp();
+    const rendered = render(<App />);
 
-    (require('../services/mobileSessionStore').loadMobileSession as jest.Mock).mockResolvedValue(mockSession);
-    (require('../services/phrMobileApi').fetchMobileDashboard as jest.Mock).mockResolvedValue({
-      patient: { id: '1', name: 'Test', age: 30, bloodType: 'O+', district: 'Kathmandu' },
-      records: [],
-      consents: [],
-      notifications: [],
+    await waitFor(() => expect(rendered.getByLabelText('Home')).toBeTruthy());
+
+    expect(rendered.UNSAFE_getByProps({ accessibilityLabel: 'Home' }).props.accessibilityState).toEqual({
+      selected: true,
     });
-
-    render(<App />);
-
-    // Check that tabs have proper accessibility role
-    const tabs = screen.getAllByRole('tab');
-    expect(tabs.length).toBeGreaterThan(0);
-  });
-
-  it('should have accessibilityState={{ selected: true }} on active tab', async () => {
-    const mockSession = {
-      principalId: 'test-principal',
-      tenantId: 'test-tenant',
-      role: 'patient',
-      name: 'Test User',
-      expiresAt: '2026-12-31T23:59:59Z',
-    };
-
-    (require('../services/mobileSessionStore').loadMobileSession as jest.Mock).mockResolvedValue(mockSession);
-    (require('../services/phrMobileApi').fetchMobileDashboard as jest.Mock).mockResolvedValue({
-      patient: { id: '1', name: 'Test', age: 30, bloodType: 'O+', district: 'Kathmandu' },
-      records: [],
-      consents: [],
-      notifications: [],
-    });
-
-    render(<App />);
-
-    // At least one tab should be selected
-    const tabs = screen.getAllByRole('tab');
-    const selectedTab = tabs.find((tab) => {
-      // In a real test, we'd check the accessibilityState prop
-      // For now, just verify tabs exist
-      return true;
-    });
-
-    expect(selectedTab).toBeDefined();
-  });
-
-  it('should have accessibilityLabel on each tab', async () => {
-    const mockSession = {
-      principalId: 'test-principal',
-      tenantId: 'test-tenant',
-      role: 'patient',
-      name: 'Test User',
-      expiresAt: '2026-12-31T23:59:59Z',
-    };
-
-    (require('../services/mobileSessionStore').loadMobileSession as jest.Mock).mockResolvedValue(mockSession);
-    (require('../services/phrMobileApi').fetchMobileDashboard as jest.Mock).mockResolvedValue({
-      patient: { id: '1', name: 'Test', age: 30, bloodType: 'O+', district: 'Kathmandu' },
-      records: [],
-      consents: [],
-      notifications: [],
-    });
-
-    render(<App />);
-
-    // Tabs should have accessibility labels
-    const tabs = screen.getAllByRole('tab');
-    tabs.forEach(tab => {
-      // In a real implementation, we'd check for accessibilityLabel prop
-      // For now, verify tabs are present
-      expect(tab).toBeTruthy();
+    expect(rendered.UNSAFE_getByProps({ accessibilityLabel: 'Records' }).props.accessibilityState).toEqual({
+      selected: false,
     });
   });
-});
 
-describe('Mobile Accessibility - Buttons', () => {
-  it('should have accessible labels on buttons', async () => {
-    const mockSession = {
-      principalId: 'test-principal',
-      tenantId: 'test-tenant',
-      role: 'patient',
-      name: 'Test User',
-      expiresAt: '2026-12-31T23:59:59Z',
-    };
-
-    (require('../services/mobileSessionStore').loadMobileSession as jest.Mock).mockResolvedValue(mockSession);
-    (require('../services/phrMobileApi').fetchMobileDashboard as jest.Mock).mockResolvedValue({
-      patient: { id: '1', name: 'Test', age: 30, bloodType: 'O+', district: 'Kathmandu' },
-      records: [],
-      consents: [],
-      notifications: [],
+  it('announces offline connectivity as an alert', async () => {
+    authenticateApp();
+    (NetInfo.addEventListener as jest.MockedFunction<typeof NetInfo.addEventListener>).mockImplementation((callback) => {
+      callback({ isConnected: false } as Parameters<typeof callback>[0]);
+      return jest.fn();
     });
 
-    render(<App />);
+    const rendered = render(<App />);
 
-    // Find retry button (appears on error)
-    const retryButton = screen.queryByText(/retry/i);
-    if (retryButton) {
-      // Button should be accessible
-      expect(retryButton).toBeTruthy();
-    }
+    await waitFor(() => expect(rendered.UNSAFE_getByProps({ accessibilityRole: 'alert' })).toBeTruthy());
+    expect(renderedText(rendered)).toContain('You are offline.');
   });
 
-  it('should have minimum touch target size (44x44)', async () => {
-    const mockSession = {
-      principalId: 'test-principal',
-      tenantId: 'test-tenant',
-      role: 'patient',
-      name: 'Test User',
-      expiresAt: '2026-12-31T23:59:59Z',
-    };
-
-    (require('../services/mobileSessionStore').loadMobileSession as jest.Mock).mockResolvedValue(mockSession);
-    (require('../services/phrMobileApi').fetchMobileDashboard as jest.Mock).mockResolvedValue({
-      patient: { id: '1', name: 'Test', age: 30, bloodType: 'O+', district: 'Kathmandu' },
-      records: [],
-      consents: [],
-      notifications: [],
-    });
-
-    const { getByRole } = render(<App />);
-
-    // Check tab bar touch targets
-    const tabBar = getByRole('tabbar');
-    expect(tabBar).toBeTruthy();
-
-    // In a real test, we'd measure the actual touch target size
-    // For now, verify the component exists
-  });
-});
-
-describe('Mobile Accessibility - Forms', () => {
-  it('should have labels for all form inputs', async () => {
-    // Login screen has form inputs
-    (require('../services/mobileSessionStore').loadMobileSession as jest.Mock).mockResolvedValue(null);
-
-    render(<App />);
-
-    // Login screen should be visible
-    // Check that form inputs have labels
-    const nationalIdInput = screen.queryByPlaceholderText(/national/i);
-    const passwordInput = screen.queryByPlaceholderText(/password/i);
-
-    if (nationalIdInput) {
-      expect(nationalIdInput).toBeTruthy();
-    }
-    if (passwordInput) {
-      expect(passwordInput).toBeTruthy();
-    }
-  });
-
-  it('should indicate required fields', async () => {
-    (require('../services/mobileSessionStore').loadMobileSession as jest.Mock).mockResolvedValue(null);
-
-    render(<App />);
-
-    // Login form fields should be required
-    // In a real test, we'd check for required indicators
-    const loginButton = screen.queryByText(/login/i);
-    if (loginButton) {
-      expect(loginButton).toBeTruthy();
-    }
-  });
-});
-
-describe('Mobile Accessibility - Screen Reader', () => {
-  it('should announce offline banner with accessibilityRole="alert"', async () => {
-    const mockSession = {
-      principalId: 'test-principal',
-      tenantId: 'test-tenant',
-      role: 'patient',
-      name: 'Test User',
-      expiresAt: '2026-12-31T23:59:59Z',
-    };
-
-    (require('../services/mobileSessionStore').loadMobileSession as jest.Mock).mockResolvedValue(mockSession);
-    (require('../services/phrMobileApi').fetchMobileDashboard as jest.Mock).mockResolvedValue({
-      patient: { id: '1', name: 'Test', age: 30, bloodType: 'O+', district: 'Kathmandu' },
-      records: [],
-      consents: [],
-      notifications: [],
-    });
-
-    // Mock NetInfo to return offline
-    (require('@react-native-community/netinfo').addEventListener as jest.Mock).mockImplementation(
-      (callback: (state: { isConnected: boolean }) => void) => {
-        callback({ isConnected: false });
-        return jest.fn();
-      }
+  it('shows a readable restoring-session state while session restore is pending', () => {
+    (loadMobileSession as jest.MockedFunction<typeof loadMobileSession>).mockImplementation(
+      () => new Promise<MobileSession | null>(() => undefined),
     );
 
-    render(<App />);
+    const rendered = render(<App />);
 
-    // Offline banner should have accessibilityRole="alert"
-    const offlineBanner = screen.queryByRole('alert');
-    if (offlineBanner) {
-      expect(offlineBanner).toBeTruthy();
-    }
+    expect(renderedText(rendered)).toContain('Restoring session');
   });
 
-  it('should announce loading state', async () => {
-    (require('../services/mobileSessionStore').loadMobileSession as jest.Mock).mockImplementation(
-      () => new Promise(() => {}) // Never resolves to keep loading state
+  it('exposes login input labels and the submit button to assistive tech', async () => {
+    (loadMobileSession as jest.MockedFunction<typeof loadMobileSession>).mockResolvedValue(null);
+    const rendered = render(<App />);
+
+    await waitFor(() => {
+      expect(rendered.getByLabelText('National ID')).toBeTruthy();
+      expect(rendered.getByLabelText('Password')).toBeTruthy();
+      expect(rendered.getByLabelText('Sign In')).toBeTruthy();
+    });
+  });
+
+  it('exposes dashboard load errors as alerts with an accessible retry action', async () => {
+    (loadMobileSession as jest.MockedFunction<typeof loadMobileSession>).mockResolvedValue(mockSession);
+    (fetchMobileDashboard as jest.MockedFunction<typeof fetchMobileDashboard>).mockRejectedValue(
+      new Error('Dashboard failed'),
     );
 
-    render(<App />);
+    const rendered = render(<App />);
 
-    // Loading indicator should be present
-    const loadingText = screen.queryByText(/restoring/i);
-    if (loadingText) {
-      expect(loadingText).toBeTruthy();
-    }
-  });
-});
-
-describe('Mobile Accessibility - Color Contrast', () => {
-  it('should have sufficient color contrast for text', async () => {
-    const mockSession = {
-      principalId: 'test-principal',
-      tenantId: 'test-tenant',
-      role: 'patient',
-      name: 'Test User',
-      expiresAt: '2026-12-31T23:59:59Z',
-    };
-
-    (require('../services/mobileSessionStore').loadMobileSession as jest.Mock).mockResolvedValue(mockSession);
-    (require('../services/phrMobileApi').fetchMobileDashboard as jest.Mock).mockResolvedValue({
-      patient: { id: '1', name: 'Test', age: 30, bloodType: 'O+', district: 'Kathmandu' },
-      records: [],
-      consents: [],
-      notifications: [],
-    });
-
-    render(<App />);
-
-    // In a real test, we'd use a library to measure contrast ratios
-    // For now, verify text elements are present
-    const header = screen.queryByText(/phr/i);
-    if (header) {
-      expect(header).toBeTruthy();
-    }
-  });
-});
-
-describe('Mobile Accessibility - Focus Management', () => {
-  it('should maintain focus when switching tabs', async () => {
-    const mockSession = {
-      principalId: 'test-principal',
-      tenantId: 'test-tenant',
-      role: 'patient',
-      name: 'Test User',
-      expiresAt: '2026-12-31T23:59:59Z',
-    };
-
-    (require('../services/mobileSessionStore').loadMobileSession as jest.Mock).mockResolvedValue(mockSession);
-    (require('../services/phrMobileApi').fetchMobileDashboard as jest.Mock).mockResolvedValue({
-      patient: { id: '1', name: 'Test', age: 30, bloodType: 'O+', district: 'Kathmandu' },
-      records: [],
-      consents: [],
-      notifications: [],
-    });
-
-    render(<App />);
-
-    // Tap on a tab
-    const tabs = screen.getAllByRole('tab');
-    if (tabs.length > 1 && tabs[1]) {
-      fireEvent.press(tabs[1]);
-
-      // In a real test, we'd verify focus moved to the new tab
-      // For now, verify the press didn't crash
-      expect(true).toBe(true);
-    }
-  });
-});
-
-describe('Mobile Accessibility - Error Messages', () => {
-  it('should announce errors with accessibilityRole="alert"', async () => {
-    const mockSession = {
-      principalId: 'test-principal',
-      tenantId: 'test-tenant',
-      role: 'patient',
-      name: 'Test User',
-      expiresAt: '2026-12-31T23:59:59Z',
-    };
-
-    (require('../services/mobileSessionStore').loadMobileSession as jest.Mock).mockResolvedValue(mockSession);
-    (require('../services/phrMobileApi').fetchMobileDashboard as jest.Mock).mockRejectedValue(
-      new Error('Test error')
-    );
-
-    render(<App />);
-
-    // Error should be announced
-    const errorText = screen.queryByText(/error/i);
-    if (errorText) {
-      expect(errorText).toBeTruthy();
-    }
+    await waitFor(() => expect(rendered.UNSAFE_getByProps({ accessibilityRole: 'alert' })).toBeTruthy());
+    expect(rendered.getByLabelText('Retry')).toBeTruthy();
+    expect(renderedText(rendered)).toContain('Dashboard failed');
   });
 });

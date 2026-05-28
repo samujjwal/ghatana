@@ -100,6 +100,12 @@
       "confirmationRequired": true,
       "idempotencyKey": "phase.advance",
       "auditType": "phase.advance.requested",
+      "targetType": "server",
+      "targetRoute": null,
+      "targetDrawer": null,
+      "requiresPreview": true,
+      "serverOperation": "phase.advance",
+      "postSuccessBehavior": "refresh-packet",
       "parameters": {
         "nextPhase": "run"
       }

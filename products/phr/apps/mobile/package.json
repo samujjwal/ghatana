@@ -10,7 +10,9 @@
     "web": "expo start --web",
     "build": "expo export --platform ios --platform android",
     "test": "tsx scripts/mobile-contract-test.ts",
-    "test:jest": "jest --passWithNoTests --selectProjects iOS",
+    "test:a11y": "jest --selectProjects Node src/__tests__/accessibility-mobile.test.tsx src/screens/__tests__/EmergencyAccessScreen.test.tsx src/screens/__tests__/SettingsScreen.test.tsx --runInBand --silent",
+    "test:jest": "jest --passWithNoTests --selectProjects Node",
+    "test:jest:native": "jest --passWithNoTests --selectProjects iOS",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

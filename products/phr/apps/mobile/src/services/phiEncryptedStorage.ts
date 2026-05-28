@@ -10,14 +10,14 @@
  * - The encrypted ciphertext (IV + tag + payload) is stored in
  *   `@react-native-async-storage/async-storage`.
  * - The WebCrypto API (`crypto.subtle`) is used for all cryptographic
- *   operations; it is available in React Native ≥ 0.71.
+ *   operations; it is available in React Native 0.71 and newer.
  *
  * Security properties:
  * - AES-256-GCM provides authenticated encryption: any tampering with the
  *   ciphertext or IV will cause decryption to throw, returning null.
  * - A fresh 12-byte IV is generated for every write.
- * - The encryption key never leaves the secure keychain; AsyncStorage holds
- *   only ciphertext.
+ * - Raw AES key material is stored in SecureStore as base64, then imported as
+ *   a non-extractable CryptoKey for encryption/decryption operations.
  * - Clearing an item removes the ciphertext from AsyncStorage; the key
  *   remains for future items to the same store.
  *
@@ -45,7 +45,7 @@ const MAX_KEY_AGE_DAYS = 365; // Force key rotation after 1 year regardless of t
 const BIOMETRIC_POLICY_KEY = 'phr-phi-biometric-policy-enabled';
 const DEVICE_INSTALL_ID_KEY = 'phr-phi-device-install-id';
 
-// ─── Crypto helpers ──────────────────────────────────────────────────────────
+// Crypto helpers
 
 function uint8ArrayToBase64(bytes: Uint8Array): string {
   let binary = '';
@@ -86,7 +86,7 @@ async function importKey(b64: string): Promise<CryptoKey> {
   return crypto.subtle.importKey('raw', raw, { name: ALGORITHM, length: KEY_LENGTH_BITS }, false, ['encrypt', 'decrypt']);
 }
 
-// ─── Key retrieval (create-once, reuse forever) ───────────────────────────────
+// Key retrieval
 
 let cachedKey: CryptoKey | null = null;
 let cachedKeyVersion: number = 0;
@@ -271,8 +271,7 @@ async function verifyTamperDetection(): Promise<boolean> {
     const stored = await SecureStore.getItemAsync(TAMPER_DETECTION_KEY);
     if (!stored) return false; // Missing tamper check is suspicious
     
-    // In production, this would verify against a server-side attestation
-    // For now, just check that the value exists and is properly formatted
+    // This local sentinel only detects missing or malformed key metadata.
     const parts = stored.split(':');
     const firstPart = parts[0];
     return parts.length === 2 && firstPart !== undefined && firstPart.length > 0;
@@ -313,7 +312,7 @@ async function verifyIntegrityCheck(): Promise<boolean> {
   }
 }
 
-// ─── Biometric access policy ─────────────────────────────────────────────────────
+// Biometric access policy
 
 async function isBiometricPolicyEnabled(): Promise<boolean> {
   const enabled = await SecureStore.getItemAsync(BIOMETRIC_POLICY_KEY);
@@ -365,8 +364,7 @@ async function authenticateWithBiometrics(): Promise<boolean> {
 }
 
 async function logSecurityEvent(event: string): Promise<void> {
-  // M-004: Use safe logger with no PHI/key details; include safe reason codes only
-  // In production, this would send to a secure logging service
+  // M-004: Store safe reason codes only; no PHI or key material is logged.
   const timestamp = Date.now();
   const logEntry = `${timestamp}:${event}`;
   await SecureStore.setItemAsync('phr-security-log', logEntry, {
@@ -374,7 +372,7 @@ async function logSecurityEvent(event: string): Promise<void> {
   });
 }
 
-// ─── Device install ID tracking ──────────────────────────────────────────────────
+// Device install ID tracking
 
 async function getOrCreateDeviceInstallId(): Promise<string> {
   let installId = await SecureStore.getItemAsync(DEVICE_INSTALL_ID_KEY);
@@ -387,7 +385,7 @@ async function getOrCreateDeviceInstallId(): Promise<string> {
   return installId;
 }
 
-// ─── PHI key registry for reliable clearing ───────────────────────────────────────
+// PHI key registry for reliable clearing
 
 const PHI_KEY_REGISTRY_KEY = 'phr-phi-key-registry';
 
@@ -431,7 +429,7 @@ async function verifyDeviceInstallIntegrity(): Promise<boolean> {
   }
 }
 
-// ─── Encrypt / decrypt ────────────────────────────────────────────────────────
+// Encrypt and decrypt
 
 async function encrypt(plaintext: string): Promise<string> {
   const key = await getOrCreateKey();
@@ -458,27 +456,28 @@ async function decrypt(b64: string): Promise<string> {
   return new TextDecoder().decode(plainBuffer);
 }
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// Public API
 
 /**
  * Testable adapter interface for PHI encrypted storage.
  * In production the default implementation encrypts via AES-256-GCM.
- * In tests, inject a mock adapter via `setPhiStorageAdapter`.
+ * In tests, inject a controlled adapter via `setPhiStorageAdapter`.
  */
 export interface PhiStorageAdapter {
   setItem(key: string, value: string): Promise<void>;
   getItem(key: string): Promise<string | null>;
   removeItem(key: string): Promise<void>;
+  clearAllPhi?(): Promise<void>;
 }
 
 /**
- * Production adapter: AES-256-GCM ciphertext → AsyncStorage, key → SecureStore.
+ * Production adapter: AES-256-GCM ciphertext in AsyncStorage, key material in SecureStore.
  */
 const productionAdapter: PhiStorageAdapter = {
   async setItem(key: string, value: string): Promise<void> {
     const ciphertext = await encrypt(value);
     await AsyncStorage.setItem(key, ciphertext);
-    // M-002: Register the key in the PHI key registry for reliable clearing
+// PHI key registry for reliable clearing
     await registerPhiKey(key);
   },
 
@@ -488,7 +487,7 @@ const productionAdapter: PhiStorageAdapter = {
     try {
       return await decrypt(ciphertext);
     } catch {
-      // Decryption failure (tampered, wrong key after reinstall, etc.) — treat as absent.
+      // Decryption failure (tampered data, wrong key after reinstall, etc.) is treated as absent.
       await AsyncStorage.removeItem(key);
       await unregisterPhiKey(key);
       return null;
@@ -505,7 +504,7 @@ let activeAdapter: PhiStorageAdapter = productionAdapter;
 
 /**
  * Replaces the default encrypted storage adapter.
- * Use this in tests to inject a mock without touching the real keychain or AsyncStorage.
+ * Use this in tests to inject a controlled adapter without touching the real keychain or AsyncStorage.
  *
  * @param adapter - the adapter to use
  */
@@ -521,7 +520,7 @@ export function resetPhiStorageAdapter(): void {
 /**
  * Stores a PHI-bearing value under `key`, encrypted at rest.
  *
- * @param key    storage key — must not contain PHI itself
+ * @param key    storage key; must not contain PHI itself
  * @param value  plaintext payload (typically serialized JSON)
  */
 export async function phiSet(key: string, value: string): Promise<void> {
@@ -532,7 +531,7 @@ export async function phiSet(key: string, value: string): Promise<void> {
  * Retrieves and decrypts a PHI-bearing value. Returns `null` when absent,
  * corrupted, or when decryption fails (key rotation, tampered ciphertext).
  *
- * @param key  storage key used during `phiSet`
+ * @param key    storage key; must not contain PHI itself
  * @returns    plaintext string or null
  */
 export async function phiGet(key: string): Promise<string | null> {
@@ -542,7 +541,7 @@ export async function phiGet(key: string): Promise<string | null> {
 /**
  * Removes a PHI-bearing value from encrypted storage.
  *
- * @param key  storage key to remove
+ * @param key    storage key; must not contain PHI itself
  */
 export async function phiRemove(key: string): Promise<void> {
   await activeAdapter.removeItem(key);
@@ -552,10 +551,14 @@ export async function phiRemove(key: string): Promise<void> {
  * Clears all PHI-bearing values from encrypted storage.
  * Must be called on consent revocation, logout, session expiry, and role/persona change.
  * 
- * M-002: Fixed to clear all PHI by maintaining a PHI key registry.
+// PHI key registry for reliable clearing
  * All PHI keys are registered when set, so we can clear them all reliably.
  */
 export async function phiClearAll(): Promise<void> {
+  if (activeAdapter.clearAllPhi) {
+    await activeAdapter.clearAllPhi();
+  }
+
   // Get all PHI keys from registry
   const registryJson = await SecureStore.getItemAsync('phr-phi-key-registry');
   const phiKeys = registryJson ? JSON.parse(registryJson) as string[] : [];
@@ -569,7 +572,7 @@ export async function phiClearAll(): Promise<void> {
   await SecureStore.deleteItemAsync('phr-phi-key-registry');
   
   // Also clear any keys with the PHI prefix as a safety net
-  const allKeys = await AsyncStorage.getAllKeys();
+  const allKeys = await AsyncStorage.getAllKeys() ?? [];
   const prefixedKeys = allKeys.filter((k) => k.startsWith(CIPHERTEXT_STORAGE_PREFIX));
   for (const key of prefixedKeys) {
     await AsyncStorage.removeItem(key);
@@ -621,3 +624,4 @@ export async function phiIsBiometricPolicyEnabled(): Promise<boolean> {
 export async function phiGetDeviceInstallId(): Promise<string> {
   return getOrCreateDeviceInstallId();
 }
+

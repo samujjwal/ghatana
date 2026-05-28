@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { TimeSeriesChart } from '@ghatana/charts';
-import { fetchObservations } from '../api/phrApi';
+import { fetchObservations } from '../api/clinicalApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import type { ObservationSummary } from '../types';
@@ -60,15 +60,16 @@ export function ObservationsPage(): React.ReactElement {
   const selectedGroup = selectedObservation ? observationsByCode[selectedObservation] : null;
 
   // Prepare chart data for TimeSeriesChart
-  const getChartData = (obsGroup: ObservationSummary[]) => {
-    return obsGroup
-      .map(obs => ({
-        x: new Date(obs.effectiveDate).getTime(),
-        y: parseFloat(obs.value),
-        label: new Date(obs.effectiveDate).toLocaleDateString(),
-      }))
-      .sort((a, b) => a.x - b.x);
-  };
+	  const getChartData = (obsGroup: ObservationSummary[]) => {
+	    return obsGroup
+	      .map(obs => ({
+	        x: new Date(obs.effectiveDate).getTime(),
+	        y: parseFloat(obs.value),
+	        label: new Date(obs.effectiveDate).toLocaleDateString(),
+	        value: parseFloat(obs.value),
+	      }))
+	      .sort((a, b) => a.x - b.x);
+	  };
 
   return (
     <div className="stack gap-lg">
@@ -101,13 +102,12 @@ export function ObservationsPage(): React.ReactElement {
                     <div className="observation-trend">
                       <h4>Trend History</h4>
                       <div className="trend-chart">
-                        <TimeSeriesChart
-                          data={getChartData(obsGroup)}
-                          height={200}
-                          showGrid={true}
-                          showTooltip={true}
-                          color="#3b82f6"
-                        />
+	                        <TimeSeriesChart
+	                          data={getChartData(obsGroup)}
+	                          series={[{ id: 'value', label: latest.name, color: '#3b82f6' }]}
+	                          height={200}
+	                          showLegend={false}
+	                        />
                       </div>
                       <table className="data-table">
                         <thead>

@@ -130,7 +130,12 @@ export function EmergencyAccessScreen({ onAuthenticate, session }: EmergencyAcce
       <View style={styles.container}>
         <Text style={styles.title}>{t('emergency.denied')}</Text>
         <Text style={styles.summary}>{t('emergency.error')}</Text>
-        <Pressable onPress={() => setState('locked')} style={styles.button} accessibilityRole="button">
+        <Pressable
+          onPress={() => setState('locked')}
+          style={styles.button}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.retry')}
+        >
           <Text style={styles.buttonText}>{t('common.retry')}</Text>
         </Pressable>
       </View>

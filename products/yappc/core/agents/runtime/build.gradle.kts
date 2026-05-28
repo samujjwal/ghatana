@@ -22,21 +22,14 @@ dependencies {
 
     // Agent framework from platform (api — types are part of YAPPCAgentBase public API)
     api(project(":platform:java:agent-core"))
-    // Unified AEP runtime (Phase 1.6 consolidation: aep-engine + aep-agent-runtime + aep-central-runtime)
-    implementation(project(":products:data-cloud:planes:action:engine"))
+    // Unified AEP runtime seam through infrastructure adapter module
+    implementation(project(":products:yappc:infrastructure:aep"))
     implementation(project(":platform:java:core"))
     implementation(project(":platform:java:workflow"))
     implementation(project(":platform:java:database"))
     implementation(project(":platform:java:ai-integration"))
-    // Accesses data-cloud:spi directly; DataStorePort adapter seam tracked in architecture backlog
-    implementation(project(":products:data-cloud:planes:shared-spi"))
 
-    // AEP contracts (decoupled from concrete runtime implementation)
-    // Accesses aep-operator-contracts directly; OperatorCatalogPort adapter seam tracked in architecture backlog
-    implementation(project(":products:data-cloud:planes:action:operator-contracts"))
-
-    // Unified AEP runtime for tests
-    testImplementation(project(":products:data-cloud:planes:action:engine"))  // Consolidated runtime
+    // AEP contracts are exposed transitively by infrastructure:aep
 
     // AI module (api — LLMProvider/LLMRequest/LLMResponse in public agent API)
     api(project(":products:yappc:core:ai"))

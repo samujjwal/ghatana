@@ -7,7 +7,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { RecordDetailPage } from '../RecordDetailPage';
 
 vi.mock('../../api/phrApi', () => ({
-  fetchDashboardData: vi.fn(),
+  fetchRecordDetail: vi.fn(),
 }));
 
 vi.mock('../../i18n/phrI18n', () => ({
@@ -18,9 +18,21 @@ vi.mock('react-router-dom', () => ({
   useParams: () => ({ recordId: 'rec-1' }),
 }));
 
-import { fetchDashboardData } from '../../api/phrApi';
+vi.mock('../../auth/PhrSessionContext', () => ({
+  usePhrSession: () => ({
+    session: {
+      tenantId: 'tenant-test',
+      principalId: 'patient-test',
+      role: 'patient',
+      name: 'Patient Test',
+      expiresAt: '2026-05-28T02:00:00Z',
+    },
+  }),
+}));
 
-const mockFetch = fetchDashboardData as ReturnType<typeof vi.fn>;
+import { fetchRecordDetail } from '../../api/phrApi';
+
+const mockFetch = fetchRecordDetail as ReturnType<typeof vi.fn>;
 
 const records = [
   {
@@ -47,24 +59,36 @@ describe('RecordDetailPage', () => {
   it('shows error when fetch fails', async () => {
     mockFetch.mockRejectedValue(new Error('network'));
     render(<RecordDetailPage />);
-    await waitFor(() => expect(screen.getByText(/dashboard\.errorPrefix/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('network')).toBeTruthy());
   });
 
   it('shows unavailable state when record is not found', async () => {
-    mockFetch.mockResolvedValue({ records: [], patient: {}, consents: [], appointments: [], labs: [], medications: [] });
+    mockFetch.mockResolvedValue(null);
     render(<RecordDetailPage />);
     await waitFor(() => expect(screen.getByText('recordDetail.unavailable.title')).toBeTruthy());
   });
 
   it('displays record title when found', async () => {
-    mockFetch.mockResolvedValue({ records, patient: {}, consents: [], appointments: [], labs: [], medications: [] });
+    const record = records[0];
+    if (!record) throw new Error('Missing record fixture');
+    mockFetch.mockResolvedValue({
+      record,
+      fhirJson: record.fhirJson,
+      accessAudit: { accessedAt: '2025-01-10T10:00:00Z', accessedBy: 'patient-test' },
+    });
     render(<RecordDetailPage />);
     await waitFor(() => expect(screen.getByText('CBC Lab Panel')).toBeTruthy());
   });
 
   it('renders FHIR JSON in a code block', async () => {
-    mockFetch.mockResolvedValue({ records, patient: {}, consents: [], appointments: [], labs: [], medications: [] });
+    const record = records[0];
+    if (!record) throw new Error('Missing record fixture');
+    mockFetch.mockResolvedValue({
+      record,
+      fhirJson: record.fhirJson,
+      accessAudit: { accessedAt: '2025-01-10T10:00:00Z', accessedBy: 'patient-test' },
+    });
     render(<RecordDetailPage />);
-    await waitFor(() => expect(screen.getByText('{"resourceType":"Observation"}')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/"resourceType": "Observation"/)).toBeTruthy());
   });
 });

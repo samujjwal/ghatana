@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { CanvasOverlays, type CanvasOverlaysProps } from '../CanvasOverlays';
 import { LifecyclePhase } from '../../../types/lifecycle';
+import type { PhrCompletenessOverlayModel } from '../../../lib/phr/phrCompletenessOverlay';
 
 vi.mock('../workspace', () => ({
     NextBestTaskCard: () => null,
@@ -81,6 +82,63 @@ function buildProps(overrides: Partial<CanvasOverlaysProps> = {}): CanvasOverlay
 }
 
 describe('CanvasOverlays', () => {
+    it('renders the PHR route completeness overlay when a model is provided', () => {
+        const phrCompletenessOverlay: PhrCompletenessOverlayModel = {
+            product: 'phr',
+            generatedAt: '2026-05-28T00:00:00.000Z',
+            totals: {
+                routes: 2,
+                stableRoutes: 1,
+                hiddenRoutes: 1,
+                blockedRoutes: 0,
+                previewRoutes: 0,
+                stableCoveragePercent: 75,
+                gapCount: 1,
+            },
+            routes: [
+                {
+                    path: '/records',
+                    label: 'Records',
+                    group: 'care',
+                    lifecycle: 'stable',
+                    useCaseIds: ['uc-patient-records'],
+                    webCovered: true,
+                    mobileCovered: false,
+                    backendCovered: true,
+                    testCovered: true,
+                    directLinkAllowed: true,
+                    score: 75,
+                },
+                {
+                    path: '/provider',
+                    label: 'Provider',
+                    group: 'provider',
+                    lifecycle: 'hidden',
+                    useCaseIds: ['uc-provider-dashboard'],
+                    webCovered: true,
+                    mobileCovered: false,
+                    backendCovered: true,
+                    testCovered: false,
+                    directLinkAllowed: false,
+                    score: 100,
+                },
+            ],
+            gaps: [
+                {
+                    routePath: '/records',
+                    category: 'mobile',
+                    message: 'stable route has no mobile use-case coverage',
+                },
+            ],
+        };
+
+        render(<CanvasOverlays {...buildProps({ phrCompletenessOverlay })} />);
+
+        expect(screen.getByRole('complementary', { name: /phr route completeness/i })).toBeInTheDocument();
+        expect(screen.getByText('PHR route completeness')).toBeInTheDocument();
+        expect(screen.getByText('75%')).toBeInTheDocument();
+    });
+
     it('renders context-menu actions as shared UI buttons and handles edit', () => {
         const setIsInspectorOpen = vi.fn();
         const setNodeContextMenu = vi.fn();

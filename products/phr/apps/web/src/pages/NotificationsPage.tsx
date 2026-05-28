@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, Badge } from '@ghatana/design-system';
-import { fetchNotifications } from '../api/phrApi';
+import { fetchNotifications } from '../api/notificationsApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import { logError } from '../utils/safeLogger';
@@ -26,7 +26,11 @@ export function NotificationsPage(): React.ReactElement {
 
   useEffect(() => {
     if (!session) return;
-    fetchNotifications(session.principalId)
+    fetchNotifications(session.principalId, {
+      tenantId: session.tenantId,
+      principalId: session.principalId,
+      role: session.role,
+    })
       .then(setNotifications)
       .catch((err: unknown) => setError(err instanceof Error ? err.message : t('notifications.error')))
       .finally(() => setLoading(false));

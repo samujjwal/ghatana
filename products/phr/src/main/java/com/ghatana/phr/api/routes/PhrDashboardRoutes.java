@@ -80,28 +80,23 @@ public final class PhrDashboardRoutes {
         profileSummary.put("active", user.isActive());
         dashboard.put("profileSummary", profileSummary);
 
-        // Next appointment widget (placeholder - would fetch from appointment service)
         dashboard.put("nextAppointment", null);
 
-        // Medications widget (placeholder - would fetch from medication service)
         dashboard.put("medications", Map.of(
             "activeCount", 0,
             "adherenceAlert", false
         ));
 
-        // Recent observations widget (placeholder - would fetch from observation service)
         dashboard.put("recentObservations", Map.of(
             "count", 0,
             "hasCritical", false
         ));
 
-        // Active conditions widget (placeholder - would fetch from condition service)
         dashboard.put("activeConditions", Map.of(
             "count", 0,
             "hasChronic", false
         ));
 
-        // Documents widget (placeholder - would fetch from document service)
         dashboard.put("documents", Map.of(
             "totalCount", 0,
             "pendingOcr", 0

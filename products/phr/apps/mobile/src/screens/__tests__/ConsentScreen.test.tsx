@@ -3,7 +3,7 @@
  * Exercises the real production component — no object-literal assertions.
  */
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { render } from '@testing-library/react-native';
 import { ConsentScreen } from '../ConsentScreen';
 import type { MobileConsent, MobileSession } from '../../types';
 
@@ -31,49 +31,50 @@ const consents: MobileConsent[] = [
   { id: 'con-2', grantee: 'Clinic ABCD', purpose: 'Lab panel', active: false },
 ];
 
+function renderedText(rendered: { toJSON: () => unknown }): string {
+  return JSON.stringify(rendered.toJSON());
+}
+
 describe('ConsentScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('renders empty state when no consents', () => {
-    const { getByText } = render(
+    const rendered = render(
       <ConsentScreen consents={[]} session={session} onConsentRevoked={() => {}} />,
     );
-    // t('consents.empty') === 'consents.empty'
-    expect(getByText('consents.empty')).toBeTruthy();
+    expect(renderedText(rendered)).toContain('consents.empty');
   });
 
   it('renders grantee names', () => {
-    const { getByText } = render(
+    const rendered = render(
       <ConsentScreen consents={consents} session={session} onConsentRevoked={() => {}} />,
     );
-    expect(getByText('Dr. Sharma')).toBeTruthy();
-    expect(getByText('Clinic ABCD')).toBeTruthy();
+    const text = renderedText(rendered);
+    expect(text).toContain('Dr. Sharma');
+    expect(text).toContain('Clinic ABCD');
   });
 
   it('renders consent purpose', () => {
-    const { getByText } = render(
+    const rendered = render(
       <ConsentScreen consents={consents} session={session} onConsentRevoked={() => {}} />,
     );
-    expect(getByText('Annual review')).toBeTruthy();
+    expect(renderedText(rendered)).toContain('Annual review');
   });
 
   it('shows active badge for active consent', () => {
-    const { getAllByText } = render(
+    const rendered = render(
       <ConsentScreen consents={consents} session={session} onConsentRevoked={() => {}} />,
     );
-    // t('consents.active') === 'consents.active'
-    expect(getAllByText('consents.active').length).toBeGreaterThan(0);
+    expect(renderedText(rendered)).toContain('consents.active');
   });
 
   it('shows revoke button only for active consents', () => {
-    const { getAllByAccessibilityLabel } = render(
+    const { getAllByLabelText } = render(
       <ConsentScreen consents={consents} session={session} onConsentRevoked={() => {}} />,
     );
-    // Only con-1 is active and should have revoke button
-    // t('consents.revoke') === 'consents.revoke'
-    const revokeButtons = getAllByAccessibilityLabel('consents.revoke');
+    const revokeButtons = getAllByLabelText('consents.revoke');
     expect(revokeButtons.length).toBe(1);
   });
 });

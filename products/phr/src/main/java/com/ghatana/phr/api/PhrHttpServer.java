@@ -11,6 +11,7 @@ import com.ghatana.phr.api.routes.PhrAuthRoutes;
 import com.ghatana.phr.api.routes.PhrCaregiverRoutes;
 import com.ghatana.phr.api.routes.PhrClinicalRoutes;
 import com.ghatana.phr.api.routes.PhrConsentRoutes;
+import com.ghatana.phr.api.routes.PhrDashboardRoutes;
 import com.ghatana.phr.api.routes.PhrDocumentImagingRoutes;
 import com.ghatana.phr.api.routes.PhrEntitlementRoutes;
 import com.ghatana.phr.api.routes.PhrEmergencyRoutes;
@@ -19,6 +20,7 @@ import com.ghatana.phr.api.routes.PhrMobileRoutes;
 import com.ghatana.phr.api.routes.PhrFhirRoutes;
 import com.ghatana.phr.api.routes.PhrHealthRoutes;
 import com.ghatana.phr.api.routes.PhrNotificationRoutes;
+import com.ghatana.phr.api.routes.PhrPatientProfileRoutes;
 import com.ghatana.phr.api.routes.PhrPatientRecordRoutes;
 import com.ghatana.phr.api.routes.PhrProviderRoutes;
 import com.ghatana.phr.api.routes.PhrReleaseReadinessRoutes;
@@ -90,6 +92,7 @@ public final class PhrHttpServer implements KernelLifecycleAware {
 
     private final Eventloop eventloop;
     private final PhrFhirRoutes fhirRoutes;
+    private final PhrDashboardRoutes dashboardRoutes;
     private final PhrPatientRecordRoutes patientRecordRoutes;
     private final PhrConsentRoutes consentRoutes;
     private final PhrClinicalRoutes clinicalRoutes;
@@ -106,6 +109,7 @@ public final class PhrHttpServer implements KernelLifecycleAware {
     private final PhrFchvRoutes fchvRoutes;
     private final PhrMobileRoutes mobileRoutes;
     private final PhrNotificationRoutes notificationRoutes;
+    private final PhrPatientProfileRoutes patientProfileRoutes;
     private volatile boolean started = false;
 
     /**
@@ -117,6 +121,7 @@ public final class PhrHttpServer implements KernelLifecycleAware {
     public PhrHttpServer(
             Eventloop eventloop,
             PhrFhirRoutes fhirRoutes,
+            PhrDashboardRoutes dashboardRoutes,
             PhrPatientRecordRoutes patientRecordRoutes,
             PhrConsentRoutes consentRoutes,
             PhrClinicalRoutes clinicalRoutes,
@@ -132,9 +137,11 @@ public final class PhrHttpServer implements KernelLifecycleAware {
             PhrCaregiverRoutes caregiverRoutes,
             PhrFchvRoutes fchvRoutes,
             PhrMobileRoutes mobileRoutes,
-            PhrNotificationRoutes notificationRoutes) {
+            PhrNotificationRoutes notificationRoutes,
+            PhrPatientProfileRoutes patientProfileRoutes) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop cannot be null");
         this.fhirRoutes = Objects.requireNonNull(fhirRoutes, "fhirRoutes cannot be null");
+        this.dashboardRoutes = Objects.requireNonNull(dashboardRoutes, "dashboardRoutes cannot be null");
         this.patientRecordRoutes = Objects.requireNonNull(patientRecordRoutes, "patientRecordRoutes cannot be null");
         this.consentRoutes = Objects.requireNonNull(consentRoutes, "consentRoutes cannot be null");
         this.clinicalRoutes = Objects.requireNonNull(clinicalRoutes, "clinicalRoutes cannot be null");
@@ -151,6 +158,7 @@ public final class PhrHttpServer implements KernelLifecycleAware {
         this.fchvRoutes = Objects.requireNonNull(fchvRoutes, "fchvRoutes cannot be null");
         this.mobileRoutes = Objects.requireNonNull(mobileRoutes, "mobileRoutes cannot be null");
         this.notificationRoutes = Objects.requireNonNull(notificationRoutes, "notificationRoutes cannot be null");
+        this.patientProfileRoutes = Objects.requireNonNull(patientProfileRoutes, "patientProfileRoutes cannot be null");
     }
 
     // -------------------------------------------------------------------------
@@ -201,12 +209,15 @@ public final class PhrHttpServer implements KernelLifecycleAware {
     public AsyncServlet getServlet() {
         RoutingServlet.Builder builder = RoutingServlet.builder(eventloop)
             .with("/fhir/*", fhirRoutes.getServlet())
+            .with("/dashboard", dashboardRoutes.getServlet())
             .with("/patients/*", patientRecordRoutes.getServlet())
             .with("/consents/*", consentRoutes.getServlet())
             .with("/clinical/*", clinicalRoutes.getServlet())
             .with("/emergency/*", emergencyRoutes.getServlet())
             .with("/admin/*", administrativeRoutes.getServlet())
+            .with("/phr/billing/*", administrativeRoutes.getBillingServlet())
             .with("/records/*", documentImagingRoutes.getServlet())
+            .with("/documents/*", documentImagingRoutes.getDocumentServlet())
             .with("/release-readiness", releaseReadinessRoutes.getServlet())
             .with("/appointments/*", administrativeRoutes.getPatientFacingServlet())
             .with("/audit/*", auditRoutes.getServlet())
@@ -215,7 +226,8 @@ public final class PhrHttpServer implements KernelLifecycleAware {
             .with("/caregiver/*", caregiverRoutes.getServlet())
             .with("/fchv/*", fchvRoutes.getServlet())
             .with("/mobile/*", mobileRoutes.getServlet())
-            .with("/notifications/*", notificationRoutes.getServlet());
+            .with("/notifications/*", notificationRoutes.getServlet())
+            .with("/profile", patientProfileRoutes.getServlet());
         return builder
             .with("/route-entitlements", entitlementRoutes.getServlet())
             .with("/health", healthRoutes.getServlet())

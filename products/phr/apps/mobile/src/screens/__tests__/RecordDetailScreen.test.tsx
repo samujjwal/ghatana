@@ -3,7 +3,7 @@
  * Exercises the real production component — no object-literal assertions.
  */
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { render } from '@testing-library/react-native';
 import { RecordDetailScreen } from '../RecordDetailScreen';
 import type { MobileRecord } from '../../types';
 
@@ -15,30 +15,45 @@ const record: MobileRecord = {
 };
 
 describe('RecordDetailScreen', () => {
+  function renderedText(rendered: { toJSON: () => unknown }): string {
+    return JSON.stringify(rendered.toJSON());
+  }
+
+  function pressNode(node: { props: Record<string, unknown> }): void {
+    const onPress = node.props.onPress;
+    if (typeof onPress !== 'function') {
+      throw new Error('Expected rendered node to expose an onPress handler.');
+    }
+    onPress();
+  }
+
   it('renders record title (type field)', () => {
-    const { getByText } = render(<RecordDetailScreen record={record} onBack={() => {}} />);
-    expect(getByText('Hemoglobin A1c')).toBeTruthy();
+    const rendered = render(<RecordDetailScreen record={record} onBack={() => {}} />);
+    expect(renderedText(rendered)).toContain('Hemoglobin A1c');
   });
 
   it('renders record summary', () => {
-    const { getByText } = render(<RecordDetailScreen record={record} onBack={() => {}} />);
-    expect(getByText('HbA1c: 6.1% — within target range.')).toBeTruthy();
+    const rendered = render(<RecordDetailScreen record={record} onBack={() => {}} />);
+    expect(renderedText(rendered)).toContain('HbA1c: 6.1%');
+    expect(renderedText(rendered)).toContain('within target range.');
   });
 
   it('renders FHIR preview code', () => {
-    const { getByText } = render(<RecordDetailScreen record={record} onBack={() => {}} />);
-    expect(getByText('{"resourceType":"Observation","status":"final"}')).toBeTruthy();
+    const rendered = render(<RecordDetailScreen record={record} onBack={() => {}} />);
+    expect(renderedText(rendered)).toContain('resourceType');
+    expect(renderedText(rendered)).toContain('Observation');
+    expect(renderedText(rendered)).toContain('final');
   });
 
   it('renders the record ID', () => {
-    const { getByText } = render(<RecordDetailScreen record={record} onBack={() => {}} />);
-    expect(getByText('rec-42')).toBeTruthy();
+    const rendered = render(<RecordDetailScreen record={record} onBack={() => {}} />);
+    expect(renderedText(rendered)).toContain('rec-42');
   });
 
   it('calls onBack when back button is pressed', () => {
     const onBack = jest.fn();
-    const { getByLabelText } = render(<RecordDetailScreen record={record} onBack={onBack} />);
-    fireEvent.press(getByLabelText('Back'));
+    const { UNSAFE_getByProps } = render(<RecordDetailScreen record={record} onBack={onBack} />);
+    pressNode(UNSAFE_getByProps({ accessibilityLabel: 'Back' }));
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 });

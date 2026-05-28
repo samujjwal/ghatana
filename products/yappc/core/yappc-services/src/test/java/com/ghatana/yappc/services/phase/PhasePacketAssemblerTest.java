@@ -73,6 +73,16 @@ class PhasePacketAssemblerTest {
                 .get()
                 .extracting(PhasePacket.PhasePanelView::status)
                 .isEqualTo("healthy");
+        assertThat(packet.phasePanels().stream().filter(panel -> "learn".equals(panel.phase())).findFirst())
+                .isPresent()
+                .get()
+                .extracting(PhasePacket.PhasePanelView::learningInsight)
+                .isNotNull();
+        assertThat(packet.phasePanels().stream().filter(panel -> "evolve".equals(panel.phase())).findFirst())
+                .isPresent()
+                .get()
+                .extracting(PhasePacket.PhasePanelView::evolutionPlan)
+                .isNotNull();
     }
 
     @Test

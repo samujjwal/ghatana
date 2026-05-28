@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Button, Card, CardContent, CardHeader, Input } from '@ghatana/design-system';
-import { fetchAppointments, fetchProviders, bookAppointment, cancelAppointment, rescheduleAppointment } from '../api/phrApi';
+import { fetchAppointments, fetchProviders, bookAppointment, cancelAppointment, rescheduleAppointment } from '../api/adminApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
+import { t } from '../i18n/phrI18n';
 import type { AppointmentSummary } from '../types';
 
 export function AppointmentsPage(): React.ReactElement {
@@ -220,37 +221,37 @@ export function AppointmentsPage(): React.ReactElement {
                 }}
                 disabled={!selectedSpecialty}
               >
-                <option value="">Select provider</option>
+                <option value="">{t('appointments.provider.placeholder')}</option>
                 {filteredProviders.map(provider => (
                   <option key={provider.id} value={provider.id}>{provider.name}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label htmlFor="slot">Available Time Slots</label>
+              <label htmlFor="slot">{t('appointments.slot.label')}</label>
               <select
                 id="slot"
                 value={selectedSlot}
                 onChange={(e) => setSelectedSlot(e.target.value)}
                 disabled={!selectedProvider}
               >
-                <option value="">Select time slot</option>
+                <option value="">{t('appointments.slot.placeholder')}</option>
                 {selectedProviderData?.availableSlots.map(slot => (
                   <option key={slot} value={slot}>{new Date(slot).toLocaleString()}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label htmlFor="notes">Notes (optional)</label>
+              <label htmlFor="notes">{t('appointments.notes.label')}</label>
               <Input
                 id="notes"
                 value={notes}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNotes(e.target.value)}
-                placeholder="Reason for visit or special requests"
+                placeholder={t('appointments.notes.reasonPlaceholder')}
               />
             </div>
             <Button type="submit" className="primary-cta" disabled={submitting || !selectedSlot}>
-              {submitting ? 'Booking...' : 'Book Appointment'}
+              {submitting ? t('appointments.booking') : t('appointments.book')}
             </Button>
           </form>
         </CardContent>

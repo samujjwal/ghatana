@@ -1,103 +1,109 @@
-/**
- * Tests for AppointmentsPage — verifies form validation and submit API call.
- */
 import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { AppointmentsPage } from '../../pages/AppointmentsPage';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AppointmentsPage } from '../AppointmentsPage';
+import { bookAppointment, fetchAppointments, fetchProviders } from '../../api/adminApi';
 
-vi.mock('../../api/phrApi', () => ({
-  fetchDashboardData: vi.fn(),
-  createAppointmentRequest: vi.fn(),
+vi.mock('../../api/adminApi', () => ({
+  fetchAppointments: vi.fn(),
+  fetchProviders: vi.fn(),
+  bookAppointment: vi.fn(),
+  cancelAppointment: vi.fn(),
+  rescheduleAppointment: vi.fn(),
 }));
 
 vi.mock('../../i18n/phrI18n', () => ({
   t: (key: string) => key,
-  formatPhrDate: (d: string) => d,
-  formatPhrDateTime: (d: string) => d,
 }));
 
-import { createAppointmentRequest, fetchDashboardData } from '../../api/phrApi';
+vi.mock('../../auth/PhrSessionContext', () => ({
+  usePhrSession: (() => {
+    const session = { principalId: 'patient-42', tenantId: 't1', role: 'patient' as const, name: 'Test Patient', expiresAt: '2027-01-01T00:00:00Z' };
+    return () => ({
+      session,
+      isAuthenticated: true,
+      setSession: vi.fn(),
+      clearSession: vi.fn(),
+    });
+  })(),
+}));
 
-const mockFetchDashboard = fetchDashboardData as ReturnType<typeof vi.fn>;
-const mockCreate = createAppointmentRequest as ReturnType<typeof vi.fn>;
+const mockFetchAppointments = fetchAppointments as ReturnType<typeof vi.fn>;
+const mockFetchProviders = fetchProviders as ReturnType<typeof vi.fn>;
+const mockBook = bookAppointment as ReturnType<typeof vi.fn>;
 
-const emptyDashboard = {
-  consents: [],
-  appointments: [],
-  labs: [],
-  medications: [],
-  records: [],
+const provider = {
+  id: 'provider-1',
+  name: 'Dr. Sharma',
+  specialty: 'General Medicine',
+  availableSlots: ['2027-03-15T09:00:00Z'],
 };
+
+async function waitForForm(): Promise<void> {
+  await screen.findByText('Book New Appointment');
+}
+
+async function chooseSlot(): Promise<void> {
+  fireEvent.change(screen.getByLabelText('Specialty'), { target: { value: provider.specialty } });
+  await waitFor(() => expect((screen.getByLabelText('Provider') as HTMLSelectElement).disabled).toBe(false));
+  fireEvent.change(screen.getByLabelText('Provider'), { target: { value: provider.id } });
+  await waitFor(() => expect((screen.getByLabelText('appointments.slot.label') as HTMLSelectElement).disabled).toBe(false));
+  fireEvent.change(screen.getByLabelText('appointments.slot.label'), { target: { value: provider.availableSlots[0] } });
+}
 
 describe('AppointmentsPage', () => {
   beforeEach(() => {
-    mockFetchDashboard.mockReset();
-    mockCreate.mockReset();
-    mockFetchDashboard.mockResolvedValue(emptyDashboard);
+    mockFetchAppointments.mockReset();
+    mockFetchProviders.mockReset();
+    mockBook.mockReset();
+    mockFetchAppointments.mockResolvedValue([]);
+    mockFetchProviders.mockResolvedValue([provider]);
   });
 
-  it('shows validation error when specialty is empty', async () => {
+  it('keeps submit disabled when provider and slot are missing', async () => {
     render(<AppointmentsPage />);
-    await waitFor(() => expect(screen.queryByText(/appointments.loading/)).toBeNull());
+    await waitForForm();
 
-    // No specialty filled — just click submit
-    fireEvent.click(screen.getByText('appointments.submit'));
-
-    await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
-    expect(mockCreate).not.toHaveBeenCalled();
+    expect((screen.getByRole('button', { name: 'appointments.book' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(mockBook).not.toHaveBeenCalled();
   });
 
-  it('calls createAppointmentRequest with form values on valid submit', async () => {
-    mockCreate.mockResolvedValue({ id: 'appt-new', status: 'REQUESTED' });
+  it('calls bookAppointment with form values on valid submit', async () => {
+    mockBook.mockResolvedValue({ id: 'appt-new', status: 'requested' });
 
     render(<AppointmentsPage />);
-    await waitFor(() => expect(screen.queryByText(/appointments.loading/)).toBeNull());
+    await waitForForm();
+    await chooseSlot();
+    fireEvent.click(screen.getByText('appointments.book'));
 
-    const specialtyInput = screen.getByRole('textbox', { name: /appointments.specialty.label/i });
-
-    fireEvent.change(specialtyInput, { target: { value: 'General Medicine' } });
-    // Find date input by label text
-    const inputs = document.querySelectorAll('input[type="date"]');
-    fireEvent.change(inputs[0]!, { target: { value: '2027-03-15' } });
-
-    fireEvent.click(screen.getByText('appointments.submit'));
-
-    await waitFor(() => expect(mockCreate).toHaveBeenCalledOnce());
-    expect(mockCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ specialty: 'General Medicine', preferredDate: '2027-03-15' }),
+    await waitFor(() => expect(mockBook).toHaveBeenCalledOnce());
+    expect(mockBook).toHaveBeenCalledWith(
+      'patient-42',
+      provider.id,
+      provider.availableSlots[0],
+      undefined,
       expect.any(Object),
     );
   });
 
   it('shows success message after successful submission', async () => {
-    mockCreate.mockResolvedValue({ id: 'appt-42', status: 'REQUESTED' });
+    mockBook.mockResolvedValue({ id: 'appt-42', status: 'requested' });
 
     render(<AppointmentsPage />);
-    await waitFor(() => expect(screen.queryByText(/appointments.loading/)).toBeNull());
-
-    const specialtyInput = screen.getByRole('textbox', { name: /appointments.specialty.label/i });
-    fireEvent.change(specialtyInput, { target: { value: 'Cardiology' } });
-    const inputs = document.querySelectorAll('input[type="date"]');
-    fireEvent.change(inputs[0]!, { target: { value: '2027-04-01' } });
-
-    fireEvent.click(screen.getByText('appointments.submit'));
+    await waitForForm();
+    await chooseSlot();
+    fireEvent.click(screen.getByText('appointments.book'));
 
     await waitFor(() => expect(screen.getByRole('status')).toBeTruthy());
   });
 
   it('shows error message when API call fails', async () => {
-    mockCreate.mockRejectedValue(new Error('Booking failed'));
+    mockBook.mockRejectedValue(new Error('Booking failed'));
 
     render(<AppointmentsPage />);
-    await waitFor(() => expect(screen.queryByText(/appointments.loading/)).toBeNull());
-
-    const specialtyInput = screen.getByRole('textbox', { name: /appointments.specialty.label/i });
-    fireEvent.change(specialtyInput, { target: { value: 'ENT' } });
-    const inputs = document.querySelectorAll('input[type="date"]');
-    fireEvent.change(inputs[0]!, { target: { value: '2027-05-01' } });
-
-    fireEvent.click(screen.getByText('appointments.submit'));
+    await waitForForm();
+    await chooseSlot();
+    fireEvent.click(screen.getByText('appointments.book'));
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
     expect(screen.getByRole('alert').textContent).toContain('Booking failed');

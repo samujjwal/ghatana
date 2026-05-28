@@ -77,9 +77,32 @@ function packetFixture(overrides: Partial<PhaseCockpitPacket> = {}): PhaseCockpi
     activityFeed: [],
     evidence: [],
     governance: [],
-    availableActions: [],
+    availableActions: [{
+      actionId: 'validate-primary',
+      label: 'phaseAction.validate.primary',
+      description: 'phaseAction.validate.primary.description',
+      enabled: true,
+      requiredPermission: 'phase:advance',
+      category: 'phase-transition',
+      severity: 'high',
+      confirmationRequired: true,
+      idempotencyKey: 'phase.advance',
+      auditType: 'phase.advance.requested',
+      targetType: 'server',
+      requiresPreview: true,
+      serverOperation: 'phase.advance',
+      postSuccessBehavior: 'refresh-packet',
+      parameters: {
+        confidence: 0.9,
+        evidence: [],
+        riskLevel: 'medium',
+        applyMode: 'review-required',
+        approvalRequired: true,
+        rollbackSupported: true,
+      },
+    }],
     dashboardActions: {
-      primaryAction: '',
+      primaryAction: 'validate-primary',
       blockedActions: [],
       reviewRequiredActions: [],
       safeToContinueActions: [],
@@ -126,6 +149,65 @@ describe('usePhaseActionHandlers', () => {
     });
   });
 
+  it('navigates for route-target actions', () => {
+    const navigate = vi.fn();
+    const routeAction = {
+      ...packetFixture().availableActions[0],
+      actionId: 'intent.route',
+      targetType: 'route',
+      targetRoute: 'intent',
+      requiresPreview: false,
+    };
+
+    const { result } = renderHook(() => usePhaseActionHandlers({
+      phase: 'intent',
+      projectId: 'proj-1',
+      packet: packetFixture({ phase: 'intent', lifecyclePhase: 'INTENT', availableActions: [routeAction] }),
+      currentUser: { id: 'user-1', tenantId: 'tenant-1' },
+      t: (key: string) => key,
+      navigate,
+      refetch: vi.fn(async () => undefined),
+      scrollToSupportingSurface: vi.fn(),
+      scrollToBlockerPanel: vi.fn(),
+    }), { wrapper: wrapperFactory() });
+
+    act(() => {
+      result.current.handlePrimaryAction();
+    });
+
+    expect(navigate).toHaveBeenCalledWith('/p/proj-1/intent');
+  });
+
+  it('opens drawer for drawer-target actions', () => {
+    const navigate = vi.fn();
+    const drawerAction = {
+      ...packetFixture().availableActions[0],
+      actionId: 'intent.drawer',
+      targetType: 'drawer',
+      targetRoute: 'intent',
+      targetDrawer: 'idea',
+      requiresPreview: false,
+    };
+
+    const { result } = renderHook(() => usePhaseActionHandlers({
+      phase: 'intent',
+      projectId: 'proj-1',
+      packet: packetFixture({ phase: 'intent', lifecyclePhase: 'INTENT', availableActions: [drawerAction] }),
+      currentUser: { id: 'user-1', tenantId: 'tenant-1' },
+      t: (key: string) => key,
+      navigate,
+      refetch: vi.fn(async () => undefined),
+      scrollToSupportingSurface: vi.fn(),
+      scrollToBlockerPanel: vi.fn(),
+    }), { wrapper: wrapperFactory() });
+
+    act(() => {
+      result.current.handlePrimaryAction();
+    });
+
+    expect(navigate).toHaveBeenCalledWith('/p/proj-1/intent?drawer=idea');
+  });
+
   it('sets missing project context error when primary action is triggered without projectId', () => {
     const { result } = renderHook(() => usePhaseActionHandlers({
       phase: 'shape',
@@ -144,6 +226,37 @@ describe('usePhaseActionHandlers', () => {
     });
 
     expect(result.current.actionError).toBe('phaseCockpit.errors.missingProjectContext');
+  });
+
+  it('shows review feedback for disabled suggestion actions', () => {
+    const scrollToSupportingSurface = vi.fn();
+    const action = {
+      ...packetFixture().availableActions[0],
+      actionId: 'shape.review',
+      label: 'Shape review',
+      enabled: false,
+      disabledReason: 'blocked',
+      requiresPreview: false,
+    };
+
+    const { result } = renderHook(() => usePhaseActionHandlers({
+      phase: 'shape',
+      projectId: 'proj-1',
+      packet: packetFixture({ phase: 'shape', lifecyclePhase: 'SHAPE', availableActions: [action] }),
+      currentUser: { id: 'user-1', tenantId: 'tenant-1' },
+      t: (key: string) => key,
+      navigate: vi.fn(),
+      refetch: vi.fn(async () => undefined),
+      scrollToSupportingSurface,
+      scrollToBlockerPanel: vi.fn(),
+    }), { wrapper: wrapperFactory() });
+
+    act(() => {
+      result.current.handleSuggestionAction(action);
+    });
+
+    expect(result.current.feedback).toContain('phaseCockpit.feedback.reviewingAction');
+    expect(scrollToSupportingSurface).toHaveBeenCalled();
   });
 
   it('sets validate lifecycle preview unavailable error when packet lacks lifecycle preview data', () => {
@@ -166,19 +279,43 @@ describe('usePhaseActionHandlers', () => {
     expect(result.current.actionError).toBe('phaseCockpit.errors.lifecyclePreviewUnavailable');
   });
 
-  it('requires authenticated reviewer for generate review decisions', async () => {
-    phaseServiceMocks.executePhasePrimaryAction.mockResolvedValueOnce({
+  it('routes server operations to review mutation when run context exists', async () => {
+    phaseServiceMocks.executeGenerateReviewDecision.mockResolvedValueOnce({
       kind: 'generate-review',
-      message: 'review pending',
+      message: 'review applied',
       runId: 'run-1',
-      reviewRequired: true,
+      reviewRequired: false,
     });
+
+    const primaryAction = {
+      ...packetFixture().availableActions[0],
+      actionId: 'generate-primary',
+      targetType: 'server',
+      serverOperation: 'generate.start',
+      requiresPreview: false,
+    };
+
+    const reviewAction = {
+      ...packetFixture().availableActions[0],
+      actionId: 'generate.apply',
+      targetType: 'server',
+      serverOperation: 'generate.apply',
+      requiresPreview: false,
+    };
 
     const { result } = renderHook(() => usePhaseActionHandlers({
       phase: 'generate',
       projectId: 'proj-1',
-      packet: packetFixture({ phase: 'generate', lifecyclePhase: 'GENERATE' }),
-      currentUser: null,
+      packet: packetFixture({
+        phase: 'generate',
+        lifecyclePhase: 'GENERATE',
+        availableActions: [primaryAction, reviewAction],
+        dashboardActions: {
+          ...packetFixture().dashboardActions,
+          primaryAction: 'generate-primary',
+        },
+      }),
+      currentUser: { id: 'user-1', tenantId: 'tenant-1', email: 'user-1@example.com' },
       t: (key: string) => key,
       navigate: vi.fn(),
       refetch: vi.fn(async () => undefined),
@@ -187,6 +324,12 @@ describe('usePhaseActionHandlers', () => {
     }), { wrapper: wrapperFactory() });
 
     await act(async () => {
+      phaseServiceMocks.executePhasePrimaryAction.mockResolvedValueOnce({
+        kind: 'generate-review',
+        message: 'review pending',
+        runId: 'run-1',
+        reviewRequired: true,
+      });
       result.current.handlePrimaryAction();
     });
 
@@ -194,10 +337,16 @@ describe('usePhaseActionHandlers', () => {
       expect(result.current.actionResult?.runId).toBe('run-1');
     });
 
-    act(() => {
-      result.current.handleGenerateReviewDecision('apply');
+    await act(async () => {
+      result.current.handleSuggestionAction(reviewAction);
     });
 
-    expect(result.current.actionError).toBe('phaseCockpit.errors.authenticatedReviewerRequired');
+    await waitFor(() => {
+      expect(phaseServiceMocks.executeGenerateReviewDecision).toHaveBeenCalled();
+      expect(phaseServiceMocks.executeGenerateReviewDecision.mock.calls[0]?.[0]).toEqual(expect.objectContaining({
+        runId: 'run-1',
+        decision: 'apply',
+      }));
+    });
   });
 });

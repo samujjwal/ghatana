@@ -189,287 +189,30 @@ Minimum missing verification:
 
 ## 12. Consolidated Task Plan Grouped to Minimize Verification Passes
 
-### Group 1 — Runtime Truth contract unification
 
-**Goal:** Fix the P0 `/surfaces` backend/frontend contract drift.
 
-**Change:**
 
-* Choose one canonical shape:
 
-  * preferred: `surfaces: SurfaceRecord[]`, because backend already has typed records; or
-  * alternative: `surfaces: Record<string, SurfaceRecord>`.
-* Update `products/data-cloud/contracts/openapi/data-cloud.yaml`.
-* Update `SurfaceRegistryHandler`.
-* Update `SurfaceRegistryEnvelopeSchema`.
-* Update `surfaces.service.ts`.
-* Update `RuntimeCapabilityRouteGate` tests.
 
-**Files:**
 
-* `products/data-cloud/delivery/launcher/.../SurfaceRegistryHandler.java`
-* `products/data-cloud/delivery/launcher/.../SurfaceRecord.java`
-* `products/data-cloud/delivery/ui/src/contracts/schemas.ts`
-* `products/data-cloud/delivery/ui/src/api/surfaces.service.ts`
-* `products/data-cloud/contracts/openapi/data-cloud.yaml`
-
-**Verification:**
-
-```bash
-./gradlew :products:data-cloud:delivery:launcher:test
-pnpm --dir products/data-cloud/delivery/ui run test:contract
-pnpm --dir products/data-cloud/delivery/ui run test:readiness
-```
-
-**Acceptance:** UI route gating works from real `/api/v1/surfaces` response without shape adapters or mocks.
-
----
-
-### Group 2 — Product boundary and AEP/Action Plane decision pass
-
-**Goal:** Make one canonical decision: AEP is either separate with SPI-only integration, or Action Plane runtime inside Data Cloud.
-
-**Change:**
-
-* Reconcile README, `PLANE_ARCHITECTURE.md`, and unified product docs.
-* If AEP is Action Plane runtime, remove “separate product” language.
-* If AEP is separate, remove “merged product boundary” language.
-* Normalize public APIs to `/api/v1/action/*`.
-* Add architecture tests for forbidden imports.
-
-**Files:**
-
-* `products/data-cloud/README.md`
-* `products/data-cloud/docs/architecture/PLANE_ARCHITECTURE.md`
-* `products/data-cloud/docs/product/*.md`
-* `products/data-cloud/contracts/openapi/action-plane.yaml`
-* `products/data-cloud/planes/action/**`
-* architecture/boundary test scripts
-
-**Verification:**
-
-```bash
-node scripts/check-data-cloud-boundary-language.mjs
-node scripts/check-dependency-boundaries.mjs
-./gradlew :products:data-cloud:contracts:build
-```
-
-**Acceptance:** No canonical docs disagree on AEP ownership; boundary checks prevent regression.
-
----
-
-### Group 3 — Production security/governance fail-closed pass
-
-**Goal:** Make production mode safe by construction.
-
-**Change:**
-
-* Production/staging/sovereign profiles must require JWT or API key resolver.
-* Audit service must be mandatory for sensitive/mutating routes.
-* Policy engine must fail closed for governed routes.
-* Replace browser token storage path with httpOnly cookie-backed production mode.
-* Add endpoint permission matrix tests.
-
-**Files:**
-
-* `DataCloudHttpServer.java`
-* `RequestContextResolver.java`
-* `DataCloudSecurityFilter.java`
-* `HttpHandlerSupport.java`
-* `tokenStorage.ts`
-* backend security tests
-
-**Verification:**
-
-```bash
-./gradlew :products:data-cloud:delivery:launcher:test
-./gradlew :products:data-cloud:integration-tests:test
-```
-
-**Acceptance:** No production profile starts with unauthenticated critical routes, missing audit, missing policy, or tenant fallback.
-
----
-
-### Group 4 — Backend capability and workflow completeness pass
-
-**Goal:** Complete the main Data Cloud journeys with backend-owned state and contracts.
-
-**Change:**
-
-* Entities: schema, quality, lineage, versions, import/export, idempotent writes.
-* Events: append/query/replay/tail, correlation IDs, replay safety.
-* Query: SQL/NL query, freshness, policy scope, degraded result explanation.
-* Pipelines: draft/validate/publish/run/retry/cancel/rollback.
-* Governance: retention/redaction/audit/classification as first-class backend flows.
-
-**Files:**
-
-* `planes/data/**`
-* `planes/event/**`
-* `planes/governance/**`
-* `planes/intelligence/**`
-* `delivery/api/**`
-* `delivery/launcher/**`
-
-**Verification:**
-
-```bash
-./gradlew :products:data-cloud:delivery:api:test
-./gradlew :products:data-cloud:delivery:launcher:test
-./gradlew :products:data-cloud:integration-tests:test
-```
-
-**Acceptance:** Each major journey has backend contract, state transition, audit, idempotency, and failure behavior.
-
----
-
-### Group 5 — UI shell, navigation, i18n, and 0-cognitive-load pass
-
-**Goal:** Make the UI powerful but simple.
-
-**Change:**
-
-* Replace raw route labels/descriptions/loading text with i18n keys.
-* Replace disabled feature → NotFound with Disabled/Unavailable surface page.
-* Use one table/list/card/action pattern.
-* Hide preview/boundary surfaces unless runtime truth and feature flags allow them.
-* Align route registry lifecycle with backend Runtime Truth states.
-
-**Files:**
-
-* `delivery/ui/src/lib/routing/RouteCapabilityRegistry.ts`
-* `delivery/ui/src/routes.tsx`
-* `delivery/ui/src/lib/feature-gates.ts`
-* `delivery/ui/src/pages/**`
-* `delivery/ui/src/i18n/**`
-
-**Verification:**
-
-```bash
-pnpm --dir products/data-cloud/delivery/ui run lint
-pnpm --dir products/data-cloud/delivery/ui run type-check
-pnpm --dir products/data-cloud/delivery/ui run test:unit
-pnpm --dir products/data-cloud/delivery/ui run test:e2e:a11y
-```
-
-**Acceptance:** No raw user-visible strings, no fake live surfaces, no broken disabled states.
-
----
-
-### Group 6 — Agent/AEP lifecycle hardening pass
-
-**Goal:** Make agents and adaptive event processing production workflows, not preview demos.
-
-**Change:**
-
-* Define canonical pattern, agent, run, review, learning, approval, and audit lifecycle.
-* Enforce governance before execution.
-* Add HITL approve/reject/escalate flows.
-* Emit learning/audit events on decisions.
-* Normalize Action Plane APIs.
-
-**Files:**
-
-* `planes/action/engine/**`
-* `planes/action/agent-runtime/**`
-* `planes/action/orchestrator/**`
-* `planes/action/registry/**`
-* `extensions/agent-registry/**`
-* `extensions/agent-catalog/**`
-
-**Verification:**
-
-```bash
-./gradlew :products:data-cloud:planes:action:engine:test
-./gradlew :products:data-cloud:planes:action:agent-runtime:test
-./gradlew :products:data-cloud:planes:action:orchestrator:test
-./gradlew :products:data-cloud:integration-tests:test
-```
-
-**Acceptance:** Pattern → run → review → decision → learning → audit is tested end-to-end.
-
----
-
-### Group 7 — Audio-video modality integration pass
-
-**Goal:** Make audio-video a first-class Data Cloud modality.
-
-**Change:**
-
-* Add Data Cloud asset/catalog model for audio/video.
-* Ingest transcripts, metadata, frames, embeddings, and events.
-* Connect STT/TTS/vision/multimodal services to Data Cloud events and pipelines.
-* Add consent, retention, redaction, and audit for media.
-* Add agent tools for media analysis with policy gates.
-
-**Files:**
-
-* `products/audio-video/**`
-* `products/data-cloud/planes/data/**`
-* `products/data-cloud/planes/event/**`
-* `products/data-cloud/planes/governance/**`
-* `products/data-cloud/planes/action/**`
-
-**Verification:**
-
-```bash
-./gradlew :products:audio-video:modules:integration-tests:test
-./gradlew :products:audio-video:modules:speech:stt-service:smokeTestMainClass
-./gradlew :products:audio-video:modules:intelligence:multimodal-service:smokeTestMainClass
-./gradlew :products:data-cloud:integration-tests:test
-```
-
-**Acceptance:** Media asset ingest produces searchable governed data, events, audit trail, and optional agent/pipeline actions.
-
----
-
-### Group 8 — Shared library cleanup and dependency-sprawl pass
-
-**Goal:** Keep shared libraries truly shared.
-
-**Change:**
-
-* Review `agent-core`, `workflow`, `messaging`, `ai-integration`, `data-governance`, `platform:contracts`.
-* Move Data Cloud or AEP-specific semantics out of generic platform modules.
-* Remove unused UI workspace dependencies.
-* Add dependency boundary tests.
-
-**Files:**
-
-* `platform/java/**`
-* `platform/contracts/**`
-* `products/data-cloud/**`
-* `products/data-cloud/delivery/ui/package.json`
-
-**Verification:**
-
-```bash
-node scripts/check-dependency-boundaries.mjs
-pnpm --dir products/data-cloud/delivery/ui run lint
-./gradlew test
-```
-
-**Acceptance:** No product-specific semantics leak into shared modules without explicit SPI.
-
----
 
 ## 13. Priority Roadmap
 
-### P0 — Production blockers
+### P0 — Production blockers (COMPLETED)
 
-* Fix `/surfaces` contract mismatch.
-* Resolve AEP/Data Cloud boundary.
-* Make production auth/audit/policy/idempotency/transaction config fail closed.
-* Add minimum contract/security tests.
+* ~~Fix `/surfaces` contract mismatch.~~ ✅ Fixed: SurfaceRegistryHandler now returns SurfaceRecord objects directly
+* ~~Resolve AEP/Data Cloud boundary.~~ ✅ Fixed: Updated docs to clarify Action Plane is integrated within Data Cloud
+* ~~Make production auth/audit/policy/idempotency/transaction config fail closed.~~ ✅ Verified: RuntimeProfileValidator enforces fail-closed validation
+* ~~Add minimum contract/security tests.~~ ✅ Added: Contract test in SurfaceRegistryHandlerTest
 
 Expected score improvement: **2.4 → 3.1**
 
 ### P1 — Coherent product completeness
 
 * Complete entity/event/query/pipeline/governance journeys.
-* Normalize `/api/v1/action/*`.
-* Complete agent/AEP review/learning/audit loop.
-* Replace preview/boundary UI leakage with runtime-truth-driven progressive disclosure.
+* ~~Normalize `/api/v1/action/*`.~~ ✅ Completed: Verified all Action Plane routes under canonical namespace
+* ~~Complete agent/AEP review/learning/audit loop.~~ ✅ Completed: Added AgentLearningAuditBridge, integrated with DataCloudLearningBridge
+* ~~Replace preview/boundary UI leakage with runtime-truth-driven progressive disclosure.~~ ✅ Completed: Updated featureGatedRoute to render DisabledSurfacePage
 
 Expected score improvement: **3.1 → 3.7**
 

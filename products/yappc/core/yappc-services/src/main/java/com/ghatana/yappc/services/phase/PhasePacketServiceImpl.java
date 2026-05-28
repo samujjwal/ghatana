@@ -64,6 +64,11 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
     private final PhaseRequiredArtifactProvider requiredArtifactProvider;
     private final DegradedPhasePacketFactory degradedPhasePacketFactory;
     private final PhaseFeatureFlagProvider phaseFeatureFlagProvider;
+    private final PhaseProjectStateService phaseProjectStateService;
+    private final PhaseEvidenceService phaseEvidenceService;
+    private final PhaseGovernanceService phaseGovernanceService;
+    private final PhaseActivityFeedService phaseActivityFeedService;
+    private final PhaseBlockerMapper phaseBlockerMapper;
     private final PhaseGateContextFactory phaseGateContextFactory;
     private final PhaseReadinessEvaluator phaseReadinessEvaluator;
     private final PhaseHealthSignalProvider phaseHealthSignalProvider;
@@ -101,6 +106,11 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                 requiredArtifactProvider,
                 degradedPhasePacketFactory,
                 new PhaseFeatureFlagProvider(dataCloudClient),
+                new PhaseProjectStateService(dataCloudClient, new PhaseFeatureFlagProvider(dataCloudClient)),
+                new PhaseEvidenceService(platformIntegrationClient),
+                new PhaseGovernanceService(platformIntegrationClient),
+                new PhaseActivityFeedService(auditService),
+                new PhaseBlockerMapper(),
                 new PhaseGateContextFactory(),
                 new PhaseReadinessEvaluator(transitionConfigLoader),
                 new PhaseHealthSignalProvider(previewRuntimeService),
@@ -129,6 +139,60 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                 @NotNull PhaseHealthSignalProvider phaseHealthSignalProvider,
                 @NotNull PhasePacketAssembler phasePacketAssembler
             ) {
+        this(
+                dataCloudClient,
+                artifactRepository,
+                phaseGateValidator,
+                policyEngine,
+                capabilityEvaluationService,
+                transitionConfigLoader,
+                platformIntegrationClient,
+                metrics,
+                auditService,
+                previewRuntimeService,
+                platformRunStatusService,
+                phaseActionAuthorizationService,
+                requiredArtifactProvider,
+                degradedPhasePacketFactory,
+                phaseFeatureFlagProvider,
+                new PhaseProjectStateService(dataCloudClient, phaseFeatureFlagProvider),
+                new PhaseEvidenceService(platformIntegrationClient),
+                new PhaseGovernanceService(platformIntegrationClient),
+                new PhaseActivityFeedService(auditService),
+                new PhaseBlockerMapper(),
+                phaseGateContextFactory,
+                phaseReadinessEvaluator,
+                phaseHealthSignalProvider,
+                phasePacketAssembler
+        );
+    }
+
+            PhasePacketServiceImpl(
+                @NotNull DataCloudClient dataCloudClient,
+                @NotNull YappcArtifactRepository artifactRepository,
+                @NotNull PhaseGateValidator phaseGateValidator,
+                @NotNull PolicyEngine policyEngine,
+                @NotNull CapabilityEvaluationService capabilityEvaluationService,
+                @NotNull TransitionConfigLoader transitionConfigLoader,
+                @NotNull PlatformIntegrationClient platformIntegrationClient,
+                @Nullable BusinessMetrics metrics,
+                @NotNull AuditService auditService,
+                @NotNull PreviewRuntimeService previewRuntimeService,
+                @NotNull PlatformRunStatusService platformRunStatusService,
+                @NotNull PhaseActionAuthorizationService phaseActionAuthorizationService,
+                @NotNull PhaseRequiredArtifactProvider requiredArtifactProvider,
+                @NotNull DegradedPhasePacketFactory degradedPhasePacketFactory,
+                @NotNull PhaseFeatureFlagProvider phaseFeatureFlagProvider,
+                @NotNull PhaseProjectStateService phaseProjectStateService,
+                @NotNull PhaseEvidenceService phaseEvidenceService,
+                @NotNull PhaseGovernanceService phaseGovernanceService,
+                @NotNull PhaseActivityFeedService phaseActivityFeedService,
+                @NotNull PhaseBlockerMapper phaseBlockerMapper,
+                @NotNull PhaseGateContextFactory phaseGateContextFactory,
+                @NotNull PhaseReadinessEvaluator phaseReadinessEvaluator,
+                @NotNull PhaseHealthSignalProvider phaseHealthSignalProvider,
+                @NotNull PhasePacketAssembler phasePacketAssembler
+            ) {
         this.dataCloudClient = Objects.requireNonNull(dataCloudClient, "dataCloudClient");
         this.artifactRepository = Objects.requireNonNull(artifactRepository, "artifactRepository");
         this.phaseGateValidator = Objects.requireNonNull(phaseGateValidator, "phaseGateValidator");
@@ -144,6 +208,11 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
         this.requiredArtifactProvider = Objects.requireNonNull(requiredArtifactProvider, "requiredArtifactProvider");
         this.degradedPhasePacketFactory = Objects.requireNonNull(degradedPhasePacketFactory, "degradedPhasePacketFactory");
             this.phaseFeatureFlagProvider = Objects.requireNonNull(phaseFeatureFlagProvider, "phaseFeatureFlagProvider");
+            this.phaseProjectStateService = Objects.requireNonNull(phaseProjectStateService, "phaseProjectStateService");
+            this.phaseEvidenceService = Objects.requireNonNull(phaseEvidenceService, "phaseEvidenceService");
+            this.phaseGovernanceService = Objects.requireNonNull(phaseGovernanceService, "phaseGovernanceService");
+            this.phaseActivityFeedService = Objects.requireNonNull(phaseActivityFeedService, "phaseActivityFeedService");
+            this.phaseBlockerMapper = Objects.requireNonNull(phaseBlockerMapper, "phaseBlockerMapper");
             this.phaseGateContextFactory = Objects.requireNonNull(phaseGateContextFactory, "phaseGateContextFactory");
             this.phaseReadinessEvaluator = Objects.requireNonNull(phaseReadinessEvaluator, "phaseReadinessEvaluator");
             this.phaseHealthSignalProvider = Objects.requireNonNull(phaseHealthSignalProvider, "phaseHealthSignalProvider");
@@ -267,12 +336,14 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                                     phase
                             ).then(platformRunStatus -> {
                 List<PhasePacket.PhaseAction> actions = phaseActionAuthorizationService.determineAvailableActions(
+                    phase,
                         capabilities,
                         tier,
                         enabledFlags,
                         readiness,
                         blockers,
-                        governance
+                    governance,
+                    !Boolean.TRUE.equals(projectState.get("featureFlagsDegraded"))
                 );
                 PhasePacket.DashboardActionClassification dashboardActions = buildDashboardActionClassification(actions, blockers);
                 String projectName = extractProjectName(projectState);
@@ -392,71 +463,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             String tenantId,
             String correlationId
     ) {
-        try {
-            // Query project metadata from DataCloud; handle async failures explicitly
-            return dataCloudClient.findById(tenantId, "projects", projectId)
-                .then((entityOpt, e) -> {
-                    if (e != null) {
-                        log.error(
-                                "DataCloud query failed for project: tenantId={}, workspaceId={}, projectId={}, phase={}, correlationId={}",
-                                tenantId,
-                                workspaceId,
-                                projectId,
-                                phase,
-                                correlationId,
-                                e);
-                        return Promise.of(Map.of(
-                            "projectId", projectId,
-                            "workspaceId", workspaceId,
-                            "tenantId", tenantId,
-                            "degraded", true,
-                            "degradedReason", "PROJECT_STATE_QUERY_FAILED"
-                        ));
-                    }
-                    Map<String, Object> data = entityOpt.isPresent() ? entityOpt.get().data() : Map.of();
-                    if (data.isEmpty()) {
-                        log.warn(
-                                "Project state not found: tenantId={}, workspaceId={}, projectId={}, phase={}, correlationId={}",
-                                tenantId,
-                                workspaceId,
-                                projectId,
-                                phase,
-                                correlationId);
-                        return Promise.of(Map.of(
-                            "projectId", projectId,
-                            "workspaceId", workspaceId,
-                            "tenantId", tenantId,
-                            "degraded", true,
-                            "degradedReason", "PROJECT_STATE_NOT_FOUND"
-                        ));
-                    }
-                    Map<String, Object> state = new HashMap<>(data);
-                    state.putIfAbsent("projectId", projectId);
-                    state.putIfAbsent("workspaceId", workspaceId);
-                    state.putIfAbsent("tenantId", tenantId);
-                    state.putIfAbsent("name", "Project-" + projectId);
-                    state.putIfAbsent("tier", "PRO");
-                    state.putIfAbsent("status", "active");
-                    state.putIfAbsent("createdAt", Instant.now().toString());
-                    return phaseFeatureFlagProvider.enrichProjectStateWithTenantFlags(tenantId, state);
-                });
-        } catch (Exception e) {
-            log.error(
-                    "Unexpected error in queryProjectState: tenantId={}, workspaceId={}, projectId={}, phase={}, correlationId={}",
-                    tenantId,
-                    workspaceId,
-                    projectId,
-                    phase,
-                    correlationId,
-                    e);
-            return Promise.of(Map.of(
-                "projectId", projectId,
-                "workspaceId", workspaceId,
-                "tenantId", tenantId,
-                "degraded", true,
-                "degradedReason", "PROJECT_STATE_QUERY_FAILED"
-            ));
-        }
+        return phaseProjectStateService.queryProjectState(phase, projectId, workspaceId, tenantId, correlationId);
     }
 
     /**
@@ -482,13 +489,21 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                 phaseType = com.ghatana.yappc.domain.PhaseType.valueOf(phase.toUpperCase());
             } catch (IllegalArgumentException e) {
                 log.warn(
-                        "Invalid phase type, defaulting to INTENT: tenantId={}, workspaceId={}, projectId={}, phase={}, correlationId={}",
+                        "Invalid phase type, returning fail-closed blocker: tenantId={}, workspaceId={}, projectId={}, phase={}, correlationId={}",
                         tenantId,
                         workspaceId,
                         projectId,
                         phase,
                         correlationId);
-                phaseType = com.ghatana.yappc.domain.PhaseType.INTENT;
+                return Promise.of(List.of(new PhasePacket.PhaseBlocker(
+                        "INVALID_PHASE",
+                        "CRITERION",
+                        "Invalid lifecycle phase",
+                        "Requested lifecycle phase is invalid and cannot be validated safely.",
+                        "CRITICAL",
+                        "invalid-phase:" + phase + ":" + projectId + ":" + workspaceId + ":" + correlationId,
+                        false
+                )));
             }
 
                 PhaseGateValidator.PhaseGateContext gateContext = phaseGateContextFactory.build(
@@ -509,24 +524,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                     if (validationResult == null || validationResult.allClear()) {
                         return List.<PhasePacket.PhaseBlocker>of();
                     }
-
-                    return validationResult.blockers().stream()
-                        .<PhasePacket.PhaseBlocker>map(blocker -> {
-                            String severity = blocker.startsWith("missing-artifact") ? "CRITICAL" : "WARNING";
-                            String title = blocker.replace("entry-criterion: ", "")
-                                                .replace("prior-exit-criterion: ", "")
-                                                .replace("missing-artifact: ", "");
-                            return new PhasePacket.PhaseBlocker(
-                                blocker,
-                                blocker.startsWith("missing-artifact") ? "ARTIFACT" : "CRITERION",
-                                title,
-                                blocker,
-                                severity,
-                                blocker,
-                                true
-                            );
-                        })
-                        .toList();
+                    return phaseBlockerMapper.map(validationResult.blockers());
                 })
                 .whenException(e -> log.error(
                         "Error querying phase blockers: tenantId={}, workspaceId={}, projectId={}, phase={}, correlationId={}",
@@ -559,61 +557,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             String tenantId,
             String correlationId
     ) {
-        try {
-            PlatformEvidence.SearchQuery query = new PlatformEvidence.SearchQuery(
-                phase + " phase evidence",
-                projectId,
-                workspaceId,
-                List.of(phase.toUpperCase() + "_EVIDENCE"),
-                Instant.now().minus(java.time.Duration.ofDays(30)),
-                Instant.now(),
-                Map.of("phase", phase, "projectId", projectId, "workspaceId", workspaceId, "tenantId", tenantId)
-            );
-
-            List<PlatformEvidence.SearchResult> searchResults = platformIntegrationClient.searchEvidence(query);
-
-            List<PhasePacket.PhaseEvidence> evidenceList = new ArrayList<>();
-            for (PlatformEvidence.SearchResult result : searchResults) {
-                Map<String, Object> metadata = new HashMap<>();
-                if (result.metadata() != null) {
-                    result.metadata().forEach((k, v) -> metadata.put(k, v));
-                }
-                evidenceList.add(new PhasePacket.PhaseEvidence(
-                    result.evidenceId(),
-                    result.evidenceType(),
-                    result.contentPreview(),
-                    "PLATFORM",
-                    result.timestamp(),
-                    metadata,
-                    result.evidenceId()
-                ));
-            }
-            return evidenceList;
-        } catch (Exception e) {
-            log.error(
-                    "Error querying phase evidence: tenantId={}, workspaceId={}, projectId={}, phase={}, correlationId={}",
-                    tenantId,
-                    workspaceId,
-                    projectId,
-                    phase,
-                    correlationId,
-                    e
-            );
-            return List.of(new PhasePacket.PhaseEvidence(
-                    "EVIDENCE_QUERY_FAILED",
-                    "SYSTEM_DEGRADED",
-                    "Phase evidence unavailable",
-                    "Evidence service failure blocks unsafe phase advancement until runtime truth is available.",
-                    Instant.now(),
-                    Map.of(
-                            "phase", phase,
-                            "projectId", projectId,
-                            "workspaceId", workspaceId,
-                            "tenantId", tenantId,
-                            "correlationId", correlationId,
-                            "reason", e.getClass().getSimpleName()),
-                    "evidence-query-failed:" + e.getClass().getSimpleName()));
-        }
+        return phaseEvidenceService.queryPhaseEvidence(phase, projectId, workspaceId, tenantId, correlationId);
     }
 
     /**
@@ -626,79 +570,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             String tenantId,
             String correlationId
     ) {
-        try {
-            PlatformPolicy.PolicyRequest policyRequest =
-                new PlatformPolicy.PolicyRequest(
-                    "PHASE_GOVERNANCE",
-                    Map.of("phase", phase, "projectId", projectId, "workspaceId", workspaceId),
-                    tenantId,
-                    workspaceId,
-                    projectId
-                );
-
-            PlatformPolicy policyDecision = platformIntegrationClient.evaluatePolicy(policyRequest);
-
-            List<PhasePacket.GovernanceRecord> records = new ArrayList<>();
-
-            if (!policyDecision.isAllowed()) {
-                for (String reason : policyDecision.deniedReasons()) {
-                    records.add(new PhasePacket.GovernanceRecord(
-                        "POLICY_DENIAL",
-                        "POLICY_DENIAL",
-                        "DENIED",
-                        "system",
-                        Instant.now(),
-                        Map.of(
-                            "phase", phase,
-                            "projectId", projectId,
-                            "workspaceId", workspaceId,
-                            "reason", reason
-                        ),
-                        policyDecision.policyId()
-                    ));
-                }
-            } else {
-                records.add(new PhasePacket.GovernanceRecord(
-                    "POLICY_APPROVAL",
-                    "POLICY_APPROVAL",
-                    "APPROVED",
-                    "system",
-                    Instant.now(),
-                    Map.of(
-                        "phase", phase,
-                        "projectId", projectId,
-                        "workspaceId", workspaceId
-                    ),
-                    policyDecision.policyId()
-                ));
-            }
-
-            return records;
-        } catch (Exception e) {
-            log.error(
-                    "Error querying governance records: tenantId={}, workspaceId={}, projectId={}, phase={}, correlationId={}",
-                    tenantId,
-                    workspaceId,
-                    projectId,
-                    phase,
-                    correlationId,
-                    e
-            );
-            return List.of(new PhasePacket.GovernanceRecord(
-                    "GOVERNANCE_QUERY_FAILED",
-                    "POLICY_DENIAL",
-                    "DENIED",
-                    "system",
-                    Instant.now(),
-                    Map.of(
-                            "phase", phase,
-                            "projectId", projectId,
-                            "workspaceId", workspaceId,
-                            "tenantId", tenantId,
-                            "correlationId", correlationId,
-                            "reason", e.getClass().getSimpleName()),
-                    "governance-query-failed:" + projectId + ":" + phase));
-        }
+        return phaseGovernanceService.queryGovernanceRecords(phase, projectId, workspaceId, tenantId, correlationId);
     }
 
     /**
@@ -709,15 +581,24 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             Principal principal
     ) {
         try {
-            String tierStr = (String) projectState.getOrDefault("tier", "PRO");
-            return switch (tierStr.toUpperCase()) {
+            Object tierValue = projectState.get("tier");
+            if (!(tierValue instanceof String tierStr) || tierStr.isBlank()) {
+                log.warn("Missing or invalid tenant tier value, failing closed to FREE: {}", tierValue);
+                return PhasePacket.TenantTier.FREE;
+            }
+
+            return switch (tierStr.trim().toUpperCase()) {
                 case "FREE" -> PhasePacket.TenantTier.FREE;
+                case "PRO" -> PhasePacket.TenantTier.PRO;
                 case "ENTERPRISE" -> PhasePacket.TenantTier.ENTERPRISE;
-                default -> PhasePacket.TenantTier.PRO;
+                default -> {
+                    log.warn("Unknown tenant tier '{}', failing closed to FREE", tierStr);
+                    yield PhasePacket.TenantTier.FREE;
+                }
             };
         } catch (Exception e) {
-            log.warn("Error determining tenant tier, defaulting to PRO", e);
-            return PhasePacket.TenantTier.PRO;
+            log.warn("Error determining tenant tier, defaulting to FREE", e);
+            return PhasePacket.TenantTier.FREE;
         }
     }
 
@@ -738,8 +619,16 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             try {
                 phaseType = com.ghatana.yappc.domain.PhaseType.valueOf(phase.toUpperCase());
             } catch (IllegalArgumentException e) {
-                log.warn("Invalid phase type: {}, defaulting to INTENT", phase);
-                phaseType = com.ghatana.yappc.domain.PhaseType.INTENT;
+                log.warn("Invalid phase type: {}, returning explicit completed-artifact degraded marker", phase);
+                return Promise.of(List.of(new PhasePacket.CompletedArtifact(
+                        "INVALID_PHASE",
+                        "SYSTEM_DEGRADED",
+                        null,
+                        "Completed artifacts unavailable due to invalid phase",
+                        Instant.now(),
+                        "system",
+                        null
+                )));
             }
 
             return artifactRepository.listCompletedArtifactMetadata(projectId, phaseType)
@@ -789,75 +678,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             String projectId,
             String tenantId
     ) {
-        try {
-            // Query recent audit events for this project and phase using the platform AuditService
-            Instant endDate = Instant.now();
-            Instant startDate = endDate.minus(java.time.Duration.ofDays(30)); // Last 30 days
-
-            return auditService.queryByPhase(projectId, phase, startDate, endDate)
-                .<List<PhasePacket.ActivityFeedEntry>>map(auditEvents -> {
-                    if (auditEvents == null || auditEvents.isEmpty()) {
-                        log.debug("No audit events found for phase={}, projectId={}", phase, projectId);
-                        return List.of();
-                    }
-
-                    // Convert AuditEvent to ActivityFeedEntry
-                    return auditEvents.stream()
-                        .limit(50) // Limit to most recent 50 events
-                        .map(event -> {
-                            Map<String, Object> details = event.getDetails();
-                            String outcome = activityOutcome(event.getSuccess(), details);
-                            Boolean success = activitySuccess(event.getSuccess(), outcome);
-                            return new PhasePacket.ActivityFeedEntry(
-                                    event.getId(),
-                                    event.getEventType(),
-                                    activityAction(event.getEventType(), details),
-                                    activitySummary(details),
-                                    event.getPrincipal() != null ? event.getPrincipal() : "System",
-                                    event.getTimestamp(),
-                                    activitySeverity(success, details),
-                                    event.getEventType(),
-                                    success,
-                                    outcome,
-                                    activityCorrelationId(details)
-                            );
-                        })
-                        .toList();
-                })
-                .then((entries, error) -> {
-                    if (error == null) {
-                        return Promise.of(entries);
-                    }
-                    log.error("Error querying activity feed: phase={}, projectId={}, tenantId={}", phase, projectId, tenantId, error);
-                    return Promise.of(List.<PhasePacket.ActivityFeedEntry>of(new PhasePacket.ActivityFeedEntry(
-                            "ACTIVITY_FEED_QUERY_FAILED",
-                            "SYSTEM_DEGRADED",
-                            "activity.feed.unavailable",
-                            "Activity feed unavailable",
-                            "System",
-                            Instant.now(),
-                            "ERROR",
-                            "SYSTEM_DEGRADED",
-                            false,
-                            "FAILURE",
-                            null)));
-                });
-
-        } catch (Exception e) {
-            log.error("Error querying activity feed: phase={}, projectId={}, tenantId={}", phase, projectId, tenantId, e);
-            return Promise.of(List.<PhasePacket.ActivityFeedEntry>of(new PhasePacket.ActivityFeedEntry(
-                    "ACTIVITY_FEED_QUERY_FAILED",
-                    "SYSTEM_DEGRADED",
-                    "activity.feed.unavailable",
-                    "Activity feed unavailable",
-                    "System",
-                    Instant.now(),
-                    "ERROR",
-                    "SYSTEM_DEGRADED",
-                    false,
-                    "FAILURE",
-                    null)));
-        }
+        return phaseActivityFeedService.queryActivityFeed(phase, projectId, tenantId);
     }
 
     private static String activityAction(String eventType, Map<String, Object> details) {

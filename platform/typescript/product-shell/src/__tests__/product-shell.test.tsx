@@ -65,6 +65,8 @@ const routes: ProductRouteCapability[] = [
   },
   { path: '/reports', label: 'Reports', group: 'Core', lifecycle: 'boundary', discoverable: true },
   { path: '/legacy', label: 'Legacy', group: 'Core', lifecycle: 'deprecated', discoverable: true },
+  { path: '/hidden-work', label: 'Hidden Work', group: 'Core', lifecycle: 'hidden', discoverable: true },
+  { path: '/blocked-work', label: 'Blocked Work', group: 'Core', stability: 'blocked', discoverable: true },
   { path: '/beta', label: 'Beta Feature', group: 'Core', lifecycle: 'stable', discoverable: false },
   {
     path: '/trust',
@@ -557,7 +559,17 @@ describe('shared route access helpers', () => {
     expect(isRouteAllowed({ minimumRole: 'owner' }, 'admin', ROLE_ORDER)).toBe(false);
   });
 
-  it('filters hidden, boundary, and role-denied routes', () => {
+  it('denies hidden and blocked route states before role checks', () => {
+    const evaluator = createRouteAccessEvaluator(ROLE_ORDER);
+
+    expect(evaluator.isRouteAllowed({ lifecycle: 'hidden' }, 'admin')).toBe(false);
+    expect(evaluator.isRouteAllowed({ stability: 'blocked' }, 'admin')).toBe(false);
+    expect(evaluator.isRouteAllowed({ hidden: true }, 'admin')).toBe(false);
+    expect(evaluator.isRouteDirectLinkAllowed({ blocked: true }, 'admin')).toBe(false);
+    expect(evaluator.isRouteDirectLinkAllowed({ lifecycle: 'preview' }, 'admin')).toBe(true);
+  });
+
+  it('filters hidden, blocked, boundary, and role-denied routes', () => {
     expect(filterDiscoverableRoutes(routes, 'operator', ROLE_ORDER).map((route) => route.path)).toEqual([
       '/',
       '/data',

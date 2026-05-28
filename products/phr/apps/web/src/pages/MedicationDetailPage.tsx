@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { useParams } from 'react-router-dom';
-import { fetchMedicationDetail } from '../api/phrApi';
+import { fetchMedicationDetail } from '../api/clinicalApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
+import { t } from '../i18n/phrI18n';
 import type { MedicationSummary } from '../types';
 
 export function MedicationDetailPage(): React.ReactElement {
@@ -24,33 +25,33 @@ export function MedicationDetailPage(): React.ReactElement {
       role: session.role,
     })
       .then(setMedication)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load medication detail'))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('medicationDetail.error.load')))
       .finally(() => setLoading(false));
   }, [session, medicationId]);
 
-  if (loading) return <div className="loading">Loading medication details...</div>;
-  if (error) return <div className="error">Error: {error}</div>;
-  if (!medication) return <div className="empty">Medication not found</div>;
+  if (loading) return <div className="loading">{t('medicationDetail.loading')}</div>;
+  if (error) return <div className="error">{t('dashboard.errorPrefix')}: {error}</div>;
+  if (!medication) return <div className="empty">{t('medicationDetail.notFound')}</div>;
 
   return (
     <div className="stack gap-lg">
       <Card>
-        <CardHeader title={medication.medication} subheader="Medication Details" />
+        <CardHeader title={medication.medication} subheader={t('medicationDetail.subheader')} />
         <CardContent>
           <div className="stack gap-md">
             <div className="detail-row">
-              <span className="detail-label">Dosage:</span>
+              <span className="detail-label">{t('medicationDetail.dosage')}:</span>
               <span className="detail-value"><strong>{medication.dosage}</strong></span>
             </div>
             <div className="detail-row">
-              <span className="detail-label">Schedule:</span>
+              <span className="detail-label">{t('medicationDetail.schedule')}:</span>
               <span className="detail-value">{medication.schedule}</span>
             </div>
             <div className="detail-row">
-              <span className="detail-label">Adherence:</span>
+              <span className="detail-label">{t('medications.adherenceLabel')}:</span>
               <span className="detail-value">
                 <strong>{medication.adherence}%</strong>
-                <span className="muted"> (based on refill data)</span>
+                <span className="muted"> {t('medicationDetail.refillBasis')}</span>
               </span>
             </div>
           </div>
@@ -60,12 +61,12 @@ export function MedicationDetailPage(): React.ReactElement {
       {/* Interactions and Warnings */}
       {(medication.interactions.length > 0 || medication.warnings.length > 0) && (
         <Card>
-          <CardHeader title="Safety Information" subheader="Interactions and warnings" />
+          <CardHeader title={t('medicationDetail.safety.title')} subheader={t('medicationDetail.safety.subheader')} />
           <CardContent>
             <div className="stack gap-md">
               {medication.interactions.length > 0 && (
                 <div>
-                  <h4>Drug Interactions</h4>
+                  <h4>{t('medicationDetail.interactions')}</h4>
                   <ul className="stack gap-sm">
                     {medication.interactions.map((interaction, idx) => (
                       <li key={idx} className="warning-item">{interaction}</li>
@@ -75,7 +76,7 @@ export function MedicationDetailPage(): React.ReactElement {
               )}
               {medication.warnings.length > 0 && (
                 <div>
-                  <h4>Warnings</h4>
+                  <h4>{t('medicationDetail.warnings')}</h4>
                   <ul className="stack gap-sm">
                     {medication.warnings.map((warning, idx) => (
                       <li key={idx} className="warning-item">{warning}</li>
@@ -90,13 +91,13 @@ export function MedicationDetailPage(): React.ReactElement {
 
       {/* History */}
       <Card>
-        <CardHeader title="Prescription History" subheader="Changes and refills" />
+        <CardHeader title={t('medicationDetail.history.title')} subheader={t('medicationDetail.history.subheader')} />
         <CardContent>
           <table className="data-table">
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Action</th>
+                <th>{t('labDetail.date')}</th>
+                <th>{t('medicationDetail.action')}</th>
               </tr>
             </thead>
             <tbody>

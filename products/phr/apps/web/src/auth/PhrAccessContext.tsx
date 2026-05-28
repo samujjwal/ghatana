@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { useOptionalPhrSession } from './PhrSessionContext';
 
 export type PhrRole = 'patient' | 'caregiver' | 'clinician' | 'admin' | 'fchv';
 
@@ -28,19 +29,21 @@ function loadStoredRole(): PhrRole {
 
 function loadStoredTenantId(): string {
   if (typeof window === 'undefined') {
-    return 'demo-tenant';
+    return '';
   }
-  return window.localStorage.getItem(TENANT_ID_KEY) || 'demo-tenant';
+  return window.localStorage.getItem(TENANT_ID_KEY) || '';
 }
 
 function loadStoredPrincipalId(): string {
   if (typeof window === 'undefined') {
-    return 'demo-user';
+    return '';
   }
-  return window.localStorage.getItem(PRINCIPAL_ID_KEY) || 'demo-user';
+  return window.localStorage.getItem(PRINCIPAL_ID_KEY) || '';
 }
 
 export function PhrAccessProvider({ children }: { children: React.ReactNode }): React.ReactElement {
+  const sessionContext = useOptionalPhrSession();
+  const session = sessionContext?.session ?? null;
   const [role, setRole] = useState<PhrRole>(loadStoredRole);
   const [tenantId] = useState<string>(loadStoredTenantId);
   const [principalId] = useState<string>(loadStoredPrincipalId);
@@ -49,7 +52,15 @@ export function PhrAccessProvider({ children }: { children: React.ReactNode }): 
     window.localStorage.setItem(STORAGE_KEY, role);
   }, [role]);
 
-  const value = useMemo<PhrAccessContextValue>(() => ({ role, setRole, tenantId, principalId }), [role, tenantId, principalId]);
+  const value = useMemo<PhrAccessContextValue>(
+    () => ({
+      role: session?.role ?? role,
+      setRole,
+      tenantId: session?.tenantId ?? tenantId,
+      principalId: session?.principalId ?? principalId,
+    }),
+    [role, session, tenantId, principalId],
+  );
   return <PhrAccessContext.Provider value={value}>{children}</PhrAccessContext.Provider>;
 }
 

@@ -1,176 +1,55 @@
-/**
- * Route Entitlement Parity Test
- *
- * Verifies that the web route contracts (phrRouteContracts.ts) and backend
- * entitlement routes (PhrEntitlementRoutes.java) are in sync. This test
- * ensures no drift between frontend and backend route definitions.
- *
- * The backend route list is extracted from PhrEntitlementRoutes.java and
- * compared against the frontend phrRouteContracts array.
- */
+import { describe, expect, it } from 'vitest';
+import routeContractJson from '../../../../config/phr-route-contract.json';
+import { attachPhrRouteElement } from '../phrRouteElements';
+import { PHR_ROLE_ORDER, phrRouteContracts, type PhrRole } from '../phrRouteContracts';
+import { NotFoundPage } from '../pages/NotFoundPage';
 
-import { phrRouteContracts } from '../phrRouteContracts';
+interface CanonicalRoute {
+  readonly path: string;
+  readonly stability: string;
+  readonly apiEndpoint?: string;
+  readonly policyId?: string;
+  readonly testId?: string;
+}
 
-// Backend routes from PhrEntitlementRoutes.java (phrRoutesFor method)
-// This list must be kept in sync with the Java implementation
-const BACKEND_ROUTES = [
-  '/dashboard',
-  '/records',
-  '/consents',
-  '/appointments',
-  '/settings',
-  '/labs',
-  '/medications',
-  '/conditions',
-  '/observations',
-  '/immunizations',
-  '/documents',
-  '/documents/upload',
-  '/documents/:docId/ocr',
-  '/timeline',
-  '/profile',
-  '/records/:recordId',
-  '/notifications',
-  '/forbidden',
-  '/not-found',
-  '/emergency',
-  '/emergency/reviews',
-  '/release-readiness',
-  '/audit',
-  '/provider/dashboard',
-  '/provider/patients',
-  '/caregiver/dependents',
-  '/fchv/dashboard',
-] as const;
+interface CanonicalContract {
+  readonly roleOrder: Readonly<Record<PhrRole, number>>;
+  readonly routes: readonly CanonicalRoute[];
+}
 
-type BackendRoute = (typeof BACKEND_ROUTES)[number];
-type FrontendRoute = (typeof phrRouteContracts)[number]['path'];
+const canonicalContract = routeContractJson as CanonicalContract;
 
 describe('Route Entitlement Parity', () => {
-  it('should have all backend routes present in frontend contracts', () => {
-    const frontendPaths = new Set<FrontendRoute>(
-      phrRouteContracts.map((r) => r.path)
+  it('projects the exact canonical JSON routes into the web contract', () => {
+    expect(phrRouteContracts.map((route) => route.path)).toEqual(
+      canonicalContract.routes.map((route) => route.path),
     );
-
-    const missingRoutes: BackendRoute[] = [];
-    for (const backendRoute of BACKEND_ROUTES) {
-      if (!frontendPaths.has(backendRoute as FrontendRoute)) {
-        missingRoutes.push(backendRoute);
-      }
-    }
-
-    if (missingRoutes.length > 0) {
-      throw new Error(
-        `Backend routes missing from frontend contracts: ${missingRoutes.join(', ')}\n` +
-          'Update phrRouteContracts.ts to include these routes or remove them from PhrEntitlementRoutes.java'
-      );
-    }
   });
 
-  it('should have all frontend routes present in backend', () => {
-    const backendPaths = new Set<BackendRoute>(BACKEND_ROUTES);
-    const extraRoutes: FrontendRoute[] = [];
-
-    for (const contract of phrRouteContracts) {
-      if (!backendPaths.has(contract.path as BackendRoute)) {
-        extraRoutes.push(contract.path);
-      }
-    }
-
-    if (extraRoutes.length > 0) {
-      throw new Error(
-        `Frontend routes missing from backend: ${extraRoutes.join(', ')}\n` +
-          'Update PhrEntitlementRoutes.java to include these routes or remove them from phrRouteContracts.ts'
-      );
-    }
+  it('projects the canonical role hierarchy without local overrides', () => {
+    expect(PHR_ROLE_ORDER).toEqual(canonicalContract.roleOrder);
+    expect(PHR_ROLE_ORDER.fchv).toBeLessThan(PHR_ROLE_ORDER.clinician);
   });
 
-  it('should have matching route counts', () => {
-    const frontendCount = phrRouteContracts.length;
-    const backendCount = BACKEND_ROUTES.length;
+  it('requires stable routes to expose endpoint, policy, and test metadata', () => {
+    const incompleteStableRoutes = canonicalContract.routes
+      .filter((route) => route.stability === 'stable')
+      .filter((route) => !route.apiEndpoint || !route.policyId || !route.testId)
+      .map((route) => route.path);
 
-    if (frontendCount !== backendCount) {
-      throw new Error(
-        `Route count mismatch: frontend has ${frontendCount} routes, backend has ${backendCount} routes`
-      );
-    }
+    expect(incompleteStableRoutes).toEqual([]);
   });
 
-  it('should have consistent minimumRole for common routes', () => {
-    // Define expected minimum roles for key routes
-    const expectedRoles: Record<string, string> = {
-      '/dashboard': 'patient',
-      '/records': 'patient',
-      '/consents': 'patient',
-      '/appointments': 'patient',
-      '/settings': 'patient',
-      '/labs': 'caregiver',
-      '/medications': 'caregiver',
-      '/conditions': 'patient',
-      '/observations': 'caregiver',
-      '/immunizations': 'patient',
-      '/documents': 'patient',
-      '/documents/upload': 'patient',
-      '/documents/:docId/ocr': 'patient',
-      '/timeline': 'patient',
-      '/profile': 'patient',
-      '/records/:recordId': 'patient',
-      '/notifications': 'patient',
-      '/emergency': 'clinician',
-      '/emergency/reviews': 'admin',
-      '/release-readiness': 'admin',
-      '/audit': 'admin',
-      '/provider/dashboard': 'clinician',
-      '/provider/patients': 'clinician',
-      '/caregiver/dependents': 'caregiver',
-      '/fchv/dashboard': 'caregiver',
-    };
-
-    const mismatches: string[] = [];
-    for (const contract of phrRouteContracts) {
-      const expected = expectedRoles[contract.path];
-      if (expected && contract.minimumRole !== expected) {
-        mismatches.push(
-          `${contract.path}: expected minimumRole '${expected}', got '${contract.minimumRole}'`
-        );
-      }
-    }
-
-    if (mismatches.length > 0) {
-      throw new Error(
-        `Minimum role mismatches:\n${mismatches.join('\n')}\n` +
-          'Update either phrRouteContracts.ts or PhrEntitlementRoutes.java to align roles'
-      );
-    }
+  it('excludes mobile-only dashboard from the web route contract', () => {
+    expect(phrRouteContracts.some((route) => route.path === '/mobile/dashboard')).toBe(false);
   });
 
-  it('should have lifecycle metadata for all routes', () => {
-    const routesWithoutLifecycle: string[] = [];
+  it('blocks hidden direct links with the not-found route element', () => {
+    const hiddenRoutes = phrRouteContracts.filter((route) => route.stability === 'hidden');
 
-    for (const contract of phrRouteContracts) {
-      if (!contract.lifecycle) {
-        routesWithoutLifecycle.push(contract.path);
-      }
-    }
-
-    if (routesWithoutLifecycle.length > 0) {
-      throw new Error(
-        `Routes missing lifecycle metadata: ${routesWithoutLifecycle.join(', ')}\n` +
-          'Add lifecycle metadata to these routes in phrRouteContracts.ts'
-      );
-    }
-  });
-
-  it('should have featureFlag only on experimental routes', () => {
-    const featureFlaggedRoutes = phrRouteContracts.filter((r) => r.featureFlag);
-
-    for (const route of featureFlaggedRoutes) {
-      if (route.lifecycle?.stability !== 'experimental') {
-        throw new Error(
-          `Route ${route.path} has featureFlag but stability is '${route.lifecycle?.stability}'. ` +
-          'Feature-flagged routes should have stability: "experimental"'
-        );
-      }
+    expect(hiddenRoutes.length).toBeGreaterThan(0);
+    for (const route of hiddenRoutes) {
+      expect(attachPhrRouteElement(route).element.type).toBe(NotFoundPage);
     }
   });
 });

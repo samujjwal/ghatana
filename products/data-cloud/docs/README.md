@@ -16,7 +16,7 @@ This folder contains the required Data Cloud product and architecture documentat
 
 ## Runtime Implementation Docs
 
-`docs/aep` contains Data-Cloud integration documents for AEP persistence and compatibility boundaries. AEP is a separate adaptive event intelligence platform; these documents must not define AEP-owned EventCloud, PatternSpec/EPL, operator-runtime, pattern learning/adaptation, or agent orchestration semantics.
+`docs/aep` contains historical integration documents for Action Plane (formerly AEP) persistence and compatibility boundaries. Action Plane is Data Cloud's governed automation runtime; these documents describe integration patterns and boundary contracts.
 
 ## Deprecated Documentation
 
@@ -65,8 +65,7 @@ Runtime Truth Registry
 plane state
 surface state
 Action Plane
-AEP integration boundary
-AEP as separate adaptive event intelligence platform
+Action Plane integration boundary
 ```
 
 Avoid in product/architecture docs:
@@ -76,6 +75,6 @@ capability area
 capability model
 capability registry
 Data-Cloud as CEP/EventCloud
-AEP as Data-Cloud internals
+AEP as separate product (Action Plane is integrated within Data Cloud)
 Data Cloud + AEP as one blurred product
 ```

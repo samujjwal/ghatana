@@ -101,6 +101,9 @@ public class CreateCommand implements Callable<Integer> {
     @Option(names = {"--workspace-id"}, description = "Workspace ID for kernel-product-unit provenance")
     private String workspaceId;
 
+    @Option(names = {"--tenant-id"}, description = "Tenant ID for kernel-product-unit scope (default: default-tenant)")
+    private String tenantId = "default-tenant";
+
     @Option(names = {"--project-id"}, description = "Project/ProductUnit ID for kernel-product-unit provenance")
     private String projectId;
 
@@ -232,7 +235,9 @@ public class CreateCommand implements Callable<Integer> {
                     .targetType("kernel-product-unit")
                     .surfaces(requestedSurfaces)
                     .runtimeProvider(runtimeProvider)
+                    .sourceProvider(runtimeProvider)
                     .lifecycleProfile(lifecycleProfile)
+                    .tenantId(tenantId)
                     .workspaceId(workspaceId)
                     .sourcePhase("generate")
                     .build();

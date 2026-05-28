@@ -17,6 +17,10 @@ dependencies {
     testImplementation(libs.bundles.testing.core)
     testImplementation(project(":platform-kernel:kernel-testing"))
     testImplementation(project(":platform:java:testing"))
+    testImplementation(project(":platform:java:governance"))
+    testImplementation(project(":products:data-cloud:planes:shared-spi"))
+    testImplementation(project(":products:yappc:infrastructure:datacloud"))
+    testImplementation(project(":products:yappc:libs:java:yappc-domain"))
     testRuntimeOnly(libs.junit.jupiter.engine)
 }
 

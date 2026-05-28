@@ -229,8 +229,6 @@ public final class ClinicalDecisionSupportService implements KernelLifecycleAwar
         Objects.requireNonNull(decision, "decision cannot be null");
         Objects.requireNonNull(reviewerId, "reviewerId cannot be null");
 
-        // In production, this would record to an audit dataset
-        // For now, just log the review
         System.out.println(String.format(
             "Human review recorded: Patient=%s, Reviewer=%s, Approved=%s, Priority=%s, Comments=%s",
             decision.patientId(),

@@ -1,8 +1,8 @@
 package com.ghatana.phr.api.routes;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.ghatana.phr.api.dto.CreateConsentGrantRequest;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -13,7 +13,6 @@ import io.activej.promise.Promise;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -30,10 +29,15 @@ public final class PhrConsentRoutes {
 
     private final Eventloop eventloop;
     private final ConsentManagementService consentService;
+    private final PhrPolicyEvaluator policyEvaluator;
 
-    public PhrConsentRoutes(Eventloop eventloop, ConsentManagementService consentService) {
+    public PhrConsentRoutes(
+            Eventloop eventloop,
+            ConsentManagementService consentService,
+            PhrPolicyEvaluator policyEvaluator) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.consentService = Objects.requireNonNull(consentService, "consentService must not be null");
+        this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 
     /**
@@ -87,8 +91,9 @@ public final class PhrConsentRoutes {
                 } catch (IllegalArgumentException ex) {
                     return PhrRouteSupport.errorResponse(400, "INVALID_CONSENT_GRANT", ex.getMessage());
                 }
-                if (!mayManagePatientConsent(context, grant.getPatientId())) {
-                    return PhrRouteSupport.errorResponse(403, "CONSENT_OWNER_REQUIRED", "Only the patient or an admin can create consent grants");
+                PhrPolicyEvaluator.PolicyDecision decision = policyEvaluator.canManageConsent(context, grant.getPatientId());
+                if (!decision.isAllowed()) {
+                    return PhrRouteSupport.errorResponse(403, decision.getReasonCode(), decision.getReasonMessage());
                 }
                 return consentService.createGrant(grant)
                     .then(created -> PhrRouteSupport.jsonResponse(201, created));
@@ -104,8 +109,9 @@ public final class PhrConsentRoutes {
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "INVALID_REVOKE", ex.getMessage());
         }
-        if (!mayManagePatientConsent(context, patientId)) {
-            return PhrRouteSupport.errorResponse(403, "CONSENT_OWNER_REQUIRED", "Only the patient or an admin can revoke consent grants");
+        PhrPolicyEvaluator.PolicyDecision decision = policyEvaluator.canManageConsent(context, patientId);
+        if (!decision.isAllowed()) {
+            return PhrRouteSupport.errorResponse(403, decision.getReasonCode(), decision.getReasonMessage());
         }
         String grantId = request.getPathParameter("grantId");
         return consentService.revokeGrant(grantId)
@@ -150,8 +156,9 @@ public final class PhrConsentRoutes {
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "INVALID_LIST", ex.getMessage());
         }
-        if (!mayManagePatientConsent(context, patientId)) {
-            return PhrRouteSupport.errorResponse(403, "CONSENT_OWNER_REQUIRED", "Only the patient or an admin can list consent grants");
+        PhrPolicyEvaluator.PolicyDecision decision = policyEvaluator.canManageConsent(context, patientId);
+        if (!decision.isAllowed()) {
+            return PhrRouteSupport.errorResponse(403, decision.getReasonCode(), decision.getReasonMessage());
         }
         return consentService.getPatientGrants(patientId)
             .then(grants -> PhrRouteSupport.jsonResponse(200, Map.of(
@@ -159,10 +166,6 @@ public final class PhrConsentRoutes {
                 "items", grants,
                 "count", grants.size()
             )));
-    }
-
-    private static boolean mayManagePatientConsent(PhrRouteSupport.PhrRequestContext context, String patientId) {
-        return context.principalId().equals(patientId) || "admin".equalsIgnoreCase(context.role());
     }
 
     private static ConsentManagementService.ConsentGrant parseGrant(String json, String idempotencyKey) {
@@ -194,16 +197,4 @@ public final class PhrConsentRoutes {
         );
     }
 
-    private static Set<String> stringSet(JsonNode node) {
-        if (!node.isArray()) {
-            return Set.of();
-        }
-        Set<String> values = new LinkedHashSet<>();
-        node.forEach(value -> {
-            if (!value.asText().isBlank()) {
-                values.add(value.asText());
-            }
-        });
-        return Set.copyOf(values);
-    }
 }

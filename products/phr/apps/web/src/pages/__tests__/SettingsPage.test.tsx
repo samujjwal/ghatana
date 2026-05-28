@@ -12,8 +12,11 @@ vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
 }));
 
-vi.mock('../../api/phrApi', () => ({
+vi.mock('../../api/patientApi', () => ({
   exportPatientBundle: vi.fn(),
+}));
+
+vi.mock('../../api/authApi', () => ({
   logoutSession: vi.fn(),
 }));
 
@@ -38,7 +41,8 @@ vi.mock('../../auth/PhrSessionContext', () => ({
   }),
 }));
 
-import { exportPatientBundle, logoutSession } from '../../api/phrApi';
+import { logoutSession } from '../../api/authApi';
+import { exportPatientBundle } from '../../api/patientApi';
 
 const mockExport = exportPatientBundle as ReturnType<typeof vi.fn>;
 const mockLogout = logoutSession as ReturnType<typeof vi.fn>;
@@ -86,6 +90,12 @@ describe('SettingsPage', () => {
     mockExport.mockResolvedValue('OK');
     render(<SettingsPage />);
     fireEvent.click(screen.getByText('settings.hie.prepare'));
-    await waitFor(() => expect(mockExport).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(mockExport).toHaveBeenCalledWith({
+        tenantId: 't1',
+        principalId: 'patient-42',
+        role: 'patient',
+      })
+    );
   });
 });

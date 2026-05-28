@@ -22,24 +22,27 @@ class StructuredLoggingContractTest {
     @DisplayName("phase packet critical logs carry tenant, workspace, project, phase, and correlation fields")
     void phasePacketCriticalLogsCarryCanonicalScopeFields() throws IOException {
         assertThat(PhasePacketServiceImpl.class).isNotNull();
-        String source = normalizedSource("products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/phase/PhasePacketServiceImpl.java");
+        String packetSource = normalizedSource("products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/phase/PhasePacketServiceImpl.java");
+        String projectStateSource = normalizedSource("products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/phase/PhaseProjectStateService.java");
+        String evidenceSource = normalizedSource("products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/phase/PhaseEvidenceService.java");
+        String governanceSource = normalizedSource("products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/phase/PhaseGovernanceService.java");
 
-        List<String> criticalMessages = List.of(
-                "Building phase packet",
-                "Project in degraded state",
-                "Built phase packet successfully",
-                "DataCloud query failed for project",
-                "Project state not found",
-                "Unexpected error in queryProjectState",
-                "Error querying phase blockers",
-                "Error querying phase evidence",
-                "Error querying governance records"
+        List<LogMarkerExpectation> expectations = List.of(
+            new LogMarkerExpectation(packetSource, "Building phase packet"),
+            new LogMarkerExpectation(packetSource, "Project in degraded state"),
+            new LogMarkerExpectation(packetSource, "Built phase packet successfully"),
+            new LogMarkerExpectation(projectStateSource, "DataCloud query failed for project"),
+            new LogMarkerExpectation(projectStateSource, "Project state not found"),
+            new LogMarkerExpectation(projectStateSource, "Unexpected error in queryProjectState"),
+            new LogMarkerExpectation(packetSource, "Error querying phase blockers"),
+            new LogMarkerExpectation(evidenceSource, "Error querying phase evidence"),
+            new LogMarkerExpectation(governanceSource, "Error querying governance records")
         );
 
-        for (String message : criticalMessages) {
-            String logTemplate = sliceAround(source, message);
+        for (LogMarkerExpectation expectation : expectations) {
+            String logTemplate = sliceAround(expectation.source(), expectation.marker());
             assertThat(logTemplate)
-                    .as("log template for '%s'", message)
+                .as("log template for '%s'", expectation.marker())
                     .contains("tenantId={}", "workspaceId={}", "projectId={}", "phase={}", "correlationId={}");
         }
     }
@@ -76,4 +79,6 @@ class StructuredLoggingContractTest {
         }
         throw new IllegalStateException("Unable to locate repository path: " + relativePath);
     }
+
+    private record LogMarkerExpectation(String source, String marker) {}
 }

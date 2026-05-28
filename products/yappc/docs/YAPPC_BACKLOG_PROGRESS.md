@@ -242,10 +242,9 @@ This file tracks the consolidated YAPPC-only backlog from the `797819d9ee4e5e027
 
 ## Next Hardening Focus
 
-- Complete the remaining phase cockpit decomposition slices: dedicated container organization, action-hook coverage expansion, and route-level guard consistency.
-- Finish heuristic-removal cleanup for phase status logic so all lifecycle status semantics are backend-owned typed packet data.
-- Standardize shell composition and state components across kernel-health, product-family, and admin routes.
-- Keep architecture and README snapshots synchronized with verification outcomes from each implementation wave.
+- Keep phase packet semantics fully backend-owned and continue removing any remaining frontend heuristics.
+- Continue adapter-port hardening and boundary validation across capability modules.
+- Keep architecture/README/module-catalog snapshots synchronized with verification outcomes from each implementation wave.
 
 ## Not Started
 

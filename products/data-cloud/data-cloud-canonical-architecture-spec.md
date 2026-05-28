@@ -27,7 +27,7 @@ Data Cloud product
 └─ Operations Plane
 ```
 
-AEP is a separate adaptive event intelligence platform. Data-Cloud may provide storage plugins used by AEP's EventCloud, but EventCloud, PatternSpec/EPL, operator runtime, pattern learning/adaptation, and agent orchestration are AEP-owned.
+Action Plane is Data Cloud's governed automation runtime (formerly AEP), providing event-driven agent orchestration, pattern detection, pipeline execution, HITL review, and learning loops.
 
 ## Required Vocabulary
 

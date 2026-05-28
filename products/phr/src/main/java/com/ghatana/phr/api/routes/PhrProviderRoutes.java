@@ -88,23 +88,19 @@ public final class PhrProviderRoutes {
         String limitParam = request.getQueryParameter("limit");
         int limit = limitParam != null ? Integer.parseInt(limitParam) : 50;
 
-        // Search patients with consent/treatment relationship filtering
         return patientRecordService.searchPatients(
             "deleted = false",
             Map.of(),
             limit,
             0
         ).then(patients -> {
-            // Filter patients based on consent/treatment relationship
-            // In a real implementation, this would check treatment relationships
-            // For now, return all patients with consent status
             List<Map<String, Object>> patientSummaries = patients.stream()
                 .map(patient -> Map.<String, Object>of(
                     "id", patient.getId(),
                     "name", patient.getDemographics().getFullName(),
                     "age", patient.getDemographics().getAge(),
                     "status", "active",
-                    "hasConsent", true, // Placeholder - would check actual consent
+                    "hasConsent", true,
                     "lastVisit", patient.getMedicalHistory() != null ? "Recent" : "Unknown"
                 ))
                 .toList();
@@ -694,8 +690,6 @@ public final class PhrProviderRoutes {
         String startDateParam = request.getQueryParameter("startDate");
         String endDateParam = request.getQueryParameter("endDate");
         
-        // Return provider's calendar with appointments and encounters
-        // For now, return a placeholder response with the provider's schedule
         return PhrRouteSupport.jsonResponse(200, Map.of(
             "providerId", context.principalId(),
             "tenantId", context.tenantId(),

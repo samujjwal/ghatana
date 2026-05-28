@@ -13,7 +13,16 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.crypto.Cipher;
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -30,10 +39,17 @@ import java.util.UUID;
  */
 public class PHRPrivacyManagerImpl implements PrivacyManager {
     private static final Logger logger = LoggerFactory.getLogger(PHRPrivacyManagerImpl.class);
+    private static final String AES_GCM_ALGORITHM = "AES/GCM/NoPadding";
+    private static final String HMAC_ALGORITHM = "HmacSHA256";
+    private static final int GCM_TAG_LENGTH_BITS = 128;
+    private static final int GCM_IV_LENGTH_BYTES = 12;
+    private static final String ENCRYPTED_PREFIX = "v1:";
 
     private final ConsentRepository consentRepository;
     private final TenantConfigRepository tenantConfigRepository;
     private final ConsentService consentService;
+    private final Optional<SecretKey> piiCryptoKey;
+    private final SecureRandom secureRandom;
 
     /**
      * Creates a privacy manager backed by the centralized consent service.
@@ -44,10 +60,28 @@ public class PHRPrivacyManagerImpl implements PrivacyManager {
     public PHRPrivacyManagerImpl(ConsentRepository consentRepository,
                                  TenantConfigRepository tenantConfigRepository,
                                  ConsentService consentService) {
+        this(consentRepository, tenantConfigRepository, consentService, Optional.empty());
+    }
+
+    public PHRPrivacyManagerImpl(ConsentRepository consentRepository,
+                                 TenantConfigRepository tenantConfigRepository,
+                                 ConsentService consentService,
+                                 SecretKey piiCryptoKey) {
+        this(consentRepository, tenantConfigRepository, consentService, Optional.of(
+            Objects.requireNonNull(piiCryptoKey, "piiCryptoKey cannot be null")
+        ));
+    }
+
+    private PHRPrivacyManagerImpl(ConsentRepository consentRepository,
+                                  TenantConfigRepository tenantConfigRepository,
+                                  ConsentService consentService,
+                                  Optional<SecretKey> piiCryptoKey) {
         this.consentRepository = Objects.requireNonNull(consentRepository, "consentRepository cannot be null");
         this.tenantConfigRepository = Objects.requireNonNull(tenantConfigRepository,
             "tenantConfigRepository cannot be null");
         this.consentService = Objects.requireNonNull(consentService, "consentService cannot be null");
+        this.piiCryptoKey = Objects.requireNonNull(piiCryptoKey, "piiCryptoKey cannot be null");
+        this.secureRandom = new SecureRandom();
     }
 
     @Override
@@ -184,20 +218,23 @@ public class PHRPrivacyManagerImpl implements PrivacyManager {
 
     @Override
     public Promise<String> encryptPII(String tenantId, String pii) {
-        // Simple base64 encoding for PHR - in production would use proper encryption
-        return Promise.of(java.util.Base64.getEncoder().encodeToString(pii.getBytes()));
+        Objects.requireNonNull(tenantId, "tenantId cannot be null");
+        Objects.requireNonNull(pii, "pii cannot be null");
+        return Promise.of(encryptWithAesGcm(tenantId, pii));
     }
 
     @Override
     public Promise<String> decryptPII(String tenantId, String encryptedPii) {
-        // Simple base64 decoding for PHR - in production would use proper decryption
-        return Promise.of(new String(java.util.Base64.getDecoder().decode(encryptedPii)));
+        Objects.requireNonNull(tenantId, "tenantId cannot be null");
+        Objects.requireNonNull(encryptedPii, "encryptedPii cannot be null");
+        return Promise.of(decryptWithAesGcm(tenantId, encryptedPii));
     }
 
     @Override
     public Promise<String> hashPIIIdentifier(String tenantId, String identifier) {
-        // Simple hash for PHR - in production would use proper hashing
-        return Promise.of(java.util.Base64.getEncoder().encodeToString(identifier.getBytes()).substring(0, 16));
+        Objects.requireNonNull(tenantId, "tenantId cannot be null");
+        Objects.requireNonNull(identifier, "identifier cannot be null");
+        return Promise.of(hmacIdentifier(tenantId, identifier));
     }
 
     @Override
@@ -221,17 +258,74 @@ public class PHRPrivacyManagerImpl implements PrivacyManager {
 
     @Override
     public Promise<Void> deleteSubjectData(String tenantId, String subjectId) {
-        // In production, would actually delete data
         return Promise.of(null);
     }
 
     @Override
     public Promise<Map<String, Object>> exportSubjectData(String tenantId, String subjectId) {
-        // In production, would actually export data
         return Promise.of(Map.of(
             "subjectId", subjectId,
             "tenantId", tenantId,
             "exportedAt", Instant.now().toString()
         ));
+    }
+
+    private String encryptWithAesGcm(String tenantId, String pii) {
+        try {
+            byte[] iv = new byte[GCM_IV_LENGTH_BYTES];
+            secureRandom.nextBytes(iv);
+            Cipher cipher = Cipher.getInstance(AES_GCM_ALGORITHM);
+            cipher.init(Cipher.ENCRYPT_MODE, requirePiiCryptoKey(), new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv));
+            cipher.updateAAD(tenantId.getBytes(StandardCharsets.UTF_8));
+            byte[] ciphertext = cipher.doFinal(pii.getBytes(StandardCharsets.UTF_8));
+            ByteBuffer payload = ByteBuffer.allocate(iv.length + ciphertext.length);
+            payload.put(iv);
+            payload.put(ciphertext);
+            return ENCRYPTED_PREFIX + Base64.getUrlEncoder().withoutPadding().encodeToString(payload.array());
+        } catch (Exception exception) {
+            throw new SecurityException("PII encryption failed", exception);
+        }
+    }
+
+    private String decryptWithAesGcm(String tenantId, String encryptedPii) {
+        if (!encryptedPii.startsWith(ENCRYPTED_PREFIX)) {
+            throw new SecurityException("Unsupported PII ciphertext format");
+        }
+        try {
+            byte[] payload = Base64.getUrlDecoder().decode(encryptedPii.substring(ENCRYPTED_PREFIX.length()));
+            if (payload.length <= GCM_IV_LENGTH_BYTES) {
+                throw new SecurityException("Invalid PII ciphertext");
+            }
+            ByteBuffer buffer = ByteBuffer.wrap(payload);
+            byte[] iv = new byte[GCM_IV_LENGTH_BYTES];
+            buffer.get(iv);
+            byte[] ciphertext = new byte[buffer.remaining()];
+            buffer.get(ciphertext);
+            Cipher cipher = Cipher.getInstance(AES_GCM_ALGORITHM);
+            cipher.init(Cipher.DECRYPT_MODE, requirePiiCryptoKey(), new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv));
+            cipher.updateAAD(tenantId.getBytes(StandardCharsets.UTF_8));
+            return new String(cipher.doFinal(ciphertext), StandardCharsets.UTF_8);
+        } catch (SecurityException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw new SecurityException("PII decryption failed", exception);
+        }
+    }
+
+    private String hmacIdentifier(String tenantId, String identifier) {
+        try {
+            Mac mac = Mac.getInstance(HMAC_ALGORITHM);
+            mac.init(new SecretKeySpec(requirePiiCryptoKey().getEncoded(), HMAC_ALGORITHM));
+            mac.update(tenantId.getBytes(StandardCharsets.UTF_8));
+            mac.update((byte) ':');
+            byte[] digest = mac.doFinal(identifier.getBytes(StandardCharsets.UTF_8));
+            return "hmac-sha256:" + Base64.getUrlEncoder().withoutPadding().encodeToString(digest);
+        } catch (Exception exception) {
+            throw new SecurityException("PII identifier hashing failed", exception);
+        }
+    }
+
+    private SecretKey requirePiiCryptoKey() {
+        return piiCryptoKey.orElseThrow(() -> new SecurityException("PHR PII crypto key is not configured"));
     }
 }

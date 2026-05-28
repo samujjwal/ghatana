@@ -12,6 +12,7 @@ import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -68,25 +69,25 @@ public final class PhrCaregiverRoutes {
                 context.correlationId());
         }
 
-        // Fetch real caregiver relationships and patient data
         return caregiverService.getPatientsForCaregiver(context.principalId())
             .then(relationships -> {
-                // Fetch patient details for each relationship
                 List<Promise<Map<String, Object>>> dependentPromises = relationships.stream()
                     .map(rel -> patientRecordService.getPatient(rel.patientId())
                         .then(opt -> {
                             if (opt.isPresent()) {
                                 var patient = opt.get();
-                                return Promise.of(Map.<String, Object>of(
-                                    "id", patient.getId(),
-                                    "name", patient.getDemographics().getFullName(),
-                                    "relationship", rel.relationshipType().name(),
-                                    "age", patient.getDemographics().getAge(),
-                                    "consentScope", rel.consentScope(),
-                                    "relationshipId", rel.id(),
-                                    "status", rel.status().name(),
-                                    "expiresAt", rel.expiresAt() != null ? rel.expiresAt().toString() : null
-                                ));
+                                Map<String, Object> dependent = new LinkedHashMap<>();
+                                dependent.put("id", patient.getId());
+                                dependent.put("name", patient.getDemographics().getFullName());
+                                dependent.put("relationship", rel.relationshipType().name());
+                                dependent.put("age", patient.getDemographics().getAge());
+                                dependent.put("consentScope", rel.consentScope());
+                                dependent.put("relationshipId", rel.id());
+                                dependent.put("status", rel.status().name());
+                                if (rel.expiresAt() != null) {
+                                    dependent.put("expiresAt", rel.expiresAt().toString());
+                                }
+                                return Promise.of(dependent);
                             } else {
                                 return Promise.of(Map.<String, Object>of(
                                     "id", rel.patientId(),
@@ -116,8 +117,13 @@ public final class PhrCaregiverRoutes {
         }
 
         String patientId = request.getPathParameter("patientId");
+
+        if (!"caregiver".equals(context.role()) && !"admin".equals(context.role())) {
+            return PhrRouteSupport.errorResponse(403, "CAREGIVER_ROLE_REQUIRED",
+                "Only caregiver or admin principals may access delegated patient summaries",
+                context.correlationId());
+        }
         
-        // Verify caregiver has relationship with patient
         return caregiverService.getPatientsForCaregiver(context.principalId())
             .then(relationships -> {
                 boolean hasRelationship = relationships.stream()
@@ -158,8 +164,13 @@ public final class PhrCaregiverRoutes {
         }
 
         String patientId = request.getPathParameter("patientId");
+
+        if (!"caregiver".equals(context.role()) && !"admin".equals(context.role())) {
+            return PhrRouteSupport.errorResponse(403, "CAREGIVER_ROLE_REQUIRED",
+                "Only caregiver or admin principals may access delegated patient details",
+                context.correlationId());
+        }
         
-        // Verify caregiver has relationship with patient
         return caregiverService.getPatientsForCaregiver(context.principalId())
             .then(relationships -> {
                 boolean hasRelationship = relationships.stream()

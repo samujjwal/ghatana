@@ -18,6 +18,7 @@ application {
 dependencies {
     // Internal dependencies
     implementation(project(":products:yappc:core:scaffold:core"))  // absorbs packs
+    implementation(project(":platform:contracts"))
 
     // JSON serialization
     implementation(libs.jackson.databind)

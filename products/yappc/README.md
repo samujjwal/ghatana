@@ -39,10 +39,10 @@ The **Run** phase target drives an underlying SDLC lifecycle (Discover → Defin
 
 ### Current Hardening Focus
 
-- Decompose the phase cockpit into a thin route with focused container, mapper, and action-handler modules.
-- Complete backend-owned typed phase panel migration across all phase-specific status rendering.
-- Align kernel-health, product-family, and admin pages to shared shell/loading/error/card patterns.
-- Continue final documentation and cleanup reconciliation so architecture, backlog, and evidence wording stay in sync.
+- Keep backend-owned typed phase panel rendering authoritative across all lifecycle surfaces.
+- Continue adapter-port hardening so capability modules stay isolated from product internals.
+- Maintain shared shell/loading/error/card patterns across phase, kernel-health, product-family, and admin surfaces.
+- Continue documentation and cleanup reconciliation so architecture, backlog, and evidence wording stay in sync.
 
 ### Known Limitations by Lifecycle Phase
 

@@ -1,20 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
-import { fetchCaregiverDependents } from '../api/phrApi';
+import { fetchCaregiverDependents } from '../api/adminApi';
+import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import type { DependentEntry } from '../types';
 
 export function CaregiverDependentsPage(): React.ReactElement {
+  const { session } = usePhrSession();
   const [dependents, setDependents] = useState<DependentEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchCaregiverDependents()
+    if (!session) {
+      setError(t('error.sessionRequired'));
+      setLoading(false);
+      return;
+    }
+    fetchCaregiverDependents({
+      tenantId: session.tenantId,
+      principalId: session.principalId,
+      role: session.role,
+    })
       .then(setDependents)
       .catch((err: unknown) => setError(err instanceof Error ? err.message : t('caregiver.dependents.error')))
       .finally(() => setLoading(false));
-  }, []);
+  }, [session]);
 
   if (loading) return <div className="loading">{t('caregiver.dependents.loading')}</div>;
   if (error) return <div className="error">{t('caregiver.dependents.error')}: {error}</div>;

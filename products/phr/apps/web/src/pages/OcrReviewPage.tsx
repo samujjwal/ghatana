@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, Button, TextArea, Badge } from '@ghatana/design-system';
-import { confirmOcrDocument, fetchOcrDocument, rejectOcrDocument } from '../api/phrApi';
+import { confirmOcrDocument, fetchOcrDocument, rejectOcrDocument } from '../api/documentsApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import { logError } from '../utils/safeLogger';

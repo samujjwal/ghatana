@@ -13,21 +13,26 @@ const records: MobileRecord[] = [
 ];
 
 describe('RecordsScreen', () => {
+  function renderedText(rendered: { toJSON: () => unknown }): string {
+    return JSON.stringify(rendered.toJSON());
+  }
+
   it('renders all record titles', () => {
-    const { getByText } = render(<RecordsScreen records={records} />);
-    expect(getByText('CBC Lab Panel')).toBeTruthy();
-    expect(getByText('Chest X-Ray')).toBeTruthy();
+    const rendered = render(<RecordsScreen records={records} />);
+    expect(renderedText(rendered)).toContain('CBC Lab Panel');
+    expect(renderedText(rendered)).toContain('Chest X-Ray');
   });
 
   it('renders record summaries', () => {
-    const { getByText } = render(<RecordsScreen records={records} />);
-    expect(getByText('All values within normal range.')).toBeTruthy();
-    expect(getByText('No abnormalities detected.')).toBeTruthy();
+    const rendered = render(<RecordsScreen records={records} />);
+    expect(renderedText(rendered)).toContain('All values within normal range.');
+    expect(renderedText(rendered)).toContain('No abnormalities detected.');
   });
 
   it('renders FHIR preview text', () => {
-    const { getByText } = render(<RecordsScreen records={records} />);
-    expect(getByText('{"resourceType":"Observation"}')).toBeTruthy();
+    const rendered = render(<RecordsScreen records={records} />);
+    expect(renderedText(rendered)).toContain('resourceType');
+    expect(renderedText(rendered)).toContain('Observation');
   });
 
   it('renders empty list without crashing', () => {
@@ -36,7 +41,7 @@ describe('RecordsScreen', () => {
   });
 
   it('renders a single record correctly', () => {
-    const { getByText } = render(<RecordsScreen records={[records[0]!]} />);
-    expect(getByText('CBC Lab Panel')).toBeTruthy();
+    const rendered = render(<RecordsScreen records={[records[0]!]} />);
+    expect(renderedText(rendered)).toContain('CBC Lab Panel');
   });
 });

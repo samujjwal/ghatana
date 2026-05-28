@@ -24,6 +24,7 @@ const TAB_KEYS: readonly ScreenKey[] = ['dashboard', 'records', 'consents', 'not
 interface TabItem {
   key: ScreenKey;
   label: string;
+  hint: string;
   icon: string;
 }
 
@@ -31,6 +32,7 @@ function getTabItems(): TabItem[] {
   return TAB_KEYS.map((key) => ({
     key,
     label: getTabLabel(key),
+    hint: getTabHint(key),
     icon: getTabIcon(key),
   }));
 }
@@ -43,6 +45,18 @@ function getTabLabel(key: ScreenKey): string {
     notifications: t('tabs.alerts'),
     emergency: t('tabs.emergency'),
     settings: t('tabs.settings'),
+  };
+  return keyMap[key];
+}
+
+function getTabHint(key: ScreenKey): string {
+  const keyMap: Record<ScreenKey, string> = {
+    dashboard: t('tabs.homeHint'),
+    records: t('tabs.recordsHint'),
+    consents: t('tabs.consentsHint'),
+    notifications: t('tabs.alertsHint'),
+    emergency: t('tabs.emergencyHint'),
+    settings: t('tabs.settingsHint'),
   };
   return keyMap[key];
 }
@@ -91,6 +105,18 @@ class AppErrorBoundary extends React.Component<{ children: ReactNode }, { hasErr
 
     return this.props.children;
   }
+}
+
+function OfflineBanner({ isConnected }: { isConnected: boolean }): React.ReactElement | null {
+  if (isConnected) {
+    return null;
+  }
+
+  return (
+    <View style={styles.offlineBanner} accessibilityLiveRegion="polite" accessibilityRole="alert">
+      <Text style={styles.offlineBannerText}>{t('offline.banner')}</Text>
+    </View>
+  );
 }
 
 export default function App(): React.ReactElement {
@@ -144,15 +170,25 @@ export default function App(): React.ReactElement {
       }
     };
 
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
-    return () => subscription.remove();
+    const subscription = AppState.addEventListener('change', handleAppStateChange) as unknown as
+      | { remove: () => void }
+      | undefined;
+    return () => {
+      subscription?.remove();
+    };
   }, [session]);
 
   React.useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener((state: { isConnected: boolean | null }) => {
+    const subscription = NetInfo.addEventListener((state: { isConnected: boolean | null }) => {
       setIsConnected(state.isConnected ?? true);
-    });
-    return unsubscribe;
+    }) as unknown as (() => void) | { remove: () => void };
+    return () => {
+      if (typeof subscription === 'function') {
+        subscription();
+        return;
+      }
+      subscription.remove();
+    };
   }, []);
 
   React.useEffect(() => {
@@ -223,6 +259,7 @@ export default function App(): React.ReactElement {
   if (isRestoringSession) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
+        <OfflineBanner isConnected={isConnected} />
         <ActivityIndicator size="large" color="#123c84" />
         <Text style={styles.loadingText}>{t('app.restoringSession')}</Text>
       </SafeAreaView>
@@ -232,6 +269,7 @@ export default function App(): React.ReactElement {
   if (!isAuthenticated) {
     return (
       <SafeAreaView style={styles.page}>
+        <OfflineBanner isConnected={isConnected} />
         <LoginScreen
           onSuccess={(newSession) => { void handleLoginSuccess(newSession); }}
           onLoginError={() => { /* error is already displayed inside LoginScreen */ }}
@@ -245,9 +283,15 @@ export default function App(): React.ReactElement {
     if (loadError) {
       return (
         <SafeAreaView style={styles.loadingContainer}>
+          <OfflineBanner isConnected={isConnected} />
           <Text style={styles.header}>{t('app.errorBoundaryTitle')}</Text>
-          <Text style={styles.errorText}>{loadError}</Text>
-          <Pressable onPress={loadDashboard} style={styles.retryButton}>
+          <Text accessibilityRole="alert" style={styles.errorText}>{loadError}</Text>
+          <Pressable
+            onPress={loadDashboard}
+            style={styles.retryButton}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.retry')}
+          >
             <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
           </Pressable>
         </SafeAreaView>
@@ -256,6 +300,7 @@ export default function App(): React.ReactElement {
 
     return (
       <SafeAreaView style={styles.loadingContainer}>
+        <OfflineBanner isConnected={isConnected} />
         <ActivityIndicator size="large" color="#123c84" />
       </SafeAreaView>
     );
@@ -288,11 +333,7 @@ export default function App(): React.ReactElement {
   return (
     <AppErrorBoundary>
       <SafeAreaView style={styles.page}>
-        {!isConnected && (
-          <View style={styles.offlineBanner} accessibilityLiveRegion="polite" accessibilityRole="alert">
-            <Text style={styles.offlineBannerText}>{t('offline.banner')}</Text>
-          </View>
-        )}
+        <OfflineBanner isConnected={isConnected} />
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.header}>{t('app.title')}</Text>
           {renderScreen()}
@@ -306,6 +347,7 @@ export default function App(): React.ReactElement {
               accessibilityRole="tab"
               accessibilityState={{ selected: activeScreen === tab.key }}
               accessibilityLabel={tab.label}
+              accessibilityHint={tab.hint}
             >
               <Text style={styles.tabIcon}>{tab.icon}</Text>
               <Text style={[styles.tabLabel, activeScreen === tab.key && styles.tabLabelActive]}>

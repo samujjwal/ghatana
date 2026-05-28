@@ -299,11 +299,33 @@ function withSuspense(
   );
 }
 
+/**
+ * Runtime-truth-driven route gating.
+ * 
+ * Instead of returning a generic 404 when disabled, this now renders
+ * DisabledSurfacePage with meaningful context about why the surface
+ * is unavailable. This provides progressive disclosure based on runtime
+ * truth rather than silent failures.
+ * 
+ * DC-P1-004: Replaced NotFound with DisabledSurfacePage for better UX.
+ */
 function featureGatedRoute(
   enabled: boolean,
   element: React.ReactElement,
+  surfaceName: string,
+  surfaceDescription: string,
 ): React.ReactElement {
-  return enabled ? element : withSuspense(NotFound);
+  if (!enabled) {
+    return withSuspense(() => (
+      <DisabledSurfacePage
+        surfaceName={surfaceName}
+        surfaceDescription={surfaceDescription}
+        status="DISABLED"
+        nextAction="This surface is currently disabled in your deployment profile. Contact your administrator to enable it."
+      />
+    ));
+  }
+  return element;
 }
 
 // =============================================================================
@@ -444,6 +466,8 @@ export const routes: RouteObject[] = [
               {withSuspense(AlertsPage)}
             </RuntimeCapabilityRouteGate>
           </RoleProtectedRoute>,
+          "Alerts",
+          "The Alerts surface provides real-time alert triage and monitoring for your Data Cloud deployment.",
         ),
       },
 
@@ -522,6 +546,8 @@ export const routes: RouteObject[] = [
               {withSuspense(MemoryPlaneViewerPage)}
             </RuntimeCapabilityRouteGate>
           </RoleProtectedRoute>,
+          "Memory Plane",
+          "The Memory Plane surface provides persistent memory and context management for AI agent workloads.",
         ),
       },
       // Entity Browser — restored as canonical route
@@ -542,6 +568,8 @@ export const routes: RouteObject[] = [
               {withSuspense(EntityBrowserPage)}
             </RuntimeCapabilityRouteGate>
           </RoleProtectedRoute>,
+          "Entity Browser",
+          "The Entity Browser surface provides structured entity management and inspection for your data domains.",
         ),
       },
       // Context Explorer — restored as canonical route
@@ -562,6 +590,8 @@ export const routes: RouteObject[] = [
               {withSuspense(ContextExplorerPage)}
             </RuntimeCapabilityRouteGate>
           </RoleProtectedRoute>,
+          "Context Explorer",
+          "The Context Explorer surface provides contextual insight and lineage tracing across your data assets.",
         ),
       },
       // Data Fabric — restored as canonical operator-facing route
@@ -582,6 +612,8 @@ export const routes: RouteObject[] = [
               {withSuspense(DataFabricPage)}
             </RuntimeCapabilityRouteGate>
           </RoleProtectedRoute>,
+          "Data Fabric",
+          "The Data Fabric surface provides unified data connectivity, storage profiling, and connector management.",
         ),
       },
       // Agent Catalog — restored as canonical operator-facing route
@@ -602,6 +634,8 @@ export const routes: RouteObject[] = [
               {withSuspense(AgentPluginManagerPage)}
             </RuntimeCapabilityRouteGate>
           </RoleProtectedRoute>,
+          "Agent Catalog",
+          "The Agent Catalog surface provides discovery, registration, and management of AI agents in your deployment.",
         ),
       },
 
@@ -623,6 +657,8 @@ export const routes: RouteObject[] = [
               {withSuspense(SettingsPage)}
             </RuntimeCapabilityRouteGate>
           </RoleProtectedRoute>,
+          "Settings",
+          "The Settings surface provides configuration management for your Data Cloud tenant.",
         ),
       },
 

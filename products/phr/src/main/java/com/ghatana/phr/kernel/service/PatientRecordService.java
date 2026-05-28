@@ -5,7 +5,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ghatana.kernel.context.KernelContext;
 import io.activej.promise.Promise;
 
+import java.time.DateTimeException;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -270,8 +273,16 @@ public class PatientRecordService extends PhrServiceBase {
         }
         
         public String getAge() {
-            // Placeholder - calculate age from dateOfBirth
-            return dateOfBirth != null ? "unknown" : "unknown";
+            if (dateOfBirth == null || dateOfBirth.isBlank()) {
+                return "unknown";
+            }
+            try {
+                LocalDate birthDate = LocalDate.parse(dateOfBirth);
+                int years = Period.between(birthDate, LocalDate.now()).getYears();
+                return years >= 0 ? Integer.toString(years) : "unknown";
+            } catch (DateTimeException ex) {
+                return "unknown";
+            }
         }
         
         public String getDistrict() {

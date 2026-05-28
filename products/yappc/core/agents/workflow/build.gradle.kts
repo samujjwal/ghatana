@@ -14,8 +14,6 @@ dependencies {
 
     // Platform deps used directly by workflow steps (api — types appear in public step signatures)
     api(project(":platform:java:database"))
-    // DataCloud SPI included directly; DataStorePort port decoupling tracked in architecture backlog
-    api(project(":products:data-cloud:planes:shared-spi"))
     api(project(":platform:java:workflow"))
 
     // ActiveJ for async operations

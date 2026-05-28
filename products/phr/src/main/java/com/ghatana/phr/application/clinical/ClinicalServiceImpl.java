@@ -128,8 +128,19 @@ public class ClinicalServiceImpl implements ClinicalService {
         if (existing == null) {
             return Promise.ofException(new IllegalArgumentException("Medication not found: " + medicationId));
         }
-        // In a real implementation, this would record the administration
-        return Promise.of(existing);
+        Medication administered = new Medication(
+            existing.medicationId(),
+            existing.patientId(),
+            existing.medicationName(),
+            existing.dosage(),
+            existing.frequency(),
+            existing.quantity(),
+            "ADMINISTERED",
+            existing.prescribedAt(),
+            existing.route()
+        );
+        medications.put(medicationId, administered);
+        return Promise.of(administered);
     }
 
     @Override
@@ -145,8 +156,19 @@ public class ClinicalServiceImpl implements ClinicalService {
         if (existing == null) {
             return Promise.ofException(new IllegalArgumentException("Medication not found: " + medicationId));
         }
-        // In a real implementation, this would process the refill request
-        return Promise.of(existing);
+        Medication refillRequested = new Medication(
+            existing.medicationId(),
+            existing.patientId(),
+            existing.medicationName(),
+            existing.dosage(),
+            existing.frequency(),
+            existing.quantity(),
+            "REFILL_REQUESTED",
+            existing.prescribedAt(),
+            existing.route()
+        );
+        medications.put(medicationId, refillRequested);
+        return Promise.of(refillRequested);
     }
 
     @Override
@@ -346,8 +368,17 @@ public class ClinicalServiceImpl implements ClinicalService {
         if (existing == null) {
             return Promise.ofException(new IllegalArgumentException("Document not found: " + documentId));
         }
-        // In a real implementation, this would update the metadata
-        return Promise.of(existing);
+        Document updated = new Document(
+            existing.documentId(),
+            existing.patientId(),
+            metadata.documentType() != null ? metadata.documentType() : existing.documentType(),
+            existing.fileName(),
+            existing.contentType(),
+            existing.uploadedAt(),
+            existing.uploadedBy()
+        );
+        documents.put(documentId, updated);
+        return Promise.of(updated);
     }
 
     @Override

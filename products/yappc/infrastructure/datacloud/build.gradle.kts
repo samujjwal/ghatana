@@ -10,7 +10,7 @@ description = "YAPPC Infrastructure - Data-Cloud Integration"
 
 dependencies {
     // Data-Cloud SPI only (no platform dep)
-    implementation(project(":products:data-cloud:planes:shared-spi"))
+    api(project(":products:data-cloud:planes:shared-spi"))
 
     // YAPPC domain models (for mapping)
     implementation(project(":products:yappc:libs:java:yappc-domain"))

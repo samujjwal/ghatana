@@ -8,7 +8,7 @@ import { DashboardScreen } from '../DashboardScreen';
 import type { MobileDashboard } from '../../types';
 
 const dashboard: MobileDashboard = {
-  patient: { name: 'Ram Bahadur', district: 'Lalitpur', bloodType: 'O+' },
+  patient: { id: 'p1', name: 'Ram Bahadur', age: 35, district: 'Lalitpur', bloodType: 'O+' },
   records: [{ id: 'r1', title: 'CBC', summary: 'Normal', fhirPreview: '{}' }],
   consents: [{ id: 'con-1', grantee: 'Dr. Rai', purpose: 'Lab review', active: true }],
   notifications: [
@@ -18,42 +18,45 @@ const dashboard: MobileDashboard = {
 };
 
 describe('DashboardScreen', () => {
+  function renderedText(rendered: { toJSON: () => unknown }): string {
+    return JSON.stringify(rendered.toJSON());
+  }
+
   it('renders patient name', () => {
-    const { getByText } = render(<DashboardScreen dashboard={dashboard} />);
-    expect(getByText('Ram Bahadur')).toBeTruthy();
+    const rendered = render(<DashboardScreen dashboard={dashboard} />);
+    expect(renderedText(rendered)).toContain('Ram Bahadur');
   });
 
   it('renders patient district and blood type', () => {
-    const { getByText } = render(<DashboardScreen dashboard={dashboard} />);
-    expect(getByText('Lalitpur · Blood group O+')).toBeTruthy();
+    const rendered = render(<DashboardScreen dashboard={dashboard} />);
+    expect(renderedText(rendered)).toContain('Lalitpur');
+    expect(renderedText(rendered)).toContain('Blood group');
+    expect(renderedText(rendered)).toContain('O+');
   });
 
   it('shows record count', () => {
-    const { getAllByText } = render(<DashboardScreen dashboard={dashboard} />);
-    // 1 record
-    expect(getAllByText('1').length).toBeGreaterThan(0);
+    const rendered = render(<DashboardScreen dashboard={dashboard} />);
+    expect(renderedText(rendered)).toContain('Records: 1');
   });
 
   it('shows consent count', () => {
-    const { getAllByText } = render(<DashboardScreen dashboard={dashboard} />);
-    // Already checked above; consents also 1
-    expect(getAllByText('Records').length).toBeGreaterThan(0);
-    expect(getAllByText('Consents').length).toBeGreaterThan(0);
+    const rendered = render(<DashboardScreen dashboard={dashboard} />);
+    expect(renderedText(rendered)).toContain('Consents: 1');
   });
 
   it('shows notification count', () => {
-    const { getAllByText } = render(<DashboardScreen dashboard={dashboard} />);
-    expect(getAllByText('2').length).toBeGreaterThan(0);
+    const rendered = render(<DashboardScreen dashboard={dashboard} />);
+    expect(renderedText(rendered)).toContain('Alerts: 2');
   });
 
   it('renders with zero records, consents, and notifications', () => {
     const empty: MobileDashboard = {
-      patient: { name: 'No Data', district: 'Unknown', bloodType: 'N/A' },
+      patient: { id: 'p2', name: 'No Data', age: 0, district: 'Unknown', bloodType: 'N/A' },
       records: [],
       consents: [],
       notifications: [],
     };
-    const { getByText } = render(<DashboardScreen dashboard={empty} />);
-    expect(getByText('No Data')).toBeTruthy();
+    const rendered = render(<DashboardScreen dashboard={empty} />);
+    expect(renderedText(rendered)).toContain('No Data');
   });
 });

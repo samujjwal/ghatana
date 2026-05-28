@@ -71,7 +71,7 @@ None. The component inventory check fails if a new local primitive appears witho
 | `journey` | 7 |
 | `keyboard` | 2 |
 | `knowledge-graph` | 10 |
-| `layout` | 4 |
+| `layout` | 5 |
 | `lifecycle` | 15 |
 | `mobile` | 2 |
 | `navigation` | 12 |

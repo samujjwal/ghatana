@@ -252,6 +252,25 @@ public class CachingEntityRepository implements EntityRepository {
                 });
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Delegates to the backing repository. On success, invalidates the L1 entry
+     * for the saved entity.
+     */
+    @Override
+    public Promise<Entity> saveWithIdempotency(String tenantId, Entity entity, String idempotencyKey) {
+        return delegate.saveWithIdempotency(tenantId, entity, idempotencyKey)
+                .map(saved -> {
+                    if (saved.getId() != null) {
+                        String key = cacheKey(tenantId, saved.getCollectionName(), saved.getId());
+                        l1Cache.invalidate(key);
+                        LOG.trace("[L1 invalidate] saveWithIdempotency key={}", key);
+                    }
+                    return saved;
+                });
+    }
+
     // -------------------------------------------------------------------------
     // Collection-scoped operations — always pass through
     // -------------------------------------------------------------------------

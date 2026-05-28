@@ -5,6 +5,13 @@
     "github",
     "external"
   ],
+  "sourceProviders": [
+    "ghatana-file-registry",
+    "github",
+    "gitlab",
+    "archive",
+    "external"
+  ],
   "lifecycleProfiles": [
     "standard-web-api-product",
     "standard-polyglot-product",

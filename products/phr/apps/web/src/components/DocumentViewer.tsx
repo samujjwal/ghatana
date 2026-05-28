@@ -5,6 +5,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@ghatana/design-system';
+import { t } from '../i18n/phrI18n';
 import { logError } from '../utils/safeLogger';
 
 interface DocumentViewerProps {
@@ -41,7 +42,7 @@ export function DocumentViewer({
 
     const handleError = () => {
       setLoading(false);
-      setError('Failed to load document');
+      setError(t('documents.error.preview'));
       logError('Document viewer failed to load', undefined, { documentId, title });
     };
 
@@ -58,16 +59,16 @@ export function DocumentViewer({
   }, [downloadUrl, documentId, title]);
 
   return (
-    <div className="document-viewer-overlay" role="dialog" aria-modal="true" aria-label={`Preview: ${title}`}>
+    <div className="document-viewer-overlay" role="dialog" aria-modal="true" aria-label={t('documents.preview.title', { title })}>
       <div className="document-viewer-content">
         <div className="document-viewer-header">
           <h2>{title}</h2>
-          <Button onClick={onClose} aria-label="Close preview">Close</Button>
+          <Button onClick={onClose} aria-label={t('documents.preview.close')}>{t('documents.preview.close')}</Button>
         </div>
         
         {loading && (
           <div className="document-viewer-loading" role="status" aria-live="polite">
-            Loading document...
+            {t('documents.preview.loading')}
           </div>
         )}
         
@@ -87,13 +88,13 @@ export function DocumentViewer({
         
         <div className="document-viewer-footer">
           <p className="muted">
-            Expires: {new Date(expiresAt).toLocaleString()}
+            {t('documents.preview.expires', { date: new Date(expiresAt).toLocaleString() })}
           </p>
           <Button
             onClick={() => window.open(downloadUrl, '_blank')}
-            aria-label={`Download ${title}`}
+            aria-label={t('documents.download.named', { title })}
           >
-            Download
+            {t('documents.download')}
           </Button>
         </div>
       </div>

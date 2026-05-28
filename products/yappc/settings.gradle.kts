@@ -126,6 +126,7 @@ include(":core:yappc-shared")
 
 // --- Infrastructure ---
 include(":infrastructure:datacloud")
+include(":infrastructure:aep")
 
 // --- YAPPC Shared Libraries ---
 include(":libs:java:yappc-domain")
@@ -200,6 +201,7 @@ if (isStandaloneBuild) {
             "core:cli-tools",
             "core:knowledge-graph",
             "infrastructure:datacloud",
+            "infrastructure:aep",
             "libs:java:yappc-domain",
             "core:yappc-domain-impl",
             "core:yappc-facades",

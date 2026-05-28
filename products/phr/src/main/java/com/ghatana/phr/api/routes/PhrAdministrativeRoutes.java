@@ -62,7 +62,7 @@ public final class PhrAdministrativeRoutes {
             .with("/appointments/*", appointmentServlet())
             .with("/telemedicine/*", telemedicineServlet())
             .with("/referrals/*", referralServlet())
-            .with("/billing/*", billingServlet())
+            .with("/billing/*", getBillingServlet())
             .build();
     }
 
@@ -124,12 +124,6 @@ public final class PhrAdministrativeRoutes {
             idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
-        }
-
-        // B-005: Check for existing request by idempotency key
-        if (idempotencyKey != null) {
-            // TODO: Check appointment service for existing request by idempotency key
-            // For now, proceed with creation
         }
 
         return request.loadBody()
@@ -199,7 +193,7 @@ public final class PhrAdministrativeRoutes {
             .build();
     }
 
-    private AsyncServlet billingServlet() {
+    public AsyncServlet getBillingServlet() {
         return RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/encounters", this::handleCreateEncounter)
             .with(HttpMethod.GET, "/encounters/:encounterId", this::handleGetEncounter)

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
-import { fetchReleaseReadiness } from '../api/phrApi';
+import { fetchReleaseReadiness } from '../api/releaseApi';
 import { usePhrAccess } from '../auth/PhrAccessContext';
 import { t } from '../i18n/phrI18n';
 import type { PhrReleaseReadiness, PhrReleaseReadinessSection } from '../types';

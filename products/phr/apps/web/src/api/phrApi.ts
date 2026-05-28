@@ -39,10 +39,8 @@ import { t } from '../i18n/phrI18n';
 // --- Config ---
 
 export const API_BASE_URL: string = import.meta.env.VITE_PHR_API_URL ?? 'http://localhost:8080';
-// A-009: Mock data only allowed in development/test environments
-const USE_MOCK: boolean = import.meta.env.MODE === 'development' && import.meta.env.VITE_USE_MOCK_DATA === 'true';
 
-// --- Error type ---
+// --- Error ---
 
 export class PhrApiError extends Error {
   constructor(
@@ -56,14 +54,14 @@ export class PhrApiError extends Error {
   }
 }
 
-// --- Correlation ID helper ---
+// --- Correlation ---
 
 /** Returns a new RFC 4122 v4 UUID to be sent as the X-Correlation-ID header. */
 function newCorrelationId(): string {
   return crypto.randomUUID();
 }
 
-// --- Shared FHIR sub-schemas ---------------------------------------------------
+// --- Shared ---
 
 const FhirCodingSchema = z.object({
   system: z.string().optional(),
@@ -161,8 +159,6 @@ const FhirAppointmentSchema = z.object({
   comment: z.string().optional(),
 }).passthrough();
 
-// --- Mock data validation schema (used when USE_MOCK=true) ------------------------
-
 const dashboardSchema = z.object({
   patient: z.object({
     id: z.string(),
@@ -210,7 +206,42 @@ const dashboardSchema = z.object({
   })),
 });
 
-// --- FHIR → UI type transformations --------------------------------------------------
+const BackendDashboardSchema = z.object({
+  tenantId: z.string(),
+  principalId: z.string(),
+  role: z.string(),
+  correlationId: z.string(),
+  profileSummary: z.object({
+    name: z.string(),
+    email: z.string().nullable().optional(),
+    providerId: z.string().nullable().optional(),
+    active: z.boolean(),
+  }),
+  nextAppointment: z.unknown().nullable(),
+  medications: z.object({
+    activeCount: z.number(),
+    adherenceAlert: z.boolean(),
+  }),
+  recentObservations: z.object({
+    count: z.number(),
+    hasCritical: z.boolean(),
+  }),
+  activeConditions: z.object({
+    count: z.number(),
+    hasChronic: z.boolean(),
+  }),
+  documents: z.object({
+    totalCount: z.number(),
+    pendingOcr: z.number(),
+  }),
+  accessAlerts: z.object({
+    expiringConsents: z.number(),
+    emergencyAccessPending: z.boolean(),
+  }),
+  generatedAt: z.string(),
+});
+
+// --- FHIR ---
 
 function fhirPatientToProfile(raw: z.infer<typeof FhirPatientSchema>): PatientProfile {
   const firstName = raw.name?.[0]?.given?.join(' ') ?? '';
@@ -256,7 +287,7 @@ function fhirObservationToLabResult(raw: z.infer<typeof FhirObservationSchema>):
   const valueQty = raw.valueQuantity;
   const value = valueQty
     ? `${valueQty.value?.toString() ?? ''} ${valueQty.unit ?? ''}`.trim()
-    : (raw.valueString ?? 'â€”');
+    : (raw.valueString ?? '-');
   const interpretationCode = raw.interpretation?.[0]?.coding?.[0]?.code ?? 'N';
   const status: 'normal' | 'attention' = (
     interpretationCode === 'N' || interpretationCode === 'normal'
@@ -303,7 +334,7 @@ function fhirAppointmentToSummary(raw: z.infer<typeof FhirAppointmentSchema>): A
   return { id: raw.id, provider, specialty, startsAt: raw.start ?? '', location };
 }
 
-// --- HTTP helpers ---
+// --- HTTP ---
 
 type SessionContext = {
   tenantId?: string;
@@ -314,6 +345,13 @@ type SessionContext = {
   correlationId?: string;
   idempotencyKey?: string;
 };
+
+function withIdempotency<T extends SessionContext>(context: T): T & { idempotencyKey: string } {
+  return {
+    ...context,
+    idempotencyKey: context.idempotencyKey ?? newCorrelationId(),
+  };
+}
 
 /**
  * A-002: Centralized header builder for PHR API requests.
@@ -348,54 +386,6 @@ export function buildPhrHeaders(context: SessionContext = {}): Record<string, st
 }
 
 /**
- * A-003: Safe JSON fetch with schema validation.
- * Every PHI response validates against schema to ensure type safety.
- */
-export async function safeFetchJson<T>(
-  path: string,
-  schema: z.ZodType<T>,
-  options: {
-    method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
-    body?: BodyInit | null;
-    context?: SessionContext;
-    accept?: string;
-    contentType?: string;
-  } = {},
-): Promise<T> {
-  const {
-    method = 'GET',
-    body = null,
-    context = {},
-    accept = 'application/json',
-    contentType = 'application/json',
-  } = options;
-
-  const headers = buildPhrHeaders(context);
-  if (contentType && body !== null) {
-    headers['Content-Type'] = contentType;
-  }
-
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers,
-    body,
-  });
-
-  if (!response.ok) {
-    const correlationId = headers['X-Correlation-ID'];
-    throw new PhrApiError(
-      `PHR request failed: ${method} ${path} returned ${response.status}`,
-      response.status,
-      undefined,
-      correlationId,
-    );
-  }
-
-  const data = await response.json() as unknown;
-  return schema.parse(data);
-}
-
-/**
  * PHR-P1-004: Central request client with consistent authenticated context.
  * All API calls should use this helper to ensure tenant/principal/role headers are injected.
  */
@@ -419,21 +409,8 @@ export async function phrFetch<T>(
     expectedSchema,
   } = options;
 
-  const headers: Record<string, string> = {
-    Accept: accept,
-    'X-Correlation-ID': context.correlationId ?? newCorrelationId(),
-  };
-
-  // Inject authenticated context headers if provided
-  if (context.tenantId) {
-    headers['X-Tenant-Id'] = context.tenantId;
-  }
-  if (context.principalId) {
-    headers['X-Principal-Id'] = context.principalId;
-  }
-  if (context.role) {
-    headers['X-Role'] = context.role;
-  }
+  const headers = buildPhrHeaders(context);
+  headers.Accept = accept;
   if (contentType && body !== null) {
     headers['Content-Type'] = contentType;
   }
@@ -448,6 +425,8 @@ export async function phrFetch<T>(
     throw new PhrApiError(
       `PHR request failed: ${method} ${path} returned ${response.status}`,
       response.status,
+      undefined,
+      headers['X-Correlation-ID'],
     );
   }
 
@@ -455,7 +434,7 @@ export async function phrFetch<T>(
   return expectedSchema ? expectedSchema.parse(data) : (data as T);
 }
 
-async function fhirGet(resourceType: string, id?: string, context?: SessionContext): Promise<unknown> {
+async function fhirGet(resourceType: string, id: string | undefined, context: SessionContext): Promise<unknown> {
   const path = id !== undefined ? `/fhir/${resourceType}/${id}` : `/fhir/${resourceType}`;
   return phrFetch(path, {
     accept: 'application/fhir+json',
@@ -467,55 +446,34 @@ function extractBundleEntries(bundle: z.infer<typeof FhirBundleSchema>): Record<
   return (bundle.entry ?? []).map(e => e.resource);
 }
 
-// --- Public API functions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Public ---
 
-export async function fetchDashboardData(context?: SessionContext): Promise<DashboardData> {
-  if (USE_MOCK) {
-    const { demoDashboard } = await import('../demoData');
-    return dashboardSchema.parse(demoDashboard);
-  }
-
-  const [patientData, obsBundle, medBundle, consentBundle, apptBundle] = await Promise.all([
-    fhirGet('Patient', 'current', context),
-    fhirGet('Observation', undefined, context),
-    fhirGet('MedicationRequest', undefined, context),
-    fhirGet('Consent', undefined, context),
-    fhirGet('Appointment', undefined, context),
-  ]);
-
-  const patient = fhirPatientToProfile(FhirPatientSchema.parse(patientData));
-
-  const observations = extractBundleEntries(FhirBundleSchema.parse(obsBundle))
-    .map(r => FhirObservationSchema.parse(r));
-  const labs = observations.map(fhirObservationToLabResult);
-  const obsRecords = observations.map(fhirObservationToRecord);
-
-  const medications_raw = extractBundleEntries(FhirBundleSchema.parse(medBundle))
-    .map(r => FhirMedicationRequestSchema.parse(r));
-  const medications = medications_raw.map(fhirMedicationRequestToSummary);
-  const medRecords = medications_raw.map(fhirMedicationRequestToRecord);
-
-  const consents = extractBundleEntries(FhirBundleSchema.parse(consentBundle))
-    .map(r => FhirConsentSchema.parse(r))
-    .map(fhirConsentToGrant);
-
-  const appointments = extractBundleEntries(FhirBundleSchema.parse(apptBundle))
-    .map(r => FhirAppointmentSchema.parse(r))
-    .map(fhirAppointmentToSummary);
-
-  const records: PatientRecordSummary[] = [...obsRecords, ...medRecords];
-
-  return { patient, records, consents, appointments, labs, medications };
+export async function fetchDashboardData(context: SessionContext): Promise<DashboardData> {
+  const dashboard = BackendDashboardSchema.parse(await phrFetch('/dashboard', { context }));
+  return dashboardSchema.parse({
+    patient: {
+      id: dashboard.principalId,
+      name: dashboard.profileSummary.name,
+      age: 0,
+      bloodType: t('common.unknown'),
+      location: dashboard.tenantId,
+      emergencyContact: t('common.unknown'),
+    },
+    records: [],
+    consents: [],
+    appointments: [],
+    labs: [],
+    medications: Array.from({ length: dashboard.medications.activeCount }, (_, index) => ({
+      id: `active-medication-${index + 1}`,
+      medication: t('dashboard.medications.active'),
+      dosage: '',
+      schedule: '',
+      adherence: dashboard.medications.adherenceAlert ? 0 : 100,
+    })),
+  });
 }
 
-export async function exportPatientBundle(context?: SessionContext): Promise<string> {
-  if (USE_MOCK) {
-    return JSON.stringify({
-      status: 'queued',
-      message: t('settings.hie.prepared'),
-    });
-  }
-
+export async function exportPatientBundle(context: SessionContext): Promise<string> {
   return phrFetch('/fhir/Patient/current/$export', {
     method: 'POST',
     context,
@@ -551,7 +509,7 @@ export async function fetchReleaseReadiness(options: {
   return PhrReleaseReadinessSchema.parse(data);
 }
 
-// --- Audit events API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Audit ---
 
 const AuditEventSchema = z.object({
   id: z.string(),
@@ -606,10 +564,29 @@ const ImmunizationSummarySchema = z.object({
 const DocumentSummarySchema = z.object({
   id: z.string(),
   title: z.string(),
-  contentType: z.string(),
+  contentType: z.string().optional(),
   uploadedAt: z.string(),
   status: z.enum(['pending', 'processing', 'ready', 'failed']).optional(),
   ocrStatus: z.enum(['pending', 'processing', 'ready', 'failed']).optional(),
+}).passthrough();
+
+const DocumentDetailSchema = DocumentSummarySchema.extend({
+  uploadedBy: z.string(),
+  description: z.string().optional(),
+  versions: z.array(z.object({
+    versionId: z.string(),
+    versionNumber: z.number(),
+    createdAt: z.string(),
+    createdBy: z.string(),
+    changeNote: z.string().optional(),
+  }).passthrough()).optional(),
+  auditLog: z.array(z.object({
+    id: z.string(),
+    action: z.string(),
+    timestamp: z.string(),
+    performedBy: z.string(),
+    details: z.record(z.string(), z.unknown()).optional(),
+  }).passthrough()).optional(),
 }).passthrough();
 
 const MedicationSummarySchema = z.object({
@@ -618,6 +595,15 @@ const MedicationSummarySchema = z.object({
   dosage: z.string(),
   schedule: z.string(),
   adherence: z.number(),
+}).passthrough();
+
+const MedicationDetailSchema = MedicationSummarySchema.extend({
+  interactions: z.array(z.string()),
+  warnings: z.array(z.string()),
+  history: z.array(z.object({
+    date: z.string(),
+    action: z.string(),
+  })),
 }).passthrough();
 
 const AppointmentSummarySchema = z.object({
@@ -630,31 +616,80 @@ const AppointmentSummarySchema = z.object({
 
 const NotificationSummarySchema = z.object({
   id: z.string(),
+  type: z.enum(['consent_expiry', 'appointment_reminder', 'lab_result', 'emergency_access', 'system']),
   title: z.string(),
-  message: z.string(),
+  body: z.string(),
   createdAt: z.string(),
-  read: z.boolean(),
+  readAt: z.string().optional(),
 }).passthrough();
 
 const DependentEntrySchema = z.object({
   id: z.string(),
   name: z.string(),
   relationship: z.string(),
-  status: z.enum(['active', 'inactive']),
+  alertCount: z.number(),
+  birthDate: z.string().optional(),
+  age: z.number().optional(),
 }).passthrough();
 
 const PatientRosterEntrySchema = z.object({
   id: z.string(),
   name: z.string(),
-  status: z.enum(['active', 'inactive']),
+  mrn: z.string(),
+  alertCount: z.number(),
+  lastVisit: z.string().optional(),
+  condition: z.string().optional(),
+  age: z.number().optional(),
+  status: z.string().optional(),
+  nextAppointment: z.string().optional(),
 }).passthrough();
 
 const FchvPatientEntrySchema = z.object({
   id: z.string(),
   name: z.string(),
-  community: z.string(),
-  lastVisit: z.string(),
+  village: z.string(),
+  riskLevel: z.enum(['low', 'medium', 'high']),
+  pendingActions: z.number(),
+  lastContact: z.string().optional(),
 }).passthrough();
+
+const ProviderAvailabilitySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  specialty: z.string(),
+  availableSlots: z.array(z.string()),
+});
+
+const DownloadDocumentResponseSchema = z.object({
+  downloadUrl: z.string(),
+  expiresAt: z.string(),
+});
+
+const TimelineEventWireSchema = z.object({
+  id: z.string(),
+  occurredAt: z.string(),
+  eventType: z.string(),
+  title: z.string(),
+  description: z.string(),
+  details: z.record(z.string(), z.unknown()),
+});
+
+const TimelinePageSchema = z.object({
+  patientId: z.string(),
+  items: z.array(TimelineEventWireSchema),
+  count: z.number(),
+  generatedAt: z.string(),
+});
+
+const PatientRecordAccessSchema = z.object({
+  patientId: z.string(),
+  recordId: z.string(),
+  resourceType: z.string(),
+  status: z.string(),
+  accessedAt: z.string(),
+  accessedBy: z.string(),
+  accessReason: z.string(),
+});
 
 // A-004: Additional Zod schemas for DTOs
 const PhrReleaseReadinessSchema = z.object({
@@ -673,7 +708,7 @@ const PhrReleaseReadinessSchema = z.object({
     blockingIssues: z.array(z.string()).optional(),
     warnings: z.array(z.string()).optional(),
   }).optional(),
-  sections: z.record(z.object({
+  sections: z.record(z.string(), z.object({
     label: z.string(),
     status: z.string(),
     runtimeProven: z.boolean(),
@@ -783,7 +818,7 @@ export async function fetchAuditEvents(options: {
   });
 }
 
-// --- Consent management API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Consent ---
 
 const ConsentGrantRequestSchema = z.object({
   patientId: z.string().min(1),
@@ -831,7 +866,7 @@ export async function createConsentGrant(
   const raw = await phrFetch('/consents/grants', {
     method: 'POST',
     body: JSON.stringify(validated),
-    context,
+    context: withIdempotency(context),
   }) as unknown;
   return FhirConsentSchema.parse(raw).id !== undefined
     ? fhirConsentToGrant(FhirConsentSchema.parse(raw))
@@ -850,12 +885,12 @@ export async function revokeConsentGrant(
   url.searchParams.set('patientId', patientId);
   const data = await phrFetch(`${url.pathname}${url.search}`, {
     method: 'POST',
-    context,
+    context: withIdempotency(context),
   });
   return ConsentRevokeResultSchema.parse(data);
 }
 
-// --- Appointment API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Appointment ---
 
 const AppointmentRequestSchema = z.object({
   specialty: z.string().min(1, 'Specialty is required'),
@@ -871,12 +906,12 @@ export async function createAppointmentRequest(
   const data = await phrFetch('/appointments', {
     method: 'POST',
     body: JSON.stringify(validated),
-    context,
+    context: withIdempotency(context),
   });
   return AppointmentCreateResultSchema.parse(data);
 }
 
-// --- Emergency access API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Emergency ---
 
 const EmergencyAccessRequestSchema = z.object({
   patientId: z.string().min(1, 'Patient ID is required'),
@@ -892,7 +927,7 @@ export async function requestEmergencyAccess(
   const data = await phrFetch('/emergency/access', {
     method: 'POST',
     body: JSON.stringify(validated),
-    context,
+    context: withIdempotency(context),
   });
   return EmergencyAccessEventSchema.parse(data);
 }
@@ -904,12 +939,12 @@ export async function reviewEmergencyAccess(
   const data = await phrFetch(`/emergency/reviews/${encodeURIComponent(review.eventId)}`, {
     method: 'POST',
     body: JSON.stringify({ reviewNote: review.reviewNote, reviewerId: review.reviewerId }),
-    context,
+    context: withIdempotency(context),
   });
   return EmergencyAccessEventSchema.parse(data);
 }
 
-// --- Auth session API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Auth ---
 
 const PhrSessionSchema = z.object({
   principalId: z.string(),
@@ -941,9 +976,9 @@ export async function logoutSession(context: {
   });
 }
 
-// --- Patient profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Patient ---
 
-export async function fetchPatientProfile(context?: SessionContext): Promise<PatientProfileExtended> {
+export async function fetchPatientProfile(context: SessionContext): Promise<PatientProfileExtended> {
   const data = await phrFetch('/profile', { context });
   return PatientProfileExtendedSchema.parse(data);
 }
@@ -955,369 +990,102 @@ export async function updatePatientProfile(
   const data = await phrFetch('/profile', {
     method: 'PUT',
     body: JSON.stringify(update),
-    context,
+    context: withIdempotency(context),
   });
   return PatientProfileExtendedSchema.parse(data);
 }
 
-// --- Timeline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Timeline ---
 
 export async function fetchTimeline(
   principalId: string,
-  context?: SessionContext,
+  context: SessionContext,
   filters?: {
     category?: string;
   },
 ): Promise<TimelineEvent[]> {
-  if (USE_MOCK) {
-    // Mock data for development
-    return [
-      {
-        id: 'tl-1',
-        occurredAt: '2024-01-15T09:00:00Z',
-        title: 'Outpatient consultation',
-        description: 'Primary care visit',
-        eventType: 'visit',
-      },
-      {
-        id: 'tl-2',
-        occurredAt: '2024-01-10T14:30:00Z',
-        title: 'New prescription',
-        description: 'Lisinopril 10mg',
-        eventType: 'medication',
-      },
-    ];
-  }
-
   const path = filters?.category
     ? `/timeline/${encodeURIComponent(principalId)}/category/${encodeURIComponent(filters.category)}`
     : `/timeline/${encodeURIComponent(principalId)}`;
 
-  const body = await phrFetch(path, { context }) as {
-    patientId: string;
-    items: Array<{
-      id: string;
-      occurredAt: string;
-      eventType: string;
-      title: string;
-      description: string;
-      details: Record<string, unknown>;
-    }>;
-    count: number;
-    generatedAt: string;
-  };
+  const body = TimelinePageSchema.parse(await phrFetch(path, { context }));
 
-  return body.items.map(item => ({
-    id: item.id,
-    occurredAt: item.occurredAt,
-    title: item.title,
-    description: item.description,
-    eventType: item.eventType,
-  }));
-}
-
-// --- Conditions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-export async function fetchConditions(principalId: string, context?: SessionContext): Promise<ConditionSummary[]> {
-  if (USE_MOCK) {
-    // Mock data for development
-    return [
-      {
-        id: 'cond-1',
-        name: 'Hypertension',
-        display: 'Hypertension',
-        code: 'I10',
-        status: 'active',
-        onsetDate: '2023-01-15',
-      },
-      {
-        id: 'cond-2',
-        name: 'Type 2 Diabetes',
-        display: 'Type 2 Diabetes',
-        code: 'E11.9',
-        status: 'active',
-        onsetDate: '2022-06-20',
-      },
-      {
-        id: 'cond-3',
-        name: 'Acute Bronchitis',
-        display: 'Acute Bronchitis',
-        code: 'J20.9',
-        status: 'resolved',
-        onsetDate: '2023-11-10',
-      },
-    ];
-  }
-
-  const body = await phrFetch(`/conditions/${encodeURIComponent(principalId)}`, { context }) as { items: ConditionSummary[] };
-  return body.items;
-}
-
-export async function fetchConditionDetail(conditionId: string, principalId: string, context?: SessionContext): Promise<ConditionSummary> {
-  if (USE_MOCK) {
-    // Mock data for development
+  return body.items.map(item => {
+    const type = toTimelineEventType(item.eventType);
     return {
-      id: conditionId,
-      name: 'Hypertension',
-      display: 'Hypertension',
-      code: 'I10',
-      status: 'active',
-      onsetDate: '2023-01-15',
+      id: item.id,
+      date: item.occurredAt.slice(0, 10),
+      type,
+      title: item.title,
+      summary: item.description,
+      occurredAt: item.occurredAt,
+      description: item.description,
     };
-  }
-
-  return phrFetch(`/conditions/${encodeURIComponent(conditionId)}?patientId=${encodeURIComponent(principalId)}`, { context }) as unknown as ConditionSummary;
+  });
 }
 
-// --- Observations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-export async function fetchObservations(principalId: string, context?: SessionContext): Promise<ObservationSummary[]> {
-  if (USE_MOCK) {
-    // Mock data for development with trend capability
-    return [
-      {
-        id: 'obs-1',
-        name: 'Blood Pressure Systolic',
-        value: '120',
-        unit: 'mmHg',
-        status: 'normal',
-        effectiveDate: '2024-01-15',
-        recordedAt: '2024-01-15T10:00:00Z',
-        loincCode: '8480-6',
-      },
-      {
-        id: 'obs-2',
-        name: 'Blood Pressure Diastolic',
-        value: '80',
-        unit: 'mmHg',
-        status: 'normal',
-        effectiveDate: '2024-01-15',
-        recordedAt: '2024-01-15T10:00:00Z',
-        loincCode: '8462-4',
-      },
-      {
-        id: 'obs-3',
-        name: 'Blood Pressure Systolic',
-        value: '125',
-        unit: 'mmHg',
-        status: 'normal',
-        effectiveDate: '2024-01-10',
-        recordedAt: '2024-01-10T10:00:00Z',
-        loincCode: '8480-6',
-      },
-      {
-        id: 'obs-4',
-        name: 'Blood Pressure Diastolic',
-        value: '82',
-        unit: 'mmHg',
-        status: 'normal',
-        effectiveDate: '2024-01-10',
-        recordedAt: '2024-01-10T10:00:00Z',
-        loincCode: '8462-4',
-      },
-      {
-        id: 'obs-5',
-        name: 'Blood Pressure Systolic',
-        value: '118',
-        unit: 'mmHg',
-        status: 'normal',
-        effectiveDate: '2024-01-05',
-        recordedAt: '2024-01-05T10:00:00Z',
-        loincCode: '8480-6',
-      },
-      {
-        id: 'obs-6',
-        name: 'Blood Pressure Diastolic',
-        value: '78',
-        unit: 'mmHg',
-        status: 'normal',
-        effectiveDate: '2024-01-05',
-        recordedAt: '2024-01-05T10:00:00Z',
-        loincCode: '8462-4',
-      },
-      {
-        id: 'obs-7',
-        name: 'Blood Glucose',
-        value: '95',
-        unit: 'mg/dL',
-        status: 'normal',
-        effectiveDate: '2024-01-15',
-        recordedAt: '2024-01-15T10:00:00Z',
-        loincCode: '2345-7',
-      },
-      {
-        id: 'obs-8',
-        name: 'Blood Glucose',
-        value: '110',
-        unit: 'mg/dL',
-        status: 'abnormal',
-        effectiveDate: '2024-01-10',
-        recordedAt: '2024-01-10T10:00:00Z',
-        loincCode: '2345-7',
-      },
-      {
-        id: 'obs-9',
-        name: 'Blood Glucose',
-        value: '98',
-        unit: 'mg/dL',
-        status: 'normal',
-        effectiveDate: '2024-01-05',
-        recordedAt: '2024-01-05T10:00:00Z',
-        loincCode: '2345-7',
-      },
-    ];
+function toTimelineEventType(eventType: string): TimelineEvent['type'] {
+  if (
+    eventType === 'visit'
+    || eventType === 'lab'
+    || eventType === 'immunization'
+    || eventType === 'medication'
+    || eventType === 'consent'
+    || eventType === 'document'
+  ) {
+    return eventType;
   }
+  return 'document';
+}
 
-  const body = await phrFetch(`/clinical/labs/observations?patientId=${encodeURIComponent(principalId)}`, { context }) as { items: ObservationSummary[] };
+// --- Conditions ---
+
+export async function fetchConditions(principalId: string, context: SessionContext): Promise<ConditionSummary[]> {
+  const body = z.object({ items: z.array(ConditionSummarySchema) })
+    .parse(await phrFetch(`/conditions/${encodeURIComponent(principalId)}`, { context }));
   return body.items;
 }
 
-export async function fetchObservationDetail(observationId: string, principalId: string, context?: SessionContext): Promise<ObservationSummary> {
-  if (USE_MOCK) {
-    // Mock data for development
-    return {
-      id: observationId,
-      name: 'Blood Pressure Systolic',
-      value: '120',
-      unit: 'mmHg',
-      status: 'normal',
-      effectiveDate: '2024-01-15',
-      recordedAt: '2024-01-15T10:00:00Z',
-      loincCode: '8480-6',
-    };
-  }
-
-  return phrFetch(`/clinical/labs/observations/${encodeURIComponent(observationId)}?patientId=${encodeURIComponent(principalId)}`, { context }) as unknown as ObservationSummary;
+export async function fetchConditionDetail(conditionId: string, principalId: string, context: SessionContext): Promise<ConditionSummary> {
+  return ConditionSummarySchema.parse(
+    await phrFetch(`/conditions/${encodeURIComponent(conditionId)}?patientId=${encodeURIComponent(principalId)}`, { context }),
+  );
 }
 
-// --- Immunizations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Observations ---
 
-export async function fetchImmunizations(principalId: string, context?: SessionContext): Promise<ImmunizationSummary[]> {
-  if (USE_MOCK) {
-    // Mock data for development
-    return [
-      {
-        id: 'imm-1',
-        vaccine: 'Influenza Vaccine',
-        date: '2024-01-15',
-        occurrenceDate: '2024-01-15',
-        status: 'complete',
-        lotNumber: 'LOT12345',
-        cvxCode: '141',
-      },
-      {
-        id: 'imm-2',
-        vaccine: 'COVID-19 mRNA Vaccine',
-        date: '2023-08-20',
-        occurrenceDate: '2023-08-20',
-        status: 'complete',
-        lotNumber: 'LOT67890',
-        cvxCode: '207',
-      },
-      {
-        id: 'imm-3',
-        vaccine: 'Tetanus, Diphtheria, Pertussis',
-        date: '2022-03-10',
-        occurrenceDate: '2022-03-10',
-        status: 'due',
-        lotNumber: 'LOT11111',
-        cvxCode: '107',
-      },
-      {
-        id: 'imm-4',
-        vaccine: 'Hepatitis B Vaccine',
-        date: '2021-11-05',
-        occurrenceDate: '2021-11-05',
-        status: 'complete',
-        lotNumber: 'LOT22222',
-        cvxCode: '08',
-      },
-    ];
-  }
-
-  const body = await phrFetch(`/clinical/immunizations?patientId=${encodeURIComponent(principalId)}`, { context }) as { items: ImmunizationSummary[] };
+export async function fetchObservations(principalId: string, context: SessionContext): Promise<ObservationSummary[]> {
+  const body = z.object({ items: z.array(ObservationSummarySchema) })
+    .parse(await phrFetch(`/clinical/labs/observations?patientId=${encodeURIComponent(principalId)}`, { context }));
   return body.items;
 }
 
-// --- Documents â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export async function fetchObservationDetail(observationId: string, principalId: string, context: SessionContext): Promise<ObservationSummary> {
+  return ObservationSummarySchema.parse(
+    await phrFetch(`/clinical/labs/observations/${encodeURIComponent(observationId)}?patientId=${encodeURIComponent(principalId)}`, { context }),
+  );
+}
 
-export async function fetchDocuments(principalId: string, context?: SessionContext): Promise<DocumentSummary[]> {
-  if (USE_MOCK) {
-    // Mock data for development
-    return [
-      {
-        id: 'doc-1',
-        title: 'Lab Results - Blood Work',
-        contentType: 'application/pdf',
-        uploadedAt: '2024-01-15T10:00:00Z',
-        ocrStatus: 'complete',
-        size: 1024000,
-      },
-      {
-        id: 'doc-2',
-        title: 'MRI Scan Report',
-        contentType: 'application/pdf',
-        uploadedAt: '2024-01-10T14:30:00Z',
-        ocrStatus: 'complete',
-        size: 2048000,
-      },
-      {
-        id: 'doc-3',
-        title: 'Discharge Summary',
-        contentType: 'application/pdf',
-        uploadedAt: '2023-12-20T09:15:00Z',
-        ocrStatus: 'pending',
-        size: 512000,
-      },
-      {
-        id: 'doc-4',
-        title: 'Insurance Card',
-        contentType: 'image/jpeg',
-        uploadedAt: '2023-11-05T16:45:00Z',
-        ocrStatus: 'complete',
-        size: 256000,
-      },
-    ];
-  }
+// --- Immunizations ---
 
-  const body = await phrFetch(`/documents?patientId=${encodeURIComponent(principalId)}`, { context }) as { items: DocumentSummary[] };
+export async function fetchImmunizations(principalId: string, context: SessionContext): Promise<ImmunizationSummary[]> {
+  const body = z.object({ items: z.array(ImmunizationSummarySchema) })
+    .parse(await phrFetch(`/clinical/immunizations?patientId=${encodeURIComponent(principalId)}`, { context }));
   return body.items;
 }
 
-export async function fetchDocumentDetail(documentId: string, principalId: string, context?: SessionContext): Promise<DocumentDetail> {
-  if (USE_MOCK) {
-    // Mock data for development
-    return {
-      id: documentId,
-      title: 'Lab Results - Blood Work',
-      category: 'lab',
-      mimeType: 'application/pdf',
-      contentType: 'application/pdf',
-      uploadedAt: '2024-01-15T10:00:00Z',
-      ocrStatus: 'ready',
-      sizeKb: 1024,
-      description: 'Complete blood work results including CBC, lipid panel, and metabolic panel.',
-      uploadedBy: 'Dr. Sharma',
-      versions: [
-        {
-          versionId: 'v1',
-          versionNumber: 1,
-          createdAt: '2024-01-15T10:00:00Z',
-          createdBy: 'Dr. Sharma',
-        },
-      ],
-      auditLog: [
-        {
-          id: 'audit-1',
-          action: 'uploaded',
-          timestamp: '2024-01-15T10:00:00Z',
-          performedBy: 'Dr. Sharma',
-        },
-      ],
-    };
-  }
+// --- Documents ---
 
-  return phrFetch(`/documents/${encodeURIComponent(documentId)}?patientId=${encodeURIComponent(principalId)}`, { context }) as unknown as DocumentDetail;
+export async function fetchDocuments(principalId: string, context: SessionContext): Promise<DocumentSummary[]> {
+  const body = z.object({ items: z.array(DocumentSummarySchema) })
+    .parse(await phrFetch(`/documents?patientId=${encodeURIComponent(principalId)}`, { context }));
+  return body.items;
+}
+
+export async function fetchDocumentDetail(documentId: string, principalId: string, context: SessionContext): Promise<DocumentDetail> {
+  return DocumentDetailSchema.parse(
+    await phrFetch(`/documents/${encodeURIComponent(documentId)}?patientId=${encodeURIComponent(principalId)}`, { context }),
+  );
 }
 
 /**
@@ -1327,36 +1095,20 @@ export async function fetchDocumentDetail(documentId: string, principalId: strin
 export async function downloadDocument(
   documentId: string,
   patientId: string,
-  context?: SessionContext,
+  context: SessionContext,
 ): Promise<{ downloadUrl: string; expiresAt: string }> {
-  if (USE_MOCK) {
-    return {
-      downloadUrl: `blob:${documentId}`,
-      expiresAt: new Date(Date.now() + 3600000).toISOString(),
-    };
-  }
-
-  const response = await phrFetch(`/documents/${encodeURIComponent(documentId)}/download?patientId=${encodeURIComponent(patientId)}`, {
+  return DownloadDocumentResponseSchema.parse(await phrFetch(`/documents/${encodeURIComponent(documentId)}/download?patientId=${encodeURIComponent(patientId)}`, {
     method: 'POST',
     context,
-  }) as { downloadUrl: string; expiresAt: string };
-  return response;
+  }));
 }
 
 export async function uploadDocument(
   patientId: string,
   file: File,
   metadata: { title: string; category?: string; description?: string },
-  context?: SessionContext & { idempotencyKey?: string },
+  context: SessionContext & { idempotencyKey?: string },
 ): Promise<{ id: string; status: string; ocrStatus: string }> {
-  if (USE_MOCK) {
-    return {
-      id: `doc-${Date.now()}`,
-      status: 'uploaded',
-      ocrStatus: 'pending',
-    };
-  }
-
   const formData = new FormData();
   formData.append('file', file);
   formData.append('title', metadata.title);
@@ -1366,149 +1118,50 @@ export async function uploadDocument(
   const data = await phrFetch(`/documents?patientId=${encodeURIComponent(patientId)}`, {
     method: 'POST',
     body: formData,
-    context,
+    context: withIdempotency(context),
   });
   return DocumentUploadInitResultSchema.parse(data);
 }
 
-// --- Medications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Medications ---
 
-export async function fetchMedications(principalId: string, context?: SessionContext): Promise<MedicationSummary[]> {
-  if (USE_MOCK) {
-    // Mock data for development
-    return [
-      {
-        id: 'med-1',
-        medication: 'Lisinopril',
-        dosage: '10mg',
-        schedule: 'Once daily',
-        adherence: 95,
-      },
-      {
-        id: 'med-2',
-        medication: 'Metformin',
-        dosage: '500mg',
-        schedule: 'Twice daily',
-        adherence: 88,
-      },
-      {
-        id: 'med-3',
-        medication: 'Atorvastatin',
-        dosage: '20mg',
-        schedule: 'Once daily',
-        adherence: 92,
-      },
-    ];
-  }
-
-  const body = await phrFetch(`/medications?patientId=${encodeURIComponent(principalId)}`, { context }) as { items: MedicationSummary[] };
+export async function fetchMedications(principalId: string, context: SessionContext): Promise<MedicationSummary[]> {
+  const body = z.object({ items: z.array(MedicationSummarySchema) })
+    .parse(await phrFetch(`/medications?patientId=${encodeURIComponent(principalId)}`, { context }));
   return body.items;
 }
 
 export async function fetchMedicationDetail(
   patientId: string,
   medicationId: string,
-  context?: SessionContext,
+  context: SessionContext,
 ): Promise<MedicationSummary & { interactions: string[]; warnings: string[]; history: Array<{ date: string; action: string }> }> {
-  if (USE_MOCK) {
-    const medications = await fetchMedications(patientId, context);
-    const medication = medications.find(m => m.id === medicationId);
-    if (!medication) {
-      throw new PhrApiError('Medication not found', 404, 'Medication');
-    }
-    return {
-      ...medication,
-      interactions: ['Avoid grapefruit juice', 'May interact with NSAIDs'],
-      warnings: ['Monitor liver function regularly', 'Report muscle pain immediately'],
-      history: [
-        { date: '2023-01-15', action: 'Prescribed' },
-        { date: '2023-06-15', action: 'Refill approved' },
-        { date: '2023-12-15', action: 'Refill approved' },
-      ],
-    };
-  }
+  const response = z.object({
+    medication: MedicationSummarySchema,
+    interactions: z.array(z.string()),
+    warnings: z.array(z.string()),
+    history: z.array(z.object({ date: z.string(), action: z.string() })),
+  }).parse(await phrFetch(`/medications/${encodeURIComponent(medicationId)}?patientId=${encodeURIComponent(patientId)}`, { context }));
 
-  const response = await phrFetch(`/medications/${encodeURIComponent(medicationId)}?patientId=${encodeURIComponent(patientId)}`, { context }) as {
-    medication: MedicationSummary;
-    interactions: string[];
-    warnings: string[];
-    history: Array<{ date: string; action: string }>;
-  };
-
-  return {
+  return MedicationDetailSchema.parse({
     ...response.medication,
     interactions: response.interactions,
     warnings: response.warnings,
     history: response.history,
-  };
+  });
 }
 
-// --- Appointments â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Appointments ---
 
-export async function fetchAppointments(principalId: string, context?: SessionContext): Promise<AppointmentSummary[]> {
-  if (USE_MOCK) {
-    // Mock data for development
-    const now = new Date();
-    return [
-      {
-        id: 'apt-1',
-        provider: 'Dr. Sarah Johnson',
-        specialty: 'Cardiology',
-        location: 'Main Clinic - Room 302',
-        startsAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'confirmed',
-        reminderSent: true,
-      },
-      {
-        id: 'apt-2',
-        provider: 'Dr. Michael Chen',
-        specialty: 'Primary Care',
-        location: 'Main Clinic - Room 105',
-        startsAt: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'completed',
-        reminderSent: true,
-      },
-      {
-        id: 'apt-3',
-        provider: 'Dr. Emily Davis',
-        specialty: 'Dermatology',
-        location: 'Main Clinic - Room 210',
-        startsAt: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'cancelled',
-        reminderSent: false,
-      },
-    ];
-  }
-
-  const body = await phrFetch(`/appointments?patientId=${encodeURIComponent(principalId)}`, { context }) as { items: AppointmentSummary[] };
+export async function fetchAppointments(principalId: string, context: SessionContext): Promise<AppointmentSummary[]> {
+  const body = z.object({ items: z.array(AppointmentSummarySchema) })
+    .parse(await phrFetch(`/appointments?patientId=${encodeURIComponent(principalId)}`, { context }));
   return body.items;
 }
 
-export async function fetchProviders(context?: SessionContext): Promise<Array<{ id: string; name: string; specialty: string; availableSlots: string[] }>> {
-  if (USE_MOCK) {
-    return [
-      {
-        id: 'prov-1',
-        name: 'Dr. Sarah Johnson',
-        specialty: 'Cardiology',
-        availableSlots: ['2024-02-01T09:00:00Z', '2024-02-01T10:00:00Z', '2024-02-02T14:00:00Z'],
-      },
-      {
-        id: 'prov-2',
-        name: 'Dr. Michael Chen',
-        specialty: 'Primary Care',
-        availableSlots: ['2024-02-01T11:00:00Z', '2024-02-02T09:00:00Z', '2024-02-03T10:00:00Z'],
-      },
-      {
-        id: 'prov-3',
-        name: 'Dr. Emily Davis',
-        specialty: 'Dermatology',
-        availableSlots: ['2024-02-01T15:00:00Z', '2024-02-02T16:00:00Z'],
-      },
-    ];
-  }
-
-  const body = await phrFetch('/providers', { context }) as { items: Array<{ id: string; name: string; specialty: string; availableSlots: string[] }> };
+export async function fetchProviders(context: SessionContext): Promise<Array<{ id: string; name: string; specialty: string; availableSlots: string[] }>> {
+  const body = z.object({ items: z.array(ProviderAvailabilitySchema) })
+    .parse(await phrFetch('/providers', { context }));
   return body.items;
 }
 
@@ -1516,20 +1169,13 @@ export async function bookAppointment(
   patientId: string,
   providerId: string,
   slot: string,
-  notes?: string,
-  context?: SessionContext & { idempotencyKey?: string },
+  notes: string | undefined,
+  context: SessionContext & { idempotencyKey?: string },
 ): Promise<{ id: string; status: string }> {
-  if (USE_MOCK) {
-    return {
-      id: `apt-${Date.now()}`,
-      status: 'confirmed',
-    };
-  }
-
   const data = await phrFetch('/appointments', {
     method: 'POST',
     body: JSON.stringify({ patientId, providerId, slot, notes }),
-    context,
+    context: withIdempotency(context),
   });
   return AppointmentBookingResultSchema.parse(data);
 }
@@ -1537,16 +1183,12 @@ export async function bookAppointment(
 export async function cancelAppointment(
   appointmentId: string,
   patientId: string,
-  context?: SessionContext & { idempotencyKey?: string },
+  context: SessionContext & { idempotencyKey?: string },
 ): Promise<{ success: boolean }> {
-  if (USE_MOCK) {
-    return { success: true };
-  }
-
   const data = await phrFetch(`/appointments/${encodeURIComponent(appointmentId)}/cancel`, {
     method: 'POST',
     body: JSON.stringify({ patientId }),
-    context,
+    context: withIdempotency(context),
   });
   return AppointmentCancelResultSchema.parse(data);
 }
@@ -1555,28 +1197,21 @@ export async function rescheduleAppointment(
   appointmentId: string,
   patientId: string,
   newSlot: string,
-  context?: SessionContext & { idempotencyKey?: string },
+  context: SessionContext & { idempotencyKey?: string },
 ): Promise<{ id: string; status: string }> {
-  if (USE_MOCK) {
-    return {
-      id: appointmentId,
-      status: 'confirmed',
-    };
-  }
-
   const data = await phrFetch(`/appointments/${encodeURIComponent(appointmentId)}/reschedule`, {
     method: 'POST',
     body: JSON.stringify({ patientId, newSlot }),
-    context,
+    context: withIdempotency(context),
   });
   return AppointmentBookingResultSchema.parse(data);
 }
 
-// --- Records â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Records ---
 
 export async function fetchRecords(
   patientId: string,
-  context?: SessionContext,
+  context: SessionContext,
   filters?: {
     category?: string;
     resourceType?: string;
@@ -1584,30 +1219,6 @@ export async function fetchRecords(
     dateTo?: string;
   },
 ): Promise<PatientRecordSummary[]> {
-  if (USE_MOCK) {
-    const { demoDashboard } = await import('../demoData');
-    let records = dashboardSchema.parse(demoDashboard).records;
-    
-    // Apply client-side filters for mock data
-    if (filters) {
-      if (filters.category) {
-        records = records.filter(r => r.category === filters.category);
-      }
-      if (filters.resourceType) {
-        records = records.filter(r => r.resourceType === filters.resourceType);
-      }
-      if (filters.dateFrom) {
-        records = records.filter(r => new Date(r.updatedAt) >= new Date(filters.dateFrom!));
-      }
-      if (filters.dateTo) {
-        records = records.filter(r => new Date(r.updatedAt) <= new Date(filters.dateTo!));
-      }
-    }
-    
-    return records;
-  }
-
-  // Fetch FHIR resources that represent patient records
   const [obsBundle, medBundle] = await Promise.all([
     fhirGet('Observation', undefined, context),
     fhirGet('MedicationRequest', undefined, context),
@@ -1631,12 +1242,14 @@ export async function fetchRecords(
     if (filters.resourceType) {
       records = records.filter(r => r.resourceType === filters.resourceType);
     }
-    if (filters.dateFrom) {
-      records = records.filter(r => new Date(r.updatedAt) >= new Date(filters.dateFrom));
-    }
-    if (filters.dateTo) {
-      records = records.filter(r => new Date(r.updatedAt) <= new Date(filters.dateTo));
-    }
+	    if (filters.dateFrom) {
+	      const dateFrom = filters.dateFrom;
+	      records = records.filter(r => new Date(r.updatedAt) >= new Date(dateFrom));
+	    }
+	    if (filters.dateTo) {
+	      const dateTo = filters.dateTo;
+	      records = records.filter(r => new Date(r.updatedAt) <= new Date(dateTo));
+	    }
   }
   
   return records;
@@ -1645,34 +1258,11 @@ export async function fetchRecords(
 export async function fetchRecordDetail(
   patientId: string,
   recordId: string,
-  context?: SessionContext,
+  context: SessionContext,
 ): Promise<{ record: PatientRecordSummary; fhirJson: string; accessAudit: { accessedAt: string; accessedBy: string } }> {
-  if (USE_MOCK) {
-    const { demoDashboard } = await import('../demoData');
-    const record = dashboardSchema.parse(demoDashboard).records.find(r => r.id === recordId);
-    if (!record) {
-      throw new PhrApiError('Record not found', 404, 'Record');
-    }
-    return {
-      record,
-      fhirJson: record.fhirJson,
-      accessAudit: {
-        accessedAt: new Date().toISOString(),
-        accessedBy: context?.principalId ?? 'unknown',
-      },
-    };
-  }
-
-  // Call the backend record-detail endpoint
-  const response = await phrFetch(`/patient-records/${encodeURIComponent(patientId)}/records/${encodeURIComponent(recordId)}`, { context }) as {
-    patientId: string;
-    recordId: string;
-    resourceType: string;
-    status: string;
-    accessedAt: string;
-    accessedBy: string;
-    accessReason: string;
-  };
+  const response = PatientRecordAccessSchema.parse(
+    await phrFetch(`/patient-records/${encodeURIComponent(patientId)}/records/${encodeURIComponent(recordId)}`, { context }),
+  );
 
   // Fetch the actual FHIR resource
   const fhirData = await fhirGet(response.resourceType, recordId, context);
@@ -1710,7 +1300,7 @@ export async function confirmOcrDocument(
   const data = await phrFetch(`/documents/${encodeURIComponent(docId)}/ocr/confirm`, {
     method: 'POST',
     body: correctedText ? JSON.stringify({ correctedText }) : undefined,
-    context,
+    context: withIdempotency(context),
   });
   return OcrReviewDocumentSchema.parse(data);
 }
@@ -1721,37 +1311,42 @@ export async function rejectOcrDocument(
 ): Promise<{ documentId: string; rejected: boolean }> {
   const data = await phrFetch(`/documents/${encodeURIComponent(docId)}/ocr/reject`, {
     method: 'POST',
-    context,
+    context: withIdempotency(context),
   });
   return OcrRejectResultSchema.parse(data);
 }
 
-// --- Notifications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Notifications ---
 
-export async function fetchNotifications(principalId: string, context?: SessionContext): Promise<NotificationSummary[]> {
-  const body = await phrFetch(`/notifications?principalId=${encodeURIComponent(principalId)}`, { context }) as { items: NotificationSummary[] };
+export async function fetchNotifications(principalId: string, context: SessionContext): Promise<NotificationSummary[]> {
+  const body = z.object({ items: z.array(NotificationSummarySchema) })
+    .parse(await phrFetch(`/notifications?principalId=${encodeURIComponent(principalId)}`, { context }));
   return body.items;
 }
 
-// --- Provider â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Provider ---
 
 export async function fetchProviderPatients(
   context: { tenantId: string; principalId: string; role: string },
 ): Promise<PatientRosterEntry[]> {
-  const body = await phrFetch('/provider/patients', { context }) as { items: PatientRosterEntry[] };
+  const body = z.object({ items: z.array(PatientRosterEntrySchema) })
+    .parse(await phrFetch('/provider/patients', { context }));
   return body.items;
 }
 
-// --- Caregiver â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Caregiver ---
 
-export async function fetchCaregiverDependents(context?: SessionContext): Promise<DependentEntry[]> {
-  const body = await phrFetch('/caregiver/dependents', { context }) as { items: DependentEntry[] };
+export async function fetchCaregiverDependents(context: SessionContext): Promise<DependentEntry[]> {
+  const body = z.object({ items: z.array(DependentEntrySchema) })
+    .parse(await phrFetch('/caregiver/dependents', { context }));
   return body.items;
 }
 
-// --- FCHV â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- FCHV ---
 
-export async function fetchFchvDashboard(context?: SessionContext): Promise<FchvPatientEntry[]> {
-  const body = await phrFetch('/fchv/dashboard', { context }) as { items: FchvPatientEntry[] };
+export async function fetchFchvDashboard(context: SessionContext): Promise<FchvPatientEntry[]> {
+  const body = z.object({ items: z.array(FchvPatientEntrySchema) })
+    .parse(await phrFetch('/fchv/dashboard', { context }));
   return body.items;
 }
+

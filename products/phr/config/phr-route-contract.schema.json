@@ -125,7 +125,20 @@
             "description": "Test ID for route verification"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "stability": { "const": "stable" }
+              },
+              "required": ["stability"]
+            },
+            "then": {
+              "required": ["apiEndpoint", "policyId", "testId"]
+            }
+          }
+        ]
       }
     }
   },

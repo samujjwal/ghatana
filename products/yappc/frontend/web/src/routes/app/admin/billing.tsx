@@ -15,6 +15,7 @@
 import React, { Suspense } from 'react';
 
 import { useCapabilityGate } from '../../../hooks/useCapabilityGate';
+import { YappcPageShell } from '../../../components/layout/YappcPageShell';
 import { RouteLoadingSpinner } from '../../../components/route/LoadingSpinner';
 import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
 
@@ -29,14 +30,13 @@ function BillingComingSoon({ reason }: { reason: 'backend-not-live' | 'insuffici
       : 'Billing is not yet available in this workspace.';
 
   return (
-    <div
-      className="flex min-h-[60vh] items-center justify-center"
-      data-testid="billing-unavailable"
-    >
-      <div className="max-w-sm space-y-2 text-center">
-        <p className="text-sm text-fg-muted">{message}</p>
+    <YappcPageShell title="Billing" description="Monitor billing, plan limits, and payment readiness." testId="billing-shell">
+      <div className="flex min-h-[40vh] items-center justify-center" data-testid="billing-unavailable">
+        <div className="max-w-sm space-y-2 text-center">
+          <p className="text-sm text-fg-muted">{message}</p>
+        </div>
       </div>
-    </div>
+    </YappcPageShell>
   );
 }
 
@@ -57,7 +57,7 @@ function BillingGate({ children }: { children: React.ReactNode }) {
 /** Placeholder for the real BillingPage — replace when billing backend ships. */
 function BillingPage() {
   return (
-    <div className="p-6" data-testid="billing-page">
+    <div data-testid="billing-page">
       <h1 className="text-xl font-semibold text-text-primary">Billing</h1>
     </div>
   );
@@ -68,9 +68,11 @@ function BillingPage() {
 export function Component() {
   return (
     <BillingGate>
-      <Suspense fallback={<RouteLoadingSpinner />}>
-        <BillingPage />
-      </Suspense>
+      <YappcPageShell title="Billing" description="Monitor billing, plan limits, and payment readiness." testId="billing-shell">
+        <Suspense fallback={<RouteLoadingSpinner />}>
+          <BillingPage />
+        </Suspense>
+      </YappcPageShell>
     </BillingGate>
   );
 }

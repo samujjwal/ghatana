@@ -8,8 +8,12 @@ import com.ghatana.phr.repository.ConsentRepository;
 import com.ghatana.phr.repository.TenantConfigRepository;
 import com.ghatana.phr.repository.UserRepository;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import javax.sql.DataSource;
+import java.util.Base64;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Configuration and setup for PHRSecurity
@@ -51,7 +55,10 @@ public class PHRSecurityConfig {
     }
 
     public PrivacyManager privacyManager() {
-        return new PHRPrivacyManagerImpl(consentRepository, tenantConfigRepository, consentService);
+        Optional<SecretKey> configuredKey = loadConfiguredPiiCryptoKey();
+        return configuredKey
+            .map(secretKey -> new PHRPrivacyManagerImpl(consentRepository, tenantConfigRepository, consentService, secretKey))
+            .orElseGet(() -> new PHRPrivacyManagerImpl(consentRepository, tenantConfigRepository, consentService));
     }
 
     public PolicyEnforcementPoint policyEnforcementPoint() {
@@ -71,5 +78,20 @@ public class PHRSecurityConfig {
 
     public TenantConfigRepository getTenantConfigRepository() {
         return tenantConfigRepository;
+    }
+
+    private static Optional<SecretKey> loadConfiguredPiiCryptoKey() {
+        String configured = System.getProperty("phr.pii.crypto.key.base64");
+        if (configured == null || configured.isBlank()) {
+            configured = System.getenv("PHR_PII_CRYPTO_KEY_BASE64");
+        }
+        if (configured == null || configured.isBlank()) {
+            return Optional.empty();
+        }
+        byte[] keyBytes = Base64.getDecoder().decode(configured);
+        if (keyBytes.length != 32) {
+            throw new IllegalStateException("PHR PII crypto key must decode to 32 bytes for AES-256-GCM");
+        }
+        return Optional.of(new SecretKeySpec(keyBytes, "AES"));
     }
 }

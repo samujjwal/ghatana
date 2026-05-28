@@ -1,119 +1,137 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fetchDashboardData } from '../api/phrApi';
-
-function bundle(resource: Record<string, unknown>) {
-  return {
-    resourceType: 'Bundle',
-    type: 'searchset',
-    entry: [{ resource }],
-  };
-}
+import { createAppointmentRequest, fetchDashboardData, fetchNotifications } from '../api/phrApi';
 
 describe('PHR API integration mapping', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it('maps FHIR resources into the dashboard contract', async () => {
-    const responses = new Map<string, unknown>([
-      [
-        '/fhir/Patient/current',
-        {
-          resourceType: 'Patient',
-          id: 'patient-001',
-          name: [{ given: ['Aarati'], family: 'Shrestha' }],
-          birthDate: '1984-01-01',
-          address: [{ city: 'Kathmandu' }],
-          telecom: [{ value: 'Sushil Shrestha' }],
-          extension: [{ url: 'http://example.test/blood-type', valueString: 'O+' }],
-        },
-      ],
-      [
-        '/fhir/Observation',
-        bundle({
-          resourceType: 'Observation',
-          id: 'obs-001',
-          status: 'final',
-          code: { text: 'HbA1c' },
-          effectiveDateTime: '2026-05-01T00:00:00Z',
-          valueQuantity: { value: 6.9, unit: '%' },
-          interpretation: [{ coding: [{ code: 'N' }] }],
-        }),
-      ],
-      [
-        '/fhir/MedicationRequest',
-        bundle({
-          resourceType: 'MedicationRequest',
-          id: 'med-001',
-          status: 'active',
-          medicationCodeableConcept: { text: 'Metformin 500mg' },
-          dosageInstruction: [{ text: 'BID' }],
-          authoredOn: '2026-04-15',
-        }),
-      ],
-      [
-        '/fhir/Consent',
-        bundle({
-          resourceType: 'Consent',
-          id: 'consent-001',
-          status: 'active',
-          organization: [{ display: 'Nepal HIE' }],
-          purpose: [{ display: 'Care coordination' }],
-          provision: { period: { end: '2026-12-31' } },
-        }),
-      ],
-      [
-        '/fhir/Appointment',
-        bundle({
-          resourceType: 'Appointment',
-          id: 'appt-001',
-          status: 'booked',
-          start: '2026-05-20T09:00:00Z',
-          specialty: [{ text: 'Endocrinology' }],
-          participant: [{ actor: { display: 'Dr. Koirala' } }],
-          comment: 'Kathmandu Clinic',
-        }),
-      ],
-    ]);
-
+  it('maps backend dashboard summary into the dashboard contract', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (input: RequestInfo | URL) => {
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = new URL(String(input));
-        const body = responses.get(url.pathname);
-
-        if (!body) {
+        if (url.pathname !== '/dashboard') {
           return new Response('Not found', { status: 404 });
         }
+        const headers = new Headers(init?.headers);
+        expect(headers.get('X-Tenant-Id')).toBe('tenant-health-1');
+        expect(headers.get('X-Principal-Id')).toBe('patient-001');
+        expect(headers.get('X-Role')).toBe('patient');
 
-        return new Response(JSON.stringify(body), {
+        return new Response(JSON.stringify({
+          tenantId: 'tenant-health-1',
+          principalId: 'patient-001',
+          role: 'patient',
+          correlationId: 'corr-1',
+          profileSummary: {
+            name: 'Aarati Shrestha',
+            email: 'aarati@example.test',
+            providerId: 'provider-1',
+            active: true,
+          },
+          nextAppointment: null,
+          medications: {
+            activeCount: 2,
+            adherenceAlert: false,
+          },
+          recentObservations: {
+            count: 3,
+            hasCritical: false,
+          },
+          activeConditions: {
+            count: 1,
+            hasChronic: true,
+          },
+          documents: {
+            totalCount: 4,
+            pendingOcr: 1,
+          },
+          accessAlerts: {
+            expiringConsents: 0,
+            emergencyAccessPending: false,
+          },
+          generatedAt: '2026-05-28T01:00:00Z',
+        }), {
           status: 200,
-          headers: { 'Content-Type': 'application/fhir+json' },
+          headers: { 'Content-Type': 'application/json' },
         });
       }),
     );
 
-    const dashboard = await fetchDashboardData();
+    const dashboard = await fetchDashboardData({
+      tenantId: 'tenant-health-1',
+      principalId: 'patient-001',
+      role: 'patient',
+    });
 
     expect(dashboard.patient).toMatchObject({
       id: 'patient-001',
       name: 'Aarati Shrestha',
-      bloodType: 'O+',
-      location: 'Kathmandu',
-      emergencyContact: 'Sushil Shrestha',
+      location: 'tenant-health-1',
     });
-    expect(dashboard.labs).toEqual([
-      expect.objectContaining({ id: 'obs-001', name: 'HbA1c', value: '6.9 %', status: 'normal' }),
-    ]);
-    expect(dashboard.medications).toEqual([
-      expect.objectContaining({ id: 'med-001', medication: 'Metformin', dosage: '500mg', schedule: 'BID' }),
-    ]);
-    expect(dashboard.consents).toEqual([
-      expect.objectContaining({ id: 'consent-001', recipient: 'Nepal HIE', purpose: 'Care coordination' }),
-    ]);
-    expect(dashboard.appointments).toEqual([
-      expect.objectContaining({ id: 'appt-001', provider: 'Dr. Koirala', specialty: 'Endocrinology' }),
-    ]);
-    expect(dashboard.records).toHaveLength(2);
+    expect(dashboard.medications).toHaveLength(2);
+    expect(dashboard.records).toEqual([]);
+    expect(dashboard.consents).toEqual([]);
+    expect(dashboard.appointments).toEqual([]);
+  });
+
+  it('adds an idempotency key to mutation requests by default', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        const headers = new Headers(init?.headers);
+        expect(headers.get('X-Idempotency-Key')).toMatch(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+        );
+        return new Response(JSON.stringify({
+          id: 'appt-1',
+          status: 'requested',
+          specialty: 'Cardiology',
+          preferredDate: '2026-06-01',
+          createdAt: '2026-05-28T01:00:00Z',
+        }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }),
+    );
+
+    await createAppointmentRequest(
+      {
+        specialty: 'Cardiology',
+        preferredDate: '2026-06-01',
+      },
+      {
+        tenantId: 'tenant-health-1',
+        principalId: 'patient-001',
+        role: 'patient',
+      },
+    );
+  });
+
+  it('rejects malformed notification payloads at the API boundary', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(JSON.stringify({
+        items: [
+          {
+            id: 'notification-1',
+            type: 'lab_result',
+            title: 'Lab update',
+            createdAt: '2026-05-28T01:00:00Z',
+          },
+        ],
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })),
+    );
+
+    await expect(fetchNotifications('patient-001', {
+      tenantId: 'tenant-health-1',
+      principalId: 'patient-001',
+      role: 'patient',
+    })).rejects.toThrow();
   });
 });

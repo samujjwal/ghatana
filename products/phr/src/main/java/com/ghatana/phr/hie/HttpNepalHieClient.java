@@ -43,15 +43,17 @@ public final class HttpNepalHieClient implements NepalHieClient {
     }
 
     private NepalHieAck sendBlocking(String patientId, String correlationId, String hl7Message) throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder()
+        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
             .uri(URI.create(config.endpoint()))
             .timeout(config.requestTimeout())
             .header("Content-Type", "application/hl7-v2")
-            .header("Authorization", "Bearer " + config.bearerToken())
             .header("X-Ghatana-Patient-Id", patientId)
             .header("X-Ghatana-Correlation-Id", correlationId)
-            .POST(HttpRequest.BodyPublishers.ofString(hl7Message))
-            .build();
+            .POST(HttpRequest.BodyPublishers.ofString(hl7Message));
+        if (config.bearerToken() != null && !config.bearerToken().isBlank()) {
+            requestBuilder.header("Authorization", "Bearer " + config.bearerToken());
+        }
+        HttpRequest request = requestBuilder.build();
 
         HttpResponse<String> response = transport.send(request);
         if (response.statusCode() < 200 || response.statusCode() >= 300) {

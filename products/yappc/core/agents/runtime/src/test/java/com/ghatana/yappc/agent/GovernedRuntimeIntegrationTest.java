@@ -3,9 +3,9 @@ package com.ghatana.yappc.agent;
 import com.ghatana.agent.AgentResult;
 import com.ghatana.agent.AgentResultStatus;
 import com.ghatana.agent.runtime.safety.GovernedAgentDispatcher;
+import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import com.ghatana.yappc.core.ai.AiIntegrationAdapter;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -73,6 +73,8 @@ class GovernedRuntimeIntegrationTest extends EventloopTestBase {
         );
 
         // Default stubs
+        lenient().when(releaseRepository.findGoverningRelease(anyString(), anyString()))
+            .thenReturn(Promise.of(Optional.empty()));
         lenient().when(traceLedger.append(any())).thenReturn(Promise.of(null));
         lenient().when(delegate.dispatch(anyString(), any(), any()))
             .thenReturn(Promise.of(AgentResult.builder()
@@ -120,7 +122,7 @@ class GovernedRuntimeIntegrationTest extends EventloopTestBase {
                     .turnId("turn-1")
                     .agentId("yappc-code-specialist")
                     .tenantId("tenant-yappc")
-                    .memoryStore(null)
+                    .memoryStore(MemoryStore.noOp())
                     .build();
 
             AgentResult<?> result = runPromise(() -> 
@@ -143,7 +145,7 @@ class GovernedRuntimeIntegrationTest extends EventloopTestBase {
                     .turnId("turn-1")
                     .agentId("yappc-architecture-specialist")
                     .tenantId("tenant-yappc")
-                    .memoryStore(null)
+                    .memoryStore(MemoryStore.noOp())
                     .build();
 
             runPromise(() -> dispatcher.dispatch("yappc-architecture-specialist", "analyze request", ctx));
@@ -161,7 +163,7 @@ class GovernedRuntimeIntegrationTest extends EventloopTestBase {
                     .turnId("turn-over")
                     .agentId("yappc-testing-specialist")
                     .tenantId("tenant-yappc")
-                    .memoryStore(null)
+                    .memoryStore(MemoryStore.noOp())
                     .addConfig("__accumulatedCostUsd", 999.0)
                     .addConfig("__costCapUsd", 1.0)
                     .build();
@@ -202,7 +204,7 @@ class GovernedRuntimeIntegrationTest extends EventloopTestBase {
                     .turnId("turn-1")
                     .agentId("test-agent")
                     .tenantId("tenant-yappc")
-                    .memoryStore(null)
+                    .memoryStore(MemoryStore.noOp())
                     .build();
 
             assertThat(ctx).isNotNull();

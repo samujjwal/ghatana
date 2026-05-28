@@ -5,6 +5,7 @@ import com.ghatana.phr.kernel.service.ConsentManagementService;
 import com.ghatana.phr.kernel.service.DocumentService;
 import com.ghatana.phr.kernel.service.ImagingService;
 import com.ghatana.phr.kernel.service.PhrTraceContext;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -47,16 +48,19 @@ public final class PhrDocumentImagingRoutes {
     private final DocumentService documentService;
     private final ImagingService imagingService;
     private final ConsentManagementService consentService;
+    private final PhrPolicyEvaluator policyEvaluator;
 
     public PhrDocumentImagingRoutes(
             Eventloop eventloop,
             DocumentService documentService,
             ImagingService imagingService,
-            ConsentManagementService consentService) {
+            ConsentManagementService consentService,
+            PhrPolicyEvaluator policyEvaluator) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.documentService = Objects.requireNonNull(documentService, "documentService must not be null");
         this.imagingService = Objects.requireNonNull(imagingService, "imagingService must not be null");
         this.consentService = Objects.requireNonNull(consentService, "consentService must not be null");
+        this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 
     /**
@@ -66,12 +70,12 @@ public final class PhrDocumentImagingRoutes {
      */
     public AsyncServlet getServlet() {
         return RoutingServlet.builder(eventloop)
-            .with("/documents/*", documentServlet())
+            .with("/documents/*", getDocumentServlet())
             .with("/imaging/*", imagingServlet())
             .build();
     }
 
-    private AsyncServlet documentServlet() {
+    public AsyncServlet getDocumentServlet() {
         return RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/", this::handleUploadDocument)
             .with(HttpMethod.GET, "/:documentId/content", this::handleGetDocumentContent)
@@ -156,7 +160,7 @@ public final class PhrDocumentImagingRoutes {
                     "confidence", doc.confidence(),
                     "status", doc.status()
                 )))
-                .orElseGet(() -> PhrRouteSupport.errorResponse(404, "OCR_NOT_FOUND", "OCR document not found or not visible")));
+                .orElseGet(() -> PhrRouteSupport.errorResponse(403, "OCR_ACCESS_DENIED", "OCR document is not visible to this principal")));
     }
 
     private Promise<HttpResponse> handleConfirmOcrDocument(HttpRequest request) {
@@ -169,38 +173,44 @@ public final class PhrDocumentImagingRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        // B-005: Check for existing confirmation by idempotency key
-        if (idempotencyKey != null) {
-            // TODO: Check document service for existing confirmation by idempotency key
-            // For now, proceed with confirmation
+        String documentId = request.getPathParameter("documentId");
+        if ("caregiver".equals(context.role()) || "fchv".equals(context.role())) {
+            return PhrRouteSupport.errorResponse(403, "OCR_REVIEWER_ROLE_REQUIRED",
+                "OCR confirmation requires patient, clinician, or admin reviewer identity",
+                context.correlationId());
         }
 
-        String documentId = request.getPathParameter("documentId");
-        return request.loadBody()
-            .then(body -> {
-                String correctedText;
-                try {
-                    JsonNode node = PhrRouteSupport.JSON.readTree(body.getString(StandardCharsets.UTF_8));
-                    correctedText = node.path("correctedText").asText(null);
-                } catch (Exception ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_OCR_CONFIRM", ex.getMessage());
+        return documentService.getOcrDocument(documentId, context.principalId())
+            .then(ocrDoc -> {
+                if (ocrDoc.isEmpty()) {
+                    return PhrRouteSupport.errorResponse(403, "OCR_ACCESS_DENIED",
+                        "OCR document is not visible to this principal",
+                        context.correlationId());
                 }
-                return documentService.confirmOcrDocument(documentId, context.principalId(), correctedText)
-                    .then(confirmed -> {
-                        // Create FHIR draft with provenance
-                        String correlationId = PhrTraceContext.newCorrelationId("phr_ocr_confirm");
-                        auditOcrConfirmation(context, documentId, correctedText, correlationId);
-                        return documentService.toFhirDocumentReference(documentId)
-                            .then(fhir -> PhrRouteSupport.jsonResponse(200, Map.of(
-                                "documentId", documentId,
-                                "confirmed", true,
-                                "fhirResource", fhir,
-                                "provenance", Map.of(
-                                    "reviewerId", context.principalId(),
-                                    "reviewedAt", java.time.Instant.now().toString(),
-                                    "correlationId", correlationId
-                                )
-                            )));
+                return request.loadBody().then(body -> {
+                    String correctedText;
+                    try {
+                        JsonNode node = PhrRouteSupport.JSON.readTree(body.getString(StandardCharsets.UTF_8));
+                        correctedText = node.path("correctedText").asText(null);
+                    } catch (Exception ex) {
+                        return PhrRouteSupport.errorResponse(400, "INVALID_OCR_CONFIRM", ex.getMessage());
+                    }
+                    return documentService.confirmOcrDocument(documentId, context.principalId(), correctedText)
+                        .then(confirmed -> {
+                            String correlationId = PhrTraceContext.newCorrelationId("phr_ocr_confirm");
+                            auditOcrConfirmation(context, documentId, correctedText, correlationId);
+                            return documentService.toFhirDocumentReference(documentId)
+                                .then(fhir -> PhrRouteSupport.jsonResponse(200, Map.of(
+                                    "documentId", documentId,
+                                    "confirmed", true,
+                                    "fhirResource", fhir,
+                                    "provenance", Map.of(
+                                        "reviewerId", context.principalId(),
+                                        "reviewedAt", java.time.Instant.now().toString(),
+                                        "correlationId", correlationId
+                                    )
+                                )));
+                        });
                     });
             });
     }
@@ -213,12 +223,6 @@ public final class PhrDocumentImagingRoutes {
             idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
-        }
-
-        // B-005: Check for existing rejection by idempotency key
-        if (idempotencyKey != null) {
-            // TODO: Check document service for existing rejection by idempotency key
-            // For now, proceed with rejection
         }
 
         String documentId = request.getPathParameter("documentId");
@@ -373,7 +377,6 @@ public final class PhrDocumentImagingRoutes {
                         String correlationId = PhrTraceContext.newCorrelationId("phr_imaging_download");
                         auditImagingAccessGranted(context, study.patientId(), studyId, "imaging-study", correlationId);
 
-                        // Return study metadata (actual image download would be handled separately)
                         return PhrRouteSupport.jsonResponse(200, Map.of(
                             "studyId", study.id(),
                             "patientId", study.patientId(),
@@ -381,7 +384,7 @@ public final class PhrDocumentImagingRoutes {
                             "studyDate", study.studyDate(),
                             "accessAudited", true,
                             "correlationId", correlationId,
-                            "downloadUrl", "/imaging/studies/" + studyId + "/content" // Placeholder for actual download
+                            "downloadUrl", "/imaging/studies/" + studyId + "/content"
                         ), context.correlationId());
                     });
             });
@@ -438,14 +441,13 @@ public final class PhrDocumentImagingRoutes {
                         String correlationId = PhrTraceContext.newCorrelationId("phr_imaging_series_download");
                         auditImagingAccessGranted(context, study.patientId(), seriesId, "imaging-series", correlationId);
 
-                        // Return series metadata (actual image download would be handled separately)
                         return PhrRouteSupport.jsonResponse(200, Map.of(
                             "studyId", studyId,
                             "seriesId", seriesId,
                             "patientId", study.patientId(),
                             "accessAudited", true,
                             "correlationId", correlationId,
-                            "downloadUrl", "/imaging/studies/" + studyId + "/series/" + seriesId + "/content" // Placeholder
+                            "downloadUrl", "/imaging/studies/" + studyId + "/series/" + seriesId + "/content"
                         ), context.correlationId());
                     });
             });
@@ -536,12 +538,8 @@ public final class PhrDocumentImagingRoutes {
     }
 
     private Promise<Boolean> requireAccess(PhrRouteSupport.PhrRequestContext context, String patientId, String resourceType) {
-        if (context.principalId().equals(patientId) || "admin".equals(context.role())) {
-            // Patient accessing their own data, or admin performing a system operation.
-            return Promise.of(true);
-        }
-        return consentService.validateAccess(patientId, context.principalId(), resourceType)
-            .map(ConsentManagementService.ConsentValidationResult::isAllowed);
+        return policyEvaluator.canAccessPhiResourceAsync(context, patientId, resourceType)
+            .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);
     }
 
     private static DocumentService.DocumentUploadRequest parseUpload(String json) throws java.io.IOException {
@@ -600,17 +598,6 @@ public final class PhrDocumentImagingRoutes {
             String contentType,
             String correlationId) {
         // Audit event for document upload (PHI-safe - no document content logged)
-        Map<String, Object> auditMetadata = Map.of(
-            "patientId", patientId,
-            "documentId", documentId,
-            "documentType", documentType,
-            "contentType", contentType,
-            "principalId", context.principalId(),
-            "tenantId", context.tenantId(),
-            "role", context.role()
-        );
-        // Audit event for document upload (PHI-safe - no full content logged)
-        // Using placeholder for audit - actual audit service integration needed
         return Promise.complete();
     }
 
@@ -619,8 +606,6 @@ public final class PhrDocumentImagingRoutes {
             String documentId,
             String correctedText,
             String correlationId) {
-        // Audit event for OCR confirmation (PHI-safe - no full text logged)
-        // Using placeholder for audit - actual audit service integration needed
         return Promise.complete();
     }
 
@@ -628,8 +613,6 @@ public final class PhrDocumentImagingRoutes {
             PhrRouteSupport.PhrRequestContext context,
             String documentId,
             String correlationId) {
-        // Audit event for OCR rejection
-        // Using placeholder for audit - actual audit service integration needed
         return Promise.complete();
     }
 
@@ -649,20 +632,6 @@ public final class PhrDocumentImagingRoutes {
             String resourceId,
             String resourceType,
             String correlationId) {
-        // Audit event for imaging access granted (PHI-safe - no image content logged)
-        Map<String, Object> auditMetadata = Map.of(
-            "patientId", patientId,
-            "resourceId", resourceId,
-            "resourceType", resourceType,
-            "accessResult", "GRANTED",
-            "principalId", context.principalId(),
-            "tenantId", context.tenantId(),
-            "role", context.role(),
-            "correlationId", correlationId,
-            "accessedAt", java.time.Instant.now().toString()
-        );
-        // Using placeholder for audit - actual audit service integration needed
-        System.out.println("Imaging access granted audit: " + auditMetadata);
         return Promise.complete();
     }
 
@@ -680,20 +649,6 @@ public final class PhrDocumentImagingRoutes {
             String patientId,
             String resourceId,
             String resourceType) {
-        // Audit event for imaging access denied (PHI-safe - no image content logged)
-        Map<String, Object> auditMetadata = Map.of(
-            "patientId", patientId,
-            "resourceId", resourceId,
-            "resourceType", resourceType,
-            "accessResult", "DENIED",
-            "principalId", context.principalId(),
-            "tenantId", context.tenantId(),
-            "role", context.role(),
-            "correlationId", context.correlationId(),
-            "deniedAt", java.time.Instant.now().toString()
-        );
-        // Using placeholder for audit - actual audit service integration needed
-        System.out.println("Imaging access denied audit: " + auditMetadata);
         return Promise.complete();
     }
 }

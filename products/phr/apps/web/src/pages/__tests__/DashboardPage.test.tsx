@@ -14,6 +14,18 @@ vi.mock('../../i18n/phrI18n', () => ({
   t: (key: string) => key,
 }));
 
+vi.mock('../../auth/PhrSessionContext', () => ({
+  usePhrSession: () => ({
+    session: {
+      tenantId: 'tenant-test',
+      principalId: 'patient-test',
+      role: 'patient',
+      name: 'Patient Test',
+      expiresAt: '2026-05-28T02:00:00Z',
+    },
+  }),
+}));
+
 import { fetchDashboardData } from '../../api/phrApi';
 
 const mockFetch = fetchDashboardData as ReturnType<typeof vi.fn>;
@@ -73,6 +85,10 @@ describe('DashboardPage', () => {
   it('calls fetchDashboardData on mount', async () => {
     mockFetch.mockResolvedValue(sampleData);
     render(<DashboardPage />);
-    await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mockFetch).toHaveBeenCalledWith({
+      tenantId: 'tenant-test',
+      principalId: 'patient-test',
+      role: 'patient',
+    }));
   });
 });

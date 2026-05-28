@@ -11,6 +11,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { ObservabilityDashboard, type HealthMetric, type ReleaseGateEvidence } from '../../../components/admin/ObservabilityDashboard';
 import { RouteLoadingSpinner } from '../../../components/route/LoadingSpinner';
 import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
+import { YappcPageShell } from '../../../components/layout/YappcPageShell';
 import { loadReleaseGateEvidence } from '../../../services/admin/releaseGateEvidenceApi';
 import { useTranslation } from '@ghatana/i18n';
 import { AdminRouteGate } from './AdminRouteGate';
@@ -107,7 +108,11 @@ function ObservabilityRouteContent() {
   ], [loadError, refreshedAt, releaseGates.length, t, unhealthyGateCount]);
 
   return (
-    <main className="min-h-screen bg-surface p-6">
+    <YappcPageShell
+      title="Observability"
+      description="Monitor release-gate evidence, health signals, and degraded dependency status."
+      testId="admin-observability-shell"
+    >
       <ObservabilityDashboard
         metrics={metrics}
         releaseGates={[...releaseGates]}
@@ -117,7 +122,7 @@ function ObservabilityRouteContent() {
           void refreshEvidence();
         }}
       />
-    </main>
+    </YappcPageShell>
   );
 }
 

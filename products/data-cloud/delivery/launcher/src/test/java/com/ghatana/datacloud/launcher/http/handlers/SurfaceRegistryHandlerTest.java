@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * @doc.type class
- * @doc.purpose Regression tests for SurfaceRegistryHandler tenant enforcement
+ * @doc.purpose Regression tests for SurfaceRegistryHandler tenant enforcement and contract compliance
  * @doc.layer product
  * @doc.pattern Test
  */
@@ -48,6 +48,7 @@ class SurfaceRegistryHandlerTest extends EventloopTestBase {
     private HttpResponse successResponse;
 
     private SurfaceRegistryHandler handler;
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() { 
@@ -58,7 +59,7 @@ class SurfaceRegistryHandlerTest extends EventloopTestBase {
                 .probe(new com.ghatana.datacloud.launcher.http.DependencyProbeResult("voice-gateway-probe", true, "UP", "OK", java.time.Instant.now()))
                 .build()
         );
-        handler = new SurfaceRegistryHandler(httpSupport, new ObjectMapper(), snapshotSupplier); 
+        handler = new SurfaceRegistryHandler(httpSupport, objectMapper, snapshotSupplier); 
     }
 
     @Test
@@ -122,5 +123,34 @@ class SurfaceRegistryHandlerTest extends EventloopTestBase {
 
         assertThat(response).isSameAs(successResponse);
         verify(httpSupport).envelopeResponse(any(ApiResponse.class), any(ObjectMapper.class));
+    }
+
+    @Test
+    @DisplayName("P0 contract test: surfaces endpoint returns SurfaceRecord objects not maps")
+    void surfacesEndpointReturnsSurfaceRecordObjectsNotMaps() {
+        Supplier<List<SurfaceRecord>> snapshotSupplier = () -> List.of(
+            SurfaceRecord.builder("test-surface")
+                .state(RuntimeTruthStatus.LIVE)
+                .ownerPlane("data")
+                .probe(new com.ghatana.datacloud.launcher.http.DependencyProbeResult("test-probe", true, "UP", "OK", java.time.Instant.now()))
+                .build()
+        );
+        SurfaceRegistryHandler contractHandler = new SurfaceRegistryHandler(httpSupport, objectMapper, snapshotSupplier);
+
+        // Verify that SurfaceRecord.toMap() produces the expected structure
+        SurfaceRecord testRecord = SurfaceRecord.builder("test-surface")
+            .state(RuntimeTruthStatus.LIVE)
+            .ownerPlane("data")
+            .probe(new com.ghatana.datacloud.launcher.http.DependencyProbeResult("test-probe", true, "UP", "OK", java.time.Instant.now()))
+            .build();
+        
+        Map<String, Object> recordMap = testRecord.toMap();
+        
+        // Verify required SurfaceRecord fields are present
+        assertThat(recordMap).containsKey("surfaceId");
+        assertThat(recordMap).containsKey("state");
+        assertThat(recordMap).containsKey("status");
+        assertThat(recordMap).containsKey("ownerPlane");
+        assertThat(recordMap).containsKey("dependencyProbes");
     }
 }

@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { render, waitFor } from '@testing-library/react-native';
+import { act, render, waitFor } from '@testing-library/react-native';
 import NetInfo from '@react-native-community/netinfo';
 import App from '../App';
 
@@ -58,6 +58,19 @@ jest.mock('../services/pushNotifications', () => ({
 
 describe('App offline behavior', () => {
   let mockNetInfoCallback: ((state: { isConnected: boolean | null }) => void) | null = null;
+  const offlineBannerText = 'You are offline. Some features may be unavailable.';
+
+  function renderedText(rendered: { toJSON: () => unknown }): string {
+    return JSON.stringify(rendered.toJSON());
+  }
+
+  function emitNetworkState(state: { isConnected: boolean | null }): void {
+    if (mockNetInfoCallback) {
+      act(() => {
+        mockNetInfoCallback?.(state);
+      });
+    }
+  }
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -75,63 +88,54 @@ describe('App offline behavior', () => {
 
   it('displays offline banner when network is disconnected', async () => {
     // Simulate initial connected state
-    if (mockNetInfoCallback) {
-      mockNetInfoCallback({ isConnected: true });
-    }
+    emitNetworkState({ isConnected: true });
 
-    const { queryByText } = render(<App />);
+    const rendered = render(<App />);
 
     // Wait for session restore to complete
     await waitFor(() => {
-      expect(queryByText('You are offline. Some features may be unavailable.')).toBeNull();
+      expect(renderedText(rendered)).not.toContain(offlineBannerText);
     });
 
     // Simulate network disconnection
-    if (mockNetInfoCallback) {
-      mockNetInfoCallback({ isConnected: false });
-    }
+    emitNetworkState({ isConnected: false });
 
     // Offline banner should appear
     await waitFor(() => {
-      expect(queryByText('You are offline. Some features may be unavailable.')).toBeTruthy();
+      expect(renderedText(rendered)).toContain(offlineBannerText);
     });
   });
 
   it('hides offline banner when network is reconnected', async () => {
     // Start with disconnected state
-    if (mockNetInfoCallback) {
-      mockNetInfoCallback({ isConnected: false });
-    }
+    emitNetworkState({ isConnected: false });
 
-    const { queryByText } = render(<App />);
+    const rendered = render(<App />);
+    emitNetworkState({ isConnected: false });
 
     // Wait for session restore to complete
     await waitFor(() => {
-      expect(queryByText('You are offline. Some features may be unavailable.')).toBeTruthy();
+      expect(renderedText(rendered)).toContain(offlineBannerText);
     });
 
     // Simulate network reconnection
-    if (mockNetInfoCallback) {
-      mockNetInfoCallback({ isConnected: true });
-    }
+    emitNetworkState({ isConnected: true });
 
     // Offline banner should disappear
     await waitFor(() => {
-      expect(queryByText('You are offline. Some features may be unavailable.')).toBeNull();
+      expect(renderedText(rendered)).not.toContain(offlineBannerText);
     });
   });
 
   it('defaults to connected state when NetInfo returns null', async () => {
     // Simulate null/unknown state
-    if (mockNetInfoCallback) {
-      mockNetInfoCallback({ isConnected: null });
-    }
+    emitNetworkState({ isConnected: null });
 
-    const { queryByText } = render(<App />);
+    const rendered = render(<App />);
 
     // Wait for session restore to complete
     await waitFor(() => {
-      expect(queryByText('You are offline. Some features may be unavailable.')).toBeNull();
+      expect(renderedText(rendered)).not.toContain(offlineBannerText);
     });
   });
 
@@ -145,7 +149,12 @@ describe('App offline behavior', () => {
     const { unmount } = render(<App />);
 
     const mockRemove = jest.fn();
-    (NetInfo.addEventListener as jest.Mock).mockReturnValue({ remove: mockRemove });
+    const subscription = (NetInfo.addEventListener as jest.Mock).mock.results[0]?.value as
+      | { remove: () => void }
+      | undefined;
+    if (subscription) {
+      subscription.remove = mockRemove;
+    }
 
     unmount();
 
@@ -153,19 +162,17 @@ describe('App offline behavior', () => {
   });
 
   it('handles rapid network state changes gracefully', async () => {
-    const { queryByText } = render(<App />);
+    const rendered = render(<App />);
 
     // Rapid state changes
-    if (mockNetInfoCallback) {
-      mockNetInfoCallback({ isConnected: true });
-      mockNetInfoCallback({ isConnected: false });
-      mockNetInfoCallback({ isConnected: true });
-      mockNetInfoCallback({ isConnected: false });
-    }
+    emitNetworkState({ isConnected: true });
+    emitNetworkState({ isConnected: false });
+    emitNetworkState({ isConnected: true });
+    emitNetworkState({ isConnected: false });
 
     // Final state should be offline
     await waitFor(() => {
-      expect(queryByText('You are offline. Some features may be unavailable.')).toBeTruthy();
+      expect(renderedText(rendered)).toContain(offlineBannerText);
     });
   });
 });

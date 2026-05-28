@@ -82,19 +82,57 @@ export function mapPacketSuggestions(
   actionText: (value: string | undefined) => string | undefined,
   onAccept: (action: PhaseAction) => void,
 ): SuggestedStep[] {
-  return packet.availableActions.map((action) => ({
-    id: action.actionId,
-    title: actionText(action.label) ?? action.actionId,
-    type: action.enabled ? 'automation' : 'review',
-    description: actionText(action.description) ?? '',
-    confidence: 0.5,
-    evidence: [],
-    riskLevel: action.enabled ? 'low' : 'medium',
-    applyMode: action.enabled ? 'one-click' : 'manual',
-    approvalRequired: !action.enabled,
-    rollbackSupported: false,
-    onAccept: () => onAccept(action),
-  }));
+  const parseSuggestionMetadata = (action: PhaseAction): Omit<SuggestedStep, 'id' | 'title' | 'description' | 'type' | 'onAccept'> | null => {
+    const confidence = Number.isFinite(action.parameters?.confidence)
+      ? Number(action.parameters?.confidence)
+      : null;
+    const evidence = Array.isArray(action.parameters?.evidence)
+      ? action.parameters.evidence.filter((item): item is string => typeof item === 'string')
+      : null;
+    const riskLevel = action.parameters?.riskLevel;
+    const applyMode = action.parameters?.applyMode;
+    const approvalRequired = action.parameters?.approvalRequired;
+    const rollbackSupported = action.parameters?.rollbackSupported;
+
+    if (
+      confidence == null
+      || evidence == null
+      || (riskLevel !== 'low' && riskLevel !== 'medium' && riskLevel !== 'high')
+      || (applyMode !== 'one-click' && applyMode !== 'manual' && applyMode !== 'review-required')
+      || typeof approvalRequired !== 'boolean'
+      || typeof rollbackSupported !== 'boolean'
+    ) {
+      return null;
+    }
+
+    return {
+      confidence,
+      evidence,
+      riskLevel,
+      applyMode,
+      approvalRequired,
+      rollbackSupported,
+      estimatedTime: undefined,
+    };
+  };
+
+  return packet.availableActions
+    .map((action) => {
+      const metadata = parseSuggestionMetadata(action);
+      if (!metadata) {
+        return null;
+      }
+
+      return {
+        id: action.actionId,
+        title: actionText(action.label) ?? action.actionId,
+        type: metadata.approvalRequired ? 'review' : (metadata.applyMode === 'manual' ? 'manual' : 'automation'),
+        description: actionText(action.description) ?? '',
+        ...metadata,
+        onAccept: () => onAccept(action),
+      } satisfies SuggestedStep;
+    })
+    .filter((step): step is SuggestedStep => step != null);
 }
 
 export function mapPacketActivity(packet: PhaseCockpitPacket): PhaseActivityEvent[] {

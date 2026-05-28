@@ -1,12 +1,16 @@
 package com.ghatana.phr.kernel.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.phr.kernel.evidence.PhrEvidenceOutbox;
 import com.ghatana.phr.kernel.event.PhrConsentEvent;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -27,6 +31,7 @@ public final class ConsentExpiryScanner extends PhrServiceBase {
 
     private static final String CONSENT_DATASET = "phr.consent.grants";
     private static final String EVIDENCE_DATASET = "phr.evidence.outbox";
+    private static final ObjectMapper JSON = new ObjectMapper().findAndRegisterModules();
 
     private final PhrEvidenceOutbox evidenceOutbox;
 
@@ -101,6 +106,7 @@ public final class ConsentExpiryScanner extends PhrServiceBase {
         // Publish expiry event to evidence outbox
         PhrConsentEvent expiryEvent = PhrConsentEvent.builder()
             .action("expired")
+            .consentType("delegated-access")
             .patientId(grant.getPatientId())
             .recipientId(grant.getRecipientId())
             .resourceType(grant.getScope().getResourceTypes().isEmpty() ? "*" 
@@ -122,7 +128,7 @@ public final class ConsentExpiryScanner extends PhrServiceBase {
         evidenceOutbox.enqueue(
             EVIDENCE_DATASET,
             expiryEvent.eventId(),
-            eventJson.getBytes(),
+            eventJson.getBytes(StandardCharsets.UTF_8),
             Map.of(
                 "eventType", "consent-expiry",
                 "patientId", grant.getPatientId(),
@@ -155,17 +161,26 @@ public final class ConsentExpiryScanner extends PhrServiceBase {
         });
     }
 
-    private String serializeEvent(PhrConsentEvent event) {
-        // Simple JSON serialization - in production would use proper JSON mapper
-        return String.format(
-            "{\"eventId\":\"%s\",\"action\":\"%s\",\"patientId\":\"%s\",\"recipientId\":\"%s\",\"expiresAt\":\"%s\",\"timestamp\":\"%s\"}",
-            event.eventId(),
-            event.action(),
-            event.patientId(),
-            event.recipientId(),
-            event.expiresAt() != null ? event.expiresAt().toString() : "",
-            event.timestamp().toString()
-        );
+    String serializeEvent(PhrConsentEvent event) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("eventId", event.eventId());
+        payload.put("productId", event.productId());
+        payload.put("consentType", event.consentType());
+        payload.put("action", event.action());
+        payload.put("patientId", event.patientId());
+        payload.put("recipientId", event.recipientId());
+        payload.put("resourceType", event.resourceType());
+        payload.put("purpose", event.purpose());
+        payload.put("expiresAt", event.expiresAt());
+        payload.put("tenantId", event.tenantId());
+        payload.put("metadata", event.metadata());
+        payload.put("timestamp", event.timestamp());
+        payload.put("correlationId", event.correlationId());
+        try {
+            return JSON.writeValueAsString(payload);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Unable to serialize consent expiry event " + event.eventId(), exception);
+        }
     }
 
     /**

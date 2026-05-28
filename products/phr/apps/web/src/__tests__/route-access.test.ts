@@ -2,20 +2,19 @@
  * Route access tests — verifies the PHR route contract access policy for all personas.
  *
  * Each route's `minimumRole` is enforced by `isRouteAllowedForRole` using the
- * PHR_ROLE_ORDER hierarchy: patient(0) < caregiver(1) < clinician(2) < admin(3).
+ * PHR_ROLE_ORDER hierarchy: patient < caregiver < fchv < clinician < admin.
  *
  * @see phrRouteContracts.ts
  */
 import { describe, expect, it } from 'vitest';
-import { isRouteAllowedForRole, phrRouteContracts } from '../phrRouteContracts';
-import type { PhrRole } from '../auth/PhrAccessContext';
+import { PHR_ROLE_ORDER, isRouteAllowedForRole, phrRouteContracts, type PhrRole } from '../phrRouteContracts';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 /** All PHR roles in ascending privilege order. */
-const ALL_ROLES: readonly PhrRole[] = ['patient', 'caregiver', 'clinician', 'admin'];
+const ALL_ROLES: readonly PhrRole[] = ['patient', 'caregiver', 'fchv', 'clinician', 'admin'];
 
 /**
  * Return routes whose minimumRole equals the given value.
@@ -23,8 +22,16 @@ const ALL_ROLES: readonly PhrRole[] = ['patient', 'caregiver', 'clinician', 'adm
  */
 function routesWithMinRole(role: PhrRole): typeof phrRouteContracts {
   return phrRouteContracts.filter(
-    (r) => (r as { minimumRole: string }).minimumRole === role,
+    (r) => (r as { minimumRole: string }).minimumRole === role && !isSuppressedRoute(r),
   ) as unknown as typeof phrRouteContracts;
+}
+
+function activeRoutes(): typeof phrRouteContracts {
+  return phrRouteContracts.filter((route) => !isSuppressedRoute(route)) as typeof phrRouteContracts;
+}
+
+function isSuppressedRoute(route: { stability?: string; hidden?: boolean; blocked?: boolean }): boolean {
+  return route.hidden === true || route.blocked === true || route.stability === 'hidden' || route.stability === 'blocked';
 }
 
 // ---------------------------------------------------------------------------
@@ -32,9 +39,15 @@ function routesWithMinRole(role: PhrRole): typeof phrRouteContracts {
 // ---------------------------------------------------------------------------
 
 describe('isRouteAllowedForRole — role hierarchy invariant', () => {
-  it('every route is accessible to admin', () => {
-    for (const route of phrRouteContracts) {
-      expect(isRouteAllowedForRole(route as { minimumRole: PhrRole }, 'admin')).toBe(true);
+  it('every active route is accessible to admin', () => {
+    for (const route of activeRoutes()) {
+      expect(isRouteAllowedForRole(route, 'admin')).toBe(true);
+    }
+  });
+
+  it('hidden and blocked routes are denied by default even for admin', () => {
+    for (const route of phrRouteContracts.filter(isSuppressedRoute)) {
+      expect(isRouteAllowedForRole(route, 'admin')).toBe(false);
     }
   });
 
@@ -52,18 +65,20 @@ describe('isRouteAllowedForRole — role hierarchy invariant', () => {
     }
   });
 
-  it('caregiver-minimum routes ARE accessible to caregiver, clinician, admin', () => {
+  it('caregiver-minimum routes ARE accessible to caregiver, FCHV, clinician, admin', () => {
     for (const route of routesWithMinRole('caregiver')) {
       expect(isRouteAllowedForRole(route as { minimumRole: PhrRole }, 'caregiver')).toBe(true);
+      expect(isRouteAllowedForRole(route as { minimumRole: PhrRole }, 'fchv')).toBe(true);
       expect(isRouteAllowedForRole(route as { minimumRole: PhrRole }, 'clinician')).toBe(true);
       expect(isRouteAllowedForRole(route as { minimumRole: PhrRole }, 'admin')).toBe(true);
     }
   });
 
-  it('clinician-minimum routes are NOT accessible to patient or caregiver', () => {
+  it('clinician-minimum routes are NOT accessible to patient, caregiver, or FCHV', () => {
     for (const route of routesWithMinRole('clinician')) {
       expect(isRouteAllowedForRole(route as { minimumRole: PhrRole }, 'patient')).toBe(false);
       expect(isRouteAllowedForRole(route as { minimumRole: PhrRole }, 'caregiver')).toBe(false);
+      expect(isRouteAllowedForRole(route as { minimumRole: PhrRole }, 'fchv')).toBe(false);
     }
   });
 
@@ -74,12 +89,20 @@ describe('isRouteAllowedForRole — role hierarchy invariant', () => {
     }
   });
 
-  it('admin-minimum routes are NOT accessible to patient, caregiver, or clinician', () => {
+  it('admin-minimum routes are NOT accessible to patient, caregiver, FCHV, or clinician', () => {
     for (const route of routesWithMinRole('admin')) {
       expect(isRouteAllowedForRole(route as { minimumRole: PhrRole }, 'patient')).toBe(false);
       expect(isRouteAllowedForRole(route as { minimumRole: PhrRole }, 'caregiver')).toBe(false);
+      expect(isRouteAllowedForRole(route as { minimumRole: PhrRole }, 'fchv')).toBe(false);
       expect(isRouteAllowedForRole(route as { minimumRole: PhrRole }, 'clinician')).toBe(false);
     }
+  });
+
+  it('keeps FCHV below clinician-only routes', () => {
+    const fchvOrder = PHR_ROLE_ORDER.fchv;
+    const clinicianOrder = PHR_ROLE_ORDER.clinician;
+
+    expect(fchvOrder).toBeLessThan(clinicianOrder);
   });
 });
 
@@ -110,6 +133,7 @@ describe('isRouteAllowedForRole — named route spot-checks', () => {
   describe('/emergency', () => {
     it('is NOT accessible to patient', () => expect(isRouteAllowedForRole(route('/emergency'), 'patient')).toBe(false));
     it('is NOT accessible to caregiver', () => expect(isRouteAllowedForRole(route('/emergency'), 'caregiver')).toBe(false));
+    it('is NOT accessible to FCHV', () => expect(isRouteAllowedForRole(route('/emergency'), 'fchv')).toBe(false));
     it('is accessible to clinician', () => expect(isRouteAllowedForRole(route('/emergency'), 'clinician')).toBe(true));
     it('is accessible to admin', () => expect(isRouteAllowedForRole(route('/emergency'), 'admin')).toBe(true));
   });
@@ -146,7 +170,7 @@ describe('phrRouteContracts — structural completeness', () => {
   });
 
   it('every route has a valid minimumRole', () => {
-    const validRoles: readonly string[] = ['patient', 'caregiver', 'clinician', 'admin'];
+    const validRoles: readonly string[] = Object.keys(PHR_ROLE_ORDER);
     for (const route of phrRouteContracts) {
       expect(validRoles).toContain((route as { minimumRole: string }).minimumRole);
     }

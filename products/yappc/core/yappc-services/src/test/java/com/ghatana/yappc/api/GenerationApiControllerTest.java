@@ -93,6 +93,7 @@ class GenerationApiControllerTest extends EventloopTestBase {
                 "projectName", "Project One",
                 "surfaces", List.of("web", "backend-api"),
                 "runtimeProvider", "ghatana-file-registry",
+                "sourceProvider", "ghatana-file-registry",
                 "lifecycleProfile", "standard-web-api-product",
                 "correlationId", "corr-1");
 
@@ -121,6 +122,7 @@ class GenerationApiControllerTest extends EventloopTestBase {
                 "workspaceId", "workspace-1",
                 "projectId", "project-1",
                 "projectName", "Project One",
+            "sourceProvider", "ghatana-file-registry",
                 "surfaces", List.of("not-a-surface"));
 
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/generate/product-unit-intent")

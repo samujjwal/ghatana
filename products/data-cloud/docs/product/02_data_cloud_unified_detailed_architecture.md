@@ -374,15 +374,15 @@ flowchart TB
 
 ### 7.2 Runtime modes
 
-| Mode | Data Cloud | AEP | Intended use |
+| Mode | Data Cloud | Action Plane | Intended use |
 |---|---|---|---|
 | Local | Embedded/in-memory | Embedded allowed | Developer workflow |
 | Sovereign | Embedded durable/file-backed | Embedded or local sidecar | Air-gapped/single-binary |
-| Standalone | Single Data Cloud server | AEP same deployment or separate process | Small production / validation |
-| Enterprise | Durable providers + auth/policy/audit | Separate scalable AEP service | Production |
+| Standalone | Single Data Cloud server | Action Plane same deployment or separate process | Small production / validation |
+| Enterprise | Durable providers + auth/policy/audit | Separate scalable Action Plane service | Production |
 | Test | Deterministic fixtures | Deterministic fixtures | CI/integration tests |
 
-### 7.3 AEP production dependency rule
+### 7.3 Action Plane production dependency rule
 
 ```text
 If AEP_PROFILE=production:

@@ -62,4 +62,67 @@ describe('PhaseStatusPanelsCanonical', () => {
     expect(screen.getByTestId('phase-panel-missing')).toBeInTheDocument();
     expect(screen.queryByTestId('validate-panel-summary')).not.toBeInTheDocument();
   });
+
+  it('renders typed learning insight and evolution plan payloads when provided', () => {
+    const { rerender } = render(
+      <PhaseStatusPanelsCanonical
+        phase="learn"
+        phasePanels={[
+          {
+            phase: 'learn',
+            status: 'ready',
+            summary: 'Learning insights are available.',
+            recommendation: 'Review and approve insight.',
+            owner: 'Learn Pipeline',
+            confidence: 0.82,
+            supportTrace: 'trace-learn-1',
+            cards: [],
+            learningInsight: {
+              learnedSignal: 'Regression risk increased in payments flow',
+              sourceEvent: 'observe.risk-detected',
+              confidence: 0.82,
+              recommendation: 'Require approval before promoting',
+              approvalRequired: true,
+              rollbackPath: 'Revert to previous approved baseline',
+            },
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByTestId('learn-learning-insight')).toBeInTheDocument();
+    expect(screen.getByTestId('learn-learning-checklist')).toBeInTheDocument();
+    expect(screen.getByText('Regression risk increased in payments flow')).toBeInTheDocument();
+
+    rerender(
+      <PhaseStatusPanelsCanonical
+        phase="evolve"
+        phasePanels={[
+          {
+            phase: 'evolve',
+            status: 'needs-review',
+            summary: 'Evolution proposal requires review.',
+            recommendation: 'Review plan details before approval.',
+            owner: 'Evolve Pipeline',
+            confidence: 0.74,
+            supportTrace: 'trace-evolve-1',
+            cards: [],
+            evolutionPlan: {
+              proposal: 'Refactor orchestration service boundaries',
+              impactSummary: 'Low runtime impact, medium integration impact',
+              diffSummary: '12 files changed',
+              validationRequirements: 'Run integration + policy checks',
+              approvalState: 'PENDING_REMEDIATION',
+              rollbackPath: 'Revert to previous release candidate',
+              rerunTarget: 'observe',
+            },
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByTestId('evolve-evolution-plan')).toBeInTheDocument();
+    expect(screen.getByTestId('evolve-evolution-stepper')).toBeInTheDocument();
+    expect(screen.getByText('Refactor orchestration service boundaries')).toBeInTheDocument();
+  });
 });

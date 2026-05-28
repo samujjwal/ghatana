@@ -21,7 +21,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
 
 /**
  * Enforcement matrix tests for {@link PhrTimelineRoutes}.
@@ -50,7 +50,7 @@ class PhrTimelineRoutesTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        when(recordService.getRecordTimeline(any(), anyString()))
+        lenient().when(recordService.getRecordTimeline(any(), anyString()))
             .thenReturn(Promise.of(new RecordService.RecordTimeline(
                 "patient-1",
                 List.of(new RecordService.TimelineEntry(

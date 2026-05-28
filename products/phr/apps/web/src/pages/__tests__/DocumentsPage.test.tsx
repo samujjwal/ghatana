@@ -6,8 +6,9 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { DocumentsPage } from '../DocumentsPage';
 
-vi.mock('../../api/phrApi', () => ({
+vi.mock('../../api/documentsApi', () => ({
   fetchDocuments: vi.fn(),
+  downloadDocument: vi.fn(),
 }));
 
 vi.mock('../../i18n/phrI18n', () => ({
@@ -18,13 +19,13 @@ vi.mock('../../auth/PhrSessionContext', () => ({
   usePhrSession: () => ({ session: { principalId: 'patient-42', tenantId: 't1', role: 'patient' as const, name: 'Test Patient', expiresAt: new Date(Date.now() + 3_600_000).toISOString() }, isAuthenticated: true, setSession: vi.fn(), clearSession: vi.fn() }),
 }));
 
-import { fetchDocuments } from '../../api/phrApi';
+import { fetchDocuments } from '../../api/documentsApi';
 
 const mockFetch = fetchDocuments as ReturnType<typeof vi.fn>;
 
 const documents = [
-  { id: 'd1', title: 'Discharge Summary 2026', category: 'discharge_summary' as const, uploadedAt: '2026-04-01T12:00:00Z', mimeType: 'application/pdf', sizeKb: 120 },
-  { id: 'd2', title: 'Lab Report March', category: 'lab_report' as const, uploadedAt: '2026-03-15T08:00:00Z', mimeType: 'application/pdf', sizeKb: 48 },
+  { id: 'd1', title: 'Discharge Summary 2026', category: 'discharge' as const, uploadedAt: '2026-04-01T12:00:00Z', mimeType: 'application/pdf', contentType: 'application/pdf', sizeKb: 120 },
+  { id: 'd2', title: 'Lab Report March', category: 'lab' as const, uploadedAt: '2026-03-15T08:00:00Z', mimeType: 'application/pdf', contentType: 'application/pdf', sizeKb: 48 },
 ];
 
 describe('DocumentsPage', () => {
@@ -73,6 +74,6 @@ describe('DocumentsPage', () => {
   it('calls fetchDocuments with the session principalId', async () => {
     mockFetch.mockResolvedValue([]);
     render(<DocumentsPage />);
-    await waitFor(() => expect(mockFetch).toHaveBeenCalledWith('patient-42'));
+    await waitFor(() => expect(mockFetch).toHaveBeenCalledWith('patient-42', expect.any(Object)));
   });
 });

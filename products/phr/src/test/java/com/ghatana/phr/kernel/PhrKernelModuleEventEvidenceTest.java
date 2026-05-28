@@ -20,6 +20,9 @@ import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.context.KernelTenantContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.event.EventHandler;
+import com.ghatana.kernel.observability.AuditTrailPersistence;
+import com.ghatana.kernel.observability.AuditTrailService;
+import com.ghatana.kernel.observability.DefaultAuditTrailService;
 import com.ghatana.platform.cache.DistributedCachePort;
 import com.ghatana.phr.kernel.event.PhrAuditEvent;
 import com.ghatana.phr.kernel.event.PhrConsentEvent;
@@ -335,6 +338,19 @@ class PhrKernelModuleEventEvidenceTest extends EventloopTestBase {
     private static final class NoDataCloudKernelContext extends CapturingKernelContext {
         private NoDataCloudKernelContext(Path outboxDir) {
             super(null, new CapturingConsentCache(), outboxDir);
+            registerService(AuditTrailService.class, new DefaultAuditTrailService(
+                new ObjectMapper(),
+                new AuditTrailPersistence() {
+                    @Override
+                    public void persist(DefaultAuditTrailService.StoredAuditEvent event) {
+                    }
+
+                    @Override
+                    public List<DefaultAuditTrailService.StoredAuditEvent> loadAll() {
+                        return List.of();
+                    }
+                }
+            ));
         }
 
         @Override

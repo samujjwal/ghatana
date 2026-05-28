@@ -3,6 +3,7 @@ package com.ghatana.yappc.kernel;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.ghatana.yappc.domain.Identifiable;
 import com.ghatana.yappc.infrastructure.datacloud.adapter.YappcDataCloudRepository;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
 import io.activej.promise.Promise;
@@ -21,7 +22,9 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -64,7 +67,8 @@ class YappcKernelDataCloudE2ETest extends EventloopTestBase {
         lenient().when(dataCloudClient.save(anyString(), anyString(), any()))
             .thenAnswer(invocation -> {
                 Map<String, Object> payload = invocation.getArgument(2);
-                return Promise.of(payload);
+                String entityId = (String) payload.getOrDefault("id", UUID.randomUUID().toString());
+                return Promise.of(DataCloudClient.Entity.of(entityId, "yappc-artifacts", payload));
             });
     }
 
@@ -131,17 +135,18 @@ class YappcKernelDataCloudE2ETest extends EventloopTestBase {
 
             when(intentProvider.exportProductUnitIntent(candidateId, request))
                 .thenReturn(Promise.of(intentResponse));
+            when(intentProvider.exportTypedProductUnitIntent(candidateId, request))
+                .thenCallRealMethod();
 
             // When
-            Promise<ProductUnitIntentContract> contractPromise = 
-                intentProvider.exportTypedProductUnitIntent(candidateId, request);
-            ProductUnitIntentContract contract = runPromise(() -> contractPromise);
+            ProductUnitIntentContract contract = runPromise(() ->
+                intentProvider.exportTypedProductUnitIntent(candidateId, request));
 
             // Then
             assertThat(contract).isNotNull();
             assertThat(contract.candidateId()).isEqualTo(candidateId);
-            assertThat(contract.intentId()).isEqualTo("intent-2");
-            assertThat(contract.provider()).isEqualTo("yappc-product-unit-intent-provider");
+            assertThat(contract.source()).isEqualTo("yappc-product-unit-intent-provider");
+            assertThat(contract.metadata()).containsEntry("intentId", "intent-2");
         }
     }
 
@@ -167,10 +172,14 @@ class YappcKernelDataCloudE2ETest extends EventloopTestBase {
             );
 
             when(mapper.toEntityData(artifact)).thenReturn(entityData);
-            when(mapper.fromEntity(entityData, TestArtifact.class)).thenReturn(artifact);
+            when(mapper.fromEntity(any(DataCloudClient.Entity.class), eq(TestArtifact.class))).thenReturn(artifact);
 
             // When
-            TestArtifact saved = runPromise(() -> repository.save(artifact));
+            TestArtifact saved = runPromise(() -> {
+                TenantContext.setCurrentTenantId("tenant-yappc");
+                return repository.save(artifact)
+                    .whenComplete(($1, $2) -> TenantContext.clear());
+            });
 
             // Then - verify Data-Cloud was called through canonical repository
             verify(dataCloudClient).save("tenant-yappc", "yappc-artifacts", entityData);
@@ -196,10 +205,14 @@ class YappcKernelDataCloudE2ETest extends EventloopTestBase {
             );
 
             when(mapper.toEntityData(evidenceArtifact)).thenReturn(entityData);
-            when(mapper.fromEntity(entityData, TestArtifact.class)).thenReturn(evidenceArtifact);
+            when(mapper.fromEntity(any(DataCloudClient.Entity.class), eq(TestArtifact.class))).thenReturn(evidenceArtifact);
 
             // When
-            TestArtifact saved = runPromise(() -> repository.save(evidenceArtifact));
+            TestArtifact saved = runPromise(() -> {
+                TenantContext.setCurrentTenantId("tenant-yappc");
+                return repository.save(evidenceArtifact)
+                    .whenComplete(($1, $2) -> TenantContext.clear());
+            });
 
             // Then
             verify(dataCloudClient).save("tenant-yappc", "yappc-artifacts", entityData);
@@ -253,10 +266,14 @@ class YappcKernelDataCloudE2ETest extends EventloopTestBase {
             );
 
             when(mapper.toEntityData(artifact)).thenReturn(artifactData);
-            when(mapper.fromEntity(artifactData, TestArtifact.class)).thenReturn(artifact);
+            when(mapper.fromEntity(any(DataCloudClient.Entity.class), eq(TestArtifact.class))).thenReturn(artifact);
 
             // When - Step 2: Persist artifact
-            TestArtifact savedArtifact = runPromise(() -> repository.save(artifact));
+            TestArtifact savedArtifact = runPromise(() -> {
+                TenantContext.setCurrentTenantId("tenant-yappc");
+                return repository.save(artifact)
+                    .whenComplete(($1, $2) -> TenantContext.clear());
+            });
 
             // Then - Step 2: Verify artifact persistence
             verify(dataCloudClient).save("tenant-yappc", "yappc-artifacts", artifactData);
@@ -276,10 +293,14 @@ class YappcKernelDataCloudE2ETest extends EventloopTestBase {
             );
 
             when(mapper.toEntityData(evidence)).thenReturn(evidenceData);
-            when(mapper.fromEntity(evidenceData, TestArtifact.class)).thenReturn(evidence);
+            when(mapper.fromEntity(any(DataCloudClient.Entity.class), eq(TestArtifact.class))).thenReturn(evidence);
 
             // When - Step 3: Persist evidence
-            TestArtifact savedEvidence = runPromise(() -> repository.save(evidence));
+            TestArtifact savedEvidence = runPromise(() -> {
+                TenantContext.setCurrentTenantId("tenant-yappc");
+                return repository.save(evidence)
+                    .whenComplete(($1, $2) -> TenantContext.clear());
+            });
 
             // Then - Step 3: Verify evidence persistence
             verify(dataCloudClient).save("tenant-yappc", "yappc-artifacts", evidenceData);
@@ -292,7 +313,7 @@ class YappcKernelDataCloudE2ETest extends EventloopTestBase {
     }
 
     // Test artifact class
-    private static class TestArtifact {
+    private static class TestArtifact implements Identifiable<UUID> {
         private final UUID id;
         private final String kind;
         private final String target;
@@ -303,7 +324,8 @@ class YappcKernelDataCloudE2ETest extends EventloopTestBase {
             this.target = target;
         }
 
-        UUID getId() {
+        @Override
+        public UUID getId() {
             return id;
         }
 

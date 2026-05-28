@@ -24,12 +24,14 @@ class PhaseActionAuthorizationServiceTest {
     @DisplayName("policy approval enables mutating phase actions when capabilities readiness and flags pass")
     void policyApprovalEnablesMutatingPhaseActions() {
         List<PhasePacket.PhaseAction> actions = service.determineAvailableActions(
+                "GENERATE",
                 CapabilityEvaluationService.CapabilityModel.allGranted(),
                 PhasePacket.TenantTier.PRO,
                 Set.of("phase.advance", "phase.governance.configure"),
                 new PhasePacket.PhaseReadiness(true, "GENERATE", List.of(), 1.0, false),
                 List.of(),
-                List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED"))
+                List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED")),
+                true
         );
 
         PhasePacket.PhaseAction advance = action(actions, "advance-phase");
@@ -37,8 +39,16 @@ class PhaseActionAuthorizationServiceTest {
 
         assertThat(advance.enabled()).isTrue();
         assertThat(advance.disabledReason()).isNull();
+                assertThat(advance.targetType()).isEqualTo("server");
+                assertThat(advance.serverOperation()).isEqualTo("phase.advance");
+                assertThat(advance.postSuccessBehavior()).isEqualTo("refresh-packet");
         assertThat(configure.enabled()).isTrue();
         assertThat(configure.disabledReason()).isNull();
+
+                PhasePacket.PhaseAction generateApply = action(actions, "generate.apply");
+                assertThat(generateApply.enabled()).isTrue();
+                assertThat(generateApply.category()).isEqualTo("review");
+                assertThat(generateApply.parameters()).containsEntry("approvalRequired", true);
     }
 
     @Test
@@ -54,6 +64,7 @@ class PhaseActionAuthorizationServiceTest {
         );
 
         List<PhasePacket.PhaseAction> actions = service.determineAvailableActions(
+                "SHAPE",
                 capabilities,
                 PhasePacket.TenantTier.PRO,
                 Set.of("phase.advance"),
@@ -67,7 +78,8 @@ class PhaseActionAuthorizationServiceTest {
                         Instant.now(),
                         Map.of(),
                         "decision-1"
-                ))
+                )),
+                true
         );
 
         PhasePacket.PhaseAction advance = actions.stream()
@@ -90,12 +102,14 @@ class PhaseActionAuthorizationServiceTest {
     @DisplayName("policy denial disables all mutating phase actions")
     void policyDenialDisablesAllMutatingPhaseActions() {
         List<PhasePacket.PhaseAction> actions = service.determineAvailableActions(
+                "GENERATE",
                 CapabilityEvaluationService.CapabilityModel.allGranted(),
                 PhasePacket.TenantTier.PRO,
                 Set.of("phase.advance", "phase.governance.configure"),
                 new PhasePacket.PhaseReadiness(true, "GENERATE", List.of(), 1.0, false),
                 List.of(),
-                List.of(governance("POLICY_DENIAL", "POLICY_DENIAL", "DENIED"))
+                List.of(governance("POLICY_DENIAL", "POLICY_DENIAL", "DENIED")),
+                true
         );
 
         PhasePacket.PhaseAction advance = action(actions, "advance-phase");
@@ -112,6 +126,7 @@ class PhaseActionAuthorizationServiceTest {
     @DisplayName("policy query error record fails closed for all mutating phase actions")
     void policyErrorRecordFailsClosedForAllMutatingPhaseActions() {
         List<PhasePacket.PhaseAction> actions = service.determineAvailableActions(
+                "GENERATE",
                 CapabilityEvaluationService.CapabilityModel.allGranted(),
                 PhasePacket.TenantTier.PRO,
                 Set.of("phase.advance", "phase.governance.configure"),
@@ -124,7 +139,8 @@ class PhaseActionAuthorizationServiceTest {
                         "system",
                         Instant.parse("2026-05-26T10:15:30Z"),
                         Map.of("reason", "TimeoutException"),
-                        "governance-query-failed:project-1:GENERATE"))
+                        "governance-query-failed:project-1:GENERATE")),
+                true
         );
 
         PhasePacket.PhaseAction advance = action(actions, "advance-phase");
@@ -150,6 +166,7 @@ class PhaseActionAuthorizationServiceTest {
         );
 
         List<PhasePacket.PhaseAction> actions = service.determineAvailableActions(
+                "GENERATE",
                 capabilities,
                 PhasePacket.TenantTier.PRO,
                 Set.of(),
@@ -163,7 +180,8 @@ class PhaseActionAuthorizationServiceTest {
                         Instant.now(),
                         Map.of(),
                         "decision-2"
-                ))
+                )),
+                true
         );
 
         PhasePacket.PhaseAction advance = actions.stream()
@@ -188,21 +206,25 @@ class PhaseActionAuthorizationServiceTest {
         );
 
         List<PhasePacket.PhaseAction> proActions = service.determineAvailableActions(
+                "RUN",
                 capabilities,
                 PhasePacket.TenantTier.PRO,
                 Set.of("phase.report.export", "phase.advance", "phase.governance.configure"),
                 readiness,
                 List.of(),
-                List.of()
+                List.of(),
+                true
         );
 
         List<PhasePacket.PhaseAction> enterpriseActions = service.determineAvailableActions(
+                "RUN",
                 capabilities,
                 PhasePacket.TenantTier.ENTERPRISE,
                 Set.of("phase.report.export", "phase.advance", "phase.governance.configure"),
                 readiness,
                 List.of(),
-                List.of()
+                List.of(),
+                true
         );
 
         PhasePacket.PhaseAction proReport = proActions.stream()
@@ -219,6 +241,32 @@ class PhaseActionAuthorizationServiceTest {
         assertThat(enterpriseReport.category()).isEqualTo("report");
         assertThat(enterpriseReport.confirmationRequired()).isFalse();
         assertThat(enterpriseReport.auditType()).isEqualTo("phase.report.exported");
+
+        PhasePacket.PhaseAction observe = action(enterpriseActions, "run.observe");
+        assertThat(observe.enabled()).isTrue();
+        assertThat(observe.targetType()).isEqualTo("route");
+        assertThat(observe.targetRoute()).isEqualTo("observe");
+    }
+
+    @Test
+    @DisplayName("feature flag dependency degraded disables entitlement-dependent actions")
+    void featureFlagDependencyDegradedDisablesEntitlementDependentActions() {
+        List<PhasePacket.PhaseAction> actions = service.determineAvailableActions(
+                "INTENT",
+                CapabilityEvaluationService.CapabilityModel.allGranted(),
+                PhasePacket.TenantTier.ENTERPRISE,
+                Set.of("phase.advance", "phase.governance.configure", "phase.report.export"),
+                new PhasePacket.PhaseReadiness(true, "SHAPE", List.of(), 1.0, false),
+                List.of(),
+                List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED")),
+                false
+        );
+
+        assertThat(action(actions, "advance-phase").enabled()).isFalse();
+        assertThat(action(actions, "advance-phase").disabledReason())
+                .isEqualTo("phaseAction.disabled.featureFlagDependencyUnavailable");
+        assertThat(action(actions, "configure-phase").enabled()).isFalse();
+        assertThat(action(actions, "export-report").enabled()).isFalse();
     }
 
     private static PhasePacket.PhaseAction action(List<PhasePacket.PhaseAction> actions, String actionId) {

@@ -183,8 +183,14 @@ public class LearningHandler {
         if (learningBridge == null) {
             return Promise.of(http.errorResponse(503, "Learning bridge not available in this deployment"));
         }
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
+        String userId = http.resolvePrincipalId(request);
         String reviewId = request.getPathParameter("reviewId");
-        boolean applied = learningBridge.approveReview(reviewId);
+        boolean applied = learningBridge.approveReview(tenantId, userId, reviewId);
         if (!applied) {
             if (learningBridge.getReviewQueue().containsKey(reviewId)) {
                 return Promise.of(http.errorResponse(409, "Review item already finalized: " + reviewId));
@@ -202,8 +208,16 @@ public class LearningHandler {
         if (learningBridge == null) {
             return Promise.of(http.errorResponse(503, "Learning bridge not available in this deployment"));
         }
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
+        String userId = http.resolvePrincipalId(request);
         String reviewId = request.getPathParameter("reviewId");
-        boolean applied = learningBridge.rejectReview(reviewId);
+        String reason = request.getQueryParameter("reason");
+        if (reason == null) reason = "No reason provided";
+        boolean applied = learningBridge.rejectReview(tenantId, userId, reviewId, reason);
         if (!applied) {
             if (learningBridge.getReviewQueue().containsKey(reviewId)) {
                 return Promise.of(http.errorResponse(409, "Review item already finalized: " + reviewId));
@@ -213,6 +227,7 @@ public class LearningHandler {
         return Promise.of(http.jsonResponse(Map.of(
             "reviewId",  reviewId,
             "decision",  "REJECTED",
+            "reason",    reason,
             "timestamp", Instant.now().toString()
         )));
     }

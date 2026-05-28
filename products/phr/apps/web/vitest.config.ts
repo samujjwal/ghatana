@@ -21,6 +21,7 @@ export default defineConfig({
     dedupe: ['react', 'react-dom', 'react-router', 'react-router-dom', 'scheduler'],
     alias: [
       { find: '@', replacement: path.resolve(__dirname, './src') },
+      { find: '@ghatana/charts', replacement: path.resolve(__dirname, '../../../../platform/typescript/charts/src/index.ts') },
       { find: '@ghatana/design-system', replacement: path.resolve(__dirname, '../../../../platform/typescript/design-system/src/index.ts') },
       { find: '@ghatana/product-shell', replacement: path.resolve(__dirname, '../../../../platform/typescript/product-shell/src/index.ts') },
       { find: '@ghatana/platform-utils', replacement: path.resolve(__dirname, '../../../../platform/typescript/platform-utils/src/index.ts') },

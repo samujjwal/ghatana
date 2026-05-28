@@ -25,7 +25,7 @@ public record NepalHieConfig(
             read("PHR_NEPAL_HIE_SENDING_FACILITY", "PHR-NEPAL"),
             read("PHR_NEPAL_HIE_RECEIVING_APPLICATION", "NEPAL-HIE"),
             read("PHR_NEPAL_HIE_RECEIVING_FACILITY", "NHIE-GATEWAY"),
-            read("PHR_NEPAL_HIE_BEARER_TOKEN", "demo-hie-token"),
+            read("PHR_NEPAL_HIE_BEARER_TOKEN", ""),
             Duration.ofSeconds(Long.parseLong(read("PHR_NEPAL_HIE_TIMEOUT_SECONDS", "15")))
         );
     }

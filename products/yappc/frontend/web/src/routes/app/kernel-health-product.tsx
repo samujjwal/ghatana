@@ -7,12 +7,19 @@
  */
 
 import { KernelHealthDashboardPage } from '../../pages/kernel-health/KernelHealthDashboardPage';
+import { YappcPageShell } from '../../components/layout/YappcPageShell';
 import { KernelHealthCapabilityGate } from './KernelHealthCapabilityGate';
 
 export default function KernelHealthProductRoute() {
   return (
     <KernelHealthCapabilityGate>
-      <KernelHealthDashboardPage />
+      <YappcPageShell
+        title="Kernel Health"
+        description="Inspect lifecycle truth and health status for a selected product unit."
+        testId="kernel-health-product-shell"
+      >
+        <KernelHealthDashboardPage />
+      </YappcPageShell>
     </KernelHealthCapabilityGate>
   );
 }

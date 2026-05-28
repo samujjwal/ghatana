@@ -9,6 +9,12 @@ export const en = {
     alerts: 'Alerts',
     emergency: 'Emergency',
     settings: 'Settings',
+    homeHint: 'Show the mobile health dashboard.',
+    recordsHint: 'Open the offline health record list.',
+    consentsHint: 'Review and revoke active sharing consent.',
+    alertsHint: 'Open privacy-safe notifications.',
+    emergencyHint: 'Request audited emergency access.',
+    settingsHint: 'Open session, cache, and privacy settings.',
   },
   dashboard: {
     title: 'My Health Dashboard',
@@ -17,6 +23,12 @@ export const en = {
     welcome: 'Welcome, {{name}}',
     lastSync: 'Last synced: {{time}}',
     noData: 'No health data available.',
+    patientName: 'Patient name',
+    location: 'Location',
+    bloodType: 'Blood group',
+    records: 'Records',
+    consents: 'Consents',
+    alerts: 'Alerts',
   },
   records: {
     title: 'Health Records',
@@ -30,6 +42,7 @@ export const en = {
     value: 'Value',
     unit: 'Unit',
     recordId: 'Record ID',
+    summary: 'Summary',
     fhirResource: 'FHIR Resource',
     backToRecords: 'Back to Records',
   },
@@ -84,6 +97,7 @@ export const en = {
     version: 'Version {{version}}',
     profile: 'Profile',
     refreshCache: 'Refresh offline cache',
+    refreshCacheHint: 'Fetches the latest dashboard and stores an encrypted offline copy.',
     cacheDescription: 'This device keeps a scoped local cache for record access during low-connectivity visits.',
     lastSync: 'Last synced: {{time}}',
     cacheStatus: 'Cache status',
@@ -112,6 +126,9 @@ export const en = {
   },
   offline: {
     banner: 'You are offline. Some features may be unavailable.',
+  },
+  notifications: {
+    enablePush: 'Enable push notifications',
   },
   common: {
     retry: 'Retry',

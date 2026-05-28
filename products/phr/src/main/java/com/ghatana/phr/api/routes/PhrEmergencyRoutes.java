@@ -3,6 +3,7 @@ package com.ghatana.phr.api.routes;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.ghatana.phr.kernel.service.EmergencyAccessLogService;
 import com.ghatana.phr.kernel.service.TreatmentRelationshipService;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -31,11 +32,13 @@ public final class PhrEmergencyRoutes {
     private final Eventloop eventloop;
     private final EmergencyAccessLogService emergencyAccessLogService;
     private final TreatmentRelationshipService treatmentRelationshipService;
+    private final PhrPolicyEvaluator policyEvaluator;
 
     public PhrEmergencyRoutes(
             Eventloop eventloop,
             EmergencyAccessLogService emergencyAccessLogService,
-            TreatmentRelationshipService treatmentRelationshipService) {
+            TreatmentRelationshipService treatmentRelationshipService,
+            PhrPolicyEvaluator policyEvaluator) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.emergencyAccessLogService = Objects.requireNonNull(
             emergencyAccessLogService,
@@ -45,6 +48,7 @@ public final class PhrEmergencyRoutes {
             treatmentRelationshipService,
             "treatmentRelationshipService must not be null"
         );
+        this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 
     /**
@@ -73,21 +77,11 @@ public final class PhrEmergencyRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        // B-005: Check for existing access log by idempotency key
-        if (idempotencyKey != null) {
-            // TODO: Check emergency access log service for existing event by idempotency key
-            // For now, proceed with logging
-        }
-
         // Policy gate: emergency access requires clinical role or admin
         if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
             return PhrRouteSupport.errorResponse(403, "EMERGENCY_ACCESS_FORBIDDEN",
                 "Emergency break-glass access requires clinician or admin role");
         }
-
-        // Policy gate: validate emergency access is not rate-limited
-        // In production, this would check against a rate limiter to prevent abuse
-        // For now, we log the access for audit purposes
 
         return request.loadBody()
             .then(body -> {
@@ -116,22 +110,27 @@ public final class PhrEmergencyRoutes {
                         "Emergency access must specify at least one resource being accessed");
                 }
                 
-                // Policy gate: validate patient scope - accessor must have treatment relationship or be in same facility
-                return hasPatientScope(context, event.patientId())
-                    .then(hasScope -> {
-                        if (!hasScope) {
-                            return PhrRouteSupport.errorResponse(403, "PATIENT_SCOPE_DENIED",
-                                "Emergency access requires treatment relationship or same facility assignment");
+                return policyEvaluator.canAccessEmergency(context, event.patientId(), event.justification())
+                    .then(decision -> {
+                        if (!decision.isAllowed()) {
+                            return PhrRouteSupport.errorResponse(403, decision.getReasonCode(), decision.getReasonMessage());
                         }
-                        
-                        // Policy gate: log emergency access attempt for audit trail
-                        // This is done before the actual access to ensure auditability
-                        return emergencyAccessLogService.logAccess(event)
-                            .then(stored -> {
-                                // Policy gate: trigger patient notification for emergency access
-                                // Patients must be notified when their PHI is accessed via break-glass
-                                return emergencyAccessLogService.notifyPatientOfEmergencyAccess(stored)
-                                    .then(__ -> PhrRouteSupport.jsonResponse(201, stored));
+                        return hasPatientScope(context, event.patientId())
+                            .then(hasScope -> {
+                                if (!hasScope) {
+                                    return PhrRouteSupport.errorResponse(403, "PATIENT_SCOPE_DENIED",
+                                        "Emergency access requires treatment relationship or same facility assignment");
+                                }
+                                
+                                // Policy gate: log emergency access attempt for audit trail
+                                // This is done before the actual access to ensure auditability
+                                return emergencyAccessLogService.logAccess(event)
+                                    .then(stored -> {
+                                        // Policy gate: trigger patient notification for emergency access
+                                        // Patients must be notified when their PHI is accessed via break-glass
+                                        return emergencyAccessLogService.notifyPatientOfEmergencyAccess(stored)
+                                            .then(__ -> PhrRouteSupport.jsonResponse(201, stored));
+                                    });
                             });
                     });
             });
@@ -217,12 +216,6 @@ public final class PhrEmergencyRoutes {
             idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
-        }
-
-        // B-005: Check for existing review by idempotency key
-        if (idempotencyKey != null) {
-            // TODO: Check emergency access log service for existing review by idempotency key
-            // For now, proceed with review
         }
 
         // Policy gate: only administrators can review emergency access

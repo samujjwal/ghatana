@@ -6,15 +6,27 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { DocumentUploadPage } from '../DocumentUploadPage';
 
-vi.mock('../../api/phrApi', () => ({
+vi.mock('../../api/documentsApi', () => ({
   uploadDocument: vi.fn(),
 }));
 
 vi.mock('../../i18n/phrI18n', () => ({
-  t: (key: string) => key,
+  t: (key: string, params?: Record<string, string>) => {
+    if (params == null) return key;
+    return `${key}:${Object.values(params).join(':')}`;
+  },
 }));
 
-import { uploadDocument } from '../../api/phrApi';
+vi.mock('../../auth/PhrSessionContext', () => ({
+  usePhrSession: () => ({
+    session: { principalId: 'patient-42', tenantId: 't1', role: 'patient' as const, name: 'Test Patient', expiresAt: new Date(Date.now() + 3_600_000).toISOString() },
+    isAuthenticated: true,
+    setSession: vi.fn(),
+    clearSession: vi.fn(),
+  }),
+}));
+
+import { uploadDocument } from '../../api/documentsApi';
 
 const mockUpload = uploadDocument as ReturnType<typeof vi.fn>;
 
@@ -30,7 +42,7 @@ describe('DocumentUploadPage', () => {
   it('renders the upload form', () => {
     render(<DocumentUploadPage />);
     expect(screen.getByText('documents.upload.title')).toBeTruthy();
-    expect(screen.getByLabelText('documents.upload.cta')).toBeTruthy();
+    expect(screen.getByLabelText('documents.upload.file.label')).toBeTruthy();
   });
 
   it('submit button is disabled when no file is selected', () => {
@@ -41,7 +53,7 @@ describe('DocumentUploadPage', () => {
 
   it('enables submit button after file is selected', async () => {
     render(<DocumentUploadPage />);
-    const input = screen.getByLabelText('documents.upload.cta') as HTMLInputElement;
+    const input = screen.getByLabelText('documents.upload.file.label') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [makeFile('report.pdf', 'application/pdf')] } });
     await waitFor(() => {
       const btn = screen.getByRole('button', { name: 'documents.upload.submit' });
@@ -50,9 +62,9 @@ describe('DocumentUploadPage', () => {
   });
 
   it('shows success message after upload completes', async () => {
-    mockUpload.mockResolvedValue({ id: 'doc-001', status: 'uploaded' });
+    mockUpload.mockResolvedValue({ id: 'doc-001', ocrStatus: 'pending' });
     render(<DocumentUploadPage />);
-    const input = screen.getByLabelText('documents.upload.cta') as HTMLInputElement;
+    const input = screen.getByLabelText('documents.upload.file.label') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [makeFile('report.jpg')] } });
     fireEvent.submit(screen.getByRole('button', { name: 'documents.upload.submit' }).closest('form')!);
     await waitFor(() => expect(screen.getByRole('status')).toBeTruthy());
@@ -62,7 +74,7 @@ describe('DocumentUploadPage', () => {
   it('shows error message when upload fails', async () => {
     mockUpload.mockRejectedValue(new Error('upload failed'));
     render(<DocumentUploadPage />);
-    const input = screen.getByLabelText('documents.upload.cta') as HTMLInputElement;
+    const input = screen.getByLabelText('documents.upload.file.label') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [makeFile('report.jpg')] } });
     fireEvent.submit(screen.getByRole('button', { name: 'documents.upload.submit' }).closest('form')!);
     await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());

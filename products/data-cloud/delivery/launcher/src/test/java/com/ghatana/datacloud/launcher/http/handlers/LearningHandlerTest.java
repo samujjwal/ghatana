@@ -65,8 +65,10 @@ class LearningHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("learning review approve returns 409 when item already finalized")
     void learningReviewApproveReturns409WhenFinalized() {
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.success("tenant-1"));
+        when(http.resolvePrincipalId(request)).thenReturn("user-1");
         when(request.getPathParameter("reviewId")).thenReturn("review-1");
-        when(learningBridge.approveReview("review-1")).thenReturn(false);
+        when(learningBridge.approveReview("tenant-1", "user-1", "review-1")).thenReturn(false);
         when(learningBridge.getReviewQueue()).thenReturn(java.util.Map.of("review-1", java.util.Map.of("status", "APPROVED")));
         when(http.errorResponse(409, "Review item already finalized: review-1")).thenReturn(errorResponse);
 

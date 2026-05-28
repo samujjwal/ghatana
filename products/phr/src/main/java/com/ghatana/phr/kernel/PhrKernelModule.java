@@ -29,6 +29,7 @@ import com.ghatana.phr.api.routes.PhrAuthRoutes;
 import com.ghatana.phr.api.routes.PhrCaregiverRoutes;
 import com.ghatana.phr.api.routes.PhrClinicalRoutes;
 import com.ghatana.phr.api.routes.PhrConsentRoutes;
+import com.ghatana.phr.api.routes.PhrDashboardRoutes;
 import com.ghatana.phr.api.routes.PhrDocumentImagingRoutes;
 import com.ghatana.phr.api.routes.PhrEntitlementRoutes;
 import com.ghatana.phr.api.routes.PhrEmergencyRoutes;
@@ -37,6 +38,7 @@ import com.ghatana.phr.api.routes.PhrFhirRoutes;
 import com.ghatana.phr.api.routes.PhrHealthRoutes;
 import com.ghatana.phr.api.routes.PhrMobileRoutes;
 import com.ghatana.phr.api.routes.PhrNotificationRoutes;
+import com.ghatana.phr.api.routes.PhrPatientProfileRoutes;
 import com.ghatana.phr.api.routes.PhrPatientRecordRoutes;
 import com.ghatana.phr.api.routes.PhrProviderRoutes;
 import com.ghatana.phr.api.routes.PhrReleaseReadinessRoutes;
@@ -428,8 +430,9 @@ public class PhrKernelModule implements KernelModule {
         // Create route objects with eventloop
         Eventloop eventloop = context.getEventloop();
         PhrFhirRoutes fhirRoutes = new PhrFhirRoutes(eventloop, fhirController);
+        PhrDashboardRoutes dashboardRoutes = new PhrDashboardRoutes(eventloop, userRepository);
         PhrPatientRecordRoutes patientRecordRoutes = new PhrPatientRecordRoutes(eventloop, patientRecords, consent, policyEvaluator);
-        PhrConsentRoutes consentRoutes = new PhrConsentRoutes(eventloop, consent);
+        PhrConsentRoutes consentRoutes = new PhrConsentRoutes(eventloop, consent, policyEvaluator);
         PhrClinicalRoutes clinicalRoutes = new PhrClinicalRoutes(
             eventloop,
             labResults,
@@ -437,7 +440,7 @@ public class PhrKernelModule implements KernelModule {
             immunizations,
             consent
         );
-        PhrEmergencyRoutes emergencyRoutes = new PhrEmergencyRoutes(eventloop, emergencyAccess, treatmentRelationship);
+        PhrEmergencyRoutes emergencyRoutes = new PhrEmergencyRoutes(eventloop, emergencyAccess, treatmentRelationship, policyEvaluator);
         PhrAdministrativeRoutes administrativeRoutes = new PhrAdministrativeRoutes(
             eventloop,
             appointments,
@@ -450,7 +453,8 @@ public class PhrKernelModule implements KernelModule {
             eventloop,
             documents,
             imaging,
-            consent
+            consent,
+            policyEvaluator
         );
         PhrHealthRoutes healthRoutes = new PhrHealthRoutes(eventloop, fhirServer, evidenceDispatcher::getHealthStatus);
         RouteEntitlementEvaluator routeEntitlementEvaluator = new RouteEntitlementEvaluator(new RoleEvaluator.FailClosed());
@@ -471,10 +475,12 @@ public class PhrKernelModule implements KernelModule {
         PhrCaregiverRoutes caregiverRoutes = new PhrCaregiverRoutes(eventloop, caregivers, patientRecords);
         PhrFchvRoutes fchvRoutes = new PhrFchvRoutes(eventloop);
         PhrNotificationRoutes notificationRoutes = new PhrNotificationRoutes(eventloop, notificationSender);
+        PhrPatientProfileRoutes patientProfileRoutes = new PhrPatientProfileRoutes(eventloop, userRepository);
         
         PhrHttpServer phrHttpServer = new PhrHttpServer(
             eventloop,
             fhirRoutes,
+            dashboardRoutes,
             patientRecordRoutes,
             consentRoutes,
             clinicalRoutes,
@@ -490,7 +496,8 @@ public class PhrKernelModule implements KernelModule {
             caregiverRoutes,
             fchvRoutes,
             mobileRoutes,
-            notificationRoutes
+            notificationRoutes,
+            patientProfileRoutes
         );
         context.registerService(PhrEvidenceOutboxDispatcher.class, evidenceDispatcher);
         context.registerService(PhrHttpServer.class, phrHttpServer);

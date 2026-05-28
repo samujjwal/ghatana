@@ -2,7 +2,10 @@ package com.ghatana.phr.api.routes;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.phr.kernel.service.EmergencyAccessLogService;
+import com.ghatana.phr.kernel.service.ConsentManagementService;
+import com.ghatana.phr.kernel.service.FchvCommunityAssignmentService;
 import com.ghatana.phr.kernel.service.TreatmentRelationshipService;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
@@ -54,22 +57,41 @@ class PhrEmergencyRoutesTest extends EventloopTestBase {
     @Mock
     private TreatmentRelationshipService treatmentRelationshipService;
 
+    @Mock
+    private ConsentManagementService consentService;
+
+    @Mock
+    private FchvCommunityAssignmentService fchvCommunityAssignmentService;
+
     private AsyncServlet servlet;
 
     private static final String ACCESS_BODY = """
         {
           "patientId": "patient-1",
-          "reason": "Cardiac emergency — patient unconscious",
-          "resourceTypes": ["labs", "medications"]
+          "accessorRole": "clinician",
+          "justification": "Cardiac emergency - patient unconscious and needs immediate care",
+          "resourcesAccessed": ["labs", "medications"]
         }
         """;
 
     @BeforeEach
     void setUp() {
-        servlet = new PhrEmergencyRoutes(eventloop(), emergencyAccessLogService, treatmentRelationshipService).getServlet();
+        PhrPolicyEvaluator policyEvaluator = new PhrPolicyEvaluator(
+            consentService,
+            treatmentRelationshipService,
+            fchvCommunityAssignmentService
+        );
+        servlet = new PhrEmergencyRoutes(
+            eventloop(),
+            emergencyAccessLogService,
+            treatmentRelationshipService,
+            policyEvaluator
+        ).getServlet();
 
         lenient().when(emergencyAccessLogService.logAccess(any()))
             .thenReturn(Promise.of(stubEvent()));
+        lenient().when(emergencyAccessLogService.notifyPatientOfEmergencyAccess(any()))
+            .thenReturn(Promise.complete());
         lenient().when(emergencyAccessLogService.getEvent(anyString()))
             .thenReturn(Promise.of(Optional.of(stubEvent())));
         lenient().when(emergencyAccessLogService.getPatientEmergencyLog(anyString()))
@@ -92,7 +114,7 @@ class PhrEmergencyRoutesTest extends EventloopTestBase {
         @DisplayName("201 — clinician may log emergency access")
         void clinicianMayLogAccess() throws Exception {
             HttpRequest request = contextRequestWithBody(
-                HttpMethod.POST, "/access", "t1", "dr-1", "clinician", ACCESS_BODY);
+                HttpMethod.POST, "/access", "tenant-1", "dr-1", "clinician", ACCESS_BODY);
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -116,9 +138,9 @@ class PhrEmergencyRoutesTest extends EventloopTestBase {
         @DisplayName("400 — missing patientId in body")
         void returns400WhenPatientIdMissing() throws Exception {
             HttpRequest request = contextRequestWithBody(
-                HttpMethod.POST, "/access", "t1", "dr-1", "clinician",
+                HttpMethod.POST, "/access", "tenant-1", "dr-1", "clinician",
                 """
-                {"reason":"Emergency","resourceTypes":["labs"]}
+                {"justification":"Emergency care required immediately","resourcesAccessed":["labs"]}
                 """);
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
@@ -132,21 +154,21 @@ class PhrEmergencyRoutesTest extends EventloopTestBase {
     class PendingReviews {
 
         @Test
-        @DisplayName("200 — clinician may view pending reviews")
+        @DisplayName("403 — clinician may NOT view pending reviews")
         void clinicianMayViewPendingReviews() throws Exception {
             HttpRequest request = contextRequest(
-                HttpMethod.GET, "/reviews/pending", "t1", "dr-1", "clinician");
+                HttpMethod.GET, "/reviews/pending", "tenant-1", "dr-1", "clinician");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
-            assertThat(response.getCode()).isEqualTo(200);
+            assertThat(response.getCode()).isEqualTo(403);
         }
 
         @Test
         @DisplayName("200 — admin may view pending reviews")
         void adminMayViewPendingReviews() throws Exception {
             HttpRequest request = contextRequest(
-                HttpMethod.GET, "/reviews/pending", "t1", "admin-1", "admin");
+                HttpMethod.GET, "/reviews/pending", "tenant-1", "admin-1", "admin");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -157,7 +179,7 @@ class PhrEmergencyRoutesTest extends EventloopTestBase {
         @DisplayName("403 — patient may NOT view pending reviews")
         void patientMayNotViewPendingReviews() throws Exception {
             HttpRequest request = contextRequest(
-                HttpMethod.GET, "/reviews/pending", "t1", "patient-1", "patient");
+                HttpMethod.GET, "/reviews/pending", "tenant-1", "patient-1", "patient");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -168,7 +190,7 @@ class PhrEmergencyRoutesTest extends EventloopTestBase {
         @DisplayName("403 — caregiver may NOT view pending reviews")
         void caregiverMayNotViewPendingReviews() throws Exception {
             HttpRequest request = contextRequest(
-                HttpMethod.GET, "/reviews/pending", "t1", "cg-1", "caregiver");
+                HttpMethod.GET, "/reviews/pending", "tenant-1", "cg-1", "caregiver");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -184,7 +206,7 @@ class PhrEmergencyRoutesTest extends EventloopTestBase {
         @DisplayName("200 — patient may view their own emergency log")
         void patientMayViewOwnLog() throws Exception {
             HttpRequest request = contextRequest(
-                HttpMethod.GET, "/patients/patient-1", "t1", "patient-1", "patient");
+                HttpMethod.GET, "/patients/patient-1", "tenant-1", "patient-1", "patient");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -195,7 +217,7 @@ class PhrEmergencyRoutesTest extends EventloopTestBase {
         @DisplayName("403 — patient may NOT view another patient's emergency log")
         void patientMayNotViewOtherPatientLog() throws Exception {
             HttpRequest request = contextRequest(
-                HttpMethod.GET, "/patients/patient-2", "t1", "patient-1", "patient");
+                HttpMethod.GET, "/patients/patient-2", "tenant-1", "patient-1", "patient");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -206,7 +228,7 @@ class PhrEmergencyRoutesTest extends EventloopTestBase {
         @DisplayName("200 — clinician may view any patient's emergency log")
         void clinicianMayViewAnyPatientLog() throws Exception {
             HttpRequest request = contextRequest(
-                HttpMethod.GET, "/patients/patient-1", "t1", "dr-1", "clinician");
+                HttpMethod.GET, "/patients/patient-1", "tenant-1", "dr-1", "clinician");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 

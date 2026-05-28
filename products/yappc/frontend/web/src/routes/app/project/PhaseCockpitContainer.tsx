@@ -4,28 +4,24 @@ import { useNavigate, useParams } from 'react-router';
 
 import { useTranslation } from '@ghatana/i18n';
 
-import { PhaseBlockerPanel } from '../../../components/phase/PhaseBlockerPanel';
-import { PhaseCockpitLayout } from '../../../components/phase/PhaseCockpitLayout';
-import { PhaseEvidencePanel } from '../../../components/phase/PhaseEvidencePanel';
-import { PhaseGovernanceTrace } from '../../../components/phase/PhaseGovernanceTrace';
-import { PhasePrimaryActionCard } from '../../../components/phase/PhasePrimaryActionCard';
-import { PhaseSuggestedNextStep } from '../../../components/phase/PhaseSuggestedNextStep';
-import { Button } from '../../../components/ui/Button';
 import { usePhasePacket } from '../../../hooks/usePhasePacket';
 import {
   formatTimestamp,
   resolvePhaseIcon,
   type MountedPhase,
   type PhaseIconId,
-  type RunPostAction,
 } from '../../../services/phase';
-import type { PhaseCockpitPacket } from '../../../types/phasePacket';
+import type { PhaseAction } from '../../../types/phasePacket';
 
-import { PhaseEmbeddedSurface } from './PhaseEmbeddedSurface';
+import {
+  type PhaseActionSectionAction,
+  type PhaseActionSectionGroup,
+} from './PhaseActionSection';
+import { PhaseCockpitView } from './PhaseCockpitView';
+import { PhaseCurrentStateCard } from './PhaseCurrentStateCard';
 import { PhaseStatusPanelsCanonical } from './PhaseStatusPanelsCanonical';
 import { PhaseDegradedPacketPanel } from './PhaseDegradedPacketPanel';
 import { PhasePacketErrorPanel } from './PhasePacketErrorPanel';
-import { PhasePacketSummary } from './PhasePacketSummary';
 import {
   AccessDeniedState,
   MissingProjectState,
@@ -125,6 +121,69 @@ const PHASE_ICON_IDS: Record<MountedPhase, PhaseIconId> = {
   evolve: 'arrow-up-right',
 };
 
+const RUN_CONTEXT_OPERATIONS = new Set([
+  'generate.apply',
+  'generate.reject',
+  'generate.rollback',
+  'generate.review.apply',
+  'generate.review.reject',
+  'generate.review.rollback',
+  'run.retry',
+  'run.rollback',
+  'run.promote',
+  'run.observe',
+]);
+
+function toTestId(actionId: string): string {
+  if (actionId === 'run.observe') {
+    return 'run-observe-handoff';
+  }
+  return actionId.replaceAll('.', '-');
+}
+
+function toSectionAction(
+  action: PhaseAction,
+  actionText: (key: string | undefined) => string | undefined,
+  disabled: boolean,
+  onClick: () => void,
+): PhaseActionSectionAction {
+  return {
+    actionId: action.actionId,
+    testId: toTestId(action.actionId),
+    label: actionText(action.label) ?? action.actionId,
+    severity: action.severity,
+    disabled,
+    onClick,
+  };
+}
+
+function categorySectionMeta(
+  category: string,
+  t: (key: string, options?: Record<string, unknown>) => string,
+): Pick<PhaseActionSectionGroup, 'testId' | 'title' | 'description'> {
+  if (category === 'review') {
+    return {
+      testId: 'generate-review-actions',
+      title: t('phaseCockpit.generateReview.title'),
+      description: t('phaseCockpit.generateReview.description'),
+    };
+  }
+  if (category === 'post-run') {
+    return {
+      testId: 'run-post-actions',
+      title: t('phaseCockpit.runPost.title'),
+      description: t('phaseCockpit.runPost.description'),
+    };
+  }
+
+  const slug = category.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  return {
+    testId: `phase-actions-${slug}`,
+    title: t('phaseCockpit.actionSections.title', { category }),
+    description: t('phaseCockpit.actionSections.description', { category }),
+  };
+}
+
 interface PhaseCockpitContainerProps {
   readonly phase: MountedPhase;
 }
@@ -166,11 +225,10 @@ export function PhaseCockpitContainer({ phase }: PhaseCockpitContainerProps): Re
     actionMutation,
     generateReviewMutation,
     runPostActionMutation,
+    isActionPending,
     handlePrimaryAction,
     handleSecondaryAction,
     handleSuggestionAction,
-    handleGenerateReviewDecision,
-    handleRunPostAction,
   } = usePhaseActionHandlers({
     phase,
     projectId,
@@ -235,38 +293,41 @@ export function PhaseCockpitContainer({ phase }: PhaseCockpitContainerProps): Re
   ) ?? packet.availableActions[0] ?? null;
 
   const isDependencyDegraded = packet.readiness.isDegraded || Boolean(packet.degradedDetails);
-  const advancedDetails = (
-    <div
-      id={`${phase}-supporting-surface`}
-      className="rounded-2xl border border-border bg-surface-raised p-4 shadow-sm"
-    >
-      <div className="mb-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fg-muted">
-          {phaseDetailLabel}
-        </p>
-        <h2 className="mt-2 text-lg font-semibold text-fg">{t('phaseCockpit.detail.title')}</h2>
-        <p className="mt-1 text-sm text-fg-muted">
-          {t('phaseCockpit.detail.body')}
-        </p>
-      </div>
-      <div className="mb-4 text-xs text-fg-muted">
-        {t('phaseCockpit.detail.lastActivity')}{' '}
-        {activity[0]?.timestamp ? formatTimestamp(activity[0].timestamp) : t('phaseCockpit.detail.noRecentActivity')}
-      </div>
-      <PhaseEmbeddedSurface phase={phase} />
-    </div>
-  );
+  const primaryNextActionLabel = actionText(primaryPacketAction?.label)
+    ?? t('phaseCockpit.contract.noSuggestedAction');
+  const governanceOutcome = packet.governance[0]?.outcome
+    ?? t('phaseCockpit.contract.readyWithoutReview');
 
   const isCtaDisabled = !primaryPacketAction?.enabled || isDependencyDegraded || actionMutation.isPending;
-  const showGenerateReviewActions = phase === 'generate'
-    && actionResult?.kind === 'generate-review'
-    && Boolean(actionResult.runId)
-    && actionResult.reviewRequired !== false;
-  const isGenerateReviewPending = generateReviewMutation.isPending;
-  const showRunPostActions = phase === 'run'
-    && actionResult?.kind === 'run-workflow'
-    && Boolean(actionResult.runId);
-  const isRunPostActionPending = runPostActionMutation.isPending;
+  const primaryActionId = primaryPacketAction?.actionId ?? null;
+  const runContextId = actionResult?.runId ?? null;
+
+  const actionSectionsMap = new Map<string, PhaseActionSectionGroup>();
+  packet.availableActions
+    .filter((action) => action.actionId !== primaryActionId)
+    .forEach((action) => {
+      const operation = action.serverOperation ?? action.actionId;
+      if (RUN_CONTEXT_OPERATIONS.has(operation) && !runContextId) {
+        return;
+      }
+
+      const sectionMeta = categorySectionMeta(action.category, t);
+      const existingActions = actionSectionsMap.get(sectionMeta.testId)?.actions ?? [];
+
+      actionSectionsMap.set(sectionMeta.testId, {
+        ...sectionMeta,
+        actions: [
+          ...existingActions,
+          toSectionAction(action, actionText, isActionPending(action) || !action.enabled, () => {
+            handleSuggestionAction(action);
+          }),
+        ],
+      });
+    });
+
+  const actionSections: readonly PhaseActionSectionGroup[] = [
+    ...actionSectionsMap.values(),
+  ].filter((section) => section.actions.length > 0);
 
   const disabledReason = actionMutation.isPending
     ? t('phaseCockpit.disabled.running')
@@ -281,193 +342,54 @@ export function PhaseCockpitContainer({ phase }: PhaseCockpitContainerProps): Re
   const canExecutePrimaryAction = Boolean(primaryPacketAction?.enabled) && !isDependencyDegraded;
 
   return (
-    <div className="p-6 space-y-6">
-      <PhaseCockpitLayout
-        testId={`${phase}-cockpit`}
-        phaseName={t(`phaseCockpit.phase.${phase}`)}
-        phaseDescription={t('phaseCockpit.layout.description', { phase, projectName })}
-        primaryAction={(
-          <PhasePrimaryActionCard
-            title={actionText(primaryPacketAction?.label) ?? t('phaseCockpit.primary.title', { phase })}
-            description={actionText(primaryPacketAction?.description) ?? t('phaseCockpit.primary.description')}
-            actionLabel={canExecutePrimaryAction ? actionText(primaryPacketAction?.label) ?? primaryPacketAction?.actionId ?? t('phaseCockpit.primary.viewBlockers') : t('phaseCockpit.primary.viewBlockers')}
-            onAction={canExecutePrimaryAction ? handlePrimaryAction : scrollToBlockerPanel}
-            secondaryActionLabel={t('phaseCockpit.primary.reviewDetails')}
-            onSecondaryAction={handleSecondaryAction}
-            icon={resolvePhaseIcon(PHASE_ICON_IDS[phase])}
-            disabled={isCtaDisabled}
-            disabledReason={disabledReason}
-            testId={`${phase}-primary-action-card`}
-            actionTestId={PRIMARY_ACTION_TEST_IDS[phase] ?? `${phase}-advance-action`}
-            secondaryActionTestId={`${phase}-review-action`}
-            actionAriaLabel={t('phaseCockpit.primary.aria', { phase })}
-          />
-        )}
-        blockers={<div id={`${phase}-blocker-panel`}><PhaseBlockerPanel blockers={blockers} /></div>}
-        evidence={<PhaseEvidencePanel evidence={evidence} />}
-        suggestedAutomation={<PhaseSuggestedNextStep steps={suggestions} />}
-        governanceTrace={<PhaseGovernanceTrace records={governance} />}
-        advancedTools={advancedDetails}
-        advancedToolsLabel={phaseDetailLabel}
-        advancedToolsDescription={phaseDetailDescription}
-      >
-        <div className="space-y-4" data-testid={`${phase}-native-summary`}>
-          <PhasePacketErrorPanel
-            error={error}
-            onRetry={() => {
-              void refetch();
-            }}
-          />
-          <PhasePacketSummary packet={packet} />
-          <PhaseDegradedPacketPanel details={packet.degradedDetails} />
-          {feedback ? (
-            <div className="rounded-xl border border-info-border bg-info-bg p-4 text-sm text-info-color">
-              {feedback}
-            </div>
-          ) : null}
-          <section
-            className="grid gap-3 rounded-2xl border border-border bg-surface-raised p-4 text-sm shadow-sm md:grid-cols-4"
-            data-testid="phase-contract-summary"
-            aria-label={t('phaseCockpit.contract.aria')}
-          >
-            <div data-testid="phase-contract-persisted">{packet.projectName ?? t('phaseCockpit.fallback.project')}</div>
-            <div data-testid="phase-contract-derived">{t('phaseCockpit.contract.evidenceCount', { count: packet.evidence.length })}</div>
-            <div data-testid="phase-contract-suggested">
-              {actionText(packet.availableActions[0]?.label) ?? t('phaseCockpit.contract.noSuggestedAction')}
-            </div>
-            <div data-testid="phase-contract-review">
-              {packet.governance[0]?.outcome ?? t('phaseCockpit.contract.readyWithoutReview')}
-            </div>
-          </section>
-          {actionResult ? (
-            <div
-              className="rounded-xl border border-success-border bg-success-bg p-4 text-sm text-success-color"
-              data-testid="phase-action-result"
-            >
-              {actionResult.message}
-            </div>
-          ) : null}
-          {showGenerateReviewActions ? (
-            <div
-              className="rounded-xl border border-border bg-surface-raised p-4"
-              data-testid="generate-review-actions"
-            >
-              <p className="text-sm font-semibold text-fg">{t('phaseCockpit.generateReview.title')}</p>
-              <p className="mt-1 text-xs text-fg-muted">
-                {t('phaseCockpit.generateReview.description')}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  tone="success"
-                  size="small"
-                  className="border-success-border bg-success-bg text-success-color"
-                  data-testid="generate-apply"
-                  disabled={isGenerateReviewPending}
-                  onClick={() => handleGenerateReviewDecision('apply')}
-                >
-                  {t('phaseCockpit.generateReview.apply')}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  tone="warning"
-                  size="small"
-                  className="border-warning-border bg-warning-bg text-warning-color"
-                  data-testid="generate-reject"
-                  disabled={isGenerateReviewPending}
-                  onClick={() => handleGenerateReviewDecision('reject')}
-                >
-                  {t('phaseCockpit.generateReview.reject')}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  tone="danger"
-                  size="small"
-                  className="border-destructive bg-destructive-bg text-destructive"
-                  data-testid="generate-rollback"
-                  disabled={isGenerateReviewPending}
-                  onClick={() => handleGenerateReviewDecision('rollback')}
-                >
-                  {t('phaseCockpit.generateReview.rollback')}
-                </Button>
-              </div>
-            </div>
-          ) : null}
-          {showRunPostActions ? (
-            <div
-              className="rounded-xl border border-border bg-surface-raised p-4"
-              data-testid="run-post-actions"
-            >
-              <p className="text-sm font-semibold text-fg">{t('phaseCockpit.runPost.title')}</p>
-              <p className="mt-1 text-xs text-fg-muted">
-                {t('phaseCockpit.runPost.description')}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  tone="warning"
-                  size="small"
-                  className="border-warning-border bg-warning-bg text-warning-color"
-                  data-testid="run-retry"
-                  disabled={isRunPostActionPending}
-                  onClick={() => handleRunPostAction('retry')}
-                >
-                  {t('phaseCockpit.runPost.retry')}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  tone="danger"
-                  size="small"
-                  className="border-destructive bg-destructive-bg text-destructive"
-                  data-testid="run-rollback"
-                  disabled={isRunPostActionPending}
-                  onClick={() => handleRunPostAction('rollback')}
-                >
-                  {t('phaseCockpit.runPost.rollback')}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  tone="success"
-                  size="small"
-                  className="border-success-border bg-success-bg text-success-color"
-                  data-testid="run-promote"
-                  disabled={isRunPostActionPending}
-                  onClick={() => handleRunPostAction('promote')}
-                >
-                  {t('phaseCockpit.runPost.promote')}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  tone="info"
-                  size="small"
-                  className="border-info-border bg-info-bg text-info-color"
-                  data-testid="run-observe-handoff"
-                  disabled={isRunPostActionPending}
-                  onClick={() => handleRunPostAction('observe')}
-                >
-                  {t('phaseCockpit.runPost.observe')}
-                </Button>
-              </div>
-            </div>
-          ) : null}
-          {actionError ? (
-            <div
-              className="rounded-xl border border-destructive bg-destructive/10 p-4 text-sm text-destructive"
-              data-testid="phase-action-error"
-            >
-              {actionError}
-            </div>
-          ) : null}
-          {statusPanels}
-        </div>
-      </PhaseCockpitLayout>
-    </div>
+    <PhaseCockpitView
+      phase={phase}
+      phaseName={t(`phaseCockpit.phase.${phase}`)}
+      phaseDescription={t('phaseCockpit.layout.description', { phase, projectName })}
+      primaryTitle={actionText(primaryPacketAction?.label) ?? t('phaseCockpit.primary.title', { phase })}
+      primaryDescription={actionText(primaryPacketAction?.description) ?? t('phaseCockpit.primary.description')}
+      primaryActionLabel={canExecutePrimaryAction
+        ? actionText(primaryPacketAction?.label) ?? primaryPacketAction?.actionId ?? t('phaseCockpit.primary.viewBlockers')
+        : t('phaseCockpit.primary.viewBlockers')}
+      primaryIcon={resolvePhaseIcon(PHASE_ICON_IDS[phase])}
+      primaryActionTestId={PRIMARY_ACTION_TEST_IDS[phase] ?? `${phase}-advance-action`}
+      secondaryActionLabel={t('phaseCockpit.primary.reviewDetails')}
+      isPrimaryDisabled={isCtaDisabled}
+      disabledReason={disabledReason}
+      canExecutePrimaryAction={canExecutePrimaryAction}
+      onPrimaryAction={handlePrimaryAction}
+      onViewBlockers={scrollToBlockerPanel}
+      onSecondaryAction={handleSecondaryAction}
+      phaseDetailLabel={phaseDetailLabel}
+      phaseDetailDescription={phaseDetailDescription}
+      phaseDetailBody={t('phaseCockpit.detail.body')}
+      phaseDetailTitle={t('phaseCockpit.detail.title')}
+      phaseDetailLastActivityLabel={t('phaseCockpit.detail.lastActivity')}
+      phaseDetailNoRecentActivityLabel={t('phaseCockpit.detail.noRecentActivity')}
+      lastActivityTimestampLabel={activity[0]?.timestamp ? formatTimestamp(activity[0].timestamp) : ''}
+      blockers={blockers}
+      evidence={evidence}
+      governance={governance}
+      suggestions={suggestions}
+      statusPanels={statusPanels}
+      error={error}
+      onRetry={() => {
+        void refetch();
+      }}
+      feedback={feedback}
+      actionResultMessage={actionResult?.message ?? null}
+      actionError={actionError}
+      actionSections={actionSections}
+      isDependencyDegraded={isDependencyDegraded}
+      currentStateCard={(
+        <PhaseCurrentStateCard
+          packet={packet}
+          primaryNextActionLabel={primaryNextActionLabel}
+          governanceOutcome={governanceOutcome}
+          isDependencyDegraded={isDependencyDegraded}
+        />
+      )}
+      degradedDetails={<PhaseDegradedPacketPanel details={packet.degradedDetails} />}
+    />
   );
 }

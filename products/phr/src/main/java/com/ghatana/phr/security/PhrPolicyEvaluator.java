@@ -81,6 +81,10 @@ public final class PhrPolicyEvaluator {
      * @return Promise resolving to policy decision with detailed reason
      */
     public Promise<PolicyDecision> canAccessPatientRecordAsync(PhrRequestContext context, String patientId) {
+        return canAccessPhiResourceAsync(context, patientId, PATIENT_RECORD_RESOURCE);
+    }
+
+    public Promise<PolicyDecision> canAccessPhiResourceAsync(PhrRequestContext context, String patientId, String resourceType) {
         if (context == null) {
             return Promise.of(PolicyDecision.denied("INVALID_CONTEXT", "Request context is null"));
         }
@@ -92,6 +96,9 @@ public final class PhrPolicyEvaluator {
 
         if (patientId == null || patientId.isBlank()) {
             return Promise.of(PolicyDecision.denied("MISSING_PATIENT_ID", "Patient ID is null or blank"));
+        }
+        if (resourceType == null || resourceType.isBlank()) {
+            return Promise.of(PolicyDecision.denied("MISSING_RESOURCE_TYPE", "Resource type is null or blank"));
         }
 
         String role = context.role();
@@ -106,7 +113,7 @@ public final class PhrPolicyEvaluator {
 
         // Caregiver role: requires active consent grant with proper scope
         if ("caregiver".equals(role)) {
-            return consentService.validateAccess(patientId, principalId, PATIENT_RECORD_RESOURCE)
+            return consentService.validateAccess(patientId, principalId, resourceType)
                 .map(result -> {
                     if (result.isAllowed()) {
                         return PolicyDecision.allowed("CAREGIVER_CONSENT_GRANTED", 
@@ -258,10 +265,13 @@ public final class PhrPolicyEvaluator {
         if ("patient".equals(role) && principalId.equals(patientId)) {
             return PolicyDecision.allowed("SELF_CONSENT_MANAGEMENT", "Patient managing own consent");
         }
+        if ("patient".equals(role)) {
+            return PolicyDecision.denied("CONSENT_OWNER_REQUIRED", "Patient can only manage their own consent grants");
+        }
 
-        // Clinicians can view/manage consent with authorization
         if ("clinician".equals(role)) {
-            return PolicyDecision.allowed("CLINICIAN_CONSENT_MANAGEMENT", "Clinician managing consent");
+            return PolicyDecision.denied("CLINICIAN_CONSENT_MANAGEMENT_DENIED",
+                "Clinician consent management requires a delegated patient authorization flow");
         }
 
         // Admins can manage consent

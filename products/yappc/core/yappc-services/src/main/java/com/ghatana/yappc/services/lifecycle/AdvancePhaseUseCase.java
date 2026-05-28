@@ -278,12 +278,14 @@ public class AdvancePhaseUseCase {
                             1.0,
                             false);
                     List<PhasePacket.PhaseAction> actions = phaseActionAuthorizationService.determineAvailableActions(
+                            request.fromPhase(),
                             capabilities,
                             request.tenantTier(),
                             request.enabledPhaseFlags(),
                             readiness,
                             List.of(),
-                            List.of());
+                            List.of(),
+                            true);
                     PhasePacket.PhaseAction advanceAction = actions.stream()
                             .filter(action -> "advance-phase".equals(action.actionId()))
                             .findFirst()

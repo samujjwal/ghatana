@@ -3,6 +3,7 @@ import { useTranslation } from '@ghatana/i18n';
 
 import { ProductFamilyControlPlanePage } from '../../pages/product-family/ProductFamilyControlPlanePage';
 import { useCapabilityGate } from '../../hooks/useCapabilityGate';
+import { YappcPageShell } from '../../components/layout/YappcPageShell';
 
 function ProductFamilyGate({ children }: { children: React.ReactNode }) {
   const { granted, reason } = useCapabilityGate('product-family:control-plane');
@@ -30,7 +31,13 @@ function ProductFamilyGate({ children }: { children: React.ReactNode }) {
 export function Component(): React.ReactElement {
   return (
     <ProductFamilyGate>
-      <ProductFamilyControlPlanePage />
+      <YappcPageShell
+        title="Product Family"
+        description="Release readiness and reusable asset control plane across product surfaces."
+        testId="product-family-shell"
+      >
+        <ProductFamilyControlPlanePage />
+      </YappcPageShell>
     </ProductFamilyGate>
   );
 }

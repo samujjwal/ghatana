@@ -6,7 +6,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { FchvDashboardPage } from '../FchvDashboardPage';
 
-vi.mock('../../api/phrApi', () => ({
+vi.mock('../../api/adminApi', () => ({
   fetchFchvDashboard: vi.fn(),
 }));
 
@@ -14,7 +14,16 @@ vi.mock('../../i18n/phrI18n', () => ({
   t: (key: string) => key,
 }));
 
-import { fetchFchvDashboard } from '../../api/phrApi';
+vi.mock('../../auth/PhrSessionContext', () => ({
+  usePhrSession: () => ({
+    session: { principalId: 'fchv-42', tenantId: 't1', role: 'fchv' as const, name: 'FCHV', expiresAt: new Date(Date.now() + 3_600_000).toISOString() },
+    isAuthenticated: true,
+    setSession: vi.fn(),
+    clearSession: vi.fn(),
+  }),
+}));
+
+import { fetchFchvDashboard } from '../../api/adminApi';
 
 const mockFetch = fetchFchvDashboard as ReturnType<typeof vi.fn>;
 

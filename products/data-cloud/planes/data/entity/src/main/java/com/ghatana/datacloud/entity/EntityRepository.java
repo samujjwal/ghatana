@@ -125,6 +125,26 @@ public interface EntityRepository {
     Promise<Entity> save(String tenantId, Entity entity);
 
     /**
+     * Saves an entity with idempotency guarantee.
+     *
+     * <p><b>Idempotency</b><br>
+     * If the same idempotency key is used for the same tenant and collection,
+     * returns the previously saved entity instead of creating a duplicate.
+     * This is critical for retry-safe operations in distributed systems.
+     *
+     * <p><b>Key Scope</b><br>
+     * Idempotency keys are scoped to (tenantId, collectionName, idempotencyKey).
+     * Different collections can reuse the same key safely.
+     *
+     * @param tenantId the tenant identifier (required)
+     * @param entity the entity to save (required)
+     * @param idempotencyKey the idempotency key (required, max 255 chars)
+     * @return Promise of saved entity (new or existing)
+     * @throws IllegalArgumentException if tenantId mismatch or key is null/empty
+     */
+    Promise<Entity> saveWithIdempotency(String tenantId, Entity entity, String idempotencyKey);
+
+    /**
      * Deletes an entity (soft delete).
      *
      * <p><b>Soft Delete</b><br>

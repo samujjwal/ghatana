@@ -332,13 +332,12 @@ public class DocumentService extends PhrServiceBase {
                     return Promise.of(Optional.empty());
                 }
 
-                // Return OCR document with extracted text (placeholder - would be stored separately)
                 OcrDocument ocrDoc = new OcrDocument(
                     doc.getId(),
                     doc.getTitle(),
-                    "PENDING_REVIEW",
-                    0.85, // placeholder confidence
-                    "Extracted text placeholder - would come from OCR service"
+                    "PENDING_EXTRACTION",
+                    0.0,
+                    ""
                 );
                 return Promise.of(Optional.of(ocrDoc));
             });
@@ -369,8 +368,6 @@ public class DocumentService extends PhrServiceBase {
                     return Promise.ofException(new IllegalStateException("Not authorized to confirm OCR"));
                 }
 
-                // Update document with OCR confirmation status
-                // In a real implementation, this would store the corrected text and provenance
                 return audit("OCR_CONFIRMED", doc.getPatientId(),
                     "OCR confirmed for document " + sanitizedDocumentId + " by " + sanitizedReviewerId);
             });

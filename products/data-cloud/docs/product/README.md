@@ -8,6 +8,6 @@ Use the canonical language:
 - Surfaces are user and API entry points.
 - Modules are implementation units.
 - Runtime truth is the live, degraded, disabled, or unavailable state of planes and surfaces.
-- AEP is a separate adaptive event intelligence platform. Data Cloud's Action Plane is a compatibility and migration area for AEP integration.
+- Action Plane is Data Cloud's governed automation runtime (formerly AEP), providing event-driven agent orchestration, pattern detection, pipeline execution, HITL review, and learning loops.
 
 Canonical architecture: `../architecture/PLANE_ARCHITECTURE.md`.

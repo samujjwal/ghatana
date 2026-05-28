@@ -58,11 +58,30 @@ public final class ProductUnitKernelContractRegistry {
         this(new KernelProductUnitContract(
                 "1.0.0",
                 providers,
+            providers,
                 lifecycleProfiles,
                 surfaces,
                 Set.of(),
                 Set.of()));
     }
+
+        public ProductUnitKernelContractRegistry(
+            @NotNull Set<String> providers,
+            @NotNull Set<String> sourceProviders,
+            @NotNull Set<String> lifecycleProfiles,
+            @NotNull Set<String> surfaces,
+            @NotNull Set<String> productUnitKinds,
+            @NotNull Set<String> implementationStatuses
+        ) {
+        this(new KernelProductUnitContract(
+            "1.0.0",
+            providers,
+            sourceProviders,
+            lifecycleProfiles,
+            surfaces,
+            productUnitKinds,
+            implementationStatuses));
+        }
 
     public boolean isProviderKnown(String provider) {
         return provider != null && contract.providers().contains(provider);
@@ -70,6 +89,10 @@ public final class ProductUnitKernelContractRegistry {
 
     public boolean isLifecycleProfileKnown(String profile) {
         return profile != null && contract.lifecycleProfiles().contains(profile);
+    }
+
+    public boolean isSourceProviderKnown(String sourceProvider) {
+        return sourceProvider != null && contract.sourceProviders().contains(sourceProvider);
     }
 
     public boolean isSurfaceKnown(String surface) {
@@ -90,6 +113,10 @@ public final class ProductUnitKernelContractRegistry {
 
     public Set<String> lifecycleProfiles() {
         return contract.lifecycleProfiles();
+    }
+
+    public Set<String> sourceProviders() {
+        return contract.sourceProviders();
     }
 
     public Set<String> surfaces() {
@@ -126,6 +153,7 @@ public final class ProductUnitKernelContractRegistry {
     public record KernelProductUnitContract(
             String schemaVersion,
             Set<String> providers,
+            Set<String> sourceProviders,
             Set<String> lifecycleProfiles,
             Set<String> surfaces,
             Set<String> productUnitKinds,
@@ -133,6 +161,7 @@ public final class ProductUnitKernelContractRegistry {
     ) {
         public KernelProductUnitContract {
             providers = Set.copyOf(providers);
+            sourceProviders = Set.copyOf(sourceProviders);
             lifecycleProfiles = Set.copyOf(lifecycleProfiles);
             surfaces = Set.copyOf(surfaces);
             productUnitKinds = Set.copyOf(productUnitKinds);

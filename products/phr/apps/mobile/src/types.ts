@@ -33,12 +33,12 @@ export interface MobileDashboard {
   notifications: MobileNotificationItem[];
 }
 
-// ─── Auth session ─────────────────────────────────────────────────────────
+// Auth session
 
 export interface MobileSession {
   principalId: string;
   tenantId: string;
-  role: 'patient' | 'caregiver' | 'clinician' | 'admin';
+  role: 'patient' | 'caregiver' | 'fchv' | 'clinician' | 'admin';
   name: string;
   expiresAt: string;
   persona?: string;

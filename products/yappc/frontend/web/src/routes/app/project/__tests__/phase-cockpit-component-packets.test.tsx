@@ -210,10 +210,11 @@ describe('phase cockpit component packet rendering', () => {
     renderCockpit(<ShapeCockpitRoute />, basePacket());
 
     expect(screen.getByTestId('shape-cockpit')).toBeInTheDocument();
-    expect(screen.getByTestId('phase-packet-summary')).toHaveTextContent('Component Contract Project');
-    expect(screen.getByTestId('phase-contract-derived')).toHaveTextContent('1 evidence item');
-    expect(screen.getByTestId('phase-contract-review')).toHaveTextContent('Policy allows phase action');
-    expect(screen.getByTestId('phase-packet-estimate')).toHaveTextContent('Ready estimate: Ready now');
+    expect(screen.getByTestId('phase-current-state-card')).toBeInTheDocument();
+    expect(screen.getByTestId('phase-current-project')).toHaveTextContent('Component Contract Project');
+    expect(screen.getByTestId('phase-current-evidence')).toHaveTextContent('1 evidence item');
+    expect(screen.getByTestId('phase-current-governance')).toHaveTextContent('Policy allows phase action');
+    expect(screen.getByTestId('phase-current-readiness')).toHaveTextContent('Can advance');
     expect(screen.getByTestId('add-components')).not.toBeDisabled();
   });
 

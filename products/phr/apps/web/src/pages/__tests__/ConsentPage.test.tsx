@@ -17,6 +17,15 @@ vi.mock('../../i18n/phrI18n', () => ({
   formatPhrDate: (d: string) => d,
 }));
 
+vi.mock('../../auth/PhrAccessContext', () => ({
+  usePhrAccess: () => ({
+    tenantId: 'tenant-test',
+    principalId: 'patient-42',
+    role: 'patient',
+    setRole: vi.fn(),
+  }),
+}));
+
 import { createConsentGrant, fetchDashboardData, revokeConsentGrant } from '../../api/phrApi';
 
 const mockFetchDashboard = fetchDashboardData as ReturnType<typeof vi.fn>;
@@ -79,13 +88,18 @@ describe('ConsentPage', () => {
     await waitFor(() => expect(mockCreate).toHaveBeenCalledOnce());
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({
+        patientId: 'patient-42',
         recipientId: 'grantee-42',
         purpose: 'Treatment',
         scope: expect.objectContaining({
           resourceTypes: ['Patient', 'Observation'],
         }),
       }),
-      expect.any(Object),
+      expect.objectContaining({
+        tenantId: 'tenant-test',
+        principalId: 'patient-42',
+        role: 'patient',
+      }),
     );
   });
 
@@ -117,7 +131,15 @@ describe('ConsentPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /consents.revoke Dr. Sharma/i }));
 
-    await waitFor(() => expect(mockRevoke).toHaveBeenCalledWith('grant-1', 'current', expect.any(Object)));
+    await waitFor(() => expect(mockRevoke).toHaveBeenCalledWith(
+      'grant-1',
+      'patient-42',
+      expect.objectContaining({
+        tenantId: 'tenant-test',
+        principalId: 'patient-42',
+        role: 'patient',
+      }),
+    ));
 
     vi.unstubAllGlobals();
   });

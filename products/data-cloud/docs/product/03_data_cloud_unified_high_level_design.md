@@ -38,7 +38,7 @@ Data Cloud
 not:
 
 ```text
-Data Cloud + separate AEP product
+Data Cloud + separate Action Plane product (Action Plane is integrated within Data Cloud)
 ```
 
 Action Plane surfaces appear through Data Cloud navigation:

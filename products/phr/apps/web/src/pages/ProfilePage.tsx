@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, Button, TextField, Select, FormControl, InputLabel } from '@ghatana/design-system';
-import { fetchPatientProfile, updatePatientProfile } from '../api/phrApi';
+import { fetchPatientProfile, updatePatientProfile } from '../api/patientApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import { logError } from '../utils/safeLogger';

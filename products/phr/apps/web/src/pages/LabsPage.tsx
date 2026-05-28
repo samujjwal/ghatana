@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { Link } from 'react-router-dom';
-import { fetchObservations } from '../api/phrApi';
+import { fetchObservations } from '../api/clinicalApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
-import { formatPhrDate } from '../i18n/phrI18n';
+import { formatPhrDate, t } from '../i18n/phrI18n';
 import type { ObservationSummary } from '../types';
 
 export function LabsPage(): React.ReactElement {
@@ -20,17 +20,17 @@ export function LabsPage(): React.ReactElement {
       role: session.role,
     })
       .then(setLabs)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load lab results'))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('labs.error')))
       .finally(() => setLoading(false));
   }, [session]);
 
-  if (loading) return <div className="loading">Loading lab results...</div>;
-  if (error) return <div className="error">Error: {error}</div>;
+  if (loading) return <div className="loading">{t('labs.loading')}</div>;
+  if (error) return <div className="error">{t('dashboard.errorPrefix')}: {error}</div>;
 
   return (
     <div className="stack gap-lg">
       <Card>
-        <CardHeader title="Lab Results" subheader="Recent laboratory test results" />
+        <CardHeader title={t('labs.title')} subheader={t('labs.subheader')} />
         <CardContent>
           <div className="info-banner">
             <p className="muted">
@@ -39,7 +39,7 @@ export function LabsPage(): React.ReactElement {
           </div>
           <div className="stack gap-md">
             {labs.length === 0 ? (
-              <p className="empty">No lab results found</p>
+              <p className="empty">{t('labs.empty')}</p>
             ) : (
               labs.map((lab) => (
                 <Link key={lab.id} className="data-card" to={`/labs/${lab.id}`}>

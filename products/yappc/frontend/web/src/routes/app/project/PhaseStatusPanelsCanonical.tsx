@@ -93,6 +93,38 @@ export function PhaseStatusPanelsCanonical({ phase, phasePanels }: PhaseStatusPa
           ))}
         </div>
       ) : null}
+
+      {panel.learningInsight ? (
+        <Card variant="outlined" data-testid={`${phase}-learning-insight`}>
+          <CardContent className="p-4">
+            <p className="text-sm font-semibold text-fg">Learning insight</p>
+            <p className="mt-2 text-sm text-fg-muted">{panel.learningInsight.learnedSignal}</p>
+            <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-fg-muted" data-testid={`${phase}-learning-checklist`}>
+              <li>Source: {panel.learningInsight.sourceEvent}</li>
+              <li>Recommendation: {panel.learningInsight.recommendation}</li>
+              <li>Approval: {panel.learningInsight.approvalRequired ? 'required' : 'not required'}</li>
+              <li>Rollback: {panel.learningInsight.rollbackPath}</li>
+            </ul>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {panel.evolutionPlan ? (
+        <Card variant="outlined" data-testid={`${phase}-evolution-plan`}>
+          <CardContent className="p-4">
+            <p className="text-sm font-semibold text-fg">Evolution plan</p>
+            <p className="mt-2 text-sm text-fg-muted">{panel.evolutionPlan.proposal}</p>
+            <ol className="mt-3 space-y-2 text-xs text-fg-muted" data-testid={`${phase}-evolution-stepper`}>
+              <li>1. Impact review: {panel.evolutionPlan.impactSummary}</li>
+              <li>2. Diff review: {panel.evolutionPlan.diffSummary}</li>
+              <li>3. Validation requirements: {panel.evolutionPlan.validationRequirements}</li>
+              <li>4. Approval state: {panel.evolutionPlan.approvalState}</li>
+              <li>5. Rollback path: {panel.evolutionPlan.rollbackPath}</li>
+              <li>6. Re-run target: {panel.evolutionPlan.rerunTarget}</li>
+            </ol>
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }

@@ -61,7 +61,7 @@ public final class PhrConditionRoutes {
 
         String patientId = request.getPathParameter("patientId");
         if (policyEvaluator == null) {
-            if (!("patient".equals(context.role()) && context.principalId().equals(patientId))) {
+            if (!canAccessWithoutPolicyEvaluator(context, patientId)) {
                 return PhrRouteSupport.errorResponse(403, "CONDITION_ACCESS_DENIED",
                     "Access denied to condition data for patient " + patientId,
                     context.correlationId());
@@ -91,5 +91,11 @@ public final class PhrConditionRoutes {
                 )
             )).then(conditions -> PhrRouteSupport.jsonResponseWithCorrelation(200, conditions, context.correlationId()));
         });
+    }
+
+    private static boolean canAccessWithoutPolicyEvaluator(PhrRouteSupport.PhrRequestContext context, String patientId) {
+        return ("patient".equals(context.role()) && context.principalId().equals(patientId))
+            || "clinician".equals(context.role())
+            || "admin".equals(context.role());
     }
 }

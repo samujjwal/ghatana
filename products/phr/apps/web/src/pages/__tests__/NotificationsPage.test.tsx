@@ -6,7 +6,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { NotificationsPage } from '../NotificationsPage';
 
-vi.mock('../../api/phrApi', () => ({
+vi.mock('../../api/notificationsApi', () => ({
   fetchNotifications: vi.fn(),
 }));
 
@@ -18,7 +18,7 @@ vi.mock('../../auth/PhrSessionContext', () => ({
   usePhrSession: () => ({ session: { principalId: 'patient-42', tenantId: 't1', role: 'patient' as const, name: 'Test Patient', expiresAt: new Date(Date.now() + 3_600_000).toISOString() }, isAuthenticated: true, setSession: vi.fn(), clearSession: vi.fn() }),
 }));
 
-import { fetchNotifications } from '../../api/phrApi';
+import { fetchNotifications } from '../../api/notificationsApi';
 
 const mockFetch = fetchNotifications as ReturnType<typeof vi.fn>;
 
@@ -95,6 +95,10 @@ describe('NotificationsPage', () => {
   it('calls fetchNotifications with the session principalId', async () => {
     mockFetch.mockResolvedValue([]);
     render(<NotificationsPage />);
-    await waitFor(() => expect(mockFetch).toHaveBeenCalledWith('patient-42'));
+    await waitFor(() => expect(mockFetch).toHaveBeenCalledWith('patient-42', {
+      tenantId: 't1',
+      principalId: 'patient-42',
+      role: 'patient',
+    }));
   });
 });

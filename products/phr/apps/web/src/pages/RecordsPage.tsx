@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { Link } from 'react-router-dom';
-import { fetchRecords } from '../api/phrApi';
+import { fetchRecords } from '../api/recordsApi';
 import { formatPhrDateTime, t } from '../i18n/phrI18n';
 import type { PatientRecordSummary } from '../types';
 import { usePhrSession } from '../auth/PhrSessionContext';
@@ -20,7 +20,7 @@ export function RecordsPage(): React.ReactElement {
 
   useEffect(() => {
     if (!session) {
-      setError('No session available');
+      setError(t('error.sessionRequired'));
       setLoading(false);
       return;
     }
@@ -36,7 +36,7 @@ export function RecordsPage(): React.ReactElement {
       dateTo: dateToFilter || undefined,
     })
       .then(setRecords)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load records'))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('error.recordsLoad')))
       .finally(() => setLoading(false));
   }, [session, categoryFilter, resourceTypeFilter, dateFromFilter, dateToFilter]);
 
@@ -52,14 +52,13 @@ export function RecordsPage(): React.ReactElement {
       <CardHeader title={t('records.title')} subheader={t('records.subheader')} />
       <CardContent>
         <div className="stack gap-md">
-          {/* Filters */}
           <div className="filter-bar">
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="filter-select"
             >
-              <option value="">Filter by category</option>
+              <option value="">{t('records.filter.category')}</option>
               {categories.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
@@ -70,7 +69,7 @@ export function RecordsPage(): React.ReactElement {
               onChange={(e) => setResourceTypeFilter(e.target.value)}
               className="filter-select"
             >
-              <option value="">Filter by resource type</option>
+              <option value="">{t('records.filter.resourceType')}</option>
               {resourceTypes.map(type => (
                 <option key={type} value={type}>{type}</option>
               ))}
@@ -81,7 +80,7 @@ export function RecordsPage(): React.ReactElement {
               value={dateFromFilter}
               onChange={(e) => setDateFromFilter(e.target.value)}
               className="filter-input"
-              placeholder="From date"
+              placeholder={t('records.filter.fromDate')}
             />
             
             <input
@@ -89,7 +88,7 @@ export function RecordsPage(): React.ReactElement {
               value={dateToFilter}
               onChange={(e) => setDateToFilter(e.target.value)}
               className="filter-input"
-              placeholder="To date"
+              placeholder={t('records.filter.toDate')}
             />
             
             {(categoryFilter || resourceTypeFilter || dateFromFilter || dateToFilter) && (
@@ -102,14 +101,13 @@ export function RecordsPage(): React.ReactElement {
                 }}
                 className="filter-clear"
               >
-                Clear filters
+                {t('records.filter.clear')}
               </button>
             )}
           </div>
 
-          {/* Records list */}
           {records.length === 0 ? (
-            <div className="empty-state">No records found matching your filters</div>
+            <div className="empty-state">{t('records.empty.filtered')}</div>
           ) : (
             records.map((record) => (
               <Link key={record.id} className="data-card" to={`/records/${record.id}`}>

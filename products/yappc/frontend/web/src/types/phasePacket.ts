@@ -177,6 +177,12 @@ export interface PhaseAction {
   readonly confirmationRequired: boolean;
   readonly idempotencyKey: string;
   readonly auditType: string;
+  readonly targetType?: string;
+  readonly targetRoute?: string | null;
+  readonly targetDrawer?: string | null;
+  readonly requiresPreview?: boolean;
+  readonly serverOperation?: string;
+  readonly postSuccessBehavior?: string;
   readonly parameters: Record<string, unknown>;
 }
 
@@ -202,6 +208,25 @@ export interface PhasePanelCard {
   readonly metadata: Record<string, unknown>;
 }
 
+export interface LearningInsightPanel {
+  readonly learnedSignal: string;
+  readonly sourceEvent: string;
+  readonly confidence: number;
+  readonly recommendation: string;
+  readonly approvalRequired: boolean;
+  readonly rollbackPath: string;
+}
+
+export interface EvolutionPlanPanel {
+  readonly proposal: string;
+  readonly impactSummary: string;
+  readonly diffSummary: string;
+  readonly validationRequirements: string;
+  readonly approvalState: string;
+  readonly rollbackPath: string;
+  readonly rerunTarget: string;
+}
+
 /**
  * Backend-owned phase panel view model.
  */
@@ -214,6 +239,8 @@ export interface PhasePanelView {
   readonly confidence: number;
   readonly supportTrace: string;
   readonly cards: readonly PhasePanelCard[];
+  readonly learningInsight?: LearningInsightPanel;
+  readonly evolutionPlan?: EvolutionPlanPanel;
 }
 
 // ============================================================================

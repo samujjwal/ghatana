@@ -35,9 +35,10 @@ public final class KernelProductUnitEvolutionUpdateService implements EvolutionK
         String workspaceId = planMetadata.get("workspaceId");
         String projectName = planMetadata.get("projectName");
         List<String> surfaces = splitCsv(planMetadata.get("surfaces"));
-        if (isBlank(workspaceId) || isBlank(projectName) || surfaces.isEmpty()) {
+        String sourceProvider = planMetadata.get("sourceProvider");
+        if (isBlank(workspaceId) || isBlank(projectName) || surfaces.isEmpty() || isBlank(sourceProvider)) {
             return Promise.of(EvolutionKernelUpdate.blocked(
-                    "Kernel-governed evolution requires workspaceId, projectName, and surfaces metadata"));
+                "Kernel-governed evolution requires workspaceId, projectName, surfaces, and sourceProvider metadata"));
         }
 
         Map<String, Object> metadata = new LinkedHashMap<>();
@@ -56,6 +57,7 @@ public final class KernelProductUnitEvolutionUpdateService implements EvolutionK
                             projectName,
                             surfaces,
                             defaultIfBlank(planMetadata.get("runtimeProvider"), "ghatana-file-registry"),
+                            sourceProvider,
                             defaultIfBlank(planMetadata.get("lifecycleProfile"), "standard-web-api-product"),
                             "evolve",
                             metadata,

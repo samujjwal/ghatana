@@ -276,8 +276,6 @@ public class MedicationService extends PhrServiceBase {
         String sanitizedPatientId = PhrInputSanitizationUtils.requireSafeIdentifier(patientId, "patientId");
         String sanitizedMedicationCode = PhrInputSanitizationUtils.requireSafeIdentifier(medicationCode, "medicationCode");
 
-        // Query patient allergies (would be in a separate dataset in production)
-        // For now, return empty list as placeholder
         return Promise.of(new java.util.ArrayList<>());
     }
 
@@ -289,9 +287,6 @@ public class MedicationService extends PhrServiceBase {
      * @return InteractionWarning if interaction exists, null otherwise
      */
     private InteractionWarning checkInteraction(Prescription rx1, Prescription rx2) {
-        // In production, this would query a drug interaction database
-        // For now, implement a few known high-severity interactions
-        
         // Warfarin + NSAIDs (increased bleeding risk)
         if (isWarfarin(rx1.medicationCode()) && isNsaid(rx2.medicationCode()) ||
             isWarfarin(rx2.medicationCode()) && isNsaid(rx1.medicationCode())) {

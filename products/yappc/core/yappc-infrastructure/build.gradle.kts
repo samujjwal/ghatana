@@ -12,13 +12,6 @@ dependencies {
     // YAPPC shared utilities (includes AgentRegistryPort, DataStorePort)
     implementation(project(":products:yappc:core:yappc-shared"))
 
-    // AEP Agent Registry — for AepAgentRegistryAdapter only
-    implementation(project(":products:data-cloud:planes:action:registry"))
-
-    // AEP Unified Runtime — for AepAgentRuntimeAdapter (Phase 1.6: aep-engine + aep-agent-runtime + aep-central-runtime)
-    implementation(project(":products:data-cloud:planes:action:engine"))
-    implementation(project(":products:data-cloud:planes:action:agent-runtime"))
-
     // Data-Cloud — for DataCloudDataStoreAdapter
     implementation(project(":products:data-cloud:delivery:runtime-composition"))
     implementation(project(":products:data-cloud:extensions:plugins"))

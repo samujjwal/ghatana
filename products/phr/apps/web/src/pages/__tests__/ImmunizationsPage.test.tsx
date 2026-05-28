@@ -6,7 +6,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { ImmunizationsPage } from '../ImmunizationsPage';
 
-vi.mock('../../api/phrApi', () => ({
+vi.mock('../../api/clinicalApi', () => ({
   fetchImmunizations: vi.fn(),
 }));
 
@@ -18,13 +18,13 @@ vi.mock('../../auth/PhrSessionContext', () => ({
   usePhrSession: () => ({ session: { principalId: 'patient-42', tenantId: 't1', role: 'patient' as const, name: 'Test Patient', expiresAt: new Date(Date.now() + 3_600_000).toISOString() }, isAuthenticated: true, setSession: vi.fn(), clearSession: vi.fn() }),
 }));
 
-import { fetchImmunizations } from '../../api/phrApi';
+import { fetchImmunizations } from '../../api/clinicalApi';
 
 const mockFetch = fetchImmunizations as ReturnType<typeof vi.fn>;
 
 const immunizations = [
-  { id: 'i1', vaccine: 'BCG', date: '2000-01-10', dose: '1', site: 'Left arm', cvxCode: '19' },
-  { id: 'i2', vaccine: 'MMR', date: '2002-06-20', dose: '2', cvxCode: '03' },
+  { id: 'i1', vaccine: 'BCG', date: '2000-01-10', occurrenceDate: '2000-01-10', dose: '1', site: 'Left arm', cvxCode: '19', status: 'completed' as const },
+  { id: 'i2', vaccine: 'MMR', date: '2002-06-20', occurrenceDate: '2002-06-20', dose: '2', cvxCode: '03', status: 'completed' as const },
 ];
 
 describe('ImmunizationsPage', () => {
@@ -42,7 +42,7 @@ describe('ImmunizationsPage', () => {
     mockFetch.mockRejectedValue(new Error('network'));
     render(<ImmunizationsPage />);
     await waitFor(() =>
-      expect(screen.getByText(/immunizations\.error/)).toBeTruthy()
+      expect(screen.getByText(/dashboard\.errorPrefix/)).toBeTruthy()
     );
   });
 
@@ -73,6 +73,6 @@ describe('ImmunizationsPage', () => {
   it('calls fetchImmunizations with the session principalId', async () => {
     mockFetch.mockResolvedValue([]);
     render(<ImmunizationsPage />);
-    await waitFor(() => expect(mockFetch).toHaveBeenCalledWith('patient-42'));
+    await waitFor(() => expect(mockFetch).toHaveBeenCalledWith('patient-42', expect.any(Object)));
   });
 });

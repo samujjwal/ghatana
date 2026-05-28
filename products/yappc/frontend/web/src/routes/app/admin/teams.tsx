@@ -14,6 +14,7 @@
 import React from 'react';
 
 import { useCapabilityGate } from '../../../hooks/useCapabilityGate';
+import { YappcPageShell } from '../../../components/layout/YappcPageShell';
 import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
 
 const TEAMS_BACKEND_LIVE = false;
@@ -29,14 +30,13 @@ function TeamsComingSoon({ reason }: { reason: 'backend-not-live' | 'insufficien
       : 'Team management is not yet available in this workspace.';
 
   return (
-    <div
-      className="flex min-h-[60vh] items-center justify-center"
-      data-testid="teams-unavailable"
-    >
-      <div className="max-w-sm space-y-2 text-center">
-        <p className="text-sm text-fg-muted">{message}</p>
+    <YappcPageShell title="Teams" description="Manage workspace team membership and access." testId="teams-shell">
+      <div className="flex min-h-[40vh] items-center justify-center" data-testid="teams-unavailable">
+        <div className="max-w-sm space-y-2 text-center">
+          <p className="text-sm text-fg-muted">{message}</p>
+        </div>
       </div>
-    </div>
+    </YappcPageShell>
   );
 }
 
@@ -61,7 +61,9 @@ function TeamsGate({ children }: { children: React.ReactNode }) {
 export function Component() {
   return (
     <TeamsGate>
-      <div className="p-6" data-testid="teams-page" />
+      <YappcPageShell title="Teams" description="Manage workspace team membership and access." testId="teams-shell">
+        <div data-testid="teams-page" />
+      </YappcPageShell>
     </TeamsGate>
   );
 }

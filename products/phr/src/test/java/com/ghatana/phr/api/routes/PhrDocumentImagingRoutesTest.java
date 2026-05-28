@@ -3,7 +3,10 @@ package com.ghatana.phr.api.routes;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
 import com.ghatana.phr.kernel.service.DocumentService;
+import com.ghatana.phr.kernel.service.FchvCommunityAssignmentService;
 import com.ghatana.phr.kernel.service.ImagingService;
+import com.ghatana.phr.kernel.service.TreatmentRelationshipService;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
@@ -56,17 +59,32 @@ class PhrDocumentImagingRoutesTest extends EventloopTestBase {
     @Mock
     private ConsentManagementService consentService;
 
+    @Mock
+    private TreatmentRelationshipService treatmentRelationshipService;
+
+    @Mock
+    private FchvCommunityAssignmentService fchvCommunityAssignmentService;
+
     private AsyncServlet servlet;
 
     @BeforeEach
     void setUp() {
+        PhrPolicyEvaluator policyEvaluator = new PhrPolicyEvaluator(
+            consentService,
+            treatmentRelationshipService,
+            fchvCommunityAssignmentService
+        );
         servlet = new PhrDocumentImagingRoutes(
-            eventloop(), documentService, imagingService, consentService
+            eventloop(), documentService, imagingService, consentService, policyEvaluator
         ).getServlet();
 
         lenient().when(consentService.validateAccess(anyString(), anyString(), anyString()))
             .thenReturn(Promise.of(new ConsentManagementService.ConsentValidationResult(
                 true, "GRANT_VALID", "grant-42")));
+        lenient().when(treatmentRelationshipService.hasActiveTreatmentRelationship(anyString(), anyString()))
+            .thenReturn(Promise.of(true));
+        lenient().when(fchvCommunityAssignmentService.hasCommunityAccess(anyString(), anyString()))
+            .thenReturn(Promise.of(true));
         lenient().when(documentService.getPatientDocuments(anyString(), anyString()))
             .thenReturn(Promise.of(List.of()));
         lenient().when(documentService.getDocument(anyString(), anyString()))
@@ -85,7 +103,7 @@ class PhrDocumentImagingRoutesTest extends EventloopTestBase {
         @DisplayName("200 — patient may list their own documents")
         void patientMayListOwnDocuments() throws Exception {
             HttpRequest request = contextRequest(
-                HttpMethod.GET, "/documents/?patientId=patient-1", "t1", "patient-1", "patient");
+                HttpMethod.GET, "/documents/?patientId=patient-1", "tenant-1", "patient-1", "patient");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -96,7 +114,7 @@ class PhrDocumentImagingRoutesTest extends EventloopTestBase {
         @DisplayName("200 — clinician with consent may list patient documents")
         void clinicianWithConsentMayListDocuments() throws Exception {
             HttpRequest request = contextRequest(
-                HttpMethod.GET, "/documents/?patientId=patient-1", "t1", "dr-1", "clinician");
+                HttpMethod.GET, "/documents/?patientId=patient-1", "tenant-1", "dr-1", "clinician");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -107,7 +125,7 @@ class PhrDocumentImagingRoutesTest extends EventloopTestBase {
         @DisplayName("400 — missing patientId query parameter")
         void returns400WhenPatientIdMissing() throws Exception {
             HttpRequest request = contextRequest(
-                HttpMethod.GET, "/documents/", "t1", "patient-1", "patient");
+                HttpMethod.GET, "/documents/", "tenant-1", "patient-1", "patient");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -133,7 +151,7 @@ class PhrDocumentImagingRoutesTest extends EventloopTestBase {
         @DisplayName("200 — patient may list their own imaging studies")
         void patientMayListOwnStudies() throws Exception {
             HttpRequest request = contextRequest(
-                HttpMethod.GET, "/imaging/?patientId=patient-1", "t1", "patient-1", "patient");
+                HttpMethod.GET, "/imaging/studies?patientId=patient-1", "tenant-1", "patient-1", "patient");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -144,7 +162,7 @@ class PhrDocumentImagingRoutesTest extends EventloopTestBase {
         @DisplayName("400 — missing patientId query parameter")
         void returns400WhenPatientIdMissing() throws Exception {
             HttpRequest request = contextRequest(
-                HttpMethod.GET, "/imaging/", "t1", "patient-1", "patient");
+                HttpMethod.GET, "/imaging/studies", "tenant-1", "patient-1", "patient");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 

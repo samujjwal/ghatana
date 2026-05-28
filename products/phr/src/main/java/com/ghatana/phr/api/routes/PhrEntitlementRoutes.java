@@ -37,20 +37,13 @@ public final class PhrEntitlementRoutes {
     private static final Logger LOG = LoggerFactory.getLogger(PhrEntitlementRoutes.class);
     private static final String CONTENT_JSON = "application/json";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final Path ROUTE_CONTRACT_REPO_PATH = Path.of("products/phr/config/phr-route-contract.json");
-    private static final Path ROUTE_CONTRACT_MODULE_PATH = Path.of("config/phr-route-contract.json");
-    private static final Map<String, Integer> ROLE_ORDER = Map.of(
-        "patient", 10,
-        "caregiver", 20,
-        "fchv", 30,
-        "clinician", 40,
-        "admin", 50
-    );
+    private static final Path ROUTE_CONTRACT_PATH = resolveRouteContractPath();
 
     private final Eventloop eventloop;
     private final RouteEntitlementEvaluator routeEntitlementEvaluator;
     private final IdentityAwareBoundedCache<String, Map<String, Object>> entitlementCache;
     private List<ProductRouteEntitlement.RouteEntitlement> cachedRoutes;
+    private Map<String, Integer> roleOrder;
     private volatile boolean contractLoaded = false;
 
     public PhrEntitlementRoutes(
@@ -63,6 +56,27 @@ public final class PhrEntitlementRoutes {
         loadRouteContract();
     }
 
+    private static Path resolveRouteContractPath() {
+        Path configuredPath = Path.of(System.getProperty(
+            "phr.route.contract.path",
+            "products/phr/config/phr-route-contract.json"
+        ));
+        if (configuredPath.isAbsolute()) {
+            return configuredPath.normalize();
+        }
+
+        Path current = Path.of("").toAbsolutePath();
+        while (current != null) {
+            Path candidate = current.resolve(configuredPath).normalize();
+            if (Files.exists(candidate)) {
+                return candidate;
+            }
+            current = current.getParent();
+        }
+
+        return Path.of("").toAbsolutePath().resolve(configuredPath).normalize();
+    }
+
     /**
      * Loads the route contract from the canonical JSON file.
      * This ensures web and backend use the same source of truth for routes.
@@ -72,11 +86,9 @@ public final class PhrEntitlementRoutes {
      */
     private void loadRouteContract() {
         try {
-            Path routeContractPath = resolveRouteContractPath();
+            Path routeContractPath = ROUTE_CONTRACT_PATH;
             if (!Files.exists(routeContractPath)) {
-                LOG.error("Route contract file not found at {} or {} - failing closed",
-                    ROUTE_CONTRACT_REPO_PATH,
-                    ROUTE_CONTRACT_MODULE_PATH);
+                LOG.error("Route contract file not found at {} - failing closed", routeContractPath);
                 this.contractLoaded = false;
                 return;
             }
@@ -85,10 +97,26 @@ public final class PhrEntitlementRoutes {
             JsonNode root = OBJECT_MAPPER.readTree(json);
 
             // Validate required top-level fields
-            if (!root.has("routes")) {
-                LOG.error("Route contract missing required field (routes) - failing closed");
+            if (!root.has("routes") || !root.has("roleOrder")) {
+                LOG.error("Route contract missing required fields (routes, roleOrder) - failing closed");
                 this.contractLoaded = false;
                 return;
+            }
+
+            Map<String, Integer> loadedRoleOrder = new java.util.LinkedHashMap<>();
+            JsonNode roleOrderNode = root.path("roleOrder");
+            if (!roleOrderNode.isObject()) {
+                LOG.error("Route contract roleOrder is not an object - failing closed");
+                this.contractLoaded = false;
+                return;
+            }
+            for (String allowedRole : PhrRouteSupport.ALLOWED_ROLES) {
+                if (!roleOrderNode.has(allowedRole)) {
+                    LOG.error("Route contract roleOrder missing role {} - failing closed", allowedRole);
+                    this.contractLoaded = false;
+                    return;
+                }
+                loadedRoleOrder.put(allowedRole, roleOrderNode.path(allowedRole).asInt());
             }
 
             // Load and validate routes
@@ -180,6 +208,7 @@ public final class PhrEntitlementRoutes {
                 ));
             }
             this.cachedRoutes = loadedRoutes;
+            this.roleOrder = loadedRoleOrder;
             this.contractLoaded = true;
             
             LOG.info("Loaded {} routes from contract file {}", loadedRoutes.size(), routeContractPath);
@@ -187,13 +216,6 @@ public final class PhrEntitlementRoutes {
             LOG.error("Failed to load route contract - failing closed", ex);
             this.contractLoaded = false;
         }
-    }
-
-    private static Path resolveRouteContractPath() {
-        if (Files.exists(ROUTE_CONTRACT_REPO_PATH)) {
-            return ROUTE_CONTRACT_REPO_PATH;
-        }
-        return ROUTE_CONTRACT_MODULE_PATH;
     }
 
     /**
@@ -270,11 +292,11 @@ public final class PhrEntitlementRoutes {
 
         // Use loaded route contract with built-in role order
         List<ProductRouteEntitlement.RouteEntitlement> routes = routeEntitlementEvaluator.filterByRole(
-            cachedRoutes, normalizedRole, ROLE_ORDER);
+            cachedRoutes, normalizedRole, roleOrder);
         List<ProductRouteEntitlement.ActionEntitlement> actions =
-            routeEntitlementEvaluator.filterActionsByRole(routes, normalizedRole, ROLE_ORDER);
+            routeEntitlementEvaluator.filterActionsByRole(routes, normalizedRole, roleOrder);
         List<ProductRouteEntitlement.CardEntitlement> cards =
-            routeEntitlementEvaluator.filterCardsByRole(routes, normalizedRole, ROLE_ORDER);
+            routeEntitlementEvaluator.filterCardsByRole(routes, normalizedRole, roleOrder);
 
         ProductRouteEntitlement entitlement = new ProductRouteEntitlement(
             "phr",

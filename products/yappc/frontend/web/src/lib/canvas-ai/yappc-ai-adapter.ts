@@ -17,9 +17,9 @@
  * - `autoLayout` → `/api/canvas/layout`
  * - `generateElements` → `/api/canvas/generate-elements`
  *
- * Endpoints that don't yet exist on the backend return graceful no-op results
- * rather than throwing, so the frontend degrades cleanly if a feature is not
- * yet implemented on the service side.
+ * Generation endpoints that are unavailable return explicit degraded/readiness
+ * state or errors so production workflows never mistake missing backend
+ * capability for successful empty generation.
  */
 
 import type {
@@ -45,6 +45,20 @@ const API_BASE =
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+export interface CanvasAIReadinessState {
+  readonly status: "degraded";
+  readonly reason: string;
+  readonly retryable: boolean;
+}
+
+export function canvasAIReadinessUnavailable(error: unknown): CanvasAIReadinessState {
+  return {
+    status: "degraded",
+    reason: error instanceof Error ? error.message : String(error),
+    retryable: true,
+  };
+}
 
 async function postJson<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -78,6 +92,18 @@ function mapSuggestion(raw: Record<string, unknown>): AISuggestion {
   };
 }
 
+function degradedReadinessSuggestion(error: unknown): AISuggestion {
+  const readiness = canvasAIReadinessUnavailable(error);
+  return {
+    id: "canvas-ai-readiness-degraded",
+    kind: "workflow",
+    title: "Canvas AI unavailable",
+    description: readiness.reason,
+    confidence: 0,
+    payload: { readiness },
+  };
+}
+
 // ---------------------------------------------------------------------------
 // YAPPC Canvas AI Adapter implementation
 // ---------------------------------------------------------------------------
@@ -92,7 +118,7 @@ export class YappcCanvasAIAdapter implements CanvasAIAdapter {
       return (result.suggestions ?? []).map(mapSuggestion);
     } catch (e) {
       console.warn("[YappcCanvasAIAdapter] getSuggestions unavailable:", e);
-      return [];
+      return [degradedReadinessSuggestion(e)];
     }
   }
 
@@ -149,7 +175,7 @@ export class YappcCanvasAIAdapter implements CanvasAIAdapter {
       return result;
     } catch (e) {
       console.warn("[YappcCanvasAIAdapter] autoLayout unavailable:", e);
-      return { positions: {} };
+      throw new Error(`Canvas AI auto-layout unavailable: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
@@ -165,7 +191,7 @@ export class YappcCanvasAIAdapter implements CanvasAIAdapter {
       return result.elements ?? [];
     } catch (e) {
       console.warn("[YappcCanvasAIAdapter] generateElements unavailable:", e);
-      return [];
+      throw new Error(`Canvas AI element generation unavailable: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 }

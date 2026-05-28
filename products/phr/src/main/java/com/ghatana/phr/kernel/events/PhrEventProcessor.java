@@ -260,7 +260,7 @@ public class PhrEventProcessor {
         public String getEncounterId() { return encounterId; }
     }
 
-    // ==================== Operator Placeholders ====================
+    // ==================== Event Operators ====================
 
     public static class ConsentValidationOperator implements Operator { }
     public static class ConsentAuditOperator implements Operator { }

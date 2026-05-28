@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import { notificationBodyContainsPhi, redactPhiFromText } from '../pushNotifications';
 
 describe('pushNotifications PHI redaction', () => {
@@ -45,8 +44,8 @@ describe('pushNotifications PHI redaction', () => {
 
   describe('redactPhiFromText', () => {
     it('redacts messages containing PHI', () => {
-      expect(redactPhiFromText('Diagnosis: Hypertension')).toBe('[Redacted — open app to view details]');
-      expect(redactPhiFromText('MRN: 123456789')).toBe('[Redacted — open app to view details]');
+      expect(redactPhiFromText('Diagnosis: Hypertension')).toBe('[Redacted - open app to view details]');
+      expect(redactPhiFromText('MRN: 123456789')).toBe('[Redacted - open app to view details]');
     });
 
     it('preserves messages without PHI', () => {

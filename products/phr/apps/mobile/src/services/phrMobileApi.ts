@@ -1,11 +1,21 @@
-import type { MobileDashboard, MobileSession } from '../types';
+import type {
+  MobileConsent,
+  MobileDashboard,
+  MobileNotificationItem,
+  MobilePatientProfile,
+  MobileRecord,
+  MobileSession,
+} from '../types';
 import { clearDashboardOffline, loadDashboardOffline, saveDashboardOffline, type SessionIdentity } from './offlineStore';
 import { clearMobileSession } from './mobileSessionStore';
 import { phiClearAll } from './phiEncryptedStorage';
 import { t } from '../i18n/phrMobileI18n';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_PHR_API_URL ?? process.env.PHR_API_URL ?? '';
 const DASHBOARD_PATH = '/mobile/dashboard';
+
+function getApiBaseUrl(): string {
+  return process.env.EXPO_PUBLIC_PHR_API_URL ?? process.env.PHR_API_URL ?? '';
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -21,6 +31,10 @@ function isNumber(value: unknown): value is number {
 
 function isBoolean(value: unknown): value is boolean {
   return typeof value === 'boolean';
+}
+
+function isMobileRole(value: unknown): value is MobileSession['role'] {
+  return value === 'patient' || value === 'caregiver' || value === 'fchv' || value === 'clinician' || value === 'admin';
 }
 
 function assertMobileDashboard(value: unknown): MobileDashboard {
@@ -71,11 +85,57 @@ function assertMobileDashboard(value: unknown): MobileDashboard {
     throw new Error(t('api.invalidNotifications'));
   }
 
-  return value as unknown as MobileDashboard;
+  const patientProfile: MobilePatientProfile = {
+    id: patient.id,
+    name: patient.name,
+    age: patient.age,
+    bloodType: patient.bloodType,
+    district: patient.district,
+  };
+  const dashboardRecords: MobileRecord[] = records.map((record) => {
+    if (!isRecord(record) || !isString(record.id) || !isString(record.title) || !isString(record.summary) || !isString(record.fhirPreview)) {
+      throw new Error(t('api.invalidRecords'));
+    }
+    return {
+      id: record.id,
+      title: record.title,
+      summary: record.summary,
+      fhirPreview: record.fhirPreview,
+    };
+  });
+  const dashboardConsents: MobileConsent[] = consents.map((consent) => {
+    if (!isRecord(consent) || !isString(consent.id) || !isString(consent.grantee) || !isString(consent.purpose) || !isBoolean(consent.active)) {
+      throw new Error(t('api.invalidConsents'));
+    }
+    return {
+      id: consent.id,
+      grantee: consent.grantee,
+      purpose: consent.purpose,
+      active: consent.active,
+    };
+  });
+  const dashboardNotifications: MobileNotificationItem[] = notifications.map((notification) => {
+    if (!isRecord(notification) || !isString(notification.id) || !isString(notification.title) || !isString(notification.detail)) {
+      throw new Error(t('api.invalidNotifications'));
+    }
+    return {
+      id: notification.id,
+      title: notification.title,
+      detail: notification.detail,
+    };
+  });
+
+  return {
+    patient: patientProfile,
+    records: dashboardRecords,
+    consents: dashboardConsents,
+    notifications: dashboardNotifications,
+  };
 }
 
 async function fetchDashboardFromApi(session: MobileSession): Promise<MobileDashboard> {
-  if (!API_BASE_URL) {
+  const apiBaseUrl = getApiBaseUrl();
+  if (!apiBaseUrl) {
     throw new Error(t('api.apiNotConfigured'));
   }
 
@@ -85,7 +145,7 @@ async function fetchDashboardFromApi(session: MobileSession): Promise<MobileDash
     role: session.role,
   };
 
-  const response = await fetch(`${API_BASE_URL}${DASHBOARD_PATH}`, {
+  const response = await fetch(`${apiBaseUrl}${DASHBOARD_PATH}`, {
     headers: {
       Accept: 'application/json',
       'X-Tenant-Id': session.tenantId,
@@ -143,7 +203,8 @@ export async function syncOfflineDashboard(session: MobileSession): Promise<stri
  * @param session  the session to invalidate
  */
 export async function logoutMobile(session: MobileSession): Promise<void> {
-  if (!API_BASE_URL) {
+  const apiBaseUrl = getApiBaseUrl();
+  if (!apiBaseUrl) {
     // Even if API is not configured, clear local PHI and session.
     await phiClearAll();
     await clearDashboardOffline();
@@ -152,7 +213,7 @@ export async function logoutMobile(session: MobileSession): Promise<void> {
   }
   // Best-effort server notification; failure must not block local cleanup.
   try {
-    await fetch(`${API_BASE_URL}/auth/logout`, {
+    await fetch(`${apiBaseUrl}/auth/logout`, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
@@ -166,7 +227,7 @@ export async function logoutMobile(session: MobileSession): Promise<void> {
       },
     });
   } catch {
-    // Network failure — continue with local cleanup.
+    // Network failure; continue with local cleanup.
   }
   // Clear encrypted PHI cache and session on logout
   await phiClearAll();
@@ -174,7 +235,7 @@ export async function logoutMobile(session: MobileSession): Promise<void> {
   await clearMobileSession();
 }
 
-// ─── Auth ──────────────────────────────────────────────────────────────────
+// Auth
 
 function assertMobileSession(value: unknown): MobileSession {
   if (!isRecord(value)) {
@@ -187,8 +248,7 @@ function assertMobileSession(value: unknown): MobileSession {
   if (!isString(tenantId) || !tenantId) {
     throw new Error(t('api.missingTenantId'));
   }
-  const validRoles = ['patient', 'caregiver', 'clinician', 'admin'] as const;
-  if (!isString(role) || !(validRoles as readonly string[]).includes(role)) {
+  if (!isMobileRole(role)) {
     throw new Error(t('api.invalidRole'));
   }
   if (!isString(name)) {
@@ -197,7 +257,15 @@ function assertMobileSession(value: unknown): MobileSession {
   if (!isString(expiresAt) || !expiresAt) {
     throw new Error(t('api.missingExpiresAt'));
   }
-  return value as unknown as MobileSession;
+  return {
+    principalId,
+    tenantId,
+    role,
+    name,
+    expiresAt,
+    ...(isString(value.persona) ? { persona: value.persona } : {}),
+    ...(isString(value.tier) ? { tier: value.tier } : {}),
+  };
 }
 
 /**
@@ -206,16 +274,17 @@ function assertMobileSession(value: unknown): MobileSession {
  * @param nationalId The user's national ID or medical record number.
  * @param password   The user's password.
  * @returns          A resolved MobileSession on success.
- * @throws           Error with a user-facing message on invalid credentials or network failure.
+    // Network failure; continue with local cleanup.
  */
 export async function loginMobile(nationalId: string, password: string): Promise<MobileSession> {
   if (!nationalId.trim() || !password) {
     throw new Error(t('api.credentialsRequired'));
   }
-  if (!API_BASE_URL) {
+  const apiBaseUrl = getApiBaseUrl();
+  if (!apiBaseUrl) {
     throw new Error(t('api.apiNotConfigured'));
   }
-  const response = await fetch(`${API_BASE_URL}/auth/login`, {
+  const response = await fetch(`${apiBaseUrl}/auth/login`, {
     method: 'POST',
     headers: {
       Accept: 'application/json',
@@ -242,10 +311,11 @@ export async function loginMobile(nationalId: string, password: string): Promise
  * @throws          Error with a user-facing message on failure.
  */
 export async function revokeConsentGrant(grantId: string, patientId: string, session: MobileSession): Promise<void> {
-  if (!API_BASE_URL) {
+  const apiBaseUrl = getApiBaseUrl();
+  if (!apiBaseUrl) {
     throw new Error(t('api.apiNotConfigured'));
   }
-  const response = await fetch(`${API_BASE_URL}/consents/grants/${encodeURIComponent(grantId)}/revoke?patientId=${encodeURIComponent(patientId)}`, {
+  const response = await fetch(`${apiBaseUrl}/consents/grants/${encodeURIComponent(grantId)}/revoke?patientId=${encodeURIComponent(patientId)}`, {
     method: 'POST',
     headers: {
       Accept: 'application/json',

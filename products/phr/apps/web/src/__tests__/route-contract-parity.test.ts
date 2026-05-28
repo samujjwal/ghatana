@@ -1,34 +1,54 @@
-/**
- * T-012: Route contract parity tests.
- * Tests route manifest/route elements/page states.
- */
+import { describe, expect, it } from 'vitest';
+import routeContractJson from '../../../../config/phr-route-contract.json';
+import { attachPhrRouteElement } from '../phrRouteElements';
+import { PHR_ROLE_ORDER, phrRouteContracts, type PhrRole } from '../phrRouteContracts';
 
-import { describe, it, expect } from 'vitest';
-import { phrRouteContracts } from '../phrRouteContracts';
+interface CanonicalRoute {
+  readonly path: string;
+  readonly minimumRole: PhrRole;
+  readonly personas: readonly PhrRole[];
+  readonly stability: string;
+  readonly apiEndpoint?: string;
+  readonly policyId?: string;
+  readonly testId?: string;
+}
+
+interface CanonicalContract {
+  readonly roleOrder: Readonly<Record<PhrRole, number>>;
+  readonly routes: readonly CanonicalRoute[];
+}
+
+const canonicalContract = routeContractJson as unknown as CanonicalContract;
 
 describe('route contract parity', () => {
-  it('should have route entries for all paths in the contract', () => {
-    // This test would verify that all routes in the JSON contract
-    // have corresponding entries in the TS route contracts
-    expect(phrRouteContracts).toBeDefined();
-    expect(phrRouteContracts.length).toBeGreaterThan(0);
+  it('uses the canonical JSON route list as the TypeScript projection', () => {
+    expect(phrRouteContracts).toEqual(canonicalContract.routes);
   });
 
-  it('should have consistent role order across contracts', () => {
-    // This test would verify that the role order is consistent
-    // between JSON and TS contracts
-    expect(phrRouteContracts).toBeDefined();
+  it('uses the canonical JSON role order as the TypeScript projection', () => {
+    expect(PHR_ROLE_ORDER).toEqual(canonicalContract.roleOrder);
   });
 
-  it('should have stability metadata for all routes', () => {
-    // This test would verify that all routes have stability metadata
-    const routesWithoutStability = phrRouteContracts.filter(r => !r.stability);
-    expect(routesWithoutStability.length).toBe(0);
+  it('has stability and role metadata for every route', () => {
+    for (const route of phrRouteContracts) {
+      expect(route.stability).toMatch(/^(stable|preview|blocked|hidden)$/);
+      expect(Object.keys(PHR_ROLE_ORDER)).toContain(route.minimumRole);
+      expect(route.personas.length).toBeGreaterThan(0);
+    }
   });
 
-  it('should have minimumRole for all routes', () => {
-    // This test would verify that all routes have minimumRole defined
-    const routesWithoutRole = phrRouteContracts.filter(r => !r.minimumRole);
-    expect(routesWithoutRole.length).toBe(0);
+  it('has route elements for every canonical route', () => {
+    for (const route of phrRouteContracts) {
+      expect(() => attachPhrRouteElement(route)).not.toThrow();
+    }
+  });
+
+  it('requires stable routes to have backend and verification metadata', () => {
+    const missingMetadata = phrRouteContracts
+      .filter((route) => route.stability === 'stable')
+      .filter((route) => !route.apiEndpoint || !route.policyId || !route.testId)
+      .map((route) => route.path);
+
+    expect(missingMetadata).toEqual([]);
   });
 });

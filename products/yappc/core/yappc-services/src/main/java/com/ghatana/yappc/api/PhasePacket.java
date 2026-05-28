@@ -362,6 +362,12 @@ public final class PhasePacket {
             boolean confirmationRequired,
             String idempotencyKey,
             String auditType,
+            String targetType,
+            String targetRoute,
+            String targetDrawer,
+            boolean requiresPreview,
+            String serverOperation,
+            String postSuccessBehavior,
             Map<String, Object> parameters
     ) {}
 
@@ -386,7 +392,47 @@ public final class PhasePacket {
             String owner,
             Double confidence,
             String supportTrace,
-            List<PhasePanelCard> cards
+            List<PhasePanelCard> cards,
+            LearningInsightPanel learningInsight,
+            EvolutionPlanPanel evolutionPlan
+    ) {
+        public PhasePanelView(
+                String phase,
+                String status,
+                String summary,
+                String recommendation,
+                String owner,
+                Double confidence,
+                String supportTrace,
+                List<PhasePanelCard> cards
+        ) {
+            this(phase, status, summary, recommendation, owner, confidence, supportTrace, cards, null, null);
+        }
+    }
+
+    /**
+     * Typed learn-phase insight panel payload.
+     */
+    public record LearningInsightPanel(
+            String learnedSignal,
+            String sourceEvent,
+            Double confidence,
+            String recommendation,
+            boolean approvalRequired,
+            String rollbackPath
+    ) {}
+
+    /**
+     * Typed evolve-phase plan panel payload.
+     */
+    public record EvolutionPlanPanel(
+            String proposal,
+            String impactSummary,
+            String diffSummary,
+            String validationRequirements,
+            String approvalState,
+            String rollbackPath,
+            String rerunTarget
     ) {}
 
     /**

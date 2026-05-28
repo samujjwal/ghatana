@@ -11,9 +11,10 @@ import {
 } from '@ghatana/product-shell';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { usePhrAccess } from '../auth/PhrAccessContext';
-import { API_BASE_URL } from '../api/phrApi';
+import { API_BASE_URL } from '../api/requestApi';
 import { t } from '../i18n/phrI18n';
 import { PHR_ROLE_ORDER, phrRouteContracts } from '../phrRouteContracts';
+import { ForbiddenPage } from '../pages/ForbiddenPage';
 
 const roleLabels = {
   patient: t('role.patient.label'),
@@ -56,26 +57,33 @@ function labelForRole(role: string): string {
 export function PhrProductShell(): React.ReactElement {
   const { role, setRole, tenantId, principalId } = usePhrAccess();
   const navigate = useNavigate();
-  const entitlementEndpoint = `${API_BASE_URL}/route-entitlements`;
   const correlationId = React.useMemo(() => crypto.randomUUID(), []);
+  const tier = role === 'clinician' || role === 'admin' ? 'clinical' : 'core';
+  const entitlementEndpoint = React.useMemo(() => {
+    const url = new URL(`${API_BASE_URL}/route-entitlements`);
+    url.searchParams.set('tenantId', tenantId);
+    url.searchParams.set('principalId', principalId);
+    url.searchParams.set('role', role);
+    url.searchParams.set('tier', tier);
+    return url.toString();
+  }, [principalId, role, tenantId, tier]);
   const entitlementRequestInit = React.useMemo<RequestInit>(
     () => ({
       headers: {
         Accept: 'application/json',
-        'X-Tenant-Id': tenantId || 'demo-tenant',
-        'X-Principal-Id': principalId || 'demo-user',
+        'X-Tenant-Id': tenantId,
+        'X-Principal-Id': principalId,
         'X-Role': role,
         'X-Persona': role,
-        'X-Tier': role === 'clinician' || role === 'admin' ? 'clinical' : 'core',
+        'X-Tier': tier,
         'X-Correlation-ID': correlationId,
       },
     }),
-    [role, tenantId, principalId, correlationId],
+    [role, tenantId, principalId, tier, correlationId],
   );
   const entitlements = useProductEntitlements({
     endpoint: entitlementEndpoint,
-    // R-012: Empty fallback array - fail closed if backend unavailable
-    fallbackRoutes: [],
+    fallbackRoutes: phrRouteContracts,
     requestInit: entitlementRequestInit,
   });
   const canReviewEmergencyAccess = entitlements.entitlement?.actions?.some(
@@ -95,20 +103,16 @@ export function PhrProductShell(): React.ReactElement {
     currentRole: role,
     ...roleSelectorConfig,
     onRoleChange: (nextRole: string) => {
-      // R-008: Prevent role escalation beyond session role in production
-      // In dev mode, allow role switching for testing
-      if (process.env.NODE_ENV === 'production') {
-        // In production, only allow role changes if explicitly authorized
-        // For now, we allow all changes but this should be restricted
-        setRole(nextRole as typeof role);
-      } else {
-        setRole(nextRole as typeof role);
-      }
+      setRole(nextRole as typeof role);
     },
     routes: entitlements.routes,
     headerActions,
     sidebarFooter,
   });
+
+  if (!tenantId || !principalId) {
+    return <ForbiddenPage />;
+  }
 
   return (
     <ProductShell config={config} contentClassName="pt-20 p-6">

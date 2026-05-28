@@ -996,6 +996,7 @@
   "phaseAction.disabled.enterpriseTierRequired": "Enterprise tier is required",
   "phaseAction.disabled.readCapabilityRequired": "Read capability is required",
   "phaseAction.disabled.reportExportEntitlementMissing": "Report export entitlement is not enabled",
+  "phaseAction.disabled.featureFlagDependencyUnavailable": "Feature flag dependency is temporarily unavailable",
   "phaseAction.disabled.unauthorized": "This phase action is not authorized",
   "phaseAction.disabled.authorizationUnavailable": "Phase action authorization is temporarily unavailable",
   "phaseAction.disabled.idempotencyConflict": "This retry key was already used for a different phase action request",

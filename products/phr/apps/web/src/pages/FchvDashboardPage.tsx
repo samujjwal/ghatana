@@ -1,20 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
-import { fetchFchvDashboard } from '../api/phrApi';
+import { fetchFchvDashboard } from '../api/adminApi';
+import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import type { FchvPatientEntry } from '../types';
 
 export function FchvDashboardPage(): React.ReactElement {
+  const { session } = usePhrSession();
   const [patients, setPatients] = useState<FchvPatientEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchFchvDashboard()
+    if (!session) {
+      setError(t('error.sessionRequired'));
+      setLoading(false);
+      return;
+    }
+    fetchFchvDashboard({
+      tenantId: session.tenantId,
+      principalId: session.principalId,
+      role: session.role,
+    })
       .then(setPatients)
       .catch((err: unknown) => setError(err instanceof Error ? err.message : t('fchv.dashboard.error')))
       .finally(() => setLoading(false));
-  }, []);
+  }, [session]);
 
   if (loading) return <div className="loading">{t('fchv.dashboard.loading')}</div>;
   if (error) return <div className="error">{t('fchv.dashboard.error')}: {error}</div>;

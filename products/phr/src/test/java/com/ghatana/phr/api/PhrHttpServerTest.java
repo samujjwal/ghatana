@@ -28,6 +28,7 @@ import com.ghatana.phr.kernel.service.PhrTestInfrastructure;
 import com.ghatana.phr.kernel.service.PhrNotificationSender;
 import com.ghatana.phr.kernel.service.ReferralService;
 import com.ghatana.phr.kernel.service.TelemedicineService;
+import com.ghatana.phr.kernel.service.FchvCommunityAssignmentService;
 import com.ghatana.phr.kernel.service.TreatmentRelationshipService;
 import com.ghatana.platform.cache.DistributedCachePort;
 import com.ghatana.platform.cache.IdentityAwareBoundedCache;
@@ -40,6 +41,7 @@ import com.ghatana.phr.api.routes.PhrAuthRoutes;
 import com.ghatana.phr.api.routes.PhrCaregiverRoutes;
 import com.ghatana.phr.api.routes.PhrClinicalRoutes;
 import com.ghatana.phr.api.routes.PhrConsentRoutes;
+import com.ghatana.phr.api.routes.PhrDashboardRoutes;
 import com.ghatana.phr.api.routes.PhrDocumentImagingRoutes;
 import com.ghatana.phr.api.routes.PhrEntitlementRoutes;
 import com.ghatana.phr.api.routes.PhrEmergencyRoutes;
@@ -48,10 +50,12 @@ import com.ghatana.phr.api.routes.PhrFhirRoutes;
 import com.ghatana.phr.api.routes.PhrHealthRoutes;
 import com.ghatana.phr.api.routes.PhrMobileRoutes;
 import com.ghatana.phr.api.routes.PhrNotificationRoutes;
+import com.ghatana.phr.api.routes.PhrPatientProfileRoutes;
 import com.ghatana.phr.api.routes.PhrPatientRecordRoutes;
 import com.ghatana.phr.api.routes.PhrProviderRoutes;
 import com.ghatana.phr.api.routes.PhrReleaseReadinessRoutes;
 import com.ghatana.phr.repository.UserRepository;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
@@ -95,6 +99,7 @@ class PhrHttpServerTest extends EventloopTestBase {
 
     private AsyncServlet servlet;
     private PhrHttpServer server;
+    private TreatmentRelationshipService treatmentRelationshipService;
 
     @BeforeEach
     void setUp() {
@@ -123,7 +128,8 @@ class PhrHttpServerTest extends EventloopTestBase {
         ImagingService imagingService = new ImagingService(kernelContext);
         CaregiverService caregiverService = new CaregiverService(kernelContext);
         DurablePhrNotificationSender durableNotificationSender = new DurablePhrNotificationSender(kernelContext);
-        TreatmentRelationshipService treatmentRelationshipService = Mockito.mock(TreatmentRelationshipService.class);
+        treatmentRelationshipService = Mockito.mock(TreatmentRelationshipService.class);
+        FchvCommunityAssignmentService fchvCommunityAssignmentService = Mockito.mock(FchvCommunityAssignmentService.class);
         EmergencyAccessLogService emergencyAccessLogService = new EmergencyAccessLogService(
             kernelContext,
             new EmergencyAccessReviewWorkflow(new NoopEmergencyAccessNotificationSender(), new NoopEmergencyAccessAuditLogger())
@@ -152,6 +158,11 @@ class PhrHttpServerTest extends EventloopTestBase {
             kernelContext,
             consentCache
         );
+        PhrPolicyEvaluator policyEvaluator = new PhrPolicyEvaluator(
+            consentService,
+            treatmentRelationshipService,
+            fchvCommunityAssignmentService
+        );
         AuditTrailService auditTrailService = Mockito.mock(AuditTrailService.class);
         Mockito.when(auditTrailService.queryAuditEvents(Mockito.any()))
             .thenReturn(List.of());
@@ -175,9 +186,10 @@ class PhrHttpServerTest extends EventloopTestBase {
 
         // Create route objects with eventloop
         PhrFhirRoutes fhirRoutes = new PhrFhirRoutes(eventloop(), controller);
+        PhrDashboardRoutes dashboardRoutes = new PhrDashboardRoutes(eventloop(), userRepository);
         PhrPatientRecordRoutes patientRecordRoutes =
             new PhrPatientRecordRoutes(eventloop(), patientRecordService, consentService);
-        PhrConsentRoutes consentRoutes = new PhrConsentRoutes(eventloop(), consentService);
+        PhrConsentRoutes consentRoutes = new PhrConsentRoutes(eventloop(), consentService, policyEvaluator);
         PhrClinicalRoutes clinicalRoutes = new PhrClinicalRoutes(
             eventloop(),
             labResultService,
@@ -188,7 +200,8 @@ class PhrHttpServerTest extends EventloopTestBase {
         PhrEmergencyRoutes emergencyRoutes = new PhrEmergencyRoutes(
             eventloop(),
             emergencyAccessLogService,
-            treatmentRelationshipService
+            treatmentRelationshipService,
+            policyEvaluator
         );
         PhrAdministrativeRoutes administrativeRoutes = new PhrAdministrativeRoutes(
             eventloop(),
@@ -202,7 +215,8 @@ class PhrHttpServerTest extends EventloopTestBase {
             eventloop(),
             documentService,
             imagingService,
-            consentService
+            consentService,
+            policyEvaluator
         );
         PhrHealthRoutes healthRoutes = new PhrHealthRoutes(eventloop(), fhirServer);
         PhrReleaseReadinessRoutes releaseReadinessRoutes = new PhrReleaseReadinessRoutes(
@@ -225,10 +239,12 @@ class PhrHttpServerTest extends EventloopTestBase {
             durableNotificationSender
         );
         PhrNotificationRoutes notificationRoutes = new PhrNotificationRoutes(eventloop(), durableNotificationSender);
+        PhrPatientProfileRoutes patientProfileRoutes = new PhrPatientProfileRoutes(eventloop(), userRepository);
 
         server = new PhrHttpServer(
             eventloop(),
             fhirRoutes,
+            dashboardRoutes,
             patientRecordRoutes,
             consentRoutes,
             clinicalRoutes,
@@ -244,7 +260,8 @@ class PhrHttpServerTest extends EventloopTestBase {
             caregiverRoutes,
             fchvRoutes,
             mobileRoutes,
-            notificationRoutes
+            notificationRoutes,
+            patientProfileRoutes
         );
         runPromise(server::start);
         servlet = server.getServlet();
@@ -425,6 +442,7 @@ class PhrHttpServerTest extends EventloopTestBase {
         @DisplayName("mounts all production route families")
         void mountsAllProductionRouteFamilies() throws Exception {
             assertMounted(HttpMethod.POST, "/auth/logout", null, Map.of());
+            assertMounted(HttpMethod.GET, "/dashboard", null, Map.of());
             assertMounted(HttpMethod.GET, "/audit/events", null, Map.of());
             assertMounted(HttpMethod.GET, "/provider/patients", null, Map.of());
             assertMounted(HttpMethod.GET, "/caregiver/dependents", null, Map.of());
@@ -1041,6 +1059,8 @@ class PhrHttpServerTest extends EventloopTestBase {
         void deniesDocumentReadWithoutConsent() throws Exception {
             dispatch(HttpMethod.POST, "/records/documents", documentUploadJson("patient-18"),
                 phrHeaders("patient-18", "patient"));
+            Mockito.when(treatmentRelationshipService.hasActiveTreatmentRelationship("provider-18", "patient-18"))
+                .thenReturn(Promise.of(false));
 
             HttpResponse response = dispatch(HttpMethod.GET, "/records/documents?patientId=patient-18", null,
                 phrHeaders("provider-18", "clinician"));

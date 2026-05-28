@@ -1,71 +1,42 @@
-/**
- * Mobile E2E smoke test for PHR mobile app.
- *
- * Tests the critical user flow: login → dashboard → records → logout.
- * This is a production-critical smoke test to ensure the app's core functionality works end-to-end.
- */
+import { by, device, element, expect as detoxExpect } from 'detox';
 
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
-import { launchApp, terminateApp } from 'detox';
+const nationalId = process.env.PHR_MOBILE_E2E_NATIONAL_ID ?? 'PHR_E2E_PATIENT';
+const password = process.env.PHR_MOBILE_E2E_PASSWORD ?? 'phr-e2e-password';
 
 describe('PHR Mobile E2E Smoke Test', () => {
   beforeAll(async () => {
-    await launchApp();
+    await device.launchApp({ newInstance: true });
   });
 
   afterAll(async () => {
-    await terminateApp();
+    await device.terminateApp();
   });
 
-  it('should complete the login → dashboard → records → logout flow', async () => {
-    // Note: This is a template for Detox E2E tests.
-    // Actual implementation requires:
-    // 1. Detox configuration in detox.config.js
-    // 2. Test environment setup with mock backend
-    // 3. Test user credentials configured
-    
-    // Login flow
-    // await element(by.id('national-id-input')).typeText('TEST_USER_123');
-    // await element(by.id('password-input')).typeText('test-password');
-    // await element(by.id('sign-in-button')).tap();
-    
-    // Verify dashboard loads
-    // await expect(element(by.text('My Health Dashboard'))).toBeVisible();
-    
-    // Navigate to records
-    // await element(by.id('tab-records')).tap();
-    // await expect(element(by.text('Health Records'))).toBeVisible();
-    
-    // Verify records are displayed
-    // await expect(element(by.id('record-item-0'))).toBeVisible();
-    
-    // Navigate back to dashboard
-    // await element(by.id('tab-dashboard')).tap();
-    
-    // Logout
-    // await element(by.id('tab-settings')).tap();
-    // await element(by.id('logout-button')).tap();
-    // await element(by.text('Sign Out')).tap();
-    
-    // Verify login screen is shown again
-    // await expect(element(by.text('PHR Nepal'))).toBeVisible();
-    
-    expect(true).toBe(true); // Placeholder until Detox is configured
+  it('completes login, dashboard, records, and logout', async () => {
+    await element(by.label('National ID')).replaceText(nationalId);
+    await element(by.label('Password')).replaceText(password);
+    await element(by.label('Sign In')).tap();
+
+    await detoxExpect(element(by.label('Home'))).toBeVisible();
+    await detoxExpect(element(by.text('PHR Nepal'))).toBeVisible();
+
+    await element(by.label('Records')).tap();
+    await detoxExpect(element(by.label('Records'))).toBeVisible();
+
+    await element(by.label('Settings')).tap();
+    await element(by.label('Sign Out')).tap();
+    await element(by.text('Sign Out')).tap();
+
+    await detoxExpect(element(by.label('National ID'))).toBeVisible();
   });
 
-  it('should handle offline state gracefully', async () => {
-    // Test offline banner display
-    // Test offline cache functionality
-    expect(true).toBe(true); // Placeholder
-  });
+  it('announces offline state while preserving the app shell', async () => {
+    await device.setURLBlacklist(['.*']);
+    await device.reloadReactNative();
 
-  it('should display consent revocation confirmation', async () => {
-    // Test consent revocation flow
-    expect(true).toBe(true); // Placeholder
-  });
+    await detoxExpect(element(by.text('You are offline. Some features may be unavailable.'))).toBeVisible();
 
-  it('should validate session expiry on app resume', async () => {
-    // Test session expiry handling
-    expect(true).toBe(true); // Placeholder
+    await device.setURLBlacklist([]);
+    await device.reloadReactNative();
   });
 });

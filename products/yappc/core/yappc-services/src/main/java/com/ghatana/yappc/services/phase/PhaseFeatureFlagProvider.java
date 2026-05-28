@@ -28,8 +28,9 @@ final class PhaseFeatureFlagProvider {
 
     Promise<Map<String, Object>> enrichProjectStateWithTenantFlags(String tenantId, Map<String, Object> projectState) {
         return queryEnabledTenantFeatureFlags(tenantId)
-                .map(tenantFlags -> {
+                .map(result -> {
                     Map<String, Object> state = new HashMap<>(projectState);
+                    List<String> tenantFlags = result.flags();
                     if (!tenantFlags.isEmpty()) {
                         LinkedHashSet<String> merged = new LinkedHashSet<>();
                         addFlagValues(merged, state.get("enabledPhaseFlags"));
@@ -38,6 +39,10 @@ final class PhaseFeatureFlagProvider {
                         addFlagValues(merged, tenantFlags);
                         state.put("featureFlags", List.copyOf(merged));
                         state.put("featureFlagsSource", "project+tenant");
+                    }
+                    if (result.degraded()) {
+                        state.put("featureFlagsDegraded", true);
+                        state.put("featureFlagsDegradedReason", result.degradedReason());
                     }
                     return Map.copyOf(state);
                 });
@@ -64,7 +69,7 @@ final class PhaseFeatureFlagProvider {
         }
     }
 
-    private Promise<List<String>> queryEnabledTenantFeatureFlags(String tenantId) {
+        private Promise<TenantFeatureFlagsResult> queryEnabledTenantFeatureFlags(String tenantId) {
         DataCloudClient.Query query = DataCloudClient.Query.builder()
                 .filter(DataCloudClient.Filter.eq("enabled", true))
                 .limit(500)
@@ -76,15 +81,26 @@ final class PhaseFeatureFlagProvider {
                         .map(String.class::cast)
                         .filter(flag -> !flag.isBlank())
                         .distinct()
-                        .toList())
+                .toList())
+            .map(flags -> new TenantFeatureFlagsResult(flags, false, null))
                 .then((flags, error) -> {
                     if (error == null) {
                         return Promise.of(flags);
                     }
                     log.error("DataCloud query failed for tenant feature flags: tenantId={}", tenantId, error);
-                    return Promise.of(List.of());
+                return Promise.of(new TenantFeatureFlagsResult(
+                    List.of(),
+                    true,
+                    "FEATURE_FLAG_DEPENDENCY_UNAVAILABLE"
+                ));
                 });
     }
+
+        private record TenantFeatureFlagsResult(
+            List<String> flags,
+            boolean degraded,
+            String degradedReason
+        ) {}
 
     private static void addFlagValues(Set<String> flags, Object value) {
         if (value instanceof String text) {

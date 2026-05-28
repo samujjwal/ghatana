@@ -6,7 +6,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { TimelinePage } from '../TimelinePage';
 
-vi.mock('../../api/phrApi', () => ({
+vi.mock('../../api/patientApi', () => ({
   fetchTimeline: vi.fn(),
 }));
 
@@ -18,7 +18,7 @@ vi.mock('../../auth/PhrSessionContext', () => ({
   usePhrSession: () => ({ session: { principalId: 'patient-42', tenantId: 't1', role: 'patient' as const, name: 'Test Patient', expiresAt: new Date(Date.now() + 3_600_000).toISOString() }, isAuthenticated: true, setSession: vi.fn(), clearSession: vi.fn() }),
 }));
 
-import { fetchTimeline } from '../../api/phrApi';
+import { fetchTimeline } from '../../api/patientApi';
 
 const mockFetch = fetchTimeline as ReturnType<typeof vi.fn>;
 
@@ -73,6 +73,16 @@ describe('TimelinePage', () => {
   it('calls fetchTimeline with the session principalId', async () => {
     mockFetch.mockResolvedValue([]);
     render(<TimelinePage />);
-    await waitFor(() => expect(mockFetch).toHaveBeenCalledWith('patient-42'));
+    await waitFor(() =>
+      expect(mockFetch).toHaveBeenCalledWith(
+        'patient-42',
+        {
+          tenantId: 't1',
+          principalId: 'patient-42',
+          role: 'patient',
+        },
+        { category: undefined }
+      )
+    );
   });
 });

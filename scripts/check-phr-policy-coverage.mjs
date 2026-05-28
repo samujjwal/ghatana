@@ -10,6 +10,7 @@ import { resolve } from 'path';
 
 const PHR_CONFIG_DIR = resolve(process.cwd(), 'products/phr/config');
 const PHR_BACKEND_DIR = resolve(process.cwd(), 'products/phr/src/main/java/com/ghatana/phr');
+const PHR_BACKEND_TEST_DIR = resolve(process.cwd(), 'products/phr/src/test/java/com/ghatana/phr');
 
 // Load JSON contract
 const jsonContractPath = resolve(PHR_CONFIG_DIR, 'phr-route-contract.json');
@@ -62,7 +63,7 @@ for (const routeFile of backendRouteFiles) {
     }
     
     // Check if route file has tests
-    const testPath = routePath.replace('.java', 'Test.java');
+    const testPath = resolve(PHR_BACKEND_TEST_DIR, routeFile.replace('.java', 'Test.java'));
     if (!existsSync(testPath)) {
       console.warn(`WARNING: Backend route file '${routeFile}' may not have corresponding test file`);
     }

@@ -7,7 +7,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { RecordsPage } from '../RecordsPage';
 
 vi.mock('../../api/phrApi', () => ({
-  fetchDashboardData: vi.fn(),
+  fetchRecords: vi.fn(),
 }));
 
 vi.mock('../../i18n/phrI18n', () => ({
@@ -20,9 +20,21 @@ vi.mock('react-router-dom', () => ({
     React.createElement('a', { href: to }, children),
 }));
 
-import { fetchDashboardData } from '../../api/phrApi';
+vi.mock('../../auth/PhrSessionContext', () => ({
+  usePhrSession: () => ({
+    session: {
+      tenantId: 'tenant-test',
+      principalId: 'patient-test',
+      role: 'patient',
+      name: 'Patient Test',
+      expiresAt: '2026-05-28T02:00:00Z',
+    },
+  }),
+}));
 
-const mockFetch = fetchDashboardData as ReturnType<typeof vi.fn>;
+import { fetchRecords } from '../../api/phrApi';
+
+const mockFetch = fetchRecords as ReturnType<typeof vi.fn>;
 
 const records = [
   {
@@ -61,21 +73,34 @@ describe('RecordsPage', () => {
   });
 
   it('displays record titles after successful fetch', async () => {
-    mockFetch.mockResolvedValue({ records, patient: {}, consents: [], appointments: [], labs: [], medications: [] });
+    mockFetch.mockResolvedValue(records);
     render(<RecordsPage />);
     await waitFor(() => expect(screen.getByText('CBC Lab Panel')).toBeTruthy());
     expect(screen.getByText('Chest X-Ray')).toBeTruthy();
   });
 
   it('renders records title key', async () => {
-    mockFetch.mockResolvedValue({ records, patient: {}, consents: [], appointments: [], labs: [], medications: [] });
+    mockFetch.mockResolvedValue(records);
     render(<RecordsPage />);
     await waitFor(() => expect(screen.getByText('records.title')).toBeTruthy());
   });
 
-  it('calls fetchDashboardData on mount', async () => {
-    mockFetch.mockResolvedValue({ records: [], patient: {}, consents: [], appointments: [], labs: [], medications: [] });
+  it('calls fetchRecords on mount with authenticated context', async () => {
+    mockFetch.mockResolvedValue([]);
     render(<RecordsPage />);
-    await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mockFetch).toHaveBeenCalledWith(
+      'patient-test',
+      {
+        tenantId: 'tenant-test',
+        principalId: 'patient-test',
+        role: 'patient',
+      },
+      {
+        category: undefined,
+        dateFrom: undefined,
+        dateTo: undefined,
+        resourceType: undefined,
+      },
+    ));
   });
 });

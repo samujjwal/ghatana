@@ -40,6 +40,7 @@ public class DataCloudLearningBridge implements AutoCloseable {
 
     private final DataCloudBrain brain;
     private final ScheduledExecutorService scheduler;
+    private final AgentLearningAuditBridge auditBridge;
 
     private final AtomicReference<Instant> lastRunTime       = new AtomicReference<>();
     private final AtomicReference<Instant> nextScheduledRun  = new AtomicReference<>();
@@ -62,10 +63,12 @@ public class DataCloudLearningBridge implements AutoCloseable {
      * Creates a new learning bridge.
      *
      * @param brain the brain facade; must not be {@code null}
+     * @param auditBridge the audit bridge for logging learning events; may be {@code null}
      */
-    public DataCloudLearningBridge(DataCloudBrain brain) {
+    public DataCloudLearningBridge(DataCloudBrain brain, AgentLearningAuditBridge auditBridge) {
         if (brain == null) throw new IllegalArgumentException("brain must not be null");
         this.brain = brain;
+        this.auditBridge = auditBridge;
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "dc-learning-bridge");
             t.setDaemon(true);
@@ -168,6 +171,13 @@ public class DataCloudLearningBridge implements AutoCloseable {
                 "ranAt",             start.toString()
             );
             lastResult.set(summary);
+            
+            // Log learning cycle to audit trail if audit bridge is available
+            if (auditBridge != null) {
+                auditBridge.logLearningCycle(tenantId, manual ? "manual-trigger" : "system-scheduler",
+                    discovered, updated, durMs, Map.of("manual", manual));
+            }
+            
             log.info("DataCloudLearningBridge: cycle done — discovered={}, updated={}, ms={}",
                     discovered, updated, durMs);
             return summary;
@@ -225,21 +235,42 @@ public class DataCloudLearningBridge implements AutoCloseable {
     /**
      * Approves a pattern review item.
      *
+     * @param tenantId the tenant ID
+     * @param userId the user ID approving the pattern
      * @param reviewId the review item identifier
      * @return {@code true} if found and updated; {@code false} if not found
      */
-    public boolean approveReview(String reviewId) {
-        return applyDecision(reviewId, "APPROVED");
+    public boolean approveReview(String tenantId, String userId, String reviewId) {
+        boolean result = applyDecision(tenantId, userId, reviewId, "APPROVED");
+        if (result && auditBridge != null) {
+            Map<String, Object> item = reviewQueue.get(reviewId);
+            if (item != null) {
+                String patternId = (String) item.getOrDefault("patternId", "unknown");
+                auditBridge.logPatternApproval(tenantId, userId, reviewId, patternId, Map.of());
+            }
+        }
+        return result;
     }
 
     /**
      * Rejects a pattern review item.
      *
+     * @param tenantId the tenant ID
+     * @param userId the user ID rejecting the pattern
      * @param reviewId the review item identifier
+     * @param reason the rejection reason
      * @return {@code true} if found and updated; {@code false} if not found
      */
-    public boolean rejectReview(String reviewId) {
-        return applyDecision(reviewId, "REJECTED");
+    public boolean rejectReview(String tenantId, String userId, String reviewId, String reason) {
+        boolean result = applyDecision(tenantId, userId, reviewId, "REJECTED");
+        if (result && auditBridge != null) {
+            Map<String, Object> item = reviewQueue.get(reviewId);
+            if (item != null) {
+                String patternId = (String) item.getOrDefault("patternId", "unknown");
+                auditBridge.logPatternRejection(tenantId, userId, reviewId, patternId, reason, Map.of());
+            }
+        }
+        return result;
     }
 
     /**
@@ -259,7 +290,7 @@ public class DataCloudLearningBridge implements AutoCloseable {
         return count[0];
     }
 
-    private boolean applyDecision(String reviewId, String decision) {
+    private boolean applyDecision(String tenantId, String userId, String reviewId, String decision) {
         Map<String, Object> existing = reviewQueue.get(reviewId);
         if (existing == null) return false;
 
@@ -277,8 +308,9 @@ public class DataCloudLearningBridge implements AutoCloseable {
         LinkedHashMap<String, Object> updated = new LinkedHashMap<>(existing);
         updated.put("status", decision);
         updated.put("reviewedAt", Instant.now().toString());
+        updated.put("reviewedBy", userId);
         reviewQueue.put(reviewId, Map.copyOf(updated));
-        log.info("DataCloudLearningBridge: review {} → {}", reviewId, decision);
+        log.info("DataCloudLearningBridge: review {} → {} by user {}", reviewId, decision, userId);
         return true;
     }
 

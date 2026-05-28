@@ -1,7 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
-import { exportPatientBundle, logoutSession } from '../api/phrApi';
+import { logoutSession } from '../api/authApi';
+import { exportPatientBundle } from '../api/patientApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 
@@ -12,7 +13,15 @@ export function SettingsPage(): React.ReactElement {
   const navigate = useNavigate();
 
   const onSync = async (): Promise<void> => {
-    const response = await exportPatientBundle();
+    if (!session) {
+      setSyncStatus(t('settings.sync.authRequired'));
+      return;
+    }
+    const response = await exportPatientBundle({
+      tenantId: session.tenantId,
+      principalId: session.principalId,
+      role: session.role,
+    });
     setSyncStatus(response);
   };
 

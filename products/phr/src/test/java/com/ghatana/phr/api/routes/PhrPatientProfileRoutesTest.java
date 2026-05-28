@@ -1,5 +1,6 @@
 package com.ghatana.phr.api.routes;
 
+import com.ghatana.phr.model.PHRUser;
 import com.ghatana.phr.repository.UserRepository;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.AsyncServlet;
@@ -36,6 +37,9 @@ class PhrPatientProfileRoutesTest extends EventloopTestBase {
     @BeforeEach
     void setUp() {
         userRepository = new UserRepository();
+        saveUser("patient-1", "Patient One", "patient@example.com", "patient");
+        saveUser("dr-1", "Clinician One", "clinician@example.com", "clinician");
+        saveUser("admin-1", "Admin One", "admin@example.com", "admin");
         servlet = new PhrPatientProfileRoutes(eventloop(), userRepository).getServlet();
     }
 
@@ -89,5 +93,13 @@ class PhrPatientProfileRoutesTest extends EventloopTestBase {
             .withHeader(HttpHeaders.of("X-Role"), role)
             .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
             .build();
+    }
+
+    private void saveUser(String userId, String username, String email, String role) {
+        PHRUser user = new PHRUser(userId, username, email);
+        user.setTenantId("t1");
+        user.addRole(role);
+        user.setAccessLevel(role);
+        userRepository.save(user);
     }
 }

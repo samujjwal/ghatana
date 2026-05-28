@@ -51,6 +51,7 @@ public final class KernelProductUnitHandoffService {
                 .targetType("kernel-product-unit")
                 .surfaces(request.surfaces())
                 .runtimeProvider(defaultIfBlank(request.runtimeProvider(), "ghatana-file-registry"))
+            .sourceProvider(requireNonBlank(request.sourceProvider(), "sourceProvider"))
                 .lifecycleProfile(defaultIfBlank(request.lifecycleProfile(), "standard-web-api-product"))
                 .sourcePhase(defaultIfBlank(request.sourcePhase(), "generate"))
                 .metadata(buildMetadata(request))
@@ -101,6 +102,7 @@ public final class KernelProductUnitHandoffService {
             String projectName,
             List<String> surfaces,
             String runtimeProvider,
+                String sourceProvider,
             String lifecycleProfile,
             String sourcePhase,
             Map<String, Object> metadata,

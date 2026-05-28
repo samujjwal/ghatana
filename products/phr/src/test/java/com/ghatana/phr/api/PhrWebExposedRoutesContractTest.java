@@ -131,32 +131,32 @@ public final class PhrWebExposedRoutesContractTest extends ApiContractConformanc
     }
 
     @Test
-    @DisplayName("GET /documents/{id}/ocr should be implemented and documented")
+    @DisplayName("GET /documents/{documentId}/ocr should be implemented and documented")
     void testDocumentOcrGetRoute() {
         HttpRouteScanner.RouteDefinition route = 
-            new HttpRouteScanner.RouteDefinition(HttpMethod.GET, "/documents/{id}/ocr");
+            new HttpRouteScanner.RouteDefinition(HttpMethod.GET, "/documents/{documentId}/ocr");
         
         assertThatRouteExists(route)
-            .as("GET /documents/{id}/ocr should be implemented")
+            .as("GET /documents/{documentId}/ocr should be implemented")
             .isTrue();
         
         assertThatRouteDocumented(route)
-            .as("GET /documents/{id}/ocr should be documented in OpenAPI spec")
+            .as("GET /documents/{documentId}/ocr should be documented in OpenAPI spec")
             .isTrue();
     }
 
     @Test
-    @DisplayName("POST /documents/{id}/ocr/confirm should be implemented and documented")
+    @DisplayName("POST /documents/{documentId}/ocr/confirm should be implemented and documented")
     void testDocumentOcrConfirmRoute() {
         HttpRouteScanner.RouteDefinition route = 
-            new HttpRouteScanner.RouteDefinition(HttpMethod.POST, "/documents/{id}/ocr/confirm");
+            new HttpRouteScanner.RouteDefinition(HttpMethod.POST, "/documents/{documentId}/ocr/confirm");
         
         assertThatRouteExists(route)
-            .as("POST /documents/{id}/ocr/confirm should be implemented")
+            .as("POST /documents/{documentId}/ocr/confirm should be implemented")
             .isTrue();
         
         assertThatRouteDocumented(route)
-            .as("POST /documents/{id}/ocr/confirm should be documented in OpenAPI spec")
+            .as("POST /documents/{documentId}/ocr/confirm should be documented in OpenAPI spec")
             .isTrue();
     }
 
@@ -221,17 +221,17 @@ public final class PhrWebExposedRoutesContractTest extends ApiContractConformanc
     }
 
     @Test
-    @DisplayName("POST /consents/grants/{id}/revoke should be implemented and documented")
+    @DisplayName("POST /consents/grants/{grantId}/revoke should be implemented and documented")
     void testConsentRevokeRoute() {
         HttpRouteScanner.RouteDefinition route = 
-            new HttpRouteScanner.RouteDefinition(HttpMethod.POST, "/consents/grants/{id}/revoke");
+            new HttpRouteScanner.RouteDefinition(HttpMethod.POST, "/consents/grants/{grantId}/revoke");
         
         assertThatRouteExists(route)
-            .as("POST /consents/grants/{id}/revoke should be implemented")
+            .as("POST /consents/grants/{grantId}/revoke should be implemented")
             .isTrue();
         
         assertThatRouteDocumented(route)
-            .as("POST /consents/grants/{id}/revoke should be documented in OpenAPI spec")
+            .as("POST /consents/grants/{grantId}/revoke should be documented in OpenAPI spec")
             .isTrue();
     }
 
@@ -251,17 +251,17 @@ public final class PhrWebExposedRoutesContractTest extends ApiContractConformanc
     }
 
     @Test
-    @DisplayName("POST /emergency/reviews/{id} should be implemented and documented")
+    @DisplayName("POST /emergency/reviews/{eventId} should be implemented and documented")
     void testEmergencyReviewRoute() {
         HttpRouteScanner.RouteDefinition route = 
-            new HttpRouteScanner.RouteDefinition(HttpMethod.POST, "/emergency/reviews/{id}");
+            new HttpRouteScanner.RouteDefinition(HttpMethod.POST, "/emergency/reviews/{eventId}");
         
         assertThatRouteExists(route)
-            .as("POST /emergency/reviews/{id} should be implemented")
+            .as("POST /emergency/reviews/{eventId} should be implemented")
             .isTrue();
         
         assertThatRouteDocumented(route)
-            .as("POST /emergency/reviews/{id} should be documented in OpenAPI spec")
+            .as("POST /emergency/reviews/{eventId} should be documented in OpenAPI spec")
             .isTrue();
     }
 

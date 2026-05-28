@@ -658,6 +658,85 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
         assertThat(packet.enabledPhaseFlags()).contains("custom.phase.flag", "tenant.admin.flag", "phase.report.export");
     }
 
+        @Test
+        @DisplayName("Invalid phase fails closed with explicit critical blocker")
+        void invalidPhase_failsClosedWithCriticalBlocker() {
+                PhasePacket packet = runPromise(() ->
+                                service.buildPhasePacket("NOT_A_REAL_PHASE", PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+                assertThat(packet.blockers()).anySatisfy(blocker -> {
+                        assertThat(blocker.id()).isEqualTo("INVALID_PHASE");
+                        assertThat(blocker.severity()).isEqualTo("CRITICAL");
+                        assertThat(blocker.resolvable()).isFalse();
+                });
+                assertThat(packet.readiness().canAdvance()).isFalse();
+        }
+
+        @Test
+        @DisplayName("Tenant tier parse error fails closed to FREE and disables privileged actions")
+        void tenantTierParseError_failsClosedToFree() {
+                when(dataCloudClient.findById(anyString(), anyString(), anyString()))
+                                .thenReturn(Promise.of(Optional.of(
+                                                DataCloudClient.Entity.of(PROJECT_ID, "projects",
+                                                                Map.of("name", "Test Project", "tier", List.of("BROKEN"), "status", "active")))));
+
+                PhasePacket packet = runPromise(() ->
+                                service.buildPhasePacket(PHASE, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+                assertThat(packet.tenantTier()).isEqualTo(PhasePacket.TenantTier.FREE);
+                assertThat(packet.availableActions()).anySatisfy(action -> {
+                        if ("advance-phase".equals(action.actionId())) {
+                                assertThat(action.enabled()).isFalse();
+                        }
+                        if ("configure-phase".equals(action.actionId())) {
+                                assertThat(action.enabled()).isFalse();
+                        }
+                        if ("export-report".equals(action.actionId())) {
+                                assertThat(action.enabled()).isFalse();
+                        }
+                });
+        }
+
+        @Test
+        @DisplayName("Unknown tenant tier fails closed to FREE")
+        void unknownTenantTier_failsClosedToFree() {
+                when(dataCloudClient.findById(anyString(), anyString(), anyString()))
+                                .thenReturn(Promise.of(Optional.of(
+                                                DataCloudClient.Entity.of(PROJECT_ID, "projects",
+                                                                Map.of("name", "Test Project", "tier", "TEAM", "status", "active")))));
+
+                PhasePacket packet = runPromise(() ->
+                                service.buildPhasePacket(PHASE, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+                assertThat(packet.tenantTier()).isEqualTo(PhasePacket.TenantTier.FREE);
+        }
+
+        @Test
+        @DisplayName("Feature flag dependency failure disables entitlement actions with explicit reason")
+        void featureFlagDependencyFailure_disablesEntitlementActions() {
+                when(dataCloudClient.findById(anyString(), anyString(), anyString()))
+                                .thenReturn(Promise.of(Optional.of(
+                                                DataCloudClient.Entity.of(PROJECT_ID, "projects",
+                                                                Map.of(
+                                                                                "name", "Test Project",
+                                                                                "tier", "ENTERPRISE",
+                                                                                "enabledPhaseFlags", List.of("phase.advance", "phase.governance.configure", "phase.report.export"),
+                                                                                "status", "active"
+                                                                )))));
+                when(dataCloudClient.query(eq(TENANT_ID), eq(AdminFeatureFlagController.FLAG_COLLECTION), any()))
+                                .thenReturn(Promise.ofException(new RuntimeException("feature flag backend unavailable")));
+
+                PhasePacket packet = runPromise(() ->
+                                service.buildPhasePacket(PHASE, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+                PhasePacket.PhaseAction advance = packet.availableActions().stream()
+                                .filter(action -> "advance-phase".equals(action.actionId()))
+                                .findFirst()
+                                .orElseThrow();
+                assertThat(advance.enabled()).isFalse();
+                assertThat(advance.disabledReason()).isEqualTo("phaseAction.disabled.featureFlagDependencyUnavailable");
+        }
+
     @Test
     @DisplayName("Phase gate validator receives typed gate context")
     void phaseGateValidatorReceivesTypedGateContext() {

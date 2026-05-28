@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Card, CardContent, CardHeader, Input } from '@ghatana/design-system';
 import { useNavigate } from 'react-router-dom';
-import { loginWithCredentials } from '../api/phrApi';
+import { loginWithCredentials } from '../api/authApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 

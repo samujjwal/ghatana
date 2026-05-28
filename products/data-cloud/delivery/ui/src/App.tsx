@@ -23,7 +23,11 @@ import {
   isOnboardingComplete,
 } from './features/onboarding/DataCloudOnboardingWizard';
 import SessionBootstrap from './lib/auth/session';
+import { initializeI18n } from './lib/i18n/config';
 import './styles/globals.css';
+
+// Initialize i18n on app load
+initializeI18n();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Query Client Configuration
@@ -99,7 +103,7 @@ export function App(): React.ReactElement {
             <React.Suspense
               fallback={
                 <LoadingState
-                  message="Loading Data Cloud..."
+                  message="app.loading"
                   className="w-full h-screen"
                   size="lg"
                 />

@@ -1,7 +1,6 @@
 /**
  * PHR session context — holds the authenticated actor identity resolved
- * from the backend auth/login response. This replaces the prior
- * demo-link pattern and gates dashboard access on a real session.
+ * from the backend auth/login response and gates dashboard access on a real session.
  *
  * @doc.type context
  * @doc.purpose Authenticated session management for PHR web app
@@ -69,21 +68,21 @@ export function PhrSessionProvider({ children }: { children: React.ReactNode }):
       const stored = loadStoredSession();
       if (!stored) return;
 
-      setSessionValidating(true);
-      try {
-        const response = await phrFetch('/auth/me', {
-          headers: {
-            'X-Principal-ID': stored.principalId,
-            'X-Tenant-ID': stored.tenantId,
-            'X-Role': stored.role,
-          },
-        }) as { principalId: string; tenantId: string; role: string; name: string; permissions: string[] };
+	    setSessionValidating(true);
+	    try {
+	        const response = await phrFetch('/auth/me', {
+	          context: {
+	            principalId: stored.principalId,
+	            tenantId: stored.tenantId,
+	            role: stored.role,
+	          },
+	        }) as { principalId: string; tenantId: string; role: string; name: string; permissions: string[] };
 
         // If backend validation succeeds, update session with fresh data
         setSessionState({
           principalId: response.principalId,
           tenantId: response.tenantId,
-          role: response.role as 'patient' | 'caregiver' | 'clinician' | 'admin',
+	          role: response.role as 'patient' | 'caregiver' | 'fchv' | 'clinician' | 'admin',
           name: response.name,
           expiresAt: stored.expiresAt, // Keep existing expiry
         });
@@ -127,4 +126,8 @@ export function usePhrSession(): PhrSessionContextValue {
     throw new Error('usePhrSession must be used within PhrSessionProvider');
   }
   return context;
+}
+
+export function useOptionalPhrSession(): PhrSessionContextValue | null {
+  return useContext(PhrSessionContext);
 }

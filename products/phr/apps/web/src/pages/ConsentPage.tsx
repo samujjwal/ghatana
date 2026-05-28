@@ -1,6 +1,8 @@
-import React, { useCallback, useEffect, useReducer, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { Badge, Button, Card, CardContent, CardHeader, Input } from '@ghatana/design-system';
-import { createConsentGrant, fetchDashboardData, revokeConsentGrant } from '../api/phrApi';
+import { createConsentGrant, revokeConsentGrant } from '../api/consentApi';
+import { fetchDashboardData } from '../api/patientApi';
+import { usePhrAccess } from '../auth/PhrAccessContext';
 import { formatPhrDate, t } from '../i18n/phrI18n';
 import type { ConsentGrant, ConsentGrantRequest } from '../types';
 
@@ -67,10 +69,9 @@ const INITIAL_STATE: ConsentPageState = {
   successMessage: null,
 };
 
-// Hard-coded context for demo; production wires from auth session.
-const DEMO_CONTEXT = { tenantId: 'tenant-health-1', principalId: 'current', role: 'patient' };
-
 export function ConsentPage(): React.ReactElement {
+  const { tenantId, principalId, role } = usePhrAccess();
+  const apiContext = useMemo(() => ({ tenantId, principalId, role }), [tenantId, principalId, role]);
   const [consents, setConsents] = useState<ConsentGrant[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -79,11 +80,11 @@ export function ConsentPage(): React.ReactElement {
   const loadConsents = useCallback((): void => {
     setLoading(true);
     setLoadError(null);
-    fetchDashboardData()
+    fetchDashboardData(apiContext)
       .then((data) => setConsents(data.consents))
       .catch((err: unknown) => setLoadError(err instanceof Error ? err.message : t('error.consentsLoad')))
       .finally(() => setLoading(false));
-  }, []);
+  }, [apiContext]);
 
   useEffect(() => {
     loadConsents();
@@ -100,7 +101,7 @@ export function ConsentPage(): React.ReactElement {
     }
 
     const request: ConsentGrantRequest = {
-      patientId: 'current',
+      patientId: principalId,
       recipientId: recipientId.trim(),
       purpose: purpose.trim(),
       scope: {
@@ -111,7 +112,7 @@ export function ConsentPage(): React.ReactElement {
 
     dispatch({ type: 'set_submitting', value: true });
     try {
-      await createConsentGrant(request, DEMO_CONTEXT);
+      await createConsentGrant(request, apiContext);
       dispatch({ type: 'set_success', message: t('consents.grant.success') });
       dispatch({ type: 'close_grant_form' });
       loadConsents();
@@ -125,7 +126,7 @@ export function ConsentPage(): React.ReactElement {
   const handleRevoke = async (consent: ConsentGrant): Promise<void> => {
     if (!confirm(t('consents.revoke.confirm'))) return;
     try {
-      await revokeConsentGrant(consent.id, 'current', DEMO_CONTEXT);
+      await revokeConsentGrant(consent.id, principalId, apiContext);
       dispatch({ type: 'set_success', message: t('consents.revoke.success') });
       loadConsents();
     } catch (err: unknown) {

@@ -68,7 +68,7 @@ public final class PhrTimelineRoutes {
 
         Promise<Boolean> accessCheck;
         if (policyEvaluator == null) {
-            accessCheck = Promise.of("patient".equals(context.role()) && context.principalId().equals(patientId));
+            accessCheck = Promise.of(canAccessWithoutPolicyEvaluator(context, patientId));
         } else {
             accessCheck = policyEvaluator.canAccessPatientRecordAsync(context, patientId)
                 .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);
@@ -135,7 +135,7 @@ public final class PhrTimelineRoutes {
 
         Promise<Boolean> accessCheck;
         if (policyEvaluator == null) {
-            accessCheck = Promise.of("patient".equals(context.role()) && context.principalId().equals(patientId));
+            accessCheck = Promise.of(canAccessWithoutPolicyEvaluator(context, patientId));
         } else {
             accessCheck = policyEvaluator.canAccessPatientRecordAsync(context, patientId)
                 .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);
@@ -169,5 +169,11 @@ public final class PhrTimelineRoutes {
                     return PhrRouteSupport.jsonResponseWithCorrelation(200, response, context.correlationId());
                 });
         });
+    }
+
+    private static boolean canAccessWithoutPolicyEvaluator(PhrRouteSupport.PhrRequestContext context, String patientId) {
+        return ("patient".equals(context.role()) && context.principalId().equals(patientId))
+            || "clinician".equals(context.role())
+            || "admin".equals(context.role());
     }
 }

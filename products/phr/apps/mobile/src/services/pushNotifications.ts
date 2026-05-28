@@ -6,8 +6,11 @@ import * as Notifications from 'expo-notifications';
  */
 const PHI_FIELD_PATTERNS: readonly RegExp[] = [
   /\b(mrn|national_?id|dob|date.of.birth|blood.type|diagnosis|condition|medication|icd|fhir)\b/i,
+  /\bnational\s+id\b/i,
   /\b\d{2}[/-]\d{2}[/-]\d{4}\b/, // date of birth pattern
+  /\b\d{4}[/-]\d{2}[/-]\d{2}\b/, // ISO date of birth pattern
   /\b[A-Z]{1,3}-\d{4,}\b/,        // ICD/MRN-style codes
+  /\b[A-Z]\d{2}(?:\.\d+)?\b/,     // ICD diagnosis codes such as E11
 ];
 
 /**
@@ -23,7 +26,7 @@ export function notificationBodyContainsPhi(text: string): boolean {
  * the event type and a generic message are preserved.
  */
 export function redactPhiFromText(text: string): string {
-  return notificationBodyContainsPhi(text) ? '[Redacted — open app to view details]' : text;
+  return notificationBodyContainsPhi(text) ? '[Redacted - open app to view details]' : text;
 }
 
 /**

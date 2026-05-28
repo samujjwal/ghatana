@@ -34,7 +34,7 @@ class DataCloudLearningBridgeTest {
     @BeforeEach
     void setUp() { 
         mockBrain = mock(DataCloudBrain.class); 
-        bridge = new DataCloudLearningBridge(mockBrain); 
+        bridge = new DataCloudLearningBridge(mockBrain, null); 
     }
 
     // ==================== Construction ====================
@@ -46,7 +46,7 @@ class DataCloudLearningBridgeTest {
         @Test
         @DisplayName("null brain throws IllegalArgumentException")
         void nullBrain_throws() { 
-            assertThatThrownBy(() -> new DataCloudLearningBridge(null)) 
+            assertThatThrownBy(() -> new DataCloudLearningBridge(null, null)) 
                 .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("brain");
         }
@@ -185,12 +185,13 @@ class DataCloudLearningBridgeTest {
             seedReviewItem("pat-1");
             String reviewKey = "review-pat-1";
 
-            boolean ok = bridge.approveReview(reviewKey); 
+            boolean ok = bridge.approveReview("tenant-1", "user-1", reviewKey); 
 
             assertThat(ok).isTrue(); 
             Map<String, Object> item = bridge.getReviewQueue().get(reviewKey); 
             assertThat(item.get("status")).isEqualTo("APPROVED");
             assertThat(item.get("reviewedAt")).isNotNull();
+            assertThat(item.get("reviewedBy")).isEqualTo("user-1");
         }
 
         @Test
@@ -199,11 +200,12 @@ class DataCloudLearningBridgeTest {
             seedReviewItem("pat-2");
             String reviewKey = "review-pat-2";
 
-            boolean ok = bridge.rejectReview(reviewKey); 
+            boolean ok = bridge.rejectReview("tenant-1", "user-1", reviewKey, "test reason"); 
 
             assertThat(ok).isTrue(); 
             Map<String, Object> item = bridge.getReviewQueue().get(reviewKey); 
             assertThat(item.get("status")).isEqualTo("REJECTED");
+            assertThat(item.get("reviewedBy")).isEqualTo("user-1");
         }
 
         @Test
@@ -212,10 +214,10 @@ class DataCloudLearningBridgeTest {
             seedReviewItem("pat-3");
             String reviewKey = "review-pat-3";
 
-            assertThat(bridge.approveReview(reviewKey)).isTrue();
+            assertThat(bridge.approveReview("tenant-1", "user-1", reviewKey)).isTrue();
             String firstReviewedAt = (String) bridge.getReviewQueue().get(reviewKey).get("reviewedAt");
 
-            assertThat(bridge.approveReview(reviewKey)).isTrue();
+            assertThat(bridge.approveReview("tenant-1", "user-1", reviewKey)).isTrue();
             Map<String, Object> item = bridge.getReviewQueue().get(reviewKey);
 
             assertThat(item.get("status")).isEqualTo("APPROVED");
@@ -228,8 +230,8 @@ class DataCloudLearningBridgeTest {
             seedReviewItem("pat-4");
             String reviewKey = "review-pat-4";
 
-            assertThat(bridge.approveReview(reviewKey)).isTrue();
-            assertThat(bridge.rejectReview(reviewKey)).isFalse();
+            assertThat(bridge.approveReview("tenant-1", "user-1", reviewKey)).isTrue();
+            assertThat(bridge.rejectReview("tenant-1", "user-1", reviewKey, "test")).isFalse();
             Map<String, Object> item = bridge.getReviewQueue().get(reviewKey);
 
             assertThat(item.get("status")).isEqualTo("APPROVED");
@@ -238,13 +240,13 @@ class DataCloudLearningBridgeTest {
         @Test
         @DisplayName("approveReview: returns false when item not found")
         void approveReview_notFound_returnsFalse() { 
-            assertThat(bridge.approveReview("no-such-id")).isFalse();
+            assertThat(bridge.approveReview("tenant-1", "user-1", "no-such-id")).isFalse();
         }
 
         @Test
         @DisplayName("rejectReview: returns false when item not found")
         void rejectReview_notFound_returnsFalse() { 
-            assertThat(bridge.rejectReview("no-such-id")).isFalse();
+            assertThat(bridge.rejectReview("tenant-1", "user-1", "no-such-id", "test")).isFalse();
         }
 
         @Test
@@ -337,8 +339,8 @@ class DataCloudLearningBridgeTest {
             seedReviewItem("a");
             seedReviewItem("b");
             seedReviewItem("c");
-            bridge.approveReview("review-a");
-            bridge.rejectReview("review-b");
+            bridge.approveReview("tenant-1", "user-1", "review-a");
+            bridge.rejectReview("tenant-1", "user-1", "review-b", "test");
             // "review-c" stays PENDING
 
             int purged = bridge.purgeCompletedReviews(); 
@@ -363,7 +365,7 @@ class DataCloudLearningBridgeTest {
         @DisplayName("purgeCompletedReviews: idempotent — second call returns 0")
         void purgeCompleted_idempotent() { 
             seedReviewItem("y");
-            bridge.approveReview("review-y");
+            bridge.approveReview("tenant-1", "user-1", "review-y");
 
             bridge.purgeCompletedReviews(); 
             int secondPurge = bridge.purgeCompletedReviews(); 

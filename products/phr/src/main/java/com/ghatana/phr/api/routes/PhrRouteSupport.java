@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.phr.api.validation.PhrRequestValidator;
 import com.ghatana.phr.security.PhrPolicyEvaluator;
+import com.ghatana.platform.http.server.activej.ActiveJHttpExchangeSupport;
 import io.activej.bytebuf.ByteBuf;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
@@ -11,7 +12,6 @@ import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,7 +33,6 @@ import java.util.Set;
  */
 public final class PhrRouteSupport {
 
-    static final String CONTENT_JSON = "application/json";
     static final ObjectMapper JSON = new ObjectMapper().findAndRegisterModules();
 
     /** Roles permitted to call PHR routes. */
@@ -70,7 +69,6 @@ public final class PhrRouteSupport {
             throw new IllegalArgumentException("Unrecognised role: " + role);
         }
 
-        // B-001: Call tenant/principal/facility validators inside requireContext
         validateTenantId(tenantId.strip());
         validatePrincipalId(principalId.strip());
         if (facilityId != null && !facilityId.isBlank()) {
@@ -78,7 +76,6 @@ public final class PhrRouteSupport {
         }
 
         String correlationId = extractCorrelationId(request);
-        // B-002: Add persona/tier/facility to request context
         return new PhrRequestContext(
             tenantId.strip(),
             principalId.strip(),
@@ -98,12 +95,7 @@ public final class PhrRouteSupport {
      * @return the correlation ID string; never null
      */
     static String extractCorrelationId(HttpRequest request) {
-        String value = firstHeader(request, "X-Correlation-ID", "X-Correlation-Id", "X-Request-ID");
-        if (value != null && !value.isBlank()) {
-            return value.strip();
-        }
-        // B-003: Generate server correlation ID if missing
-        return java.util.UUID.randomUUID().toString();
+        return ActiveJHttpExchangeSupport.correlationId(request);
     }
 
 
@@ -117,9 +109,9 @@ public final class PhrRouteSupport {
         if (tenantId == null || tenantId.isBlank()) {
             throw new IllegalArgumentException("Tenant ID cannot be blank");
         }
-        // Tenant IDs should be alphanumeric with hyphens, 3-50 characters
-        if (!tenantId.matches("^[a-zA-Z0-9-]{3,50}$")) {
-            throw new IllegalArgumentException("Tenant ID must be 3-50 alphanumeric characters with hyphens");
+        // Tenant IDs should be alphanumeric with hyphens, 2-50 characters
+        if (!tenantId.matches("^[a-zA-Z0-9-]{2,50}$")) {
+            throw new IllegalArgumentException("Tenant ID must be 2-50 alphanumeric characters with hyphens");
         }
     }
 
@@ -133,9 +125,9 @@ public final class PhrRouteSupport {
         if (principalId == null || principalId.isBlank()) {
             throw new IllegalArgumentException("Principal ID cannot be blank");
         }
-        // Principal IDs should be alphanumeric with hyphens/underscores, 3-100 characters
-        if (!principalId.matches("^[a-zA-Z0-9_-]{3,100}$")) {
-            throw new IllegalArgumentException("Principal ID must be 3-100 alphanumeric characters with hyphens/underscores");
+        // Principal IDs should be alphanumeric with hyphens/underscores, 2-100 characters
+        if (!principalId.matches("^[a-zA-Z0-9_-]{2,100}$")) {
+            throw new IllegalArgumentException("Principal ID must be 2-100 alphanumeric characters with hyphens/underscores");
         }
     }
 
@@ -149,32 +141,14 @@ public final class PhrRouteSupport {
         if (facilityId == null || facilityId.isBlank()) {
             return; // Optional for non-facility users
         }
-        // Facility IDs should be alphanumeric with hyphens, 3-50 characters
-        if (!facilityId.matches("^[a-zA-Z0-9-]{3,50}$")) {
-            throw new IllegalArgumentException("Facility ID must be 3-50 alphanumeric characters with hyphens");
+        // Facility IDs should be alphanumeric with hyphens, 2-50 characters
+        if (!facilityId.matches("^[a-zA-Z0-9-]{2,50}$")) {
+            throw new IllegalArgumentException("Facility ID must be 2-50 alphanumeric characters with hyphens");
         }
     }
 
-    // B-004: Use correlation-aware response helpers everywhere
     static Promise<HttpResponse> jsonResponseWithCorrelation(int statusCode, Object body, String correlationId) {
-        try {
-            String json = body instanceof String s ? s : JSON.writeValueAsString(body);
-            HttpResponse.Builder builder = HttpResponse.ofCode(statusCode)
-                .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_JSON)
-                .withJson(json);
-            if (correlationId != null && !correlationId.isBlank()) {
-                builder = builder.withHeader(HttpHeaders.of("X-Correlation-ID"), correlationId);
-            }
-            return Promise.of(builder.build());
-        } catch (JsonProcessingException ex) {
-            HttpResponse.Builder builder = HttpResponse.ofCode(500)
-                .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_JSON)
-                .withJson("{\"error\":\"SERIALIZATION_ERROR\",\"message\":\"Failed to serialize response\"}");
-            if (correlationId != null && !correlationId.isBlank()) {
-                builder = builder.withHeader(HttpHeaders.of("X-Correlation-ID"), correlationId);
-            }
-            return Promise.of(builder.build());
-        }
+        return Promise.of(ActiveJHttpExchangeSupport.jsonResponse(JSON, statusCode, body, correlationId));
     }
 
     static Promise<HttpResponse> jsonResponse(int statusCode, Object body) {
@@ -185,28 +159,16 @@ public final class PhrRouteSupport {
         return jsonResponseWithCorrelation(statusCode, body, correlationId);
     }
 
-    // B-006: Add correlation ID to all error responses
     static Promise<HttpResponse> errorResponse(int statusCode, String code, String message) {
         return errorResponse(statusCode, code, message, null);
     }
 
     static Promise<HttpResponse> errorResponse(int statusCode, String code, String message, String correlationId) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("error", code);
-        body.put("message", message);
-        body.put("correlationId", correlationId);
-        return jsonResponseWithCorrelation(statusCode, body, correlationId);
+        return Promise.of(ActiveJHttpExchangeSupport.errorResponse(JSON, statusCode, code, message, correlationId));
     }
 
     static Promise<HttpResponse> errorResponse(int statusCode, String code, String message, String correlationId, Map<String, Object> details) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("error", code);
-        body.put("message", message);
-        body.put("correlationId", correlationId);
-        if (details != null && !details.isEmpty()) {
-            body.put("details", details);
-        }
-        return jsonResponseWithCorrelation(statusCode, body, correlationId);
+        return Promise.of(ActiveJHttpExchangeSupport.errorResponse(JSON, statusCode, code, message, correlationId, details));
     }
 
     /**
@@ -218,11 +180,7 @@ public final class PhrRouteSupport {
      * @return Promise containing the error response
      */
     static Promise<HttpResponse> policyDenialResponse(int statusCode, String correlationId) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("error", "POLICY_DENIED");
-        body.put("message", "Access denied by policy");
-        body.put("correlationId", correlationId);
-        return jsonResponseWithCorrelation(statusCode, body, correlationId);
+        return errorResponse(statusCode, "POLICY_DENIED", "Access denied by policy", correlationId);
     }
 
     /**
@@ -287,15 +245,7 @@ public final class PhrRouteSupport {
      * @throws IllegalArgumentException if the key format is invalid
      */
     static String extractIdempotencyKey(HttpRequest request) {
-        String key = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
-        if (key == null || key.isBlank()) {
-            return null;
-        }
-        // Validate format: UUID or alphanumeric string 8-64 chars
-        if (!key.matches("^[a-zA-Z0-9\\-]{8,64}$")) {
-            throw new IllegalArgumentException("Idempotency key must be 8-64 alphanumeric characters or UUID format");
-        }
-        return key;
+        return ActiveJHttpExchangeSupport.idempotencyKey(request).orElse(null);
     }
 
     /**
@@ -325,11 +275,7 @@ public final class PhrRouteSupport {
      * @return the idempotency key, or null if not present
      */
     static String getIdempotencyKey(HttpRequest request) {
-        String key = request.getHeader(io.activej.http.HttpHeaders.of("X-Idempotency-Key"));
-        if (key != null && !key.isBlank()) {
-            return key.trim();
-        }
-        return null;
+        return extractIdempotencyKey(request);
     }
 
     /**
@@ -339,13 +285,7 @@ public final class PhrRouteSupport {
      * @return true if valid, false otherwise
      */
     static boolean isValidIdempotencyKey(String key) {
-        if (key == null || key.isBlank()) {
-            return false;
-        }
-        // Idempotency keys should be at least 16 characters and at most 255 characters
-        // They should be URL-safe (alphanumeric, hyphen, underscore)
-        return key.length() >= 16 && key.length() <= 255 
-            && key.matches("^[a-zA-Z0-9_-]+$");
+        return ActiveJHttpExchangeSupport.isValidIdempotencyKey(key);
     }
 
     static String requiredQuery(HttpRequest request, String name) {
@@ -418,8 +358,6 @@ public final class PhrRouteSupport {
         }
         return null;
     }
-
-    // B-002: Add persona/tier/facility to request context
     public record PhrRequestContext(
         String tenantId,
         String principalId,

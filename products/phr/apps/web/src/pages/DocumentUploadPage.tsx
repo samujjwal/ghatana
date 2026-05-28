@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, Input, Button, Select, Progress, TextField } from '@ghatana/design-system';
-import { uploadDocument } from '../api/phrApi';
+import { uploadDocument } from '../api/documentsApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
+import { t } from '../i18n/phrI18n';
 import { logError } from '../utils/safeLogger';
 
 // File size limit: 10MB
@@ -39,13 +40,13 @@ export function DocumentUploadPage(): React.ReactElement {
     // Client-side file validation
     if (file) {
       if (file.size > MAX_FILE_SIZE) {
-        setValidationError(`File size exceeds maximum limit of ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+        setValidationError(t('documents.upload.error.size', { size: MAX_FILE_SIZE / 1024 / 1024 }));
         setSelectedFile(null);
         return;
       }
 
       if (!ALLOWED_CONTENT_TYPES.includes(file.type)) {
-        setValidationError(`File type ${file.type} is not allowed. Allowed types: ${ALLOWED_CONTENT_TYPES.join(', ')}`);
+        setValidationError(t('documents.upload.error.type', { type: file.type, allowed: ALLOWED_CONTENT_TYPES.join(', ') }));
         setSelectedFile(null);
         return;
       }
@@ -59,19 +60,19 @@ export function DocumentUploadPage(): React.ReactElement {
 
   function validateMetadata(): boolean {
     if (!title.trim()) {
-      setValidationError('Document title is required');
+      setValidationError(t('documents.upload.error.titleRequired'));
       return false;
     }
     if (title.trim().length > 200) {
-      setValidationError('Document title must be less than 200 characters');
+      setValidationError(t('documents.upload.error.titleLength'));
       return false;
     }
     if (category && category.length > 50) {
-      setValidationError('Category must be less than 50 characters');
+      setValidationError(t('documents.upload.error.categoryLength'));
       return false;
     }
     if (description && description.length > 500) {
-      setValidationError('Description must be less than 500 characters');
+      setValidationError(t('documents.upload.error.descriptionLength'));
       return false;
     }
     return true;
@@ -81,12 +82,12 @@ export function DocumentUploadPage(): React.ReactElement {
     evt.preventDefault();
     
     if (!selectedFile) {
-      setValidationError('Please select a file to upload');
+      setValidationError(t('documents.upload.error.fileRequired'));
       return;
     }
 
     if (!session) {
-      setError('Not authenticated');
+      setError(t('documents.upload.error.auth'));
       return;
     }
 
@@ -122,14 +123,14 @@ export function DocumentUploadPage(): React.ReactElement {
       
       clearInterval(progressInterval);
       setUploadProgress(100);
-      setResult(`Document uploaded successfully (ID: ${res.id}, OCR Status: ${res.ocrStatus})`);
+      setResult(t('documents.upload.successWithOcr', { id: res.id, status: res.ocrStatus }));
       setSelectedFile(null);
       setTitle('');
       setCategory('');
       setDescription('');
       if (inputRef.current) inputRef.current.value = '';
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to upload document');
+      setError(err instanceof Error ? err.message : t('documents.upload.error'));
       logError('Failed to upload document', undefined, { error: err });
     } finally {
       setUploading(false);
@@ -140,11 +141,11 @@ export function DocumentUploadPage(): React.ReactElement {
   return (
     <div className="stack gap-lg">
       <Card>
-        <CardHeader title="Upload Document" subheader="Upload medical documents and records" />
+        <CardHeader title={t('documents.upload.title')} subheader={t('documents.upload.subheader')} />
         <CardContent>
           <form onSubmit={(e) => void handleUpload(e)} className="stack gap-md">
             <div>
-              <label htmlFor="doc-upload" className="form-label">Select File</label>
+              <label htmlFor="doc-upload" className="form-label">{t('documents.upload.file.label')}</label>
               <input
                 ref={inputRef}
                 id="doc-upload"
@@ -153,53 +154,53 @@ export function DocumentUploadPage(): React.ReactElement {
                 onChange={handleFileChange}
                 aria-describedby={validationError != null ? 'validation-error' : undefined}
               />
-              <p className="muted">Allowed types: PDF, JPEG, PNG, TIFF, DOC, DOCX. Max size: 10MB</p>
+              <p className="muted">{t('documents.upload.file.help')}</p>
             </div>
 
             <div>
-              <label htmlFor="doc-title" className="form-label">Title *</label>
+              <label htmlFor="doc-title" className="form-label">{t('documents.upload.title.label')}</label>
               <TextField
                 id="doc-title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Document title"
+                placeholder={t('documents.upload.title.placeholder')}
                 maxLength={200}
                 required
-                aria-label="Document title"
+                aria-label={t('documents.upload.title.placeholder')}
               />
             </div>
 
             <div>
-              <label htmlFor="doc-category" className="form-label">Category</label>
+              <label htmlFor="doc-category" className="form-label">{t('documents.upload.category.label')}</label>
               <Select
                 id="doc-category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                aria-label="Document category"
+                aria-label={t('documents.upload.category.label')}
               >
-                <option value="">Select category (optional)</option>
-                <option value="lab-results">Lab Results</option>
+                <option value="">{t('documents.upload.category.placeholder')}</option>
+                <option value="lab-results">{t('documents.category.lab')}</option>
                 <option value="imaging">Imaging</option>
-                <option value="discharge-summary">Discharge Summary</option>
+                <option value="discharge-summary">{t('documents.category.discharge')}</option>
                 <option value="insurance">Insurance</option>
-                <option value="other">Other</option>
+                <option value="other">{t('documents.category.other')}</option>
               </Select>
             </div>
 
             <div>
-              <label htmlFor="doc-description" className="form-label">Description</label>
+              <label htmlFor="doc-description" className="form-label">{t('documentDetail.description')}</label>
               <TextField
                 id="doc-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Optional description"
+                placeholder={t('documents.upload.description.placeholder')}
                 maxLength={500}
-                aria-label="Document description"
+                aria-label={t('documents.upload.description.placeholder')}
               />
             </div>
 
             {uploading && (
-              <Progress value={uploadProgress} aria-label="Upload progress" />
+              <Progress value={uploadProgress} aria-label={t('documents.upload.progress')} />
             )}
 
             {validationError != null && (
@@ -217,7 +218,7 @@ export function DocumentUploadPage(): React.ReactElement {
               disabled={selectedFile == null || uploading || !title.trim()} 
               aria-busy={uploading}
             >
-              {uploading ? 'Uploading...' : 'Upload Document'}
+              {uploading ? t('documents.upload.uploading') : t('documents.upload.submit')}
             </Button>
           </form>
         </CardContent>

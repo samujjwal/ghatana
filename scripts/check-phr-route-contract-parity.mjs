@@ -1,130 +1,104 @@
 #!/usr/bin/env node
 
 /**
- * T-001: Check PHR route contract parity.
- * Validates JSON ↔ generated TS ↔ route elements ↔ backend entitlements.
+ * Checks PHR route contract parity across the canonical JSON contract, frontend
+ * projection, route elements, and backend entitlement loader.
  */
 
-import { readFileSync, existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 
 const PHR_CONFIG_DIR = resolve(process.cwd(), 'products/phr/config');
 const PHR_WEB_SRC_DIR = resolve(process.cwd(), 'products/phr/apps/web/src');
 const PHR_BACKEND_DIR = resolve(process.cwd(), 'products/phr/src/main/java/com/ghatana/phr');
 
-// Load JSON contract
+function readRequired(path, label) {
+  if (!existsSync(path)) {
+    console.error(`ERROR: ${label} not found`);
+    process.exit(1);
+  }
+  return readFileSync(path, 'utf-8');
+}
+
 const jsonContractPath = resolve(PHR_CONFIG_DIR, 'phr-route-contract.json');
-if (!existsSync(jsonContractPath)) {
-  console.error('ERROR: phr-route-contract.json not found');
-  process.exit(1);
-}
-const jsonContract = JSON.parse(readFileSync(jsonContractPath, 'utf-8'));
+const jsonContract = JSON.parse(readRequired(jsonContractPath, 'phr-route-contract.json'));
+const tsContractContent = readRequired(
+  resolve(PHR_WEB_SRC_DIR, 'phrRouteContracts.ts'),
+  'phrRouteContracts.ts'
+);
+const routeElementsContent = readRequired(
+  resolve(PHR_WEB_SRC_DIR, 'phrRouteElements.tsx'),
+  'phrRouteElements.tsx'
+);
+const backendEntitlementContent = readRequired(
+  resolve(PHR_BACKEND_DIR, 'api/routes/PhrEntitlementRoutes.java'),
+  'PhrEntitlementRoutes.java'
+);
 
-// Load TS contract
-const tsContractPath = resolve(PHR_WEB_SRC_DIR, 'phrRouteContracts.ts');
-if (!existsSync(tsContractPath)) {
-  console.error('ERROR: phrRouteContracts.ts not found');
-  process.exit(1);
-}
-const tsContractContent = readFileSync(tsContractPath, 'utf-8');
-
-// Load route elements
-const routeElementsPath = resolve(PHR_WEB_SRC_DIR, 'phrRouteElements.tsx');
-if (!existsSync(routeElementsPath)) {
-  console.error('ERROR: phrRouteElements.tsx not found');
-  process.exit(1);
-}
-const routeElementsContent = readFileSync(routeElementsPath, 'utf-8');
-
-// Load backend entitlement routes
-const backendEntitlementPath = resolve(PHR_BACKEND_DIR, 'api/routes/PhrEntitlementRoutes.java');
-if (!existsSync(backendEntitlementPath)) {
-  console.error('ERROR: PhrEntitlementRoutes.java not found');
-  process.exit(1);
-}
-const backendEntitlementContent = readFileSync(backendEntitlementPath, 'utf-8');
-
-// Extract route paths from JSON contract
-const jsonPaths = new Set(jsonContract.routes.map(r => r.path));
-
-// Extract route paths from TS contract (look for path: '...' strings)
-const tsPaths = new Set();
-const tsPathMatches = tsContractContent.match(/path:\s*['"`]([^'"`]+)['"`]/g);
-if (tsPathMatches) {
-  tsPathMatches.forEach(match => {
-    const path = match.match(/['"`]([^'"`]+)['"`]/)[1];
-    tsPaths.add(path);
-  });
-}
-
-// Extract route paths from route elements
+const jsonPaths = new Set(jsonContract.routes.map((route) => route.path));
+const stableRoutes = jsonContract.routes.filter((route) => route.stability === 'stable');
 const elementPaths = new Set();
-const elementPathMatches = routeElementsContent.match(/path:\s*['"`]([^'"`]+)['"`]/g);
-if (elementPathMatches) {
-  elementPathMatches.forEach(match => {
-    const path = match.match(/['"`]([^'"`]+)['"`]/)[1];
-    elementPaths.add(path);
-  });
+const elementPathMatches = routeElementsContent.match(/['"`](\/[^'"`]+)['"`]\s*:/g) ?? [];
+
+for (const match of elementPathMatches) {
+  elementPaths.add(match.match(/['"`]([^'"`]+)['"`]/)[1]);
 }
 
-// Check parity
 let hasErrors = false;
 
-// Check JSON vs TS
-for (const path of jsonPaths) {
-  if (!tsPaths.has(path)) {
-    console.error(`ERROR: JSON contract path '${path}' not found in TS contract`);
-    hasErrors = true;
+if (!tsContractContent.includes("../../../config/phr-route-contract.json")) {
+  console.error('ERROR: phrRouteContracts.ts must import the canonical JSON route contract');
+  hasErrors = true;
+}
+
+if (/path:\s*['"`]\//.test(tsContractContent)) {
+  console.error('ERROR: phrRouteContracts.ts contains hand-maintained route path literals');
+  hasErrors = true;
+}
+
+if (jsonPaths.has('/mobile/dashboard')) {
+  console.error('ERROR: /mobile/dashboard must not be part of the web route contract');
+  hasErrors = true;
+}
+
+for (const route of stableRoutes) {
+  for (const field of ['apiEndpoint', 'policyId', 'testId']) {
+    if (!route[field] || typeof route[field] !== 'string') {
+      console.error(`ERROR: stable route '${route.path}' is missing ${field}`);
+      hasErrors = true;
+    }
   }
 }
 
-for (const path of tsPaths) {
-  if (!jsonPaths.has(path)) {
-    console.error(`ERROR: TS contract path '${path}' not found in JSON contract`);
-    hasErrors = true;
-  }
-}
-
-// Check TS vs route elements
-for (const path of tsPaths) {
-  if (!elementPaths.has(path)) {
-    console.error(`ERROR: TS contract path '${path}' not found in route elements`);
+for (const route of stableRoutes) {
+  if (!elementPaths.has(route.path)) {
+    console.error(`ERROR: stable JSON contract path '${route.path}' not found in route elements`);
     hasErrors = true;
   }
 }
 
 for (const path of elementPaths) {
-  if (!tsPaths.has(path)) {
-    console.error(`ERROR: Route element path '${path}' not found in TS contract`);
+  if (!jsonPaths.has(path)) {
+    console.error(`ERROR: route element path '${path}' not found in JSON contract`);
     hasErrors = true;
   }
 }
 
-// Check role order parity
-const jsonRoleOrder = jsonContract.roleOrder;
-const tsRoleOrderMatch = tsContractContent.match(/PHR_ROLE_ORDER\s*=\s*{([^}]+)}/);
-if (tsRoleOrderMatch) {
-  const tsRoleOrderStr = tsRoleOrderMatch[1];
-  const tsRoles = tsRoleOrderStr.split(',').map(r => r.trim().replace(/['"`]/g, '').split(':')[0]);
-  
-  for (const role of Object.keys(jsonRoleOrder)) {
-    if (!tsRoles.includes(role)) {
-      console.error(`ERROR: JSON role '${role}' not found in TS role order`);
-      hasErrors = true;
-    }
-  }
-  
-  for (const role of tsRoles) {
-    if (!jsonRoleOrder.hasOwnProperty(role)) {
-      console.error(`ERROR: TS role '${role}' not found in JSON role order`);
-      hasErrors = true;
-    }
+if (!routeElementsContent.includes("route.stability === 'hidden'")) {
+  console.error('ERROR: phrRouteElements.tsx must explicitly block hidden direct links');
+  hasErrors = true;
+}
+
+for (const role of ['patient', 'caregiver', 'clinician', 'fchv', 'admin']) {
+  if (!Object.prototype.hasOwnProperty.call(jsonContract.roleOrder ?? {}, role)) {
+    console.error(`ERROR: JSON role order missing '${role}'`);
+    hasErrors = true;
   }
 }
 
-// Check backend entitlements reference JSON contract
 if (!backendEntitlementContent.includes('phr-route-contract.json')) {
-  console.warn('WARNING: Backend entitlement routes may not reference phr-route-contract.json');
+  console.error('ERROR: backend entitlement routes must reference phr-route-contract.json');
+  hasErrors = true;
 }
 
 if (hasErrors) {

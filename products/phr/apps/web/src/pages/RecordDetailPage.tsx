@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { useParams } from 'react-router-dom';
-import { fetchRecordDetail } from '../api/phrApi';
+import { fetchRecordDetail } from '../api/recordsApi';
 import { t } from '../i18n/phrI18n';
 import { usePhrSession } from '../auth/PhrSessionContext';
 
@@ -20,7 +20,7 @@ export function RecordDetailPage(): React.ReactElement {
 
   useEffect(() => {
     if (!session || !recordId) {
-      setError('Session or record ID missing');
+      setError(t('recordDetail.error.context'));
       setLoading(false);
       return;
     }
@@ -32,7 +32,7 @@ export function RecordDetailPage(): React.ReactElement {
     })
       .then(setRecordData)
       .catch((err: unknown) => {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load record detail';
+        const errorMessage = err instanceof Error ? err.message : t('recordDetail.error.load');
         setError(errorMessage);
         // Check if error indicates invalid FHIR payload
         if (errorMessage.toLowerCase().includes('invalid') || errorMessage.toLowerCase().includes('parse')) {
@@ -80,19 +80,19 @@ export function RecordDetailPage(): React.ReactElement {
   };
 
   if (loading) {
-    return <div className="loading">Loading record detail...</div>;
+    return <div className="loading">{t('recordDetail.loading')}</div>;
   }
 
   if (error) {
     return (
       <Card>
-        <CardHeader title="Record Unavailable" subheader="Error loading record" />
+        <CardHeader title={t('recordDetail.unavailable.title')} subheader={t('recordDetail.error.load')} />
         <CardContent>
           <p className="error">{error}</p>
           {fhirInvalid && (
             <div className="warning-banner">
-              <strong>Invalid FHIR Payload</strong>
-              <p>This record contains invalid or malformed FHIR data and cannot be displayed safely.</p>
+              <strong>{t('recordDetail.invalidFhir.title')}</strong>
+              <p>{t('recordDetail.invalidFhir.body')}</p>
             </div>
           )}
         </CardContent>
@@ -103,9 +103,9 @@ export function RecordDetailPage(): React.ReactElement {
   if (!recordData) {
     return (
       <Card>
-        <CardHeader title="Record Unavailable" subheader="Record not found" />
+        <CardHeader title={t('recordDetail.unavailable.title')} subheader={t('recordDetail.notFound')} />
         <CardContent>
-          <p className="muted">The requested record could not be found.</p>
+          <p className="muted">{t('recordDetail.notFound.body')}</p>
         </CardContent>
       </Card>
     );
@@ -115,7 +115,7 @@ export function RecordDetailPage(): React.ReactElement {
 
   return (
     <Card>
-      <CardHeader title={recordData.record.title} subheader="FHIR Record Detail" />
+      <CardHeader title={recordData.record.title} subheader={t('recordDetail.fhirDetail')} />
       <CardContent>
         <div className="stack gap-md">
           <div className="row gap-sm">
@@ -126,7 +126,7 @@ export function RecordDetailPage(): React.ReactElement {
           {/* Access audit information */}
           <div className="audit-info">
             <small className="muted">
-              Accessed at: {new Date(recordData.accessAudit.accessedAt).toLocaleString()} by {recordData.accessAudit.accessedBy}
+              {t('recordDetail.accessedAt', { date: new Date(recordData.accessAudit.accessedAt).toLocaleString(), principal: recordData.accessAudit.accessedBy })}
             </small>
           </div>
 
@@ -138,20 +138,20 @@ export function RecordDetailPage(): React.ReactElement {
                 checked={showRawFhir}
                 onChange={(e) => setShowRawFhir(e.target.checked)}
               />
-              Show raw FHIR (contains PHI)
+              {t('recordDetail.showRawFhir')}
             </label>
             <button onClick={handleCopyFhir} className="btn-secondary">
-              Copy FHIR
+              {t('recordDetail.copyFhir')}
             </button>
             <button onClick={handleDownloadFhir} className="btn-secondary">
-              Download FHIR
+              {t('recordDetail.downloadFhir')}
             </button>
           </div>
 
           {!showRawFhir && (
             <div className="phi-notice">
-              <strong>PHI Redacted</strong>
-              <p className="muted">Personal health information has been redacted from this view. Check "Show raw FHIR" to see the complete data.</p>
+              <strong>{t('recordDetail.phiRedacted.title')}</strong>
+              <p className="muted">{t('recordDetail.phiRedacted.body')}</p>
             </div>
           )}
 

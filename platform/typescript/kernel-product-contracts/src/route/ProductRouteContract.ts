@@ -1,91 +1,160 @@
 /**
  * K-001: Kernel product route contract schema.
- * PHR uses Kernel product route contract instead of product-local-only schema.
+ * Product route metadata is validated once and projected into UI manifests,
+ * backend entitlement payloads, and route capability summaries.
  */
 
-export type RouteStability = 'stable' | 'preview' | 'blocked' | 'hidden';
+import { z } from "zod";
 
-export type RouteGroup = 'care' | 'governance' | 'clinical' | 'administrative' | 'profile' | 'dashboard';
+export const RouteStabilityValues = ["stable", "preview", "blocked", "hidden"] as const;
+export const RouteGroupValues = [
+  "care",
+  "governance",
+  "clinical",
+  "administrative",
+  "profile",
+  "dashboard",
+] as const;
 
-export type RouteAction = {
-  id: string;
-  label: string;
-  endpoint: string;
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-  policyId?: string;
-  idempotent?: boolean;
-  confirmationRequired?: boolean;
-  visibility?: 'public' | 'authenticated' | 'role-restricted';
-};
+export const RouteHttpMethodValues = ["GET", "POST", "PUT", "DELETE", "PATCH"] as const;
+export const RouteActionVisibilityValues = ["public", "authenticated", "role-restricted"] as const;
 
-export type RouteCard = {
-  id: string;
-  title: string;
-  description: string;
-  icon?: string;
-  badge?: string;
-};
+export type RouteStability = (typeof RouteStabilityValues)[number];
+export type RouteGroup = (typeof RouteGroupValues)[number];
 
-export type RouteMetadata = {
+const RouteStabilitySchema = z.enum(RouteStabilityValues);
+const RouteGroupSchema = z.enum(RouteGroupValues);
+
+export const RouteMetadataSchema = z
+  .object({
+    apiEndpoint: z.string().trim().min(1).optional(),
+    policyId: z.string().trim().min(1).optional(),
+    testId: z.string().trim().min(1).optional(),
+    featureFlag: z.string().trim().min(1).optional(),
+    introducedAt: z.string().trim().min(1).optional(),
+  })
+  .strict();
+
+export const RouteActionSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    label: z.string().trim().min(1),
+    endpoint: z.string().trim().min(1),
+    method: z.enum(RouteHttpMethodValues),
+    policyId: z.string().trim().min(1).optional(),
+    idempotent: z.boolean().optional(),
+    confirmationRequired: z.boolean().optional(),
+    visibility: z.enum(RouteActionVisibilityValues).optional(),
+  })
+  .strict();
+
+export const RouteCardSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    title: z.string().trim().min(1),
+    description: z.string().trim().min(1),
+    icon: z.string().trim().min(1).optional(),
+    badge: z.string().trim().min(1).optional(),
+  })
+  .strict();
+
+export const ProductRouteSchema = z
+  .object({
+    path: z.string().trim().min(1).startsWith("/"),
+    label: z.string().trim().min(1),
+    description: z.string().trim().min(1),
+    group: RouteGroupSchema,
+    minimumRole: z.string().trim().min(1),
+    personas: z.array(z.string().trim().min(1)).optional(),
+    tiers: z.array(z.string().trim().min(1)).optional(),
+    actions: z.array(RouteActionSchema).optional(),
+    cards: z.array(RouteCardSchema).optional(),
+    stability: RouteStabilitySchema,
+    featureFlag: z.boolean().optional(),
+    metadata: RouteMetadataSchema.optional(),
+  })
+  .strict()
+  .superRefine((route, context) => {
+    if (route.stability !== "stable") {
+      return;
+    }
+
+    const metadata = route.metadata;
+    const missingMetadata = [
+      metadata?.apiEndpoint ? undefined : "apiEndpoint",
+      metadata?.policyId ? undefined : "policyId",
+      metadata?.testId ? undefined : "testId",
+    ].filter((value): value is string => value !== undefined);
+
+    if (missingMetadata.length > 0) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["metadata"],
+        message: `Stable route ${route.path} is missing ${missingMetadata.join(", ")}`,
+      });
+    }
+  });
+
+export const ProductRouteContractSchema = z
+  .object({
+    version: z.string().trim().min(1),
+    roleOrder: z.record(z.string().trim().min(1), z.number().int().nonnegative()),
+    routes: z.array(ProductRouteSchema).min(1),
+  })
+  .strict()
+  .superRefine((contract, context) => {
+    const seenPaths = new Set<string>();
+
+    contract.routes.forEach((route, index) => {
+      if (seenPaths.has(route.path)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["routes", index, "path"],
+          message: `Duplicate route path ${route.path}`,
+        });
+      }
+      seenPaths.add(route.path);
+
+      if (contract.roleOrder[route.minimumRole] === undefined) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["routes", index, "minimumRole"],
+          message: `Route ${route.path} references unknown minimumRole ${route.minimumRole}`,
+        });
+      }
+    });
+  });
+
+export type RouteAction = z.infer<typeof RouteActionSchema>;
+export type RouteCard = z.infer<typeof RouteCardSchema>;
+export type RouteMetadata = z.infer<typeof RouteMetadataSchema>;
+export type ProductRoute = z.infer<typeof ProductRouteSchema>;
+export type ProductRouteContract = z.infer<typeof ProductRouteContractSchema>;
+
+export type ProductRouteCapability = {
+  path: string;
+  stability: RouteStability;
+  directLinkAllowed: boolean;
+  discoverable: boolean;
+  minimumRole: string;
+  featureFlag?: boolean;
   apiEndpoint?: string;
   policyId?: string;
   testId?: string;
-  featureFlag?: string;
-  introducedAt?: string;
 };
-
-export type ProductRoute = {
-  path: string;
-  label: string;
-  description: string;
-  group: RouteGroup;
-  minimumRole: string;
-  personas?: string[];
-  tiers?: string[];
-  actions?: RouteAction[];
-  cards?: RouteCard[];
-  stability: RouteStability;
-  featureFlag?: boolean;
-  metadata?: RouteMetadata;
-};
-
-export type ProductRouteContract = {
-  version: string;
-  roleOrder: Record<string, number>;
-  routes: ProductRoute[];
-};
-
-export const RouteStabilityValues: RouteStability[] = ['stable', 'preview', 'blocked', 'hidden'];
-export const RouteGroupValues: RouteGroup[] = ['care', 'governance', 'clinical', 'administrative', 'profile', 'dashboard'];
 
 export function isRouteStability(value: unknown): value is RouteStability {
-  return typeof value === 'string' && RouteStabilityValues.includes(value as RouteStability);
+  return RouteStabilitySchema.safeParse(value).success;
 }
 
 export function isRouteGroup(value: unknown): value is RouteGroup {
-  return typeof value === 'string' && RouteGroupValues.includes(value as RouteGroup);
+  return RouteGroupSchema.safeParse(value).success;
+}
+
+export function parseProductRouteContract(contract: unknown): ProductRouteContract {
+  return ProductRouteContractSchema.parse(contract);
 }
 
 export function validateProductRouteContract(contract: unknown): contract is ProductRouteContract {
-  if (typeof contract !== 'object' || contract === null) return false;
-  
-  const c = contract as Record<string, unknown>;
-  
-  if (typeof c.version !== 'string') return false;
-  if (typeof c.roleOrder !== 'object' || c.roleOrder === null) return false;
-  if (!Array.isArray(c.routes)) return false;
-  
-  for (const route of c.routes) {
-    if (typeof route !== 'object' || route === null) return false;
-    const r = route as Record<string, unknown>;
-    
-    if (typeof r.path !== 'string') return false;
-    if (typeof r.label !== 'string') return false;
-    if (typeof r.description !== 'string') return false;
-    if (!isRouteGroup(r.group)) return false;
-    if (typeof r.minimumRole !== 'string') return false;
-    if (!isRouteStability(r.stability)) return false;
-  }
-  
-  return true;
+  return ProductRouteContractSchema.safeParse(contract).success;
 }

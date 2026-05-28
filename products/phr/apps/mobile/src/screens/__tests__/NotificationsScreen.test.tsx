@@ -3,7 +3,7 @@
  * Exercises the real production component — no object-literal assertions.
  */
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { render } from '@testing-library/react-native';
 import { NotificationsScreen } from '../NotificationsScreen';
 import type { MobileNotificationItem } from '../../types';
 
@@ -13,27 +13,39 @@ const notifications: MobileNotificationItem[] = [
 ];
 
 describe('NotificationsScreen', () => {
+  function renderedText(rendered: { toJSON: () => unknown }): string {
+    return JSON.stringify(rendered.toJSON());
+  }
+
+  function pressNode(node: { props: Record<string, unknown> }): void {
+    const onPress = node.props.onPress;
+    if (typeof onPress !== 'function') {
+      throw new Error('Expected rendered node to expose an onPress handler.');
+    }
+    onPress();
+  }
+
   it('renders notification titles', () => {
-    const { getByText } = render(
+    const rendered = render(
       <NotificationsScreen notifications={notifications} onEnablePush={() => {}} />,
     );
-    expect(getByText('CBC result available')).toBeTruthy();
-    expect(getByText('Consent expiring')).toBeTruthy();
+    expect(renderedText(rendered)).toContain('CBC result available');
+    expect(renderedText(rendered)).toContain('Consent expiring');
   });
 
   it('renders notification detail text', () => {
-    const { getByText } = render(
+    const rendered = render(
       <NotificationsScreen notifications={notifications} onEnablePush={() => {}} />,
     );
-    expect(getByText('Your latest lab result is ready.')).toBeTruthy();
+    expect(renderedText(rendered)).toContain('Your latest lab result is ready.');
   });
 
   it('calls onEnablePush when enable button is pressed', () => {
     const onEnablePush = jest.fn();
-    const { getByText } = render(
+    const { UNSAFE_getByProps } = render(
       <NotificationsScreen notifications={notifications} onEnablePush={onEnablePush} />,
     );
-    fireEvent.press(getByText('Enable push notifications'));
+    pressNode(UNSAFE_getByProps({ accessibilityLabel: 'Enable push notifications' }));
     expect(onEnablePush).toHaveBeenCalledTimes(1);
   });
 
@@ -45,9 +57,9 @@ describe('NotificationsScreen', () => {
   });
 
   it('renders enable push notifications button', () => {
-    const { getByText } = render(
+    const rendered = render(
       <NotificationsScreen notifications={[]} onEnablePush={() => {}} />,
     );
-    expect(getByText('Enable push notifications')).toBeTruthy();
+    expect(renderedText(rendered)).toContain('Enable push notifications');
   });
 });

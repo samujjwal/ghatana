@@ -38,6 +38,8 @@ import { type Task } from '@/services/lifecycle/api';
 import { type CanvasCommandAction } from './workspace';
 import { type CanvasInteractionMode } from './workspace/canvasSharedState';
 import type { CanvasAccessPolicy } from './canvasAccessPolicy';
+import { PhrCompletenessOverlay } from './PhrCompletenessOverlay';
+import type { PhrCompletenessOverlayModel } from '@/lib/phr/phrCompletenessOverlay';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -99,6 +101,7 @@ export interface CanvasOverlaysProps {
     // ── Shared handlers ──────────────────────────────────────────────────
     handlers: OverlayHandlers;
     canvasPolicy: CanvasAccessPolicy;
+    phrCompletenessOverlay?: PhrCompletenessOverlayModel | null;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────
@@ -134,8 +137,15 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
     setSelectedNodes,
     handlers,
     canvasPolicy,
+    phrCompletenessOverlay,
 }) => (
     <>
+        {phrCompletenessOverlay && (
+            <CanvasErrorBoundary label="PHR Completeness Overlay">
+                <PhrCompletenessOverlay model={phrCompletenessOverlay} />
+            </CanvasErrorBoundary>
+        )}
+
         {/* Next Best Task card */}
         {nextTask && personaData && (
             <CanvasErrorBoundary label="Next Best Task">

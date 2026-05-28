@@ -19,6 +19,7 @@ package com.ghatana.yappc.kernel;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.ghatana.contracts.kernel.ProductUnitIntentDocument;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +53,7 @@ import java.util.function.Supplier;
  *     .targetType("kernel-product-unit")
  *     .surfaces(List.of("backend-api", "web"))
  *     .runtimeProvider("ghatana-file-registry")
+ *     .sourceProvider("ghatana-file-registry")
  *     .lifecycleProfile("standard-web-api-product")
  *     .workspaceId("workspace-123")
  *     .build();
@@ -116,6 +118,7 @@ public final class ProductUnitIntentExporter {
         private final String targetType;
         private final List<String> surfaces;
         private final String runtimeProvider;
+        private final String sourceProvider;
         private final String lifecycleProfile;
         private final String tenantId;
         private final String workspaceId;
@@ -129,6 +132,7 @@ public final class ProductUnitIntentExporter {
             this.targetType = builder.targetType;
             this.surfaces = builder.surfaces;
             this.runtimeProvider = builder.runtimeProvider;
+            this.sourceProvider = builder.sourceProvider;
             this.lifecycleProfile = builder.lifecycleProfile;
             this.tenantId = builder.tenantId;
             this.workspaceId = builder.workspaceId;
@@ -142,6 +146,7 @@ public final class ProductUnitIntentExporter {
         public String targetType() { return targetType; }
         public List<String> surfaces() { return surfaces; }
         public String runtimeProvider() { return runtimeProvider; }
+        public String sourceProvider() { return sourceProvider; }
         public String lifecycleProfile() { return lifecycleProfile; }
         public String tenantId() { return tenantId; }
         public String workspaceId() { return workspaceId; }
@@ -162,6 +167,7 @@ public final class ProductUnitIntentExporter {
             private String targetType;
             private List<String> surfaces;
             private String runtimeProvider;
+            private String sourceProvider;
             private String lifecycleProfile;
             private String tenantId;
             private String workspaceId;
@@ -191,6 +197,11 @@ public final class ProductUnitIntentExporter {
 
             public Builder runtimeProvider(String runtimeProvider) {
                 this.runtimeProvider = runtimeProvider;
+                return this;
+            }
+
+            public Builder sourceProvider(String sourceProvider) {
+                this.sourceProvider = sourceProvider;
                 return this;
             }
 
@@ -318,6 +329,12 @@ public final class ProductUnitIntentExporter {
         if (!contractRegistry.isProviderKnown(request.runtimeProvider())) {
             throw new ExportException("Unknown Kernel registry provider: " + request.runtimeProvider());
         }
+        if (request.sourceProvider() == null || request.sourceProvider().isBlank()) {
+            throw new ExportException("sourceProvider is required");
+        }
+        if (!contractRegistry.isSourceProviderKnown(request.sourceProvider())) {
+            throw new ExportException("Unknown source provider: " + request.sourceProvider());
+        }
         if (request.lifecycleProfile() == null || request.lifecycleProfile().isBlank()) {
             throw new ExportException("lifecycleProfile is required");
         }
@@ -329,6 +346,14 @@ public final class ProductUnitIntentExporter {
         }
         if (request.workspaceId() == null || request.workspaceId().isBlank()) {
             throw new ExportException("workspaceId is required");
+        }
+
+        String inferredKind = inferKindFromTargetType(request.targetType());
+        if (inferredKind == null || !contractRegistry.isProductUnitKindKnown(inferredKind)) {
+            throw new ExportException("Unknown ProductUnit kind inferred from targetType: " + request.targetType());
+        }
+        if (!contractRegistry.isImplementationStatusKnown("planned")) {
+            throw new ExportException("Unknown ProductUnit implementation status: planned");
         }
     }
 
@@ -342,31 +367,32 @@ public final class ProductUnitIntentExporter {
         metadata.put("projectId", request.projectId());
         metadata.put("workspaceId", request.workspaceId());
         metadata.put("exportedAt", Instant.now(clock).toString());
+        String inferredKind = inferKindFromTargetType(request.targetType());
 
         ProductUnitIntentDocument document = new ProductUnitIntentDocument(
                 SCHEMA_VERSION,
                 intentId,
                 "create",
-                new ProductUnitScopeDocument(request.tenantId(), request.workspaceId(), request.projectId()),
-                new ProducerDocument(
+            new ProductUnitIntentDocument.ProductUnitScopeDocument(request.tenantId(), request.workspaceId(), request.projectId()),
+            new ProductUnitIntentDocument.ProducerDocument(
                         "yappc:" + request.workspaceId(),
                         PRODUCER_TYPE,
                         "yappc-product-unit-intent-exporter",
                     correlationId),
-                new TargetProvidersDocument(request.runtimeProvider(), "ghatana-file-registry"),
-                new ProductUnitDraftDocument(
+                new ProductUnitIntentDocument.TargetProvidersDocument(request.runtimeProvider(), request.sourceProvider()),
+            new ProductUnitIntentDocument.ProductUnitDraftDocument(
                         request.projectId(),
                         request.projectName(),
-                        inferKindFromTargetType(request.targetType()),
+                        inferredKind,
                         request.surfaces().stream()
-                                .map(surface -> new ProductUnitSurfaceDocument(
+                    .map(surface -> new ProductUnitIntentDocument.ProductUnitSurfaceDocument(
                                         request.projectId() + "-" + surface,
                                         surface,
                                         "planned"))
                                 .toList(),
                         request.lifecycleProfile(),
                         Collections.unmodifiableMap(metadata)),
-                new RequestedLifecycleDocument(request.lifecycleProfile(), true));
+            new ProductUnitIntentDocument.RequestedLifecycleDocument(request.lifecycleProfile(), true));
 
         @SuppressWarnings("unchecked")
         Map<String, Object> intent = jsonMapper.convertValue(document, Map.class);
@@ -382,101 +408,8 @@ public final class ProductUnitIntentExporter {
             case "kernel-product-unit" -> "business-product";
             case "platform-provider" -> "platform-provider";
             case "shared-service" -> "shared-service";
-            default -> "business-product";
+            default -> null;
         };
-    }
-
-    /**
-     * Typed ProductUnitIntent document exported to Kernel public contracts.
-     *
-     * @doc.type record
-     * @doc.purpose Schema-backed ProductUnitIntent document used before YAML or JSON serialization
-     * @doc.layer product
-     * @doc.pattern DTO
-     */
-    public record ProductUnitIntentDocument(
-            String schemaVersion,
-            String intentId,
-            String intentType,
-            ProductUnitScopeDocument scope,
-            ProducerDocument producer,
-            TargetProvidersDocument target,
-            ProductUnitDraftDocument productUnit,
-            RequestedLifecycleDocument requestedLifecycle
-    ) {
-    }
-
-    /**
-     * ProductUnitIntent scope.
-     *
-     * @doc.type record
-     * @doc.purpose Carries tenant, workspace, and project scope for Kernel handoff
-     * @doc.layer product
-     * @doc.pattern DTO
-     */
-    public record ProductUnitScopeDocument(String tenantId, String workspaceId, String projectId) {
-    }
-
-    /**
-     * ProductUnitIntent producer metadata.
-     *
-     * @doc.type record
-     * @doc.purpose Captures YAPPC producer identity and correlation for Kernel handoff
-     * @doc.layer product
-     * @doc.pattern DTO
-     */
-    public record ProducerDocument(String id, String type, String name, String correlationId) {
-    }
-
-    /**
-     * ProductUnitIntent target providers.
-     *
-     * @doc.type record
-     * @doc.purpose Captures Kernel registry and source providers
-     * @doc.layer product
-     * @doc.pattern DTO
-     */
-    public record TargetProvidersDocument(String registryProvider, String sourceProvider) {
-    }
-
-    /**
-     * ProductUnit draft document.
-     *
-     * @doc.type record
-     * @doc.purpose Captures ProductUnit draft fields using Kernel public DTO shape
-     * @doc.layer product
-     * @doc.pattern DTO
-     */
-    public record ProductUnitDraftDocument(
-            String id,
-            String name,
-            String kind,
-            List<ProductUnitSurfaceDocument> surfaces,
-            String lifecycleProfile,
-            Map<String, Object> metadata
-    ) {
-    }
-
-    /**
-     * ProductUnit surface document.
-     *
-     * @doc.type record
-     * @doc.purpose Captures canonical Kernel ProductUnitSurface fields
-     * @doc.layer product
-     * @doc.pattern DTO
-     */
-    public record ProductUnitSurfaceDocument(String id, String type, String implementationStatus) {
-    }
-
-    /**
-     * Requested lifecycle document.
-     *
-     * @doc.type record
-     * @doc.purpose Captures requested Kernel lifecycle profile and execution preference
-     * @doc.layer product
-     * @doc.pattern DTO
-     */
-    public record RequestedLifecycleDocument(String profile, boolean enableExecution) {
     }
 
     /**

@@ -3,14 +3,14 @@
  *
  * Displays immutable access history for patient data, including
  * access events, consent grants, and consent revocations.
- * Queries the real PHR audit/evidence API â€” no mock data.
+ * Queries the real PHR audit/evidence API.
  *
  * @doc.type page
  * @doc.purpose Audit page for immutable access history
  * @doc.layer frontend
  */
 import React, { useCallback, useEffect, useState } from 'react';
-import { fetchAuditEvents } from '../api/phrApi';
+import { fetchAuditEvents } from '../api/auditApi';
 import { formatPhrDateTime, t } from '../i18n/phrI18n';
 import type { AuditEvent } from '../types';
 
@@ -288,26 +288,25 @@ export function AuditPage(): React.ReactElement {
         </div>
       )}
 
-      {/* Export Modal with Privacy Policy */}
       {showExportModal && (
         <div className="fixed inset-0 z-50 overflow-hidden">
           <div className="absolute inset-0 bg-black bg-opacity-50" onClick={handleCloseExportModal} />
           <div className="absolute inset-0 flex items-center justify-center p-4">
             <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-full overflow-y-auto">
               <div className="p-6">
-                <h2 className="text-xl font-bold mb-4">Export Audit Trail</h2>
+                <h2 className="text-xl font-bold mb-4">{t('audit.export.title')}</h2>
                 
                 <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-                  <h3 className="font-semibold text-yellow-800 mb-2">Privacy Policy Notice</h3>
+                  <h3 className="font-semibold text-yellow-800 mb-2">{t('audit.export.noticeTitle')}</h3>
                   <p className="text-sm text-yellow-700 mb-2">
-                    By exporting this audit trail, you agree to the following:
+                    {t('audit.export.noticeIntro')}
                   </p>
                   <ul className="text-sm text-yellow-700 list-disc list-inside space-y-1">
-                    <li>This data contains sensitive access information</li>
-                    <li>Store exported files securely and delete when no longer needed</li>
-                    <li>Do not share with unauthorized personnel</li>
-                    <li>Comply with applicable data protection regulations</li>
-                    <li>Report any unauthorized access immediately</li>
+                    <li>{t('audit.export.policy.sensitive')}</li>
+                    <li>{t('audit.export.policy.storeSecurely')}</li>
+                    <li>{t('audit.export.policy.noSharing')}</li>
+                    <li>{t('audit.export.policy.compliance')}</li>
+                    <li>{t('audit.export.policy.reportAccess')}</li>
                   </ul>
                 </div>
 
@@ -320,7 +319,7 @@ export function AuditPage(): React.ReactElement {
                       className="mt-1"
                     />
                     <span className="text-sm text-gray-700">
-                      I acknowledge the privacy policy and agree to handle this data responsibly
+                      {t('audit.export.acknowledgement')}
                     </span>
                   </label>
                 </div>

@@ -52,8 +52,16 @@ describe('phiEncryptedStorage', () => {
       async removeItem(key: string): Promise<void> {
         mockStorage.delete(key);
       },
+      async clearAllPhi(): Promise<void> {
+        for (const key of Array.from(mockStorage.keys())) {
+          if (key.startsWith('phr-phi-cipher:')) {
+            mockStorage.delete(key);
+          }
+        }
+      },
     };
 
+    (AsyncStorage.getAllKeys as jest.MockedFunction<typeof AsyncStorage.getAllKeys>).mockResolvedValue([]);
     setPhiStorageAdapter(mockAdapter);
   });
 
@@ -237,20 +245,48 @@ describe('phiEncryptedStorage', () => {
       expect(tamperCheck).toBe('invalid-format');
     });
 
-    it('initializes tamper detection on first key creation', async () => {
-      // Verify tamper detection key is initialized
-      const tamperCheck = mockStorage.get('phr-phi-tamper-check');
-      // In production, this would be a properly formatted check value
-      expect(tamperCheck).toBeDefined();
-    });
+    it('initializes production metadata on first encrypted write', async () => {
+      const secureStore = new Map<string, string>();
+      const asyncStore = new Map<string, string>();
+      (SecureStore.getItemAsync as jest.MockedFunction<typeof SecureStore.getItemAsync>).mockImplementation(
+        async (key: string) => secureStore.get(key) ?? null,
+      );
+      (SecureStore.setItemAsync as jest.MockedFunction<typeof SecureStore.setItemAsync>).mockImplementation(
+        async (key: string, value: string) => {
+          secureStore.set(key, value);
+        },
+      );
+      (SecureStore.deleteItemAsync as jest.MockedFunction<typeof SecureStore.deleteItemAsync>).mockImplementation(
+        async (key: string) => {
+          secureStore.delete(key);
+        },
+      );
+      (AsyncStorage.setItem as jest.MockedFunction<typeof AsyncStorage.setItem>).mockImplementation(
+        async (key: string, value: string) => {
+          asyncStore.set(key, value);
+        },
+      );
+      (AsyncStorage.getItem as jest.MockedFunction<typeof AsyncStorage.getItem>).mockImplementation(
+        async (key: string) => asyncStore.get(key) ?? null,
+      );
+      (AsyncStorage.removeItem as jest.MockedFunction<typeof AsyncStorage.removeItem>).mockImplementation(
+        async (key: string) => {
+          asyncStore.delete(key);
+        },
+      );
+      (AsyncStorage.getAllKeys as jest.MockedFunction<typeof AsyncStorage.getAllKeys>).mockImplementation(
+        async () => Array.from(asyncStore.keys()),
+      );
 
-    it('handles missing tamper detection key as failure', async () => {
-      // Missing tamper check should be treated as suspicious
-      const tamperCheck = mockStorage.get('phr-phi-tamper-check');
-      if (!tamperCheck) {
-        // Should trigger key regeneration
-        expect(tamperCheck).toBeNull();
-      }
+      resetPhiStorageAdapter();
+
+      await phiSet('phr-phi-cipher:patient-summary', 'encrypted payload source');
+
+      expect(secureStore.get('phr-phi-tamper-check')).toMatch(/^\d+:.+/);
+      expect(secureStore.get('phr-phi-integrity-check')).toMatch(/^\d+:.+/);
+      expect(secureStore.get('phr-phi-tamper-version')).toBe('1');
+      expect(secureStore.get('phr-phi-key-registry')).toContain('phr-phi-cipher:patient-summary');
+      expect(asyncStore.get('phr-phi-cipher:patient-summary')).not.toBe('encrypted payload source');
     });
 
     it('clears key metadata on clearKey', async () => {
@@ -449,7 +485,7 @@ describe('phiEncryptedStorage', () => {
       const stored = mockStorage.get('phr-phi-integrity-check');
       if (stored) {
         const parts = stored.split(':');
-        expect(parts[1].length).toBe(32);
+        expect(parts[1]?.length).toBe(32);
       }
     });
   });

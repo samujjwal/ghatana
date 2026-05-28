@@ -10,7 +10,7 @@ dependencies {
     api(project(":products:yappc:core:ai"))
     api(project(":products:yappc:core:yappc-domain-impl"))
     api(project(":platform:java:agent-core"))
-    implementation(project(":products:data-cloud:planes:action:agent-runtime"))
+    implementation(project(":products:yappc:infrastructure:aep"))
 
     implementation(libs.activej.promise)
     implementation(libs.activej.eventloop)

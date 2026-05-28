@@ -2229,6 +2229,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/release-readiness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List tenant-scoped product release readiness records */
+        get: operations["apiV1ReleaseReadinessList"];
+        put?: never;
+        /** Produce product release readiness into Data Cloud */
+        post: operations["apiV1ReleaseReadinessProduce"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/release-readiness/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get product release readiness statistics */
+        get: operations["apiV1ReleaseReadinessStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/release-readiness/{productId}/{productVersion}/{releaseTarget}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get product release readiness by product/version/target */
+        get: operations["apiV1ReleaseReadinessGet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/release-readiness/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a product release readiness record */
+        delete: operations["apiV1ReleaseReadinessDelete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/settings": {
         parameters: {
             query?: never;
@@ -3254,6 +3323,43 @@ export interface components {
         /** @description Arbitrary JSON object. */
         FreeformObject: {
             [key: string]: unknown;
+        };
+        ProductReleaseReadiness: {
+            id?: string;
+            /** @enum {string} */
+            productId: "phr" | "digital-marketing" | "dmos" | "data-cloud";
+            productVersion: string;
+            /** @enum {string} */
+            releaseTarget: "development" | "staging" | "production";
+            /** @enum {string} */
+            releaseVerdict: "pass" | "fail";
+            averageScore?: number;
+            releaseTargetScore?: number;
+            /** Format: date-time */
+            generatedAt: string;
+            evidence: components["schemas"]["FreeformObject"];
+            blockingGaps: components["schemas"]["FreeformObject"][];
+            belowTargetDimensions: components["schemas"]["FreeformObject"][];
+            tenantId: string;
+            commitSha: string;
+            /** @enum {string} */
+            evidenceEnvironment: "development" | "staging" | "production";
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        ProductReleaseReadinessStats: {
+            totalReleases: number;
+            passedReleases: number;
+            failedReleases: number;
+            averageScore: number;
+            byProduct: {
+                [key: string]: components["schemas"]["FreeformObject"];
+            };
+            byTarget: {
+                [key: string]: components["schemas"]["FreeformObject"];
+            };
         };
         /** @description Typed surface record with dependency-probe evidence (DC-P1-5). */
         SurfaceRecord: {
@@ -9607,9 +9713,8 @@ export interface operations {
                 content: {
                     "application/json": {
                         data?: {
-                            surfaces?: {
-                                [key: string]: unknown;
-                            };
+                            surfaces?: components["schemas"]["SurfaceRecord"][];
+                            count?: number;
                             generatedAt?: string;
                         };
                         meta?: {
@@ -9641,6 +9746,166 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["FreeformObject"];
                 };
+            };
+        };
+    };
+    apiV1ReleaseReadinessList: {
+        parameters: {
+            query?: {
+                /**
+                 * @deprecated
+                 * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+                 *
+                 *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+                 *     If provided, this value must match the authenticated tenant or the request is rejected.
+                 *     In local/test/embedded profiles, this may be used for convenience when authentication
+                 *     does not include tenant claims.
+                 */
+                tenantId?: components["parameters"]["tenantIdQuery"];
+                productId?: string;
+                productVersion?: string;
+                releaseTarget?: "development" | "staging" | "production";
+                releaseVerdict?: "pass" | "fail";
+                limit?: components["parameters"]["limitQuery"];
+                offset?: components["parameters"]["offsetQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Release readiness records. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductReleaseReadiness"][];
+                };
+            };
+        };
+    };
+    apiV1ReleaseReadinessProduce: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductReleaseReadiness"];
+            };
+        };
+        responses: {
+            /** @description Persisted release readiness record. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductReleaseReadiness"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    apiV1ReleaseReadinessStats: {
+        parameters: {
+            query?: {
+                /**
+                 * @deprecated
+                 * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+                 *
+                 *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+                 *     If provided, this value must match the authenticated tenant or the request is rejected.
+                 *     In local/test/embedded profiles, this may be used for convenience when authentication
+                 *     does not include tenant claims.
+                 */
+                tenantId?: components["parameters"]["tenantIdQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tenant-scoped release readiness statistics. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductReleaseReadinessStats"];
+                };
+            };
+        };
+    };
+    apiV1ReleaseReadinessGet: {
+        parameters: {
+            query?: {
+                /**
+                 * @deprecated
+                 * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+                 *
+                 *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+                 *     If provided, this value must match the authenticated tenant or the request is rejected.
+                 *     In local/test/embedded profiles, this may be used for convenience when authentication
+                 *     does not include tenant claims.
+                 */
+                tenantId?: components["parameters"]["tenantIdQuery"];
+            };
+            header?: never;
+            path: {
+                productId: string;
+                productVersion: string;
+                releaseTarget: "development" | "staging" | "production";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Release readiness record. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductReleaseReadiness"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    apiV1ReleaseReadinessDelete: {
+        parameters: {
+            query?: {
+                /**
+                 * @deprecated
+                 * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+                 *
+                 *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+                 *     If provided, this value must match the authenticated tenant or the request is rejected.
+                 *     In local/test/embedded profiles, this may be used for convenience when authentication
+                 *     does not include tenant claims.
+                 */
+                tenantId?: components["parameters"]["tenantIdQuery"];
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Release readiness record deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

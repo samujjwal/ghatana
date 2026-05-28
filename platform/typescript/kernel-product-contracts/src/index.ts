@@ -9,12 +9,19 @@ export type {
   RouteAction,
   RouteCard,
   RouteMetadata,
+  ProductRouteCapability,
 } from "./route/ProductRouteContract.js";
 export {
+  ProductRouteContractSchema,
+  ProductRouteSchema,
+  RouteActionSchema,
+  RouteCardSchema,
+  RouteMetadataSchema,
   RouteStabilityValues,
   RouteGroupValues,
   isRouteStability,
   isRouteGroup,
+  parseProductRouteContract,
   validateProductRouteContract,
 } from "./route/ProductRouteContract.js";
 
@@ -23,6 +30,7 @@ export type {
   GeneratedTSManifest,
   GeneratedBackendEntitlement,
   GeneratedRouteDocs,
+  GeneratedRouteCapabilityContract,
 } from "./route/RouteContractGenerator.js";
 export {
   RouteContractGenerator,
@@ -71,12 +79,29 @@ export type {
   MobilePhiPolicy,
   MobilePhiPolicyCheckRequest,
   MobilePhiPolicyCheckResult,
+  MobilePhiReleaseValidationInput,
+  MobilePhiReleaseValidationResult,
 } from "./policy/MobilePhiPolicyContract.js";
 export {
+  PhiStoragePolicySchema,
+  PhiCachePolicySchema,
+  PhiFieldPolicySchema,
+  MobilePhiPolicySchema,
+  MobilePhiPolicyCheckRequestSchema,
+  MobilePhiReleaseValidationInputSchema,
+  PhiEncryptionAlgorithms,
+  PhiKeyDerivationMethods,
+  PhiKeyStorageModes,
+  PhiFieldClassifications,
+  MobilePhiActions,
+  MobilePhiReleaseGateStatuses,
   createDefaultPhiStoragePolicy,
   createDefaultPhiCachePolicy,
+  createDefaultMobilePhiPolicy,
   validatePhiStoragePolicy,
   validatePhiCachePolicy,
+  evaluateMobilePhiPolicyCheck,
+  validateMobilePhiReleaseGate,
 } from "./policy/MobilePhiPolicyContract.js";
 
 // Correlation contracts (K-006)

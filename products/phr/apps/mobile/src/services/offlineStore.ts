@@ -39,6 +39,10 @@ const RESTRICTED_FIELDS = new Set([
   'substanceAbuseHistory',
 ]);
 
+type JsonPrimitive = string | number | boolean | null;
+type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
+type JsonObject = { [key: string]: JsonValue };
+
 interface DashboardCacheEnvelope {
   schemaVersion: number;
   savedAt: number;
@@ -46,7 +50,7 @@ interface DashboardCacheEnvelope {
   tenantId: string;
   principalId: string;
   role: string;
-  data: MobileDashboard;
+  data: JsonValue;
 }
 
 export async function saveDashboardOffline(
@@ -71,7 +75,7 @@ export async function saveDashboardOffline(
 
 /**
  * Loads the cached dashboard. Returns `null` if the cache is absent,
- * has an unknown schema version, has expired, or session mismatch — forcing a fresh fetch.
+ * has an unknown schema version, has expired, or session mismatch; this forces a fresh fetch.
  * Callers must not use a `null` result to serve stale PHI.
  */
 export async function loadDashboardOffline(
@@ -84,13 +88,13 @@ export async function loadDashboardOffline(
   try {
     envelope = JSON.parse(raw) as DashboardCacheEnvelope;
   } catch {
-    // Corrupt payload — discard.
+    // Corrupt payload; discard.
     await clearDashboardOffline();
     return null;
   }
 
   if (envelope.schemaVersion !== SCHEMA_VERSION) {
-    // Schema mismatch — discard so stale structure is not used.
+    // Schema mismatch; discard so stale structure is not used.
     await clearDashboardOffline();
     return null;
   }
@@ -103,12 +107,17 @@ export async function loadDashboardOffline(
 
   const ageMs = Date.now() - envelope.savedAt;
   if (ageMs > envelope.ttlMs) {
-    // Cache expired — discard PHI proactively.
+    // Cache expired; discard PHI proactively.
     await clearDashboardOffline();
     return null;
   }
 
-  return envelope.data;
+  try {
+    return parseMobileDashboard(envelope.data);
+  } catch {
+    await clearDashboardOffline();
+    return null;
+  }
 }
 
 /**
@@ -137,37 +146,123 @@ export async function getDashboardOfflineTimestamp(): Promise<number | null> {
   return envelope.savedAt;
 }
 
-// ==================== Helper Functions ====================
-
 /**
  * Sanitizes restricted fields from dashboard data before caching.
  * Restricted fields are never cached per security policy.
  */
-function sanitizeRestrictedFields(dashboard: MobileDashboard): MobileDashboard {
-  // Deep clone to avoid mutating original
-  const sanitized = JSON.parse(JSON.stringify(dashboard)) as MobileDashboard;
-  
-  // Remove restricted fields recursively
-  return removeRestrictedFields(sanitized);
+function sanitizeRestrictedFields(dashboard: MobileDashboard): JsonValue {
+  return removeRestrictedFields(toJsonValue(dashboard));
 }
 
-function removeRestrictedFields(obj: any): any {
-  if (!obj || typeof obj !== 'object') {
-    return obj;
+function toJsonValue(value: unknown): JsonValue {
+  if (value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return value;
   }
-  
-  if (Array.isArray(obj)) {
-    return obj.map(removeRestrictedFields);
+  if (Array.isArray(value)) {
+    return value.map(toJsonValue);
   }
-  
-  const result: any = {};
-  for (const key in obj) {
-    if (obj.hasOwnProperty(key)) {
-      if (RESTRICTED_FIELDS.has(key)) {
-        // Skip restricted field
-        continue;
+  if (typeof value === 'object') {
+    const result: JsonObject = {};
+    for (const [key, childValue] of Object.entries(value)) {
+      result[key] = toJsonValue(childValue);
+    }
+    return result;
+  }
+  return null;
+}
+
+function isJsonObject(value: JsonValue | undefined): value is JsonObject {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isString(value: JsonValue | undefined): value is string {
+  return typeof value === 'string';
+}
+
+function isNumber(value: JsonValue | undefined): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function isBoolean(value: JsonValue | undefined): value is boolean {
+  return typeof value === 'boolean';
+}
+
+function parseMobileDashboard(value: JsonValue): MobileDashboard {
+  if (!isJsonObject(value)) {
+    throw new Error('Invalid cached dashboard envelope');
+  }
+  const patient = value.patient;
+  const records = value.records;
+  const consents = value.consents;
+  const notifications = value.notifications;
+  if (!isJsonObject(patient) || !isString(patient.id) || !isString(patient.name) || !isNumber(patient.age) || !isString(patient.bloodType) || !isString(patient.district)) {
+    throw new Error('Invalid cached patient profile');
+  }
+  if (!Array.isArray(records) || !records.every(isJsonObject)) {
+    throw new Error('Invalid cached records');
+  }
+  if (!Array.isArray(consents) || !consents.every(isJsonObject)) {
+    throw new Error('Invalid cached consents');
+  }
+  if (!Array.isArray(notifications) || !notifications.every(isJsonObject)) {
+    throw new Error('Invalid cached notifications');
+  }
+  return {
+    patient: {
+      id: patient.id,
+      name: patient.name,
+      age: patient.age,
+      bloodType: patient.bloodType,
+      district: patient.district,
+    },
+    records: records.map((record) => {
+      if (!isString(record.id) || !isString(record.title) || !isString(record.summary) || !isString(record.fhirPreview)) {
+        throw new Error('Invalid cached record');
       }
-      result[key] = removeRestrictedFields(obj[key]);
+      return {
+        id: record.id,
+        title: record.title,
+        summary: record.summary,
+        fhirPreview: record.fhirPreview,
+      };
+    }),
+    consents: consents.map((consent) => {
+      if (!isString(consent.id) || !isString(consent.grantee) || !isString(consent.purpose) || !isBoolean(consent.active)) {
+        throw new Error('Invalid cached consent');
+      }
+      return {
+        id: consent.id,
+        grantee: consent.grantee,
+        purpose: consent.purpose,
+        active: consent.active,
+      };
+    }),
+    notifications: notifications.map((notification) => {
+      if (!isString(notification.id) || !isString(notification.title) || !isString(notification.detail)) {
+        throw new Error('Invalid cached notification');
+      }
+      return {
+        id: notification.id,
+        title: notification.title,
+        detail: notification.detail,
+      };
+    }),
+  };
+}
+
+function removeRestrictedFields(value: JsonValue): JsonValue {
+  if (value === null || typeof value !== 'object') {
+    return value;
+  }
+  
+  if (Array.isArray(value)) {
+    return value.map(removeRestrictedFields);
+  }
+  
+  const result: { [key: string]: JsonValue } = {};
+  for (const [key, childValue] of Object.entries(value)) {
+    if (!RESTRICTED_FIELDS.has(key)) {
+      result[key] = removeRestrictedFields(childValue);
     }
   }
   

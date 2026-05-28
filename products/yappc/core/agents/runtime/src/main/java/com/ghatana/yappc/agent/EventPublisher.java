@@ -4,7 +4,6 @@
  */
 package com.ghatana.yappc.agent;
 
-import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry;
@@ -43,13 +42,6 @@ public final class EventPublisher {
     public EventPublisher(EventLogStore eventLogStore, String defaultTenantId) {
         this.eventLogStore = Objects.requireNonNull(eventLogStore, "eventLogStore required");
         this.defaultTenantId = Objects.requireNonNull(defaultTenantId, "defaultTenantId required");
-    }
-
-    /**
-     * Backward-compatible constructor for legacy Data-Cloud SPI callers.
-     */
-    public EventPublisher(com.ghatana.datacloud.spi.EventLogStore legacyEventLogStore, String defaultTenantId) {
-        this(EventLogStoreAdapters.toPlatformStore(legacyEventLogStore), defaultTenantId);
     }
 
     /**

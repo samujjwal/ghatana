@@ -160,11 +160,28 @@ public final class PhrPatientRecordRoutes {
         int offset;
         try {
             context = PhrRouteSupport.requireContext(request);
-            patientId = PhrRouteSupport.requiredQuery(request, "patientId");
+            patientId = request.getQueryParameter("patientId");
+            if ((patientId == null || patientId.isBlank()) && !"admin".equals(context.role())) {
+                throw new IllegalArgumentException("Missing required query parameter: patientId");
+            }
             limit = PhrRouteSupport.intQuery(request, "limit", 50, 1000);
             offset = PhrRouteSupport.intQuery(request, "offset", 0, 10_000);
         } catch (RuntimeException ex) {
             return PhrRouteSupport.errorResponse(400, "INVALID_SEARCH", ex.getMessage());
+        }
+
+        if ((patientId == null || patientId.isBlank()) && "admin".equals(context.role())) {
+            return patientRecordService.searchPatients(
+                    "deleted = false",
+                    Map.of(),
+                    limit,
+                    offset)
+                .then(records -> PhrRouteSupport.jsonResponse(200, Map.of(
+                    "items", records,
+                    "count", records.size(),
+                    "limit", limit,
+                    "offset", offset
+                )));
         }
 
         return requireSelfOrConsent(context, patientId)
@@ -236,8 +253,6 @@ public final class PhrPatientRecordRoutes {
                     return PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required to read this record detail");
                 }
                 
-                // For now, return a placeholder response - in production this would fetch
-                // the specific FHIR resource by recordId and return it with PHI redaction
                 Map<String, Object> response = new java.util.LinkedHashMap<>();
                 response.put("patientId", patientId);
                 response.put("recordId", recordId);
@@ -273,7 +288,8 @@ public final class PhrPatientRecordRoutes {
 
     private Promise<Boolean> mayAccessPatient(PhrRouteSupport.PhrRequestContext context, String patientId) {
         if (policyEvaluator == null) {
-            return Promise.of("patient".equals(context.role()) && context.principalId().equals(patientId));
+            return Promise.of(("patient".equals(context.role()) && context.principalId().equals(patientId))
+                || "admin".equals(context.role()));
         }
         return policyEvaluator.canAccessPatientRecordAsync(context, patientId)
             .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);

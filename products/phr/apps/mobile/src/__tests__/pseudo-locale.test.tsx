@@ -1,33 +1,12 @@
-/**
- * Pseudo-locale tests for PHR mobile app
- *
- * These tests use a pseudo-locale (xx-XX) to verify that all user-visible strings
- * are properly internationalized and no hardcoded strings leak into the UI.
- *
- * Pseudo-locale format: [!!prefix]original text[!!suffix]
- * This makes it easy to visually identify untranslated strings.
- */
-
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { render, waitFor } from '@testing-library/react-native';
+import NetInfo from '@react-native-community/netinfo';
 import App from '../App';
-import { t } from '../i18n/phrMobileI18n';
+import { setLocale } from '../i18n/phrMobileI18n';
+import { fetchMobileDashboard } from '../services/phrMobileApi';
+import { loadMobileSession } from '../services/mobileSessionStore';
+import type { MobileDashboard, MobileSession } from '../types';
 
-// Mock the i18n function to use pseudo-locale
-jest.mock('../i18n/phrMobileI18n', () => ({
-  t: jest.fn((key: string, params?: Record<string, string>) => {
-    // Return pseudo-locale format: [!!]key[!!]
-    if (params) {
-      const paramString = Object.entries(params)
-        .map(([k, v]) => `${k}=${v}`)
-        .join(', ');
-      return `[!!]${key}(${paramString})[!!]`;
-    }
-    return `[!!]${key}[!!]`;
-  }),
-}));
-
-// Mock dependencies
 jest.mock('@react-native-community/netinfo', () => ({
   addEventListener: jest.fn(() => jest.fn()),
 }));
@@ -53,147 +32,86 @@ jest.mock('../services/pushNotifications', () => ({
   registerForPushNotificationsAsync: jest.fn(),
 }));
 
+const mockSession: MobileSession = {
+  principalId: 'test-principal',
+  tenantId: 'test-tenant',
+  role: 'patient',
+  name: 'Test User',
+  expiresAt: '2026-12-31T23:59:59Z',
+};
+
+const mockDashboard: MobileDashboard = {
+  patient: { id: '1', name: 'Test User', age: 30, bloodType: 'O+', district: 'Kathmandu' },
+  records: [],
+  consents: [],
+  notifications: [],
+};
+
+function renderedText(rendered: { toJSON: () => unknown }): string {
+  return JSON.stringify(rendered.toJSON());
+}
+
+function authenticateApp(): void {
+  (loadMobileSession as jest.MockedFunction<typeof loadMobileSession>).mockResolvedValue(mockSession);
+  (fetchMobileDashboard as jest.MockedFunction<typeof fetchMobileDashboard>).mockResolvedValue(mockDashboard);
+}
+
 describe('Pseudo-locale tests', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
+    await setLocale('en-XA');
+    (NetInfo.addEventListener as jest.MockedFunction<typeof NetInfo.addEventListener>).mockImplementation(() => jest.fn());
   });
 
-  it('should render all tab labels with pseudo-locale format', () => {
-    const mockSession = {
-      principalId: 'test-principal',
-      tenantId: 'test-tenant',
-      role: 'patient',
-      name: 'Test User',
-      expiresAt: '2026-12-31T23:59:59Z',
-    };
-
-    (require('../services/mobileSessionStore').loadMobileSession as jest.Mock).mockResolvedValue(mockSession);
-    (require('../services/phrMobileApi').fetchMobileDashboard as jest.Mock).mockResolvedValue({
-      patient: { id: '1', name: 'Test', age: 30, bloodType: 'O+', district: 'Kathmandu' },
-      records: [],
-      consents: [],
-      notifications: [],
-    });
-
-    render(<App />);
-
-    // Wait for session to load
-    // Check that tab labels are in pseudo-locale format
-    const homeTab = screen.queryByText(/\[!!\].*home.*\[!!\]/i);
-    const recordsTab = screen.queryByText(/\[!!\].*records.*\[!!\]/i);
-    const consentsTab = screen.queryByText(/\[!!\].*consents.*\[!!\]/i);
-    const alertsTab = screen.queryByText(/\[!!\].*alerts.*\[!!\]/i);
-    const emergencyTab = screen.queryByText(/\[!!\].*emergency.*\[!!\]/i);
-    const settingsTab = screen.queryByText(/\[!!\].*settings.*\[!!\]/i);
-
-    // At least some tabs should be visible with pseudo-locale format
-    expect(homeTab || recordsTab || consentsTab).toBeTruthy();
+  afterEach(async () => {
+    await setLocale('en');
   });
 
-  it('should not contain hardcoded English strings in visible UI', () => {
-    const mockSession = {
-      principalId: 'test-principal',
-      tenantId: 'test-tenant',
-      role: 'patient',
-      name: 'Test User',
-      expiresAt: '2026-12-31T23:59:59Z',
-    };
+  it('renders authenticated tab labels with pseudo-localized strings', async () => {
+    authenticateApp();
+    const rendered = render(<App />);
 
-    (require('../services/mobileSessionStore').loadMobileSession as jest.Mock).mockResolvedValue(mockSession);
-    (require('../services/phrMobileApi').fetchMobileDashboard as jest.Mock).mockResolvedValue({
-      patient: { id: '1', name: 'Test', age: 30, bloodType: 'O+', district: 'Kathmandu' },
-      records: [],
-      consents: [],
-      notifications: [],
-    });
-
-    const { getByText } = render(<App />);
-
-    // Common hardcoded strings that should NOT appear
-    const hardcodedStrings = [
-      'Dashboard',
-      'Records',
-      'Consents',
-      'Notifications',
-      'Emergency',
-      'Settings',
-      'Loading',
-      'Error',
-      'Retry',
-    ];
-
-    hardcodedStrings.forEach((str) => {
-      // If the string appears, it should be wrapped in pseudo-locale markers
-      const textElement = getByText(str);
-      if (textElement) {
-        // This means a hardcoded string was found - fail the test
-        throw new Error(`Found hardcoded string "${str}" in UI without i18n wrapper`);
-      }
+    await waitFor(() => {
+      const text = renderedText(rendered);
+      expect(text).toContain('[Hoomee]');
+      expect(text).toContain('[Reecoords]');
+      expect(text).toContain('[Coonseents]');
     });
   });
 
-  it('should render error messages with pseudo-locale format', async () => {
-    const mockSession = {
-      principalId: 'test-principal',
-      tenantId: 'test-tenant',
-      role: 'patient',
-      name: 'Test User',
-      expiresAt: '2026-12-31T23:59:59Z',
-    };
+  it('does not render raw English tab labels in pseudo-locale mode', async () => {
+    authenticateApp();
+    const rendered = render(<App />);
 
-    (require('../services/mobileSessionStore').loadMobileSession as jest.Mock).mockResolvedValue(mockSession);
-    (require('../services/phrMobileApi').fetchMobileDashboard as jest.Mock).mockRejectedValue(
-      new Error('Test error')
+    await waitFor(() => expect(renderedText(rendered)).toContain('[Hoomee]'));
+    const text = renderedText(rendered);
+
+    expect(text).not.toContain('"Home"');
+    expect(text).not.toContain('"Records"');
+    expect(text).not.toContain('"Consents"');
+    expect(text).not.toContain('"Emergency"');
+    expect(text).not.toContain('"Settings"');
+  });
+
+  it('renders restoring-session text with pseudo-localization', () => {
+    (loadMobileSession as jest.MockedFunction<typeof loadMobileSession>).mockImplementation(
+      () => new Promise<MobileSession | null>(() => undefined),
     );
 
-    render(<App />);
+    const rendered = render(<App />);
 
-    // Error messages should be in pseudo-locale format
-    // The error might be displayed after a delay, so we check for the pattern
-    // In a real test, we'd wait for the error to appear
+    expect(renderedText(rendered)).toContain('[Reestooriing seessiioon');
   });
 
-  it('should render loading state with pseudo-locale format', () => {
-    (require('../services/mobileSessionStore').loadMobileSession as jest.Mock).mockImplementation(
-      () => new Promise(() => {}) // Never resolves to keep loading state
-    );
-
-    render(<App />);
-
-    // Loading text should be in pseudo-locale format
-    const loadingText = screen.queryByText(/\[!!\].*restoring.*session.*\[!!\]/i);
-    expect(loadingText).toBeTruthy();
-  });
-
-  it('should render offline banner with pseudo-locale format', () => {
-    const mockSession = {
-      principalId: 'test-principal',
-      tenantId: 'test-tenant',
-      role: 'patient',
-      name: 'Test User',
-      expiresAt: '2026-12-31T23:59:59Z',
-    };
-
-    (require('../services/mobileSessionStore').loadMobileSession as jest.Mock).mockResolvedValue(mockSession);
-    (require('../services/phrMobileApi').fetchMobileDashboard as jest.Mock).mockResolvedValue({
-      patient: { id: '1', name: 'Test', age: 30, bloodType: 'O+', district: 'Kathmandu' },
-      records: [],
-      consents: [],
-      notifications: [],
+  it('renders the offline banner with pseudo-localization', async () => {
+    authenticateApp();
+    (NetInfo.addEventListener as jest.MockedFunction<typeof NetInfo.addEventListener>).mockImplementation((callback) => {
+      callback({ isConnected: false } as Parameters<typeof callback>[0]);
+      return jest.fn();
     });
 
-    // Mock NetInfo to return offline
-    (require('@react-native-community/netinfo').addEventListener as jest.Mock).mockImplementation(
-      (callback: (state: { isConnected: boolean }) => void) => {
-        callback({ isConnected: false });
-        return jest.fn();
-      }
-    );
+    const rendered = render(<App />);
 
-    render(<App />);
-
-    // Offline banner should be in pseudo-locale format
-    const offlineBanner = screen.queryByText(/\[!!\].*offline.*\[!!\]/i);
-    expect(offlineBanner).toBeTruthy();
+    await waitFor(() => expect(renderedText(rendered)).toContain('[Yoouu aaree ooffliinee.'));
   });
 });

@@ -60,7 +60,13 @@ export function SettingsScreen({ onSyncOffline, onLogout, syncMessage, session }
           {isCacheStale ? t('settings.cacheStale') : t('settings.cacheFresh')}
         </Text>
         <Text style={styles.description}>{t('settings.cacheDescription')}</Text>
-        <Pressable onPress={onSyncOffline} style={styles.button}>
+        <Pressable
+          onPress={onSyncOffline}
+          style={styles.button}
+          accessibilityRole="button"
+          accessibilityLabel={t('settings.refreshCache')}
+          accessibilityHint={t('settings.refreshCacheHint')}
+        >
           <Text style={styles.buttonText}>{t('settings.refreshCache')}</Text>
         </Pressable>
         <Text style={styles.summary}>{syncMessage}</Text>

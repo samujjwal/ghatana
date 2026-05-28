@@ -67,6 +67,7 @@ export function LoginScreen({ onSuccess, onLoginError, loginFn }: LoginScreenPro
       )}
       <Pressable
         accessibilityRole="button"
+        accessibilityLabel={t('login.signIn')}
         onPress={() => void handleSubmit()}
         style={[styles.button, loading && styles.buttonDisabled]}
         disabled={loading}

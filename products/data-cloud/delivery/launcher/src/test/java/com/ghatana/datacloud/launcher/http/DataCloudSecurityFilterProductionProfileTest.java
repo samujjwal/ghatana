@@ -30,6 +30,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 
 /**
  * Production-grade tests for DataCloudSecurityFilter in strict production profiles.
@@ -859,8 +860,8 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
         HttpResponse response = runPromise(() ->
             filter.apply(req -> HttpResponse.ok200().toPromise()).serve(request));
 
-        // Should reject (403 or 404) due to missing route metadata
-        assertThat(response.getCode()).isIn(403, 404);
+        // Should reject with 500 (ROUTE_METADATA_REQUIRED) in production-like profiles
+        assertThat(response.getCode()).isEqualTo(500);
     }
 
     @Test
@@ -886,8 +887,8 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
         HttpResponse response = runPromise(() ->
             filter.apply(req -> HttpResponse.ok200().toPromise()).serve(request));
 
-        // Should reject (403 or 404) due to missing route metadata
-        assertThat(response.getCode()).isIn(403, 404);
+        // Should reject with 500 (ROUTE_METADATA_REQUIRED) in production-like profiles
+        assertThat(response.getCode()).isEqualTo(500);
     }
 
     @Test
@@ -913,8 +914,8 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
         HttpResponse response = runPromise(() ->
             filter.apply(req -> HttpResponse.ok200().toPromise()).serve(request));
 
-        // Should reject (403 or 404) due to missing route metadata
-        assertThat(response.getCode()).isIn(403, 404);
+        // Should reject with 500 (ROUTE_METADATA_REQUIRED) in production-like profiles
+        assertThat(response.getCode()).isEqualTo(500);
     }
 
     @Test
@@ -986,16 +987,18 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
             .deploymentProfile("production")
             .build();
 
-        // Request to a CRITICAL route (governance policy delete)
-        HttpRequest request = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/governance/policies/{id}")
+        // Request to a CRITICAL route with requiresBlockingAudit=true (checkpoints delete)
+        HttpRequest request = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/checkpoints/{checkpointId}")
             .withHeader(HttpHeaders.of("X-API-Key"), "valid-api-key")
             .build();
 
-        HttpResponse response = runPromise(() ->
-            filter.apply(req -> HttpResponse.ok200().toPromise()).serve(request));
-
-        // Should block (500 or 503) when audit fails on CRITICAL route
-        assertThat(response.getCode()).isIn(500, 503);
+        // The filter should throw an IllegalStateException when audit fails on CRITICAL route with blocking audit
+        Throwable thrown = catchThrowable(() ->
+            runPromise(() -> filter.apply(req -> HttpResponse.ok200().toPromise()).serve(request)));
+        
+        assertThat(thrown)
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("DC-P1-06");
     }
 
     @Test
@@ -1088,16 +1091,18 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
             .deploymentProfile("staging")
             .build();
 
-        // Request to a CRITICAL route
-        HttpRequest request = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/governance/policies/{id}")
+        // Request to a CRITICAL route with requiresBlockingAudit=true (checkpoints delete)
+        HttpRequest request = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/checkpoints/{checkpointId}")
             .withHeader(HttpHeaders.of("X-API-Key"), "valid-api-key")
             .build();
 
-        HttpResponse response = runPromise(() ->
-            filter.apply(req -> HttpResponse.ok200().toPromise()).serve(request));
-
-        // Should block (500 or 503) when audit fails on CRITICAL route in staging
-        assertThat(response.getCode()).isIn(500, 503);
+        // The filter should throw an IllegalStateException when audit fails on CRITICAL route with blocking audit
+        Throwable thrown = catchThrowable(() ->
+            runPromise(() -> filter.apply(req -> HttpResponse.ok200().toPromise()).serve(request)));
+        
+        assertThat(thrown)
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("DC-P1-06");
     }
 
     @Test
@@ -1380,6 +1385,7 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
                 .policyEngine(policyEngine)
                 .auditService(auditService)
                 .enforcing(false)  // audit-only: must be rejected in production
+                .strictTenantResolution(true)
                 .deploymentProfile("production")
                 .build();
 
@@ -1400,6 +1406,7 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
                 .policyEngine(policyEngine)
                 .auditService(auditService)
                 .enforcing(false)  // audit-only: must also be rejected in staging
+                .strictTenantResolution(true)
                 .deploymentProfile("staging")
                 .build();
 

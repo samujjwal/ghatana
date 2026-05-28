@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Button, Card, CardContent, CardHeader, Input } from '@ghatana/design-system';
-import { reviewEmergencyAccess } from '../api/phrApi';
+import { reviewEmergencyAccess } from '../api/emergencyApi';
+import { usePhrAccess } from '../auth/PhrAccessContext';
 import { t } from '../i18n/phrI18n';
 import type { EmergencyAccessEvent } from '../types';
 
-// Hard-coded context for demo; production wires from auth session.
-const DEMO_CONTEXT = { tenantId: 'tenant-health-1', principalId: 'current', role: 'admin' };
-
 export function EmergencyReviewsPage(): React.ReactElement {
+  const { tenantId, principalId, role } = usePhrAccess();
+  const apiContext = useMemo(() => ({ tenantId, principalId, role }), [tenantId, principalId, role]);
   const [reviewEventId, setReviewEventId] = useState<string>('');
   const [reviewNote, setReviewNote] = useState<string>('');
   const [reviewing, setReviewing] = useState<boolean>(false);
@@ -27,8 +27,8 @@ export function EmergencyReviewsPage(): React.ReactElement {
     setReviewing(true);
     try {
       const result = await reviewEmergencyAccess(
-        { eventId: reviewEventId.trim(), reviewNote: reviewNote.trim(), reviewerId: DEMO_CONTEXT.principalId },
-        DEMO_CONTEXT,
+        { eventId: reviewEventId.trim(), reviewNote: reviewNote.trim(), reviewerId: principalId },
+        apiContext,
       );
       setReviewResult(result);
       setReviewEventId('');
@@ -48,9 +48,9 @@ export function EmergencyReviewsPage(): React.ReactElement {
           <div className="stack gap-md">
             <p>{t('emergency.review.subheader')}</p>
             <ul className="stack gap-sm">
-              <li>Pending emergency access reviews</li>
-              <li>Overdue emergency access reviews</li>
-              <li>Audit trail for emergency access</li>
+              <li>{t('emergency.review.pending')}</li>
+              <li>{t('emergency.review.overdue')}</li>
+              <li>{t('emergency.review.auditTrail')}</li>
             </ul>
           </div>
 

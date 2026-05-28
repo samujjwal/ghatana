@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, Badge } from '@ghatana/design-system';
-import { fetchImmunizations } from '../api/phrApi';
+import { fetchImmunizations } from '../api/clinicalApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import { logError } from '../utils/safeLogger';
@@ -20,18 +20,18 @@ export function ImmunizationsPage(): React.ReactElement {
       role: session.role,
     })
       .then(setImmunizations)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load immunizations'))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('immunizations.error')))
       .finally(() => setLoading(false));
   }, [session]);
 
-  if (loading) return <div className="loading" role="status" aria-live="polite">Loading immunizations...</div>;
-  if (error) return <div className="error" role="alert">Error: {error}</div>;
-  if (!immunizations.length) return <div className="empty" role="status">No immunizations recorded</div>;
+  if (loading) return <div className="loading" role="status" aria-live="polite">{t('immunizations.loading')}</div>;
+  if (error) return <div className="error" role="alert">{t('dashboard.errorPrefix')}: {error}</div>;
+  if (!immunizations.length) return <div className="empty" role="status">{t('immunizations.empty')}</div>;
 
   // Group by status
-  const complete = immunizations.filter((imm) => imm.status === 'complete');
+  const complete = immunizations.filter((imm) => imm.status === 'completed');
   const due = immunizations.filter((imm) => imm.status === 'due');
-  const other = immunizations.filter((imm) => imm.status !== 'complete' && imm.status !== 'due');
+  const other = immunizations.filter((imm) => imm.status !== 'completed' && imm.status !== 'due');
 
   // Calculate retention status (time since last dose)
   const getRetentionStatus = (imm: ImmunizationSummary): string => {
@@ -90,7 +90,7 @@ export function ImmunizationsPage(): React.ReactElement {
                   {due.map((imm) => (
                     <li key={imm.id} className="immunization-entry" role="listitem">
                       <strong>{imm.vaccine}</strong>
-                      <Badge variant="destructive" aria-label="Status: Due">Due</Badge>
+                      <Badge variant="destructive" aria-label={t('immunizations.status.due')}>{t('immunizations.status.due')}</Badge>
                       {imm.lotNumber != null && <span className="muted">Last Lot: {imm.lotNumber}</span>}
                       {imm.cvxCode != null && <span className="muted">CVX: {imm.cvxCode}</span>}
                     </li>

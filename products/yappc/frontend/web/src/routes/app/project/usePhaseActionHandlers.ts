@@ -9,7 +9,6 @@ import {
   executeRunPostAction,
   type MountedPhase,
   type PhaseActionResult,
-  type RunPostAction,
 } from '../../../services/phase';
 import type { PhaseAction, PhaseCockpitPacket } from '../../../types/phasePacket';
 
@@ -21,7 +20,8 @@ export interface PhaseCurrentUser {
   readonly email?: string;
 }
 
-export type GenerateReviewDecision = 'apply' | 'reject' | 'rollback';
+type GenerateReviewDecision = 'apply' | 'reject' | 'rollback';
+type RunPostDecision = 'retry' | 'rollback' | 'promote' | 'observe';
 
 type TranslationFunction = (key: string, options?: Record<string, unknown>) => string;
 
@@ -36,6 +36,22 @@ interface UsePhaseActionHandlersParams {
   readonly scrollToSupportingSurface: () => void;
   readonly scrollToBlockerPanel: () => void;
 }
+
+const GENERATE_OPERATION_MAP: Record<string, GenerateReviewDecision> = {
+  'generate.apply': 'apply',
+  'generate.reject': 'reject',
+  'generate.rollback': 'rollback',
+  'generate.review.apply': 'apply',
+  'generate.review.reject': 'reject',
+  'generate.review.rollback': 'rollback',
+};
+
+const RUN_OPERATION_MAP: Record<string, RunPostDecision> = {
+  'run.retry': 'retry',
+  'run.rollback': 'rollback',
+  'run.promote': 'promote',
+  'run.observe': 'observe',
+};
 
 export function usePhaseActionHandlers({
   phase,
@@ -59,6 +75,19 @@ export function usePhaseActionHandlers({
     }
     return value.startsWith('phaseAction.') ? t(value) : value;
   }, [t]);
+
+  const resolveNavigationPath = useCallback((targetRoute: string | undefined): string | null => {
+    if (!projectId) {
+      return null;
+    }
+    if (targetRoute && targetRoute.startsWith('/')) {
+      return targetRoute;
+    }
+    if (targetRoute && targetRoute.trim().length > 0) {
+      return `/p/${projectId}/${targetRoute.replace(/^\/+/, '')}`;
+    }
+    return `/p/${projectId}/${phase}`;
+  }, [phase, projectId]);
 
   const actionMutation = useMutation({
     mutationFn: executePhasePrimaryAction,
@@ -112,12 +141,86 @@ export function usePhaseActionHandlers({
     },
   });
 
-  const handlePrimaryAction = useCallback(() => {
+  const executeServerOperation = useCallback((action: PhaseAction): boolean => {
+    const operation = action.serverOperation ?? action.actionId;
+    const generateDecision = GENERATE_OPERATION_MAP[operation];
+    if (generateDecision) {
+      if (!projectId || !actionResult?.runId) {
+        setActionError(t('phaseCockpit.errors.missingGenerationRunContext'));
+        return true;
+      }
+      if (!currentUser?.id) {
+        setActionError(t('phaseCockpit.errors.authenticatedReviewerRequired'));
+        return true;
+      }
+
+      generateReviewMutation.mutate({
+        projectId,
+        runId: actionResult.runId,
+        decision: generateDecision,
+        actorId: currentUser.id,
+        reason: t('phaseCockpit.generateReview.reason', { reviewer: currentUser.email ?? currentUser.id }),
+      });
+      return true;
+    }
+
+    const runDecision = RUN_OPERATION_MAP[operation];
+    if (runDecision) {
+      if (!projectId || !actionResult?.runId) {
+        setActionError(t('phaseCockpit.errors.missingRunContext'));
+        return true;
+      }
+
+      runPostActionMutation.mutate({
+        projectId,
+        runId: actionResult.runId,
+        action: runDecision,
+      });
+      return true;
+    }
+
+    return false;
+  }, [actionResult?.runId, currentUser?.email, currentUser?.id, generateReviewMutation, projectId, runPostActionMutation, t]);
+
+  const isActionPending = useCallback((action: PhaseAction): boolean => {
+    const operation = action.serverOperation ?? action.actionId;
+    if (operation in GENERATE_OPERATION_MAP) {
+      return generateReviewMutation.isPending;
+    }
+    if (operation in RUN_OPERATION_MAP) {
+      return runPostActionMutation.isPending;
+    }
+    return actionMutation.isPending;
+  }, [actionMutation.isPending, generateReviewMutation.isPending, runPostActionMutation.isPending]);
+
+  const executePacketAction = useCallback((action: PhaseAction) => {
     setActionResult(null);
     setActionError(null);
 
-    if (phase === 'intent' && projectId) {
-      void navigate(`/p/${projectId}/intent?drawer=idea`);
+    if (!action.enabled) {
+      setFeedback(t('phaseCockpit.feedback.reviewingAction', { label: actionText(action.label) ?? action.actionId }));
+      scrollToSupportingSurface();
+      return;
+    }
+
+    if (action.targetType === 'route') {
+      const path = resolveNavigationPath(action.targetRoute);
+      if (!path) {
+        setActionError(t('phaseCockpit.errors.missingProjectContext'));
+        return;
+      }
+      void navigate(path);
+      return;
+    }
+
+    if (action.targetType === 'drawer') {
+      const path = resolveNavigationPath(action.targetRoute);
+      if (!path) {
+        setActionError(t('phaseCockpit.errors.missingProjectContext'));
+        return;
+      }
+      const drawer = action.targetDrawer ?? 'idea';
+      void navigate(`${path}?drawer=${drawer}`);
       return;
     }
 
@@ -126,8 +229,12 @@ export function usePhaseActionHandlers({
       return;
     }
 
-    if (phase === 'validate' && packet && (!packet.lifecyclePhase || !packet.readiness.nextPhase)) {
+    if (action.requiresPreview && packet && (!packet.lifecyclePhase || !packet.readiness.nextPhase)) {
       setActionError(t('phaseCockpit.errors.lifecyclePreviewUnavailable'));
+      return;
+    }
+
+    if (executeServerOperation(action)) {
       return;
     }
 
@@ -138,7 +245,20 @@ export function usePhaseActionHandlers({
       actorId: currentUser?.id,
       preview: packet ? phasePacketToPreview(packet) : null,
     });
-  }, [actionMutation, currentUser?.id, currentUser?.tenantId, navigate, packet, phase, projectId, t]);
+  }, [actionMutation, actionText, currentUser?.id, currentUser?.tenantId, executeServerOperation, navigate, packet, phase, projectId, resolveNavigationPath, scrollToSupportingSurface, t]);
+
+  const handlePrimaryAction = useCallback(() => {
+    const primaryAction = packet?.availableActions.find(
+      (action) => action.actionId === packet.dashboardActions.primaryAction,
+    ) ?? packet?.availableActions[0];
+
+    if (!primaryAction) {
+      setActionError(t('phaseCockpit.errors.missingProjectContext'));
+      return;
+    }
+
+    executePacketAction(primaryAction);
+  }, [executePacketAction, packet, t]);
 
   const handleSecondaryAction = useCallback(() => {
     setActionResult(null);
@@ -149,45 +269,13 @@ export function usePhaseActionHandlers({
 
   const handleSuggestionAction = useCallback((action: PhaseAction) => {
     if (action.enabled && !action.disabledReason) {
-      handlePrimaryAction();
+      executePacketAction(action);
       return;
     }
 
     setFeedback(t('phaseCockpit.feedback.reviewingAction', { label: actionText(action.label) ?? action.actionId }));
     scrollToSupportingSurface();
-  }, [actionText, handlePrimaryAction, scrollToSupportingSurface, t]);
-
-  const handleGenerateReviewDecision = useCallback((decision: GenerateReviewDecision) => {
-    if (!projectId || !actionResult?.runId) {
-      setActionError(t('phaseCockpit.errors.missingGenerationRunContext'));
-      return;
-    }
-    if (!currentUser?.id) {
-      setActionError(t('phaseCockpit.errors.authenticatedReviewerRequired'));
-      return;
-    }
-
-    generateReviewMutation.mutate({
-      projectId,
-      runId: actionResult.runId,
-      decision,
-      actorId: currentUser.id,
-      reason: t('phaseCockpit.generateReview.reason', { reviewer: currentUser.email ?? currentUser.id }),
-    });
-  }, [actionResult?.runId, currentUser?.email, currentUser?.id, generateReviewMutation, projectId, t]);
-
-  const handleRunPostAction = useCallback((action: RunPostAction) => {
-    if (!projectId || !actionResult?.runId) {
-      setActionError(t('phaseCockpit.errors.missingRunContext'));
-      return;
-    }
-
-    runPostActionMutation.mutate({
-      projectId,
-      runId: actionResult.runId,
-      action,
-    });
-  }, [actionResult?.runId, projectId, runPostActionMutation, t]);
+  }, [actionText, executePacketAction, scrollToSupportingSurface, t]);
 
   return {
     feedback,
@@ -197,10 +285,9 @@ export function usePhaseActionHandlers({
     actionMutation,
     generateReviewMutation,
     runPostActionMutation,
+    isActionPending,
     handlePrimaryAction,
     handleSecondaryAction,
     handleSuggestionAction,
-    handleGenerateReviewDecision,
-    handleRunPostAction,
   };
 }

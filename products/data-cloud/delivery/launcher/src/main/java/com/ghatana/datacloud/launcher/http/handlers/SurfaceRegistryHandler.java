@@ -82,7 +82,7 @@ public final class SurfaceRegistryHandler {
         List<SurfaceRecord> records = typedSurfaceSupplier.get();
 
         Map<String, Object> response = new LinkedHashMap<>();
-        response.put("surfaces", records.stream().map(SurfaceRecord::toMap).toList());
+        response.put("surfaces", records);
         response.put("count", records.size());
         response.put("generatedAt", Instant.now().toString());
 

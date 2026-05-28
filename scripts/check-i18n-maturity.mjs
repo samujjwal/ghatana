@@ -385,6 +385,55 @@ function checkPseudoLocaleTesting(productPath, productName) {
   }
 }
 
+function checkPhrMobileI18n(productPath, productName) {
+  const requiredFiles = [
+    'src/i18n/phrMobileI18n.ts',
+    'src/locales/en.ts',
+    'src/locales/ne.ts',
+    'src/__tests__/pseudo-locale.test.tsx',
+  ];
+
+  for (const relativePath of requiredFiles) {
+    const absolutePath = path.join(productPath, relativePath);
+    if (!existsSync(absolutePath)) {
+      logError(`${productName}: Missing mobile i18n artifact ${relativePath}`);
+    }
+  }
+
+  const i18nPath = path.join(productPath, 'src/i18n/phrMobileI18n.ts');
+  if (existsSync(i18nPath)) {
+    const i18nSource = readFileSync(i18nPath, 'utf8');
+    for (const token of ['export function t', 'setLocale', 'pseudoLocalize', 'en-XA']) {
+      if (!i18nSource.includes(token)) {
+        logError(`${productName}: mobile i18n config missing token ${token}`);
+      }
+    }
+  }
+
+  const localePaths = [
+    path.join(productPath, 'src/locales/en.ts'),
+    path.join(productPath, 'src/locales/ne.ts'),
+  ];
+  for (const localePath of localePaths) {
+    if (!existsSync(localePath)) {
+      continue;
+    }
+    const localeSource = readFileSync(localePath, 'utf8');
+    for (const namespace of ['tabs', 'dashboard', 'records', 'emergency', 'settings', 'error', 'app', 'api']) {
+      if (!localeSource.includes(`${namespace}:`)) {
+        logError(`${productName}: mobile locale ${path.basename(localePath)} missing namespace ${namespace}`);
+      }
+    }
+  }
+
+  const rawStringCheck = path.join(repoRoot, 'scripts/check-phr-mobile-i18n.mjs');
+  if (existsSync(rawStringCheck)) {
+    logSuccess(`${productName}: Mobile raw-string check is registered`);
+  } else {
+    logError(`${productName}: Missing mobile raw-string check script`);
+  }
+}
+
 /**
  * Main validation
  */
@@ -393,7 +442,8 @@ function main() {
 
   // Products to check
   const products = [
-    { path: 'products/phr/apps/web', name: 'PHR Web' },
+    { path: 'products/phr/apps/web', name: 'PHR Web', surface: 'web' },
+    { path: 'products/phr/apps/mobile', name: 'PHR Mobile', surface: 'mobile' },
   ];
 
   for (const product of products) {
@@ -405,6 +455,11 @@ function main() {
     }
 
     console.log(`\n--- Checking ${product.name} ---`);
+
+    if (product.surface === 'mobile') {
+      checkPhrMobileI18n(productPath, product.name);
+      continue;
+    }
     
     checkLocaleStructure(productPath, product.name);
     checkMissingKeys(productPath, product.name);

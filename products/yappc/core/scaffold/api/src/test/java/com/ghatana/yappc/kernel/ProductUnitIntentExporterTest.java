@@ -105,6 +105,7 @@ class ProductUnitIntentExporterTest {
                 .targetType("kernel-product-unit")
                 .surfaces(List.of("backend-api"))
                 .runtimeProvider("ghatana-kernel")
+                .sourceProvider("ghatana-file-registry")
                 .lifecycleProfile("standard-web-api-product")
                 .tenantId("tenant-123")
                 .workspaceId("workspace-123")
@@ -143,6 +144,7 @@ class ProductUnitIntentExporterTest {
                                 .targetType("kernel-product-unit")
                                 .surfaces(List.of("backend-api"))
                                 .runtimeProvider("ghatana-file-registry")
+                                .sourceProvider("ghatana-file-registry")
                                 .lifecycleProfile("standard-web-api-product")
                                 .workspaceId("workspace-123")
                                 .build();
@@ -162,6 +164,7 @@ class ProductUnitIntentExporterTest {
                 .targetType("kernel-product-unit")
                 .surfaces(List.of("backend-api"))
                 .runtimeProvider("ghatana-file-registry")
+                .sourceProvider("ghatana-file-registry")
                 .lifecycleProfile("standard-web-api-product")
                 .tenantId("tenant-123")
                 .workspaceId("workspace-123")
@@ -194,6 +197,7 @@ class ProductUnitIntentExporterTest {
                                 .targetType("kernel-product-unit")
                                 .surfaces(List.of("backend-api"))
                                 .runtimeProvider("ghatana-file-registry")
+                                .sourceProvider("ghatana-file-registry")
                                 .lifecycleProfile("standard-web-api-product")
                                 .tenantId("tenant-123")
                                 .workspaceId("workspace-123")
@@ -207,6 +211,26 @@ class ProductUnitIntentExporterTest {
                 assertThat(producer).containsEntry("correlationId", "req-corr-9");
         }
 
+        @Test
+        void rejectsUnknownSourceProvider() {
+                ProductUnitIntentExporter exporter = new ProductUnitIntentExporter();
+                ProductUnitIntentExporter.Request request = ProductUnitIntentExporter.Request.builder()
+                                .projectId("test-project")
+                                .projectName("Test Project")
+                                .targetType("kernel-product-unit")
+                                .surfaces(List.of("backend-api"))
+                                .runtimeProvider("ghatana-file-registry")
+                                .sourceProvider("unknown-source")
+                                .lifecycleProfile("standard-web-api-product")
+                                .tenantId("tenant-123")
+                                .workspaceId("workspace-123")
+                                .build();
+
+                assertThatThrownBy(() -> exporter.export(request, Path.of("/tmp/test.yaml")))
+                                .isInstanceOf(ProductUnitIntentExporter.ExportException.class)
+                                .hasMessageContaining("Unknown source provider: unknown-source");
+        }
+
     private static ProductUnitIntentExporter.Request standardRequest() {
         return ProductUnitIntentExporter.Request.builder()
                 .projectId("digital-marketing-campaign")
@@ -214,6 +238,7 @@ class ProductUnitIntentExporterTest {
                 .targetType("kernel-product-unit")
                 .surfaces(List.of("backend-api", "web"))
                 .runtimeProvider("ghatana-file-registry")
+                .sourceProvider("ghatana-file-registry")
                 .lifecycleProfile("standard-web-api-product")
                 .tenantId("tenant-123")
                 .workspaceId("workspace-123")

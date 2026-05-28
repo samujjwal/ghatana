@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
-import { fetchTimeline } from '../api/phrApi';
+import { fetchTimeline } from '../api/patientApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import type { TimelineEvent } from '../types';

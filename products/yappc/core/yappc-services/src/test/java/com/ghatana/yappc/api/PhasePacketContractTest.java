@@ -43,6 +43,10 @@ class PhasePacketContractTest {
         assertThat(json.at("/availableActions/0/confirmationRequired").asBoolean()).isTrue();
         assertThat(json.at("/availableActions/0/idempotencyKey").asText()).isEqualTo("phase.advance");
         assertThat(json.at("/availableActions/0/auditType").asText()).isEqualTo("phase.advance.requested");
+        assertThat(json.at("/availableActions/0/targetType").asText()).isEqualTo("server");
+        assertThat(json.at("/availableActions/0/requiresPreview").asBoolean()).isTrue();
+        assertThat(json.at("/availableActions/0/serverOperation").asText()).isEqualTo("phase.advance");
+        assertThat(json.at("/availableActions/0/postSuccessBehavior").asText()).isEqualTo("refresh-packet");
         assertThat(json.at("/readiness/estimatedReadyIn").asText()).isEqualTo("Blocked");
         assertThat(json.at("/readiness/estimatedReadyInHours").asInt()).isEqualTo(24);
         assertThat(json.at("/readiness/predictionConfidence").asDouble()).isEqualTo(0.35);
@@ -126,6 +130,12 @@ class PhasePacketContractTest {
                         true,
                         "phase.advance",
                         "phase.advance.requested",
+                        "server",
+                        null,
+                        null,
+                        true,
+                        "phase.advance",
+                        "refresh-packet",
                         java.util.Map.of("nextPhase", "run")
                 )),
                 new PhasePacket.DashboardActionClassification(null, List.of("all"), List.of(), List.of()),

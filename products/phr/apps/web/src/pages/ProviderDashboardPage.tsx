@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
-import { fetchProviderPatients } from '../api/phrApi';
+import { fetchProviderPatients } from '../api/adminApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { usePhrAccess } from '../auth/PhrAccessContext';
 import { t } from '../i18n/phrI18n';

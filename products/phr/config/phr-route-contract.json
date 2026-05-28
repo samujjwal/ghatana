@@ -8,10 +8,23 @@
       "description": "Patient dashboard with summary and care plan",
       "group": "care",
       "minimumRole": "patient",
-      "personas": ["patient", "caregiver", "clinician", "admin"],
-      "tiers": ["core"],
-      "actions": ["view-patient-summary"],
-      "cards": ["patient-summary", "care-plan", "emergency-readiness"],
+      "personas": [
+        "patient",
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "core"
+      ],
+      "actions": [
+        "view-patient-summary"
+      ],
+      "cards": [
+        "patient-summary",
+        "care-plan",
+        "emergency-readiness"
+      ],
       "stability": "stable",
       "apiEndpoint": "/api/v1/dashboard",
       "policyId": "phr.dashboard.view",
@@ -23,10 +36,22 @@
       "description": "Patient health records",
       "group": "care",
       "minimumRole": "patient",
-      "personas": ["patient", "caregiver", "clinician", "admin"],
-      "tiers": ["core"],
-      "actions": ["view-records"],
-      "cards": ["record-highlights", "interop-status"],
+      "personas": [
+        "patient",
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "core"
+      ],
+      "actions": [
+        "view-records"
+      ],
+      "cards": [
+        "record-highlights",
+        "interop-status"
+      ],
       "stability": "stable",
       "apiEndpoint": "/api/v1/records",
       "policyId": "phr.records.view",
@@ -38,11 +63,26 @@
       "description": "Consent management",
       "group": "care",
       "minimumRole": "patient",
-      "personas": ["patient", "caregiver", "clinician", "admin"],
-      "tiers": ["core"],
-      "actions": ["manage-consent"],
-      "cards": ["active-consent-grants", "expiring-consents"],
-      "stability": "stable"
+      "personas": [
+        "patient",
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "core"
+      ],
+      "actions": [
+        "manage-consent"
+      ],
+      "cards": [
+        "active-consent-grants",
+        "expiring-consents"
+      ],
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/consents",
+      "policyId": "phr.consents.access",
+      "testId": "phr-consents-001"
     },
     {
       "path": "/appointments",
@@ -50,11 +90,25 @@
       "description": "Appointment scheduling",
       "group": "care",
       "minimumRole": "patient",
-      "personas": ["patient", "caregiver", "clinician", "admin"],
-      "tiers": ["core"],
-      "actions": ["schedule-visit"],
-      "cards": ["upcoming-appointments"],
-      "stability": "stable"
+      "personas": [
+        "patient",
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "core"
+      ],
+      "actions": [
+        "schedule-visit"
+      ],
+      "cards": [
+        "upcoming-appointments"
+      ],
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/appointments",
+      "policyId": "phr.appointments.access",
+      "testId": "phr-appointments-001"
     },
     {
       "path": "/settings",
@@ -62,11 +116,26 @@
       "description": "Profile and settings",
       "group": "governance",
       "minimumRole": "patient",
-      "personas": ["patient", "caregiver", "clinician", "admin"],
-      "tiers": ["core"],
-      "actions": ["manage-profile-settings"],
-      "cards": ["profile-controls", "integration-status"],
-      "stability": "stable"
+      "personas": [
+        "patient",
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "core"
+      ],
+      "actions": [
+        "manage-profile-settings"
+      ],
+      "cards": [
+        "profile-controls",
+        "integration-status"
+      ],
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/profile/settings",
+      "policyId": "phr.settings.access",
+      "testId": "phr-settings-001"
     },
     {
       "path": "/labs",
@@ -74,11 +143,24 @@
       "description": "Lab results",
       "group": "clinical",
       "minimumRole": "caregiver",
-      "personas": ["caregiver", "clinician", "admin"],
-      "tiers": ["clinical"],
-      "actions": ["review-lab-results"],
-      "cards": ["recent-lab-results"],
-      "stability": "stable"
+      "personas": [
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "clinical"
+      ],
+      "actions": [
+        "review-lab-results"
+      ],
+      "cards": [
+        "recent-lab-results"
+      ],
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/clinical/labs",
+      "policyId": "phr.labs.access",
+      "testId": "phr-labs-001"
     },
     {
       "path": "/medications",
@@ -86,11 +168,24 @@
       "description": "Medication management",
       "group": "clinical",
       "minimumRole": "caregiver",
-      "personas": ["caregiver", "clinician", "admin"],
-      "tiers": ["clinical"],
-      "actions": ["review-medications"],
-      "cards": ["medication-adherence"],
-      "stability": "stable"
+      "personas": [
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "clinical"
+      ],
+      "actions": [
+        "review-medications"
+      ],
+      "cards": [
+        "medication-adherence"
+      ],
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/clinical/medications",
+      "policyId": "phr.medications.access",
+      "testId": "phr-medications-001"
     },
     {
       "path": "/conditions",
@@ -98,11 +193,25 @@
       "description": "Health conditions",
       "group": "clinical",
       "minimumRole": "patient",
-      "personas": ["patient", "caregiver", "clinician", "admin"],
-      "tiers": ["core"],
-      "actions": ["view-conditions"],
-      "cards": ["condition-list"],
-      "stability": "stable"
+      "personas": [
+        "patient",
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "core"
+      ],
+      "actions": [
+        "view-conditions"
+      ],
+      "cards": [
+        "condition-list"
+      ],
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/clinical/conditions",
+      "policyId": "phr.conditions.access",
+      "testId": "phr-conditions-001"
     },
     {
       "path": "/observations",
@@ -110,11 +219,24 @@
       "description": "Clinical observations",
       "group": "clinical",
       "minimumRole": "caregiver",
-      "personas": ["caregiver", "clinician", "admin"],
-      "tiers": ["clinical"],
-      "actions": ["view-observations"],
-      "cards": ["observation-trends"],
-      "stability": "stable"
+      "personas": [
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "clinical"
+      ],
+      "actions": [
+        "view-observations"
+      ],
+      "cards": [
+        "observation-trends"
+      ],
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/clinical/observations",
+      "policyId": "phr.observations.access",
+      "testId": "phr-observations-001"
     },
     {
       "path": "/immunizations",
@@ -122,11 +244,25 @@
       "description": "Immunization records",
       "group": "clinical",
       "minimumRole": "patient",
-      "personas": ["patient", "caregiver", "clinician", "admin"],
-      "tiers": ["core"],
-      "actions": ["view-immunizations"],
-      "cards": ["immunization-schedule"],
-      "stability": "stable"
+      "personas": [
+        "patient",
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "core"
+      ],
+      "actions": [
+        "view-immunizations"
+      ],
+      "cards": [
+        "immunization-schedule"
+      ],
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/clinical/immunizations",
+      "policyId": "phr.immunizations.access",
+      "testId": "phr-immunizations-001"
     },
     {
       "path": "/documents",
@@ -134,11 +270,26 @@
       "description": "Document management",
       "group": "care",
       "minimumRole": "patient",
-      "personas": ["patient", "caregiver", "clinician", "admin"],
-      "tiers": ["core"],
-      "actions": ["view-documents", "upload-document"],
-      "cards": ["document-list"],
-      "stability": "stable"
+      "personas": [
+        "patient",
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "core"
+      ],
+      "actions": [
+        "view-documents",
+        "upload-document"
+      ],
+      "cards": [
+        "document-list"
+      ],
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/records/documents",
+      "policyId": "phr.documents.access",
+      "testId": "phr-documents-001"
     },
     {
       "path": "/documents/upload",
@@ -146,11 +297,23 @@
       "description": "Upload documents",
       "group": "care",
       "minimumRole": "patient",
-      "personas": ["patient", "caregiver", "clinician", "admin"],
-      "tiers": ["core"],
-      "actions": ["upload-document"],
+      "personas": [
+        "patient",
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "core"
+      ],
+      "actions": [
+        "upload-document"
+      ],
       "cards": [],
-      "stability": "stable"
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/records/documents",
+      "policyId": "phr.documents.upload.access",
+      "testId": "phr-documents-upload-001"
     },
     {
       "path": "/documents/:docId/ocr",
@@ -158,11 +321,23 @@
       "description": "OCR document review",
       "group": "care",
       "minimumRole": "patient",
-      "personas": ["patient", "caregiver", "clinician", "admin"],
-      "tiers": ["core"],
-      "actions": ["review-ocr"],
+      "personas": [
+        "patient",
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "core"
+      ],
+      "actions": [
+        "review-ocr"
+      ],
       "cards": [],
-      "stability": "stable"
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/records/documents/:docId/ocr",
+      "policyId": "phr.documents.doc-id.ocr.access",
+      "testId": "phr-documents-doc-id-ocr-001"
     },
     {
       "path": "/timeline",
@@ -170,11 +345,25 @@
       "description": "Health timeline",
       "group": "care",
       "minimumRole": "patient",
-      "personas": ["patient", "caregiver", "clinician", "admin"],
-      "tiers": ["core"],
-      "actions": ["view-timeline"],
-      "cards": ["health-timeline"],
-      "stability": "stable"
+      "personas": [
+        "patient",
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "core"
+      ],
+      "actions": [
+        "view-timeline"
+      ],
+      "cards": [
+        "health-timeline"
+      ],
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/records/timeline",
+      "policyId": "phr.timeline.access",
+      "testId": "phr-timeline-001"
     },
     {
       "path": "/profile",
@@ -182,11 +371,26 @@
       "description": "Patient profile",
       "group": "care",
       "minimumRole": "patient",
-      "personas": ["patient", "caregiver", "clinician", "admin"],
-      "tiers": ["core"],
-      "actions": ["view-profile", "edit-profile"],
-      "cards": ["profile-summary"],
-      "stability": "stable"
+      "personas": [
+        "patient",
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "core"
+      ],
+      "actions": [
+        "view-profile",
+        "edit-profile"
+      ],
+      "cards": [
+        "profile-summary"
+      ],
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/profile",
+      "policyId": "phr.profile.access",
+      "testId": "phr-profile-001"
     },
     {
       "path": "/records/:recordId",
@@ -194,11 +398,23 @@
       "description": "Detailed record view",
       "group": "care",
       "minimumRole": "patient",
-      "personas": ["patient", "caregiver", "clinician", "admin"],
-      "tiers": ["core"],
-      "actions": ["view-records"],
+      "personas": [
+        "patient",
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "core"
+      ],
+      "actions": [
+        "view-records"
+      ],
       "cards": [],
-      "stability": "stable"
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/records/:recordId",
+      "policyId": "phr.records.record-id.access",
+      "testId": "phr-records-record-id-001"
     },
     {
       "path": "/notifications",
@@ -206,11 +422,25 @@
       "description": "Patient notifications",
       "group": "care",
       "minimumRole": "patient",
-      "personas": ["patient", "caregiver", "clinician", "admin"],
-      "tiers": ["core"],
-      "actions": ["view-notifications"],
-      "cards": ["notification-feed"],
-      "stability": "stable"
+      "personas": [
+        "patient",
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "core"
+      ],
+      "actions": [
+        "view-notifications"
+      ],
+      "cards": [
+        "notification-feed"
+      ],
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/notifications",
+      "policyId": "phr.notifications.access",
+      "testId": "phr-notifications-001"
     },
     {
       "path": "/forbidden",
@@ -218,11 +448,21 @@
       "description": "Access denied page",
       "group": "governance",
       "minimumRole": "patient",
-      "personas": ["patient", "caregiver", "clinician", "admin"],
-      "tiers": ["core"],
+      "personas": [
+        "patient",
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "core"
+      ],
       "actions": [],
       "cards": [],
-      "stability": "stable"
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/route-entitlements",
+      "policyId": "phr.forbidden.access",
+      "testId": "phr-forbidden-001"
     },
     {
       "path": "/not-found",
@@ -230,11 +470,21 @@
       "description": "Page not found",
       "group": "governance",
       "minimumRole": "patient",
-      "personas": ["patient", "caregiver", "clinician", "admin"],
-      "tiers": ["core"],
+      "personas": [
+        "patient",
+        "caregiver",
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "core"
+      ],
       "actions": [],
       "cards": [],
-      "stability": "stable"
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/route-entitlements",
+      "policyId": "phr.not.found.access",
+      "testId": "phr-not-found-001"
     },
     {
       "path": "/emergency",
@@ -242,14 +492,24 @@
       "description": "Emergency break-glass access",
       "group": "governance",
       "minimumRole": "clinician",
-      "personas": ["clinician", "admin"],
-      "tiers": ["emergency"],
-      "actions": ["break-glass-review"],
-      "cards": ["override-audit-timeline"],
+      "personas": [
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "emergency"
+      ],
+      "actions": [
+        "break-glass-review"
+      ],
+      "cards": [
+        "override-audit-timeline"
+      ],
       "stability": "stable",
       "apiEndpoint": "/api/v1/emergency/access",
       "policyId": "phr.emergency.break-glass",
-      "testId": "phr-emergency-break-glass-001"
+      "testId": "phr-emergency-break-glass-001",
+      "emergencyAction": true
     },
     {
       "path": "/emergency/reviews",
@@ -257,10 +517,19 @@
       "description": "Emergency access review",
       "group": "governance",
       "minimumRole": "admin",
-      "personas": ["admin"],
-      "tiers": ["emergency"],
-      "actions": ["review-emergency-access"],
-      "cards": ["pending-reviews", "overdue-reviews"],
+      "personas": [
+        "admin"
+      ],
+      "tiers": [
+        "emergency"
+      ],
+      "actions": [
+        "review-emergency-access"
+      ],
+      "cards": [
+        "pending-reviews",
+        "overdue-reviews"
+      ],
       "stability": "stable",
       "apiEndpoint": "/api/v1/emergency/reviews",
       "policyId": "phr.emergency.review",
@@ -272,11 +541,25 @@
       "description": "Release readiness dashboard",
       "group": "governance",
       "minimumRole": "admin",
-      "personas": ["admin"],
-      "tiers": ["clinical"],
-      "actions": ["view-release-readiness"],
-      "cards": ["evidence-freshness", "fhir-runtime", "consent-cache-proof", "rollback-proof"],
-      "stability": "stable"
+      "personas": [
+        "admin"
+      ],
+      "tiers": [
+        "clinical"
+      ],
+      "actions": [
+        "view-release-readiness"
+      ],
+      "cards": [
+        "evidence-freshness",
+        "fhir-runtime",
+        "consent-cache-proof",
+        "rollback-proof"
+      ],
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/release-readiness",
+      "policyId": "phr.release.readiness.access",
+      "testId": "phr-release-readiness-001"
     },
     {
       "path": "/audit",
@@ -284,11 +567,22 @@
       "description": "Audit trail",
       "group": "governance",
       "minimumRole": "admin",
-      "personas": ["admin"],
-      "tiers": ["clinical"],
-      "actions": ["view-audit-trail"],
-      "cards": ["audit-trail"],
-      "stability": "stable"
+      "personas": [
+        "admin"
+      ],
+      "tiers": [
+        "clinical"
+      ],
+      "actions": [
+        "view-audit-trail"
+      ],
+      "cards": [
+        "audit-trail"
+      ],
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/audit/events",
+      "policyId": "phr.audit.access",
+      "testId": "phr-audit-001"
     },
     {
       "path": "/provider/dashboard",
@@ -296,10 +590,19 @@
       "description": "Provider dashboard",
       "group": "provider",
       "minimumRole": "clinician",
-      "personas": ["clinician", "admin"],
-      "tiers": ["clinical"],
-      "actions": ["view-provider-dashboard"],
-      "cards": ["provider-panel"],
+      "personas": [
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "clinical"
+      ],
+      "actions": [
+        "view-provider-dashboard"
+      ],
+      "cards": [
+        "provider-panel"
+      ],
       "stability": "hidden"
     },
     {
@@ -308,10 +611,19 @@
       "description": "Provider patient list",
       "group": "provider",
       "minimumRole": "clinician",
-      "personas": ["clinician", "admin"],
-      "tiers": ["clinical"],
-      "actions": ["view-patient-list"],
-      "cards": ["patient-roster"],
+      "personas": [
+        "clinician",
+        "admin"
+      ],
+      "tiers": [
+        "clinical"
+      ],
+      "actions": [
+        "view-patient-list"
+      ],
+      "cards": [
+        "patient-roster"
+      ],
       "stability": "hidden"
     },
     {
@@ -320,10 +632,19 @@
       "description": "Caregiver dependent management",
       "group": "caregiver",
       "minimumRole": "caregiver",
-      "personas": ["caregiver", "admin"],
-      "tiers": ["core"],
-      "actions": ["view-dependents"],
-      "cards": ["dependent-summaries"],
+      "personas": [
+        "caregiver",
+        "admin"
+      ],
+      "tiers": [
+        "core"
+      ],
+      "actions": [
+        "view-dependents"
+      ],
+      "cards": [
+        "dependent-summaries"
+      ],
       "stability": "hidden"
     },
     {
@@ -332,23 +653,27 @@
       "description": "FCHV community health dashboard",
       "group": "fchv",
       "minimumRole": "fchv",
-      "personas": ["fchv", "admin"],
-      "tiers": ["core"],
-      "actions": ["view-fchv-dashboard"],
-      "cards": ["community-health-summary"],
+      "personas": [
+        "fchv",
+        "admin"
+      ],
+      "tiers": [
+        "core"
+      ],
+      "actions": [
+        "view-fchv-dashboard"
+      ],
+      "cards": [
+        "community-health-summary"
+      ],
       "stability": "hidden"
-    },
-    {
-      "path": "/mobile/dashboard",
-      "label": "Mobile Dashboard",
-      "description": "Mobile-specific dashboard",
-      "group": "care",
-      "minimumRole": "patient",
-      "personas": ["patient"],
-      "tiers": ["core"],
-      "actions": ["view-mobile-dashboard"],
-      "cards": ["mobile-patient-summary"],
-      "stability": "stable"
     }
-  ]
+  ],
+  "roleOrder": {
+    "patient": 0,
+    "caregiver": 1,
+    "fchv": 2,
+    "clinician": 3,
+    "admin": 4
+  }
 }

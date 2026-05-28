@@ -37,6 +37,7 @@ class KernelProductUnitEvolutionUpdateServiceTest extends EventloopTestBase {
                         "projectName", "Project One",
                         "surfaces", "web,backend-api",
                         "runtimeProvider", "ghatana-file-registry",
+                        "sourceProvider", "ghatana-file-registry",
                         "lifecycleProfile", "standard-web-api-product",
                         "correlationId", "corr-1"))
                 .build();

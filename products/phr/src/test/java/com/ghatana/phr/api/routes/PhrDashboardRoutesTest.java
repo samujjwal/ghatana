@@ -1,6 +1,7 @@
 package com.ghatana.phr.api.routes;
 
 import com.ghatana.phr.repository.UserRepository;
+import com.ghatana.phr.model.PHRUser;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
@@ -36,13 +37,16 @@ class PhrDashboardRoutesTest extends EventloopTestBase {
     @BeforeEach
     void setUp() {
         userRepository = new UserRepository();
+        userRepository.save(new PHRUser("patient-1", "Patient One", "patient@example.test"));
+        userRepository.save(new PHRUser("dr-1", "Doctor One", "doctor@example.test"));
+        userRepository.save(new PHRUser("admin-1", "Admin One", "admin@example.test"));
         servlet = new PhrDashboardRoutes(eventloop(), userRepository).getServlet();
     }
 
     @Test
     @DisplayName("200 — patient with valid context receives dashboard summary")
     void patientReceivesDashboard() throws Exception {
-        HttpRequest request = contextRequest(HttpMethod.GET, "/", "t1", "patient-1", "patient");
+        HttpRequest request = contextRequest(HttpMethod.GET, "/", "tenant-1", "patient-1", "patient");
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -52,7 +56,7 @@ class PhrDashboardRoutesTest extends EventloopTestBase {
     @Test
     @DisplayName("200 — clinician with valid context receives dashboard summary")
     void clinicianReceivesDashboard() throws Exception {
-        HttpRequest request = contextRequest(HttpMethod.GET, "/", "t1", "dr-1", "clinician");
+        HttpRequest request = contextRequest(HttpMethod.GET, "/", "tenant-1", "dr-1", "clinician");
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -62,7 +66,7 @@ class PhrDashboardRoutesTest extends EventloopTestBase {
     @Test
     @DisplayName("200 — admin with valid context receives dashboard summary")
     void adminReceivesDashboard() throws Exception {
-        HttpRequest request = contextRequest(HttpMethod.GET, "/", "t1", "admin-1", "admin");
+        HttpRequest request = contextRequest(HttpMethod.GET, "/", "tenant-1", "admin-1", "admin");
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
 

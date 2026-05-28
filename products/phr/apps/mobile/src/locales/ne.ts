@@ -13,6 +13,12 @@ export const ne: LocaleShape = {
     alerts: 'सूचनाहरू',
     emergency: 'आपतकाल',
     settings: 'सेटिङ',
+    homeHint: 'मोबाइल स्वास्थ्य ड्यासबोर्ड खोल्नुहोस्।',
+    recordsHint: 'अफलाइन स्वास्थ्य अभिलेख सूची खोल्नुहोस्।',
+    consentsHint: 'सक्रिय साझेदारी सहमति समीक्षा वा फिर्ता गर्नुहोस्।',
+    alertsHint: 'गोपनीयता-सुरक्षित सूचनाहरू खोल्नुहोस्।',
+    emergencyHint: 'अडिट गरिएको आपतकालीन पहुँच अनुरोध गर्नुहोस्।',
+    settingsHint: 'सत्र, क्यास, र गोपनीयता सेटिङ खोल्नुहोस्।',
   },
   dashboard: {
     title: 'मेरो स्वास्थ्य ड्यासबोर्ड',
@@ -21,6 +27,12 @@ export const ne: LocaleShape = {
     welcome: 'स्वागत छ, {{name}}',
     lastSync: 'अन्तिम सिंक: {{time}}',
     noData: 'कुनै स्वास्थ्य डेटा उपलब्ध छैन।',
+    patientName: 'बिरामीको नाम',
+    location: 'स्थान',
+    bloodType: 'रक्त समूह',
+    records: 'रेकर्डहरू',
+    consents: 'सहमतिहरू',
+    alerts: 'सूचनाहरू',
   },
   records: {
     title: 'स्वास्थ्य अभिलेखहरू',
@@ -34,6 +46,7 @@ export const ne: LocaleShape = {
     value: 'मान',
     unit: 'एकाइ',
     recordId: 'अभिलेख ID',
+    summary: 'सारांश',
     fhirResource: 'FHIR स्रोत',
     backToRecords: 'अभिलेखहरूमा फर्कनुहोस्',
   },
@@ -88,6 +101,7 @@ export const ne: LocaleShape = {
     version: 'संस्करण {{version}}',
     profile: 'प्रोफाइल',
     refreshCache: 'अफलाइन क्यास रिफ्रेस गर्नुहोस्',
+    refreshCacheHint: 'नवीनतम ड्यासबोर्ड ल्याएर इन्क्रिप्ट गरिएको अफलाइन प्रतिलिपि राख्छ।',
     cacheDescription: 'यो उपकरणले कम कनेक्टिभिटी भ्रमणको लागि रेकर्ड पहुँचका लागि एक स्कोप गरिएको स्थानीय क्यास राख्छ।',
     lastSync: 'अन्तिम सिंक: {{time}}',
     cacheStatus: 'क्यास स्थिति',
@@ -116,6 +130,9 @@ export const ne: LocaleShape = {
   },
   offline: {
     banner: 'तपाईं अफलाइन हुनुहुन्छ। केही सुविधाहरू उपलब्ध नहोलान।',
+  },
+  notifications: {
+    enablePush: 'पुस सूचना सक्षम गर्नुहोस्',
   },
   common: {
     retry: 'पुनः प्रयास गर्नुहोस्',

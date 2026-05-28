@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { Link } from 'react-router-dom';
-import { fetchConditions } from '../api/phrApi';
+import { fetchConditions } from '../api/clinicalApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import type { ConditionSummary } from '../types';
@@ -20,12 +20,12 @@ export function ConditionsPage(): React.ReactElement {
       role: session.role,
     })
       .then(setConditions)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load conditions'))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('conditions.error')))
       .finally(() => setLoading(false));
   }, [session]);
 
-  if (loading) return <div className="loading">Loading conditions...</div>;
-  if (error) return <div className="error">Error: {error}</div>;
+  if (loading) return <div className="loading">{t('conditions.loading')}</div>;
+  if (error) return <div className="error">{t('dashboard.errorPrefix')}: {error}</div>;
 
   const active = conditions.filter((c) => c.status === 'active');
   const resolved = conditions.filter((c) => c.status !== 'active');
@@ -33,15 +33,15 @@ export function ConditionsPage(): React.ReactElement {
   return (
     <div className="stack gap-lg">
       <Card>
-        <CardHeader title="Conditions" subheader="Your health conditions" />
+        <CardHeader title={t('conditions.title')} subheader={t('conditions.subheader')} />
         <CardContent>
           {conditions.length === 0 ? (
-            <p className="empty">No conditions recorded</p>
+            <p className="empty">{t('conditions.empty')}</p>
           ) : (
             <>
-              <h3>Active Conditions</h3>
+              <h3>{t('conditions.active')}</h3>
               {active.length === 0 ? (
-                <p className="muted">No active conditions</p>
+                <p className="muted">{t('conditions.emptyActive')}</p>
               ) : (
                 <ul className="stack gap-sm">
                   {active.map((c) => (
@@ -57,7 +57,7 @@ export function ConditionsPage(): React.ReactElement {
               )}
               {resolved.length > 0 && (
                 <>
-                  <h3>Resolved Conditions</h3>
+                  <h3>{t('conditions.resolved')}</h3>
                   <ul className="stack gap-sm">
                     {resolved.map((c) => (
                       <li key={c.id} className="condition-item">

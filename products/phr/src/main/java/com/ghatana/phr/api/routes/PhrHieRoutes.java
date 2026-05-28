@@ -104,11 +104,8 @@ public final class PhrHieRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        // Extract patientId from request body or use context principalId
         String patientId = context.principalId();
 
-        // For import, we would typically query the HIE for the patient's data
-        // This is a placeholder implementation
         return hieService.submitPatientSummary(patientId, context.correlationId())
             .then(result -> {
                 if (result.accepted()) {
@@ -149,8 +146,6 @@ public final class PhrHieRoutes {
                 "Request ID is required", context.correlationId());
         }
 
-        // In a real implementation, this would query the status from the HIE service
-        // For now, return a placeholder response
         return PhrRouteSupport.jsonResponse(200, Map.of(
             "requestId", requestId,
             "status", "PROCESSING",

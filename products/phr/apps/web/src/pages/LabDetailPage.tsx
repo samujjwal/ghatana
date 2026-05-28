@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { useParams } from 'react-router-dom';
-import { fetchObservations } from '../api/phrApi';
+import { fetchObservations } from '../api/clinicalApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
+import { t } from '../i18n/phrI18n';
 import type { ObservationSummary } from '../types';
 
 export function LabDetailPage(): React.ReactElement {
@@ -24,47 +25,47 @@ export function LabDetailPage(): React.ReactElement {
         if (found) {
           setLab(found);
         } else {
-          setError('Lab result not found');
+          setError(t('labDetail.notFound'));
         }
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load lab detail'))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('labDetail.error.load')))
       .finally(() => setLoading(false));
   }, [session, labId]);
 
-  if (loading) return <div className="loading">Loading lab details...</div>;
-  if (error) return <div className="error">Error: {error}</div>;
-  if (!lab) return <div className="empty">Lab result not found</div>;
+  if (loading) return <div className="loading">{t('labDetail.loading')}</div>;
+  if (error) return <div className="error">{t('dashboard.errorPrefix')}: {error}</div>;
+  if (!lab) return <div className="empty">{t('labDetail.notFound')}</div>;
 
   return (
     <div className="stack gap-lg">
       <Card>
-        <CardHeader title={lab.name} subheader="Lab Result Details" />
+        <CardHeader title={lab.name} subheader={t('labDetail.subheader')} />
         <CardContent>
           <div className="stack gap-md">
             <div className="detail-row">
-              <span className="detail-label">Value:</span>
+              <span className="detail-label">{t('labDetail.value')}:</span>
               <span className="detail-value">
                 <strong>{lab.value}</strong>
                 {lab.unit && <span className="muted"> {lab.unit}</span>}
               </span>
             </div>
             <div className="detail-row">
-              <span className="detail-label">Status:</span>
+              <span className="detail-label">{t('conditionDetail.status')}:</span>
               <span className={`badge badge--${lab.status}`}>{lab.status}</span>
             </div>
             <div className="detail-row">
-              <span className="detail-label">Date:</span>
+              <span className="detail-label">{t('labDetail.date')}:</span>
               <time dateTime={lab.effectiveDate}>{new Date(lab.effectiveDate).toLocaleString()}</time>
             </div>
             {lab.loincCode && (
               <div className="detail-row">
-                <span className="detail-label">LOINC Code:</span>
+                <span className="detail-label">{t('observationDetail.loincCode')}:</span>
                 <code>{lab.loincCode}</code>
               </div>
             )}
             {lab.recordedAt && (
               <div className="detail-row">
-                <span className="detail-label">Recorded:</span>
+                <span className="detail-label">{t('labDetail.recorded')}:</span>
                 <time dateTime={lab.recordedAt}>{new Date(lab.recordedAt).toLocaleString()}</time>
               </div>
             )}

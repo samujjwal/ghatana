@@ -6,7 +6,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { CaregiverDependentsPage } from '../CaregiverDependentsPage';
 
-vi.mock('../../api/phrApi', () => ({
+vi.mock('../../api/adminApi', () => ({
   fetchCaregiverDependents: vi.fn(),
 }));
 
@@ -14,7 +14,16 @@ vi.mock('../../i18n/phrI18n', () => ({
   t: (key: string) => key,
 }));
 
-import { fetchCaregiverDependents } from '../../api/phrApi';
+vi.mock('../../auth/PhrSessionContext', () => ({
+  usePhrSession: () => ({
+    session: { principalId: 'caregiver-42', tenantId: 't1', role: 'caregiver' as const, name: 'Caregiver', expiresAt: new Date(Date.now() + 3_600_000).toISOString() },
+    isAuthenticated: true,
+    setSession: vi.fn(),
+    clearSession: vi.fn(),
+  }),
+}));
+
+import { fetchCaregiverDependents } from '../../api/adminApi';
 
 const mockFetch = fetchCaregiverDependents as ReturnType<typeof vi.fn>;
 

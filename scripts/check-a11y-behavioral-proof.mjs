@@ -70,6 +70,60 @@ function resolveWebProofPath(product) {
   return path.join(repoRoot, product.path);
 }
 
+function shouldCheckPhrMobile() {
+  if (!PRODUCT_ARG) {
+    return true;
+  }
+  const normalized = PRODUCT_ARG.toLowerCase();
+  return normalized === 'phr' || normalized === 'phr-mobile' || normalized === 'mobile';
+}
+
+function executePhrMobileA11yProof() {
+  const mobilePath = path.join(repoRoot, 'products/phr/apps/mobile');
+  const packagePath = path.join(mobilePath, 'package.json');
+  const coreTestPath = path.join(mobilePath, 'src/__tests__/accessibility-mobile.test.tsx');
+  const emergencyTestPath = path.join(mobilePath, 'src/screens/__tests__/EmergencyAccessScreen.test.tsx');
+  const settingsTestPath = path.join(mobilePath, 'src/screens/__tests__/SettingsScreen.test.tsx');
+
+  if (!existsSync(packagePath)) {
+    logError('PHR Mobile: missing package.json for mobile accessibility proof');
+    return;
+  }
+
+  const packageJson = JSON.parse(readFileSync(packagePath, 'utf8'));
+  if (typeof packageJson.scripts?.['test:a11y'] !== 'string') {
+    logError('PHR Mobile: package must define scripts.test:a11y');
+    return;
+  }
+
+  for (const testPath of [coreTestPath, emergencyTestPath, settingsTestPath]) {
+    if (!existsSync(testPath)) {
+      logError(`PHR Mobile: missing accessibility test ${path.relative(repoRoot, testPath)}`);
+      return;
+    }
+    const source = readFileSync(testPath, 'utf8');
+    if (!source.includes('accessibility') && !source.includes('accessibilityLabel')) {
+      logError(`PHR Mobile: accessibility test lacks accessibility assertions in ${path.relative(repoRoot, testPath)}`);
+      return;
+    }
+  }
+
+  try {
+    const command = 'pnpm --dir products/phr/apps/mobile run test:a11y';
+    console.log(`  Executing: ${command}`);
+    execSync(command, {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      stdio: CI_MODE ? 'pipe' : 'inherit',
+      timeout: 120000,
+    });
+    logSuccess('PHR Mobile: A11y behavioral tests PASSED');
+    logEvidence('PHR Mobile: Executed mobile screen accessibilityLabel, emergency, and settings behavior tests');
+  } catch (error) {
+    logError(`PHR Mobile: A11y behavioral tests FAILED: ${error.message}`);
+  }
+}
+
 /**
  * Execute a11y behavioral tests with Playwright
  */
@@ -695,6 +749,11 @@ function main() {
         checkModalToastErrorAccessibility(productPath, product.name);
       }
     }
+  }
+
+  if (shouldCheckPhrMobile()) {
+    console.log('\n--- Checking PHR Mobile ---');
+    executePhrMobileA11yProof();
   }
 
   console.log('\n--- Summary ---');

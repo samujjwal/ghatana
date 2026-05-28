@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import { demoDashboard } from '../src/data/demoDashboard';
+import { mobileDashboardFixture } from '../src/__tests__/fixtures/mobileDashboardFixture';
 
-assert.equal(demoDashboard.patient.name, 'Aarati Shrestha');
-assert.ok(demoDashboard.records.length > 0, 'expected demo records');
-assert.ok(demoDashboard.consents.length > 0, 'expected demo consents');
-assert.ok(demoDashboard.notifications.length > 0, 'expected demo notifications');
+assert.equal(mobileDashboardFixture.patient.name, 'Aarati Shrestha');
+assert.ok(mobileDashboardFixture.records.length > 0, 'expected records');
+assert.ok(mobileDashboardFixture.consents.length > 0, 'expected consents');
+assert.ok(mobileDashboardFixture.notifications.length > 0, 'expected notifications');

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { Link } from 'react-router-dom';
-import { fetchMedications } from '../api/phrApi';
+import { fetchMedications } from '../api/clinicalApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
+import { t } from '../i18n/phrI18n';
 import type { MedicationSummary } from '../types';
 
 export function MedicationsPage(): React.ReactElement {
@@ -19,21 +20,21 @@ export function MedicationsPage(): React.ReactElement {
       role: session.role,
     })
       .then(setMedications)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load medications'))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('medications.error')))
       .finally(() => setLoading(false));
   }, [session]);
 
-  if (loading) return <div className="loading">Loading medications...</div>;
-  if (error) return <div className="error">Error: {error}</div>;
+  if (loading) return <div className="loading">{t('medications.loading')}</div>;
+  if (error) return <div className="error">{t('dashboard.errorPrefix')}: {error}</div>;
 
   return (
     <div className="stack gap-lg">
       <Card>
-        <CardHeader title="Medications" subheader="Current medications and adherence" />
+        <CardHeader title={t('medications.title')} subheader={t('medications.subheader')} />
         <CardContent>
           <div className="stack gap-md">
             {medications.length === 0 ? (
-              <p className="empty">No medications recorded</p>
+              <p className="empty">{t('medications.empty')}</p>
             ) : (
               medications.map((medication) => (
                 <Link key={medication.id} to={`/medications/${medication.id}`} className="data-card">
@@ -43,7 +44,7 @@ export function MedicationsPage(): React.ReactElement {
                   </div>
                   <div className="row gap-sm align-center">
                     <span className="pill">
-                      Adherence: {medication.adherence}%
+                      {t('medications.adherenceLabel')}: {medication.adherence}%
                     </span>
                     {medication.status && <span className={`badge badge--${medication.status}`}>{medication.status}</span>}
                   </div>

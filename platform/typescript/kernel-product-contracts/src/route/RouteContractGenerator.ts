@@ -4,9 +4,11 @@
  */
 
 import type {
+  ProductRouteCapability,
   ProductRouteContract,
   RouteStability,
 } from './ProductRouteContract.js';
+import { parseProductRouteContract } from './ProductRouteContract.js';
 
 export interface GeneratedTSManifest {
   routes: {
@@ -31,6 +33,12 @@ export interface GeneratedTSManifest {
     }>;
     stability: RouteStability;
     featureFlag?: boolean;
+    metadata?: {
+      apiEndpoint?: string;
+      policyId?: string;
+      testId?: string;
+      featureFlag?: string;
+    };
   }[];
 }
 
@@ -68,8 +76,18 @@ export interface GeneratedRouteDocs {
   }[];
 }
 
+export interface GeneratedRouteCapabilityContract {
+  version: string;
+  roleOrder: Record<string, number>;
+  capabilities: ProductRouteCapability[];
+}
+
 export class RouteContractGenerator {
-  constructor(private contract: ProductRouteContract) {}
+  private readonly contract: ProductRouteContract;
+
+  constructor(contract: ProductRouteContract) {
+    this.contract = parseProductRouteContract(contract);
+  }
 
   generateTSManifest(): GeneratedTSManifest {
     return {
@@ -102,6 +120,13 @@ export class RouteContractGenerator {
           }));
         }
         if (route.featureFlag !== undefined) result.featureFlag = route.featureFlag;
+        if (route.metadata) {
+          result.metadata = {};
+          if (route.metadata.apiEndpoint) result.metadata.apiEndpoint = route.metadata.apiEndpoint;
+          if (route.metadata.policyId) result.metadata.policyId = route.metadata.policyId;
+          if (route.metadata.testId) result.metadata.testId = route.metadata.testId;
+          if (route.metadata.featureFlag) result.metadata.featureFlag = route.metadata.featureFlag;
+        }
         
         return result;
       }),
@@ -157,11 +182,41 @@ export class RouteContractGenerator {
     };
   }
 
-  generateAll() {
+  generateRouteCapabilities(): GeneratedRouteCapabilityContract {
+    return {
+      version: this.contract.version,
+      roleOrder: this.contract.roleOrder,
+      capabilities: this.contract.routes.map(route => {
+        const suppressed = route.stability === 'hidden' || route.stability === 'blocked';
+        const result: ProductRouteCapability = {
+          path: route.path,
+          stability: route.stability,
+          directLinkAllowed: !suppressed,
+          discoverable: !suppressed && route.stability !== 'preview',
+          minimumRole: route.minimumRole,
+        };
+
+        if (route.featureFlag !== undefined) result.featureFlag = route.featureFlag;
+        if (route.metadata?.apiEndpoint) result.apiEndpoint = route.metadata.apiEndpoint;
+        if (route.metadata?.policyId) result.policyId = route.metadata.policyId;
+        if (route.metadata?.testId) result.testId = route.metadata.testId;
+
+        return result;
+      }),
+    };
+  }
+
+  generateAll(): {
+    tsManifest: GeneratedTSManifest;
+    backendEntitlement: GeneratedBackendEntitlement;
+    routeDocs: GeneratedRouteDocs;
+    routeCapabilities: GeneratedRouteCapabilityContract;
+  } {
     return {
       tsManifest: this.generateTSManifest(),
       backendEntitlement: this.generateBackendEntitlement(),
       routeDocs: this.generateRouteDocs(),
+      routeCapabilities: this.generateRouteCapabilities(),
     };
   }
 }

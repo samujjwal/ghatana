@@ -109,7 +109,14 @@ function packetFixture(): PhaseCockpitPacket {
       confirmationRequired: false,
       idempotencyKey: 'shape-primary',
       auditType: 'shape.primary.requested',
-      parameters: {},
+      parameters: {
+        confidence: 0.91,
+        evidence: ['shape-evidence-1'],
+        riskLevel: 'low',
+        applyMode: 'one-click',
+        approvalRequired: false,
+        rollbackSupported: true,
+      },
     }],
     dashboardActions: {
       primaryAction: 'shape-primary',
@@ -173,7 +180,29 @@ describe('phasePacketMappers', () => {
     const suggestions = mapPacketSuggestions(packet, (value) => value, onAccept);
 
     expect(suggestions[0]?.title).toBe('phaseAction.shape.primary');
+    expect(suggestions[0]?.confidence).toBe(0.91);
+    expect(suggestions[0]?.riskLevel).toBe('low');
+    expect(suggestions[0]?.applyMode).toBe('one-click');
     suggestions[0]?.onAccept(suggestions[0]);
     expect(onAccept).toHaveBeenCalledWith(packet.availableActions[0]);
+  });
+
+  it('does not synthesize suggestion metadata when backend metadata is missing', () => {
+    const packet = packetFixture();
+    const onAccept = vi.fn<(action: PhaseAction) => void>();
+    const actionWithoutMetadata: PhaseAction = {
+      ...packet.availableActions[0],
+      actionId: 'shape-no-metadata',
+      parameters: {},
+    };
+
+    const suggestions = mapPacketSuggestions(
+      { ...packet, availableActions: [actionWithoutMetadata] },
+      (value) => value,
+      onAccept,
+    );
+
+    expect(suggestions).toHaveLength(0);
+    expect(onAccept).not.toHaveBeenCalled();
   });
 });

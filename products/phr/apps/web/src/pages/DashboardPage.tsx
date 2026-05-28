@@ -1,20 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
-import { fetchDashboardData } from '../api/phrApi';
+import { fetchDashboardData } from '../api/patientApi';
+import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import type { DashboardData } from '../types';
 
 export function DashboardPage(): React.ReactElement {
+  const { session } = usePhrSession();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchDashboardData()
+    if (!session) {
+      setError(t('error.sessionRequired'));
+      setLoading(false);
+      return;
+    }
+    fetchDashboardData({
+      tenantId: session.tenantId,
+      principalId: session.principalId,
+      role: session.role,
+    })
       .then(setData)
       .catch((err: unknown) => setError(err instanceof Error ? err.message : t('error.dashboardLoad')))
       .finally(() => setLoading(false));
-  }, []);
+  }, [session]);
 
   if (loading) return <div className="loading">{t('dashboard.loading')}</div>;
   if (error) return <div className="error">{t('dashboard.errorPrefix')}: {error}</div>;

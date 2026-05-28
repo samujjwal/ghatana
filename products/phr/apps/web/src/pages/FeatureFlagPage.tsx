@@ -7,10 +7,8 @@ interface FeatureFlagPageProps {
 }
 
 /**
- * Placeholder page rendered for feature-flagged routes that are present in
- * the IA contract but not yet production-ready. Shows a localised "coming
- * soon" message and exposes a data attribute so integration tests can assert
- * on which route is deferred.
+ * Deferred page rendered for preview routes that are present in the IA
+ * contract but blocked from production navigation.
  */
 export function FeatureFlagPage({ routePath }: FeatureFlagPageProps): React.ReactElement {
   return (

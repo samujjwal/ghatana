@@ -1,7 +1,7 @@
 # YAPPC Architecture
 
 **Status:** Active  
-**Last Updated:** 2026-05-27  
+**Last Updated:** 2026-05-28  
 **Owner:** Architecture Team
 
 > **Changes since 2026-03-24:**
@@ -42,13 +42,13 @@ YAPPC is an **AI-powered project scaffolding and code-generation platform** buil
 | GENERATE | Implemented | Canonical backend-owned assurance panel composition across all UI surfaces |
 | RUN | Implemented | Retry/rollback/promote operational drills and environment-specific resilience |
 | OBSERVE | Implemented | Typed runtime diagnostics enrichment and operator remediation runbooks |
-| LEARN | Implemented | Longer-horizon feedback loop verification and governance signal traceability |
-| EVOLVE | Implemented | Broader impact-analysis and diff-review end-to-end regression coverage |
+| LEARN | Implemented | Backend-owned typed learning insight packet model and guided Learn panel flow are active and validated |
+| EVOLVE | Implemented | Backend-owned typed evolution plan packet model and guided Evolve panel flow are active and validated |
 
 ### Current Hardening Focus Areas
 
 - Phase cockpit decomposition into thin routes, mappers, action hooks, and focused presentational panels.
-- Full removal of frontend heuristic lifecycle inference in favor of typed backend packet models.
+- Maintain typed backend packet ownership as the only lifecycle/status source of truth.
 - Product shell consistency across phase cockpit, kernel health, product-family, and admin surfaces.
 - Ongoing docs reconciliation to keep architecture and backlog language synchronized with current implementation.
 
@@ -115,7 +115,7 @@ YAPPC is an **AI-powered project scaffolding and code-generation platform** buil
        ▼
 ┌──────────────────────────────────────────────────────────────┐
 │           Data-Cloud / AEP Integration Layer                 │
-│    infrastructure:datacloud        AEP (agentic-event-proc.) │
+│    infrastructure:datacloud    infrastructure:aep            │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -156,14 +156,14 @@ yappc/
 │   │   └── generators/           # Generation layer: language gens, pack/plugin/CI
 │   │
 │   ├── knowledge-graph/          # Knowledge graph engine
-│   ├── spi/                      # Extension SPI (pluggable capabilities)
 │   ├── refactorer/
 │   │   ├── api/                  # Refactoring request/response contracts
 │   │   └── engine/               # Code analysis + transformation engine
 │   └── cli-tools/                # CLI tooling utilities
 │
 ├── infrastructure/
-│   └── datacloud/                # Data-Cloud integration adapter
+│   ├── datacloud/                # Data-Cloud integration adapter
+│   └── aep/                      # AEP registry/runtime adapter
 │
 ├── libs/java/
 │   └── yappc-domain/             # CANONICAL PUBLIC domain types (DTOs, enums, events)
@@ -312,9 +312,9 @@ services (app)  →  core/services-platform  +  core/services-lifecycle
 ```
 
 **BOUNDARY RULE**: `core/*` modules must NOT directly import `products:aep:*` or
-`products:data-cloud:*` (except `data-cloud:spi` temporarily until adapter seams are in place).
-These external product deps should go through adapter ports defined in YAPPC.
-Current violations are annotated with `TODO(ADAPTER-SEAM)` in the relevant build files.
+`products:data-cloud:*`. These external product deps are routed through
+YAPPC adapter modules (`infrastructure:aep`, `infrastructure:datacloud`) and
+adapter ports defined in YAPPC.
 
 Cross-product integration is via Data-Cloud events and AEP (`agentic-event-processor`) only.
 

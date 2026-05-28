@@ -6,9 +6,15 @@ export interface RouteAccessEvaluator<Role extends string = string> {
   readonly roleOrder: RoleHierarchy<Role>;
   resolveHighestRole(roles: readonly string[] | undefined, fallbackRole: Role): Role;
   hasMinimumRole(roles: readonly string[] | undefined, minimumRole: Role, fallbackRole: Role): boolean;
-  isRouteAllowed(route: Pick<ProductRouteCapability, 'minimumRole'>, role: Role): boolean;
+  isRouteAllowed(route: RouteAccessInput, role: Role): boolean;
+  isRouteDirectLinkAllowed(route: RouteAccessInput, role: Role): boolean;
   filterDiscoverableRoutes(routes: readonly ProductRouteCapability[], role: Role): readonly ProductRouteCapability[];
 }
+
+export type RouteAccessInput = Pick<
+  ProductRouteCapability,
+  'minimumRole' | 'lifecycle' | 'stability' | 'hidden' | 'blocked'
+>;
 
 export function resolveHighestRole(
   roles: readonly string[] | undefined,
@@ -43,6 +49,26 @@ export function hasMinimumRole<Role extends string>(
 }
 
 export function isRouteAllowed(
+  route: RouteAccessInput,
+  role: string,
+  roleOrder: Readonly<Record<string, number>>,
+): boolean {
+  if (isRouteSuppressed(route)) {
+    return false;
+  }
+
+  return hasRouteMinimumRole(route, role, roleOrder);
+}
+
+export function isRouteDirectLinkAllowed(
+  route: RouteAccessInput,
+  role: string,
+  roleOrder: Readonly<Record<string, number>>,
+): boolean {
+  return isRouteAllowed(route, role, roleOrder);
+}
+
+function hasRouteMinimumRole(
   route: Pick<ProductRouteCapability, 'minimumRole'>,
   role: string,
   roleOrder: Readonly<Record<string, number>>,
@@ -65,6 +91,15 @@ export function isRouteAllowed(
   return currentOrder >= minimumOrder;
 }
 
+function isRouteSuppressed(route: RouteAccessInput): boolean {
+  if (route.hidden === true || route.blocked === true) {
+    return true;
+  }
+
+  const state = route.stability ?? route.lifecycle;
+  return state === 'hidden' || state === 'blocked' || state === 'boundary' || state === 'deprecated';
+}
+
 export function filterDiscoverableRoutes(
   routes: readonly ProductRouteCapability[],
   role: string,
@@ -72,8 +107,6 @@ export function filterDiscoverableRoutes(
 ): readonly ProductRouteCapability[] {
   return routes.filter(
     (route) =>
-      route.lifecycle !== 'boundary' &&
-      route.lifecycle !== 'deprecated' &&
       route.discoverable !== false &&
       isRouteAllowed(route, role, roleOrder),
   );
@@ -92,7 +125,10 @@ export function createRouteAccessEvaluator<Role extends string>(
     hasMinimumRole(roles: readonly string[] | undefined, minimumRole: Role, fallbackRole: Role): boolean {
       return hasMinimumRole(roles, minimumRole, hierarchy, fallbackRole);
     },
-    isRouteAllowed(route: Pick<ProductRouteCapability, 'minimumRole'>, role: Role): boolean {
+    isRouteAllowed(route: RouteAccessInput, role: Role): boolean {
+      return isRouteAllowed(route, role, hierarchy);
+    },
+    isRouteDirectLinkAllowed(route: RouteAccessInput, role: Role): boolean {
       return isRouteAllowed(route, role, hierarchy);
     },
     filterDiscoverableRoutes(

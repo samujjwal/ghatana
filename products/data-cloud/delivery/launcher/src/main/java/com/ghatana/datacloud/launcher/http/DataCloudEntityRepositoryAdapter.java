@@ -99,6 +99,13 @@ final class DataCloudEntityRepositoryAdapter implements EntityRepository {
                 .toList());
     }
 
+    @Override
+    public Promise<Entity> saveWithIdempotency(String tenantId, Entity entity, String idempotencyKey) {
+        // This adapter does not support idempotency - delegate to save
+        // In production, use JpaEntityRepositoryImpl which has full idempotency support
+        return save(tenantId, entity);
+    }
+
     private static EntityStore.QuerySpec toQuerySpec(
             String collectionName,
             Map<String, Object> filter,

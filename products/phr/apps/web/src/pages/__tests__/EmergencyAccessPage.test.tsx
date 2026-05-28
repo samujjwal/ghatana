@@ -5,6 +5,7 @@ import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { EmergencyAccessPage } from '../../pages/EmergencyAccessPage';
+import { EmergencyReviewsPage } from '../../pages/EmergencyReviewsPage';
 
 vi.mock('../../api/phrApi', () => ({
   requestEmergencyAccess: vi.fn(),
@@ -18,6 +19,15 @@ vi.mock('../../i18n/phrI18n', () => ({
     }
     return key;
   },
+}));
+
+vi.mock('../../auth/PhrAccessContext', () => ({
+  usePhrAccess: () => ({
+    tenantId: 'tenant-test',
+    principalId: 'clinician-42',
+    role: 'clinician',
+    setRole: vi.fn(),
+  }),
 }));
 
 import { requestEmergencyAccess, reviewEmergencyAccess } from '../../api/phrApi';
@@ -73,6 +83,11 @@ describe('EmergencyAccessPage – request workflow', () => {
     expect(payload.patientId).toBe('patient-42');
     expect(payload.clinicianId).toBe('clinician-7');
     expect(payload.reason).toBe('Unconscious patient in A&E.');
+    expect(mockRequest.mock.calls[0]?.[1]).toMatchObject({
+      tenantId: 'tenant-test',
+      principalId: 'clinician-42',
+      role: 'clinician',
+    });
   });
 
   it('shows success message after approved request', async () => {
@@ -125,14 +140,14 @@ describe('EmergencyAccessPage – review workflow', () => {
   });
 
   it('renders the review form', () => {
-    render(<EmergencyAccessPage />);
+    render(<EmergencyReviewsPage />);
     expect(screen.getByRole('button', { name: /emergency.review.submit/i })).toBeTruthy();
     expect(screen.getByLabelText('emergency.reviewEventId.label')).toBeTruthy();
     expect(screen.getByLabelText('emergency.review.note.label')).toBeTruthy();
   });
 
   it('shows a validation error when review fields are empty', async () => {
-    render(<EmergencyAccessPage />);
+    render(<EmergencyReviewsPage />);
     fireEvent.click(screen.getByRole('button', { name: /emergency.review.submit/i }));
     await waitFor(() => expect(screen.getAllByRole('alert').length).toBeGreaterThan(0));
     expect(mockReview).not.toHaveBeenCalled();
@@ -140,7 +155,7 @@ describe('EmergencyAccessPage – review workflow', () => {
 
   it('calls reviewEmergencyAccess with trimmed values', async () => {
     mockReview.mockResolvedValue({ ...stubEvent, reviewNote: 'LGTM', id: 'evt-review-1' });
-    render(<EmergencyAccessPage />);
+    render(<EmergencyReviewsPage />);
 
     fireEvent.change(screen.getByLabelText('emergency.reviewEventId.label'), { target: { value: '  evt-review-1  ' } });
     fireEvent.change(screen.getByLabelText('emergency.review.note.label'), { target: { value: 'Reviewed: appropriate use' } });
@@ -150,11 +165,17 @@ describe('EmergencyAccessPage – review workflow', () => {
     const [payload] = mockReview.mock.calls[0] as [{ eventId: string; reviewNote: string }, unknown];
     expect(payload.eventId).toBe('evt-review-1');
     expect(payload.reviewNote).toBe('Reviewed: appropriate use');
+    expect(payload).toMatchObject({ reviewerId: 'clinician-42' });
+    expect(mockReview.mock.calls[0]?.[1]).toMatchObject({
+      tenantId: 'tenant-test',
+      principalId: 'clinician-42',
+      role: 'clinician',
+    });
   });
 
   it('shows success message after successful review', async () => {
     mockReview.mockResolvedValue({ ...stubEvent, id: 'evt-rev-42' });
-    render(<EmergencyAccessPage />);
+    render(<EmergencyReviewsPage />);
 
     fireEvent.change(screen.getByLabelText('emergency.reviewEventId.label'), { target: { value: 'evt-rev-42' } });
     fireEvent.change(screen.getByLabelText('emergency.review.note.label'), { target: { value: 'Review note text' } });
@@ -166,7 +187,7 @@ describe('EmergencyAccessPage – review workflow', () => {
 
   it('shows error message when reviewEmergencyAccess rejects', async () => {
     mockReview.mockRejectedValue(new Error('Review service unavailable'));
-    render(<EmergencyAccessPage />);
+    render(<EmergencyReviewsPage />);
 
     fireEvent.change(screen.getByLabelText('emergency.reviewEventId.label'), { target: { value: 'evt-1' } });
     fireEvent.change(screen.getByLabelText('emergency.review.note.label'), { target: { value: 'Some review note' } });

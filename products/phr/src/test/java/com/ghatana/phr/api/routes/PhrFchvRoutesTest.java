@@ -15,16 +15,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Enforcement matrix tests for {@link PhrFchvRoutes}.
  *
- * <p>Verifies that FCHV endpoints enforce caregiver-or-admin role policy:
+ * <p>Verifies that FCHV endpoints enforce FCHV-or-admin role policy:
  * <ul>
- *   <li>Caregiver may access FCHV dashboard and patient endpoints.</li>
+ *   <li>FCHV principals may access FCHV dashboard and patient endpoints.</li>
  *   <li>Admin may access all FCHV endpoints.</li>
  *   <li>Patient and clinician may NOT access FCHV dashboard.</li>
  *   <li>400 is returned when required context headers are absent.</li>
  * </ul>
  *
  * @doc.type class
- * @doc.purpose FCHV enforcement matrix: verifies caregiver-or-admin role policy on FCHV routes
+ * @doc.purpose FCHV enforcement matrix: verifies FCHV-or-admin role policy on FCHV routes
  * @doc.layer product
  * @doc.pattern Test
  */
@@ -42,7 +42,7 @@ class PhrFchvRoutesTest extends EventloopTestBase {
     @DisplayName("200 — caregiver may access FCHV dashboard")
     void caregiverMayAccessFchvDashboard() throws Exception {
         HttpRequest request = contextRequest(
-            HttpMethod.GET, "/dashboard", "t1", "fchv-1", "caregiver");
+            HttpMethod.GET, "/dashboard", "t1", "fchv-1", "fchv");
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -86,7 +86,7 @@ class PhrFchvRoutesTest extends EventloopTestBase {
     @DisplayName("200 — caregiver may access an FCHV patient record")
     void caregiverMayAccessFchvPatient() throws Exception {
         HttpRequest request = contextRequest(
-            HttpMethod.GET, "/patients/patient-1", "t1", "fchv-1", "caregiver");
+            HttpMethod.GET, "/patients/patient-1", "t1", "fchv-1", "fchv");
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
 

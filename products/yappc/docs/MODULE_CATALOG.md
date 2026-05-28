@@ -1,7 +1,7 @@
 # YAPPC Module Catalog
 
 **Status:** Authoritative  
-**Last Updated:** 2026-03-24  
+**Last Updated:** 2026-05-28  
 **Owner:** Architecture Team
 
 This is the single source of truth for every active YAPPC module. Every module has
@@ -77,8 +77,8 @@ another module, or pending removal.
 |-------------|-----------|------|-------|
 | `:products:yappc:core:ai` | `core/ai/` | **capability** | LLM integration: prompt templates, model clients, completion strategies. |
 | `:products:yappc:core:agents` | `core/agents/` | **capability** | Aggregator for all agent modules. Exposes unified agent API. |
-| `:products:yappc:core:agents:runtime` | `core/agents/runtime/` | **capability** | Agent execution runtime (ActiveJ). ⚠️ `TODO(ADAPTER-SEAM)`: direct AEP dep. |
-| `:products:yappc:core:agents:workflow` | `core/agents/workflow/` | **capability** | Multi-step SDLC workflow engine. ⚠️ `TODO(ADAPTER-SEAM)`: direct data-cloud dep. |
+| `:products:yappc:core:agents:runtime` | `core/agents/runtime/` | **capability** | Agent execution runtime (ActiveJ). Uses `infrastructure:aep` seam for AEP runtime/contracts. |
+| `:products:yappc:core:agents:workflow` | `core/agents/workflow/` | **capability** | Multi-step SDLC workflow engine. Uses platform workflow/database abstractions; no direct Data-Cloud dependency. |
 | `:products:yappc:core:agents:common` | `core/agents/common/` | **capability** | Shared agent utilities and base types. |
 | `:products:yappc:core:agents:code-specialists` | `core/agents/code-specialists/` | **capability** | Code analysis, language experts, debug agents. |
 | `:products:yappc:core:agents:delivery-specialists` | `core/agents/delivery-specialists/` | **capability** | Release, DevOps, compliance, security agents. |
@@ -90,10 +90,9 @@ another module, or pending removal.
 | `:products:yappc:core:scaffold:templates` | `core/scaffold/templates/` | **capability** | Template models, errors, IO, RCA, docs. |
 | `:products:yappc:core:scaffold:engine` | `core/scaffold/engine/` | **capability** | AI, cache, config, telemetry orchestration. |
 | `:products:yappc:core:scaffold:generators` | `core/scaffold/generators/` | **capability** | Language generators, pack/plugin/CI generators. |
-| `:products:yappc:core:knowledge-graph` | `core/knowledge-graph/` | **capability** | Knowledge graph engine. ⚠️ `TODO(ADAPTER-SEAM)`: direct data-cloud dep. |
+| `:products:yappc:core:knowledge-graph` | `core/knowledge-graph/` | **capability** | Knowledge graph engine. Depends on YAPPC infrastructure adapters instead of direct Data-Cloud imports. |
 | `:products:yappc:core:refactorer:api` | `core/refactorer/api/` | **capability** | Refactoring request/response contracts. |
 | `:products:yappc:core:refactorer:engine` | `core/refactorer/engine/` | **capability** | Code analysis and transformation engine. |
-| `:products:yappc:core:spi` | `core/spi/` | **compatibility** | Deprecated compatibility wrapper that re-exports `:products:yappc:core:yappc-shared`. |
 | `:products:yappc:core:cli-tools` | `core/cli-tools/` | **capability** | CLI tooling utilities. |
 
 ---
@@ -103,10 +102,9 @@ another module, or pending removal.
 | Module path | Directory | Role | Notes |
 |-------------|-----------|------|-------|
 | `:products:yappc:infrastructure:datacloud` | `infrastructure/datacloud/` | **adapter** | Data-Cloud SPI binding. Owns all `products:data-cloud:*` imports for YAPPC. |
+| `:products:yappc:infrastructure:aep` | `infrastructure/aep/` | **adapter** | AEP registry/runtime adapter seam. Owns `products:data-cloud:planes:action:*` imports for YAPPC adapter implementations. |
 
-> **TODO(Phase 4)**: An `infrastructure:aep` adapter module should be introduced to own all
-> `products:aep:*` imports currently scattered across capability modules. See `TODO(ADAPTER-SEAM)`
-> annotations in build files.
+> `infrastructure:aep` and `infrastructure:datacloud` own YAPPC's direct `products:data-cloud:*` module imports.
 
 ---
 
@@ -194,22 +192,18 @@ still actively used. They should eventually be consolidated into the canonical p
 
 ---
 
-## Pending Structural Work
+## Structural Status
 
-### Phase 4: Adapter Seam Introduction (TODO)
+### Adapter Seam Completion (Current State)
 
-The following capability modules have direct AEP/DataCloud imports that violate
-the adapter boundary rule. Each is annotated with `TODO(ADAPTER-SEAM)` in its
-`build.gradle.kts`. The remediation plan:
+Capability-module dependency seams are routed through `infrastructure:aep`
+and `infrastructure:datacloud` instead of direct `products:data-cloud:*` imports
+inside core capability modules.
 
-1. Define port interfaces in YAPPC (e.g., `AgentRuntimePort`, `DataStorePort`, `OperatorCatalogPort`)
-2. Create `infrastructure:aep` adapter module implementing those ports
-3. Update capability modules to use port interfaces instead of direct AEP/DC imports
-
-| Module | Violating dep | Future fix |
-|--------|--------------|------------|
-| `core:agents` | `aep:aep-registry`, `aep:aep-agent-runtime` | Use `AgentRegistryPort` |
-| `core:agents:runtime` | `aep:aep-agent-runtime`, `data-cloud:spi`, `aep:aep-operator-contracts` | Use `AgentRuntimePort`, `DataStorePort`, `OperatorCatalogPort` |
-| `core:agents:workflow` | `data-cloud:spi` | Use `DataStorePort` |
-| `core:knowledge-graph` | `data-cloud:platform` | Use `DataStorePort` |
-| `core:yappc-services` | `data-cloud:platform` | Use `DataStorePort` |
+| Module | Dependency status | Notes |
+|--------|-------------------|-------|
+| `core:agents` | resolved | Uses AgentRegistryPort/AgentRuntimePort seams; no direct AEP module dependency |
+| `core:agents:runtime` | resolved | Uses `infrastructure:aep`; no direct action-plane dependency |
+| `core:agents:workflow` | resolved | Uses platform abstractions without direct Data-Cloud module dependency |
+| `core:knowledge-graph` | resolved | Uses `core:yappc-infrastructure` adapter seam |
+| `core:yappc-services` | resolved | Uses `infrastructure:aep` and `infrastructure:datacloud` seams |

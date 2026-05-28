@@ -2,6 +2,9 @@ package com.ghatana.phr.api.routes;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
+import com.ghatana.phr.kernel.service.FchvCommunityAssignmentService;
+import com.ghatana.phr.kernel.service.TreatmentRelationshipService;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
@@ -51,6 +54,12 @@ class PhrConsentRoutesTest extends EventloopTestBase {
     @Mock
     private ConsentManagementService consentService;
 
+    @Mock
+    private TreatmentRelationshipService treatmentRelationshipService;
+
+    @Mock
+    private FchvCommunityAssignmentService fchvCommunityAssignmentService;
+
     private AsyncServlet servlet;
 
     private static final String GRANT_BODY = """
@@ -69,7 +78,11 @@ class PhrConsentRoutesTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        servlet = new PhrConsentRoutes(eventloop(), consentService).getServlet();
+        servlet = new PhrConsentRoutes(
+            eventloop(),
+            consentService,
+            new PhrPolicyEvaluator(consentService, treatmentRelationshipService, fchvCommunityAssignmentService)
+        ).getServlet();
 
         // Stub read-only operations used across multiple tests — lenient because
         // not every test invokes every read path.
@@ -95,7 +108,7 @@ class PhrConsentRoutesTest extends EventloopTestBase {
         @Test
         @DisplayName("201 — patient may create their own grant")
         void patientMayCreateOwnGrant() throws Exception {
-            HttpRequest request = contextRequestWithBody(HttpMethod.POST, "/grants", "t1", "patient-1", "patient", GRANT_BODY);
+            HttpRequest request = contextRequestWithBody(HttpMethod.POST, "/grants", "tenant-1", "patient-1", "patient", GRANT_BODY);
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -106,7 +119,7 @@ class PhrConsentRoutesTest extends EventloopTestBase {
         @Test
         @DisplayName("201 — admin may create grant for any patient")
         void adminMayCreateGrantForAnyPatient() throws Exception {
-            HttpRequest request = contextRequestWithBody(HttpMethod.POST, "/grants", "t1", "admin-1", "admin", GRANT_BODY);
+            HttpRequest request = contextRequestWithBody(HttpMethod.POST, "/grants", "tenant-1", "admin-1", "admin", GRANT_BODY);
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -116,7 +129,7 @@ class PhrConsentRoutesTest extends EventloopTestBase {
         @Test
         @DisplayName("403 — clinician may NOT create consent grants")
         void clinicianMayNotCreateGrant() throws Exception {
-            HttpRequest request = contextRequestWithBody(HttpMethod.POST, "/grants", "t1", "dr-1", "clinician", GRANT_BODY);
+            HttpRequest request = contextRequestWithBody(HttpMethod.POST, "/grants", "tenant-1", "dr-1", "clinician", GRANT_BODY);
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -126,7 +139,7 @@ class PhrConsentRoutesTest extends EventloopTestBase {
         @Test
         @DisplayName("403 — caregiver may NOT create consent grants")
         void caregiverMayNotCreateGrant() throws Exception {
-            HttpRequest request = contextRequestWithBody(HttpMethod.POST, "/grants", "t1", "cg-1", "caregiver", GRANT_BODY);
+            HttpRequest request = contextRequestWithBody(HttpMethod.POST, "/grants", "tenant-1", "cg-1", "caregiver", GRANT_BODY);
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -163,7 +176,7 @@ class PhrConsentRoutesTest extends EventloopTestBase {
         @DisplayName("200 — patient may revoke their own grant")
         void patientMayRevokeOwnGrant() throws Exception {
             HttpRequest request = contextRequest(
-                HttpMethod.POST, "/grants/grant-42/revoke?patientId=patient-1", "t1", "patient-1", "patient");
+                HttpMethod.POST, "/grants/grant-42/revoke?patientId=patient-1", "tenant-1", "patient-1", "patient");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -175,7 +188,7 @@ class PhrConsentRoutesTest extends EventloopTestBase {
         @DisplayName("200 — admin may revoke any grant")
         void adminMayRevokeGrant() throws Exception {
             HttpRequest request = contextRequest(
-                HttpMethod.POST, "/grants/grant-42/revoke?patientId=patient-1", "t1", "admin-1", "admin");
+                HttpMethod.POST, "/grants/grant-42/revoke?patientId=patient-1", "tenant-1", "admin-1", "admin");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -186,7 +199,7 @@ class PhrConsentRoutesTest extends EventloopTestBase {
         @DisplayName("403 — clinician may NOT revoke consent grants")
         void clinicianMayNotRevoke() throws Exception {
             HttpRequest request = contextRequest(
-                HttpMethod.POST, "/grants/grant-42/revoke?patientId=patient-1", "t1", "dr-1", "clinician");
+                HttpMethod.POST, "/grants/grant-42/revoke?patientId=patient-1", "tenant-1", "dr-1", "clinician");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -197,7 +210,7 @@ class PhrConsentRoutesTest extends EventloopTestBase {
         @DisplayName("403 — caregiver may NOT revoke consent grants")
         void caregiverMayNotRevoke() throws Exception {
             HttpRequest request = contextRequest(
-                HttpMethod.POST, "/grants/grant-42/revoke?patientId=patient-1", "t1", "cg-1", "caregiver");
+                HttpMethod.POST, "/grants/grant-42/revoke?patientId=patient-1", "tenant-1", "cg-1", "caregiver");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -208,7 +221,7 @@ class PhrConsentRoutesTest extends EventloopTestBase {
         @DisplayName("400 — missing patientId query parameter")
         void returns400WhenPatientIdMissing() throws Exception {
             HttpRequest request = contextRequest(
-                HttpMethod.POST, "/grants/grant-42/revoke", "t1", "patient-1", "patient");
+                HttpMethod.POST, "/grants/grant-42/revoke", "tenant-1", "patient-1", "patient");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -227,7 +240,7 @@ class PhrConsentRoutesTest extends EventloopTestBase {
         void patientMayCheckConsent() throws Exception {
             HttpRequest request = contextRequest(
                 HttpMethod.GET, "/check?patientId=patient-1&accessorId=clinician-1&resourceType=labs",
-                "t1", "patient-1", "patient");
+                "tenant-1", "patient-1", "patient");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -239,7 +252,7 @@ class PhrConsentRoutesTest extends EventloopTestBase {
         void clinicianMayCheckConsent() throws Exception {
             HttpRequest request = contextRequest(
                 HttpMethod.GET, "/check?patientId=patient-1&accessorId=clinician-1&resourceType=labs",
-                "t1", "clinician-1", "clinician");
+                "tenant-1", "clinician-1", "clinician");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -249,7 +262,7 @@ class PhrConsentRoutesTest extends EventloopTestBase {
         @Test
         @DisplayName("400 — missing required query parameters")
         void returns400WhenQueryParamsMissing() throws Exception {
-            HttpRequest request = contextRequest(HttpMethod.GET, "/check", "t1", "patient-1", "patient");
+            HttpRequest request = contextRequest(HttpMethod.GET, "/check", "tenant-1", "patient-1", "patient");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -267,7 +280,7 @@ class PhrConsentRoutesTest extends EventloopTestBase {
         @DisplayName("200 — patient may list own grants")
         void patientMayListOwnGrants() throws Exception {
             HttpRequest request = contextRequest(
-                HttpMethod.GET, "/?patientId=patient-1", "t1", "patient-1", "patient");
+                HttpMethod.GET, "/?patientId=patient-1", "tenant-1", "patient-1", "patient");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -278,7 +291,7 @@ class PhrConsentRoutesTest extends EventloopTestBase {
         @DisplayName("200 — admin may list grants for any patient")
         void adminMayListGrants() throws Exception {
             HttpRequest request = contextRequest(
-                HttpMethod.GET, "/?patientId=patient-1", "t1", "admin-1", "admin");
+                HttpMethod.GET, "/?patientId=patient-1", "tenant-1", "admin-1", "admin");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -289,7 +302,7 @@ class PhrConsentRoutesTest extends EventloopTestBase {
         @DisplayName("403 — clinician may NOT list patient grants directly")
         void clinicianMayNotListPatientGrants() throws Exception {
             HttpRequest request = contextRequest(
-                HttpMethod.GET, "/?patientId=patient-1", "t1", "dr-1", "clinician");
+                HttpMethod.GET, "/?patientId=patient-1", "tenant-1", "dr-1", "clinician");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
@@ -299,7 +312,7 @@ class PhrConsentRoutesTest extends EventloopTestBase {
         @Test
         @DisplayName("400 — missing patientId query parameter")
         void returns400WhenPatientIdMissing() throws Exception {
-            HttpRequest request = contextRequest(HttpMethod.GET, "/", "t1", "patient-1", "patient");
+            HttpRequest request = contextRequest(HttpMethod.GET, "/", "tenant-1", "patient-1", "patient");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 

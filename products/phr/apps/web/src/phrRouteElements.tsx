@@ -61,7 +61,6 @@ const routeElements: Record<PhrRoutePath, React.ReactElement> = {
   '/provider/patients': <ProviderPatientsPage />,
   '/caregiver/dependents': <CaregiverDependentsPage />,
   '/fchv/dashboard': <FchvDashboardPage />,
-  '/mobile/dashboard': <DashboardPage />,
 };
 
 export function attachPhrRouteElement(route: PhrRouteContract): PhrRouteManifestEntry {
@@ -70,14 +69,12 @@ export function attachPhrRouteElement(route: PhrRouteContract): PhrRouteManifest
     throw new Error(`PHR route element is missing for path ${route.path}`);
   }
 
-  // R-010: Enforce feature visibility centrally
-  // Feature-flagged routes render a placeholder instead of the actual page
-  // Blocked routes render forbidden page
-  // Hidden routes are excluded from navigation but still accessible
   const finalElement = route.featureFlag
     ? <FeatureFlagPage routePath={route.path} />
     : route.stability === 'blocked'
     ? <ForbiddenPage />
+    : route.stability === 'hidden'
+    ? <NotFoundPage />
     : element;
 
   return {

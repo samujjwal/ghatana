@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Button, Card, CardContent, CardHeader, Input } from '@ghatana/design-system';
-import { requestEmergencyAccess } from '../api/phrApi';
+import { requestEmergencyAccess } from '../api/emergencyApi';
+import { usePhrAccess } from '../auth/PhrAccessContext';
 import { t } from '../i18n/phrI18n';
 import { logError } from '../utils/safeLogger';
 import type { EmergencyAccessEvent } from '../types';
 
-// Hard-coded context for demo; production wires from auth session.
-const DEMO_CONTEXT = { tenantId: 'tenant-health-1', principalId: 'current', role: 'clinician' };
-
 export function EmergencyAccessPage(): React.ReactElement {
+  const { tenantId, principalId, role } = usePhrAccess();
+  const apiContext = useMemo(() => ({ tenantId, principalId, role }), [tenantId, principalId, role]);
   // Emergency access request fields
   const [patientId, setPatientId] = useState<string>('');
   const [reason, setReason] = useState<string>('');
@@ -35,7 +35,7 @@ export function EmergencyAccessPage(): React.ReactElement {
     try {
       const result = await requestEmergencyAccess(
         { patientId: patientId.trim(), reason: reason.trim(), clinicianId: clinicianId.trim() },
-        DEMO_CONTEXT,
+        apiContext,
       );
       setRequestResult(result);
       setPatientId('');

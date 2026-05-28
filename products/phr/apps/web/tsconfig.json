@@ -17,6 +17,7 @@
     "types": ["vite/client", "node", "react", "react-dom", "vitest/globals"],
     "paths": {
       "@/*": ["src/*"],
+      "@ghatana/charts": ["../../../../platform/typescript/charts/src/index.ts"],
       "@ghatana/product-shell": ["../../../../platform/typescript/product-shell/src/index.ts"]
     }
   },

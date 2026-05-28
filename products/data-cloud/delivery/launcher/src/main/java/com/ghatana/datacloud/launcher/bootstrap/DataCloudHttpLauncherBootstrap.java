@@ -27,6 +27,7 @@ import com.ghatana.datacloud.launcher.DataCloudLauncherSettings;
 import com.ghatana.datacloud.launcher.DataCloudTransportStartupException;
 import com.ghatana.datacloud.launcher.audit.EventLogAuditService;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
+import com.ghatana.datacloud.launcher.learning.AgentLearningAuditBridge;
 import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
 import com.ghatana.datacloud.launcher.settings.JdbcSettingsStore;
 import com.ghatana.datacloud.spi.EntityWriteIdempotencyStore;
@@ -88,7 +89,10 @@ public final class DataCloudHttpLauncherBootstrap {
     }
 
     static void start(DataCloudClient client, Logger log, Map<String, String> env) throws UnknownHostException {
-        start(client, log, env, DataCloudBrainModule::createStandalone, DataCloudLearningBridge::new);
+        start(client, log, env, DataCloudBrainModule::createStandalone, (brain) -> {
+            AgentLearningAuditBridge auditBridge = new AgentLearningAuditBridge(null);
+            return new DataCloudLearningBridge(brain, auditBridge);
+        });
     }
 
     static void start(

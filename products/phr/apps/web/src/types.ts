@@ -10,7 +10,7 @@ export interface PatientProfile {
 export interface PatientRecordSummary {
   id: string;
   title: string;
-  category: 'visit' | 'lab' | 'immunization' | 'medication';
+  category: 'visit' | 'lab' | 'immunization' | 'medication' | 'clinical';
   updatedAt: string;
   resourceType: string;
   fhirJson: string;
@@ -30,6 +30,8 @@ export interface AppointmentSummary {
   specialty: string;
   startsAt: string;
   location: string;
+  status?: 'requested' | 'confirmed' | 'completed' | 'cancelled';
+  reminderSent?: boolean;
 }
 
 export interface LabResultSummary {
@@ -46,6 +48,7 @@ export interface MedicationSummary {
   dosage: string;
   schedule: string;
   adherence: number;
+  status?: 'active' | 'history' | 'stopped';
 }
 
 export interface DashboardData {
@@ -172,7 +175,7 @@ export interface EmergencyReviewRequest {
 export interface PhrSession {
   principalId: string;
   tenantId: string;
-  role: 'patient' | 'caregiver' | 'clinician' | 'admin';
+  role: 'patient' | 'caregiver' | 'fchv' | 'clinician' | 'admin';
   name: string;
   expiresAt: string;
 }
@@ -223,7 +226,7 @@ export interface ConditionSummary {
   display: string;
   /** ICD-10 or SNOMED code. */
   code?: string;
-  status: 'active' | 'resolved' | 'inactive';
+  status: 'active' | 'resolved' | 'chronic';
   onsetDate?: string;
   resolvedDate?: string;
   icdCode?: string;
@@ -236,7 +239,7 @@ export interface ObservationSummary {
   name: string;
   value: string;
   unit?: string;
-  status: 'normal' | 'abnormal' | 'pending';
+  status: 'normal' | 'attention' | 'critical' | 'abnormal' | 'pending';
   recordedAt: string;
   /** ISO date of observation; aliases `recordedAt` for wire response compatibility. */
   effectiveDate: string;
@@ -256,7 +259,7 @@ export interface ImmunizationSummary {
   lotNumber?: string;
   site?: string;
   cvxCode?: string;
-  status?: string;
+  status?: 'completed' | 'not-done' | 'entered-in-error' | 'due';
 }
 
 // ─── Documents ────────────────────────────────────────────────────────────────
@@ -264,9 +267,9 @@ export interface ImmunizationSummary {
 export interface DocumentSummary {
   id: string;
   title: string;
-  category: 'lab' | 'referral' | 'discharge' | 'imaging' | 'other';
+  category?: 'lab' | 'referral' | 'discharge' | 'imaging' | 'other';
   uploadedAt: string;
-  mimeType: string;
+  mimeType?: string;
   sizeKb?: number;
   /** MIME content-type for display (e.g. "application/pdf"). */
   contentType?: string;

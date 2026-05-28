@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
-import { fetchDocuments, downloadDocument } from '../api/phrApi';
+import { fetchDocuments, downloadDocument } from '../api/documentsApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import { logError } from '../utils/safeLogger';
