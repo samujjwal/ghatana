@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 public final class PhrPolicyEvaluator {
 
     private static final Logger LOG = LoggerFactory.getLogger(PhrPolicyEvaluator.class);
+    private static final String PATIENT_RECORD_RESOURCE = "patient-record";
 
     private final ConsentManagementService consentService;
     private final TreatmentRelationshipService treatmentRelationshipService;
@@ -105,11 +106,9 @@ public final class PhrPolicyEvaluator {
 
         // Caregiver role: requires active consent grant with proper scope
         if ("caregiver".equals(role)) {
-            return consentService.validateAccess(patientId, principalId, "*")
+            return consentService.validateAccess(patientId, principalId, PATIENT_RECORD_RESOURCE)
                 .map(result -> {
                     if (result.isAllowed()) {
-                        // Check if consent scope includes the requested resource type
-                        // For now, we use "*" as a wildcard - in production, this would check specific resource types
                         return PolicyDecision.allowed("CAREGIVER_CONSENT_GRANTED", 
                             "Valid caregiver consent grant exists with appropriate scope");
                     }
@@ -128,13 +127,10 @@ public final class PhrPolicyEvaluator {
 
         // Admin role: requires audit justification and proper authorization
         if ("admin".equals(role)) {
-            // Admin access is allowed but requires audit logging
-            // The audit justification should be provided via a separate header or parameter
-            // For now, we allow access but mark it as requiring audit
-            LOG.info("Admin PHI access - requires audit logging. principalId={}, patientId={}, correlationId={}",
+            LOG.warn("Admin PHI access denied without route-level justification. principalId={}, patientId={}, correlationId={}",
                 principalId, patientId, context.correlationId());
-            return Promise.of(PolicyDecision.allowedWithAudit("ADMIN_ACCESS", 
-                "Admin access requires audit justification and logging"));
+            return Promise.of(PolicyDecision.denied("ADMIN_JUSTIFICATION_REQUIRED",
+                "Admin PHI access requires explicit justification"));
         }
 
         // FCHV role: requires community assignment
@@ -149,66 +145,6 @@ public final class PhrPolicyEvaluator {
         LOG.warn("Unknown role attempted PHI access - denying. role={}, principalId={}, patientId={}, correlationId={}",
             role, principalId, patientId, context.correlationId());
         return Promise.of(PolicyDecision.denied("UNKNOWN_ROLE", "Unknown role: " + role));
-    }
-
-    /**
-     * Synchronous version of canAccessPatientRecord for backward compatibility.
-     *
-     * <p>Note: This method does not perform full policy checks for caregivers and clinicians
-     * as those require async service calls. Use canAccessPatientRecordAsync for full policy evaluation.</p>
-     *
-     * <p>This method is deprecated and will be removed in a future version.
-     * All routes should migrate to the async version.</p>
-     *
-     * @param context the PHR request context
-     * @param patientId the target patient ID
-     * @return true if PHI access is provisionally allowed (service layer must verify)
-     * @deprecated Use canAccessPatientRecordAsync for full policy evaluation
-     */
-    @Deprecated
-    public boolean canAccessPatientRecord(PhrRequestContext context, String patientId) {
-        if (context == null) {
-            return false;
-        }
-
-        String principalId = context.principalId();
-        if (principalId == null) {
-            return false;
-        }
-
-        String role = context.role();
-
-        // Patient role: can only access own records
-        if ("patient".equals(role)) {
-            return principalId.equals(patientId);
-        }
-
-        // Caregiver role: requires consent verification (service layer)
-        if ("caregiver".equals(role)) {
-            // Consent is verified by the service layer - policy gate allows access
-            return true;
-        }
-
-        // Clinician role: requires treatment relationship (service layer)
-        if ("clinician".equals(role)) {
-            // Treatment relationship is verified by the service layer
-            return true;
-        }
-
-        // Admin role: requires audit trail (service layer)
-        if ("admin".equals(role)) {
-            // Admin access is logged and requires justification
-            return true;
-        }
-
-        // FCHV role: community health volunteer access
-        if ("fchv".equals(role)) {
-            // FCHV access is scoped to assigned community members
-            return true;
-        }
-
-        // Unknown role: fail closed
-        return false;
     }
 
     /**
@@ -274,28 +210,6 @@ public final class PhrPolicyEvaluator {
             principalId, patientId, context.correlationId());
         return Promise.of(PolicyDecision.emergencyOverride("ADMIN_EMERGENCY", 
             "Admin emergency access - requires post-hoc justification"));
-    }
-
-    /**
-     * Synchronous version of emergency access check for backward compatibility.
-     *
-     * @param context the PHR request context
-     * @return policy decision with detailed reason
-     * @deprecated Use canAccessEmergency with patientId and justification for full policy evaluation
-     */
-    @Deprecated
-    public PolicyDecision canAccessEmergency(PhrRequestContext context) {
-        if (context == null) {
-            return PolicyDecision.denied("INVALID_CONTEXT", "Request context is null");
-        }
-
-        String role = context.role();
-        // Only clinicians and admins can request emergency access
-        if ("clinician".equals(role) || "admin".equals(role)) {
-            return PolicyDecision.allowed("EMERGENCY_ELIGIBLE", "Role eligible for emergency access");
-        }
-        
-        return PolicyDecision.denied("EMERGENCY_NOT_ELIGIBLE", "Only clinicians and admins can request emergency access");
     }
 
     /**

@@ -1,6 +1,6 @@
 # YAPPC Route Docs
 
-> Auto-generated from `src/routes.ts` and `products/yappc/docs/api/route-manifest.yaml` on 2026-05-26.
+> Auto-generated from `src/routes.ts` and `products/yappc/docs/api/route-manifest.yaml` on 2026-05-27.
 > Run `node scripts/generate-route-inventory.mjs` to regenerate.
 
 ## Summary

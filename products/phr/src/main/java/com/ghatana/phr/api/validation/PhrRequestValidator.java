@@ -4,6 +4,7 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
+import org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -24,7 +25,10 @@ public final class PhrRequestValidator {
     private static final Validator VALIDATOR;
 
     static {
-        try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
+        try (ValidatorFactory factory = Validation.byDefaultProvider()
+                .configure()
+                .messageInterpolator(new ParameterMessageInterpolator())
+                .buildValidatorFactory()) {
             VALIDATOR = factory.getValidator();
         }
     }

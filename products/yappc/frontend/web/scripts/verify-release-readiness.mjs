@@ -48,10 +48,10 @@ const requiredEvidence = [
     area: 'preview',
     files: [
       'products/yappc/frontend/web/src/components/studio/__tests__/LivePreviewPanel.test.tsx',
-      'products/yappc/frontend/web/src/routes/app/project/__tests__/PhaseStatusPanels.test.tsx',
+      'products/yappc/frontend/web/src/routes/app/project/__tests__/PhaseStatusPanelsCanonical.test.tsx',
       'products/yappc/frontend/web/src/services/compiler/__tests__/ArtifactCompilerRuntimeHealth.test.ts',
     ],
-    execute: 'pnpm --filter @ghatana/yappc-web-app test -- src/components/studio/__tests__/LivePreviewPanel.test.tsx src/routes/app/project/__tests__/PhaseStatusPanels.test.tsx src/services/compiler/__tests__/ArtifactCompilerRuntimeHealth.test.ts',
+    execute: 'pnpm --filter @ghatana/yappc-web-app test -- src/components/studio/__tests__/LivePreviewPanel.test.tsx src/routes/app/project/__tests__/PhaseStatusPanelsCanonical.test.tsx src/services/compiler/__tests__/ArtifactCompilerRuntimeHealth.test.ts',
   },
   {
     area: 'preview-edge-security',

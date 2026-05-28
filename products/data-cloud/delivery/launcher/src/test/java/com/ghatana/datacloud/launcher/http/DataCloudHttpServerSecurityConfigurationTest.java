@@ -17,47 +17,77 @@ class DataCloudHttpServerSecurityConfigurationTest {
 
     @Test
     @DisplayName("fails fast when auth is missing in non-local profiles")
-    void failsFastWhenAuthMissingInNonLocalProfile() { 
-        Logger logger = mock(Logger.class); 
+    void failsFastWhenAuthMissingInNonLocalProfile() {
+        Logger logger = mock(Logger.class);
 
-        assertThatThrownBy(() -> DataCloudHttpServer.validateSecurityConfiguration(false, true, logger)) 
-            .isInstanceOf(IllegalStateException.class) 
-            .hasMessage("Security filter must be configured for non-local profiles. Call withApiKeyResolver() or withJwtProvider().");
+        assertThatThrownBy(() -> DataCloudHttpServer.validateSecurityConfiguration(false, true, "staging", logger))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("Authentication is REQUIRED in deployment profile 'staging'. " +
+                "Production/staging/sovereign profiles must configure authentication. " +
+                "Call withApiKeyResolver() or withJwtProvider().");
 
-        verifyNoInteractions(logger); 
+        verifyNoInteractions(logger);
     }
 
     @Test
     @DisplayName("warns when auth is missing in local profile")
-    void warnsWhenAuthMissingInLocalProfile() { 
-        Logger logger = mock(Logger.class); 
+    void warnsWhenAuthMissingInLocalProfile() {
+        Logger logger = mock(Logger.class);
 
-        assertThatCode(() -> DataCloudHttpServer.validateSecurityConfiguration(false, false, logger)) 
-            .doesNotThrowAnyException(); 
+        assertThatCode(() -> DataCloudHttpServer.validateSecurityConfiguration(false, false, "local", logger))
+            .doesNotThrowAnyException();
 
         verify(logger).warn("Running without authentication — LOCAL profile only.");
     }
 
     @Test
     @DisplayName("accepts configured authentication in non-local profiles")
-    void acceptsConfiguredAuthenticationInNonLocalProfile() { 
-        Logger logger = mock(Logger.class); 
+    void acceptsConfiguredAuthenticationInNonLocalProfile() {
+        Logger logger = mock(Logger.class);
 
-        assertThatCode(() -> DataCloudHttpServer.validateSecurityConfiguration(true, true, logger)) 
-            .doesNotThrowAnyException(); 
+        assertThatCode(() -> DataCloudHttpServer.validateSecurityConfiguration(true, true, "staging", logger))
+            .doesNotThrowAnyException();
 
-        verifyNoInteractions(logger); 
+        verifyNoInteractions(logger);
     }
 
     @Test
     @DisplayName("accepts configured JWT authentication in non-local profiles")
-    void acceptsConfiguredJwtAuthenticationInNonLocalProfile() { 
-        Logger logger = mock(Logger.class); 
+    void acceptsConfiguredJwtAuthenticationInNonLocalProfile() {
+        Logger logger = mock(Logger.class);
 
-        assertThatCode(() -> DataCloudHttpServer.validateSecurityConfiguration(true, true, logger)) 
-            .doesNotThrowAnyException(); 
+        assertThatCode(() -> DataCloudHttpServer.validateSecurityConfiguration(true, true, "production", logger))
+            .doesNotThrowAnyException();
 
-        verifyNoInteractions(logger); 
+        verifyNoInteractions(logger);
+    }
+
+    @Test
+    @DisplayName("fails fast when auth is missing in production profile")
+    void failsFastWhenAuthMissingInProductionProfile() {
+        Logger logger = mock(Logger.class);
+
+        assertThatThrownBy(() -> DataCloudHttpServer.validateSecurityConfiguration(false, false, "production", logger))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("Authentication is REQUIRED in deployment profile 'production'. " +
+                "Production/staging/sovereign profiles must configure authentication. " +
+                "Call withApiKeyResolver() or withJwtProvider().");
+
+        verifyNoInteractions(logger);
+    }
+
+    @Test
+    @DisplayName("fails fast when auth is missing in sovereign profile")
+    void failsFastWhenAuthMissingInSovereignProfile() {
+        Logger logger = mock(Logger.class);
+
+        assertThatThrownBy(() -> DataCloudHttpServer.validateSecurityConfiguration(false, false, "sovereign", logger))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("Authentication is REQUIRED in deployment profile 'sovereign'. " +
+                "Production/staging/sovereign profiles must configure authentication. " +
+                "Call withApiKeyResolver() or withJwtProvider().");
+
+        verifyNoInteractions(logger);
     }
 
     @Test

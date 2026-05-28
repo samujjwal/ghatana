@@ -73,6 +73,7 @@ dependencies {
 
     // JSON processing
     implementation(libs.bundles.jackson.json)
+    implementation(libs.hibernate.validator)
 
     // Database
     implementation(libs.bundles.database.core)

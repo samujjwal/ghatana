@@ -13,29 +13,26 @@ Planes = product architecture
 Surfaces = user/API entry points
 Modules = implementation
 Runtime truth = live/degraded/unavailable state of planes and surfaces
-AEP = separate adaptive event intelligence platform that may use Data-Cloud storage through public contracts or stable SPI
+Action Plane = Data Cloud's governed automation runtime (formerly AEP)
 ```
 
 ## Positioning
 
 Data Cloud is a governed operational data fabric where trusted data, durable storage-plane events, governed context, intelligence substrate, policy evidence, and pluggable persistence run together.
 
-It should not be positioned as CEP or EventCloud. AEP is the separate adaptive event intelligence platform. Data-Cloud may provide persistence plugins used by AEP's EventCloud, but Data-Cloud does not own EventCloud, PatternSpec/EPL, operator-runtime, pattern learning/adaptation, or agent orchestration.
+The Action Plane (formerly AEP) is integrated within Data Cloud as the governed automation runtime, providing event-driven agent orchestration, pattern detection, pipeline execution, HITL review, and learning loops.
 
 ```text
-Data-Cloud product
+Data Cloud product
   governed data/storage substrate
   public contracts and stable SPI
-    optional persistence plugins used by AEP
-
-AEP product
-  EventCloud
-  PatternSpec/EPL
-  EventOperatorCapability runtime
-  adaptive learning and pattern governance
+  Action Plane runtime (governed automation)
+    Event-driven agent orchestration
+    Pattern detection and learning
+    Pipeline execution
+    HITL review workflows
+    Runtime observability
 ```
-
-During migration, AEP implementation modules may remain under `products/data-cloud/planes/action/*`. Treat this as a temporary code-location reality, not product ownership. Data-Cloud planes still must not import AEP semantics, and AEP integration with Data-Cloud must go through public contracts or stable SPI.
 
 ## Plane Model
 
@@ -49,7 +46,7 @@ During migration, AEP implementation modules may remain under `products/data-clo
 | Context Plane | Lineage, provenance, freshness, semantic context, memory, RAG, and retrieval grounding | Context details, lineage, memory, RAG | `planes/context` |
 | Intelligence Plane | Schema inference, query assistance, recommendations, anomaly detection, classification, summarization, and ML substrate | Query assist, insights, recommendations | `planes/intelligence` |
 | Governance Plane | Tenant isolation, authorization, policy, privacy, retention, redaction, legal hold, audit, and compliance evidence | Trust, audit, policy, privacy actions | `planes/governance` |
-| Action Plane | AEP-powered compatibility and migration area for persisted action metadata, review evidence, policy evidence, audit evidence, storage integrations, and AEP integration adapters | Pipelines, agents, reviews, runs, learning metadata | `planes/action` during boundary cleanup; adaptive event-processing semantics belong to AEP |
+| Action Plane | Governed automation runtime providing event-driven agent orchestration, pattern detection, pipeline execution, HITL review, learning loops, and runtime observability | Pipelines, agents, reviews, runs, learning metadata | `planes/action` |
 | Operations Plane | Metrics, traces, logs, alerts, backup, restore, compaction, readiness, and operational diagnostics | Operations, alerts, health | `planes/operations` |
 
 ## Navigation Model
@@ -152,12 +149,12 @@ products/data-cloud/
 | `platform-analytics/` | `planes/intelligence/analytics/` | Intelligence | Query, reports, analytics |
 | `platform-governance/` | `planes/governance/core/` | Governance | Governance and policy support |
 | `platform-config/` | `planes/operations/config/` | Operations | Runtime configuration model |
-| `aep/operator-contracts/` | `planes/action/operator-contracts/` | Action | Compatibility area; AEP operator semantics should move to AEP-owned contracts/specs |
-| `aep/engine/` | `planes/action/engine/` | Action | Compatibility area for existing runtime code; PatternSpec and operator runtime semantics are AEP-owned |
-| `aep/orchestrator/` | `planes/action/orchestrator/` | Action | Compatibility area for orchestration code; agent orchestration semantics are AEP-owned |
-| `aep/agent-runtime/` | `planes/action/agent-runtime/` | Action | Compatibility area; EventOperatorCapability runtime semantics are AEP-owned |
-| `aep/event-cloud-bridge/` | `planes/action/event-bridge/` | Action/Event | Persistence bridge only; EventCloud semantics are AEP-owned |
-| `aep/server/` | `planes/action/server/` | Action/Delivery | Compatibility server during boundary cleanup |
+| `aep/operator-contracts/` | `planes/action/operator-contracts/` | Action | Action Plane operator contracts and extension interfaces |
+| `aep/engine/` | `planes/action/engine/` | Action | Pattern detection and adaptive learning engine |
+| `aep/orchestrator/` | `planes/action/orchestrator/` | Action | Pipeline and agent orchestration runtime |
+| `aep/agent-runtime/` | `planes/action/agent-runtime/` | Action | Agent execution context and lifecycle management |
+| `aep/event-cloud-bridge/` | `planes/action/event-bridge/` | Action/Event | Event bridge between Data Cloud Event Plane and Action Plane |
+| `aep/server/` | `planes/action/server/` | Action/Delivery | Action Plane HTTP server and API handlers |
 | `platform-api/` | `delivery/api/` | Delivery | Data Cloud API handlers and route adapters |
 | `platform-launcher/` | `delivery/runtime-composition/` | Delivery | Runtime composition across planes |
 | `launcher/` | `delivery/launcher/` | Delivery | Process entry point and transport handlers |
@@ -174,20 +171,18 @@ products/data-cloud/
 
 ```text
 delivery/runtime-composition may compose Data-Cloud planes.
-Data-Cloud AEP integration may depend on public contracts/SPI from data, event, context, governance, and operations.
-planes/data, planes/event, planes/context, and planes/governance must not depend on planes/action internals or AEP modules.
+Action Plane runtime may depend on public contracts/SPI from data, event, context, governance, and operations.
+planes/data, planes/event, planes/context, and planes/governance must not depend on planes/action implementation internals.
 delivery/ui must depend on generated clients and frontend adapters, not backend internals.
 extensions must depend on contracts/SPI, not launcher internals.
 contracts must not depend on implementation modules.
-AEP may use Data-Cloud storage plugins through stable SPI.
-Data-Cloud must not import AEP modules, PatternSpec/EPL, EventOperator runtime, or adaptive learning semantics.
 ```
 
 Allowed direction:
 
 ```text
 Experience -> Contract -> Planes
-AEP integration -> Data/Event/Context/Governance public contracts
+Action Plane runtime -> Data/Event/Context/Governance public contracts
 Planes -> Operations telemetry contracts
 Delivery composition -> all planes
 ```
@@ -195,11 +190,10 @@ Delivery composition -> all planes
 Forbidden direction:
 
 ```text
-Data/Event/Context/Governance -> Action implementation or AEP modules
+Data/Event/Context/Governance -> Action Plane implementation internals
 Contracts -> runtime implementation
 SDK -> launcher or server internals
 UI -> backend implementation modules
-Data-Cloud -> PatternSpec/EPL/EventOperator runtime
 ```
 
 ## Shared Platform Review Rules
@@ -217,7 +211,7 @@ The module is infrastructure rather than product behavior.
 Move or split into Data Cloud when:
 
 ```text
-The module exists mainly for Data-Cloud storage plus AEP integration.
+The module exists mainly for Data Cloud or Action Plane functionality.
 The types describe Data Cloud planes or Action Plane semantics.
 The implementation is product behavior, not cross-product infrastructure.
 ```
@@ -226,9 +220,9 @@ Initial candidates:
 
 | Platform Module | Recommendation |
 | --- | --- |
-| `platform:java:agent-core` | Keep minimal generic interfaces in platform; move AEP-specific runtime, dispatch, review, and EventOperatorCapability semantics to AEP. Data-Cloud may keep persistence models only. |
-| `platform:java:workflow` | Keep generic workflow primitives if other products use them; keep Data-Cloud persistence metadata separate from AEP runtime semantics. |
-| `platform:java:messaging` | Keep generic messaging abstractions in platform; move Data-Cloud storage-plane event routing into `planes/event`; keep EventCloud semantics in AEP. |
+| `platform:java:agent-core` | Keep minimal generic interfaces in platform; move Action Plane-specific runtime, dispatch, review, and EventOperatorCapability semantics to `planes/action`. Data-Cloud may keep persistence models only. |
+| `platform:java:workflow` | Keep generic workflow primitives if other products use them; keep Data-Cloud persistence metadata separate from Action Plane runtime semantics. |
+| `platform:java:messaging` | Keep generic messaging abstractions in platform; move Data-Cloud storage-plane event routing into `planes/event`; keep Action Plane event semantics in `planes/action`. |
 | `platform:java:ai-integration` | Keep provider abstractions in platform; move query assist, schema inference, recommendations, and action suggestions into `planes/intelligence`. |
 | `platform:java:data-governance` | Keep generic policy primitives if reused; move retention, redaction, provenance, and evidence implementations into `planes/governance`. |
 | `platform:contracts` | Move Data Cloud and Action Plane OpenAPI/schemas into `products/data-cloud/contracts`. |
@@ -240,12 +234,11 @@ Initial candidates:
 3. Move docs into `docs/product`, `docs/architecture`, `docs/api`, `docs/operations`, `docs/migration`, and `docs/audits`.
 4. Move low-risk deployment assets into `deploy`.
 5. Move current Data Cloud core modules into `planes/*` without package renames.
-6. Isolate AEP-owned semantics from Data-Cloud planes behind public contracts and stable SPI.
+6. Ensure Action Plane runtime uses public contracts/SPI from Data Cloud planes.
 7. Move delivery modules into `delivery/*`.
 8. Move plugin/catalog/bridge modules into `extensions/*`.
 9. Add architecture checks for forbidden dependencies.
 10. Rename Java packages after Gradle/module paths stabilize.
-11. Move or document AEP-owned runtime modules under `products/aep` when build/module boundaries are ready.
 
 ## Naming Rules
 

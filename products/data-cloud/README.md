@@ -2,7 +2,7 @@
 
 Data Cloud is Ghatana's governed operational data fabric. It unifies trusted operational data, metadata, schemas, durable storage-plane events, governed context, intelligence substrate, policy evidence, and pluggable persistence.
 
-The product is organized by planes, not capability areas. AEP is a separate adaptive event intelligence platform. Data-Cloud may provide storage plugins used by AEP's EventCloud, but Data-Cloud does not own EventCloud, CEP semantics, PatternSpec/EPL, pattern learning, or agent orchestration.
+The product is organized by planes, not capability areas. Data Cloud is the single customer-facing product. The Action Plane runtime (formerly AEP) is integrated within Data Cloud under `products/data-cloud/planes/action`, providing governed automation, pipelines, patterns, agents, reviews, runs, and learning.
 
 ## Canonical Docs
 
@@ -57,7 +57,7 @@ The active repository layout is plane-based.
 | `planes/intelligence/analytics/`, `planes/intelligence/feature-ingest/` | Intelligence Plane |
 | `planes/governance/core/` | Governance Plane |
 | `planes/operations/config/` | Operations Plane |
-| `planes/action/*` | Compatibility and migration area for AEP-related integration; adaptive event semantics belong to AEP |
+| `planes/action/*` | Action Plane runtime implementation providing governed automation, pipelines, patterns, agents, reviews, runs, and learning |
 | `delivery/api/`, `delivery/launcher/`, `delivery/runtime-composition/`, `delivery/sdk/`, `delivery/ui/` | Delivery and Experience surfaces |
 | `extensions/connectors/`, `extensions/plugins/`, `extensions/agent-catalog/`, `extensions/agent-registry/`, `extensions/kernel-bridge/` | Extension modules |
 | `deploy/helm/`, `deploy/k8s/`, `deploy/terraform/` | Deployment assets |

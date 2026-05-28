@@ -12,6 +12,7 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Button, IconButton } from '@ghatana/design-system';
 import { getSurfaceSignal, useSurfaceRegistry } from '../api/surfaces.service';
 import {
@@ -90,42 +91,42 @@ function formatRunTime(timestamp?: string): string {
     return new Date(timestamp).toLocaleString();
 }
 
-function getWorkflowFocusLabel(workflow: Workflow): {
+function getWorkflowFocusLabel(workflow: Workflow, t: (key: string) => string): {
     title: string;
     description: string;
     tone: 'attention' | 'healthy' | 'draft';
 } {
     if (workflow.status === 'paused') {
         return {
-            title: 'Resume or archive',
-            description: 'This pipeline is paused. Decide whether it should resume or leave the active queue.',
+            title: t('workflows.resumeOrArchive'),
+            description: t('workflows.resumeOrArchiveDesc'),
             tone: 'attention',
         };
     }
 
     if (workflow.status === 'draft') {
         return {
-            title: 'Finish the first run',
+            title: t('workflows.finishFirstRun'),
             description: workflow.lastExecutedAt
-                ? 'Review the draft and promote it when the current flow is ready.'
-                : 'This draft has not been run yet. Validate the outcome and schedule before promotion.',
+                ? t('workflows.finishFirstRunDescExecuted')
+                : t('workflows.finishFirstRunDescNotExecuted'),
             tone: 'draft',
         };
     }
 
     if (workflow.status === 'archived') {
         return {
-            title: 'Reference only',
-            description: 'Keep this pipeline archived unless a previous flow needs to be restored or compared.',
+            title: t('workflows.referenceOnly'),
+            description: t('workflows.referenceOnlyDesc'),
             tone: 'healthy',
         };
     }
 
     return {
-        title: workflow.lastExecutedAt ? 'Check the latest outcome' : 'Run the first execution',
+        title: workflow.lastExecutedAt ? t('workflows.checkLatestOutcome') : t('workflows.runFirstExecution'),
         description: workflow.lastExecutedAt
-            ? 'Active pipeline. Confirm the most recent run completed the intended outcome.'
-            : 'Active pipeline with no recorded execution yet. Trigger an initial run before broad rollout.',
+            ? t('workflows.checkLatestOutcomeDesc')
+            : t('workflows.runFirstExecutionDesc'),
         tone: workflow.lastExecutedAt ? 'healthy' : 'attention',
     };
 }
@@ -418,6 +419,7 @@ function WorkflowActions({ workflow }: { workflow: Workflow }) {
  * Optimized Workflows Page Component
  */
 export function WorkflowsPage() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -599,21 +601,21 @@ export function WorkflowsPage() {
             {/* Pipelines list */}
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
                 {isLoading ? (
-                    <LoadingState message="Loading pipelines..." />
+                    <LoadingState message={t('loading.pipelines')} />
                 ) : workflows.length === 0 ? (
                     <EmptyState
-                        title="No workflows found"
+                        title={t('workflows.noWorkflowsFound')}
                         description={
                             searchQuery || statusFilter !== 'all'
-                                ? 'Try adjusting your filters'
-                                : 'Create your first workflow to get started'
+                                ? t('workflows.tryAdjustingFilters')
+                                : t('workflows.createFirstWorkflow')
                         }
                         icon={<WorkflowIcon className="h-12 w-12 text-gray-400 mb-4" />}
                     />
                 ) : (
                     <div className="divide-y divide-gray-200 dark:divide-gray-700">
                         {visibleWorkflows.map((workflow) => {
-                            const focus = getWorkflowFocusLabel(workflow);
+                            const focus = getWorkflowFocusLabel(workflow, t);
 
                             return (
                                 <div
@@ -772,13 +774,13 @@ export function WorkflowsPage() {
                         </div>
 
                         <div className="space-y-4">
-                            <div className={cn('rounded-xl border px-4 py-3', getWorkflowToneClass(getWorkflowFocusLabel(selectedWorkflow).tone))}>
+                            <div className={cn('rounded-xl border px-4 py-3', getWorkflowToneClass(getWorkflowFocusLabel(selectedWorkflow, t).tone))}>
                                 <div className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
-                                    {getWorkflowToneIcon(getWorkflowFocusLabel(selectedWorkflow).tone)}
-                                    {getWorkflowFocusLabel(selectedWorkflow).title}
+                                    {getWorkflowToneIcon(getWorkflowFocusLabel(selectedWorkflow, t).tone)}
+                                    {getWorkflowFocusLabel(selectedWorkflow, t).title}
                                 </div>
                                 <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                                    {getWorkflowFocusLabel(selectedWorkflow).description}
+                                    {getWorkflowFocusLabel(selectedWorkflow, t).description}
                                 </p>
                             </div>
 

@@ -17,6 +17,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router';
 import { Lock, AlertCircle, ExternalLink, CheckCircle, XCircle, Settings } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/theme';
 
 /**
@@ -69,10 +70,11 @@ export const DisabledSurfacePage = React.memo(function DisabledSurfacePage({
   dependencies = [],
   nextAction,
   remediationLink,
-  actionHint = 'Contact your administrator to enable this capability.',
+  actionHint,
   className,
   'data-testid': testId,
 }: DisabledSurfacePageProps): React.ReactElement {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const getStatusIcon = () => {
@@ -104,13 +106,13 @@ export const DisabledSurfacePage = React.memo(function DisabledSurfacePage({
   const getStatusText = () => {
     switch (status) {
       case 'DEGRADED':
-        return 'is degraded';
+        return t('disabledSurface.degraded');
       case 'UNAVAILABLE':
-        return 'is unavailable';
+        return t('disabledSurface.unavailable');
       case 'MISCONFIGURED':
-        return 'is misconfigured';
+        return t('disabledSurface.misconfigured');
       default:
-        return 'is not available';
+        return t('disabledSurface.disabled');
     }
   };
 
@@ -160,17 +162,17 @@ export const DisabledSurfacePage = React.memo(function DisabledSurfacePage({
         )}
 
         <p className="mt-3 text-sm text-gray-500 dark:text-gray-500">
-          {status === 'DISABLED' && 'This capability is not enabled in your current Data Cloud configuration. '}
-          {status === 'DEGRADED' && 'This capability is currently degraded due to dependency issues. '}
-          {status === 'UNAVAILABLE' && 'This capability is currently unavailable due to missing or failed dependencies. '}
-          {status === 'MISCONFIGURED' && 'This capability is misconfigured and requires configuration updates. '}
-          {nextAction || actionHint}
+          {status === 'DISABLED' && t('disabledSurface.disabledMessage') + ' '}
+          {status === 'DEGRADED' && t('disabledSurface.degradedMessage') + ' '}
+          {status === 'UNAVAILABLE' && t('disabledSurface.unavailableMessage') + ' '}
+          {status === 'MISCONFIGURED' && t('disabledSurface.misconfiguredMessage') + ' '}
+          {nextAction || actionHint || t('disabledSurface.contactAdmin')}
         </p>
 
         {dependencies.length > 0 && (
           <div className="mt-6 rounded-lg bg-gray-50 dark:bg-gray-800 p-4 text-left">
             <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
-              Affected Dependencies
+              {t('disabledSurface.affectedDependencies')}
             </h3>
             <ul className="space-y-2">
               {dependencies.map((dep, index) => (
@@ -194,7 +196,7 @@ export const DisabledSurfacePage = React.memo(function DisabledSurfacePage({
         {nextAction && (
           <div className="mt-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 p-4">
             <h3 className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-1">
-              Next Action
+              {t('disabledSurface.nextAction')}
             </h3>
             <p className="text-sm text-blue-800 dark:text-blue-400">{nextAction}</p>
           </div>
@@ -209,7 +211,7 @@ export const DisabledSurfacePage = React.memo(function DisabledSurfacePage({
               className="inline-flex items-center gap-1 text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
             >
               <ExternalLink className="h-4 w-4" />
-              View remediation documentation
+              {t('disabledSurface.viewRemediation')}
             </a>
           </div>
         )}
@@ -226,7 +228,7 @@ export const DisabledSurfacePage = React.memo(function DisabledSurfacePage({
               'transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500'
             )}
           >
-            Go back
+            {t('disabledSurface.goBack')}
           </button>
           <button
             type="button"
@@ -238,7 +240,7 @@ export const DisabledSurfacePage = React.memo(function DisabledSurfacePage({
               'transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500'
             )}
           >
-            Go to Home
+            {t('disabledSurface.goToHome')}
           </button>
         </div>
       </div>

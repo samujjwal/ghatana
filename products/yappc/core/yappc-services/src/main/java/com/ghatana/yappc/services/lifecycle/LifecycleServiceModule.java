@@ -53,6 +53,7 @@ import com.ghatana.yappc.services.evolve.LifecycleApiExecutionDispatcher;
 import com.ghatana.yappc.services.generate.GenerationService;
 import com.ghatana.yappc.services.generate.GenerationAssuranceService;
 import com.ghatana.yappc.services.generate.GenerationServiceImpl;
+import com.ghatana.yappc.services.generate.AiHealthProvider;
 import com.ghatana.yappc.services.kernel.KernelProductUnitHandoffService;
 import com.ghatana.yappc.services.intent.IntentService;
 import com.ghatana.yappc.services.intent.IntentServiceImpl;
@@ -286,6 +287,7 @@ public class LifecycleServiceModule extends AbstractModule {
             MetricsCollector metrics,
             GenerationRunRepository generationRunRepository,
             ObjectMapper objectMapper,
+            AiHealthProvider aiHealthProvider,
             GenerationAssuranceService generationAssuranceService) {
         logger.info("Creating GenerationService");
         return new GenerationServiceImpl(
@@ -294,8 +296,14 @@ public class LifecycleServiceModule extends AbstractModule {
                 metrics,
                 generationRunRepository,
                 objectMapper,
-                com.ghatana.yappc.services.generate.AiHealthProvider.alwaysHealthy(),
+                aiHealthProvider,
                 generationAssuranceService);
+    }
+
+    /** Provides the runtime AI health signal used by generation fallback logic. */
+    @Provides
+    AiHealthProvider aiHealthProvider() {
+        return new com.ghatana.yappc.services.generate.EnvironmentAiHealthProvider();
     }
 
     /** Provides Generate assurance checks. */

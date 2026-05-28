@@ -11,40 +11,18 @@
  */
 
 import { Suspense } from 'react';
-import { useCapabilityGate } from '../../../hooks/useCapabilityGate';
 import { RouteLoadingSpinner } from '../../../components/route/LoadingSpinner';
 import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
 import { PromptVersionsPage } from '../../../components/admin/PromptVersionsPage';
-
-function AdminGate({ children }: { children: React.ReactNode }) {
-  const { granted, reason } = useCapabilityGate('admin:prompt-versions');
-
-  if (!granted) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center space-y-2">
-          <p className="text-fg-muted text-sm">
-            {reason === 'insufficient-role'
-              ? 'You do not have permission to access this page.'
-              : reason === 'unauthenticated'
-              ? 'Please log in to access this page.'
-              : 'This feature is not yet available.'}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
-}
+import { AdminRouteGate } from './AdminRouteGate';
 
 export function Component() {
   return (
-    <AdminGate>
+    <AdminRouteGate capability="admin:prompt-versions" deniedTestId="admin-prompt-versions-unavailable">
       <Suspense fallback={<RouteLoadingSpinner />}>
         <PromptVersionsPage className="min-h-screen bg-surface" />
       </Suspense>
-    </AdminGate>
+    </AdminRouteGate>
   );
 }
 

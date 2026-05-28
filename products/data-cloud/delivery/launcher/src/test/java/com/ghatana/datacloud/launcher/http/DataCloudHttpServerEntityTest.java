@@ -72,10 +72,11 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
     }
 
     @Override
-    protected void startServer() throws Exception { 
-        server = new DataCloudHttpServer(mockClient, port); 
-        server.start(); 
-        waitForServerReady(TestConstants.TIMEOUT_SERVER_START_MS); 
+    protected void startServer() throws Exception {
+        server = new DataCloudHttpServer(mockClient, port)
+                .withDeploymentMode("local");
+        server.start();
+        waitForServerReady(TestConstants.TIMEOUT_SERVER_START_MS);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -386,22 +387,28 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
 
         @Test
         @DisplayName("returns 200 with deletedCount when ids are provided")
-        void batchDelete_withIds_returns200() throws Exception { 
+        void batchDelete_withIds_returns200() throws Exception {
+            DataCloudClient.Entity entity1 = DataCloudClient.Entity.of("id-1", "products", Map.of("name", "product1"));
+            DataCloudClient.Entity entity2 = DataCloudClient.Entity.of("id-2", "products", Map.of("name", "product2"));
+            when(mockClient.findById(eq(TestConstants.TENANT_DEFAULT), eq("products"), eq("id-1")))
+                    .thenReturn(Promise.of(Optional.of(entity1)));
+            when(mockClient.findById(eq(TestConstants.TENANT_DEFAULT), eq("products"), eq("id-2")))
+                    .thenReturn(Promise.of(Optional.of(entity2)));
             when(mockClient.delete(anyString(), eq("products"), anyString()))
-                    .thenReturn(Promise.of((Void) null)); 
-            when(mockClient.appendEvent(anyString(), any())).thenReturn(Promise.of(DataCloudClient.Offset.of(1))); 
+                    .thenReturn(Promise.of((Void) null));
+            when(mockClient.appendEvent(anyString(), any())).thenReturn(Promise.of(DataCloudClient.Offset.of(1)));
 
-            startServer(); 
+            startServer();
 
             // Use dry-run mode to avoid token requirement
-            HttpRequest req = HttpRequest.newBuilder() 
-                    .method("DELETE", HttpRequest.BodyPublishers.ofString( 
+            HttpRequest req = HttpRequest.newBuilder()
+                    .method("DELETE", HttpRequest.BodyPublishers.ofString(
                             "{\"ids\":[\"id-1\",\"id-2\"],\"dryRun\":true}"))
-                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/entities/products/batch")) 
-                    .header("Content-Type", "application/json") 
-                    .header("X-Tenant-Id", TestConstants.TENANT_DEFAULT) 
-                    .build(); 
-            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
+                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/entities/products/batch"))
+                    .header("Content-Type", "application/json")
+                    .header("X-Tenant-ID", TestConstants.TENANT_DEFAULT)
+                    .build();
+            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
 
             assertThat(resp.statusCode()).isEqualTo(200);
             // Verify dry-run response structure

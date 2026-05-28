@@ -194,10 +194,11 @@ function normalizeSurfaceEntry(key: string, rawValue: unknown): SurfaceSignal {
 
 async function fetchFromSurfaces(): Promise<SurfaceRegistrySnapshot> {
   // DC-P1.12: Use canonical /surfaces endpoint only; /capabilities compatibility alias removed.
+  // Backend returns surfaces as an array of SurfaceRecord objects (P0 fix).
   const rawResponse = await apiClient.get<unknown>("/surfaces");
   const envelope = SurfaceRegistryEnvelopeSchema.parse(rawResponse);
-  const surfaces = Object.entries(envelope.data.surfaces)
-    .map(([key, value]) => normalizeSurfaceEntry(key, value))
+  const surfaces = envelope.data.surfaces
+    .map((record) => normalizeSurfaceEntry(record.surfaceId, record))
     .sort((a, b) => a.label.localeCompare(b.label));
   return {
     generatedAt: envelope.data.generatedAt,

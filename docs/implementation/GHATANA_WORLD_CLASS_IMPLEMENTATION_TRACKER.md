@@ -1,488 +1,512 @@
-Below is the reorganized backlog for commit `2103f84ea84043fb22febf30b5e2fe0d4c4e4c05`, grouped by **file/set of related files** so each group can be implemented and verified together with the smallest reasonable number of verification passes.
+## 1. Executive Summary
 
-The current state is materially ahead of the previous audit: more PHR web routes/pages now exist, route elements map them, mobile API calls now send session headers, and mobile PHI storage has an encrypted-storage adapter.     
+I audited the repository at commit `495d21bcd79a5cdb8b6af3197ce981b086344895` using the repo connector. I did **not** run Gradle, pnpm, Playwright, or CI locally, so this is a deterministic source-code/docs/config audit, not an executed test report. The commit was resolved successfully from `samujjwal/ghatana`. 
 
----
+**Overall production-readiness score: 2.4 / 5.0**
 
-# Verification Strategy
+Data Cloud has a serious foundation: plane-based architecture, generated module registration, runtime surface concepts, UI route registry, role-disclosed navigation, typed backend surface records, tenant-context resolution, and broad Data Cloud/AEP/agent modules. But it is **not production-ready yet** because key contracts drift, product boundary decisions conflict, security/observability/reliability are still optional in critical places, and multiple important surfaces are preview/boundary/gated rather than complete end-to-end.
 
-Use **verification batches**, not one-off checks per task.
+### Top blockers
 
-| Batch                       | Verifies                                                                                     | Run after completing |
-| --------------------------- | -------------------------------------------------------------------------------------------- | -------------------- |
-| V1 Route contract parity    | JSON contract, TS route manifest, route elements, backend entitlements, shell nav            | Groups 1–2           |
-| V2 Security/policy          | PHI access, consent, treatment relationship, FCHV scope, emergency, no legacy role shortcuts | Group 3              |
-| V3 Mobile PHI/privacy       | encryption, cache clear, session restore/logout, biometric policy, mobile API headers        | Group 4              |
-| V4 Web API + page behavior  | API contracts, route rendering, loading/error/empty/access states, no raw text               | Groups 5–7           |
-| V5 Backend API contract     | route validation, idempotency, errors, correlation IDs, scoped PHI reads/writes              | Group 8              |
-| V6 Kernel/YAPPC integration | Kernel-owned route/policy/contracts and YAPPC generator alignment                            | Groups 9–10          |
-| V7 Full PHR smoke           | Auth → dashboard → records → consent → docs → emergency → audit → mobile cache               | Final pass           |
-
-No evidence generation tasks are included here; release evidence can be handled later.
-
----
-
-# 0. Tasks to Remove From Previous Backlog Because Current Code Already Moved
-
-These are **not done enough for production**, but the original task wording should change.
-
-| Old task                                            | Current state                                                                                                | New task location                            |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------- |
-| “Create encrypted mobile PHI storage”               | `offlineStore.ts` now uses `phiEncryptedStorage`, and `phiEncryptedStorage.ts` implements AES-GCM adapter.   | Replace with Group 4 correctness fixes.      |
-| “Pass session headers to mobile dashboard”          | `fetchDashboardFromApi(session)` now sends tenant/principal/role/correlation headers.                        | Keep only coverage/negative tests.           |
-| “Add mobile i18n helper”                            | `phrMobileI18n.ts` exists with EN/NE locale dictionaries.                                                    | Keep locale persistence/raw text cleanup.    |
-| “Add route elements for profile/timeline/docs/etc.” | `phrRouteElements.tsx` maps many new pages.                                                                  | Keep functional completion and parity tasks. |
-| “Add route contract JSON”                           | `products/phr/config/phr-route-contract.json` exists.                                                        | Keep canonicalization/parity tasks.          |
+1. **Runtime Truth API contract is broken between backend and frontend.** Backend returns `surfaces` as a list of `SurfaceRecord` maps, while the UI schema expects `surfaces` as a record/object map. This can break surface gating and route availability.  
+2. **Canonical product boundary is inconsistent.** README and plane architecture say AEP is separate and Data Cloud must not own AEP semantics, while the unified product vision says AEP is no longer a separate customer-facing product and is the Action Plane runtime.   
+3. **Production security is structurally present but too dependent on optional wiring.** API-key resolver, JWT provider, audit service, policy engine, transaction manager, idempotency stores, metrics, and trace export are optional or default to local/no-op/in-memory behavior.   
+4. **UI shell role is explicitly disclosure-only**, so every backend route must independently enforce authorization; the audit found good request-context infrastructure, but not enough proof that every action route is policy-enforced end-to-end. 
+5. **Several major product surfaces are preview/boundary rather than complete.** Agents, memory, entities, context, fabric, alerts are preview; settings is boundary.  
+6. **Action Plane API direction is documented but not fully normalized.** The HLD says canonical Action Plane APIs should be `/api/v1/action/*`, while legacy AEP-backed endpoints may remain temporarily. 
+7. **Observability exists as a design goal, but runtime export is optional.** Metrics default to no-op unless configured, and trace export can generate spans but discard them if no service is attached.  
+8. **Audio-video is moduleized but not proven as a first-class Data Cloud modality.** The generated registry includes audio-video modules, and STT/multimodal services depend on governance/security/audit/observability pieces, but inspected files do not prove integration into Data Cloud catalog, events, pipelines, agents, or AEP workflows.   
+9. **Docs and module classification drift.** README says API contract and integration-test modules are advisory, but the active-module script has an empty advisory set and marks those modules release-blocking.  
+10. **i18n is incomplete.** The UI still has raw labels/descriptions and raw loading text in route/app code.  
 
 ---
 
-# 1. Route Contract, Route Elements, Routing, Product Shell
+## 2. Scope Inspected
 
-## Files
+Inspected representative canonical docs, module registries, UI routing/runtime truth code, backend runtime truth/security/server composition code, and audio-video module build files:
 
-* `products/phr/config/phr-route-contract.json`
-* `products/phr/apps/web/src/phrRouteContracts.ts`
-* `products/phr/apps/web/src/phrRouteElements.tsx`
-* `products/phr/apps/web/src/routes.tsx`
-* `products/phr/apps/web/src/layout/PhrProductShell.tsx`
-* `products/phr/apps/web/src/auth/PhrAccessContext.tsx`
-
-## Current Findings
-
-The TS route manifest is still hand-maintained and duplicates JSON. It also contains lifecycle fields that support deprecation/removal/migration notes, which conflicts with the fix-forward/no-deprecation direction. 
-
-`phrRouteElements.tsx` maps expanded routes, but `/emergency/reviews` still maps to `EmergencyAccessPage`, not a dedicated admin review page. 
-
-`PhrAccessContext.tsx` supports only `patient | caregiver | clinician | admin`, while backend route support allows `fchv`.  
-
-`PhrProductShell.tsx` requests entitlements with role/persona/tier but does **not** include tenant/principal/correlation headers, while backend entitlement route now fails closed if identity headers are missing.  
-
-## Tasks
-
-| ID    | Action                                                          | File(s)                                                                   | Expected change                                                                                                                                  |
-| ----- | --------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| R-001 | Delete deprecated/removal/migration route lifecycle fields.     | `phrRouteContracts.ts`, `phr-route-contract.json`                         | Remove `deprecatedAt`, `removedAt`, `migrationNotes`, and any `deprecated` stability. Use only `stable`, `preview`, `blocked`, `hidden`.         |
-| R-002 | Make JSON route contract the canonical source.                  | `phr-route-contract.json`, generated `phrRouteContracts.ts`               | Stop hand-maintaining duplicated route objects in TS. Generate TS from JSON or load typed generated output.                                      |
-| R-003 | Add route-contract schema validation.                           | New `products/phr/config/phr-route-contract.schema.json` or Kernel schema | Validate path, label key, description key, role, persona, tier, actions, cards, stability, feature visibility.                                   |
-| R-004 | Ensure TS route manifest and JSON route contract are identical. | `phrRouteContracts.ts`, `phr-route-contract.json`                         | Every route in one source must exist in the other with same role/actions/cards/stability.                                                        |
-| R-005 | Replace `/emergency/reviews` mapping.                           | `phrRouteElements.tsx`, new `EmergencyReviewsPage.tsx`                    | Map `/emergency/reviews` to dedicated review page, not `EmergencyAccessPage`.                                                                    |
-| R-006 | Add FCHV role to frontend role model.                           | `PhrAccessContext.tsx`, `PhrProductShell.tsx`, route contract             | Add `fchv` to role type/order/labels/role selector only if FCHV is intended to be selectable. Otherwise remove FCHV route from visible contract. |
-| R-007 | Send identity headers for entitlement requests.                 | `PhrProductShell.tsx`                                                     | Include `X-Tenant-Id`, `X-Principal-Id`, `X-Role`, `X-Persona`, `X-Tier`, `X-Correlation-ID` from session/access context.                        |
-| R-008 | Align shell role with authenticated session.                    | `PhrAccessContext.tsx`, `PhrSessionContext.tsx`, `PhrProductShell.tsx`    | Prevent local role selector from escalating beyond session role unless explicitly running dev/persona mode.                                      |
-| R-009 | Add catch-all route.                                            | `routes.tsx`                                                              | Unknown paths render `/not-found` or `NotFoundPage`. Current router only defines known children.                                                 |
-| R-010 | Enforce feature visibility centrally.                           | `phr-route-contract.json`, generated TS, `attachPhrRouteElement`          | Route is either implemented, hidden, blocked, or preview; no “visible but fake” production route.                                                |
-| R-011 | Add route metadata for backend endpoint IDs.                    | `phr-route-contract.json`                                                 | Each route declares expected API endpoint(s), policy ID, test ID.                                                                                |
-| R-012 | Delete backend/TS fallback route drift permanently.             | `PhrEntitlementRoutes.java`, generated files                              | Backend must fail closed if canonical route contract is missing/invalid.                                                                         |
-
-## Verification Batch V1
-
-Create one route-contract parity test that validates:
-
-* JSON schema is valid.
-* Generated TS route list equals JSON.
-* `phrRouteElements.tsx` has an element for every route.
-* Backend entitlement output equals JSON for each role.
-* Product shell entitlement request includes identity headers.
-* No deprecated/removed/migration metadata exists.
+* Data Cloud README and canonical plane/product docs.  
+* Generated Gradle module registry and active-module classifier.  
+* UI package, routes, route registry, feature gates, API client, session/token storage, and Runtime Truth client schema.   
+* Backend HTTP server, Runtime Truth handler, `SurfaceRecord`, request context resolver, and handler support.    
+* Audio-video root, multimodal, and STT build files.   
 
 ---
 
-# 2. Backend Entitlements
+## 3. Current Product Map
 
-## Files
+Data Cloud is documented as Ghatana’s governed operational data fabric, with trusted operational data, metadata, schemas, durable storage-plane events, governed context, intelligence substrate, policy evidence, and pluggable persistence. 
 
-* `products/phr/src/main/java/com/ghatana/phr/api/routes/PhrEntitlementRoutes.java`
-* `products/phr/config/phr-route-contract.json`
-* Kernel/product-shell entitlement types
+Current generated modules show Data Cloud has core planes for shared SPI, data/entity, event/core/store, operations/config, intelligence/analytics/feature-ingest, governance/core, delivery runtime/API/launcher/SDK/UI/contracts, integration tests, agent registry/catalog, kernel bridge, and a large Action Plane/AEP set under `products:data-cloud:planes:action:*`. 
 
-## Current Findings
-
-`PhrEntitlementRoutes` now attempts to load `products/phr/config/phr-route-contract.json`, which is good. But it still has a fallback route list that is stale and role order differs from JSON (`patient` starts at 1 in fallback vs 0 in JSON).  
-
-## Tasks
-
-| ID    | Action                                                                                   | File(s)                                                                   | Expected change                                                                                        |
-| ----- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| E-001 | Delete fallback route list.                                                              | `PhrEntitlementRoutes.java`                                               | If contract missing/invalid, return safe failure; do not serve partial fallback nav.                   |
-| E-002 | Delete fallback role order.                                                              | `PhrEntitlementRoutes.java`                                               | Role order must come only from canonical route contract or Kernel role registry.                       |
-| E-003 | Validate loaded route contract fields.                                                   | `PhrEntitlementRoutes.java`                                               | Reject empty path/label/minimumRole, unknown role, invalid tier, missing actions/cards arrays.         |
-| E-004 | Include `featureFlag`/visibility/stability in backend entitlement payload.               | `PhrEntitlementRoutes.java`, platform `ProductRouteEntitlement` if needed | Backend must tell UI whether a route is hidden/blocked/preview.                                        |
-| E-005 | Use tenant/principal/persona/tier in cache key.                                          | `PhrEntitlementRoutes.java`                                               | Current cache key is role-based; include tenant, principal, persona, tier, feature visibility version. |
-| E-006 | Add correlation ID in entitlement response.                                              | `PhrEntitlementRoutes.java`                                               | Response includes `correlationId`; request accepts `X-Correlation-ID`.                                 |
-| E-007 | Remove manual `HashMap` response construction if platform contract can serialize safely. | `PhrEntitlementRoutes.java`, platform contract                            | Use one canonical serializer after fixing null handling.                                               |
-| E-008 | Validate route contract load path.                                                       | `PhrEntitlementRoutes.java`                                               | Do not rely on process working directory guessing; inject config path via Kernel config/context.       |
-
-## Verification Batch V1
-
-Same V1 route parity test should cover entitlement behavior; do not create a separate verification suite.
+Audio-video is registered separately as a shared-service product with infrastructure, multimodal, STT, TTS, vision, common libs, and integration-test modules. 
 
 ---
 
-# 3. Security / Policy / Access Control
+## 4. Readiness Scorecard
 
-## Files
-
-* `products/phr/src/main/java/com/ghatana/phr/security/PhrPolicyEvaluator.java`
-* `products/phr/src/main/java/com/ghatana/phr/api/routes/PhrRouteSupport.java`
-* all PHR route adapters that read/write PHI
-* future/actual `TreatmentRelationshipService`
-* caregiver/FCHV/facility policy services
-
-## Current Findings
-
-`PhrPolicyEvaluator` is static and has permissive fallbacks: caregiver access is allowed if consent service is null; clinician access is allowed if treatment relationship service is null; admin and FCHV have broad allow paths.  
-
-`PhrRouteSupport` still contains deprecated shortcut methods and comments encouraging service-layer verification. User direction is fix-forward and delete legacy paths. 
-
-## Tasks
-
-| ID    | Action                                                                | File(s)                                                               | Expected change                                                                             |
-| ----- | --------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| S-001 | Convert `PhrPolicyEvaluator` from static utility to injected service. | `PhrPolicyEvaluator.java`, `PhrKernelModule.java`, route constructors | No static mutable service fields; routes receive evaluator instance.                        |
-| S-002 | Delete deprecated access shortcut methods.                            | `PhrRouteSupport.java`, `PhrPolicyEvaluator.java`                     | Remove `hasClinicalRole`, `canPerformAdminOperation`, sync `canAccessPatientRecord`.        |
-| S-003 | Make policy fail closed.                                              | `PhrPolicyEvaluator.java`                                             | Null consent/treatment/community services deny access.                                      |
-| S-004 | Add explicit policy result object.                                    | `PhrPolicyEvaluator.java`                                             | Return allowed/denied + reason code + audit requirement + emergency flag, not just boolean. |
-| S-005 | Add treatment relationship service.                                   | New/actual `TreatmentRelationshipService.java`                        | Clinician access requires active relationship unless emergency override.                    |
-| S-006 | Add FCHV community assignment service.                                | New `FchvCommunityAssignmentService.java` or equivalent               | FCHV access requires assigned community/patient.                                            |
-| S-007 | Add facility/tenant scope validation.                                 | `PhrRouteSupport.java`, policy evaluator                              | Request context includes facility ID; policy checks facility scope.                         |
-| S-008 | Add emergency policy branch.                                          | `PhrPolicyEvaluator.java`, emergency route/service                    | Emergency requires reason, allowed role, audit, notification, review state.                 |
-| S-009 | Add admin PHI policy.                                                 | `PhrPolicyEvaluator.java`                                             | Admin cannot read clinical PHI by role alone; needs compliance/audit workflow.              |
-| S-010 | Add caregiver consent resource/action scope.                          | `PhrPolicyEvaluator.java`, `ConsentManagementService.java`            | Caregiver must have active grant for exact resource/action.                                 |
-| S-011 | Add PHI field classification checks.                                  | Policy service + DTO/resource classifiers                             | Restricted fields never cached/exported/displayed without explicit policy.                  |
-| S-012 | Ensure every PHI route uses async policy.                             | All route adapters                                                    | No route checks role directly for PHI access.                                               |
-| S-013 | Sanitize policy denial responses.                                     | `PhrRouteSupport.java`                                                | Denials return safe code/message/correlation ID only.                                       |
-
-## Verification Batch V2
-
-One policy matrix suite:
-
-* patient own vs other patient
-* caregiver with/without grant
-* clinician with/without treatment relationship
-* admin with/without audit purpose
-* FCHV assigned/unassigned
-* emergency approved/pending/denied
-* missing policy services fail closed
-* route adapters have no direct role-only PHI authorization
+| Dimension                      |   Score | Rationale                                                                                     |
+| ------------------------------ | ------: | --------------------------------------------------------------------------------------------- |
+| Product coherence              |     3.0 | Strong plane model, but AEP boundary conflicts across canonical docs.                         |
+| Feature completeness           |     2.5 | Many modules exist, but several user-facing surfaces are preview/boundary.                    |
+| E2E workflow completeness      |     2.3 | Journeys are well designed, but code still has optional dependencies and contract drift.      |
+| Data Cloud core architecture   |     3.0 | Planes and generated modules are credible; runtime truth contract mismatch blocks readiness.  |
+| AEP architecture/integration   |     2.2 | Action modules exist, but ownership semantics conflict.                                       |
+| Agent architecture/integration |     2.0 | Agent catalog/runtime surfaces exist, but UI is preview and lifecycle evidence is incomplete. |
+| Audio-video integration        |     1.8 | Services exist, but Data Cloud modality integration is not proven.                            |
+| Shared library quality         |     2.5 | Reuse rules exist, but dependency sprawl and product-boundary leakage remain risks.           |
+| UI/UX simplicity               |     3.0 | Unified routes and gates exist, but many preview surfaces and raw strings remain.             |
+| Backend/API correctness        |     2.4 | Broad handlers exist, but `/surfaces` contract drift is P0.                                   |
+| Plugin/extensibility           |     2.7 | Plugin routes/modules exist; lifecycle/isolation/versioning still needs hardening.            |
+| Security/authorization         |     2.4 | Good resolver design, but production enforcement depends on optional wiring.                  |
+| Privacy/governance             |     2.2 | Governance modules exist; audit/policy can be optional.                                       |
+| Observability/operations       |     2.5 | Runtime truth exists; metrics/traces can be no-op/discarded.                                  |
+| Reliability/failure handling   |     2.2 | Idempotency, transactions, outbox are optional/fallback.                                      |
+| Performance/scalability        |     2.1 | Rate limiting and streaming concepts exist; load/backpressure proof is limited.               |
+| i18n readiness                 |     1.7 | Raw UI strings remain in app/routes.                                                          |
+| Accessibility readiness        |     2.5 | A11y scripts/deps exist; execution not verified here.                                         |
+| Test quality/coverage          |     2.5 | Test scripts/modules exist; contract drift proves gaps remain.                                |
+| Developer experience           |     3.2 | Generated registry, scripts, docs, Gradle tasks are strong.                                   |
+| Config/feature flags           |     3.0 | Feature gates have production-safe defaults, but behavior must align with runtime truth.      |
+| Docs/code alignment            |     1.8 | Major AEP boundary and module-classification mismatches.                                      |
+| Deployment readiness           |     2.0 | Production-critical services are optional by default.                                         |
+| Maintainability/SRP/DRY        |     2.5 | Handler extraction exists, but `DataCloudHttpServer` is still a large composition hotspot.    |
+| Overall readiness              | **2.4** | Not production-ready; ready for a hardening pass.                                             |
 
 ---
 
-# 4. Mobile PHI Storage, Session, Offline, Biometric
+## 5. Feature Completeness Matrix
 
-## Files
-
-* `products/phr/apps/mobile/src/services/phiEncryptedStorage.ts`
-* `products/phr/apps/mobile/src/services/offlineStore.ts`
-* `products/phr/apps/mobile/src/services/phrMobileApi.ts`
-* `products/phr/apps/mobile/src/services/mobileSessionStore.ts`
-* `products/phr/apps/mobile/src/App.tsx`
-* `products/phr/apps/mobile/src/screens/SettingsScreen.tsx`
-* `products/phr/apps/mobile/src/screens/EmergencyAccessScreen.tsx`
-
-## Current Findings
-
-`offlineStore.ts` now routes dashboard cache through `phiSet/phiGet/phiRemove`, which is the correct direction. 
-
-But `phiEncryptedStorage.ts` has a likely broken key export path because the generated key is non-extractable and then exported.  Also, `phiClearAll()` filters keys by a prefix that production writes do not apply.  
-
-## Tasks
-
-| ID    | Action                                                   | File(s)                                                                     | Expected change                                                                                                                   |
-| ----- | -------------------------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| M-001 | Fix AES key generation/storage.                          | `phiEncryptedStorage.ts`                                                    | Generate storable raw key bytes in SecureStore, import as non-extractable CryptoKey, or use platform-supported secure crypto API. |
-| M-002 | Fix `phiClearAll`.                                       | `phiEncryptedStorage.ts`                                                    | Prefix stored PHI keys consistently or maintain PHI key registry. Must clear all PHI.                                             |
-| M-003 | Remove recursive key-recovery loop.                      | `phiEncryptedStorage.ts`                                                    | Replace recursive `return getOrCreateKey()` after clear with bounded retry or explicit fresh initialization.                      |
-| M-004 | Remove unsafe console warnings/errors.                   | `phiEncryptedStorage.ts`                                                    | Use safe logger with no PHI/key details; include safe reason codes only.                                                          |
-| M-005 | Implement restricted-field cache sanitizer.              | `offlineStore.ts`                                                           | Comments say restricted fields are never cached; enforce before `phiSet`.                                                         |
-| M-006 | Bind offline cache to session identity.                  | `offlineStore.ts`, `phrMobileApi.ts`                                        | Cache envelope includes tenantId/principalId/role; reject cache if session differs.                                               |
-| M-007 | Add cache expiry/clear on role/persona change.           | `App.tsx`, `offlineStore.ts`                                                | Clear dashboard cache when session role changes.                                                                                  |
-| M-008 | Wire logout UI to `logoutMobile`.                        | `SettingsScreen.tsx`, `App.tsx`, `phrMobileApi.ts`                          | Explicit logout clears session + encrypted PHI.                                                                                   |
-| M-009 | Persist mobile locale.                                   | `phrMobileI18n.ts`, new locale store, `SettingsScreen.tsx`                  | `setLocale` survives app restart. Current active locale is memory-only.                                                           |
-| M-010 | Add pseudo-locale support to mobile.                     | `phrMobileI18n.ts`, locales                                                 | Match web pseudo-locale behavior.                                                                                                 |
-| M-011 | Enforce biometric policy for emergency/offline PHI.      | `EmergencyAccessScreen.tsx`, `phiEncryptedStorage.ts`, `SettingsScreen.tsx` | PHI decrypt/read requires biometric/device auth where policy enabled.                                                             |
-| M-012 | Make biometric policy default for emergency/offline PHI. | `phiEncryptedStorage.ts`                                                    | Default secure posture; user/admin policy can loosen only if allowed.                                                             |
-| M-013 | Add mobile record detail screen.                         | New `RecordDetailScreen.tsx`, records navigation                            | Records list drills into scoped/redacted detail.                                                                                  |
-| M-014 | Add consent revoke UI.                                   | `ConsentScreen.tsx`, `phrMobileApi.ts`                                      | Revoke grant and clear PHI cache. API function exists.                                                                            |
-| M-015 | Add stale/offline indicator.                             | `SettingsScreen.tsx`, `offlineStore.ts`                                     | Show last cache timestamp using `getDashboardOfflineTimestamp`.                                                                   |
-| M-016 | Add mobile raw-string cleanup.                           | `App.tsx`, `screens/*.tsx`, services                                        | All user text through `t()`.                                                                                                      |
-| M-017 | Add accessibility labels/hints.                          | Mobile screens                                                              | All Pressable/Input/tab controls have roles/labels.                                                                               |
-
-## Verification Batch V3
-
-One mobile privacy suite:
-
-* encrypt/decrypt across app restart
-* corrupt ciphertext returns null and clears
-* logout clears all PHI
-* consent revoke clears all PHI
-* session mismatch refuses cache
-* biometric enabled blocks decrypt until authenticated
-* locale persists
-* dashboard calls include headers
-* no direct AsyncStorage in PHI-bearing modules except encrypted adapter
+| Capability          | Current state                                                  | Gap                                                                                      | Severity |
+| ------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | -------- |
+| Runtime Truth       | Backend has typed `SurfaceRecord`; UI has runtime gate/client. | Backend returns list; frontend expects record map.                                       | P0       |
+| Data/entity         | Entity APIs, validation, export, anomaly hooks exist.          | Several capabilities depend on optional services; transaction/idempotency not mandatory. | P0/P1    |
+| Events              | Event plane/modules and event routes exist.                    | AEP/EventCloud ownership unclear; replay/tail/pattern E2E not proven.                    | P1       |
+| Query/analytics     | Analytics/query surfaces and handlers exist.                   | Trino/OpenSearch can fall back or be absent; degraded behavior needs UX/API guarantees.  | P1       |
+| Pipelines/workflows | UI routes and workflow execution capability exist.             | DATA_LOCAL vs AEP_AGENTIC lifecycle not fully proven end-to-end.                         | P1       |
+| AEP/patterns        | Action Plane modules exist.                                    | PatternSpec/EPL/adaptive learning ownership conflicts with Data Cloud docs.              | P0/P1    |
+| Agents              | Agent catalog/registry modules and preview UI exist.           | Runtime governance, memory, HITL, approval, and audit loops need completion.             | P1       |
+| Audio-video         | STT, multimodal, vision, infra modules exist.                  | Not integrated as Data Cloud dataset/event/pipeline/agent modality.                      | P1       |
+| Governance/security | Request context resolver is strong.                            | Optional auth/policy/audit wiring blocks production trust.                               | P0       |
+| UI shell            | Unified routing, lazy pages, role gates, runtime gates exist.  | Preview/boundary surfaces, raw strings, disabled behavior, route/contract drift.         | P1       |
+| Tests               | Unit/integration/e2e/a11y scripts exist.                       | Minimum contract/security/E2E tests are missing or insufficient.                         | P0/P1    |
 
 ---
 
-# 5. Web API Client and API Contract Alignment
+## 6. End-to-End Journey Analysis
 
-## Files
+| Journey                       | Status  | Main gap                                                                                    |
+| ----------------------------- | ------- | ------------------------------------------------------------------------------------------- |
+| Create/connect data source    | Partial | Connectors route exists, but connector lifecycle/plugin validation is not proven.           |
+| Ingest dataset/stream         | Partial | Entity/event modules exist; ingestion workflow is not fully user-journey complete.          |
+| Define schema/contract        | Partial | Contracts exist, but frontend/backend generated contract alignment is incomplete.           |
+| Run quality checks            | Partial | Quality concepts exist; production quality lifecycle and UI action path need hardening.     |
+| Build/run pipeline            | Partial | Pipeline UI/routes exist; run ledger, validation, rollback, policy impact need full E2E.    |
+| Detect event patterns         | Partial | AEP/action modules exist; ownership and public Action API remain unsettled.                 |
+| Adaptive feedback             | Partial | Docs define learning loops; implementation proof is incomplete.                             |
+| Trigger agent workflow        | Partial | Agent catalog/runtime exists, but preview UI and governance lifecycle gaps remain.          |
+| Process audio/video asset     | Weak    | Audio-video services exist but Data Cloud workflow integration is not demonstrated.         |
+| Search/catalog/discover data  | Partial | Data/search surfaces exist; OpenSearch is optional and may return unavailable behavior.     |
+| Govern/access/share data      | Partial | Request context exists; policy/audit must be fail-closed everywhere.                        |
+| Observe/debug failed job      | Partial | Runtime Truth and operations UI exist; metrics/traces can be no-op/discarded.               |
+| Administer plugins/config     | Partial | Plugins active; settings boundary; plugin lifecycle needs production hardening.             |
+| Normal user, 0 cognitive load | Partial | IA is improving, but preview/boundary concepts and raw route strings still leak complexity. |
 
-* `products/phr/apps/web/src/api/phrApi.ts`
-* `products/phr/apps/web/src/types.ts`
-* backend route adapters
-
-## Current Findings
-
-`phrApi.ts` now contains many DTOs/types and correlation ID helper, but it still has mojibake separator comments and uses mixed validation depth: some APIs parse with Zod, others return `as Promise<Type>`. 
-
-## Tasks
-
-| ID    | Action                                                           | File(s)                                           | Expected change                                                                                                       |
-| ----- | ---------------------------------------------------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| A-001 | Fix mojibake comments.                                           | `phrApi.ts`                                       | Replace corrupted separators with valid UTF-8 or ASCII.                                                               |
-| A-002 | Add common `buildPhrHeaders(context)` helper.                    | `phrApi.ts`                                       | Tenant/principal/role/persona/tier/correlation/idempotency centralized.                                               |
-| A-003 | Add common `safeFetchJson(schema)` helper.                       | `phrApi.ts`                                       | Every PHI response validates against schema.                                                                          |
-| A-004 | Add Zod schemas for all newly added DTOs.                        | `phrApi.ts` or shared schema package              | No unvalidated `as Promise<Type>` for PHI-bearing payloads.                                                           |
-| A-005 | Align consent create payload with backend.                       | `phrApi.ts`, `PhrConsentRoutes.java`              | Use backend’s `patientId`, `recipientId`, `scope.resourceTypes`, `scope.actions`, `expiresAt`.                        |
-| A-006 | Align document APIs with backend secure download/preview policy. | `phrApi.ts`, `DocumentsPage.tsx`, document routes | Preview/download must return safe blob/URL with audit.                                                                |
-| A-007 | Add idempotency key support for mutating APIs.                   | `phrApi.ts`                                       | Consent, appointments, upload, OCR confirm, profile update, emergency request.                                        |
-| A-008 | Add safe API error class with correlation ID.                    | `phrApi.ts`                                       | UI displays safe message + correlation ID.                                                                            |
-| A-009 | Remove production mock fallback or enforce dev/test-only.        | `phrApi.ts`, demo data                            | `USE_MOCK` must not be enabled in production bundle.                                                                  |
-| A-010 | Split monolithic API file if it blocks maintainability.          | `api/*.ts`                                        | Group `authApi`, `recordsApi`, `consentApi`, `documentsApi`, `emergencyApi`, etc. Keep one exported facade if needed. |
-
-## Verification Batch V4/V5
-
-* Web API contract tests mock server responses and assert schema validation.
-* Backend API contract tests assert expected request/response shape.
-* One mutation test verifies idempotency header is sent.
+The target journeys are well articulated in the HLD, especially data exploration, query-to-action, pipeline creation, HITL review, and degraded-surface investigation.  
 
 ---
 
-# 6. Web Page Files — Consistency and Functional Completion
+## 7. UI/UX Findings
 
-## Files
+The UI has a solid foundation: React Router, lazy-loaded pages, route guards, runtime capability gates, and compatibility routes.  
 
-* `ProfilePage.tsx`
-* `TimelinePage.tsx`
-* `DocumentsPage.tsx`
-* `DocumentUploadPage.tsx`
-* `OcrReviewPage.tsx`
-* `ConditionsPage.tsx`
-* `ObservationsPage.tsx`
-* `ImmunizationsPage.tsx`
-* `NotificationsPage.tsx`
-* `EmergencyAccessPage.tsx`
-* new `EmergencyReviewsPage.tsx`
-* provider/caregiver/FCHV pages
+Key gaps:
 
-## Current Findings
-
-`ProfilePage` has functional edit/save flow but uses raw HTML form controls instead of design-system controls and includes hardcoded option labels. 
-
-`TimelinePage` and `DocumentsPage` contain many raw strings and direct `toLocaleDateString()` formatting.    
-
-`DocumentsPage` uses `window.open` with an object URL and logs download failures directly.  
-
-## Tasks
-
-| ID    | Action                                                 | File(s)                                                                 | Expected change                                                              |
-| ----- | ------------------------------------------------------ | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| W-001 | Add shared page state components.                      | New `components/PageStates.tsx`                                         | Loading/error/empty/forbidden states reused by all pages.                    |
-| W-002 | Add safe alert/error component.                        | New `components/SafeError.tsx`                                          | Safe message + correlation ID; no raw exception details.                     |
-| W-003 | Replace raw form controls with design-system controls. | `ProfilePage.tsx`, upload/OCR/consent/appointment pages                 | Use `Input`, `Select`, `Button`, `FormField`, validation messages.           |
-| W-004 | Remove all raw strings from `TimelinePage`.            | `TimelinePage.tsx`, locale files                                        | All visible strings via `t()`.                                               |
-| W-005 | Remove all raw strings from `DocumentsPage`.           | `DocumentsPage.tsx`, locale files                                       | Titles, filters, buttons, OCR states, empty/loading/error strings via `t()`. |
-| W-006 | Replace all direct locale date formatting.             | `TimelinePage.tsx`, `DocumentsPage.tsx`, other pages                    | Use PHR date/time formatters.                                                |
-| W-007 | Replace document preview with secure internal viewer.  | `DocumentsPage.tsx`, new `DocumentViewer.tsx`                           | No unmanaged `window.open` PHI object URLs.                                  |
-| W-008 | Revoke object URLs safely.                             | `DocumentViewer.tsx`, `DocumentsPage.tsx`                               | Object URL lifecycle tracked and cleaned.                                    |
-| W-009 | Replace console errors with safe diagnostics.          | `DocumentsPage.tsx`, all web pages                                      | Safe logger/correlation only.                                                |
-| W-010 | Add document detail page.                              | New `DocumentDetailPage.tsx`, route contract                            | Metadata, versions, provenance, audit/download policy.                       |
-| W-011 | Complete OCR review UI.                                | `OcrReviewPage.tsx`                                                     | Accept/edit/reject fields, confidence badges, FHIR draft cards, confirm.     |
-| W-012 | Complete document upload validation/progress.          | `DocumentUploadPage.tsx`                                                | Type/size/progress/retry; backend-driven constraints.                        |
-| W-013 | Complete timeline detail expansion.                    | `TimelinePage.tsx`                                                      | Events link to record/document/encounter detail.                             |
-| W-014 | Complete condition detail route.                       | `ConditionsPage.tsx`, new `ConditionDetailPage.tsx`                     | Active/resolved/detail.                                                      |
-| W-015 | Complete observation trend chart and detail.           | `ObservationsPage.tsx`, new `ObservationDetailPage.tsx`                 | Date range, abnormal flags, units, provenance.                               |
-| W-016 | Complete immunization list/detail.                     | `ImmunizationsPage.tsx`                                                 | Vaccine code, status, administered date, retention indicator.                |
-| W-017 | Complete notifications privacy.                        | `NotificationsPage.tsx`                                                 | Redacted list; detail requires authenticated route.                          |
-| W-018 | Split emergency request/review UI.                     | `EmergencyAccessPage.tsx`, new `EmergencyReviewsPage.tsx`               | Clinician request vs admin review.                                           |
-| W-019 | Implement or hide provider pages.                      | `ProviderDashboardPage.tsx`, `ProviderPatientsPage.tsx`, route contract | No visible placeholder in stable route surface.                              |
-| W-020 | Implement or hide caregiver dependents.                | `CaregiverDependentsPage.tsx`, route contract                           | Dependent list/detail with grant scope.                                      |
-| W-021 | Implement or hide FCHV dashboard.                      | `FchvDashboardPage.tsx`, route contract                                 | FCHV route must match real role/policy.                                      |
-| W-022 | Add accessibility labels and keyboard behavior.        | All pages                                                               | Forms, filters, cards, buttons, tables are keyboard/screen-reader friendly.  |
-
-## Verification Batch V4
-
-One web route traversal suite:
-
-* allowed/denied persona per route
-* route renders without raw placeholder
-* loading/error/empty state
-* primary actions exist and call expected API
-* no raw text scan
-* a11y smoke per stable route
-* document preview/download safe behavior
+* **Runtime gating may fail** because `/surfaces` shape mismatches the UI schema and client normalization.  
+* **Disabled feature behavior is not always user-friendly.** `featureGatedRoute` returns NotFound when disabled, which hides whether a feature is unavailable, disabled, or not permitted. 
+* **Route registry still exposes raw labels/descriptions** instead of i18n keys. 
+* **Several important surfaces are preview**, which is acceptable for development but not for a production-grade, low-cognitive-load product. 
+* **Settings is a boundary route**, so admin/configuration is not yet production-complete. 
 
 ---
 
-# 7. Backend Route Adapters and HTTP Support
+## 8. Architecture and Boundary Findings
 
-## Files
+The architecture has the right vocabulary: planes, surfaces, modules, runtime truth, and explicit dependency rules. The canonical plane doc forbids Data/Event/Context/Governance from importing Action/AEP implementation internals and forbids Data Cloud from importing PatternSpec/EPL/EventOperator runtime semantics. 
 
-* `PhrRouteSupport.java`
-* `PhrPatientRecordRoutes.java`
-* `PhrConsentRoutes.java`
-* `PhrAdministrativeRoutes.java`
-* `PhrClinicalRoutes.java`
-* `PhrDocumentImagingRoutes.java`
-* `PhrEmergencyRoutes.java`
-* `PhrFhirRoutes.java`
-* new/needed route adapters: dashboard, mobile, profile, timeline, provider, caregiver, FCHV, audit
+However:
 
-## Tasks
-
-| ID    | Action                                                             | File(s)                                                       | Expected change                                                  |
-| ----- | ------------------------------------------------------------------ | ------------------------------------------------------------- | ---------------------------------------------------------------- |
-| B-001 | Call tenant/principal/facility validators inside `requireContext`. | `PhrRouteSupport.java`                                        | Validation helpers exist; make them part of context extraction.  |
-| B-002 | Add persona/tier/facility to request context.                      | `PhrRouteSupport.java`                                        | Policy and entitlement checks need full context.                 |
-| B-003 | Generate server correlation ID if missing.                         | `PhrRouteSupport.java`                                        | Do not use `"no-correlation-id"` fallback.                       |
-| B-004 | Use correlation-aware response helpers everywhere.                 | All route adapters                                            | Every response has correlation header.                           |
-| B-005 | Use idempotency key on mutating routes.                            | Consent, appointment, upload, OCR confirm, profile, emergency | `extractIdempotencyKey` exists; apply it.                        |
-| B-006 | Add dashboard route.                                               | New `PhrDashboardRoutes.java`                                 | Backend-owned dashboard contract.                                |
-| B-007 | Add mobile dashboard route.                                        | New `PhrMobileRoutes.java`                                    | Response matches `MobileDashboard`; enforces headers.            |
-| B-008 | Add profile route.                                                 | New `PhrPatientProfileRoutes.java` or extend existing         | Field-level edit policy and audit.                               |
-| B-009 | Add timeline route.                                                | New `PhrTimelineRoutes.java`                                  | Date/category/facility/provider filters.                         |
-| B-010 | Add condition route.                                               | New `PhrConditionRoutes.java`                                 | List/detail.                                                     |
-| B-011 | Add provider routes.                                               | New `PhrProviderRoutes.java`                                  | Dashboard, patient search, patient summary, encounter, calendar. |
-| B-012 | Add caregiver routes.                                              | New `PhrCaregiverRoutes.java`                                 | Dependent list/detail.                                           |
-| B-013 | Add FCHV routes.                                                   | New `PhrFchvRoutes.java`                                      | Community dashboard, registration, vitals capture.               |
-| B-014 | Add audit route.                                                   | New/updated `PhrAuditRoutes.java`                             | List/detail/export, admin/compliance policy.                     |
-| B-015 | Add secure document preview/download route behavior.               | `PhrDocumentImagingRoutes.java`                               | Audit and stream/download safely.                                |
-| B-016 | Add OCR review/confirm route behavior.                             | `PhrDocumentImagingRoutes.java`                               | Structured field review and FHIR draft creation.                 |
-| B-017 | Add emergency review route behavior.                               | `PhrEmergencyRoutes.java`                                     | Admin review status and notification.                            |
-| B-018 | Replace manual JSON parsing with request validators.               | Route adapters, `PhrRequestValidator.java`                    | Consistent validation and safe errors.                           |
-| B-019 | Add OpenAPI/contract source for PHR API.                           | New PHR API contract package                                  | Web/mobile clients and backend routes share contracts.           |
-
-## Verification Batch V5
-
-One backend API contract suite:
-
-* context validation
-* policy result
-* idempotency
-* correlation header
-* safe error envelope
-* route-specific request/response validation
-* PHI access matrix
+* **AEP boundary is unresolved.** One doc says AEP is separate; another says AEP is the Action Plane runtime inside Data Cloud. This must be resolved before more code movement.  
+* **Action modules are still embedded under Data Cloud**, including engine, registry, analytics, security, event bridge, agent runtime, orchestrator, server, identity, compliance, and kernel bridge. 
+* **Some kernel bridge modules are included manually outside the canonical registry**, which weakens the “generated registry is source of truth” story. 
+* **Shared-platform rules are documented but need enforcement.** The plane architecture explicitly calls out `agent-core`, `workflow`, `messaging`, `ai-integration`, `data-governance`, and `platform:contracts` as candidates needing review/splitting. 
 
 ---
 
-# 8. Kernel Platform Work Required by Current PHR State
+## 9. Security, Privacy, Governance Findings
 
-## Files / Packages
+Strong pieces exist. `RequestContextResolver` rejects tenant spoofing from headers/query params in production/staging/sovereign profiles and requires tenant identity from authenticated principal in those profiles.  
 
-* `platform/typescript/product-shell/**`
-* Kernel lifecycle/product contract packages
-* Kernel security/policy packages
-* Kernel route/entitlement contract tooling
-* root scripts/checks
+But production hardening is incomplete:
 
-## Tasks
-
-| ID    | Action                                          | Expected change                                                                                          |
-| ----- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| K-001 | Promote route contract schema to Kernel.        | PHR uses Kernel product route contract instead of product-local-only schema.                             |
-| K-002 | Add Kernel route contract generator.            | Generates TS manifest, backend entitlement data, and route docs from one contract.                       |
-| K-003 | Add Kernel product policy abstraction for PHI.  | Consent/treatment/facility/emergency/FCHV policies are modeled in Kernel, implemented/configured by PHR. |
-| K-004 | Add Kernel mobile PHI policy check.             | Ensures encrypted storage, clear-on-revoke/logout/session-expiry, biometric gating where required.       |
-| K-005 | Add Kernel no-legacy/no-deprecation route mode. | Product can opt into fix-forward route model that rejects deprecated/removed states.                     |
-| K-006 | Add Kernel request correlation primitive.       | Shared web/mobile/backend correlation ID shape and propagation helpers.                                  |
-| K-007 | Add product action contract.                    | Route actions declare endpoint, method, policy, idempotency, confirmation, visibility.                   |
-| K-008 | Add product UI state contract.                  | Each route declares loading/error/empty/forbidden requirements.                                          |
-| K-009 | Add product i18n/a11y contract.                 | Route/action/card labels and accessibility metadata are validated.                                       |
-| K-010 | Add generated artifact cleanup mode.            | Generators delete stale route/page/API artifacts instead of retaining legacy files.                      |
-
-## Verification Batch V6
-
-One Kernel product-contract suite:
-
-* route schema validates PHR
-* generated TS/backend artifacts match
-* no legacy/deprecated state allowed
-* policy contract compiles and denies by default
-* product action/UI/i18n/a11y metadata complete
+* API-key resolver is optional; if not called, the security filter is not activated. 
+* JWT provider is optional. 
+* Audit service can be null, and audit emission is silently skipped. 
+* Token storage currently supports memory/sessionStorage token storage, while the file itself says httpOnly SameSite cookies are the recommended migration target. 
+* Shell role is explicitly not backend authorization, so backend policy tests must cover every mutating/read-sensitive route. 
 
 ---
 
-# 9. YAPPC Work Required by Current PHR State
+## 10. Observability, Reliability, Performance Findings
 
-## Files / Packages
+Runtime Truth is conceptually strong. `SurfaceRecord` includes state, owner plane, dependencies, probe results, tenant scope, runtime profile, evidence, action gates, and runtime posture. 
 
-* `products/yappc/core/scaffold/api/**`
-* `products/yappc/frontend/web/src/lib/canvas-ai/**`
-* YAPPC scaffold packs/templates
-* YAPPC frontend canvas/product model
+Production gaps:
 
-## Tasks
-
-| ID    | Action                                                               | Expected change                                                             |
-| ----- | -------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| Y-001 | Add PHR route contract importer.                                     | YAPPC imports `phr-route-contract.json` and displays route/product gaps.    |
-| Y-002 | Add PHR IA/use-case importer.                                        | YAPPC imports PHR vision/IA/screen matrix into product model.               |
-| Y-003 | Add Kernel-native generator mode.                                    | YAPPC generates only through Kernel product contracts.                      |
-| Y-004 | Add PHR web page templates.                                          | Generates design-system-compliant pages with standard states.               |
-| Y-005 | Add PHR mobile screen templates.                                     | Generates i18n/a11y/mobile-safe screens.                                    |
-| Y-006 | Add backend route adapter templates.                                 | Generates ActiveJ route + validator + policy + test skeleton.               |
-| Y-007 | Add test skeleton generator.                                         | Generates route/API/page/policy/i18n/a11y tests per contract.               |
-| Y-008 | Make missing Canvas AI backend endpoints visible in production mode. | No silent no-op for production readiness/generation workflows.              |
-| Y-009 | Add stale artifact delete mode.                                      | Generated replacements delete old/legacy artifacts.                         |
-| Y-010 | Add PHR product gap board.                                           | Groups tasks by patient/provider/caregiver/FCHV/admin/mobile/security/i18n. |
-
-## Verification Batch V6
-
-One YAPPC roundtrip:
-
-PHR IA + route contract → YAPPC product model → Kernel contract → generated web/API/mobile/test artifacts → parity checks.
+* Metrics default to no-op unless explicitly configured. 
+* Trace export can be absent, causing spans to be generated but not persisted. 
+* Idempotency stores can fall back to in-memory. 
+* Transaction manager is optional; without it, multi-step writes run without transaction boundaries. 
+* Search, reports, AI model registry, feature store, and federated query capabilities rely on optional services or fallbacks.   
 
 ---
 
-# 10. Test and Check Files
+## 11. Test and Verification Gap Analysis
 
-## New/Updated Scripts
+Existing test infrastructure is promising: the UI package has unit, integration, E2E, a11y, contract, readiness, route-doc, API-type, and Storybook scripts. 
 
-| ID    | File                                          | Purpose                                                      |
-| ----- | --------------------------------------------- | ------------------------------------------------------------ |
-| T-001 | `scripts/check-phr-route-contract-parity.mjs` | JSON ↔ generated TS ↔ route elements ↔ backend entitlements. |
-| T-002 | `scripts/check-phr-no-legacy-route-state.mjs` | Fails deprecated/removed/migration route metadata.           |
-| T-003 | `scripts/check-phr-web-i18n.mjs`              | Raw web UI string scan.                                      |
-| T-004 | `scripts/check-phr-mobile-i18n.mjs`           | Raw mobile UI string scan.                                   |
-| T-005 | `scripts/check-phr-mobile-phi-storage.mjs`    | No direct AsyncStorage for PHI except encrypted adapter.     |
-| T-006 | `scripts/check-phr-phi-log-safety.mjs`        | No unsafe console/log usage in PHI surfaces.                 |
-| T-007 | `scripts/check-phr-api-contracts.mjs`         | Frontend/mobile/backend API contract parity.                 |
-| T-008 | `scripts/check-phr-policy-coverage.mjs`       | Every PHI route has policy ID and test.                      |
+Minimum missing verification:
 
-## Test Suites
-
-| ID    | Where                                                                         | Coverage                                                                      |
-| ----- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| T-009 | `products/phr/apps/mobile/src/services/__tests__/phiEncryptedStorage.test.ts` | Key lifecycle, encrypt/decrypt, corrupt payload, clear-all, biometric policy. |
-| T-010 | `products/phr/apps/mobile/src/services/__tests__/offlineStore.test.ts`        | TTL, session binding, clear on revoke/logout/expiry.                          |
-| T-011 | `products/phr/apps/mobile/src/services/__tests__/phrMobileApi.test.ts`        | Headers, validation, logout cleanup, consent revoke cleanup.                  |
-| T-012 | `products/phr/apps/web/src/__tests__/route-contract-parity.test.ts`           | Route manifest/route elements/page states.                                    |
-| T-013 | `products/phr/apps/web/e2e/phr-route-traversal.spec.ts`                       | Every stable route renders allowed/denied/loading/error/empty.                |
-| T-014 | Backend policy tests                                                          | Patient/caregiver/clinician/admin/FCHV/emergency matrix.                      |
-| T-015 | Backend API contract tests                                                    | Auth, dashboard, records, consent, docs, emergency, audit, mobile dashboard.  |
-| T-016 | YAPPC roundtrip test                                                          | PHR IA → Kernel contract → generated artifacts.                               |
+1. Java + TypeScript contract test for `/api/v1/surfaces`.
+2. UI E2E test proving runtime-gated routes render correctly for LIVE, PREVIEW, DEGRADED, DISABLED, MISCONFIGURED, and UNAVAILABLE.
+3. Backend production-profile security tests for rejected `X-Tenant-ID`, rejected `tenantId` query param, missing JWT/API key, support-access delegation, and policy-denied routes.
+4. Agent/AEP lifecycle tests for pattern → run → review → approve/reject → learning/audit.
+5. Audio-video integration tests for asset ingest → metadata/transcript/event extraction → Data Cloud catalog/search → agent/pipeline action.
+6. i18n raw-string scan for Data Cloud UI route registry/pages.
+7. Observability tests proving audit, trace, metric, and correlation IDs exist for success and failure paths.
 
 ---
 
-# Recommended Implementation Order
+## 12. Consolidated Task Plan Grouped to Minimize Verification Passes
 
-1. **Group 3 + Group 4 first:** policy fail-closed and PHI encryption correctness.
-2. **Group 1 + Group 2 next:** canonical route contract, no legacy route states, entitlement parity.
-3. **Group 5 + Group 7:** API client/backend contract alignment and missing route adapters.
-4. **Group 6:** web page consistency, i18n, safe preview/download, real emergency review page.
-5. **Group 8:** Kernel route/policy/product contract support.
-6. **Group 9:** YAPPC generation/import only after Kernel contract shape is stable.
-7. **Group 10:** add consolidated verification batches and make them part of required checks.
+### Group 1 — Runtime Truth contract unification
 
-This ordering keeps verification minimal: one policy suite, one mobile PHI suite, one route parity suite, one web route traversal suite, one backend API suite, and one Kernel/YAPPC roundtrip.
+**Goal:** Fix the P0 `/surfaces` backend/frontend contract drift.
+
+**Change:**
+
+* Choose one canonical shape:
+
+  * preferred: `surfaces: SurfaceRecord[]`, because backend already has typed records; or
+  * alternative: `surfaces: Record<string, SurfaceRecord>`.
+* Update `products/data-cloud/contracts/openapi/data-cloud.yaml`.
+* Update `SurfaceRegistryHandler`.
+* Update `SurfaceRegistryEnvelopeSchema`.
+* Update `surfaces.service.ts`.
+* Update `RuntimeCapabilityRouteGate` tests.
+
+**Files:**
+
+* `products/data-cloud/delivery/launcher/.../SurfaceRegistryHandler.java`
+* `products/data-cloud/delivery/launcher/.../SurfaceRecord.java`
+* `products/data-cloud/delivery/ui/src/contracts/schemas.ts`
+* `products/data-cloud/delivery/ui/src/api/surfaces.service.ts`
+* `products/data-cloud/contracts/openapi/data-cloud.yaml`
+
+**Verification:**
+
+```bash
+./gradlew :products:data-cloud:delivery:launcher:test
+pnpm --dir products/data-cloud/delivery/ui run test:contract
+pnpm --dir products/data-cloud/delivery/ui run test:readiness
+```
+
+**Acceptance:** UI route gating works from real `/api/v1/surfaces` response without shape adapters or mocks.
+
+---
+
+### Group 2 — Product boundary and AEP/Action Plane decision pass
+
+**Goal:** Make one canonical decision: AEP is either separate with SPI-only integration, or Action Plane runtime inside Data Cloud.
+
+**Change:**
+
+* Reconcile README, `PLANE_ARCHITECTURE.md`, and unified product docs.
+* If AEP is Action Plane runtime, remove “separate product” language.
+* If AEP is separate, remove “merged product boundary” language.
+* Normalize public APIs to `/api/v1/action/*`.
+* Add architecture tests for forbidden imports.
+
+**Files:**
+
+* `products/data-cloud/README.md`
+* `products/data-cloud/docs/architecture/PLANE_ARCHITECTURE.md`
+* `products/data-cloud/docs/product/*.md`
+* `products/data-cloud/contracts/openapi/action-plane.yaml`
+* `products/data-cloud/planes/action/**`
+* architecture/boundary test scripts
+
+**Verification:**
+
+```bash
+node scripts/check-data-cloud-boundary-language.mjs
+node scripts/check-dependency-boundaries.mjs
+./gradlew :products:data-cloud:contracts:build
+```
+
+**Acceptance:** No canonical docs disagree on AEP ownership; boundary checks prevent regression.
+
+---
+
+### Group 3 — Production security/governance fail-closed pass
+
+**Goal:** Make production mode safe by construction.
+
+**Change:**
+
+* Production/staging/sovereign profiles must require JWT or API key resolver.
+* Audit service must be mandatory for sensitive/mutating routes.
+* Policy engine must fail closed for governed routes.
+* Replace browser token storage path with httpOnly cookie-backed production mode.
+* Add endpoint permission matrix tests.
+
+**Files:**
+
+* `DataCloudHttpServer.java`
+* `RequestContextResolver.java`
+* `DataCloudSecurityFilter.java`
+* `HttpHandlerSupport.java`
+* `tokenStorage.ts`
+* backend security tests
+
+**Verification:**
+
+```bash
+./gradlew :products:data-cloud:delivery:launcher:test
+./gradlew :products:data-cloud:integration-tests:test
+```
+
+**Acceptance:** No production profile starts with unauthenticated critical routes, missing audit, missing policy, or tenant fallback.
+
+---
+
+### Group 4 — Backend capability and workflow completeness pass
+
+**Goal:** Complete the main Data Cloud journeys with backend-owned state and contracts.
+
+**Change:**
+
+* Entities: schema, quality, lineage, versions, import/export, idempotent writes.
+* Events: append/query/replay/tail, correlation IDs, replay safety.
+* Query: SQL/NL query, freshness, policy scope, degraded result explanation.
+* Pipelines: draft/validate/publish/run/retry/cancel/rollback.
+* Governance: retention/redaction/audit/classification as first-class backend flows.
+
+**Files:**
+
+* `planes/data/**`
+* `planes/event/**`
+* `planes/governance/**`
+* `planes/intelligence/**`
+* `delivery/api/**`
+* `delivery/launcher/**`
+
+**Verification:**
+
+```bash
+./gradlew :products:data-cloud:delivery:api:test
+./gradlew :products:data-cloud:delivery:launcher:test
+./gradlew :products:data-cloud:integration-tests:test
+```
+
+**Acceptance:** Each major journey has backend contract, state transition, audit, idempotency, and failure behavior.
+
+---
+
+### Group 5 — UI shell, navigation, i18n, and 0-cognitive-load pass
+
+**Goal:** Make the UI powerful but simple.
+
+**Change:**
+
+* Replace raw route labels/descriptions/loading text with i18n keys.
+* Replace disabled feature → NotFound with Disabled/Unavailable surface page.
+* Use one table/list/card/action pattern.
+* Hide preview/boundary surfaces unless runtime truth and feature flags allow them.
+* Align route registry lifecycle with backend Runtime Truth states.
+
+**Files:**
+
+* `delivery/ui/src/lib/routing/RouteCapabilityRegistry.ts`
+* `delivery/ui/src/routes.tsx`
+* `delivery/ui/src/lib/feature-gates.ts`
+* `delivery/ui/src/pages/**`
+* `delivery/ui/src/i18n/**`
+
+**Verification:**
+
+```bash
+pnpm --dir products/data-cloud/delivery/ui run lint
+pnpm --dir products/data-cloud/delivery/ui run type-check
+pnpm --dir products/data-cloud/delivery/ui run test:unit
+pnpm --dir products/data-cloud/delivery/ui run test:e2e:a11y
+```
+
+**Acceptance:** No raw user-visible strings, no fake live surfaces, no broken disabled states.
+
+---
+
+### Group 6 — Agent/AEP lifecycle hardening pass
+
+**Goal:** Make agents and adaptive event processing production workflows, not preview demos.
+
+**Change:**
+
+* Define canonical pattern, agent, run, review, learning, approval, and audit lifecycle.
+* Enforce governance before execution.
+* Add HITL approve/reject/escalate flows.
+* Emit learning/audit events on decisions.
+* Normalize Action Plane APIs.
+
+**Files:**
+
+* `planes/action/engine/**`
+* `planes/action/agent-runtime/**`
+* `planes/action/orchestrator/**`
+* `planes/action/registry/**`
+* `extensions/agent-registry/**`
+* `extensions/agent-catalog/**`
+
+**Verification:**
+
+```bash
+./gradlew :products:data-cloud:planes:action:engine:test
+./gradlew :products:data-cloud:planes:action:agent-runtime:test
+./gradlew :products:data-cloud:planes:action:orchestrator:test
+./gradlew :products:data-cloud:integration-tests:test
+```
+
+**Acceptance:** Pattern → run → review → decision → learning → audit is tested end-to-end.
+
+---
+
+### Group 7 — Audio-video modality integration pass
+
+**Goal:** Make audio-video a first-class Data Cloud modality.
+
+**Change:**
+
+* Add Data Cloud asset/catalog model for audio/video.
+* Ingest transcripts, metadata, frames, embeddings, and events.
+* Connect STT/TTS/vision/multimodal services to Data Cloud events and pipelines.
+* Add consent, retention, redaction, and audit for media.
+* Add agent tools for media analysis with policy gates.
+
+**Files:**
+
+* `products/audio-video/**`
+* `products/data-cloud/planes/data/**`
+* `products/data-cloud/planes/event/**`
+* `products/data-cloud/planes/governance/**`
+* `products/data-cloud/planes/action/**`
+
+**Verification:**
+
+```bash
+./gradlew :products:audio-video:modules:integration-tests:test
+./gradlew :products:audio-video:modules:speech:stt-service:smokeTestMainClass
+./gradlew :products:audio-video:modules:intelligence:multimodal-service:smokeTestMainClass
+./gradlew :products:data-cloud:integration-tests:test
+```
+
+**Acceptance:** Media asset ingest produces searchable governed data, events, audit trail, and optional agent/pipeline actions.
+
+---
+
+### Group 8 — Shared library cleanup and dependency-sprawl pass
+
+**Goal:** Keep shared libraries truly shared.
+
+**Change:**
+
+* Review `agent-core`, `workflow`, `messaging`, `ai-integration`, `data-governance`, `platform:contracts`.
+* Move Data Cloud or AEP-specific semantics out of generic platform modules.
+* Remove unused UI workspace dependencies.
+* Add dependency boundary tests.
+
+**Files:**
+
+* `platform/java/**`
+* `platform/contracts/**`
+* `products/data-cloud/**`
+* `products/data-cloud/delivery/ui/package.json`
+
+**Verification:**
+
+```bash
+node scripts/check-dependency-boundaries.mjs
+pnpm --dir products/data-cloud/delivery/ui run lint
+./gradlew test
+```
+
+**Acceptance:** No product-specific semantics leak into shared modules without explicit SPI.
+
+---
+
+## 13. Priority Roadmap
+
+### P0 — Production blockers
+
+* Fix `/surfaces` contract mismatch.
+* Resolve AEP/Data Cloud boundary.
+* Make production auth/audit/policy/idempotency/transaction config fail closed.
+* Add minimum contract/security tests.
+
+Expected score improvement: **2.4 → 3.1**
+
+### P1 — Coherent product completeness
+
+* Complete entity/event/query/pipeline/governance journeys.
+* Normalize `/api/v1/action/*`.
+* Complete agent/AEP review/learning/audit loop.
+* Replace preview/boundary UI leakage with runtime-truth-driven progressive disclosure.
+
+Expected score improvement: **3.1 → 3.7**
+
+### P2 — Extensibility and modality hardening
+
+* Audio-video as first-class Data Cloud modality.
+* Plugin lifecycle/versioning/isolation.
+* Shared library cleanup.
+* Observability and operations hardening.
+
+Expected score improvement: **3.7 → 4.2**
+
+### P3 — Polish and optimization
+
+* Full i18n/a11y polish.
+* Performance/load tests.
+* UI visual consistency and 0-cognitive-load refinements.
+* Developer-experience cleanup.
+
+Expected score improvement: **4.2 → 4.6+**
+
+---
+
+## 14. Final Recommendation
+
+Data Cloud at this commit is **not production-ready**, but it has enough structure to become production-grade through a focused hardening sequence.
+
+The **next implementation pass should start with Group 1 and Group 2 together**: fix Runtime Truth contract drift and settle the Data Cloud/AEP boundary. Those two issues affect every route, every Action Plane feature, every UI gate, every test, and every production-readiness score.
+
+Do **not** prioritize release evidence generation yet. Also do not expand new features until the Runtime Truth contract, product boundary, production security defaults, and end-to-end journey tests are stable.
+
+Minimum path to a coherent production-grade Data Cloud product suite:
+
+1. Fix `/surfaces` contract.
+2. Resolve AEP/Action Plane ownership.
+3. Enforce production fail-closed security/governance/observability dependencies.
+4. Complete Data/Event/Query/Pipeline/Governance journeys.
+5. Harden Agent/AEP lifecycle.
+6. Integrate audio-video as a governed Data Cloud modality.
+7. Finish UI/i18n/a11y/test passes grouped around the same verification runs.

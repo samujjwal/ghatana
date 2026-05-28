@@ -26,6 +26,8 @@ import com.ghatana.yappc.services.evolve.EvolutionKernelUpdateService;
 import com.ghatana.yappc.services.evolve.KernelProductUnitEvolutionUpdateService;
 import com.ghatana.yappc.services.evolve.EvolutionLifecycleExecutionDispatcher;
 import com.ghatana.yappc.services.evolve.LifecycleApiExecutionDispatcher;
+import com.ghatana.yappc.services.generate.EnvironmentAiHealthProvider;
+import com.ghatana.yappc.services.generate.AiHealthProvider;
 import com.ghatana.yappc.services.generate.GenerationService;
 import com.ghatana.yappc.services.generate.GenerationAssuranceService;
 import com.ghatana.yappc.services.generate.GenerationServiceImpl;
@@ -138,6 +140,7 @@ public class YappcApiModule extends AbstractModule {
             MetricsCollector metrics,
             GenerationRunRepository generationRunRepository,
             ObjectMapper objectMapper,
+            AiHealthProvider aiHealthProvider,
             GenerationAssuranceService generationAssuranceService) {
         return new GenerationServiceImpl(
                 aiService,
@@ -145,8 +148,13 @@ public class YappcApiModule extends AbstractModule {
                 metrics,
                 generationRunRepository,
                 objectMapper,
-                com.ghatana.yappc.services.generate.AiHealthProvider.alwaysHealthy(),
+                aiHealthProvider,
                 generationAssuranceService);
+    }
+
+    @Provides
+    AiHealthProvider aiHealthProvider() {
+        return new EnvironmentAiHealthProvider();
     }
 
     @Provides

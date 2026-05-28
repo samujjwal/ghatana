@@ -3,17 +3,18 @@ openapi: "3.1.0"
 info:
   title: Data-Cloud Platform API
   description: |
-    REST API for the Ghatana Data-Cloud unified data platform.
+    REST API for the Ghatana Data Cloud unified data platform.
 
-    Data-Cloud is an independent, deployable, AI/ML-native product. It owns data management,
-    event-cloud streaming, analytics, reporting, governance, plugin-driven extensibility, feature
+    Data Cloud is an independent, deployable, AI/ML-native product. It owns data management,
+    event streaming, analytics, reporting, governance, plugin-driven extensibility, feature
     storage, model metadata, and execution persistence surfaces.
 
-    Data Cloud includes the Action Plane runtime implementation for plugin-backed workflow execution and observability.
-    The Action Plane provides agentic orchestration, pattern detection, anomaly analysis, time-series forecasting,
-    pipeline execution, and governance/operation surfaces.
-    In this API, workflow and pipeline execution means data-local plugin runtime execution.
-    AEP still owns broader agentic orchestration.
+    Data Cloud's Action Plane provides governed automation, pipelines, patterns, agents, reviews,
+    runs, and learning. The Action Plane runtime (formerly AEP) is integrated within Data Cloud
+    under `products/data-cloud/planes/action`, providing event-driven agent orchestration,
+    pattern detection, pipeline execution, HITL review, and learning loops.
+
+    In this API, workflow and pipeline execution means Action Plane runtime execution within Data Cloud.
 
     The Data-Cloud platform provides:
     - **Entity storage** — multi-tenant JSONB entity CRUD with pluggable storage backends
@@ -5727,8 +5728,11 @@ paths:
                     type: object
                     properties:
                       surfaces:
-                        type: object
-                        additionalProperties: true
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/SurfaceRecord"
+                      count:
+                        type: integer
                       generatedAt:
                         type: string
                   meta:

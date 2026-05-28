@@ -61,7 +61,7 @@ public final class PhrConditionRoutes {
 
         String patientId = request.getPathParameter("patientId");
         if (policyEvaluator == null) {
-            if (!PhrRouteSupport.canAccessPatientRecordForRole(context, patientId)) {
+            if (!("patient".equals(context.role()) && context.principalId().equals(patientId))) {
                 return PhrRouteSupport.errorResponse(403, "CONDITION_ACCESS_DENIED",
                     "Access denied to condition data for patient " + patientId,
                     context.correlationId());

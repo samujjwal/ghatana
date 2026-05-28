@@ -1,0 +1,114 @@
+import type { Blocker } from '../../../components/phase/PhaseBlockerPanel';
+import type { EvidenceItem } from '../../../components/phase/PhaseEvidencePanel';
+import type { GovernanceRecord as GovernanceTraceRecord } from '../../../components/phase/PhaseGovernanceTrace';
+import type { SuggestedStep } from '../../../components/phase/PhaseSuggestedNextStep';
+import type {
+  PhaseAction,
+  PhaseCockpitPacket,
+} from '../../../types/phasePacket';
+import type {
+  PhaseActivityEvent,
+  PhaseTransitionPreviewSnapshot,
+} from '../../../services/phase';
+
+export function phaseBlockerSeverity(severity: string): Blocker['severity'] {
+  if (severity === 'CRITICAL') {
+    return 'critical';
+  }
+  if (severity === 'ERROR' || severity === 'HIGH') {
+    return 'high';
+  }
+  if (severity === 'WARNING' || severity === 'MEDIUM') {
+    return 'medium';
+  }
+  return 'low';
+}
+
+export function phasePacketToPreview(packet: PhaseCockpitPacket): PhaseTransitionPreviewSnapshot {
+  return {
+    projectId: packet.projectId,
+    currentPhase: packet.lifecyclePhase ?? '',
+    nextPhase: packet.readiness.nextPhase ?? null,
+    canAdvance: packet.readiness.canAdvance,
+    readiness: Math.round(packet.readiness.completenessScore * 100),
+    blockers: packet.blockers.map((blocker) => blocker.title),
+    requiredArtifacts: packet.requiredArtifacts.map((artifact) => artifact.title),
+    completedArtifacts: packet.completedArtifacts.map((artifact) => artifact.title),
+    estimatedReadyIn: packet.readiness.estimatedReadyIn ?? null,
+    estimatedReadyInHours: packet.readiness.estimatedReadyInHours ?? null,
+    predictionConfidence: packet.readiness.predictionConfidence ?? null,
+    checkedAt: new Date(packet.timestamp).toISOString(),
+  };
+}
+
+export function mapPacketBlockers(packet: PhaseCockpitPacket): Blocker[] {
+  return packet.blockers.map((blocker) => ({
+    id: blocker.id,
+    title: blocker.title,
+    severity: phaseBlockerSeverity(blocker.severity),
+    description: blocker.description,
+    source: blocker.type,
+  }));
+}
+
+export function mapPacketEvidence(packet: PhaseCockpitPacket): EvidenceItem[] {
+  return packet.evidence.map((evidence) => ({
+    id: evidence.id,
+    type: (evidence.type as EvidenceItem['type']) || 'observation',
+    title: evidence.title,
+    description: evidence.description,
+    timestamp: new Date(evidence.timestamp).toISOString(),
+    source: evidence.evidenceId,
+  }));
+}
+
+export function mapPacketGovernance(packet: PhaseCockpitPacket): GovernanceTraceRecord[] {
+  return packet.governance.map((governance) => ({
+    id: governance.id,
+    artifactId: governance.id,
+    action: governance.type,
+    actor: governance.actor,
+    source: (governance.type as GovernanceTraceRecord['source']) || 'derived',
+    timestamp: new Date(governance.timestamp).toISOString(),
+    metadata: governance.metadata as GovernanceTraceRecord['metadata'],
+    reviewState: undefined,
+    system: undefined,
+    confidence: undefined,
+  }));
+}
+
+export function mapPacketSuggestions(
+  packet: PhaseCockpitPacket,
+  actionText: (value: string | undefined) => string | undefined,
+  onAccept: (action: PhaseAction) => void,
+): SuggestedStep[] {
+  return packet.availableActions.map((action) => ({
+    id: action.actionId,
+    title: actionText(action.label) ?? action.actionId,
+    type: action.enabled ? 'automation' : 'review',
+    description: actionText(action.description) ?? '',
+    confidence: 0.5,
+    evidence: [],
+    riskLevel: action.enabled ? 'low' : 'medium',
+    applyMode: action.enabled ? 'one-click' : 'manual',
+    approvalRequired: !action.enabled,
+    rollbackSupported: false,
+    onAccept: () => onAccept(action),
+  }));
+}
+
+export function mapPacketActivity(packet: PhaseCockpitPacket): PhaseActivityEvent[] {
+  return packet.activityFeed.map((entry) => ({
+    id: entry.id,
+    source: 'lifecycle',
+    action: entry.action,
+    summary: entry.summary,
+    timestamp: new Date(entry.timestamp).toISOString(),
+    actor: entry.actor,
+    severity: entry.severity,
+    success: entry.success ?? null,
+    eventType: entry.eventType ?? entry.type,
+    outcome: entry.outcome ?? (entry.success === false ? 'FAILURE' : 'SUCCESS'),
+    correlationId: entry.correlationId ?? null,
+  }));
+}

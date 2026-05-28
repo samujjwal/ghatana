@@ -273,7 +273,7 @@ public final class PhrPatientRecordRoutes {
 
     private Promise<Boolean> mayAccessPatient(PhrRouteSupport.PhrRequestContext context, String patientId) {
         if (policyEvaluator == null) {
-            return Promise.of(PhrRouteSupport.canAccessPatientRecordForRole(context, patientId));
+            return Promise.of("patient".equals(context.role()) && context.principalId().equals(patientId));
         }
         return policyEvaluator.canAccessPatientRecordAsync(context, patientId)
             .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);

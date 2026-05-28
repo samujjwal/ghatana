@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from '@/test-utils/test-utils';
 import { currentUserAtom } from '@/stores/user.store';
 import type { User } from '@/types/dashboard';
-import type { DegradedPacketDetails, HealthSignals, PhaseEvidence } from '@/types/phasePacket';
+import type { DegradedPacketDetails, HealthSignals, PhaseEvidence, PhasePanelView } from '@/types/phasePacket';
 
 const { mockNavigate, mockGetNextPhase, mockGetPhasePacket } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
@@ -71,6 +71,8 @@ import ValidateRoute from '../validate';
 import GenerateRoute from '../generate';
 import RunRoute from '../run';
 import ObserveRoute from '../observe';
+import LearnRoute from '../learn';
+import EvolveRoute from '../evolve';
 
 function renderRoute(node: React.ReactNode) {
   const queryClient = new QueryClient({
@@ -136,6 +138,7 @@ function mockPhaseBootstrap({
       correlationId: 'corr-audit-1',
     },
   ],
+  phasePanels,
   degradedDetails,
   evidence: evidenceOverride,
   healthSignals: healthSignalsOverride,
@@ -176,6 +179,7 @@ function mockPhaseBootstrap({
     readonly outcome?: string | null;
     readonly correlationId?: string | null;
   }[];
+  readonly phasePanels?: readonly PhasePanelView[];
   readonly degradedDetails?: DegradedPacketDetails;
   readonly evidence?: readonly PhaseEvidence[];
   readonly healthSignals?: Partial<HealthSignals>;
@@ -312,6 +316,16 @@ function mockPhaseBootstrap({
       reviewRequiredActions: [],
       safeToContinueActions: canAdvance ? [`${phase}-primary`] : [],
     },
+    phasePanels: phasePanels ?? [{
+      phase,
+      status: canAdvance ? 'ready' : 'blocked',
+      summary: `${phase} status is ${canAdvance ? 'ready' : 'blocked'}.`,
+      recommendation: canAdvance ? `Proceed to ${nextPhase}.` : `Resolve blockers before ${nextPhase}.`,
+      owner: 'Lifecycle Service',
+      confidence: predictionConfidence ?? 0.5,
+      supportTrace: `trace-${phase}-1`,
+      cards: [],
+    }],
     healthSignals: {
       ...defaultHealthSignals,
       ...healthSignalsOverride,
@@ -471,16 +485,33 @@ describe('phase cockpit routes', () => {
         outcome: 'FAILURE',
         correlationId: 'corr-shape-1',
       }],
+      phasePanels: [{
+        phase: 'shape',
+        status: 'blocked',
+        summary: 'Shape validation has traceable audit signals.',
+        recommendation: 'Review and resolve the latest failed validation trace.',
+        owner: 'Shape Governance',
+        confidence: 0.71,
+        supportTrace: 'corr-shape-1',
+        cards: [{
+          id: 'shape-trace-1',
+          title: 'Validation failure',
+          detail: 'Actor: designer-1 | Event: PHASE_ACTION_EXECUTED | Outcome: FAILURE | Correlation ID: corr-shape-1',
+          status: 'error',
+          trace: 'corr-shape-1',
+          metadata: {},
+        }],
+      }],
     });
 
     renderRoute(<ShapeRoute />);
 
     expect(await screen.findByTestId('shape-cockpit')).toBeInTheDocument();
-    expect(screen.getAllByText('Shape validation failed').length).toBeGreaterThan(0);
-    expect(screen.getByTestId('activity-trace')).toHaveTextContent('Actor: designer-1');
-    expect(screen.getByTestId('activity-trace')).toHaveTextContent('Event: PHASE_ACTION_EXECUTED');
-    expect(screen.getByTestId('activity-trace')).toHaveTextContent('Outcome: FAILURE');
-    expect(screen.getByTestId('activity-trace')).toHaveTextContent('Correlation ID: corr-shape-1');
+    expect(screen.getByTestId('shape-backend-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('shape-panel-trace')).toHaveTextContent('corr-shape-1');
+    expect(screen.getByTestId('shape-panel-card')).toHaveTextContent('Actor: designer-1');
+    expect(screen.getByTestId('shape-panel-card')).toHaveTextContent('Outcome: FAILURE');
+    expect(screen.getByTestId('shape-panel-card')).toHaveTextContent('Correlation ID: corr-shape-1');
   });
 
   it('executes safe one-click cockpit suggestions through the backed phase action path', async () => {
@@ -605,17 +636,32 @@ describe('phase cockpit routes', () => {
           success: true,
         },
       ],
+      phasePanels: [{
+        phase: 'observe',
+        status: 'blocked',
+        summary: 'Preview runtime has active diagnostics requiring review.',
+        recommendation: 'Address runtime errors before moving to Learn.',
+        owner: 'Preview Runtime',
+        confidence: 0.66,
+        supportTrace: 'trace-observe-1',
+        cards: [{
+          id: 'preview-runtime',
+          title: 'Runtime diagnostics',
+          detail: 'ReferenceError surfaced in preview runtime. Console warning captured during Observe review. Preview policy blocked third-party script execution. Preview reload completed in 615ms. Actor user-1.',
+          status: 'degraded',
+          trace: 'trace-observe-runtime-1',
+          metadata: {},
+        }],
+      }],
     });
     renderRoute(<ObserveRoute />);
 
     expect(await screen.findByTestId('observe-cockpit')).toBeInTheDocument();
-    expect(screen.getByTestId('observe-preview-diagnostics')).toBeInTheDocument();
-    expect(screen.getByTestId('observe-preview-health')).toHaveTextContent('Preview health: Down');
-    expect(screen.getByTestId('preview-runtime-error')).toHaveTextContent('ReferenceError');
-    expect(screen.getByTestId('preview-console-log')).toHaveTextContent('Console warning');
-    expect(screen.getByTestId('preview-policy-block')).toHaveTextContent('third-party script');
-    expect(screen.getByTestId('preview-load-latency')).toHaveTextContent('615ms');
-    expect(screen.getByTestId('preview-user-action')).toHaveTextContent('user-1');
+    expect(screen.getByTestId('observe-backend-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('observe-panel-summary-text')).toHaveTextContent('active diagnostics');
+    expect(screen.getByTestId('observe-panel-card')).toHaveTextContent('ReferenceError');
+    expect(screen.getByTestId('observe-panel-card')).toHaveTextContent('615ms');
+    expect(screen.getByTestId('observe-panel-card')).toHaveTextContent('user-1');
   });
 
   it('surfaces a retryable error when the canonical shape packet fails to load', async () => {
@@ -650,15 +696,33 @@ describe('phase cockpit routes', () => {
   });
 
   it('mounts the validate cockpit route with real gate summaries', async () => {
-    mockPhaseBootstrap({ lifecyclePhase: 'VALIDATE', nextPhase: 'GENERATE' });
+    mockPhaseBootstrap({
+      lifecyclePhase: 'VALIDATE',
+      nextPhase: 'GENERATE',
+      phasePanels: [{
+        phase: 'validate',
+        status: 'pending',
+        summary: 'Validation requires explicit gate approvals.',
+        recommendation: 'Collect required approvals and rerun validation checks.',
+        owner: 'Validation Board',
+        confidence: 0.79,
+        supportTrace: 'trace-validate-1',
+        cards: [{
+          id: 'approval-gates',
+          title: 'Approval gates',
+          detail: 'Security review and architecture review are still pending.',
+          status: 'pending',
+          trace: 'trace-validate-gates-1',
+          metadata: {},
+        }],
+      }],
+    });
     renderRoute(<ValidateRoute />);
 
     expect(await screen.findByTestId('validate-cockpit')).toBeInTheDocument();
-    await waitFor(() => {
-      expect(screen.getByTestId('validation-status')).toHaveTextContent(/passed|pending/i);
-    });
-    expect(screen.getByTestId('approval-gates')).toBeInTheDocument();
-    expect(screen.getAllByTestId('required-approval').length).toBeGreaterThan(0);
+    expect(screen.getByTestId('validate-backend-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('validate-panel-status')).toHaveTextContent('pending');
+    expect(screen.getByTestId('validate-panel-card')).toHaveTextContent('Approval gates');
   });
 
   it('approves validate transitions through the lifecycle backend', async () => {
@@ -946,5 +1010,67 @@ describe('phase cockpit routes', () => {
       const startCall = vi.mocked(fetch).mock.calls.find(([input]) => String(input).includes('/api/v1/workflows/yappc-run/start'));
       expect(startCall?.[1]?.headers).toMatchObject({ 'X-Tenant-Id': 'tenant-1' });
     });
+  });
+
+  it('mounts the learn cockpit route with backend-owned panel content', async () => {
+    mockPhaseBootstrap({
+      lifecyclePhase: 'LEARN',
+      nextPhase: 'EVOLVE',
+      phasePanels: [{
+        phase: 'learn',
+        status: 'ready',
+        summary: 'Learning evidence is synchronized and ready for evolve planning.',
+        recommendation: 'Review evidence and proceed to evolve backlog shaping.',
+        owner: 'Learning Service',
+        confidence: 0.78,
+        supportTrace: 'trace-learn-1',
+        cards: [{
+          id: 'learn-evidence-1',
+          title: 'Learning evidence',
+          detail: 'Recent run outcomes and approvals are incorporated.',
+          status: 'healthy',
+          trace: 'trace-learn-card-1',
+          metadata: {},
+        }],
+      }],
+    });
+
+    renderRoute(<LearnRoute />);
+
+    expect(await screen.findByTestId('learn-cockpit')).toBeInTheDocument();
+    expect(screen.getByTestId('learn-backend-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('learn-panel-status')).toHaveTextContent('ready');
+    expect(screen.getByTestId('learn-panel-card')).toHaveTextContent('Learning evidence');
+  });
+
+  it('mounts the evolve cockpit route with backend-owned panel content', async () => {
+    mockPhaseBootstrap({
+      lifecyclePhase: 'EVOLVE',
+      nextPhase: 'INTENT',
+      phasePanels: [{
+        phase: 'evolve',
+        status: 'pending',
+        summary: 'Evolution proposals are queued for review.',
+        recommendation: 'Complete impact review and approve next-cycle rollout.',
+        owner: 'Evolve Service',
+        confidence: 0.73,
+        supportTrace: 'trace-evolve-1',
+        cards: [{
+          id: 'evolve-proposal-1',
+          title: 'Impact analysis',
+          detail: 'Proposal impacts two modules and one workflow.',
+          status: 'warning',
+          trace: 'trace-evolve-card-1',
+          metadata: {},
+        }],
+      }],
+    });
+
+    renderRoute(<EvolveRoute />);
+
+    expect(await screen.findByTestId('evolve-cockpit')).toBeInTheDocument();
+    expect(screen.getByTestId('evolve-backend-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('evolve-panel-status')).toHaveTextContent('pending');
+    expect(screen.getByTestId('evolve-panel-card')).toHaveTextContent('Impact analysis');
   });
 });

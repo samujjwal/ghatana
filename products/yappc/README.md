@@ -37,6 +37,13 @@ The **Run** phase target drives an underlying SDLC lifecycle (Discover → Defin
 - Prompt template registry supports active-version control, rollback, scoring, and weight rebalancing.
 - Release evidence now includes CI execution proof, scorecard dimensions, route/OpenAPI/client parity, E2E matrix mapping, a11y, performance, security, privacy, and governance checks.
 
+### Current Hardening Focus
+
+- Decompose the phase cockpit into a thin route with focused container, mapper, and action-handler modules.
+- Complete backend-owned typed phase panel migration across all phase-specific status rendering.
+- Align kernel-health, product-family, and admin pages to shared shell/loading/error/card patterns.
+- Continue final documentation and cleanup reconciliation so architecture, backlog, and evidence wording stay in sync.
+
 ### Known Limitations by Lifecycle Phase
 
 | Phase | Current Maturity | Known Limitations |

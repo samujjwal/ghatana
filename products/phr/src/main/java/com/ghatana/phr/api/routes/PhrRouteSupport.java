@@ -246,9 +246,8 @@ public final class PhrRouteSupport {
             return; // Skip facility scope check for these roles
         }
         
-        // For clinicians and caregivers, facility scope should match their assigned facility
-        // This is a basic check; full policy enforcement is done by PhrPolicyEvaluator
-        // In production, this would query the principal's assigned facility from the database
+        // For clinicians and caregivers, route handlers defer the final facility-scoped
+        // PHI decision to PhrPolicyEvaluator.
     }
 
     /**

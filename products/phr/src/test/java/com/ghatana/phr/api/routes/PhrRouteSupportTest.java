@@ -123,37 +123,41 @@ class PhrRouteSupportTest {
     }
 
     @Test
-    @DisplayName("hasClinicalRole returns true for clinician and admin")
-    void hasClinicalRoleForClinicianAndAdmin() {
+    @DisplayName("requireContext accepts clinician and admin roles")
+    void requireContextAcceptsClinicianAndAdmin() {
         for (String role : new String[]{"admin", "clinician"}) {
-            PhrRouteSupport.PhrRequestContext ctx = new PhrRouteSupport.PhrRequestContext("t1", "p1", role, "corr", role, "core", null);
-            assertThat(PhrRouteSupport.hasClinicalRole(ctx)).isTrue();
+            PhrRouteSupport.PhrRequestContext ctx = PhrRouteSupport.requireContext(
+                requestWithHeaders("tenant-1", "principal-1", role));
+            assertThat(ctx.role()).isEqualTo(role);
         }
     }
 
     @Test
-    @DisplayName("hasClinicalRole returns false for patient and caregiver")
-    void hasClinicalRoleReturnsFalseForNonClinical() {
+    @DisplayName("requireContext accepts patient and caregiver roles")
+    void requireContextAcceptsPatientAndCaregiver() {
         for (String role : new String[]{"patient", "caregiver"}) {
-            PhrRouteSupport.PhrRequestContext ctx = new PhrRouteSupport.PhrRequestContext("t1", "p1", role, "corr", role, "core", null);
-            assertThat(PhrRouteSupport.hasClinicalRole(ctx)).isFalse();
+            PhrRouteSupport.PhrRequestContext ctx = PhrRouteSupport.requireContext(
+                requestWithHeaders("tenant-1", "principal-1", role));
+            assertThat(ctx.role()).isEqualTo(role);
         }
     }
 
     @Test
-    @DisplayName("canAccessPatientRecordForRole — patient may only access own record")
-    void patientCanOnlyAccessOwnRecord() {
-        PhrRouteSupport.PhrRequestContext ctx = new PhrRouteSupport.PhrRequestContext("t1", "patient-42", "patient", "corr", "patient", "core", null);
-        assertThat(PhrRouteSupport.canAccessPatientRecordForRole(ctx, "patient-42")).isTrue();
-        assertThat(PhrRouteSupport.canAccessPatientRecordForRole(ctx, "patient-99")).isFalse();
+    @DisplayName("requireContext preserves patient principal for downstream policy")
+    void requireContextPreservesPatientPrincipal() {
+        PhrRouteSupport.PhrRequestContext ctx = PhrRouteSupport.requireContext(
+            requestWithHeaders("tenant-1", "patient-42", "patient"));
+        assertThat(ctx.role()).isEqualTo("patient");
+        assertThat(ctx.principalId()).isEqualTo("patient-42");
     }
 
     @Test
-    @DisplayName("canAccessPatientRecordForRole — clinician and admin access any record")
-    void clinicianAndAdminAccessAnyRecord() {
+    @DisplayName("requireContext preserves privileged roles for downstream policy")
+    void requireContextPreservesPrivilegedRoles() {
         for (String role : new String[]{"clinician", "admin"}) {
-            PhrRouteSupport.PhrRequestContext ctx = new PhrRouteSupport.PhrRequestContext("t1", "p1", role, "corr", role, "core", null);
-            assertThat(PhrRouteSupport.canAccessPatientRecordForRole(ctx, "any-patient")).isTrue();
+            PhrRouteSupport.PhrRequestContext ctx = PhrRouteSupport.requireContext(
+                requestWithHeaders("tenant-1", "principal-1", role));
+            assertThat(ctx.role()).isEqualTo(role);
         }
     }
 

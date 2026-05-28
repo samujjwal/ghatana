@@ -427,8 +427,25 @@ export const CapabilityRegistryDataSchema = z.object({
 
 export const CapabilityRegistryEnvelopeSchema = apiEnvelopeSchema(CapabilityRegistryDataSchema);
 
+export const SurfaceRecordSchema = z.object({
+  surfaceId: z.string(),
+  state: z.string(),
+  status: z.string(),
+  ownerPlane: z.string(),
+  requiredDependencies: z.array(z.string()),
+  dependencyProbes: z.array(z.record(z.string(), z.unknown())),
+  tenantScope: z.string(),
+  runtimeProfile: z.string(),
+  lastCheckedAt: z.string(),
+  evidence: z.record(z.string(), z.unknown()),
+  limitations: z.string(),
+  actionsAllowed: z.array(z.string()),
+  runtimePosture: z.record(z.string(), z.unknown()).optional(),
+});
+
 export const SurfaceRegistryDataSchema = z.object({
-  surfaces: z.record(z.string(), z.unknown()),
+  surfaces: z.array(SurfaceRecordSchema),
+  count: z.number(),
   generatedAt: z.string(),
 });
 

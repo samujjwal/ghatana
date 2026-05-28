@@ -16,6 +16,7 @@
  */
 
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Button, IconButton, Input } from '@ghatana/design-system';
 import { useSurfaceGate, useSurfaceSignal } from '../hooks/useSurfaceGate';
@@ -604,6 +605,7 @@ function AuditTimelineCard({ entry, 'data-testid': dataTestId }: { entry: AuditT
  * Trust Center Page
  */
 export function TrustCenter() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeQuickAction, setActiveQuickAction] = useState<GovernanceQuickAction | 'create-policy' | null>(null);
   const [classificationForm, setClassificationForm] = useState<RetentionClassificationFormState>(DEFAULT_CLASSIFICATION_FORM);
@@ -725,7 +727,7 @@ export function TrustCenter() {
       const msg = error instanceof Error ? error.message : 'Failed';
       if (ctx?.op) resolveOp(ctx.op.id, 'failure', msg);
       if (ctx?.jobId) completeJob(ctx.jobId, 'failure', msg);
-      toast.error(error instanceof Error ? error.message : 'Failed to classify retention policy');
+      toast.error(error instanceof Error ? error.message : t('trustCenter.classifyRetentionPolicy'));
     },
   });
 
@@ -759,7 +761,7 @@ export function TrustCenter() {
       const msg = error instanceof Error ? error.message : 'Failed';
       if (ctx?.op) resolveOp(ctx.op.id, 'failure', msg);
       if (ctx?.jobId) completeJob(ctx.jobId, 'failure', msg);
-      toast.error(error instanceof Error ? error.message : 'Failed to redact PII fields');
+      toast.error(error instanceof Error ? error.message : t('trustCenter.redactPIIFields'));
     },
   });
 
@@ -775,7 +777,7 @@ export function TrustCenter() {
       refreshGovernanceData();
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'Failed to refresh compliance summary');
+      toast.error(error instanceof Error ? error.message : t('trustCenter.refreshComplianceSummary'));
     },
   });
 
@@ -793,7 +795,7 @@ export function TrustCenter() {
       toast.success(`Dry run completed for ${result.dryRun.collection}`);
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'Failed to run retention purge dry run');
+      toast.error(error instanceof Error ? error.message : t('trustCenter.runRetentionPurgeDryRun'));
     },
   });
 
@@ -830,7 +832,7 @@ export function TrustCenter() {
       const msg = error instanceof Error ? error.message : 'Failed';
       if (ctx?.op) resolveOp(ctx.op.id, 'failure', msg);
       if (ctx?.jobId) completeJob(ctx.jobId, 'failure', msg);
-      toast.error(error instanceof Error ? error.message : 'Failed to execute retention purge');
+      toast.error(error instanceof Error ? error.message : t('trustCenter.executeRetentionPurge'));
     },
   });
 
@@ -862,7 +864,7 @@ export function TrustCenter() {
       const msg = error instanceof Error ? error.message : 'Failed';
       if (ctx?.op) resolveOp(ctx.op.id, 'failure', msg);
       if (ctx?.jobId) completeJob(ctx.jobId, 'failure', msg);
-      toast.error(error instanceof Error ? error.message : 'Failed to create policy');
+      toast.error(error instanceof Error ? error.message : t('trustCenter.createPolicy'));
     },
   });
 
@@ -893,7 +895,7 @@ export function TrustCenter() {
       const msg = error instanceof Error ? error.message : 'Failed';
       if (ctx?.op) resolveOp(ctx.op.id, 'failure', msg);
       if (ctx?.jobId) completeJob(ctx.jobId, 'failure', msg);
-      toast.error(error instanceof Error ? error.message : 'Failed to update policy');
+      toast.error(error instanceof Error ? error.message : t('trustCenter.updatePolicy'));
     },
   });
 
@@ -916,7 +918,7 @@ export function TrustCenter() {
       const msg = error instanceof Error ? error.message : 'Failed';
       if (ctx?.op) resolveOp(ctx.op.id, 'failure', msg);
       if (ctx?.jobId) completeJob(ctx.jobId, 'failure', msg);
-      toast.error(error instanceof Error ? error.message : 'Failed to delete policy');
+      toast.error(error instanceof Error ? error.message : t('trustCenter.deletePolicy'));
     },
   });
 
@@ -938,7 +940,7 @@ export function TrustCenter() {
       const msg = error instanceof Error ? error.message : 'Failed';
       if (ctx?.op) resolveOp(ctx.op.id, 'failure', msg);
       if (ctx?.jobId) completeJob(ctx.jobId, 'failure', msg);
-      toast.error(error instanceof Error ? error.message : 'Failed to toggle policy');
+      toast.error(error instanceof Error ? error.message : t('trustCenter.togglePolicy'));
     },
   });
 
@@ -1078,7 +1080,7 @@ export function TrustCenter() {
           {lifecycleLoading ? (
             <div className="flex items-center gap-2 text-gray-500 py-4">
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-sm">Loading governance lifecycle truth...</span>
+              <span className="text-sm">{t('trustCenter.loadingGovernanceLifecycle')}</span>
             </div>
           ) : (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4" data-testid="trust-lifecycle-section">
@@ -1104,7 +1106,7 @@ export function TrustCenter() {
           {recommendationsLoading ? (
             <div className="flex items-center gap-2 text-gray-500 py-4">
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-sm">Loading recommendations...</span>
+              <span className="text-sm">{t('trustCenter.loadingRecommendations')}</span>
             </div>
           ) : recommendations.length === 0 ? (
             <p className="text-sm text-gray-500">No operator recommendations are active right now.</p>
@@ -1197,7 +1199,7 @@ export function TrustCenter() {
               {policiesLoading ? (
                 <div className="flex items-center gap-2 text-gray-500 py-4">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm">Loading policies...</span>
+                  <span className="text-sm">{t('trustCenter.loadingPolicies')}</span>
                 </div>
               ) : policies.length === 0 ? (
                 <p className="text-sm text-gray-500 py-4">No derived policy coverage is available from the current compliance summary.</p>
@@ -1227,7 +1229,7 @@ export function TrustCenter() {
               {auditLoading ? (
                 <div className="flex items-center gap-2 text-gray-500 py-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm">Loading audit logs...</span>
+                  <span className="text-sm">{t('trustCenter.loadingAuditLogs')}</span>
                 </div>
               ) : auditTimeline.length === 0 ? (
                 <p className="text-sm text-gray-500 py-2">No recent governance audit events.</p>

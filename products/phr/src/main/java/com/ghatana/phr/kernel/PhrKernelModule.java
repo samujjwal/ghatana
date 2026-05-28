@@ -1,6 +1,7 @@
 package com.ghatana.phr.kernel;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
 import com.ghatana.kernel.config.KernelConfigResolver;
 import com.ghatana.kernel.contracts.ContractRegistry;
 import com.ghatana.kernel.contracts.ModuleContract;
@@ -9,6 +10,10 @@ import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
 import com.ghatana.kernel.module.KernelModule;
+import com.ghatana.kernel.observability.AuditTrailService;
+import com.ghatana.kernel.release.FileBasedReleaseReadinessRuntimeService;
+import com.ghatana.kernel.release.ReleaseReadinessRuntimeService;
+import com.ghatana.kernel.security.KernelSecurityManager;
 import com.ghatana.kernel.service.KernelLifecycleAware;
 import com.ghatana.platform.cache.DistributedCachePort;
 import com.ghatana.platform.cache.IdentityAwareBoundedCache;
@@ -19,18 +24,24 @@ import com.ghatana.phr.api.FhirController;
 import com.ghatana.phr.api.NepalHieController;
 import com.ghatana.phr.api.PhrHttpServer;
 import com.ghatana.phr.api.routes.PhrAdministrativeRoutes;
+import com.ghatana.phr.api.routes.PhrAuditRoutes;
+import com.ghatana.phr.api.routes.PhrAuthRoutes;
+import com.ghatana.phr.api.routes.PhrCaregiverRoutes;
 import com.ghatana.phr.api.routes.PhrClinicalRoutes;
 import com.ghatana.phr.api.routes.PhrConsentRoutes;
 import com.ghatana.phr.api.routes.PhrDocumentImagingRoutes;
 import com.ghatana.phr.api.routes.PhrEntitlementRoutes;
 import com.ghatana.phr.api.routes.PhrEmergencyRoutes;
+import com.ghatana.phr.api.routes.PhrFchvRoutes;
 import com.ghatana.phr.api.routes.PhrFhirRoutes;
 import com.ghatana.phr.api.routes.PhrHealthRoutes;
 import com.ghatana.phr.api.routes.PhrMobileRoutes;
+import com.ghatana.phr.api.routes.PhrNotificationRoutes;
 import com.ghatana.phr.api.routes.PhrPatientRecordRoutes;
+import com.ghatana.phr.api.routes.PhrProviderRoutes;
 import com.ghatana.phr.api.routes.PhrReleaseReadinessRoutes;
-import com.ghatana.kernel.release.FileBasedReleaseReadinessRuntimeService;
-import com.ghatana.kernel.release.ReleaseReadinessRuntimeService;
+import com.ghatana.phr.application.clinical.ClinicalService;
+import com.ghatana.phr.application.clinical.ClinicalServiceImpl;
 import com.ghatana.phr.fhir.server.PhrFhirR4Server;
 import com.ghatana.phr.hie.HttpNepalHieClient;
 import com.ghatana.phr.hie.NepalHieConfig;
@@ -69,6 +80,9 @@ import com.ghatana.phr.kernel.service.PhrServiceCatalog;
 import com.ghatana.phr.kernel.service.ReferralService;
 import com.ghatana.phr.kernel.service.TelemedicineService;
 import com.ghatana.phr.kernel.service.TreatmentRelationshipService;
+import com.ghatana.phr.observability.PHRAuditTrailServiceImpl;
+import com.ghatana.phr.repository.UserRepository;
+import com.ghatana.phr.security.PHRSecurityManagerImpl;
 import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
@@ -373,6 +387,9 @@ public class PhrKernelModule implements KernelModule {
         context.registerService(EmergencyAccessNotificationSender.class, emergencyNotificationSender);
         context.registerService(EmergencyAccessReviewAuditLogger.class, emergencyAuditLogger);
         context.registerService(PhrNotificationOutboxDispatcher.class, notificationDispatcher);
+        AuditTrailService auditTrailService = resolveAuditTrailService(context);
+        UserRepository userRepository = resolveUserRepository(context);
+        KernelSecurityManager securityManager = resolveSecurityManager(context, userRepository);
 
         PatientRecordService patientRecords = new PatientRecordService(context);
         ConsentManagementService consent = new ConsentManagementService(context, consentCache);
@@ -398,6 +415,7 @@ public class PhrKernelModule implements KernelModule {
         BillingService billing = new BillingService(context);
         TelemedicineService telemedicine = new TelemedicineService(context);
         CaregiverService caregivers = new CaregiverService(context);
+        ClinicalService clinicalService = new ClinicalServiceImpl();
         TreatmentRelationshipService treatmentRelationship = new TreatmentRelationshipService(context);
         FchvCommunityAssignmentService fchvAssignment = new FchvCommunityAssignmentService(context);
         EmergencyAccessReviewWorkflow emergencyReview = EmergencyAccessReviewWorkflow.fromContext(context);
@@ -447,6 +465,12 @@ public class PhrKernelModule implements KernelModule {
             documents,
             notificationSender
         );
+        PhrAuditRoutes auditRoutes = new PhrAuditRoutes(eventloop, auditTrailService);
+        PhrAuthRoutes authRoutes = new PhrAuthRoutes(eventloop, securityManager, userRepository, auditTrailService);
+        PhrProviderRoutes providerRoutes = new PhrProviderRoutes(eventloop, patientRecords, consent, clinicalService);
+        PhrCaregiverRoutes caregiverRoutes = new PhrCaregiverRoutes(eventloop, caregivers, patientRecords);
+        PhrFchvRoutes fchvRoutes = new PhrFchvRoutes(eventloop);
+        PhrNotificationRoutes notificationRoutes = new PhrNotificationRoutes(eventloop, notificationSender);
         
         PhrHttpServer phrHttpServer = new PhrHttpServer(
             eventloop,
@@ -460,13 +484,13 @@ public class PhrKernelModule implements KernelModule {
             releaseReadinessRoutes,
             entitlementRoutes,
             healthRoutes,
-            null,  // auditRoutes
-            null,  // authRoutes
-            null,  // providerRoutes
-            null,  // caregiverRoutes
-            null,  // fchvRoutes
+            auditRoutes,
+            authRoutes,
+            providerRoutes,
+            caregiverRoutes,
+            fchvRoutes,
             mobileRoutes,
-            null   // notificationRoutes
+            notificationRoutes
         );
         context.registerService(PhrEvidenceOutboxDispatcher.class, evidenceDispatcher);
         context.registerService(PhrHttpServer.class, phrHttpServer);
@@ -530,6 +554,28 @@ public class PhrKernelModule implements KernelModule {
             new FileBackedPhrEvidenceOutbox(Path.of(configuredPath)),
             MAX_EVIDENCE_WRITE_RETRIES
         );
+    }
+
+    private AuditTrailService resolveAuditTrailService(KernelContext context) {
+        return context.getOptionalDependency(AuditTrailService.class)
+            .orElseGet(() -> {
+                if (!context.hasDependency(DataCloudKernelAdapter.class)) {
+                    throw new IllegalStateException(
+                        "AuditTrailService or DataCloudKernelAdapter dependency required for PhrAuditRoutes"
+                    );
+                }
+                return new PHRAuditTrailServiceImpl(context.getDependency(DataCloudKernelAdapter.class));
+            });
+    }
+
+    private UserRepository resolveUserRepository(KernelContext context) {
+        return context.getOptionalDependency(UserRepository.class)
+            .orElseGet(UserRepository::new);
+    }
+
+    private KernelSecurityManager resolveSecurityManager(KernelContext context, UserRepository userRepository) {
+        return context.getOptionalDependency(KernelSecurityManager.class)
+            .orElseGet(() -> new PHRSecurityManagerImpl(userRepository));
     }
 
     @SuppressWarnings("unchecked")

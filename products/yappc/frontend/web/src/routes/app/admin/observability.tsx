@@ -11,31 +11,26 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { ObservabilityDashboard, type HealthMetric, type ReleaseGateEvidence } from '../../../components/admin/ObservabilityDashboard';
 import { RouteLoadingSpinner } from '../../../components/route/LoadingSpinner';
 import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
-import { useCapabilityGate } from '../../../hooks/useCapabilityGate';
 import { loadReleaseGateEvidence } from '../../../services/admin/releaseGateEvidenceApi';
 import { useTranslation } from '@ghatana/i18n';
+import { AdminRouteGate } from './AdminRouteGate';
 
 function AdminGate({ children }: { children: React.ReactNode }) {
-  const { granted, reason } = useCapabilityGate('admin:observability');
   const { t } = useTranslation('common');
 
-  if (!granted) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="space-y-2 text-center">
-          <p className="text-sm text-fg-muted">
-            {reason === 'insufficient-role'
-              ? t('admin.observability.denied.permission')
-              : reason === 'unauthenticated'
-                ? t('admin.observability.denied.login')
-                : t('admin.observability.denied.unavailable')}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
+  return (
+    <AdminRouteGate
+      capability="admin:observability"
+      deniedTestId="admin-observability-unavailable"
+      messages={{
+        permissionDenied: t('admin.observability.denied.permission'),
+        loginRequired: t('admin.observability.denied.login'),
+        unavailable: t('admin.observability.denied.unavailable'),
+      }}
+    >
+      {children}
+    </AdminRouteGate>
+  );
 }
 
 function ObservabilityRouteContent() {

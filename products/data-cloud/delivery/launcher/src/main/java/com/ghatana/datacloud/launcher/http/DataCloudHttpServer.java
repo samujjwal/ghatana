@@ -1124,11 +1124,22 @@ public class DataCloudHttpServer {
 
     static void validateSecurityConfiguration(boolean authConfigured,
                                               boolean strictTenantResolution,
+                                              String deploymentMode,
                                               Logger logger) {
         requireNonNull(logger, "logger");
 
         if (authConfigured) {
             return;
+        }
+
+        // DC-P3: Fail-closed security - require authentication in production profiles
+        boolean isProduction = isProductionMode(deploymentMode);
+        if (isProduction) {
+            throw new IllegalStateException(
+                "Authentication is REQUIRED in deployment profile '" + deploymentMode + "'. " +
+                    "Production/staging/sovereign profiles must configure authentication. " +
+                    "Call withApiKeyResolver() or withJwtProvider()."
+            );
         }
 
         if (strictTenantResolution) {
@@ -1406,7 +1417,7 @@ public class DataCloudHttpServer {
         boolean entityStoreDurable = isDurableStoreBacking(client.entityStore());
         boolean coreEventStoreDurable = isDurableStoreBacking(client.eventLogStore());
 
-        validateSecurityConfiguration(apiKeyResolver != null || jwtProvider != null, strictTenantResolution, log);
+        validateSecurityConfiguration(apiKeyResolver != null || jwtProvider != null, strictTenantResolution, deploymentMode, log);
         enforceLoopbackInInsecureMode(authConfigured, strictTenantResolution, listenHost, log);
         validateSettingsStorageConfiguration(strictTenantResolution, deploymentMode, settingsStore, log);
         validateProductionDependencies(strictTenantResolution, deploymentMode,

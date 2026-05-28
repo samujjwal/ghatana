@@ -6,14 +6,18 @@
  * This script scans OpenAPI contracts and documentation files for deprecated language
  * that should not appear outside explicit compatibility/deprecation sections.
  *
+ * <p>Canonical decision: AEP is a separate adaptive event intelligence platform.
+ * Data Cloud's Action Plane is a compatibility and migration area for AEP integration.
+ *
  * <p>Forbidden patterns (outside compatibility sections):
  * <ul>
- *   <li>"AEP standalone" - AEP is now the runtime implementation within Data Cloud</li>
- *   <li>"AEP owns" - AEP does not own orchestration independently</li>
- *   <li>"AEP external orchestration" - All orchestration is now within Data Cloud</li>
+ *   <li>"AEP is the Action Plane runtime implementation" - AEP is a separate product</li>
+ *   <li>"AEP runtime implementation" - AEP is a separate product</li>
+ *   <li>"Data Cloud includes the Action Plane runtime" - Action Plane is for AEP integration</li>
+ *   <li>"AEP is no longer a separate product" - AEP IS a separate product</li>
+ *   <li>"merged product boundary" - AEP and Data Cloud remain separate</li>
  *   <li>"aep.ghatana.local" - Legacy external endpoint references</li>
  *   <li>"port 8090 AEP" - Legacy port references</li>
- *   <li>"tenantId as authoritative tenant source" - Tenant resolution is now via authenticated principal</li>
  * </ul>
  *
  * <p>Allowed sections (where these patterns may appear):
@@ -41,19 +45,29 @@ const __dirname = path.dirname(__filename);
 // DC-P1-04: Forbidden patterns that should not appear outside compatibility sections
 const FORBIDDEN_PATTERNS = [
   {
-    pattern: /AEP standalone/i,
-    description: 'AEP standalone',
-    replacement: 'Data Cloud Action Plane runtime implementation'
+    pattern: /AEP is the Action Plane runtime implementation/i,
+    description: 'AEP is the Action Plane runtime implementation',
+    replacement: 'AEP is a separate adaptive event intelligence platform'
   },
   {
-    pattern: /AEP owns/i,
-    description: 'AEP owns',
-    replacement: 'Data Cloud owns'
+    pattern: /AEP runtime implementation/i,
+    description: 'AEP runtime implementation',
+    replacement: 'AEP is a separate product'
   },
   {
-    pattern: /AEP external orchestration/i,
-    description: 'AEP external orchestration',
-    replacement: 'Data Cloud orchestration'
+    pattern: /Data Cloud includes the Action Plane runtime/i,
+    description: 'Data Cloud includes the Action Plane runtime',
+    replacement: 'Data Cloud Action Plane is a compatibility area for AEP integration'
+  },
+  {
+    pattern: /AEP is no longer a separate product/i,
+    description: 'AEP is no longer a separate product',
+    replacement: 'AEP is a separate adaptive event intelligence platform'
+  },
+  {
+    pattern: /merged product boundary/i,
+    description: 'merged product boundary',
+    replacement: 'separate product boundary'
   },
   {
     pattern: /aep\.ghatana\.local/i,
@@ -64,11 +78,6 @@ const FORBIDDEN_PATTERNS = [
     pattern: /port 8090 AEP/i,
     description: 'port 8090 AEP',
     replacement: 'Data Cloud service port'
-  },
-  {
-    pattern: /tenantId as authoritative tenant source/i,
-    description: 'tenantId as authoritative tenant source',
-    replacement: 'authenticated principal as tenant source'
   }
 ];
 

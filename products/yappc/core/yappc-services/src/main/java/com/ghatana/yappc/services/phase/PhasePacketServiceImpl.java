@@ -278,6 +278,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                 String projectName = extractProjectName(projectState);
                 String workspaceName = extractWorkspaceName(projectState, workspaceId);
                 PhasePacket.ActorContext actor = buildActorContext(principal, projectState);
+                String lifecyclePhase = extractLifecyclePhase(phase, projectState);
 
                 PhasePacket packet = phasePacketAssembler.assemble(
                         phase,
@@ -287,7 +288,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                         workspaceId,
                         workspaceName,
                         actor,
-                        phase,
+                        lifecyclePhase,
                         tier,
                         enabledFlags,
                         new com.ghatana.yappc.api.PhasePacket.CapabilityModel(
@@ -988,6 +989,21 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
      */
     private String extractWorkspaceName(Map<String, Object> projectState, String workspaceId) {
         return (String) projectState.getOrDefault("workspaceName", "Workspace-" + workspaceId);
+    }
+
+    /**
+     * Extracts the canonical runtime lifecycle phase from project state.
+     */
+    private String extractLifecyclePhase(String requestedPhase, Map<String, Object> projectState) {
+        Object lifecyclePhase = projectState.get("lifecyclePhase");
+        if (lifecyclePhase instanceof String value && !value.isBlank()) {
+            return value;
+        }
+        Object currentPhase = projectState.get("currentPhase");
+        if (currentPhase instanceof String value && !value.isBlank()) {
+            return value;
+        }
+        return requestedPhase;
     }
 
     /**

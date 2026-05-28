@@ -53,23 +53,6 @@ public class IntentServiceImpl implements IntentService {
             CompletionService aiService,
             AuditLogger auditLogger,
             MetricsCollector metrics,
-            PromptTemplateRegistry promptRegistry) {
-        this(aiService, auditLogger, metrics, promptRegistry, null);
-    }
-
-    IntentServiceImpl(
-            CompletionService aiService,
-            AuditLogger auditLogger,
-            MetricsCollector metrics,
-            PromptTemplateRegistry promptRegistry,
-            IntentRepository intentRepository) {
-        this(aiService, auditLogger, metrics, promptRegistry, intentRepository, null);
-    }
-
-    IntentServiceImpl(
-            CompletionService aiService,
-            AuditLogger auditLogger,
-            MetricsCollector metrics,
             PromptTemplateRegistry promptRegistry,
             IntentRepository intentRepository,
             IntentEvidenceService intentEvidenceService) {

@@ -159,7 +159,7 @@ const ROUTE_METADATA = new Map([
     nav: 'Project phase tab',
     featureFlag: 'learn',
     expectedActions: ['Review learning evidence', 'Inspect agent governance state'],
-    coverage: ['src/routes/app/project/__tests__/PhaseStatusPanels.test.tsx'],
+    coverage: ['src/routes/app/project/__tests__/phase-cockpit-routes.test.tsx'],
   }),
   routeMetadata('p/:projectId/evolve', 'routes/app/project/evolve.tsx', {
     owner: 'Evolve phase',
@@ -167,7 +167,7 @@ const ROUTE_METADATA = new Map([
     nav: 'Project phase tab',
     featureFlag: 'evolve',
     expectedActions: ['Review evolution proposal', 'Inspect impact analysis', 'Approve or reject diff'],
-    coverage: ['src/routes/app/project/__tests__/PhaseStatusPanels.test.tsx'],
+    coverage: ['src/routes/app/project/__tests__/phase-cockpit-routes.test.tsx'],
   }),
   routeMetadata('p/:projectId/settings', 'routes/app/project/settings.tsx', {
     owner: 'Project settings',

@@ -1,7 +1,7 @@
 # YAPPC Architecture
 
 **Status:** Active  
-**Last Updated:** 2026-04-17  
+**Last Updated:** 2026-05-27  
 **Owner:** Architecture Team
 
 > **Changes since 2026-03-24:**
@@ -25,26 +25,32 @@ YAPPC is an **AI-powered project scaffolding and code-generation platform** buil
 - **Multi-tenancy** with strict tenant isolation at every layer
 - **Event-driven** for cross-module and cross-product communication
 
-### Implementation Reality Snapshot (2026-04-17)
+### Implementation Reality Snapshot (2026-05-27)
 
-- Architecture direction is stable, but implementation maturity is uneven by phase.
-- AI-Native maturity is currently early-stage: real provider integrations exist, while implicit AI automation remains in progress.
-- Several lifecycle capabilities are implemented with deterministic fallback paths to preserve reliability during rollout.
-- API compatibility is maintained across `/api/*` and `/api/v1/*` prefixes while migration continues.
-- Lifecycle automation planning is now available in API gateway route `POST /projects/:projectId/automation/plan` with explicit decision-support defaults.
+- Architecture direction and phase boundary ownership are stable and aligned with Kernel/Data Cloud/AEP contracts.
+- Backend lifecycle, phase packet, ProductUnitIntent handoff, and degraded fail-closed semantics are implemented and verified.
+- Frontend is now transitioning from heuristic phase-status rendering to backend-owned typed phase panel models.
+- Remaining engineering work is primarily hardening: cockpit decomposition, shell consistency, and documentation drift removal.
 
-### Known Limitations by Phase (2026-04-17)
+### Known Hardening Gaps by Phase (2026-05-27)
 
-| Lifecycle Phase | Status | Limitation Focus |
-|----------------|--------|------------------|
-| INTENT | Partial | Intent capture is implemented, while deeper AI-native interpretation remains in progress |
-| SHAPE | Partial | Shape derivation exists, but high-fidelity automated architecture modeling is not complete |
-| VALIDATE | Partial | Validation endpoints exist; broader policy automation and confidence routing remain incomplete |
-| GENERATE | Partial | Generation paths are available, with incomplete quality gates and artifact assurance loops |
-| RUN | Early | Full execution orchestration and production-hardening flows are still being integrated |
-| OBSERVE | Early | Metrics/traces are present, but complete observability-driven automation is not yet in place |
-| LEARN | Early | Learning-service feedback loops are partial and not universally connected across phases |
-| EVOLVE | Early | Evolution workflows are available in parts but not end-to-end across lifecycle state |
+| Lifecycle Phase | Current State | Hardening Focus |
+|----------------|---------------|-----------------|
+| INTENT | Implemented | Deeper model/prompt evaluation breadth and long-run regression coverage |
+| SHAPE | Implemented | Larger project canvas performance and artifact lineage regression depth |
+| VALIDATE | Implemented | Expanded policy fixture combinations and gate confidence explainability |
+| GENERATE | Implemented | Canonical backend-owned assurance panel composition across all UI surfaces |
+| RUN | Implemented | Retry/rollback/promote operational drills and environment-specific resilience |
+| OBSERVE | Implemented | Typed runtime diagnostics enrichment and operator remediation runbooks |
+| LEARN | Implemented | Longer-horizon feedback loop verification and governance signal traceability |
+| EVOLVE | Implemented | Broader impact-analysis and diff-review end-to-end regression coverage |
+
+### Current Hardening Focus Areas
+
+- Phase cockpit decomposition into thin routes, mappers, action hooks, and focused presentational panels.
+- Full removal of frontend heuristic lifecycle inference in favor of typed backend packet models.
+- Product shell consistency across phase cockpit, kernel health, product-family, and admin surfaces.
+- Ongoing docs reconciliation to keep architecture and backlog language synchronized with current implementation.
 
 ---
 

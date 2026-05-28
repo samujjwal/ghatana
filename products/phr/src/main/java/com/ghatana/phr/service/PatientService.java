@@ -48,18 +48,6 @@ public class PatientService {
         this.consentService = consentService;
     }
 
-    /**
-     * Legacy constructor without consent service — kept for backward compatibility only.
-     * @deprecated Inject {@link ConsentService} via the 4-arg constructor. This no-consent
-     *             variant will be removed once all call sites are migrated.
-     */
-    @Deprecated
-    public PatientService(KernelTelemetryManager telemetry,
-                         AuditTrailService auditTrail,
-                         PatientRecordRepository recordsRepository) {
-        this(telemetry, auditTrail, recordsRepository, null);
-    }
-
     public PatientRecords getRecords(String patientId) {
         String sanitizedPatientId = PhrInputSanitizationUtils.requireSafeIdentifier(patientId, "patientId");
         enforceConsentForPatientRead(sanitizedPatientId);

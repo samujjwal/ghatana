@@ -12,7 +12,7 @@ const requiredGroups = {
   ],
   "test:integration": [
     "src/routes/app/project/__tests__/phase-cockpit-routes.test.tsx",
-    "src/routes/app/project/__tests__/PhaseStatusPanels.test.tsx",
+    "src/routes/app/project/__tests__/PhaseStatusPanelsCanonical.test.tsx",
   ],
   "test:contract": [
     "scripts/check-e2e-matrix.mjs",

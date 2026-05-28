@@ -1,6 +1,8 @@
 package com.ghatana.core.pattern.learning;
 
 import java.time.Instant;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -40,7 +42,7 @@ public final class PatternSuggestedEvent {
         this.tenantId = Objects.requireNonNull(tenantId, "tenantId must not be null");
         this.candidatePatternSpec = Objects.requireNonNull(candidatePatternSpec, "candidatePatternSpec must not be null");
         this.confidenceScore = confidenceScore;
-        this.evidence = Map.copyOf(Objects.requireNonNull(evidence, "evidence must not be null"));
+        this.evidence = Collections.unmodifiableMap(new HashMap<>(Objects.requireNonNull(evidence, "evidence must not be null")));
         this.timestamp = Instant.now();
         this.suggestedBy = Objects.requireNonNull(suggestedBy, "suggestedBy must not be null");
     }

@@ -39,6 +39,13 @@ public final class PhrEntitlementRoutes {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final Path ROUTE_CONTRACT_REPO_PATH = Path.of("products/phr/config/phr-route-contract.json");
     private static final Path ROUTE_CONTRACT_MODULE_PATH = Path.of("config/phr-route-contract.json");
+    private static final Map<String, Integer> ROLE_ORDER = Map.of(
+        "patient", 10,
+        "caregiver", 20,
+        "fchv", 30,
+        "clinician", 40,
+        "admin", 50
+    );
 
     private final Eventloop eventloop;
     private final RouteEntitlementEvaluator routeEntitlementEvaluator;
@@ -263,11 +270,11 @@ public final class PhrEntitlementRoutes {
 
         // Use loaded route contract with built-in role order
         List<ProductRouteEntitlement.RouteEntitlement> routes = routeEntitlementEvaluator.filterByRole(
-            cachedRoutes, normalizedRole);
+            cachedRoutes, normalizedRole, ROLE_ORDER);
         List<ProductRouteEntitlement.ActionEntitlement> actions =
-            routeEntitlementEvaluator.filterActionsByRole(routes, normalizedRole);
+            routeEntitlementEvaluator.filterActionsByRole(routes, normalizedRole, ROLE_ORDER);
         List<ProductRouteEntitlement.CardEntitlement> cards =
-            routeEntitlementEvaluator.filterCardsByRole(routes, normalizedRole);
+            routeEntitlementEvaluator.filterCardsByRole(routes, normalizedRole, ROLE_ORDER);
 
         ProductRouteEntitlement entitlement = new ProductRouteEntitlement(
             "phr",

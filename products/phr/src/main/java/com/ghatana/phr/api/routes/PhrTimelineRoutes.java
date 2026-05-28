@@ -68,7 +68,7 @@ public final class PhrTimelineRoutes {
 
         Promise<Boolean> accessCheck;
         if (policyEvaluator == null) {
-            accessCheck = Promise.of(PhrRouteSupport.canAccessPatientRecordForRole(context, patientId));
+            accessCheck = Promise.of("patient".equals(context.role()) && context.principalId().equals(patientId));
         } else {
             accessCheck = policyEvaluator.canAccessPatientRecordAsync(context, patientId)
                 .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);
@@ -125,12 +125,6 @@ public final class PhrTimelineRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        if (!PhrRouteSupport.canAccessPatientRecordForRole(context, patientId)) {
-            return PhrRouteSupport.errorResponse(403, "TIMELINE_ACCESS_DENIED",
-                "Access denied to timeline for patient " + patientId,
-                context.correlationId());
-        }
-
         PatientOperationContext opCtx = new PatientOperationContext(
             context.tenantId(),
             "default",
@@ -139,8 +133,22 @@ public final class PhrTimelineRoutes {
             context.correlationId()
         );
 
-        return recordService.getTimelineByCategory(opCtx, patientId, category)
-            .then(entries -> {
+        Promise<Boolean> accessCheck;
+        if (policyEvaluator == null) {
+            accessCheck = Promise.of("patient".equals(context.role()) && context.principalId().equals(patientId));
+        } else {
+            accessCheck = policyEvaluator.canAccessPatientRecordAsync(context, patientId)
+                .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);
+        }
+
+        return accessCheck.then(allowed -> {
+            if (!allowed) {
+                return PhrRouteSupport.errorResponse(403, "TIMELINE_ACCESS_DENIED",
+                    "Access denied to timeline for patient " + patientId,
+                    context.correlationId());
+            }
+            return recordService.getTimelineByCategory(opCtx, patientId, category)
+                .then(entries -> {
                 List<Map<String, Object>> items = entries.stream()
                     .map(entry -> Map.of(
                         "id", entry.entryId(),
@@ -157,8 +165,9 @@ public final class PhrTimelineRoutes {
                 response.put("category", category);
                 response.put("items", items);
                 response.put("count", items.size());
-                
-                return PhrRouteSupport.jsonResponseWithCorrelation(200, response, context.correlationId());
-            });
+
+                    return PhrRouteSupport.jsonResponseWithCorrelation(200, response, context.correlationId());
+                });
+        });
     }
 }

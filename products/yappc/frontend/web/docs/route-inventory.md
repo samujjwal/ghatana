@@ -1,6 +1,6 @@
 # YAPPC Route Inventory
 
-> Auto-generated from `src/routes.ts` on 2026-05-26.
+> Auto-generated from `src/routes.ts` on 2026-05-27.
 > Run `node scripts/generate-route-inventory.mjs` to regenerate.
 
 | # | URL Path | Route File | Owner | Auth | Nav | Feature Flag | Expected User Actions | Coverage |
@@ -21,8 +21,8 @@
 | 14 | `p/:projectId/generate` | `routes/app/project/generate.tsx` | Generate phase | Authenticated project access | Project phase tab | generate | Start generation<br>Review diff<br>Apply/reject/rollback generated changes | `src/routes/app/project/__tests__/phase-cockpit-routes.test.tsx` |
 | 15 | `p/:projectId/run` | `routes/app/project/run.tsx` | Run phase | Authenticated project access | Project phase tab | run | Start run workflow<br>Retry run<br>Rollback run<br>Promote run | `src/routes/app/project/__tests__/phase-cockpit-routes.test.tsx` |
 | 16 | `p/:projectId/observe` | `routes/app/project/observe.tsx` | Observe phase | Authenticated project access | Project phase tab | observe | Inspect preview diagnostics<br>Review runtime health<br>Review recommendations | `src/routes/app/project/__tests__/phase-cockpit-routes.test.tsx` |
-| 17 | `p/:projectId/learn` | `routes/app/project/learn.tsx` | Learn phase | Authenticated project access | Project phase tab | learn | Review learning evidence<br>Inspect agent governance state | `src/routes/app/project/__tests__/PhaseStatusPanels.test.tsx` |
-| 18 | `p/:projectId/evolve` | `routes/app/project/evolve.tsx` | Evolve phase | Authenticated project access | Project phase tab | evolve | Review evolution proposal<br>Inspect impact analysis<br>Approve or reject diff | `src/routes/app/project/__tests__/PhaseStatusPanels.test.tsx` |
+| 17 | `p/:projectId/learn` | `routes/app/project/learn.tsx` | Learn phase | Authenticated project access | Project phase tab | learn | Review learning evidence<br>Inspect agent governance state | `src/routes/app/project/__tests__/phase-cockpit-routes.test.tsx` |
+| 18 | `p/:projectId/evolve` | `routes/app/project/evolve.tsx` | Evolve phase | Authenticated project access | Project phase tab | evolve | Review evolution proposal<br>Inspect impact analysis<br>Approve or reject diff | `src/routes/app/project/__tests__/phase-cockpit-routes.test.tsx` |
 | 19 | `p/:projectId/settings` | `routes/app/project/settings.tsx` | Project settings | Authenticated project access | Project settings action | None | Update project metadata<br>Manage project access settings | `src/routes/app/project/__tests__/settings.test.tsx` |
 | 20 | `p/:projectId/canvas` | `routes/app/project/canvas.tsx` | Legacy Shape canvas | Authenticated project access | Deep link only | legacy route policy | Open compatibility canvas surface | `src/routes/app/project/__tests__/canvas.integration.test.tsx` |
 | 21 | `p/:projectId/preview` | `routes/app/project/preview.tsx` | Legacy preview | Authenticated project access | Deep link only | legacy route policy | Open compatibility preview surface | `src/routes/app/project/__tests__/preview.test.tsx` |

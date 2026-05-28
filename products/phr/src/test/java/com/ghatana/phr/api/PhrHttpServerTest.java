@@ -2,7 +2,11 @@ package com.ghatana.phr.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.kernel.observability.AuditTrailService;
 import com.ghatana.kernel.release.ReleaseReadinessRuntimeService;
+import com.ghatana.kernel.security.KernelSecurityManager;
+import com.ghatana.phr.application.clinical.ClinicalService;
+import com.ghatana.phr.application.clinical.ClinicalServiceImpl;
 import com.ghatana.phr.fhir.server.PhrFhirR4Server;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
 import com.ghatana.phr.kernel.service.EmergencyAccessLogService;
@@ -10,6 +14,8 @@ import com.ghatana.phr.kernel.service.EmergencyAccessNotificationSender;
 import com.ghatana.phr.kernel.service.EmergencyAccessReviewAuditLogger;
 import com.ghatana.phr.kernel.service.EmergencyAccessReviewCase;
 import com.ghatana.phr.kernel.service.EmergencyAccessReviewWorkflow;
+import com.ghatana.phr.kernel.service.CaregiverService;
+import com.ghatana.phr.kernel.service.DurablePhrNotificationSender;
 import com.ghatana.phr.kernel.service.ImmunizationService;
 import com.ghatana.phr.kernel.service.LabResultService;
 import com.ghatana.phr.kernel.service.MedicationService;
@@ -29,15 +35,23 @@ import com.ghatana.platform.http.security.RoleEvaluator;
 import com.ghatana.platform.http.security.RouteEntitlementEvaluator;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.phr.api.routes.PhrAdministrativeRoutes;
+import com.ghatana.phr.api.routes.PhrAuditRoutes;
+import com.ghatana.phr.api.routes.PhrAuthRoutes;
+import com.ghatana.phr.api.routes.PhrCaregiverRoutes;
 import com.ghatana.phr.api.routes.PhrClinicalRoutes;
 import com.ghatana.phr.api.routes.PhrConsentRoutes;
 import com.ghatana.phr.api.routes.PhrDocumentImagingRoutes;
 import com.ghatana.phr.api.routes.PhrEntitlementRoutes;
 import com.ghatana.phr.api.routes.PhrEmergencyRoutes;
+import com.ghatana.phr.api.routes.PhrFchvRoutes;
 import com.ghatana.phr.api.routes.PhrFhirRoutes;
 import com.ghatana.phr.api.routes.PhrHealthRoutes;
+import com.ghatana.phr.api.routes.PhrMobileRoutes;
+import com.ghatana.phr.api.routes.PhrNotificationRoutes;
 import com.ghatana.phr.api.routes.PhrPatientRecordRoutes;
+import com.ghatana.phr.api.routes.PhrProviderRoutes;
 import com.ghatana.phr.api.routes.PhrReleaseReadinessRoutes;
+import com.ghatana.phr.repository.UserRepository;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
@@ -88,30 +102,30 @@ class PhrHttpServerTest extends EventloopTestBase {
             new PhrTestInfrastructure.StubDataCloudAdapter();
         DistributedCachePort<String, ConsentManagementService.ConsentCacheEntry> consentCache =
             new TestDistributedCache<>();
+        var kernelContext = PhrTestInfrastructure.createTestContext(
+            dataCloud,
+            Map.of(PhrNotificationSender.class, new NoopNotificationSender())
+        );
         PhrFhirR4Server fhirServer =
-            new PhrFhirR4Server(PhrTestInfrastructure.createTestContext(dataCloud));
+            new PhrFhirR4Server(kernelContext);
         runPromise(fhirServer::start);
 
         FhirController controller = new FhirController(fhirServer);
-        PatientRecordService patientRecordService = new PatientRecordService(PhrTestInfrastructure.createTestContext(dataCloud));
-        LabResultService labResultService = new LabResultService(PhrTestInfrastructure.createTestContext(dataCloud));
-        MedicationService medicationService = new MedicationService(PhrTestInfrastructure.createTestContext(dataCloud));
-        ImmunizationService immunizationService = new ImmunizationService(PhrTestInfrastructure.createTestContext(dataCloud));
-        AppointmentService appointmentService = new AppointmentService(PhrTestInfrastructure.createTestContext(
-            dataCloud,
-            Map.of(PhrNotificationSender.class, new NoopNotificationSender())
-        ));
-        TelemedicineService telemedicineService = new TelemedicineService(PhrTestInfrastructure.createTestContext(
-            dataCloud,
-            Map.of(PhrNotificationSender.class, new NoopNotificationSender())
-        ));
-        ReferralService referralService = new ReferralService(PhrTestInfrastructure.createTestContext(dataCloud));
-        BillingService billingService = new BillingService(PhrTestInfrastructure.createTestContext(dataCloud));
-        DocumentService documentService = new DocumentService(PhrTestInfrastructure.createTestContext(dataCloud));
-        ImagingService imagingService = new ImagingService(PhrTestInfrastructure.createTestContext(dataCloud));
+        PatientRecordService patientRecordService = new PatientRecordService(kernelContext);
+        LabResultService labResultService = new LabResultService(kernelContext);
+        MedicationService medicationService = new MedicationService(kernelContext);
+        ImmunizationService immunizationService = new ImmunizationService(kernelContext);
+        AppointmentService appointmentService = new AppointmentService(kernelContext);
+        TelemedicineService telemedicineService = new TelemedicineService(kernelContext);
+        ReferralService referralService = new ReferralService(kernelContext);
+        BillingService billingService = new BillingService(kernelContext);
+        DocumentService documentService = new DocumentService(kernelContext);
+        ImagingService imagingService = new ImagingService(kernelContext);
+        CaregiverService caregiverService = new CaregiverService(kernelContext);
+        DurablePhrNotificationSender durableNotificationSender = new DurablePhrNotificationSender(kernelContext);
         TreatmentRelationshipService treatmentRelationshipService = Mockito.mock(TreatmentRelationshipService.class);
         EmergencyAccessLogService emergencyAccessLogService = new EmergencyAccessLogService(
-            PhrTestInfrastructure.createTestContext(dataCloud),
+            kernelContext,
             new EmergencyAccessReviewWorkflow(new NoopEmergencyAccessNotificationSender(), new NoopEmergencyAccessAuditLogger())
         );
         ReleaseReadinessRuntimeService releaseReadinessRuntimeService = new ReleaseReadinessRuntimeService() {
@@ -135,12 +149,15 @@ class PhrHttpServerTest extends EventloopTestBase {
         Mockito.when(treatmentRelationshipService.hasActiveTreatmentRelationship(Mockito.anyString(), Mockito.anyString()))
             .thenReturn(Promise.of(true));
         ConsentManagementService consentService = new ConsentManagementService(
-            PhrTestInfrastructure.createTestContext(
-                dataCloud,
-                Map.of(PhrNotificationSender.class, new NoopNotificationSender())
-            ),
+            kernelContext,
             consentCache
         );
+        AuditTrailService auditTrailService = Mockito.mock(AuditTrailService.class);
+        Mockito.when(auditTrailService.queryAuditEvents(Mockito.any()))
+            .thenReturn(List.of());
+        KernelSecurityManager securityManager = Mockito.mock(KernelSecurityManager.class);
+        UserRepository userRepository = new UserRepository();
+        ClinicalService clinicalService = new ClinicalServiceImpl();
         runPromise(patientRecordService::start);
         runPromise(labResultService::start);
         runPromise(medicationService::start);
@@ -151,6 +168,8 @@ class PhrHttpServerTest extends EventloopTestBase {
         runPromise(billingService::start);
         runPromise(documentService::start);
         runPromise(imagingService::start);
+        runPromise(caregiverService::start);
+        runPromise(durableNotificationSender::start);
         runPromise(emergencyAccessLogService::start);
         runPromise(consentService::start);
 
@@ -193,6 +212,19 @@ class PhrHttpServerTest extends EventloopTestBase {
         RouteEntitlementEvaluator routeEntitlementEvaluator = new RouteEntitlementEvaluator(new RoleEvaluator.FailClosed());
         IdentityAwareBoundedCache<String, Map<String, Object>> entitlementCache = new IdentityAwareBoundedCache<>(1000, 300);
         PhrEntitlementRoutes entitlementRoutes = new PhrEntitlementRoutes(eventloop(), routeEntitlementEvaluator, entitlementCache);
+        PhrAuditRoutes auditRoutes = new PhrAuditRoutes(eventloop(), auditTrailService);
+        PhrAuthRoutes authRoutes = new PhrAuthRoutes(eventloop(), securityManager, userRepository, auditTrailService);
+        PhrProviderRoutes providerRoutes = new PhrProviderRoutes(eventloop(), patientRecordService, consentService, clinicalService);
+        PhrCaregiverRoutes caregiverRoutes = new PhrCaregiverRoutes(eventloop(), caregiverService, patientRecordService);
+        PhrFchvRoutes fchvRoutes = new PhrFchvRoutes(eventloop());
+        PhrMobileRoutes mobileRoutes = new PhrMobileRoutes(
+            eventloop(),
+            patientRecordService,
+            consentService,
+            documentService,
+            durableNotificationSender
+        );
+        PhrNotificationRoutes notificationRoutes = new PhrNotificationRoutes(eventloop(), durableNotificationSender);
 
         server = new PhrHttpServer(
             eventloop(),
@@ -205,7 +237,14 @@ class PhrHttpServerTest extends EventloopTestBase {
             documentImagingRoutes,
             releaseReadinessRoutes,
             entitlementRoutes,
-            healthRoutes
+            healthRoutes,
+            auditRoutes,
+            authRoutes,
+            providerRoutes,
+            caregiverRoutes,
+            fchvRoutes,
+            mobileRoutes,
+            notificationRoutes
         );
         runPromise(server::start);
         servlet = server.getServlet();
@@ -375,6 +414,26 @@ class PhrHttpServerTest extends EventloopTestBase {
             assertThat(body.path("principalId").asText()).isEqualTo("principal-1");
             assertThat(body.path("persona").asText()).isEqualTo("clinician");
             assertThat(body.path("tier").asText()).isEqualTo("clinical");
+        }
+    }
+
+    @Nested
+    @DisplayName("stable route groups")
+    class StableRouteGroups {
+
+        @Test
+        @DisplayName("mounts all production route families")
+        void mountsAllProductionRouteFamilies() throws Exception {
+            assertMounted(HttpMethod.POST, "/auth/logout", null, Map.of());
+            assertMounted(HttpMethod.GET, "/audit/events", null, Map.of());
+            assertMounted(HttpMethod.GET, "/provider/patients", null, Map.of());
+            assertMounted(HttpMethod.GET, "/caregiver/dependents", null, Map.of());
+            assertMounted(HttpMethod.GET, "/fchv/dashboard", null, Map.of());
+            assertMounted(HttpMethod.GET, "/notifications/", null, Map.of());
+            assertMounted(HttpMethod.GET, "/mobile/dashboard", null, Map.of());
+            assertMounted(HttpMethod.GET, "/route-entitlements", null, Map.of());
+            assertMounted(HttpMethod.GET, "/health", null, Map.of());
+            assertMounted(HttpMethod.GET, "/ready", null, Map.of());
         }
     }
 
@@ -1008,6 +1067,14 @@ class PhrHttpServerTest extends EventloopTestBase {
             builder.withBody(jsonBody.getBytes(StandardCharsets.UTF_8));
         }
         return runPromise(() -> servlet.serve(builder.build()));
+    }
+
+    private void assertMounted(HttpMethod method, String path, String jsonBody, Map<String, String> headers)
+            throws Exception {
+        HttpResponse response = dispatch(method, path, jsonBody, headers);
+        assertThat(response.getCode())
+            .as("%s %s should be routed by PhrHttpServer", method, path)
+            .isNotEqualTo(404);
     }
 
     private static java.util.List<String> routePaths(JsonNode routes) {
