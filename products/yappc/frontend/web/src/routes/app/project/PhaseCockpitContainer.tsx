@@ -387,6 +387,7 @@ export function PhaseCockpitContainer({ phase }: PhaseCockpitContainerProps): Re
       )}
       degradedDetails={<PhaseDegradedPacketPanel details={packet.degradedDetails} />}
       phasePanels={packet.phasePanels ?? []}
+      packet={packet}
     />
   );
 }

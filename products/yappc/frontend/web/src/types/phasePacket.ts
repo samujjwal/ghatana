@@ -155,7 +155,13 @@ export interface PlatformRunStatus {
   readonly startedAt: string;
   readonly completedAt?: string;
   readonly traceId: string;
-  readonly evidenceIds: readonly string[];`r`n  readonly rollbackTarget?: string;`r`n  readonly promoteTarget?: string;`r`n  readonly releaseCandidate?: string;`r`n  readonly riskLevel?: string;`r`n  readonly remediationHint?: string;`r`n  readonly rollbackSupported?: boolean;
+  readonly evidenceIds: readonly string[];
+  readonly rollbackTarget?: string;
+  readonly promoteTarget?: string;
+  readonly releaseCandidate?: string;
+  readonly riskLevel?: string;
+  readonly remediationHint?: string;
+  readonly rollbackSupported?: boolean;
 }
 
 // ============================================================================
@@ -307,7 +313,13 @@ export interface AgentGovernanceHealth {
   readonly status: string;
   readonly governanceState: string;
   readonly learningLevel: string;
-  readonly evidenceIds: readonly string[];`r`n  readonly rollbackTarget?: string;`r`n  readonly promoteTarget?: string;`r`n  readonly releaseCandidate?: string;`r`n  readonly riskLevel?: string;`r`n  readonly remediationHint?: string;`r`n  readonly rollbackSupported?: boolean;
+  readonly evidenceIds: readonly string[];
+  readonly rollbackTarget?: string;
+  readonly promoteTarget?: string;
+  readonly releaseCandidate?: string;
+  readonly riskLevel?: string;
+  readonly remediationHint?: string;
+  readonly rollbackSupported?: boolean;
   readonly issues: readonly string[];
 }
 

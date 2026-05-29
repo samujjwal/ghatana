@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { Alert } from '@ghatana/design-system';
+
 import { PhaseBlockerPanel } from '../../../components/phase/PhaseBlockerPanel';
 import { PhaseCockpitLayout } from '../../../components/phase/PhaseCockpitLayout';
 import { PhaseEvidencePanel } from '../../../components/phase/PhaseEvidencePanel';
@@ -16,6 +18,7 @@ import type { MountedPhase } from '../../../services/phase';
 import { PhaseActionSection, type PhaseActionSectionGroup } from './PhaseActionSection';
 import { PhaseEmbeddedSurface } from './PhaseEmbeddedSurface';
 import { PhasePacketErrorPanel } from './PhasePacketErrorPanel';
+import { PhasePacketSummary } from './PhasePacketSummary';
 
 interface PhaseCockpitViewProps {
   readonly phase: MountedPhase;
@@ -56,6 +59,7 @@ interface PhaseCockpitViewProps {
   readonly degradedDetails: React.ReactNode;
   readonly isDependencyDegraded: boolean;
   readonly phasePanels?: readonly import('../../../types/phasePacket').PhasePanelView[];
+  readonly packet: import('../../../types/phasePacket').PhaseCockpitPacket | null;
 }
 
 export function PhaseCockpitView({
@@ -97,6 +101,7 @@ export function PhaseCockpitView({
   degradedDetails,
   isDependencyDegraded,
   phasePanels,
+  packet,
 }: PhaseCockpitViewProps): React.ReactNode {
   const advancedDetails = (
     <div
@@ -119,7 +124,7 @@ export function PhaseCockpitView({
   );
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
       <PhaseCockpitLayout
         testId={`${phase}-cockpit`}
         phaseName={phaseName}
@@ -149,22 +154,16 @@ export function PhaseCockpitView({
         advancedToolsLabel={phaseDetailLabel}
         advancedToolsDescription={phaseDetailDescription}
       >
-        <div className="space-y-4" data-testid={`${phase}-native-summary`}>
+        <div className="space-y-3 md:space-y-4" data-testid={`${phase}-native-summary`}>
+          <PhasePacketSummary packet={packet} />
           <PhasePacketErrorPanel error={error} onRetry={onRetry} />
           {currentStateCard}
           {degradedDetails}
           {feedback ? (
-            <div className="rounded-xl border border-info-border bg-info-bg p-4 text-sm text-info-color">
-              {feedback}
-            </div>
+            <Alert tone="info" description={feedback} data-testid="phase-feedback" />
           ) : null}
           {actionResultMessage ? (
-            <div
-              className="rounded-xl border border-success-border bg-success-bg p-4 text-sm text-success-color"
-              data-testid="phase-action-result"
-            >
-              {actionResultMessage}
-            </div>
+            <Alert tone="success" description={actionResultMessage} data-testid="phase-action-result" />
           ) : null}
           {actionSections.map((section) => (
             <PhaseActionSection
@@ -176,12 +175,7 @@ export function PhaseCockpitView({
             />
           ))}
           {actionError ? (
-            <div
-              className="rounded-xl border border-destructive bg-destructive/10 p-4 text-sm text-destructive"
-              data-testid="phase-action-error"
-            >
-              {actionError}
-            </div>
+            <Alert tone="danger" description={actionError} data-testid="phase-action-error" />
           ) : null}
           {isDependencyDegraded ? (
             <details
