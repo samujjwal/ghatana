@@ -12,8 +12,10 @@
  */
 
 import React, { useEffect, useMemo, useState, Suspense } from 'react';
-import { useSearchParams, useNavigate } from 'react-router';
+import { useSearchParams, useNavigate, useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import {
     Database,
     Table,
@@ -30,6 +32,9 @@ import {
     ArrowUpDown,
     ArrowUp,
     ArrowDown,
+    Trash2,
+    Archive,
+    ChevronRight,
 } from 'lucide-react';
 import { cn } from '../lib/theme';
 import { collectionsApi, type Collection } from '../lib/api/collections';
@@ -37,6 +42,7 @@ import { lineageService } from '../api/lineage.service';
 import { aiOperationsService, type AiQualityAdvisory } from '../api/ai-operations.service';
 import { LineageGraph } from '../components/lineage/LineageGraph';
 import { AIAssistSuggestion } from '../components/common/AIAssistSuggestion';
+import { DataSummary } from '../components/common/DataSummary';
 
 /**
  * View modes for the explorer
@@ -188,16 +194,27 @@ function OperationalStatusDot({ status }: { status: Collection['operationalStatu
 
 /**
  * Collection Row Component
+ * P6.2: Added deterministic action handlers for quality, lineage, schema, delete, and archive
  */
 function CollectionRow({
     collection,
     onView,
     onEdit,
+    onQuality,
+    onLineage,
+    onSchema,
+    onDelete,
+    onArchive,
     viewMode,
 }: {
     collection: Collection;
     onView: () => void;
     onEdit: () => void;
+    onQuality: () => void;
+    onLineage: () => void;
+    onSchema: () => void;
+    onDelete: () => void;
+    onArchive: () => void;
     viewMode: ViewMode;
 }) {
     return (
@@ -275,12 +292,44 @@ function CollectionRow({
                     <Edit className="h-4 w-4 text-gray-400" />
                 </button>
                 <button
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => { e.stopPropagation(); onQuality(); }}
                     className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-                    title="More actions"
-                    aria-label={`More actions for ${collection.name}`}
+                    title="Quality"
+                    aria-label={`View quality for ${collection.name}`}
                 >
-                    <MoreVertical className="h-4 w-4 text-gray-400" />
+                    <Activity className="h-4 w-4 text-gray-400" />
+                </button>
+                <button
+                    onClick={(e) => { e.stopPropagation(); onLineage(); }}
+                    className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                    title="Lineage"
+                    aria-label={`View lineage for ${collection.name}`}
+                >
+                    <GitBranch className="h-4 w-4 text-gray-400" />
+                </button>
+                <button
+                    onClick={(e) => { e.stopPropagation(); onSchema(); }}
+                    className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                    title="Schema"
+                    aria-label={`View schema for ${collection.name}`}
+                >
+                    <Code className="h-4 w-4 text-gray-400" />
+                </button>
+                <button
+                    onClick={(e) => { e.stopPropagation(); onArchive(); }}
+                    className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                    title="Archive"
+                    aria-label={`Archive ${collection.name}`}
+                >
+                    <Archive className="h-4 w-4 text-gray-400" />
+                </button>
+                <button
+                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                    className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900 rounded"
+                    title="Delete"
+                    aria-label={`Delete ${collection.name}`}
+                >
+                    <Trash2 className="h-4 w-4 text-red-400" />
                 </button>
             </div>
         </div>
@@ -305,7 +354,9 @@ function LazyLoading({ message = 'Loading...' }: { message?: string }) {
  * Optimized Data Explorer Component
  */
 export function DataExplorer() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
+    const params = useParams();
     const [searchParams, setSearchParams] = useSearchParams();
     const rawViewMode = searchParams.get('view');
     const viewMode = normalizeViewMode(rawViewMode);
@@ -341,6 +392,18 @@ export function DataExplorer() {
     });
 
     const collections = collectionsPage?.items ?? [];
+
+    // P6.1: Load selected collection from route param for deep-link support
+    const collectionIdFromRoute = params.id;
+    useEffect(() => {
+        if (collectionIdFromRoute && collections.length > 0) {
+            const collection = collections.find(c => c.id === collectionIdFromRoute);
+            if (collection && (!selectedCollection || selectedCollection.id !== collectionIdFromRoute)) {
+                setSelectedCollection(collection);
+            }
+        }
+    }, [collectionIdFromRoute, collections, selectedCollection]);
+
     const advisoryCollectionId = selectedCollection?.id ?? collections[0]?.id;
     const { data: backendQualityAdvisory } = useQuery({
         queryKey: ['quality-advisory', advisoryCollectionId],
@@ -598,6 +661,33 @@ export function DataExplorer() {
                             collection={collection}
                             onView={() => handleCollectionClick(collection)}
                             onEdit={() => navigate(`/data/${collection.id}/edit`)}
+                            onQuality={() => navigate(`/data/${collection.id}?view=quality`)}
+                            onLineage={() => navigate(`/data/${collection.id}?view=lineage`)}
+                            onSchema={() => navigate(`/data/${collection.id}?view=schema`)}
+                            onDelete={async () => {
+                                if (confirm(`Are you sure you want to delete "${collection.name}"? This action cannot be undone.`)) {
+                                    try {
+                                        await collectionsApi.delete(collection.id);
+                                        toast.success(`Collection "${collection.name}" deleted successfully`);
+                                        await refetch();
+                                        if (selectedCollection?.id === collection.id) {
+                                            setSelectedCollection(null);
+                                            navigate('/data');
+                                        }
+                                    } catch (error) {
+                                        toast.error(`Failed to delete collection: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                                    }
+                                }
+                            }}
+                            onArchive={async () => {
+                                try {
+                                    await collectionsApi.archive(collection.id);
+                                    toast.success(`Collection "${collection.name}" archived successfully`);
+                                    await refetch();
+                                } catch (error) {
+                                    toast.error(`Failed to archive collection: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                                }
+                            }}
                             viewMode={viewMode}
                         />
                     ))}
@@ -678,24 +768,24 @@ export function DataExplorer() {
                                     </div>
                                 )}
 
-                                {/* Retention policy */}
+                                {/* Retention Policy */}
                                 {selectedCollection.retentionPolicy && (
-                                    <div>
-                                        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Retention Policy</h3>
-                                        <pre className="text-xs bg-gray-50 dark:bg-gray-900/30 p-3 rounded-lg border border-gray-200 dark:border-gray-700 overflow-auto">
-                                            {JSON.stringify(selectedCollection.retentionPolicy, null, 2)}
-                                        </pre>
-                                    </div>
+                                    <DataSummary
+                                        title="Retention Policy"
+                                        description="Data retention and archival configuration"
+                                        data={selectedCollection.retentionPolicy as Record<string, unknown>}
+                                        highlightFields={['retentionPeriod', 'archiveAfter', 'deleteAfter']}
+                                    />
                                 )}
 
                                 {/* Lineage */}
                                 {selectedCollection.lineage && (
-                                    <div>
-                                        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Lineage</h3>
-                                        <pre className="text-xs bg-gray-50 dark:bg-gray-900/30 p-3 rounded-lg border border-gray-200 dark:border-gray-700 overflow-auto">
-                                            {JSON.stringify(selectedCollection.lineage, null, 2)}
-                                        </pre>
-                                    </div>
+                                    <DataSummary
+                                        title="Lineage"
+                                        description="Data lineage and provenance information"
+                                        data={selectedCollection.lineage as Record<string, unknown>}
+                                        highlightFields={['upstream', 'downstream', 'source']}
+                                    />
                                 )}
 
                                 {!selectedCollection.qualityScore && !selectedCollection.qualityMetrics && (

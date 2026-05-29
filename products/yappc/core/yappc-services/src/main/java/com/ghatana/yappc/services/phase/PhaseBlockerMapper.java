@@ -6,6 +6,11 @@ import java.util.List;
 
 /**
  * Maps gate validator blockers into canonical phase packet blockers.
+ *
+ * @doc.type class
+ * @doc.purpose Maps gate validator blockers into canonical phase packet blockers
+ * @doc.layer service
+ * @doc.pattern Mapper
  */
 public final class PhaseBlockerMapper {
 

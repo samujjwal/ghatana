@@ -151,10 +151,14 @@ class BudgetRecommendationTest {
     }
 
     @Test @DisplayName("equals returns false for null")
-    void shouldNotEqualNull() { assertThat(draft()).isNotEqualTo(null); }
+    void shouldNotEqualNull() {
+        assertThat(draft()).isNotEqualTo(null);
+    }
 
     @Test @DisplayName("equals returns false for different type")
-    void shouldNotEqualDifferentType() { assertThat(draft()).isNotEqualTo("x"); }
+    void shouldNotEqualDifferentType() {
+        assertThat(draft()).isNotEqualTo("x");
+    }
 
     @Test @DisplayName("equals and hashCode are id-based")
     void shouldEqualById() {

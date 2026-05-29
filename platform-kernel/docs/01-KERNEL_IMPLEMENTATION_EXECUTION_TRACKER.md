@@ -87,7 +87,7 @@ Scope executed in this pass: Group 4 release-ops wave continuation for Data Clou
 
 Current blocker after this pass:
 
-- [ ] `pnpm check:data-cloud-release-gate` now fails at `check:evidence-current-commit` because of repo-wide stale evidence files outside the Data Cloud scope (notably Digital Marketing and PHR evidence snapshots pinned to older commits). This is cross-product freshness debt, not a remaining Data Cloud handler/route/auth implementation defect.
+- [ ] `pnpm check:data-cloud-release-gate` now fails at `check:evidence-current-commit` because of repo-wide stale evidence files outside the Data Cloud scope (notably Digital Marketing and other product evidence snapshots pinned to older commits). This is cross-product freshness debt, not a remaining Data Cloud handler/route/auth implementation defect.
 
 Verification evidence from this pass:
 
@@ -120,7 +120,7 @@ Verification evidence from this pass:
 
 Notes:
 
-- `pnpm check:route-entitlement-contracts` was started and reached successful Kernel + PHR stages before being intentionally interrupted during DMOS stage to avoid long-running cross-product execution without a focused blocker.
+- `pnpm check:route-entitlement-contracts` was started and reached successful Kernel + product stages before being intentionally interrupted during DMOS stage to avoid long-running cross-product execution without a focused blocker.
 - Next execution slice should continue with a fail-fast Wave 2 strategy (one failing check at a time, then fix+reverify) to satisfy efficient completion requirements.
 
 ---

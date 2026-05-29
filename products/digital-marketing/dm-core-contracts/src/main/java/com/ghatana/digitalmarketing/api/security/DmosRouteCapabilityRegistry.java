@@ -60,6 +60,7 @@ public final class DmosRouteCapabilityRegistry {
         new RouteCapability("/v1/workspaces/:workspaceId/self-marketing-funnel", "dmos.self_marketing"),
         new RouteCapability("/v1/workspaces/:workspaceId/strategy", "dmos.strategy"),
         new RouteCapability("/v1/workspaces/:workspaceId/strategy", "dmos.strategy"),
+        new RouteCapability("/v1/workspaces/:workspaceId/strategy/:strategyId", "dmos.strategy"),
         new RouteCapability("/v1/workspaces/:workspaceId/strategy/:strategyId/approve", "dmos.strategy"),
         new RouteCapability("/v1/workspaces/:workspaceId/strategy/:strategyId/submit", "dmos.strategy")
     );

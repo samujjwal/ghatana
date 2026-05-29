@@ -93,25 +93,10 @@ function mapProductViewModeToShellRole(mode: ProductViewMode): ShellRole {
  *
  * Primary navigation stays outcome-first and lightweight. Advanced and preview
  * surfaces remain directly routable but are intentionally non-discoverable.
+ *
+ * P5.1: Removed static navSections - navigation is now fully driven by buildNavFromRegistry
+ * to ensure single source of truth from RouteSurfaceRegistry.
  */
-const navSections: NavSection[] = [
-    {
-        title: 'layout.sectionCore',
-        items: [
-            { to: '/', label: 'Home', icon: <Home className="h-4 w-4" />, exact: true },
-            { to: '/data', label: 'Data', icon: <Database className="h-4 w-4" /> },
-            { to: '/pipelines', label: 'Pipelines', icon: <Workflow className="h-4 w-4" /> },
-            { to: '/query', label: 'Query', icon: <Terminal className="h-4 w-4" /> },
-            { to: '/trust', label: 'Trust', icon: <Shield className="h-4 w-4" />, minimumShellRole: 'operator' },
-        ],
-    },
-    {
-        title: 'layout.sectionManage',
-        items: [
-            { to: '/operations', label: 'Operations', icon: <Settings className="h-4 w-4" />, minimumShellRole: 'admin' },
-        ],
-    },
-];
 
 const ROUTE_ICON_MAP: Record<string, LucideIcon> = {
     Home,
@@ -137,11 +122,15 @@ function getRouteIcon(iconName?: string): React.ReactNode {
 /**
  * Build navigation items from canonical route registry for a given role.
  * Ensures navigation always matches route surface truth (RBAC-001).
+ * P5.1: This is now the single source of truth for navigation, replacing static navSections.
+ * P5.2: Added progressive disclosure sections for advanced and preview surfaces.
  */
 export function buildNavFromRegistry(shellRole: ShellRole): NavSection[] {
     const discoverable = getDiscoverableRouteSurfaces(shellRole);
 
-    const corePaths = new Set(['/', '/data', '/pipelines', '/query', '/trust']);
+    const corePaths = new Set(['/', '/data', '/pipelines', '/query', '/trust', '/events']);
+    const advancedPaths = new Set(['/connectors', '/insights', '/plugins']);
+    const previewPaths = new Set(['/alerts', '/memory', '/entities', '/context', '/fabric', '/agents']);
     const managePaths = new Set(['/operations']);
 
     const coreItems: NavItem[] = discoverable
@@ -152,6 +141,24 @@ export function buildNavFromRegistry(shellRole: ShellRole): NavSection[] {
             labelKey: r.labelKey,
             icon: getRouteIcon(r.iconName),
             exact: r.path === '/',
+            minimumShellRole: r.minimumShellRole as ShellRole,
+        }));
+
+    const advancedItems: NavItem[] = discoverable
+        .filter((r) => advancedPaths.has(r.path))
+        .map((r) => ({
+            to: r.path,
+            label: r.label,
+            icon: getRouteIcon(r.iconName),
+            minimumShellRole: r.minimumShellRole as ShellRole,
+        }));
+
+    const previewItems: NavItem[] = discoverable
+        .filter((r) => previewPaths.has(r.path))
+        .map((r) => ({
+            to: r.path,
+            label: r.label,
+            icon: getRouteIcon(r.iconName),
             minimumShellRole: r.minimumShellRole as ShellRole,
         }));
 
@@ -167,32 +174,18 @@ export function buildNavFromRegistry(shellRole: ShellRole): NavSection[] {
 
     return [
         ...(coreItems.length > 0 ? [{ title: 'layout.sectionCore', items: coreItems }] : []),
+        ...(advancedItems.length > 0 ? [{ title: 'layout.sectionAdvanced', items: advancedItems }] : []),
+        ...(previewItems.length > 0 ? [{ title: 'layout.sectionPreview', items: previewItems }] : []),
         ...(manageItems.length > 0 ? [{ title: 'layout.sectionManage', items: manageItems }] : []),
     ];
 }
 
 /**
  * DC-UX-002: Access control derived from canonical route registry.
- * `getDiscoverableRoutes` is the single source of truth for which paths are
- * visible for a given shell role. Presentation data (icons, labels, grouping)
- * stays in `navSections`; the static `minimumShellRole` on nav items is ignored.
+ * P5.1: Updated to use buildNavFromRegistry as single source of truth, removing static navSections dependency.
  */
 export function getNavigationSectionsForShellRole(role: ShellRole): NavSection[] {
-    const accessiblePaths = new Set(getDiscoverableRouteSurfaces(role).map((r) => r.path));
-
-    if (!isAlertsSurfaceEnabled()) {
-        accessiblePaths.delete('/alerts');
-    }
-    if (!isFabricSurfaceEnabled()) {
-        accessiblePaths.delete('/fabric');
-    }
-
-    return navSections
-        .map((section: NavSection) => ({
-            ...section,
-            items: section.items.filter((item: NavItem) => accessiblePaths.has(item.to)),
-        }))
-        .filter((section: NavSection) => section.items.length > 0);
+    return buildNavFromRegistry(role);
 }
 
 /**

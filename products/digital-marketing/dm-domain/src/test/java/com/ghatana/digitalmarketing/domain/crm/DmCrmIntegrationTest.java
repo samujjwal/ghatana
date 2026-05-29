@@ -1,13 +1,13 @@
 package com.ghatana.digitalmarketing.domain.crm;
 
-import com.ghatana.digitalmarketing.domain.crm.DmCrmIntegration;
-import com.ghatana.digitalmarketing.domain.crm.DmCrmIntegrationStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 @DisplayName("DmCrmIntegration domain entity")
 class DmCrmIntegrationTest {
@@ -62,10 +62,14 @@ class DmCrmIntegrationTest {
     }
 
     @Test @DisplayName("equals returns false for null")
-    void shouldNotEqualNull() { assertThat(valid()).isNotEqualTo(null); }
+    void shouldNotEqualNull() {
+        assertThat(valid()).isNotEqualTo(null);
+    }
 
     @Test @DisplayName("equals returns false for different type")
-    void shouldNotEqualDifferentType() { assertThat(valid()).isNotEqualTo(42); }
+    void shouldNotEqualDifferentType() {
+        assertThat(valid()).isNotEqualTo(42);
+    }
 
     @Test @DisplayName("all getters return expected values")
     void shouldExposeAllGetters() {

@@ -826,4 +826,20 @@ public class HttpHandlerSupport {
                                                 String correlationId, String tenantId) {
         return canonicalErrorResponse(code, errorCode, message, correlationId, tenantId, null, false, null);
     }
+
+    /**
+     * Parses JSON body from HTTP request.
+     *
+     * @param request inbound HTTP request
+     * @return parsed JSON as Map
+     * @throws JsonProcessingException if JSON parsing fails
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> parseJsonBody(HttpRequest request) throws JsonProcessingException {
+        var bodyBuf = request.getBody();
+        if (bodyBuf == null || bodyBuf.readRemaining() == 0) {
+            return Map.of();
+        }
+        return objectMapper.readValue(bodyBuf.getString(StandardCharsets.UTF_8), Map.class);
+    }
 }

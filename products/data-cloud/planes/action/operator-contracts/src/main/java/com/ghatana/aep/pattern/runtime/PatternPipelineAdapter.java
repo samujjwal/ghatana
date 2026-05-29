@@ -197,7 +197,7 @@ public final class PatternPipelineAdapter {
         });
         String lifecycleState = String.valueOf(lifecycle.getOrDefault("state", "")).toUpperCase(Locale.ROOT);
         if ("SHADOW".equals(lifecycleState) && descriptor.sideEffectProfile() == AgentSideEffectProfile.SIDE_EFFECTING) {
-            throw new IllegalArgumentException("SHADOW lifecycle cannot bind SIDE_EFFECTING capability");
+            throw new IllegalArgumentException("SHADOW lifecycle cannot bind SIDE_EFFECTING");
         }
         if ("ACTIVE".equals(lifecycleState)
             && descriptor.sideEffectProfile() == AgentSideEffectProfile.SIDE_EFFECTING

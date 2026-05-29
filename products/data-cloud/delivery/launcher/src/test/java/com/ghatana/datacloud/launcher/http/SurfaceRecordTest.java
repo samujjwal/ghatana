@@ -194,7 +194,7 @@ class SurfaceRecordTest {
                 .build();
 
             Map<String, Object> map = record.toMap();
-            assertThat(map.get("state")).isEqualTo("live");
+            assertThat(map.get("state")).isEqualTo("LIVE");
             assertThat(map.get("status")).isEqualTo("ACTIVE");
             assertThat(map.get("surfaceId")).isEqualTo("intelligence.aiCompletion");
             assertThat(map.get("ownerPlane")).isEqualTo("intelligence");

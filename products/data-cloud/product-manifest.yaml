@@ -1,0 +1,277 @@
+# Data Cloud Product Manifest
+# Platform-provider product for data lake infrastructure and operational data fabric
+
+schemaVersion: "1.0.0"
+id: data-cloud
+version: "1.0.0"
+product: data-cloud
+kind: platform-provider
+domain: platform-infrastructure
+kernelCapabilitiesProvided:
+  - data-lake-storage
+  - entity-catalog
+  - event-log
+  - query-engine
+  - pipeline-runtime
+  - governance-controls
+  - observability-surface
+policyActions:
+  - data-cloud:entity-read
+  - data-cloud:entity-write
+  - data-cloud:entity-delete
+  - data-cloud:query-execute
+  - data-cloud:pipeline-execute
+  - data-cloud:governance-apply
+  - data-cloud:policy-manage
+policyResources:
+  - data-cloud:entities
+  - data-cloud:collections
+  - data-cloud:pipelines
+  - data-cloud:events
+  - data-cloud:connectors
+policies:
+  actions:
+    - data-cloud:entity-read
+    - data-cloud:entity-write
+    - data-cloud:entity-delete
+    - data-cloud:query-execute
+    - data-cloud:pipeline-execute
+    - data-cloud:governance-apply
+    - data-cloud:policy-manage
+  resources:
+    - data-cloud:entities
+    - data-cloud:collections
+    - data-cloud:pipelines
+    - data-cloud:events
+    - data-cloud:connectors
+pluginsProvided:
+  - redis-hot-tier
+  - s3-cold-archive
+  - kafka-streaming
+  - vector-memory
+  - knowledge-graph
+  - iceberg-cool-tier
+  - enterprise-compliance
+  - lineage
+bridgesProvided:
+  - data-cloud-kernel-bridge
+domainPacksProvided:
+  - data-cloud-entity-domain
+  - data-cloud-event-domain
+  - data-cloud-governance-domain
+  - data-cloud-intelligence-domain
+  - audio-video-modality-domain
+uiSurfaces:
+  - web
+runtimeServices:
+  - api-server
+  - sdk
+  - agent-runtime
+  - action-plane
+surfaces:
+  ui:
+    - web
+  runtime:
+    - api-server
+    - sdk
+    - agent-runtime
+    - action-plane
+dataSensitivity: MEDIUM
+capabilities:
+  - id: data-cloud.entity-storage
+    name: "Entity Storage"
+    type: DATA_MANAGEMENT
+    description: "Tenant-isolated entity storage with multi-tier caching and archival"
+    metadata:
+      storage_tiers: hot,warm,cold
+      connectors: postgres,opensearch,clickhouse,s3,iceberg
+
+  - id: data-cloud.audio-video-modality
+    name: "Audio-Video Modality"
+    type: DATA_MANAGEMENT
+    description: "Audio/video ingestion, processing, transcription, and multimodal search integration"
+    metadata:
+      supported_formats: mp3,wav,mp4,webm
+      processing: stt,tts,frame-index,transcript-search
+
+  - id: data-cloud.event-log
+    name: "Event Log"
+    type: DATA_MANAGEMENT
+    description: "Immutable event log for audit trails and temporal queries"
+    metadata:
+      retention: configurable
+      compression: enabled
+
+  - id: data-cloud.query-engine
+    name: "Query Engine"
+    type: PROCESSING
+    description: "Federated query engine with multi-connector support and query optimization"
+    metadata:
+      query_types: sql,nlq,graphql
+      optimization: cost-based
+
+  - id: data-cloud.pipeline-runtime
+    name: "Pipeline Runtime"
+    type: WORKFLOW
+    description: "Action Plane pipeline execution with governed agent dispatch"
+    metadata:
+      execution_modes: streaming,batch
+      governance: invariant-monitor
+
+  - id: data-cloud.governance-controls
+    name: "Governance Controls"
+    type: GOVERNANCE
+    description: "Data governance with retention, redaction, policy enforcement, and compliance"
+    metadata:
+      controls: retention,redaction,rbac,audit
+      frameworks: soc2,gdpr,hipaa
+
+  - id: data-cloud.observability-surface
+    name: "Observability Surface"
+    type: OBSERVABILITY
+    description: "Runtime truth provider with health checks, metrics, and tracing"
+    metadata:
+      metrics: prometheus
+      tracing: opentelemetry
+      logging: structured
+
+  - id: data-cloud.agent-catalog
+    name: "Agent Catalog"
+    type: AI_RUNTIME
+    description: "Governed agent catalog with mastery bindings and learning deltas"
+    metadata:
+      governance: governed-dispatch
+      learning: l1-l2-adaptive
+
+extensions:
+  - id: data-cloud.redis-hot-tier
+    name: "Redis Hot Tier Plugin"
+    description: "Redis-based hot tier caching for high-performance access"
+    target_capability: data-cloud.entity-storage
+
+  - id: data-cloud.s3-cold-archive
+    name: "S3 Cold Archive Plugin"
+    description: "S3-based cold archival for long-term storage"
+    target_capability: data-cloud.entity-storage
+
+  - id: data-cloud.kafka-streaming
+    name: "Kafka Streaming Plugin"
+    description: "Kafka-based event streaming for real-time processing"
+    target_capability: data-cloud.event-log
+
+  - id: data-cloud.vector-memory
+    name: "Vector Memory Plugin"
+    description: "Vector-based semantic memory for AI agents"
+    target_capability: data-cloud.agent-catalog
+
+  - id: data-cloud.knowledge-graph
+    name: "Knowledge Graph Plugin"
+    description: "Knowledge graph for entity relationships and context"
+    target_capability: data-cloud.entity-storage
+
+  - id: data-cloud.iceberg-cool-tier
+    name: "Iceberg Cool Tier Plugin"
+    description: "Apache Iceberg-based cool tier for analytical queries"
+    target_capability: data-cloud.entity-storage
+
+  - id: data-cloud.enterprise-compliance
+    name: "Enterprise Compliance Plugin"
+    description: "Enterprise compliance frameworks and controls"
+    target_capability: data-cloud.governance-controls
+
+  - id: data-cloud.lineage
+    name: "Lineage Plugin"
+    description: "Data lineage tracking and impact analysis"
+    target_capability: data-cloud.governance-controls
+
+modules:
+  - name: shared-spi
+    description: "Shared service provider interfaces"
+  - name: data-entity
+    description: "Data plane entity storage and catalog"
+  - name: event-core
+    description: "Event plane core event log"
+  - name: event-store
+    description: "Event plane event storage"
+  - name: operations-config
+    description: "Operations plane configuration"
+  - name: intelligence-analytics
+    description: "Intelligence plane analytics"
+  - name: intelligence-feature-ingest
+    description: "Intelligence plane feature ingestion"
+  - name: governance-core
+    description: "Governance plane core controls"
+  - name: action
+    description: "Action plane base module"
+  - name: action-operator-contracts
+    description: "Action plane operator contracts"
+  - name: action-central-runtime
+    description: "Action plane central runtime"
+  - name: action-engine
+    description: "Action plane execution engine"
+  - name: action-registry
+    description: "Action plane pipeline registry"
+  - name: action-analytics
+    description: "Action plane analytics"
+  - name: action-security
+    description: "Action plane security"
+  - name: action-event-bridge
+    description: "Action plane event bridge"
+  - name: action-agent-runtime
+    description: "Action plane agent runtime"
+  - name: action-api
+    description: "Action plane API"
+  - name: action-scaling
+    description: "Action plane scaling"
+  - name: action-observability
+    description: "Action plane observability"
+  - name: action-orchestrator
+    description: "Action plane orchestrator"
+  - name: action-server
+    description: "Action plane server"
+  - name: action-identity
+    description: "Action plane identity"
+  - name: action-compliance
+    description: "Action plane compliance"
+  - name: action-kernel-bridge
+    description: "Action plane kernel bridge"
+  - name: runtime-composition
+    description: "Delivery runtime composition"
+  - name: plugins
+    description: "Extensions plugins"
+  - name: api
+    description: "Delivery API"
+  - name: launcher
+    description: "Delivery launcher"
+  - name: sdk
+    description: "Delivery SDK"
+  - name: contracts
+    description: "OpenAPI contracts"
+  - name: agent-registry
+    description: "Extensions agent registry"
+  - name: agent-catalog
+    description: "Extensions agent catalog"
+  - name: kernel-bridge
+    description: "Extensions kernel bridge"
+  - name: integration-tests
+    description: "Integration tests"
+
+deployment:
+  type: platform-provider
+  dependencies:
+    - platform:java:kernel
+    - platform:java:security
+    - platform:java:audit
+    - platform:java:observability
+    - platform:java:database
+    - platform:java:agent-core
+    - platform:java:ai-integration
+    - platform:java:http
+
+metadata:
+  created: "2026-03-19"
+  author: "Ghatana Data Cloud Team"
+  documentation: "products/data-cloud/README.md"
+  productName: "Data Cloud Product"
+  description: "Platform data services and data lake infrastructure provider with planes architecture"
+  type: platform-provider

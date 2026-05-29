@@ -16,6 +16,11 @@ import java.util.Objects;
 
 /**
  * Queries phase evidence records from platform integrations.
+ *
+ * @doc.type class
+ * @doc.purpose Queries phase evidence records from platform integrations
+ * @doc.layer service
+ * @doc.pattern Service
  */
 public final class PhaseEvidenceService {
 

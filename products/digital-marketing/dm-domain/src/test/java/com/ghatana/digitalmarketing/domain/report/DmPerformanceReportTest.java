@@ -1,16 +1,16 @@
 package com.ghatana.digitalmarketing.domain.report;
 
-import com.ghatana.digitalmarketing.domain.report.DmPerformanceReport;
 import com.ghatana.digitalmarketing.domain.report.DmPerformanceReport.DmReportPeriod;
 import com.ghatana.digitalmarketing.domain.report.DmPerformanceReport.DmReportSection;
-import com.ghatana.digitalmarketing.domain.report.DmReportStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 @DisplayName("DmPerformanceReport domain entity")
 class DmPerformanceReportTest {
@@ -58,10 +58,14 @@ class DmPerformanceReportTest {
     }
 
     @Test @DisplayName("equals returns false for null")
-    void shouldNotEqualNull() { assertThat(valid()).isNotEqualTo(null); }
+    void shouldNotEqualNull() {
+        assertThat(valid()).isNotEqualTo(null);
+    }
 
     @Test @DisplayName("equals returns false for different type")
-    void shouldNotEqualDifferentType() { assertThat(valid()).isNotEqualTo("x"); }
+    void shouldNotEqualDifferentType() {
+        assertThat(valid()).isNotEqualTo("x");
+    }
 
     @Test @DisplayName("all getters return expected values")
     void shouldExposeAllGetters() {

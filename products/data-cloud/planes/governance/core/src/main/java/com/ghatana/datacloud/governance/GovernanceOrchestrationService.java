@@ -107,8 +107,10 @@ public class GovernanceOrchestrationService {
             String tenantId, String policyId, String entityId, String userRole, String userId) {
         return redactionExecutor.apply(tenantId, policyId, entityId, userRole)
             .then(redactedData -> {
-                auditService.logPolicyUpdated(tenantId, userId, policyId, 
-                    Map.of("entityId", entityId, "redactedFields", redactedData.keySet()));
+                Map<String, Map.Entry<String, String>> auditData = new java.util.HashMap<>();
+                auditData.put("entityId", Map.entry("value", entityId));
+                auditData.put("redactedFields", Map.entry("value", redactedData.keySet().toString()));
+                auditService.logPolicyUpdated(tenantId, userId, policyId, auditData);
                 return Promise.of(redactedData);
             });
     }
@@ -127,8 +129,10 @@ public class GovernanceOrchestrationService {
             String tenantId, String policyId, List<String> entityIds, String userRole, String userId) {
         return redactionExecutor.bulkApply(tenantId, policyId, entityIds, userRole)
             .then(result -> {
-                auditService.logPolicyUpdated(tenantId, userId, policyId, 
-                    Map.of("entityCount", entityIds.size(), "redactedCount", result.redactedCount()));
+                Map<String, Map.Entry<String, String>> auditData = new java.util.HashMap<>();
+                auditData.put("entityCount", Map.entry("value", String.valueOf(entityIds.size())));
+                auditData.put("redactedCount", Map.entry("value", String.valueOf(result.redactedCount())));
+                auditService.logPolicyUpdated(tenantId, userId, policyId, auditData);
                 return Promise.of(result);
             });
     }

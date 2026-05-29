@@ -1,13 +1,13 @@
 package com.ghatana.digitalmarketing.domain.attribution;
 
-import com.ghatana.digitalmarketing.domain.attribution.DmAttributionRecord;
-import com.ghatana.digitalmarketing.domain.attribution.DmAttributionModel;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 /**
  * @doc.type class

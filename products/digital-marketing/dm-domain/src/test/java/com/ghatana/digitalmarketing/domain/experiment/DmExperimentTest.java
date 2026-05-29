@@ -1,15 +1,15 @@
 package com.ghatana.digitalmarketing.domain.experiment;
 
-import com.ghatana.digitalmarketing.domain.experiment.DmExperiment;
 import com.ghatana.digitalmarketing.domain.experiment.DmExperiment.DmExperimentVariant;
-import com.ghatana.digitalmarketing.domain.experiment.DmExperimentStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
 @DisplayName("DmExperiment domain entity")
 class DmExperimentTest {

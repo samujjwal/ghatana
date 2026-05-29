@@ -71,6 +71,41 @@ tasks.named("check") {
     dependsOn(tasks.jacocoTestCoverageVerification)
 }
 
+// Boundary rule: Event plane must not depend on Action internals
+tasks.register("validateBoundaryRules") {
+    group = "verification"
+    description = "Validates that Event plane does not depend on Action internals"
+    notCompatibleWithConfigurationCache("Task accesses Configuration at execution time")
+    
+    doLast {
+        val forbiddenDependencies = listOf(
+            ":products:data-cloud:planes:action:engine",
+            ":products:data-cloud:planes:action:orchestrator",
+            ":products:data-cloud:planes:action:agent-runtime",
+            ":products:data-cloud:planes:action:central-runtime",
+            ":products:data-cloud:planes:action:operator-contracts"
+        )
+        
+        val violations = configurations
+            .getByName("compileClasspath")
+            .allDependencies
+            .map { it.name }
+            .filter { depName -> forbiddenDependencies.any { depName.contains(it) } }
+        
+        if (violations.isNotEmpty()) {
+            throw GradleException(
+                "Event plane boundary violation: Event plane must not depend on Action internals. " +
+                "Found forbidden dependencies: ${violations.joinToString()}. " +
+                "Action Plane semantics should be accessed through shared SPI contracts only."
+            )
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn("validateBoundaryRules")
+}
+
 tasks.javadoc {
     dependsOn(tasks.compileJava)
     classpath += sourceSets.main.get().compileClasspath

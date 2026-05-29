@@ -45,7 +45,7 @@ public record RuntimePosture(
             dependencyHealth.entrySet().stream()
                 .collect(java.util.LinkedHashMap::new, (m, e) -> m.put(e.getKey(), e.getValue().toMap()), java.util.LinkedHashMap::putAll)
         );
-        result.putAll(details);
+        result.put("details", details);
         return Collections.unmodifiableMap(result);
     }
 

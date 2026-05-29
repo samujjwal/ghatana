@@ -187,7 +187,7 @@ public class DurableDataCloudClient implements DataCloudClient, AutoCloseable {
             });
     }
 
-    public Promise<DataRecordInterface> getEntity(String tenantId, String collectionName, String entityId) {
+    public Promise<com.ghatana.datacloud.DataCloudClient.Entity> getEntity(String tenantId, String collectionName, String entityId) {
         requireOpen();
         validateTenantId(tenantId);
         validateCollectionName(collectionName);
@@ -198,9 +198,17 @@ public class DurableDataCloudClient implements DataCloudClient, AutoCloseable {
             .then(opt -> {
                 if (opt.isEmpty()) {
                     log.debug("Entity not found: {} in {}/{}", entityId, tenantId, collectionName);
-                    return Promise.of(null);
+                    return Promise.ofException(new IllegalArgumentException("Entity not found: " + entityId));
                 }
-                return Promise.of(toEntityInterface(opt.get()));
+                com.ghatana.datacloud.spi.EntityStore.Entity entity = opt.get();
+                return Promise.of(new com.ghatana.datacloud.DataCloudClient.Entity(
+                    entity.id().value(),
+                    entity.collection(),
+                    entity.data(),
+                    entity.metadata().createdAt(),
+                    entity.metadata().updatedAt(),
+                    entity.metadata().version()
+                ));
             });
     }
 

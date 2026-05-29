@@ -318,6 +318,7 @@ class DataCloudHttpServerLearningTest {
             .uri(URI.create("http://127.0.0.1:" + port + path)) 
             .header("Content-Type", "application/json") 
             .header("X-Tenant-Id", "default") 
+            .header("X-User-ID", "ui-user") 
             .build(); 
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }

@@ -727,6 +727,13 @@ public final class DataSourceRegistryHandler {
                             String postState = result.success() ? "ACTIVE" : "ERROR";
                             String postHealth = result.success() ? "healthy" : "unhealthy";
                             updateConnectionStateAsync(tenantId, connectionId, postState, postHealth);
+                            
+                            // P4.4: Link connector sync output to target collection registry
+                            String targetCollection = config.targetCollection();
+                            if (targetCollection != null && !targetCollection.isBlank()) {
+                                updateCollectionSyncMetadata(tenantId, targetCollection, connectionId, result);
+                            }
+                            
                             Map<String, Object> responseBody = Map.of(
                                 "tenantId", tenantId,
                                 "connectionId", connectionId,
@@ -734,6 +741,7 @@ public final class DataSourceRegistryHandler {
                                 "recordsSynced", result.recordsSynced(),
                                 "recordsFailed", result.recordsFailed(),
                                 "message", result.errorMessage(),
+                                "targetCollection", targetCollection,
                                 "timestamp", Instant.now().toString()
                             );
                             storeIdempotency(tenantId, connectionId, "sync", request, responseBody);
@@ -895,6 +903,34 @@ public final class DataSourceRegistryHandler {
         updateConnectionState(tenantId, connectionId, state, healthStatus)
             .whenResult(e -> log.debug("[updateConnectionState] {} -> {} ({})", connectionId, state, healthStatus))
             .whenException(e -> log.error("[updateConnectionState] {} failed: {}", connectionId, e.getMessage()));
+    }
+
+    /**
+     * P4.4: Update collection metadata with sync information from connector.
+     * Links connector sync output to the collection registry.
+     */
+    private void updateCollectionSyncMetadata(String tenantId, String collectionId, String connectionId, DataFabricConnector.SyncResult result) {
+        try {
+            Map<String, Object> syncMetadata = new LinkedHashMap<>();
+            syncMetadata.put("lastSyncConnectionId", connectionId);
+            syncMetadata.put("lastSyncTimestamp", Instant.now().toString());
+            syncMetadata.put("lastSyncStatus", result.success() ? "completed" : "failed");
+            syncMetadata.put("lastSyncRecordsSynced", result.recordsSynced());
+            syncMetadata.put("lastSyncRecordsFailed", result.recordsFailed());
+            if (result.errorMessage() != null) {
+                syncMetadata.put("lastSyncError", result.errorMessage());
+            }
+            
+            Map<String, Object> collectionUpdate = new LinkedHashMap<>();
+            collectionUpdate.put("syncMetadata", syncMetadata);
+            collectionUpdate.put("updatedAt", Instant.now().toString());
+            
+            client.updateEntity("dc_collections", collectionId, collectionUpdate, tenantId)
+                .whenResult(e -> log.info("[updateCollectionSyncMetadata] Updated collection {} with sync from connector {}", collectionId, connectionId))
+                .whenException(e -> log.warn("[updateCollectionSyncMetadata] Failed to update collection {}: {}", collectionId, e.getMessage()));
+        } catch (Exception e) {
+            log.error("[updateCollectionSyncMetadata] Unexpected error updating collection {}: {}", collectionId, e.getMessage(), e);
+        }
     }
 
     // ─── GET /api/v1/data-fabric/metrics ────────────────────────────────────────

@@ -16,6 +16,11 @@ import java.util.Optional;
 
 /**
  * Queries and maps phase activity feed entries.
+ *
+ * @doc.type class
+ * @doc.purpose Queries and maps phase activity feed entries from audit service
+ * @doc.layer service
+ * @doc.pattern Service
  */
 public final class PhaseActivityFeedService {
 

@@ -675,7 +675,7 @@ public class DataCloudRouterBuilder {
      * Adds connector registry endpoints for external data sources (P1.1).
      * Includes both /api/v1/connectors and /data-fabric/connectors routes for frontend compatibility.
      */
-    public DataCloudRouterBuilder withConnectorRoutes(DataSourceRegistryHandler dataSourceRegistryHandler, HttpHandlerSupport httpSupport) {
+    public DataCloudRouterBuilder withConnectorRoutes(DataSourceRegistryHandler dataSourceRegistryHandler, HttpHandlerSupport httpSupport, String deploymentProfile) {
         if (dataSourceRegistryHandler != null && DataCloudFeatureFlags.isEnabled(DataCloudFeature.DATA_CLOUD_CONNECTORS)) {
             // /api/v1/connectors routes (canonical API)
             builder
@@ -705,33 +705,42 @@ public class DataCloudRouterBuilder {
                 .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/disable", dataSourceRegistryHandler::handleDisableConnection)
                 .with(HttpMethod.GET,    "/data-fabric/metrics", dataSourceRegistryHandler::handleGetFabricMetrics);
         } else {
-            // /api/v1/connectors routes - 503 when handler not available or feature disabled
+            // /api/v1/connectors routes - return runtime truth state when handler not available or feature disabled (P4.2)
+            // This allows UI to display appropriate feature availability information instead of generic 503
+            java.util.Map<String, Object> runtimeTruth = java.util.Map.of(
+                "featureAvailable", false,
+                "featureName", "DATA_CLOUD_CONNECTORS",
+                "reason", dataSourceRegistryHandler == null ? "Handler not configured" : "Feature disabled",
+                "deploymentProfile", deploymentProfile,
+                "timestamp", java.time.Instant.now().toString()
+            );
+            
             builder
-                .with(HttpMethod.GET,    "/api/v1/connectors", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.POST,   "/api/v1/connectors", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.GET,    "/api/v1/connectors/:connectionId", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.PUT,    "/api/v1/connectors/:connectionId", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.DELETE, "/api/v1/connectors/:connectionId", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.POST,   "/api/v1/connectors/:connectionId/test", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.POST,   "/api/v1/connectors/:connectionId/enable", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.POST,   "/api/v1/connectors/:connectionId/disable", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.POST,   "/api/v1/connectors/:connectionId/rotate-credentials", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.GET,    "/api/v1/connectors/:connectionId/health", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.GET,    "/api/v1/connectors/:connectionId/schema", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.POST,   "/api/v1/connectors/:connectionId/sync", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.GET,    "/api/v1/connectors/:connectionId/sync/status", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                // /data-fabric/connectors routes - 503 when handler not available or feature disabled
-                .with(HttpMethod.GET,    "/data-fabric/connectors", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.POST,   "/data-fabric/connectors", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.GET,    "/data-fabric/connectors/:connectionId", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/test", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.PUT,    "/data-fabric/connectors/:connectionId", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.DELETE, "/data-fabric/connectors/:connectionId", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/sync", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.GET,    "/data-fabric/connectors/:connectionId/statistics", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/enable", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/disable", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.GET,    "/data-fabric/metrics", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")));
+                .with(HttpMethod.GET,    "/api/v1/connectors", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                .with(HttpMethod.POST,   "/api/v1/connectors", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                .with(HttpMethod.GET,    "/api/v1/connectors/:connectionId", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                .with(HttpMethod.PUT,    "/api/v1/connectors/:connectionId", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                .with(HttpMethod.DELETE, "/api/v1/connectors/:connectionId", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                .with(HttpMethod.POST,   "/api/v1/connectors/:connectionId/test", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                .with(HttpMethod.POST,   "/api/v1/connectors/:connectionId/enable", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                .with(HttpMethod.POST,   "/api/v1/connectors/:connectionId/disable", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                .with(HttpMethod.POST,   "/api/v1/connectors/:connectionId/rotate-credentials", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                .with(HttpMethod.GET,    "/api/v1/connectors/:connectionId/health", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                .with(HttpMethod.GET,    "/api/v1/connectors/:connectionId/schema", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                .with(HttpMethod.POST,   "/api/v1/connectors/:connectionId/sync", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                .with(HttpMethod.GET,    "/api/v1/connectors/:connectionId/sync/status", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                // /data-fabric/connectors routes - return runtime truth state when handler not available or feature disabled
+                .with(HttpMethod.GET,    "/data-fabric/connectors", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                .with(HttpMethod.POST,   "/data-fabric/connectors", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                .with(HttpMethod.GET,    "/data-fabric/connectors/:connectionId", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/test", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                .with(HttpMethod.PUT,    "/data-fabric/connectors/:connectionId", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                .with(HttpMethod.DELETE, "/data-fabric/connectors/:connectionId", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/sync", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                .with(HttpMethod.GET,    "/data-fabric/connectors/:connectionId/statistics", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/enable", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                .with(HttpMethod.POST,   "/data-fabric/connectors/:connectionId/disable", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)))
+                .with(HttpMethod.GET,    "/data-fabric/metrics", req -> Promise.of(httpSupport.jsonResponse(503, runtimeTruth)));
         }
         return this;
     }

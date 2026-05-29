@@ -46,6 +46,7 @@ import java.util.Optional;
  * // In HTTP server setup:
  * JwtAuthenticationFilter filter = new JwtAuthenticationFilter(
  *     jwtProvider,
+ *     platformJwtProvider,
  *     metricsCollector
  * );
  *
@@ -92,17 +93,20 @@ public class JwtAuthenticationFilter {
     private static final int BEARER_PREFIX_LENGTH = BEARER_PREFIX.length();
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final com.ghatana.platform.security.port.JwtTokenProvider platformJwtTokenProvider;
     private final MetricsCollector metrics;
 
     /**
      * Creates a JwtAuthenticationFilter.
      *
-     * @param jwtTokenProvider the JWT token provider for validation
+     * @param jwtTokenProvider the product-level JWT token provider for tenant-scoped validation
+     * @param platformJwtTokenProvider the platform-level JWT token provider for initial tenant extraction
      * @param metrics the metrics collector for instrumentation
      * @throws IllegalArgumentException if any parameter is null
      */
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, MetricsCollector metrics) {
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, com.ghatana.platform.security.port.JwtTokenProvider platformJwtTokenProvider, MetricsCollector metrics) {
         this.jwtTokenProvider = Objects.requireNonNull(jwtTokenProvider, "jwtTokenProvider cannot be null");
+        this.platformJwtTokenProvider = Objects.requireNonNull(platformJwtTokenProvider, "platformJwtTokenProvider cannot be null");
         this.metrics = Objects.requireNonNull(metrics, "metrics cannot be null");
     }
 
@@ -138,14 +142,34 @@ public class JwtAuthenticationFilter {
 
         // SEC-P1-006: Production-safe - extract tenant from JWT claims before validation
         // No default tenant fallback allowed in production code
-        // The JWT token provider must support tenant-agnostic validation or tenant extraction
         try {
-            // Validate token without tenant context to extract claims first
-            Promise<JwtClaims> validatePromise = jwtTokenProvider.validateToken(tokenValue);
+            // Extract tenant ID from token using platform provider (tenant-agnostic parsing)
+            Optional<java.util.Map<String, Object>> claimsOpt = platformJwtTokenProvider.extractClaims(tokenValue);
+            if (claimsOpt.isEmpty()) {
+                metrics.incrementCounter("authentication.failed",
+                        "method", request.getMethod().toString(),
+                        "path", request.getPath(),
+                        "reason", "CLAIMS_EXTRACTION_FAILED");
+                return Promise.ofException(new AuthenticationException("Failed to extract claims from token"));
+            }
+
+            java.util.Map<String, Object> claims = claimsOpt.get();
+            Object tenantIdObj = claims.get("tenantId");
+            if (tenantIdObj == null) {
+                metrics.incrementCounter("authentication.failed",
+                        "method", request.getMethod().toString(),
+                        "path", request.getPath(),
+                        "reason", "MISSING_TENANT_CLAIM");
+                return Promise.ofException(new AuthenticationException("Token missing tenantId claim"));
+            }
+
+            TenantId tenantId = TenantId.of(tenantIdObj.toString());
+
+            // Validate token with tenant context using product-level provider
+            Promise<JwtClaims> validatePromise = jwtTokenProvider.validateToken(tenantId, tokenValue);
             return validatePromise
                     .map(jwtClaims -> {
-                        // Extract TenantId and UserPrincipal from JWT claims
-                        TenantId tenantId = TenantId.of(jwtClaims.getTenantId().value());  // Convert from platform TenantId
+                        // Extract UserPrincipal from JWT claims
                         UserPrincipal userPrincipal = UserPrincipal.builder()
                                 .userId(jwtClaims.getUserId())
                                 .email(jwtClaims.getEmail())

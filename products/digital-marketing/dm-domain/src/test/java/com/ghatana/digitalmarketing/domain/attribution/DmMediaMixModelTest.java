@@ -1,15 +1,15 @@
 package com.ghatana.digitalmarketing.domain.attribution;
 
-import com.ghatana.digitalmarketing.domain.attribution.DmMediaMixModel;
 import com.ghatana.digitalmarketing.domain.attribution.DmMediaMixModel.DmChannelContribution;
-import com.ghatana.digitalmarketing.domain.attribution.DmMediaMixModelStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 @DisplayName("DmMediaMixModel domain entity")
 class DmMediaMixModelTest {
@@ -68,10 +68,14 @@ class DmMediaMixModelTest {
     }
 
     @Test @DisplayName("equals returns false for null")
-    void shouldNotEqualNull() { assertThat(valid()).isNotEqualTo(null); }
+    void shouldNotEqualNull() {
+        assertThat(valid()).isNotEqualTo(null);
+    }
 
     @Test @DisplayName("equals returns false for different type")
-    void shouldNotEqualDifferentType() { assertThat(valid()).isNotEqualTo("x"); }
+    void shouldNotEqualDifferentType() {
+        assertThat(valid()).isNotEqualTo("x");
+    }
 
     @Test @DisplayName("all getters return expected values")
     void shouldExposeAllGetters() {

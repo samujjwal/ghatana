@@ -1,13 +1,13 @@
 package com.ghatana.digitalmarketing.domain.marketplace;
 
-import com.ghatana.digitalmarketing.domain.marketplace.DmMarketplaceListing;
-import com.ghatana.digitalmarketing.domain.marketplace.DmMarketplaceListingStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
 @DisplayName("DmMarketplaceListing domain entity")
 class DmMarketplaceListingTest {

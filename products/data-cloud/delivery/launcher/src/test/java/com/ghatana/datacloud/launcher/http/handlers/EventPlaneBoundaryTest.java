@@ -77,6 +77,7 @@ class EventPlaneBoundaryTest extends EventloopTestBase {
         lenient().when(successResponse.getCode()).thenReturn(200);
         lenient().when(http.requireTenantIdWithError(request))
             .thenReturn(HttpHandlerSupport.TenantResolutionResult.success("tenant-1", null));
+        lenient().when(http.objectMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper());
     }
 
     // ==================== DC-EVENT-003: EventLog is storage-plane primitive ====================
@@ -123,7 +124,7 @@ class EventPlaneBoundaryTest extends EventloopTestBase {
     @Test
     @DisplayName("DC-EVENT-003: Event tail uses storage-plane primitive (EventLog)")
     void eventTailUsesStoragePlanePrimitive() {
-        when(request.getPathParameter("offset")).thenReturn("0");
+        when(request.getQueryParameter("from")).thenReturn("0");
         when(client.queryEvents(anyString(), any()))
             .thenReturn(Promise.of(List.of(
                 DataCloudClient.Event.builder()
@@ -167,7 +168,7 @@ class EventPlaneBoundaryTest extends EventloopTestBase {
     @Test
     @DisplayName("DC-EVENT-003: Event response does not contain AEP EventOperatorCapability")
     void eventResponseDoesNotContainAEPEventOperatorCapability() {
-        when(request.getPathParameter("offset")).thenReturn("1");
+        when(request.getPathParameter("offset")).thenReturn("0");
         when(client.queryEvents(anyString(), any()))
             .thenReturn(Promise.of(List.of(
                 DataCloudClient.Event.builder()
@@ -215,9 +216,9 @@ class EventPlaneBoundaryTest extends EventloopTestBase {
     @Test
     @DisplayName("DC-EVENT-003: Event payload contains domain data, not AEP patterns")
     void eventPayloadContainsDomainDataNotAEPPatterns() {
-        when(request.getPathParameter("offset")).thenReturn("1");
-        when(client.readEvent(anyString(), eq(1L)))
-            .thenReturn(Promise.of(Optional.of(DataCloudClient.Event.builder()
+        when(request.getPathParameter("offset")).thenReturn("0");
+        when(client.queryEvents(anyString(), any()))
+            .thenReturn(Promise.of(List.of(DataCloudClient.Event.builder()
                 .type("entity.created")
                 .payload(Map.of("entityId", "ent-1", "entityType", "Customer"))
                 .build())));
