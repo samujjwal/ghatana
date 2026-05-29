@@ -193,3 +193,56 @@ test('schema violation fails on unknown kind', () => {
 
   assert(issues.some((problem) => problem.message.includes('schema violation')));
 });
+
+test('data-cloud conformance flags require manifest', () => {
+  const registry = createRegistry();
+  registry.registry['data-cloud'].conformance = {
+    manifest: true,
+    observability: true,
+    security: true,
+    dataAccess: true,
+    bridge: true,
+    bridgeAdapters: [{ file: 'bridge.java', tests: [{ file: 'bridge.test.java' }] }],
+    agentDefinitions: true,
+    masteryBindings: true,
+    evaluationPacks: true,
+    runtimeModule: true,
+  };
+  registry.registry['data-cloud'].manifestPath = 'products/data-cloud/product-manifest.yaml';
+  registry.registry['data-cloud'].manifestFormat = 'yaml';
+  registry.registry['data-cloud'].buildFile = 'products/data-cloud/delivery/launcher/build.gradle.kts';
+
+  const issues = validateProductRegistryDocument(registry, {
+    schema,
+    generatedIncludes: 'include(":products:digital-marketing:dm-api")\ninclude(":products:phr")\ninclude(":products:data-cloud:delivery:api")',
+    pnpmWorkspace: '',
+    pathExists: (relativePath) => {
+      // Manifest exists
+      if (relativePath === 'products/data-cloud/product-manifest.yaml') return true;
+      // Build file exists
+      if (relativePath === 'products/data-cloud/delivery/launcher/build.gradle.kts') return true;
+      return true;
+    },
+    yamlReader: () => ({ executionEnabled: false, readiness: { requiredGates: ['runtime-truth-provider'] } }),
+    runArtifactCheck: () => 'ok',
+  });
+
+  // Should pass when manifest conformance is true and manifest exists
+  assert(!issues.some((problem) => problem.message.includes('manifest')));
+});
+
+test('data-cloud platform-provider requires readiness gates', () => {
+  const registry = createRegistry();
+  registry.registry['data-cloud'].lifecycleReadiness = { requiredGates: [] };
+
+  const issues = validateProductRegistryDocument(registry, {
+    schema,
+    generatedIncludes: 'include(":products:digital-marketing:dm-api")\ninclude(":products:phr")\ninclude(":products:data-cloud:delivery:api")',
+    pnpmWorkspace: '',
+    pathExists: () => true,
+    yamlReader: () => ({ executionEnabled: false, readiness: { requiredGates: [] } }),
+    runArtifactCheck: () => 'ok',
+  });
+
+  assert(issues.some((problem) => problem.message.includes('platform-provider products require readiness gates')));
+});

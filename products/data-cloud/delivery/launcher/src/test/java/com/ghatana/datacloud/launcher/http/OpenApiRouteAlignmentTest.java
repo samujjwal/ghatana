@@ -144,8 +144,8 @@ class OpenApiRouteAlignmentTest {
         String spec = Files.readString(specFile);
 
         assertThat(spec)
-            .contains("In this API, workflow and pipeline execution means data-local plugin runtime execution.")
-            .contains("AEP still owns broader agentic orchestration");
+            .contains("In this API, workflow and pipeline execution means Action Plane runtime execution within Data Cloud.")
+            .contains("The Action Plane runtime (formerly AEP) is integrated within Data Cloud");
     }
 
     private static Set<String> readCodeRoutes(Path serverFile) throws IOException {

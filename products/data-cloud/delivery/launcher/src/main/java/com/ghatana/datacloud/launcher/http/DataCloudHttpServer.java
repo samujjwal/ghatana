@@ -175,6 +175,7 @@ public class DataCloudHttpServer {
         Pattern.compile("^/api/v1/collections/[^/]+/migrate$"),
         Pattern.compile("^/api/v1/pipelines/[^/]+/executions/[^/]+/cancel$"),
         Pattern.compile("^/api/v1/executions/[^/]+/cancel$"),
+        Pattern.compile("^/api/v1/action/executions/[^/]+/(cancel|retry|rollback|restore|checkpoint)$"),
         Pattern.compile("^/api/v1/learning/review/[^/]+/(approve|reject)$"),
         Pattern.compile("^/api/v1/learning/review/completed$"),
         Pattern.compile("^/api/v1/models/[^/]+/promote$")
@@ -1749,7 +1750,7 @@ public class DataCloudHttpServer {
             .withStorageCostRoutes(storageCostHandler, httpSupport)
             .withFederatedQueryRoutes(federatedQueryHandler, httpSupport)
             .withTierMigrationRoutes(tierMigrationHandler, httpSupport)
-            .withConnectorRoutes(dataSourceRegistryHandler, httpSupport)
+            .withConnectorRoutes(dataSourceRegistryHandler, httpSupport, deploymentMode)
             .withSettingsRoutes(settingsHandler)
             .withProductReleaseReadinessRoutes(productReleaseReadinessHandler)
             .withComplianceRoutes(complianceHandler)

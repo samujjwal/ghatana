@@ -1,14 +1,13 @@
 package com.ghatana.digitalmarketing.domain.narrative;
 
-import com.ghatana.digitalmarketing.domain.narrative.DmNarrativeReview;
-import com.ghatana.digitalmarketing.domain.narrative.DmNarrativePeriodType;
-import com.ghatana.digitalmarketing.domain.narrative.DmNarrativeReviewStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 @DisplayName("DmNarrativeReview domain entity")
 class DmNarrativeReviewTest {
@@ -53,10 +52,14 @@ class DmNarrativeReviewTest {
     }
 
     @Test @DisplayName("equals returns false for null")
-    void shouldNotEqualNull() { assertThat(valid()).isNotEqualTo(null); }
+    void shouldNotEqualNull() {
+        assertThat(valid()).isNotEqualTo(null);
+    }
 
     @Test @DisplayName("equals returns false for different type")
-    void shouldNotEqualDifferentType() { assertThat(valid()).isNotEqualTo("x"); }
+    void shouldNotEqualDifferentType() {
+        assertThat(valid()).isNotEqualTo("x");
+    }
 
     @Test @DisplayName("all getters return expected values")
     void shouldExposeAllGetters() {

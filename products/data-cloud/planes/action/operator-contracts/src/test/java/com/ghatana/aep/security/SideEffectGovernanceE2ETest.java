@@ -54,13 +54,17 @@ class SideEffectGovernanceE2ETest {
     @Test
     @DisplayName("AEP-004: AGENT_ACTION with toolPolicy and governance passes validation")
     void agentActionWithToolPolicyAndGovernancePasses() {
-        PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
+        Map<String, Object> spec = validSpec(Map.of(
             "operator", "AGENT_ACTION",
             "agentRef", "agents/write-agent@1.0.0",
             "capabilityRef", "agents/write-agent@1.0.0/capability",
-            "outputSchema", "WriteResult",
-            "toolPolicy", Map.of("allowedTools", List.of("data-cloud.entity.write"))
-        )));
+            "outputSchema", "WriteResult"));
+        // Move toolPolicy to governance section where validator expects it
+        Map<String, Object> governance = new java.util.LinkedHashMap<>((Map<String, Object>) spec.get("governance"));
+        governance.put("toolPolicy", Map.of("allowedTools", List.of("data-cloud.entity.write")));
+        spec.put("governance", governance);
+
+        PatternSpecValidationResult result = PatternSpecValidator.validate(spec);
 
         assertThat(result.valid()).isTrue();
     }

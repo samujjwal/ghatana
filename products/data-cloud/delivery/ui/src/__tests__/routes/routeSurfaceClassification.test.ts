@@ -45,19 +45,31 @@ describe('route surface classification', () => {
     expect(settingsRoute.minimumShellRole).toBe('admin');
   });
 
-  it('treats non-primary active operator/admin surfaces as hidden by default', () => {
-    const hiddenActiveKeys = [
+  it('treats non-primary active operator/admin surfaces as discoverable with progressive disclosure (P5.2)', () => {
+    const discoverableActiveKeys = [
       'connectors',
       'insights',
       'events',
-      'operationsJobs',
-      'operationsReleaseTruth',
       'plugins',
     ] as const;
 
-    for (const key of hiddenActiveKeys) {
+    for (const key of discoverableActiveKeys) {
       const route = canonicalRouteSurfaceRegistry[key];
-      expect(route, `Missing hidden active route '${key}'`).toBeDefined();
+      expect(route, `Missing discoverable active route '${key}'`).toBeDefined();
+      expect(route.lifecycle).toBe('active');
+      expect(route.discoverable).toBe(true);
+    }
+  });
+
+  it('keeps operations sub-routes hidden from main navigation (P5.2)', () => {
+    const hiddenOperationsKeys = [
+      'operationsJobs',
+      'operationsReleaseTruth',
+    ] as const;
+
+    for (const key of hiddenOperationsKeys) {
+      const route = canonicalRouteSurfaceRegistry[key];
+      expect(route, `Missing hidden operations route '${key}'`).toBeDefined();
       expect(route.lifecycle).toBe('active');
       expect(route.discoverable).toBe(false);
     }

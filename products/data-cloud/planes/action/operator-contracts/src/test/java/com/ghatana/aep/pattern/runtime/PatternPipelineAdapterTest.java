@@ -158,12 +158,16 @@ class PatternPipelineAdapterTest {
     @Test
     void rejectsShadowSideEffectingCapability() {
         String capabilityRef = "agents/action@1.0.0/capabilities/agent_action";
-        CompiledPattern compiled = PatternSpecCompiler.compile(validSpec(Map.of(
+        Map<String, Object> spec = validSpec(Map.of(
             "operator", "AGENT_ACTION",
             "capabilityRef", capabilityRef,
             "inputSchema", "EventContext",
-            "toolPolicy", Map.of("mode", "ticketing.propose"),
-            "outputSchema", "ActionResult")));
+            "outputSchema", "ActionResult"));
+        // Move toolPolicy to governance section where validator expects it
+        Map<String, Object> governance = new java.util.LinkedHashMap<>((Map<String, Object>) spec.get("governance"));
+        governance.put("toolPolicy", Map.of("mode", "ticketing.propose"));
+        spec.put("governance", governance);
+        CompiledPattern compiled = PatternSpecCompiler.compile(spec);
         CapabilityResolver resolver = new MapCapabilityResolver(Map.of(
             capabilityRef, descriptor(
                 capabilityRef,

@@ -15,6 +15,11 @@ import java.util.Objects;
 
 /**
  * Queries governance decisions for phase packets.
+ *
+ * @doc.type class
+ * @doc.purpose Queries governance decisions for phase packets from platform integration
+ * @doc.layer service
+ * @doc.pattern Service
  */
 public final class PhaseGovernanceService {
 

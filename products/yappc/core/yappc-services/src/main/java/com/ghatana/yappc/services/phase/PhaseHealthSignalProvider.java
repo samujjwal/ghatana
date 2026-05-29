@@ -14,6 +14,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * Builds health signals for phase packets from preview runtime service.
+ *
+ * @doc.type class
+ * @doc.purpose Builds health signals for phase packets from preview runtime service
+ * @doc.layer service
+ * @doc.pattern Service
+ */
 public final class PhaseHealthSignalProvider {
 
     private static final Logger log = LoggerFactory.getLogger(PhaseHealthSignalProvider.class);

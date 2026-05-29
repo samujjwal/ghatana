@@ -81,12 +81,17 @@ class PatternSpecValidatorTest {
 
     @Test
     void acceptsGovernedAgentAction() {
-        PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
+        Map<String, Object> spec = validSpec(Map.of(
             "operator", "AGENT_ACTION",
             "agentRef", "agents/action@1.0.0",
                     "capabilityRef", "agents/action@1.0.0/capability",
-            "outputSchema", "ActionResult",
-            "toolPolicy", Map.of("allowedTools", List.of("pagerduty.incident.create")))));
+            "outputSchema", "ActionResult"));
+        // Move toolPolicy to governance section where validator expects it
+        Map<String, Object> governance = new java.util.LinkedHashMap<>((Map<String, Object>) spec.get("governance"));
+        governance.put("toolPolicy", Map.of("allowedTools", List.of("pagerduty.incident.create")));
+        spec.put("governance", governance);
+
+        PatternSpecValidationResult result = PatternSpecValidator.validate(spec);
 
         assertThat(result.valid()).isTrue();
     }

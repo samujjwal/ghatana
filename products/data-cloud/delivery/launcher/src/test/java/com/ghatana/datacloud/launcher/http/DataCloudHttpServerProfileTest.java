@@ -202,8 +202,8 @@ class DataCloudHttpServerProfileTest {
 
         assertThatThrownBy(() -> server.start())
             .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("P1.18")
-            .hasMessageContaining("Authentication is required for production profiles");
+            .hasMessageContaining("Authentication is REQUIRED")
+            .hasMessageContaining("production");
     }
 
     @Test
@@ -215,8 +215,8 @@ class DataCloudHttpServerProfileTest {
 
         assertThatThrownBy(() -> server.start())
             .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("P1.18")
-            .hasMessageContaining("Authentication is required for production profiles");
+            .hasMessageContaining("Authentication is REQUIRED")
+            .hasMessageContaining("staging");
     }
 
     @Test
@@ -228,8 +228,8 @@ class DataCloudHttpServerProfileTest {
 
         assertThatThrownBy(() -> server.start())
             .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("P1.18")
-            .hasMessageContaining("Authentication is required for production profiles");
+            .hasMessageContaining("Authentication is REQUIRED")
+            .hasMessageContaining("sovereign");
     }
 
     @Test

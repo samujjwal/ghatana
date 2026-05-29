@@ -1,14 +1,15 @@
 package com.ghatana.digitalmarketing.domain.api;
 
-import com.ghatana.digitalmarketing.domain.api.DmPublicApiKey;
-import com.ghatana.digitalmarketing.domain.api.DmPublicApiKeyStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 @DisplayName("DmPublicApiKey domain entity")
 class DmPublicApiKeyTest {

@@ -506,6 +506,12 @@ class DataCloudMasteryRegistryTest extends EventloopTestBase {
         }
 
         @Override
+        public Promise<Entity> saveWithIdempotency(String tenantId, Entity entity, String idempotencyKey) {
+            // Test-only implementation: delegate to save without idempotency
+            return save(tenantId, entity);
+        }
+
+        @Override
         public Promise<Void> delete(String tenantId, String collectionName, UUID entityId) {
             return Promise.complete();
         }

@@ -403,8 +403,7 @@ class PatternSpecGoldenTests {
         spec.put("pattern", Map.of(
             "operator", "AGENT_ACTION",
             "capabilityRef", "agents/action@1.0.0",
-            "outputSchema", "schema://action/output",
-            "toolPolicy", Map.of("mode", "strict")));
+            "outputSchema", "schema://action/output"));
         spec.put("emit", Map.of(
             "eventType", "test.result",
             "outputSchema", "schema://result/output"));
@@ -412,11 +411,12 @@ class PatternSpecGoldenTests {
             "state", "shadow"));
         spec.put("governance", Map.of(
             "owner", "test-team",
-            "approvalPolicy", "manual"));
+            "approvalPolicy", "manual",
+            "toolPolicy", Map.of("mode", "strict")));
         spec.put("observability", Map.of());
 
-        // This would fail at compile time with a registry that has the capability marked as SIDE_EFFECTING
-        // For now, we test the validation passes but compilation would fail with registry
+        // PatternSpec validation passes (structural validation)
+        // The side-effect check happens at compile time with capability registry
         PatternSpecValidationResult result = PatternSpecValidator.validate(spec);
         assertThat(result.valid()).isTrue();
     }

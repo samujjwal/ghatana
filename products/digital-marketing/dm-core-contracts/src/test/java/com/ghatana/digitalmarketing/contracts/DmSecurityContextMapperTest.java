@@ -113,6 +113,73 @@ class DmSecurityContextMapperTest {
     }
 
     @Test
+    @DisplayName("toTenantSecurityContext handles empty additional attributes map")
+    void shouldHandleEmptyAdditionalAttributes() {
+        DmOperationContext context = DmOperationContext.builder()
+            .tenantId(DmTenantId.of("tenant-1"))
+            .workspaceId(DmWorkspaceId.of("ws-1"))
+            .actor(ActorRef.user("user-1"))
+            .correlationId(DmCorrelationId.of("corr-1"))
+            .build();
+
+        TenantSecurityContext securityContext = DmSecurityContextMapper.toTenantSecurityContext(
+            context,
+            "session-1",
+            Set.of(),
+            Set.of(),
+            Map.of()
+        );
+
+        assertThat(securityContext.getTenantId()).isEqualTo("tenant-1");
+        assertThat(securityContext.getUserId()).isEqualTo("user-1");
+        assertThat(securityContext.getSessionId()).isEqualTo("session-1");
+        assertThat(securityContext.getAttribute("dm.workspaceId")).isEqualTo("ws-1");
+        assertThat(securityContext.getAttribute("dm.correlationId")).isEqualTo("corr-1");
+    }
+
+    @Test
+    @DisplayName("toTenantSecurityContext handles null sessionId")
+    void shouldHandleNullSessionId() {
+        DmOperationContext context = DmOperationContext.builder()
+            .tenantId(DmTenantId.of("tenant-1"))
+            .workspaceId(DmWorkspaceId.of("ws-1"))
+            .actor(ActorRef.user("user-1"))
+            .correlationId(DmCorrelationId.of("corr-1"))
+            .build();
+
+        TenantSecurityContext securityContext = DmSecurityContextMapper.toTenantSecurityContext(
+            context,
+            null,
+            Set.of(),
+            Set.of(),
+            Map.of()
+        );
+
+        assertThat(securityContext.getSessionId()).startsWith("dm-session-");
+    }
+
+    @Test
+    @DisplayName("toTenantSecurityContext handles agent actor")
+    void shouldHandleAgentActor() {
+        DmOperationContext context = DmOperationContext.builder()
+            .tenantId(DmTenantId.of("tenant-1"))
+            .workspaceId(DmWorkspaceId.of("ws-1"))
+            .actor(ActorRef.agent("agent-1"))
+            .correlationId(DmCorrelationId.of("corr-1"))
+            .build();
+
+        TenantSecurityContext securityContext = DmSecurityContextMapper.toTenantSecurityContext(
+            context,
+            "session-1",
+            Set.of(),
+            Set.of(),
+            Map.of()
+        );
+
+        assertThat(securityContext.getUserId()).isEqualTo("agent-1");
+    }
+
+    @Test
     @DisplayName("mapper rejects null required arguments")
     void shouldRejectNullArguments() {
         DmOperationContext context = DmOperationContext.builder()

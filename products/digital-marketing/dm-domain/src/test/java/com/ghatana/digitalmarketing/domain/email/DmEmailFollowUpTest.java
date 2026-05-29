@@ -6,7 +6,10 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 @DisplayName("DmEmailFollowUp domain entity")
 class DmEmailFollowUpTest {
@@ -91,10 +94,14 @@ class DmEmailFollowUpTest {
     }
 
     @Test @DisplayName("equals returns false for null")
-    void shouldNotEqualNull() { assertThat(valid()).isNotEqualTo(null); }
+    void shouldNotEqualNull() {
+        assertThat(valid()).isNotEqualTo(null);
+    }
 
     @Test @DisplayName("equals returns false for different type")
-    void shouldNotEqualDifferentType() { assertThat(valid()).isNotEqualTo("x"); }
+    void shouldNotEqualDifferentType() {
+        assertThat(valid()).isNotEqualTo("x");
+    }
 
     @Test @DisplayName("null tenantId throws")
     void shouldRejectNullTenantId() {

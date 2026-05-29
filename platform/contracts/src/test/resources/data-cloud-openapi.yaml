@@ -256,6 +256,257 @@ components:
       description: Arbitrary JSON object.
       additionalProperties: true
 
+    # First-class Data Cloud domain contracts
+    Collection:
+      type: object
+      description: First-class collection contract for Data Cloud data organization
+      required:
+        - id
+        - name
+        - tenantId
+        - lifecycleStatus
+        - operationalStatus
+      properties:
+        id:
+          type: string
+          description: Unique collection identifier
+        name:
+          type: string
+          description: Human-readable collection name
+        tenantId:
+          type: string
+          description: Owning tenant identifier
+        description:
+          type: string
+          description: Collection description
+        lifecycleStatus:
+          type: string
+          enum: [DRAFT, PUBLISHED, DEPRECATED, ARCHIVED]
+          description: Lifecycle state of the collection
+        operationalStatus:
+          type: string
+          enum: [healthy, degraded, unavailable, maintenance]
+          description: Operational health status
+        qualityScore:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+          description: Overall quality score (0.0 to 1.0)
+        qualityMetrics:
+          type: object
+          description: Detailed quality metrics
+          additionalProperties: true
+        retentionPolicy:
+          type: object
+          description: Retention policy configuration
+          properties:
+            retentionPeriodDays:
+              type: integer
+              description: Retention period in days
+            archivalTier:
+              type: string
+              enum: [HOT, WARM, COLD]
+              description: Default archival tier
+        lineage:
+          type: object
+          description: Data lineage information
+          properties:
+            upstreamSources:
+              type: array
+              items:
+                type: string
+              description: Upstream collection IDs
+            downstreamConsumers:
+              type: array
+              items:
+                type: string
+              description: Downstream collection IDs
+        owner:
+          type: string
+          description: Collection owner or team
+        schemaVersion:
+          type: string
+          description: Schema version identifier
+        validationSchema:
+          type: object
+          description: JSON schema for collection validation
+          additionalProperties: true
+        storageProfile:
+          type: object
+          description: Storage configuration profile
+          properties:
+            primaryConnector:
+              type: string
+              description: Primary storage connector ID
+            tieringEnabled:
+              type: boolean
+              description: Whether automatic tiering is enabled
+        physicalMapping:
+          type: object
+          description: Physical storage mapping details
+          additionalProperties: true
+        permissions:
+          type: object
+          description: Access permissions
+          properties:
+            readers:
+              type: array
+              items:
+                type: string
+              description: Reader principal IDs
+            writers:
+              type: array
+              items:
+                type: string
+              description: Writer principal IDs
+            owners:
+              type: array
+              items:
+                type: string
+              description: Owner principal IDs
+        createdAt:
+          type: string
+          format: date-time
+          description: Collection creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    Dataset:
+      type: object
+      description: Dataset contract representing a logical grouping of collections
+      required:
+        - id
+        - name
+        - tenantId
+        - collections
+      properties:
+        id:
+          type: string
+          description: Unique dataset identifier
+        name:
+          type: string
+          description: Human-readable dataset name
+        tenantId:
+          type: string
+          description: Owning tenant identifier
+        description:
+          type: string
+          description: Dataset description
+        collections:
+          type: array
+          items:
+            type: string
+          description: Collection IDs included in this dataset
+        domain:
+          type: string
+          description: Business domain classification
+        classification:
+          type: string
+          enum: [PUBLIC, INTERNAL, CONFIDENTIAL, RESTRICTED]
+          description: Data classification level
+        tags:
+          type: array
+          items:
+            type: string
+          description: Dataset tags
+        owner:
+          type: string
+          description: Dataset owner or team
+        steward:
+          type: string
+          description: Data steward responsible for the dataset
+        createdAt:
+          type: string
+          format: date-time
+          description: Dataset creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    DataSource:
+      type: object
+      description: DataSource contract for external data connections
+      required:
+        - id
+        - name
+        - tenantId
+        - type
+        - connectionConfig
+      properties:
+        id:
+          type: string
+          description: Unique data source identifier
+        name:
+          type: string
+          description: Human-readable data source name
+        tenantId:
+          type: string
+          description: Owning tenant identifier
+        description:
+          type: string
+          description: Data source description
+        type:
+          type: string
+          enum: [POSTGRESQL, MYSQL, CLICKHOUSE, OPENSEARCH, S3, KAFKA, SNOWFLAKE, BIGQUERY]
+          description: Data source type
+        connectionConfig:
+          type: object
+          description: Connection configuration (encrypted at rest)
+          additionalProperties: true
+        healthStatus:
+          type: string
+          enum: [HEALTHY, UNHEALTHY, UNKNOWN]
+          description: Connection health status
+        lastHealthCheck:
+          type: string
+          format: date-time
+          description: Last health check timestamp
+        schemaPreview:
+          type: object
+          description: Preview of source schema
+          additionalProperties: true
+        syncConfig:
+          type: object
+          description: Synchronization configuration
+          properties:
+            syncEnabled:
+              type: boolean
+              description: Whether sync is enabled
+            syncSchedule:
+              type: string
+              description: Cron expression for sync schedule
+            targetCollection:
+              type: string
+              description: Target collection ID for sync
+        credentials:
+          type: object
+          description: Credential reference (stored securely)
+          properties:
+            credentialId:
+              type: string
+              description: Secure credential ID
+            rotationRequired:
+              type: boolean
+              description: Whether credential rotation is required
+            lastRotated:
+              type: string
+              format: date-time
+              description: Last credential rotation timestamp
+        owner:
+          type: string
+          description: Data source owner or team
+        createdAt:
+          type: string
+          format: date-time
+          description: Data source creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
     ProductReleaseReadiness:
       type: object
       required:

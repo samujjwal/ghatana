@@ -10,6 +10,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Builds phase gate context for phase gate validation.
+ *
+ * @doc.type class
+ * @doc.purpose Builds phase gate context for phase gate validation
+ * @doc.layer service
+ * @doc.pattern Factory
+ */
 public final class PhaseGateContextFactory {
 
     PhaseGateValidator.PhaseGateContext build(

@@ -284,54 +284,60 @@ class JdbcEntityRepository implements EntityRepository {
         }
 
         @Override
-        public Promise<Entity> save(String tenantId, Entity entity) { 
-            return Promise.ofBlocking(executor, () -> { 
-                try (Connection conn = connect()) { 
+        public Promise<Entity> save(String tenantId, Entity entity) {
+            return Promise.ofBlocking(executor, () -> {
+                try (Connection conn = connect()) {
                     boolean exists = false;
-                    if (entity.getId() != null) { 
-                        try (PreparedStatement ps = conn.prepareStatement( 
+                    if (entity.getId() != null) {
+                        try (PreparedStatement ps = conn.prepareStatement(
                                 "SELECT 1 FROM entities WHERE id = ? AND tenant_id = ?")) {
-                            ps.setObject(1, entity.getId()); 
-                            ps.setString(2, tenantId); 
-                            exists = ps.executeQuery().next(); 
+                            ps.setObject(1, entity.getId());
+                            ps.setString(2, tenantId);
+                            exists = ps.executeQuery().next();
                         }
                     }
-                    UUID id = entity.getId() != null ? entity.getId() : UUID.randomUUID(); 
-                    String dataJson = MAPPER.writeValueAsString( 
-                            entity.getData() != null ? entity.getData() : Map.of()); 
-                    Instant now = Instant.now(); 
+                    UUID id = entity.getId() != null ? entity.getId() : UUID.randomUUID();
+                    String dataJson = MAPPER.writeValueAsString(
+                            entity.getData() != null ? entity.getData() : Map.of());
+                    Instant now = Instant.now();
 
-                    if (exists) { 
-                        try (PreparedStatement ps = conn.prepareStatement( 
+                    if (exists) {
+                        try (PreparedStatement ps = conn.prepareStatement(
                                 "UPDATE entities SET data = ?::jsonb, updated_at = ? WHERE id = ? AND tenant_id = ?")) {
-                            ps.setString(1, dataJson); 
-                            ps.setTimestamp(2, Timestamp.from(now)); 
-                            ps.setObject(3, id); 
-                            ps.setString(4, tenantId); 
-                            ps.executeUpdate(); 
+                            ps.setString(1, dataJson);
+                            ps.setTimestamp(2, Timestamp.from(now));
+                            ps.setObject(3, id);
+                            ps.setString(4, tenantId);
+                            ps.executeUpdate();
                         }
                     } else {
-                        try (PreparedStatement ps = conn.prepareStatement( 
-                                "INSERT INTO entities (id, tenant_id, collection_name, record_type, data, created_at, active, version) " + 
-                                "VALUES (?, ?, ?, ?, ?::jsonb, ?, true, 1)")) { 
-                            ps.setObject(1, id); 
-                            ps.setString(2, tenantId); 
-                            ps.setString(3, entity.getCollectionName()); 
-                            ps.setString(4, entity.getRecordType() != null ? entity.getRecordType().name() : "ENTITY"); 
-                            ps.setString(5, dataJson); 
-                            ps.setTimestamp(6, Timestamp.from(now)); 
-                            ps.executeUpdate(); 
+                        try (PreparedStatement ps = conn.prepareStatement(
+                                "INSERT INTO entities (id, tenant_id, collection_name, record_type, data, created_at, active, version) " +
+                                "VALUES (?, ?, ?, ?, ?::jsonb, ?, true, 1)")) {
+                            ps.setObject(1, id);
+                            ps.setString(2, tenantId);
+                            ps.setString(3, entity.getCollectionName());
+                            ps.setString(4, entity.getRecordType() != null ? entity.getRecordType().name() : "ENTITY");
+                            ps.setString(5, dataJson);
+                            ps.setTimestamp(6, Timestamp.from(now));
+                            ps.executeUpdate();
                         }
                     }
-                    return Entity.builder() 
-                            .id(id) 
-                            .tenantId(tenantId) 
-                            .collectionName(entity.getCollectionName()) 
-                            .recordType(entity.getRecordType() != null ? entity.getRecordType() : RecordType.ENTITY) 
-                            .data(entity.getData()) 
-                            .build(); 
+                    return Entity.builder()
+                            .id(id)
+                            .tenantId(tenantId)
+                            .collectionName(entity.getCollectionName())
+                            .recordType(entity.getRecordType() != null ? entity.getRecordType() : RecordType.ENTITY)
+                            .data(entity.getData())
+                            .build();
                 }
             });
+        }
+
+        @Override
+        public Promise<Entity> saveWithIdempotency(String tenantId, Entity entity, String idempotencyKey) {
+            // Test-only implementation: delegate to save without idempotency
+            return save(tenantId, entity);
         }
 
         @Override

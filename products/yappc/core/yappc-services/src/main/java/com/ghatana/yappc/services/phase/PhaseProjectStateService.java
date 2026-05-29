@@ -13,6 +13,11 @@ import java.util.Objects;
 
 /**
  * Queries and enriches phase packet project state.
+ *
+ * @doc.type class
+ * @doc.purpose Queries and enriches phase packet project state from DataCloud
+ * @doc.layer service
+ * @doc.pattern Service
  */
 public final class PhaseProjectStateService {
 

@@ -16,6 +16,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.*;
@@ -42,6 +44,7 @@ import static org.mockito.Mockito.*;
 class SecurityContextTest extends EventloopTestBase {
 
     private JwtTokenProvider jwtTokenProvider;
+    private com.ghatana.platform.security.port.JwtTokenProvider platformJwtTokenProvider;
     private JwtAuthenticationFilter authenticationFilter;
     private TenantId testTenantId;
     private UserPrincipal testUser;
@@ -49,8 +52,10 @@ class SecurityContextTest extends EventloopTestBase {
     @BeforeEach
     void setUp() {
         jwtTokenProvider = mock(JwtTokenProvider.class);
+        platformJwtTokenProvider = mock(com.ghatana.platform.security.port.JwtTokenProvider.class);
         authenticationFilter = new JwtAuthenticationFilter(
                 jwtTokenProvider,
+                platformJwtTokenProvider,
                 new NoopMetricsCollector()
         );
         testTenantId = TenantId.of("test-tenant");
@@ -310,8 +315,11 @@ class SecurityContextTest extends EventloopTestBase {
         // GIVEN
         String token = "valid-jwt-token-123";
         JwtClaims claims = createJwtClaims();
+        Map<String, Object> platformClaims = Map.of("tenantId", "test-tenant");
 
-        when(jwtTokenProvider.validateToken(any(), eq(token)))
+        when(platformJwtTokenProvider.extractClaims(eq(token)))
+                .thenReturn(Optional.of(platformClaims));
+        when(jwtTokenProvider.validateToken(eq(testTenantId), eq(token)))
                 .thenReturn(Promise.of(claims));
 
         HttpRequest request = createRequest("Bearer " + token);
@@ -327,7 +335,8 @@ class SecurityContextTest extends EventloopTestBase {
                 .as("Returned request should have correct path")
                 .isEqualTo("/api/resource");
 
-        verify(jwtTokenProvider).validateToken(eq(TenantId.of("default-tenant")), eq(token));
+        verify(platformJwtTokenProvider).extractClaims(eq(token));
+        verify(jwtTokenProvider).validateToken(eq(testTenantId), eq(token));
     }
 
         @Test
@@ -370,8 +379,11 @@ class SecurityContextTest extends EventloopTestBase {
         // GIVEN
         String token = "valid-jwt-token-123";
         JwtClaims claims = createJwtClaims();
+        Map<String, Object> platformClaims = Map.of("tenantId", "test-tenant");
 
-        when(jwtTokenProvider.validateToken(any(), eq(token)))
+        when(platformJwtTokenProvider.extractClaims(eq(token)))
+                .thenReturn(Optional.of(platformClaims));
+        when(jwtTokenProvider.validateToken(eq(testTenantId), eq(token)))
                 .thenReturn(Promise.of(claims));
 
         HttpRequest request = createRequest("Bearer " + token);
@@ -398,8 +410,11 @@ class SecurityContextTest extends EventloopTestBase {
         SecurityContextHolder.setCurrentContext(SecurityContext.of(testUser, testTenantId));
         String token = "replacement-jwt-token-456";
         JwtClaims claims = createJwtClaims();
+        Map<String, Object> platformClaims = Map.of("tenantId", "test-tenant");
 
-        when(jwtTokenProvider.validateToken(any(), eq(token)))
+        when(platformJwtTokenProvider.extractClaims(eq(token)))
+                .thenReturn(Optional.of(platformClaims));
+        when(jwtTokenProvider.validateToken(eq(testTenantId), eq(token)))
                 .thenReturn(Promise.of(claims));
 
         HttpRequest request = createRequest("Bearer " + token);

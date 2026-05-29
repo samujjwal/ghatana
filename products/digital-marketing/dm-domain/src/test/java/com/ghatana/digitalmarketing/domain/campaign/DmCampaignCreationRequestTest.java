@@ -1,14 +1,15 @@
 package com.ghatana.digitalmarketing.domain.campaign;
 
-import com.ghatana.digitalmarketing.domain.campaign.DmCampaignCreationRequest;
-import com.ghatana.digitalmarketing.domain.campaign.DmCampaignCreationStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 @DisplayName("DmCampaignCreationRequest domain entity")
 class DmCampaignCreationRequestTest {

@@ -183,6 +183,10 @@ public final class PatternSpecParser {
             optionalString(governanceMap, "commitSha"),
             optionalString(governanceMap, "approvalPolicy"),
             optionalString(governanceMap, "reviewPolicy"),
+            optionalString(governanceMap, "toolPolicy"),
+            optionalString(governanceMap, "auditPolicy"),
+            optionalString(governanceMap, "rollbackPolicy"),
+            optionalString(governanceMap, "idempotency"),
             optionalMap(governanceMap, "options"));
     }
 

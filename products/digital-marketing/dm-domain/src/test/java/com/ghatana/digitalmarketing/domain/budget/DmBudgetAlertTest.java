@@ -1,13 +1,13 @@
 package com.ghatana.digitalmarketing.domain.budget;
 
-import com.ghatana.digitalmarketing.domain.budget.DmBudgetAlert;
-import com.ghatana.digitalmarketing.domain.budget.DmBudgetAlertLevel;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
 @DisplayName("DmBudgetAlert domain entity")
 class DmBudgetAlertTest {

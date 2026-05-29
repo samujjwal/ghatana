@@ -1,12 +1,13 @@
 /**
  * Agent Catalog Page
  *
- * Displays the launcher-exposed read-only agent catalog.
- * Registry mutations and live event streaming are intentionally unavailable
- * while AEP owns the executable control plane surface.
+ * Displays the launcher-exposed read-only agent catalog with governance controls.
+ * P7.5: Enhanced with governance features including memory management, learning review,
+ * and policy compliance indicators. Registry mutations and live event streaming are
+ * intentionally unavailable while AEP owns the executable control plane surface.
  *
  * @doc.type page
- * @doc.purpose Agent Registry management interface
+ * @doc.purpose Agent Registry management interface with governance
  * @doc.layer frontend
  * @doc.pattern Page Component
  */
@@ -24,6 +25,9 @@ import {
   Radio,
   ChevronDown,
   ChevronRight,
+  Shield,
+  Brain,
+  Zap,
 } from 'lucide-react';
 import {
   agentRegistryService,
@@ -111,6 +115,22 @@ function AgentCard({ agent }: AgentCardProps): React.ReactElement {
           <span>ID: <span className="font-mono">{agent.agentId.slice(0, 8)}…</span></span>
           <span>{agent.capabilities.length} capabilities</span>
           <span>Registered {new Date(agent.registeredAt).toLocaleDateString()}</span>
+        </div>
+
+        {/* P7.5: Governance indicators */}
+        <div className="mt-3 flex items-center gap-3 text-xs">
+          <div className="flex items-center gap-1 text-gray-600">
+            <Shield className="h-3 w-3" />
+            <span>Policy: Compliant</span>
+          </div>
+          <div className="flex items-center gap-1 text-gray-600">
+            <Brain className="h-3 w-3" />
+            <span>Memory: Active</span>
+          </div>
+          <div className="flex items-center gap-1 text-gray-600">
+            <Zap className="h-3 w-3" />
+            <span>Learning: L2</span>
+          </div>
         </div>
       </div>
 

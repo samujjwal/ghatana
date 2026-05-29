@@ -8,6 +8,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Assembles phase packets from various phase service components.
+ *
+ * @doc.type class
+ * @doc.purpose Assembles phase packets from various phase service components
+ * @doc.layer service
+ * @doc.pattern Assembler
+ */
 public final class PhasePacketAssembler {
 
     private final LearningInsightService learningInsightService;

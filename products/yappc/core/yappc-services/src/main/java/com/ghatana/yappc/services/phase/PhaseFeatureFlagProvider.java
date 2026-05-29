@@ -16,6 +16,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Provides feature flag enrichment for phase project state.
+ *
+ * @doc.type class
+ * @doc.purpose Provides feature flag enrichment for phase project state
+ * @doc.layer service
+ * @doc.pattern Provider
+ */
 public final class PhaseFeatureFlagProvider {
 
     private static final Logger log = LoggerFactory.getLogger(PhaseFeatureFlagProvider.class);

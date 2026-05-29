@@ -150,9 +150,17 @@ public final class PatternSpecCompiler {
         boolean isShadow = "shadow".equals(lifecycleState);
         boolean isActive = "active".equals(lifecycleState);
 
+        Map<String, Object> governance = mapSection(spec, "governance");
         PatternRuntimeNode root = compileExpression(mapSection(spec, "pattern"), "root", registry, isShadow, null);
         List<String> nodeOrder = new ArrayList<>();
         collectNodeOrder(root, nodeOrder);
+
+        // DC-P5-002: Side-effecting capability without production policy fails (legacy path)
+        if (root.capabilityDescriptor().isPresent()
+                && root.capabilityDescriptor().get().sideEffectProfile().name().equals("SIDE_EFFECTING")
+                && !hasProductionPolicy(governance)) {
+            throw new IllegalArgumentException("root is SIDE_EFFECTING but governance lacks production policy");
+        }
 
         // DC-P5-004: Resolve time and uncertainty policies
         Map<String, Object> semantics = mapSection(spec, "semantics");
@@ -169,7 +177,7 @@ public final class PatternSpecCompiler {
             semantics,
             mapSection(spec, "emit"),
             lifecycle,
-            mapSection(spec, "governance"),
+            governance,
             timePolicy,
             uncertaintyPolicy,
             isShadow,
@@ -297,8 +305,9 @@ public final class PatternSpecCompiler {
         }
 
         // DC-P5-002: Side-effecting capability without production policy fails
-        if (capabilityDescriptor.isPresent() 
+        if (capabilityDescriptor.isPresent()
                 && capabilityDescriptor.get().sideEffectProfile().name().equals("SIDE_EFFECTING")
+                && spec != null
                 && !hasProductionPolicy(spec.governance())) {
             throw new IllegalArgumentException(path + " is SIDE_EFFECTING but governance lacks production policy");
         }
@@ -415,6 +424,24 @@ public final class PatternSpecCompiler {
         boolean hasAuditPolicy = governance.auditPolicy() != null;
         // Control 5: rollback / compensation strategy (AEP-P1-005)
         boolean hasRollbackPolicy = governance.rollbackPolicy() != null;
+        return hasApprovalOrReview && hasCommitSha && hasToolPolicy && hasAuditPolicy && hasRollbackPolicy;
+    }
+
+    /**
+     * AEP-P1-005: Check governance map for all five production controls (legacy path).
+     */
+    private static boolean hasProductionPolicy(Map<String, Object> governance) {
+        if (governance == null) return false;
+        // Control 1: human oversight (approval or review)
+        boolean hasApprovalOrReview = governance.get("approvalPolicy") != null || governance.get("reviewPolicy") != null;
+        // Control 2: immutable truth binding
+        boolean hasCommitSha = governance.get("commitSha") != null;
+        // Control 3: allowed-tool declaration (AEP-P1-005)
+        boolean hasToolPolicy = governance.get("toolPolicy") != null;
+        // Control 4: audit sink specification (AEP-P1-005)
+        boolean hasAuditPolicy = governance.get("auditPolicy") != null;
+        // Control 5: rollback / compensation strategy (AEP-P1-005)
+        boolean hasRollbackPolicy = governance.get("rollbackPolicy") != null;
         return hasApprovalOrReview && hasCommitSha && hasToolPolicy && hasAuditPolicy && hasRollbackPolicy;
     }
 }

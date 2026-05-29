@@ -33,6 +33,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -40,6 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -530,6 +532,73 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
         // The actual behavior depends on whether fabric is available
         // Without fabric, it returns 503 early
         assertThat(response.getCode()).isEqualTo(503);
+    }
+
+    @Test
+    @DisplayName("Sync updates collection metadata with sync information (P4.4)")
+    void syncUpdatesCollectionMetadata() {
+        // Given fabric connector that returns successful sync
+        DataFabricConnector mockFabric = mock(DataFabricConnector.class);
+        DataFabricConnector.SyncResult syncResult = new DataFabricConnector.SyncResult(
+            "conn-1", true, 1000, 0, Instant.now(), Instant.now(), "Sync completed successfully");
+        lenient().when(mockFabric.sync(anyString(), any()))
+            .thenReturn(io.activej.promise.Promise.of(syncResult));
+
+        DataSourceRegistryHandler handlerWithFabric = new DataSourceRegistryHandler(
+            client, http, mockFabric, null);
+
+        HttpRequest request = mock(HttpRequest.class);
+        lenient().when(request.getPathParameter("connectionId")).thenReturn("conn-1");
+        lenient().when(request.getHeader(TenantExtractor.TENANT_HEADER)).thenReturn("test-tenant");
+        lenient().when(request.getPath()).thenReturn("/api/v1/connectors/conn-1/sync");
+        lenient().when(request.getQueryParameter("tenantId")).thenReturn(null);
+        lenient().when(request.getMethod()).thenReturn(io.activej.http.HttpMethod.POST);
+        lenient().doReturn(TenantResolutionResult.success("test-tenant", null)).when(http).requireTenantIdWithError(any());
+        lenient().when(request.getBody()).thenReturn(ByteBufStrings.wrapUtf8("{\"targetCollection\":\"col-1\"}"));
+
+        DataCloudClient.Entity existingConnection = mockEntity("conn-1", Map.of("name", "test-conn", "type", "POSTGRESQL", "state", "ACTIVE"));
+        lenient().when(client.findById(anyString(), anyString(), eq("conn-1")))
+            .thenReturn(io.activej.promise.Promise.of(java.util.Optional.of(existingConnection)));
+
+        DataCloudClient.Entity savedConnection = mock(DataCloudClient.Entity.class);
+        lenient().when(savedConnection.id()).thenReturn("conn-1");
+        lenient().when(savedConnection.data()).thenReturn(Map.of("name", "test-conn", "type", "POSTGRESQL", "state", "ACTIVE"));
+        lenient().when(savedConnection.collection()).thenReturn("dc_connections");
+        lenient().when(savedConnection.version()).thenReturn(1L);
+        lenient().when(savedConnection.createdAt()).thenReturn(java.time.Instant.now());
+        
+        lenient().when(client.save(anyString(), anyString(), anyMap()))
+            .thenReturn(io.activej.promise.Promise.of(savedConnection));
+
+        DataCloudClient.Entity existingCollection = mock(DataCloudClient.Entity.class);
+        lenient().when(existingCollection.id()).thenReturn("col-1");
+        lenient().when(existingCollection.data()).thenReturn(Map.of("name", "test-collection"));
+        lenient().when(existingCollection.collection()).thenReturn("dc_collections");
+        lenient().when(existingCollection.version()).thenReturn(1L);
+        lenient().when(existingCollection.createdAt()).thenReturn(java.time.Instant.now());
+        
+        lenient().when(client.findById(anyString(), anyString(), eq("col-1")))
+            .thenReturn(io.activej.promise.Promise.of(java.util.Optional.of(existingCollection)));
+
+        DataCloudClient.Entity updatedCollection = mock(DataCloudClient.Entity.class);
+        lenient().when(updatedCollection.id()).thenReturn("col-1");
+        lenient().when(updatedCollection.data()).thenReturn(Map.of("name", "test-collection", "syncMetadata", Map.of(
+            "lastSyncConnectionId", "conn-1",
+            "lastSyncStatus", "completed",
+            "lastSyncRecordsSynced", 1000
+        )));
+        lenient().when(updatedCollection.collection()).thenReturn("dc_collections");
+        lenient().when(updatedCollection.version()).thenReturn(2L);
+        lenient().when(updatedCollection.createdAt()).thenReturn(java.time.Instant.now());
+        
+        lenient().when(client.updateEntity(anyString(), eq("col-1"), anyMap(), eq("test-tenant")))
+            .thenReturn(io.activej.promise.Promise.of(updatedCollection));
+
+        HttpResponse response = runPromise(() -> handlerWithFabric.handleTriggerSync(request));
+
+        assertThat(response).isNotNull();
+        // Verify that collection metadata was updated with sync information
+        verify(client).updateEntity(anyString(), eq("col-1"), anyMap(), eq("test-tenant"));
     }
 
     // Helper methods

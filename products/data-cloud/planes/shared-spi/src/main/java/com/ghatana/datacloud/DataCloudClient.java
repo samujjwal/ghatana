@@ -75,6 +75,69 @@ public interface DataCloudClient extends AutoCloseable {
      */
     Promise<Void> delete(String tenantId, String collection, String id);
 
+    /**
+     * List all entities in a collection.
+     *
+     * @param collection collection name
+     * @param tenantId tenant identifier
+     * @return promise of list of entities
+     */
+    default Promise<List<Entity>> listEntities(String collection, String tenantId) {
+        return query(tenantId, collection, Query.all());
+    }
+
+    /**
+     * Get a single entity by ID.
+     *
+     * @param collection collection name
+     * @param id entity ID
+     * @param tenantId tenant identifier
+     * @return promise of entity
+     */
+    default Promise<Entity> getEntity(String collection, String id, String tenantId) {
+        return findById(tenantId, collection, id)
+            .then(opt -> opt.map(Promise::of).orElseGet(() -> Promise.ofException(
+                new IllegalArgumentException("Entity not found: " + id))));
+    }
+
+    /**
+     * Create a new entity.
+     *
+     * @param collection collection name
+     * @param id entity ID
+     * @param data entity data
+     * @param tenantId tenant identifier
+     * @return promise of created entity
+     */
+    default Promise<Entity> createEntity(String collection, String id, Map<String, Object> data, String tenantId) {
+        return save(tenantId, collection, data);
+    }
+
+    /**
+     * Update an existing entity.
+     *
+     * @param collection collection name
+     * @param id entity ID
+     * @param data entity data
+     * @param tenantId tenant identifier
+     * @return promise of updated entity
+     */
+    default Promise<Entity> updateEntity(String collection, String id, Map<String, Object> data, String tenantId) {
+        return save(tenantId, collection, data);
+    }
+
+    /**
+     * Delete an entity by ID.
+     *
+     * @param collection collection name
+     * @param id entity ID
+     * @param tenantId tenant identifier
+     * @return promise completing when deleted
+     */
+    default Promise<Void> deleteEntity(String collection, String id, String tenantId) {
+        return delete(tenantId, collection, id);
+    }
+
     // ==================== Event Operations (3 methods) ====================
 
     /**

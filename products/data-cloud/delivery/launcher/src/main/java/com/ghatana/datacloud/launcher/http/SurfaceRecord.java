@@ -111,7 +111,7 @@ public record SurfaceRecord(
     public Map<String, Object> toMap() {
         Map<String, Object> result = new java.util.LinkedHashMap<>();
         result.put("surfaceId", surfaceId);
-        result.put("state", state.toJsonValue());
+        result.put("state", state.name()); // Use enum name for JSON serialization
         result.put("status", state.toLegacyValue());
         result.put("ownerPlane", ownerPlane != null ? ownerPlane : "unknown");
         result.put("requiredDependencies", requiredDependencies);

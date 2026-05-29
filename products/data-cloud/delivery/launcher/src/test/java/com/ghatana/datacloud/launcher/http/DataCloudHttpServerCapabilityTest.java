@@ -73,13 +73,14 @@ class DataCloudHttpServerCapabilityTest {
         Map<String, Object> aiCompletionCapability = surfacesById.get("intelligence.aiCompletion");
         Map<String, Object> eventStoreCapability = surfacesById.get("event.store");
         Map<String, Object> runtimePosture = (Map<String, Object>) eventStoreCapability.get("runtimePosture");
-        Map<String, Object> eventTail = (Map<String, Object>) runtimePosture.get("eventTail");
+        Map<String, Object> details = (Map<String, Object>) runtimePosture.get("details");
+        Map<String, Object> eventTail = (Map<String, Object>) details.get("eventTail");
 
-        assertThat(jwtCapability).containsEntry("state", "live");
+        assertThat(jwtCapability).containsEntry("state", "LIVE");
         assertThat(jwtCapability).containsEntry("status", "ACTIVE");
-        assertThat(entityStoreCapability).containsEntry("state", "degraded");
+        assertThat(entityStoreCapability).containsEntry("state", "DEGRADED");
         assertThat(entityStoreCapability).containsEntry("status", "DEGRADED");
-        assertThat(aiCompletionCapability).containsEntry("state", "disabled");
+        assertThat(aiCompletionCapability).containsEntry("state", "DISABLED");
         assertThat(aiCompletionCapability).containsEntry("status", "NOT_CONFIGURED");
         assertThat(eventTail).containsEntry("available", false);
         assertThat(eventTail).containsEntry("configurable", false);
@@ -119,15 +120,17 @@ class DataCloudHttpServerCapabilityTest {
         Map<String, Object> transactionSurface2 = surfacesById2.get("operations.transactionManager");
         Map<String, Object> runtimePosture = (Map<String, Object>) transactionSurface.get("runtimePosture");
         Map<String, Object> runtimePosture2 = (Map<String, Object>) transactionSurface2.get("runtimePosture");
+        Map<String, Object> details = (Map<String, Object>) runtimePosture.get("details");
+        Map<String, Object> details2 = (Map<String, Object>) runtimePosture2.get("details");
 
-        assertThat(runtimePosture).containsEntry("authenticationConfigured", true);
-        assertThat(runtimePosture2).containsEntry("authenticationConfigured", true);
-        assertThat(runtimePosture).containsEntry("transactionManager", false);
-        assertThat(runtimePosture2).containsEntry("transactionManager", false);
-        assertThat(runtimePosture).containsEntry("contextStoreMode", "InMemoryContextStore");
-        assertThat(runtimePosture2).containsEntry("contextStoreMode", "InMemoryContextStore");
-        assertThat(runtimePosture.get("settingsStorageMode")).isEqualTo(runtimePosture2.get("settingsStorageMode"));
-        assertThat(runtimePosture.get("eventTail")).isEqualTo(runtimePosture2.get("eventTail"));
+        assertThat(details).containsEntry("authenticationConfigured", true);
+        assertThat(details2).containsEntry("authenticationConfigured", true);
+        assertThat(details).containsEntry("transactionManager", false);
+        assertThat(details2).containsEntry("transactionManager", false);
+        assertThat(details).containsEntry("contextStoreMode", "InMemoryContextStore");
+        assertThat(details2).containsEntry("contextStoreMode", "InMemoryContextStore");
+        assertThat(details.get("settingsStorageMode")).isEqualTo(details2.get("settingsStorageMode"));
+        assertThat(details.get("eventTail")).isEqualTo(details2.get("eventTail"));
         assertThat(((Map<String, Object>) surfacesBody.get("meta")).get("tenantId"))
             .isEqualTo(((Map<String, Object>) surfacesBody2.get("meta")).get("tenantId"));
     }
@@ -157,11 +160,12 @@ class DataCloudHttpServerCapabilityTest {
             .orElseThrow();
         Map<String, Object> runtimePosture = (Map<String, Object>) transactionManagerSurface.get("runtimePosture");
 
-        assertThat(transactionManagerSurface).containsEntry("state", "live");
-        assertThat(runtimePosture).containsEntry("transactionManager", true);
-        assertThat(runtimePosture).containsEntry("transactionOrchestrationMode", "transactional");
-        assertThat(runtimePosture).containsEntry("contextStoreMode", "JdbcContextStore");
-        assertThat(runtimePosture).containsEntry("contextStoreDurable", true);
+        assertThat(transactionManagerSurface).containsEntry("state", "LIVE");
+        Map<String, Object> details = (Map<String, Object>) runtimePosture.get("details");
+        assertThat(details).containsEntry("transactionManager", true);
+        assertThat(details).containsEntry("transactionOrchestrationMode", "transactional");
+        assertThat(details).containsEntry("contextStoreMode", "JdbcContextStore");
+        assertThat(details).containsEntry("contextStoreDurable", true);
     }
 
     private HttpResponse<String> get(String path, String token) throws Exception { 

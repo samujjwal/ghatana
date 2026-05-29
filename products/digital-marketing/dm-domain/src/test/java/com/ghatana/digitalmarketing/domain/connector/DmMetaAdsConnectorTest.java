@@ -1,13 +1,13 @@
 package com.ghatana.digitalmarketing.domain.connector;
 
-import com.ghatana.digitalmarketing.domain.connector.DmMetaAdsConnector;
-import com.ghatana.digitalmarketing.domain.connector.DmMetaAdsConnectorStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
 @DisplayName("DmMetaAdsConnector domain entity")
 class DmMetaAdsConnectorTest {

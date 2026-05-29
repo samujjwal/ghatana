@@ -1,7 +1,8 @@
 /**
  * Collections API
  * 
- * API endpoints for collection management.
+ * API endpoints for first-class collection management.
+ * Uses canonical /api/v1/collections endpoints (P3.1).
  * 
  * @doc.type service
  * @doc.purpose Collections API endpoints
@@ -10,19 +11,13 @@
  */
 
 import { apiClient, PaginatedResponse } from './client';
-import {
-    CollectionEntityListResponseSchema,
-    CollectionEntitySchema,
-    type CollectionEntity as BackendEntity,
-    type CollectionEntityListResponse as BackendEntityListResponse,
-} from '../../contracts/schemas';
 
 // ---------------------------------------------------------------------------
-// Backend entity response shapes (raw responses from /api/v1/entities/…)
+// First-class Collection contract (P3.1)
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// Transformation helpers
+// Transformation helpers for canonical Collection contract (P3.1)
 // ---------------------------------------------------------------------------
 
 const collectionSchemaTypes = ['entity', 'event', 'timeseries', 'graph', 'document'] as const;
@@ -86,38 +81,33 @@ function normalizeQualityMetrics(value: unknown): Record<string, number> | undef
     return Object.fromEntries(entries);
 }
 
-function entityToCollection(e: BackendEntity): Collection {
-    const d = e.data as Record<string, unknown>;
-    const schema = d.schema as CollectionSchema | undefined;
-    const storageSizeRaw =
-        d.storageSizeBytes ??
-        d.storageBytes ??
-        d.storageSize ??
-        d.statsStorageBytes ??
-        null;
-    const storageSizeBytes =
-        toFiniteNumberOrUndefined(storageSizeRaw) ?? null;
+// Transform canonical Collection contract to UI model
+function canonicalToCollection(data: Record<string, unknown>): Collection {
+    const schema = data.schema as CollectionSchema | undefined;
+    const storageSizeRaw = data.storageSizeBytes ?? data.storageBytes ?? data.storageSize ?? null;
+    const storageSizeBytes = toFiniteNumberOrUndefined(storageSizeRaw) ?? null;
+    
     return {
-        id: e.id,
-        name: toStringOrDefault(d.name, ''),
-        description: toStringOrDefault(d.description, ''),
-        schemaType: normalizeEnumValue(d.schemaType, collectionSchemaTypes, 'entity'),
-        status: normalizeEnumValue(d.status, collectionStatuses, 'draft'),
-        isActive: Boolean(d.isActive ?? (d.status === 'active')),
-        entityCount: toFiniteNumberOrDefault(d.entityCount, 0),
+        id: toStringOrDefault(data.id, ''),
+        name: toStringOrDefault(data.name, ''),
+        description: toStringOrDefault(data.description, ''),
+        schemaType: normalizeEnumValue(data.schemaType, collectionSchemaTypes, 'entity'),
+        status: normalizeEnumValue(data.status, collectionStatuses, 'draft'),
+        isActive: Boolean(data.isActive ?? (data.status === 'active')),
+        entityCount: toFiniteNumberOrDefault(data.entityCount, 0),
         schema: schema ?? { fields: [] },
-        tags: toStringArray(d.tags),
-        createdAt: e.createdAt ?? String(d.createdAt ?? new Date().toISOString()),
-        updatedAt: e.updatedAt ?? String(d.updatedAt ?? new Date().toISOString()),
-        createdBy: toStringOrDefault(d.createdBy, 'unknown'),
-        // P0.2 first-class collection registry fields
-        lifecycleStatus: normalizeEnumValue(d.lifecycleStatus, lifecycleStatuses, 'UNKNOWN'),
-        operationalStatus: normalizeEnumValue(d.operationalStatus, operationalStatuses, 'unknown'),
-        qualityScore: toFiniteNumberOrUndefined(d.qualityScore),
-        qualityMetrics: normalizeQualityMetrics(d.qualityMetrics),
-        retentionPolicy: d.retentionPolicy as Record<string, unknown> | undefined,
-        lineage: d.lineage as Record<string, unknown> | undefined,
-        owner: toStringOrDefault(d.owner ?? d.createdBy, 'unknown'),
+        tags: toStringArray(data.tags),
+        createdAt: toStringOrDefault(data.createdAt, new Date().toISOString()),
+        updatedAt: toStringOrDefault(data.updatedAt, new Date().toISOString()),
+        createdBy: toStringOrDefault(data.createdBy, 'unknown'),
+        // First-class collection registry fields (P3.1)
+        lifecycleStatus: normalizeEnumValue(data.lifecycleStatus, lifecycleStatuses, 'UNKNOWN'),
+        operationalStatus: normalizeEnumValue(data.operationalStatus, operationalStatuses, 'unknown'),
+        qualityScore: toFiniteNumberOrUndefined(data.qualityScore),
+        qualityMetrics: normalizeQualityMetrics(data.qualityMetrics),
+        retentionPolicy: data.retentionPolicy as Record<string, unknown> | undefined,
+        lineage: data.lineage as Record<string, unknown> | undefined,
+        owner: toStringOrDefault(data.owner ?? data.createdBy, 'unknown'),
         storageSizeBytes: Number.isFinite(storageSizeBytes) ? (storageSizeBytes as number) : undefined,
     };
 }
@@ -204,81 +194,104 @@ export interface CollectionQueryParams {
 /**
  * Collections API
  *
- * Routes now backed by /api/v1/entities/dc_collections (Option A,
- * DATA_CLOUD_REMEDIATION_IMPLEMENTATION_PLAN Phase 2).
+ * Routes backed by canonical /api/v1/collections endpoints (P3.1).
  */
 export const collectionsApi = {
     /**
      * List all collections.
-     * GET /api/v1/entities/dc_collections
+     * GET /api/v1/collections
      */
     list: async (params?: CollectionQueryParams): Promise<PaginatedResponse<Collection>> => {
-        const limit = params?.pageSize ?? 50;
-        const offset = ((params?.page ?? 1) - 1) * limit;
-        const queryParams: Record<string, unknown> = { limit, offset };
+        const queryParams: Record<string, unknown> = {};
         if (params?.search) queryParams.search = params.search;
         if (params?.status) queryParams.status = params.status;
         if (params?.schemaType) queryParams.schemaType = params.schemaType;
         if (params?.sortBy) queryParams.sortBy = params.sortBy;
         if (params?.sortOrder) queryParams.sortOrder = params.sortOrder;
         
-        const rawResponse = await apiClient.get<BackendEntityListResponse>('/entities/dc_collections', {
+        const rawResponse = await apiClient.get<{ collections: Record<string, unknown>[]; tenantId: string; count: number }>('/collections', {
             params: queryParams,
         });
-        const raw = CollectionEntityListResponseSchema.parse(rawResponse);
-        const items = (raw.entities ?? []).map(entityToCollection);
+        const items = (rawResponse.collections ?? []).map(canonicalToCollection);
         const page = params?.page ?? 1;
+        const pageSize = params?.pageSize ?? 50;
+        const offset = (page - 1) * pageSize;
         return {
             items,
-            total: raw.count ?? items.length,
+            total: rawResponse.count ?? items.length,
             page,
-            pageSize: limit,
-            hasMore: offset + items.length < (raw.count ?? items.length),
+            pageSize,
+            hasMore: offset + items.length < (rawResponse.count ?? items.length),
         };
     },
 
     /**
      * Get collection by ID.
-     * GET /api/v1/entities/dc_collections/:id
+     * GET /api/v1/collections/:id
      */
     get: async (id: string): Promise<Collection> => {
-        const rawResponse = await apiClient.get<BackendEntity>(`/entities/dc_collections/${id}`);
-        const raw = CollectionEntitySchema.parse(rawResponse);
-        return entityToCollection(raw);
+        const rawResponse = await apiClient.get<Record<string, unknown>>(`/collections/${id}`);
+        return canonicalToCollection(rawResponse);
     },
 
     /**
      * Create new collection.
-     * POST /api/v1/entities/dc_collections
+     * POST /api/v1/collections
      */
     create: async (data: CreateCollectionDto): Promise<Collection> => {
-        // The backend entity save returns {id, collection, version, createdAt, timestamp}
-        const saved = await apiClient.post<{ id: string; collection: string; createdAt: string; timestamp: string }>(
-            '/entities/dc_collections',
-            { ...data } as Record<string, unknown>
+        const saved = await apiClient.post<Record<string, unknown>>(
+            '/collections',
+            { ...data, lifecycleStatus: 'DRAFT', operationalStatus: 'healthy' } as Record<string, unknown>
         );
-        return collectionsApi.get(saved.id);
+        return canonicalToCollection(saved);
     },
 
     /**
-     * Update collection (upsert via POST with existing ID in payload).
-     * POST /api/v1/entities/dc_collections
+     * Update collection.
+     * PUT /api/v1/collections/:id
      */
     update: async (id: string, data: UpdateCollectionDto): Promise<Collection> => {
-        await apiClient.post('/entities/dc_collections', { id, ...data } as Record<string, unknown>);
-        return collectionsApi.get(id);
+        const updated = await apiClient.put<Record<string, unknown>>(`/collections/${id}`, data as Record<string, unknown>);
+        return canonicalToCollection(updated);
     },
 
     /**
      * Delete collection.
-     * DELETE /api/v1/entities/dc_collections/:id
+     * DELETE /api/v1/collections/:id
      */
     delete: async (id: string): Promise<void> => {
-        return apiClient.delete(`/entities/dc_collections/${id}`);
+        return apiClient.delete(`/collections/${id}`);
     },
 
     /**
-     * Get collection schema (stored in the collection entity data.schema field).
+     * Publish collection (DRAFT → PUBLISHED).
+     * POST /api/v1/collections/:id/publish
+     */
+    publish: async (id: string): Promise<Collection> => {
+        const updated = await apiClient.post<Record<string, unknown>>(`/collections/${id}/publish`, {});
+        return canonicalToCollection(updated);
+    },
+
+    /**
+     * Deprecate collection (PUBLISHED → DEPRECATED).
+     * POST /api/v1/collections/:id/deprecate
+     */
+    deprecate: async (id: string): Promise<Collection> => {
+        const updated = await apiClient.post<Record<string, unknown>>(`/collections/${id}/deprecate`, {});
+        return canonicalToCollection(updated);
+    },
+
+    /**
+     * Archive collection (DEPRECATED → ARCHIVED).
+     * POST /api/v1/collections/:id/archive
+     */
+    archive: async (id: string): Promise<Collection> => {
+        const updated = await apiClient.post<Record<string, unknown>>(`/collections/${id}/archive`, {});
+        return canonicalToCollection(updated);
+    },
+
+    /**
+     * Get collection schema.
      */
     getSchema: async (id: string): Promise<Record<string, unknown>> => {
         const col = await collectionsApi.get(id);
@@ -286,14 +299,14 @@ export const collectionsApi = {
     },
 
     /**
-     * Update collection schema via upsert.
+     * Update collection schema.
      */
     updateSchema: async (id: string, schema: CollectionSchema): Promise<Collection> => {
         return collectionsApi.update(id, { schema });
     },
 
     /**
-     * Get collection entity count from the collection metadata entity.
+     * Get collection stats.
      */
     getStats: async (id: string): Promise<{
         entityCount: number;

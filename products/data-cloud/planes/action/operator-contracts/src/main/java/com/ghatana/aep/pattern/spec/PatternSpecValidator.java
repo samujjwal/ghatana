@@ -563,8 +563,8 @@ public final class PatternSpecValidator {
         if (!governance.hasApprovalPolicy()) {
             errors.add(path + ".AGENT_ACTION requires approval policy");
         }
-        if (isBlank(expression.get("toolPolicy"))) {
-            errors.add(path + ".AGENT_ACTION requires toolPolicy");
+        if (!governance.hasToolPolicy()) {
+            errors.add(path + ".AGENT_ACTION requires toolPolicy in governance");
         }
     }
 
@@ -577,17 +577,18 @@ public final class PatternSpecValidator {
     private static GovernanceContext governanceContext(Map<String, Object> spec) {
         Object governance = spec.get("governance");
         if (!(governance instanceof Map<?, ?> governanceMap)) {
-            return new GovernanceContext(false, false);
+            return new GovernanceContext(false, false, false);
         }
 
         boolean hasApprovalPolicy =
             !isBlank(governanceMap.get("approvalPolicy")) || !isBlank(governanceMap.get("reviewPolicy"));
-        return new GovernanceContext(!governanceMap.isEmpty(), hasApprovalPolicy);
+        boolean hasToolPolicy = !isBlank(governanceMap.get("toolPolicy"));
+        return new GovernanceContext(!governanceMap.isEmpty(), hasApprovalPolicy, hasToolPolicy);
     }
 
     private static boolean isBlank(Object value) {
         return value == null || String.valueOf(value).isBlank();
     }
 
-    private record GovernanceContext(boolean present, boolean hasApprovalPolicy) {}
+    private record GovernanceContext(boolean present, boolean hasApprovalPolicy, boolean hasToolPolicy) {}
 }

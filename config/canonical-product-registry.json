@@ -836,8 +836,9 @@
       "description": "Data cloud platform with planes architecture",
       "type": "product",
       "kind": "platform-provider",
-      "manifestPath": null,
-      "manifestFormat": null,
+      "manifestPath": "products/data-cloud/product-manifest.yaml",
+      "manifestFormat": "yaml",
+      "buildFile": "products/data-cloud/delivery/launcher/build.gradle.kts",
       "gradleModules": [
         ":products:data-cloud:planes:shared-spi",
         ":products:data-cloud:planes:data:entity",
@@ -911,16 +912,28 @@
         ]
       },
       "conformance": {
-        "manifest": false,
-        "observability": false,
-        "security": false,
-        "dataAccess": false,
-        "bridge": false,
-        "agentDefinitions": false,
-        "masteryBindings": false,
-        "evaluationPacks": false,
-        "runtimeModule": false,
-        "manifestExemption": "No product manifest is registered yet; manifest conformance is disabled until manifestPath, manifestFormat, and buildFile are declared."
+        "manifest": true,
+        "observability": true,
+        "security": true,
+        "dataAccess": true,
+        "bridge": true,
+        "bridgeAdapters": [
+          {
+            "file": "products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudKernelAdapterImpl.java",
+            "tests": [
+              {
+                "file": "products/data-cloud/extensions/kernel-bridge/src/test/java/com/ghatana/datacloud/kernel/DataCloudKernelAdapterImplTest.java"
+              },
+              {
+                "file": "products/data-cloud/extensions/kernel-bridge/src/test/java/com/ghatana/datacloud/kernel/DataCloudProviderTest.java"
+              }
+            ]
+          }
+        ],
+        "agentDefinitions": true,
+        "masteryBindings": true,
+        "evaluationPacks": true,
+        "runtimeModule": true
       },
       "metadata": {
         "owner": "Data Cloud Team",
@@ -937,16 +950,24 @@
           "bootstrap-platform-separation-validated",
           "platform-provider-health-validated",
           "runtime-truth-provider-validated",
-          "data-cloud-release-gate-passed"
+          "conformance-gates-incomplete",
+          "first-class-domain-contracts-missing",
+          "connector-production-path-incomplete"
         ],
         "requiredGates": [
           "bootstrap-build-without-platform-providers",
           "platform-provider-health",
-          "runtime-truth-provider"
+          "runtime-truth-provider",
+          "manifest-conformance-complete",
+          "first-class-domain-contracts",
+          "connector-production-path"
         ],
         "nextRequiredWork": [
           "Keep Data Cloud registered as a platform provider rather than an ordinary Kernel lifecycle product",
-          "Keep bootstrap separation, runtime truth provider, and Action Plane governance evidence current for each release target"
+          "Keep bootstrap separation, runtime truth provider, and Action Plane governance evidence current for each release target",
+          "Complete conformance gates: manifest, observability, security, dataAccess, bridge, agentDefinitions, masteryBindings, evaluationPacks, runtimeModule",
+          "Implement first-class Collection/Dataset/DataSource contracts instead of generic entity-backed storage",
+          "Complete connector production path with real handler, runtime truth states, and dataset linkage"
         ],
         "evidenceRefs": [
           "products/data-cloud/lifecycle/readiness-evidence.yaml",
@@ -955,7 +976,11 @@
           ".kernel/evidence/data-cloud/platform-provider-readiness.json"
         ],
         "blockerGateAdapterMatrix": {
-          "blockers": [],
+          "blockers": [
+            "conformance-gates-incomplete",
+            "first-class-domain-contracts-missing",
+            "connector-production-path-incomplete"
+          ],
           "gates": [
             {
               "gateId": "bootstrap-build-without-platform-providers",
@@ -968,6 +993,18 @@
             {
               "gateId": "runtime-truth-provider",
               "description": "Runtime truth provider availability"
+            },
+            {
+              "gateId": "manifest-conformance-complete",
+              "description": "All conformance flags must be true with executable proof"
+            },
+            {
+              "gateId": "first-class-domain-contracts",
+              "description": "First-class Collection/Dataset/DataSource contracts implemented"
+            },
+            {
+              "gateId": "connector-production-path",
+              "description": "Connector production path complete with real handler and dataset linkage"
             }
           ],
           "adapters": [
@@ -989,7 +1026,7 @@
             }
           ]
         },
-        "status": "ready"
+        "status": "blocked"
       },
       "lifecycleExecutionAllowed": false
     },
