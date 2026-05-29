@@ -1,8 +1,10 @@
 import { createRouteAccessEvaluator, type ProductRouteCapability } from '@ghatana/product-shell';
+import type { RouteStability } from '@ghatana/kernel-product-contracts';
 import routeContractJson from '../../../config/phr-route-contract.json';
 
 export type PhrRole = 'patient' | 'caregiver' | 'fchv' | 'clinician' | 'admin';
-export type PhrRouteStability = 'stable' | 'preview' | 'blocked' | 'hidden';
+// Use platform contract stability values instead of duplicating
+export type PhrRouteStability = RouteStability;
 
 export interface PhrRouteContract extends ProductRouteCapability {
   readonly path: string;

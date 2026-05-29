@@ -6,12 +6,12 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
-import com.ghatana.datacloud.infrastructure.governance.http.dto.ErrorResponse;
-import io.activej.http.HttpHeaders;
-import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,9 +38,13 @@ class HttpHandlerSupportErrorResponseTest {
     @DisplayName("errorResponse creates ApiResponse with error envelope")
     void errorResponseCreatesApiResponseWithErrorEnvelope() { 
         HttpResponse response = support.errorResponse(400, "Invalid request"); 
-        
-        assertThat(response).isNotNull(); 
+
         assertThat(response.getCode()).isEqualTo(400); 
+        Map<String, Object> body = parseError(response);
+        assertThat(body.get("status")).isEqualTo(400);
+        assertThat(body.get("error")).isEqualTo("BAD_REQUEST");
+        assertThat(body.get("message")).isEqualTo("Invalid request");
+        assertThat(String.valueOf(body.get("traceId"))).isNotBlank();
     }
 
     @Test
@@ -48,9 +52,17 @@ class HttpHandlerSupportErrorResponseTest {
     void envelopeResponseWithApiResponsePreservesErrorStructure() { 
         ApiResponse apiResponse = ApiResponse.error("VALIDATION_ERROR", "Invalid input", "test-tenant", "test-request"); 
         HttpResponse response = support.envelopeResponse(apiResponse, new ObjectMapper()); 
-        
-        assertThat(response).isNotNull(); 
+
         assertThat(response.getCode()).isEqualTo(400); 
+        Map<String, Object> body = parseError(response);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> error = (Map<String, Object>) body.get("error");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> meta = (Map<String, Object>) body.get("meta");
+        assertThat(error.get("code")).isEqualTo("VALIDATION_ERROR");
+        assertThat(error.get("message")).isEqualTo("Invalid input");
+        assertThat(meta.get("requestId")).isEqualTo("test-request");
+        assertThat(meta.get("tenantId")).isEqualTo("test-tenant");
     }
 
     @Test
@@ -107,5 +119,15 @@ class HttpHandlerSupportErrorResponseTest {
         HttpResponse response = support.errorResponse(500, "Internal server error"); 
         
         assertThat(response.getCode()).isEqualTo(500); 
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> parseError(HttpResponse response) {
+        try {
+            String json = response.getBody().getString(StandardCharsets.UTF_8);
+            return new ObjectMapper().readValue(json, Map.class);
+        } catch (Exception e) {
+            throw new AssertionError("Failed to parse error response body", e);
+        }
     }
 }

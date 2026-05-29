@@ -3,11 +3,11 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { LabsPage } from '../LabsPage';
-import { fetchObservations } from '../../api/clinicalApi';
+import { fetchLabs } from '../../api/clinicalApi';
 import type { ObservationSummary } from '../../types';
 
 vi.mock('../../api/clinicalApi', () => ({
-  fetchObservations: vi.fn(),
+  fetchLabs: vi.fn(),
 }));
 
 vi.mock('../../i18n/phrI18n', () => ({
@@ -29,7 +29,7 @@ vi.mock('../../auth/PhrSessionContext', () => ({
   }),
 }));
 
-const mockFetch = vi.mocked(fetchObservations);
+const mockFetch = vi.mocked(fetchLabs);
 
 const labs: ObservationSummary[] = [
   { id: 'lab-1', name: 'Hemoglobin A1c', recordedAt: '2025-01-05', effectiveDate: '2025-01-05', status: 'normal', value: '6.1', unit: '%' },

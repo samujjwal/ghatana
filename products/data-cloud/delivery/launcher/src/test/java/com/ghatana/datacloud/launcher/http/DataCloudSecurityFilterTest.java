@@ -900,8 +900,14 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
             return Stream.of(
                     Arguments.of("/api/v1/action/autonomy/feedback-policy", "POST", true),
                     Arguments.of("/api/v1/action/learning/trigger", "POST", false),
+                    Arguments.of("/api/v1/action/pipelines/pipeline-1/execute", "POST", true),
+                    Arguments.of("/api/v1/collections/collection-1/migrate", "POST", true),
+                    Arguments.of("/api/v1/entities/orders/export", "POST", true),
+                    Arguments.of("/mcp/v1/tools", "POST", true),
+                    Arguments.of("/api/v1/plugins/plugin-1/upgrade", "POST", true),
                     // Compatibility alias route should still honor requiresPolicy metadata.
                     Arguments.of("/api/v1/executions/exec-1/cancel", "POST", true),
+                    Arguments.of("/api/v1/plugins/plugin-1/disable", "POST", true),
                     Arguments.of("/api/v1/executions/exec-1/checkpoint", "POST", false)
             );
         }

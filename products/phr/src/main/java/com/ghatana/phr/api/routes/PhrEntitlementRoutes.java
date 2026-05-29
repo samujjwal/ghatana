@@ -44,6 +44,7 @@ public final class PhrEntitlementRoutes {
     private final IdentityAwareBoundedCache<String, Map<String, Object>> entitlementCache;
     private List<ProductRouteEntitlement.RouteEntitlement> cachedRoutes;
     private Map<String, Integer> roleOrder;
+    private Map<String, Map<String, Object>> cachedRouteMeta;
     private volatile boolean contractLoaded = false;
 
     public PhrEntitlementRoutes(
@@ -128,6 +129,7 @@ public final class PhrEntitlementRoutes {
             }
 
             List<ProductRouteEntitlement.RouteEntitlement> loadedRoutes = new ArrayList<>();
+            Map<String, Map<String, Object>> loadedMeta = new java.util.LinkedHashMap<>();
             for (JsonNode routeNode : routesNode) {
                 if (!routeNode.has("path") || !routeNode.has("label") || !routeNode.has("minimumRole")
                         || !routeNode.has("stability")) {
@@ -212,6 +214,20 @@ public final class PhrEntitlementRoutes {
                     }
                 }
 
+                Map<String, Object> meta = new java.util.LinkedHashMap<>();
+                meta.put("stability", stability);
+                String apiEndpoint = routeNode.path("apiEndpoint").asText(null);
+                String policyId = routeNode.path("policyId").asText(null);
+                String testId = routeNode.path("testId").asText(null);
+                String group = routeNode.path("group").asText(null);
+                String description = routeNode.path("description").asText(null);
+                if (apiEndpoint != null && !apiEndpoint.isBlank()) meta.put("apiEndpoint", apiEndpoint);
+                if (policyId != null && !policyId.isBlank()) meta.put("policyId", policyId);
+                if (testId != null && !testId.isBlank()) meta.put("testId", testId);
+                if (group != null && !group.isBlank()) meta.put("group", group);
+                if (description != null && !description.isBlank()) meta.put("description", description);
+                loadedMeta.put(path, meta);
+
                 if ("hidden".equals(stability) || "blocked".equals(stability)) {
                     continue;
                 }
@@ -229,6 +245,7 @@ public final class PhrEntitlementRoutes {
             }
             this.cachedRoutes = loadedRoutes;
             this.roleOrder = loadedRoleOrder;
+            this.cachedRouteMeta = loadedMeta;
             this.contractLoaded = true;
             
             LOG.info("Loaded {} routes from contract file {}", loadedRoutes.size(), routeContractPath);
@@ -300,9 +317,19 @@ public final class PhrEntitlementRoutes {
             cards
         );
 
-        // E-007: Use platform contract serialization
-        Map<String, Object> entitlementMap = entitlement.toMap();
-        
+        // E-007: Use platform contract serialization then augment with PHR-specific route metadata
+        Map<String, Object> entitlementMap = new java.util.LinkedHashMap<>(entitlement.toMap());
+        if (cachedRouteMeta != null && !cachedRouteMeta.isEmpty()) {
+            Map<String, Map<String, Object>> filteredMeta = new java.util.LinkedHashMap<>();
+            for (ProductRouteEntitlement.RouteEntitlement route : routes) {
+                Map<String, Object> meta = cachedRouteMeta.get(route.path());
+                if (meta != null) {
+                    filteredMeta.put(route.path(), meta);
+                }
+            }
+            entitlementMap.put("routeMeta", filteredMeta);
+        }
+
         // Cache for 5 minutes (300 seconds)
         entitlementCache.put(context.principalId(), context.tenantId(), "/route-entitlements", cacheKey, entitlementMap);
         

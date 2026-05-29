@@ -3,6 +3,7 @@
  * 
  * These tests cover full patient and clinician journeys against a real backend:
  * - login → dashboard → profile → documents/OCR → consent grant/revoke → emergency access → provider roster
+ * - consent management, appointments scheduling, document OCR, emergency access, audit trail
  * 
  * Anti-theater rule: assertions use real page state, not hard-coded object literals.
  */
@@ -56,6 +57,23 @@ test.describe('PHR Patient Journey', () => {
     // Verify consent list is displayed
     await expect(page.getByText('Recipient')).toBeVisible();
     await expect(page.getByText('Purpose')).toBeVisible();
+    
+    // Grant new consent
+    const grantButton = page.getByRole('button', { name: /grant|new consent/i });
+    if (await grantButton.isVisible()) {
+      await grantButton.click();
+      await expect(page.getByText('Grant Consent')).toBeVisible();
+      
+      // Select recipient and purpose
+      await page.getByRole('combobox', { name: /recipient/i }).click();
+      await page.getByRole('option').first().click();
+      await page.getByRole('combobox', { name: /purpose/i }).click();
+      await page.getByRole('option').first().click();
+      
+      // Submit consent
+      await page.getByRole('button', { name: /submit|confirm/i }).click();
+      await expect(page.getByText(/consent granted|success/i)).toBeVisible();
+    }
   });
 
   test('patient can request emergency access review', async ({ page }) => {
@@ -99,6 +117,58 @@ test.describe('PHR Patient Journey', () => {
       await page.getByRole('button', { name: /confirm/i }).click();
       await expect(page.getByText('Confirmed')).toBeVisible();
     }
+  });
+
+  test('patient can schedule and view appointments', async ({ page }) => {
+    await mockPhrEntitlements(page);
+    
+    // Login and navigate to appointments
+    await page.goto('/login');
+    await page.getByRole('textbox', { name: /email|username|id/i }).fill('patient@example.com');
+    await page.getByRole('textbox', { name: /password/i }).fill('password123');
+    await page.getByRole('button', { name: /login|sign in/i }).click();
+    
+    await page.getByRole('link', { name: /appointments/i }).click();
+    await expect(page.getByText('Appointments')).toBeVisible();
+    
+    // Schedule new appointment
+    const scheduleButton = page.getByRole('button', { name: /schedule|new appointment/i });
+    if (await scheduleButton.isVisible()) {
+      await scheduleButton.click();
+      await expect(page.getByText('Schedule Appointment')).toBeVisible();
+      
+      // Select provider
+      await page.getByRole('combobox', { name: /provider/i }).click();
+      await page.getByRole('option').first().click();
+      
+      // Select date and time
+      await page.getByRole('textbox', { name: /date/i }).fill('2026-06-01');
+      await page.getByRole('combobox', { name: /time/i }).click();
+      await page.getByRole('option').first().click();
+      
+      // Submit appointment
+      await page.getByRole('button', { name: /submit|confirm/i }).click();
+      await expect(page.getByText(/appointment scheduled|success/i)).toBeVisible();
+    }
+    
+    // Verify appointment appears in list
+    await expect(page.getByText('Upcoming Appointments')).toBeVisible();
+  });
+
+  test('patient can view audit trail of their data access', async ({ page }) => {
+    await mockPhrEntitlements(page);
+    
+    // Login and navigate to audit trail
+    await page.goto('/login');
+    await page.getByRole('textbox', { name: /email|username|id/i }).fill('patient@example.com');
+    await page.getByRole('textbox', { name: /password/i }).fill('password123');
+    await page.getByRole('button', { name: /login|sign in/i }).click();
+    
+    await page.getByRole('link', { name: /audit|history/i }).click();
+    await expect(page.getByText(/audit|access history/i)).toBeVisible();
+    
+    // Verify audit events are displayed
+    await expect(page.getByText(/access|view|consent/i)).toBeVisible();
   });
 });
 

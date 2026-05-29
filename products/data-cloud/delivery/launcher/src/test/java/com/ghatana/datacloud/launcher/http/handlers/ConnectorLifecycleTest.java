@@ -423,22 +423,29 @@ class ConnectorLifecycleTest extends EventloopTestBase {
         void enableEmitsAuditEvent() {
             setupExistingConnection();
 
+            DataFabricConnector fabric = mock(DataFabricConnector.class);
+            DataFabricConnector.ConnectionTestResult passResult =
+                new DataFabricConnector.ConnectionTestResult(true, "ok", 12L, null);
+            when(fabric.testConnection(CONN_ID)).thenReturn(Promise.of(passResult));
+
+            DataSourceRegistryHandler handlerWithFabric =
+                new DataSourceRegistryHandler(client, httpSpy, fabric, auditService);
+
             HttpRequest request = buildRequest(HttpMethod.POST,
                 "http://localhost/api/v1/connectors/" + CONN_ID + "/enable", null);
 
-            HttpResponse response = runPromise(() -> handler.handleEnableConnection(request));
+            HttpResponse response = runPromise(() -> handlerWithFabric.handleEnableConnection(request));
 
-            assertThat(response).isNotNull();
-            // Response structure changed - skip assertions for now
-            // assertThat(response.getCode()).isEqualTo(200);
-            // Map<String, Object> body = parseBody(response);
-            // assertThat(body.get("state")).isEqualTo("ACTIVE");
-            // assertThat(body.get("enabled")).isEqualTo(true);
+            assertThat(response.getCode()).isEqualTo(200);
+            Map<String, Object> body = parseBody(response);
+            assertThat(body.get("state")).isEqualTo("ACTIVE");
+            assertThat(body.get("enabled")).isEqualTo(true);
+            assertThat(body.get("connectionId")).isEqualTo(CONN_ID);
 
-            // Audit event verification also skipped due to response structure change
-            // ArgumentCaptor<AuditEvent> captor = ArgumentCaptor.forClass(AuditEvent.class);
-            // verify(auditService).record(captor.capture());
-            // assertThat(captor.getValue().eventType()).isEqualTo("CONNECTOR_ENABLED");
+            ArgumentCaptor<AuditEvent> captor = ArgumentCaptor.forClass(AuditEvent.class);
+            verify(auditService).record(captor.capture());
+            assertThat(captor.getValue().eventType()).isEqualTo("CONNECTOR_ENABLED");
+            assertThat(captor.getValue().success()).isTrue();
         }
 
         @Test

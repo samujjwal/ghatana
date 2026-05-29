@@ -88,8 +88,8 @@ export function DocumentsPage(): React.ReactElement {
            contentType === 'text/plain';
   };
 
-  if (loading) return <div className="loading">{t('documents.loading')}</div>;
-  if (error) return <div className="error">{t('documents.error')}: {error}</div>;
+  if (loading) return <div className="loading" role="status" aria-live="polite">{t('documents.loading')}</div>;
+  if (error) return <div className="error" role="alert">{t('documents.error')}: {error}</div>;
 
   // Filter documents by content type (as a proxy for category)
   const filteredDocuments = categoryFilter

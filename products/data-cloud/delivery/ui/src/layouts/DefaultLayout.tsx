@@ -69,6 +69,7 @@ interface NavSection {
 interface NavItem {
     to: string;
     label: string;
+    labelKey?: string;
     icon: React.ReactNode;
     exact?: boolean;
     minimumShellRole?: ShellRole;
@@ -148,6 +149,7 @@ export function buildNavFromRegistry(shellRole: ShellRole): NavSection[] {
         .map((r) => ({
             to: r.path,
             label: r.label,
+            labelKey: r.labelKey,
             icon: getRouteIcon(r.iconName),
             exact: r.path === '/',
             minimumShellRole: r.minimumShellRole as ShellRole,
@@ -158,6 +160,7 @@ export function buildNavFromRegistry(shellRole: ShellRole): NavSection[] {
         .map((r) => ({
             to: r.path,
             label: r.label,
+            labelKey: r.labelKey,
             icon: getRouteIcon(r.iconName),
             minimumShellRole: r.minimumShellRole as ShellRole,
         }));
@@ -210,6 +213,8 @@ function Sidebar({
 }) {
     const { t } = useTranslation();
     const visibleSections = getNavigationSectionsForShellRole(shellRole);
+    const resolveNavLabel = (item: NavItem): string =>
+        item.labelKey ? t(item.labelKey, { defaultValue: item.label }) : item.label;
 
     return (
         <>
@@ -286,10 +291,10 @@ function Sidebar({
                                                 isCollapsed && 'justify-center'
                                             )
                                         }
-                                        title={isCollapsed ? item.label : undefined}
+                                        title={isCollapsed ? resolveNavLabel(item) : undefined}
                                     >
                                         {item.icon}
-                                        {!isCollapsed && <span>{item.label}</span>}
+                                        {!isCollapsed && <span>{resolveNavLabel(item)}</span>}
                                     </NavLink>
                                 ))}
                             </div>

@@ -4,6 +4,8 @@
  */
 package com.ghatana.datacloud.launcher.atomic;
 
+import java.time.Instant;
+
 /**
  * State of an atomic workflow.
  *

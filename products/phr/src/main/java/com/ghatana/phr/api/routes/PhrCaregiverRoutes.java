@@ -53,10 +53,68 @@ public final class PhrCaregiverRoutes {
      */
     public AsyncServlet getServlet() {
         return RoutingServlet.builder(eventloop)
+            .with(HttpMethod.GET, "/dashboard", this::handleGetCaregiverDashboard)
             .with(HttpMethod.GET, "/dependents", this::handleGetDependents)
             .with(HttpMethod.GET, "/patient/:patientId", this::handleGetPatientSummary)
             .with(HttpMethod.GET, "/patient/:patientId/detail", this::handleGetPatientDetail)
             .build();
+    }
+
+    private Promise<HttpResponse> handleGetCaregiverDashboard(HttpRequest request) {
+        PhrRouteSupport.PhrRequestContext context;
+        try {
+            context = PhrRouteSupport.requireContext(request);
+        } catch (IllegalArgumentException ex) {
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+        }
+
+        if (!"caregiver".equals(context.role()) && !"admin".equals(context.role())) {
+            return PhrRouteSupport.errorResponse(403, "CAREGIVER_ROLE_REQUIRED",
+                "Only caregiver or admin principals may access caregiver dashboard",
+                context.correlationId());
+        }
+
+        // Caregiver dashboard with dependent list, consent status, and alerts
+        return caregiverService.getPatientsForCaregiver(context.principalId())
+            .then(relationships -> {
+                List<Promise<Map<String, Object>>> dependentPromises = relationships.stream()
+                    .map(rel -> patientRecordService.getPatient(rel.patientId())
+                        .then(opt -> {
+                            if (opt.isEmpty()) {
+                                return Promise.of(Map.<String, Object>of(
+                                    "id", rel.patientId(),
+                                    "name", "[REDACTED]",
+                                    "relationship", rel.relationshipType(),
+                                    "consentStatus", rel.status(),
+                                    "expiresAt", rel.expiresAt() != null ? rel.expiresAt().toString() : ""
+                                ));
+                            }
+                            var patient = opt.get();
+                            return Promise.of(Map.<String, Object>of(
+                                "id", patient.getId(),
+                                "name", patient.getDemographics().getFullName(),
+                                "relationship", rel.relationshipType(),
+                                "consentStatus", rel.status(),
+                                "expiresAt", rel.expiresAt() != null ? rel.expiresAt().toString() : "",
+                                "age", patient.getDemographics().getAge(),
+                                "alertCount", 0
+                            ));
+                        }))
+                    .toList();
+
+                return Promises.all(dependentPromises)
+                    .then(dependents -> PhrRouteSupport.jsonResponse(200, Map.of(
+                        "caregiverId", context.principalId(),
+                        "tenantId", context.tenantId(),
+                        "dependents", dependents,
+                        "alerts", Map.of(
+                            "expiringConsents", 0,
+                            "revokedConsents", 0,
+                            "emergencyAccessRequests", 0
+                        ),
+                        "generatedAt", java.time.Instant.now().toString()
+                    ), context.correlationId()));
+            });
     }
 
     private Promise<HttpResponse> handleGetDependents(HttpRequest request) {

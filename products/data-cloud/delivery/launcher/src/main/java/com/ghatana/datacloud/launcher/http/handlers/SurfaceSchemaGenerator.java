@@ -4,7 +4,12 @@
  */
 package com.ghatana.datacloud.launcher.http.handlers;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.ghatana.datacloud.launcher.http.RouteSecurityMetadata;
+import com.ghatana.datacloud.launcher.http.RouteSecurityRegistry;
+import com.ghatana.datacloud.launcher.http.RouteSurfaceMapping;
 import com.ghatana.datacloud.spi.AggregationCapability;
 import com.ghatana.datacloud.spi.StreamingCapability;
 import com.ghatana.datacloud.spi.ai.AnomalyDetectionCapability;
@@ -19,12 +24,21 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.function.Predicate;
 
 /**
  * P2-CAP-1: Surface Schema Generator
@@ -43,6 +57,10 @@ public final class SurfaceSchemaGenerator {
     private static final Logger log = LoggerFactory.getLogger(SurfaceSchemaGenerator.class);
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory());
+    private static final String AUDIO_VIDEO_CAPABILITIES_CLASSPATH = "capabilities/audio-video-capabilities.yaml";
+    private static final String AUDIO_VIDEO_CAPABILITIES_REPO_PATH =
+        "products/data-cloud/planes/action/agent-catalog/capabilities/audio-video-capabilities.yaml";
 
     private SurfaceSchemaGenerator() {}
 
@@ -53,9 +71,11 @@ public final class SurfaceSchemaGenerator {
         SurfaceSchema schema = new SurfaceSchema();
         schema.version = "1.0.0";
         schema.metadata = new SchemaMetadata();
-        schema.metadata.description = "Unified surface schema for Ghatana platform and products";
+        schema.metadata.description = "Unified surface schema for Ghatana platform and products, derived from runtime truth registries";
         schema.metadata.lastUpdated = Instant.now().toString();
         schema.metadata.generators = List.of(
+            "RouteSecurityRegistry",
+            "RouteSurfaceMapping",
             "KernelCapability.java",
             "Data Cloud SPI capabilities",
             "AEP SPI capabilities",
@@ -68,6 +88,7 @@ public final class SurfaceSchemaGenerator {
         schema.aepCapabilities = discoverAepCapabilities();
         schema.uiFeatureGates = generateUIFeatureGates(schema.dataCloudCapabilities);
         schema.statusDefinitions = generateStatusDefinitions();
+        schema.routeTruth = generateRouteTruthSnapshot();
 
         return schema;
     }
@@ -292,9 +313,9 @@ public final class SurfaceSchemaGenerator {
      * Discover AEP capabilities
      */
     private static List<Capability> discoverAepCapabilities() {
-        List<Capability> capabilities = new ArrayList<>();
+        Map<String, Capability> capabilities = new TreeMap<>();
 
-        capabilities.add(new Capability(
+        capabilities.put("aep.eventlog.durable", new Capability(
             "aep.eventlog.durable",
             "Durable EventLog",
             "EVENT_PROCESSING",
@@ -309,7 +330,278 @@ public final class SurfaceSchemaGenerator {
             )
         ));
 
-        return capabilities;
+        discoverRouteBackedActionPlaneCapabilities(capabilities);
+        discoverAudioVideoCapabilities(capabilities);
+
+        return List.copyOf(capabilities.values());
+    }
+
+    private static void discoverRouteBackedActionPlaneCapabilities(Map<String, Capability> capabilities) {
+        List<RouteCapabilityDescriptor> descriptors = List.of(
+            new RouteCapabilityDescriptor(
+                "aep.pipelines",
+                "Pipelines",
+                "ACTION_PLANE",
+                "stable",
+                List.of("data-cloud", "aep"),
+                "Pipeline lifecycle and execution surfaces exposed through the canonical Action Plane routes.",
+                "action-plane-routes",
+                null,
+                metadata -> metadata.canonicalPath().startsWith("/api/v1/action/pipelines")
+                    || metadata.canonicalPath().startsWith("/api/v1/pipelines")
+            ),
+            new RouteCapabilityDescriptor(
+                "aep.runs",
+                "Runs",
+                "ACTION_PLANE",
+                "stable",
+                List.of("data-cloud", "aep"),
+                "Execution and run-ledger surfaces for Action Plane operations.",
+                "action-plane-routes",
+                null,
+                metadata -> metadata.canonicalPath().startsWith("/api/v1/action/executions")
+                    || metadata.canonicalPath().startsWith("/api/v1/runs")
+            ),
+            new RouteCapabilityDescriptor(
+                "aep.reviews",
+                "Reviews",
+                "ACTION_PLANE",
+                "stable",
+                List.of("data-cloud", "aep"),
+                "Human-in-the-loop review queues and review decisions.",
+                "action-plane-routes",
+                null,
+                metadata -> metadata.canonicalPath().contains("/learning/review")
+                    || metadata.canonicalPath().startsWith("/api/v1/hitl")
+            ),
+            new RouteCapabilityDescriptor(
+                "aep.learning",
+                "Learning",
+                "ACTION_PLANE",
+                "stable",
+                List.of("data-cloud", "aep"),
+                "Learning status, trigger, and policy-backed feedback surfaces.",
+                "action-plane-routes",
+                null,
+                metadata -> metadata.canonicalPath().startsWith("/api/v1/action/learning")
+                    || metadata.canonicalPath().startsWith("/api/v1/learning")
+            ),
+            new RouteCapabilityDescriptor(
+                "aep.agents",
+                "Agents",
+                "ACTION_PLANE",
+                "stable",
+                List.of("data-cloud", "aep"),
+                "Agent catalog, runtime, and memory access surfaces.",
+                "action-plane-routes",
+                null,
+                metadata -> metadata.canonicalPath().startsWith("/api/v1/action/agents")
+                    || metadata.canonicalPath().startsWith("/api/v1/agents")
+                    || metadata.canonicalPath().startsWith("/api/v1/action/memory")
+            ),
+            new RouteCapabilityDescriptor(
+                "aep.patterns",
+                "Patterns",
+                "ACTION_PLANE",
+                "stable",
+                List.of("data-cloud", "aep"),
+                "Pattern registry and detection surfaces.",
+                "action-plane-routes",
+                null,
+                metadata -> metadata.canonicalPath().startsWith("/api/v1/patterns")
+            ),
+            new RouteCapabilityDescriptor(
+                "aep.deployments",
+                "Deployments",
+                "ACTION_PLANE",
+                "stable",
+                List.of("data-cloud", "aep"),
+                "Deployment management surfaces for Action Plane assets.",
+                "action-plane-routes",
+                null,
+                metadata -> metadata.canonicalPath().startsWith("/api/v1/deployments")
+            ),
+            new RouteCapabilityDescriptor(
+                "aep.reports",
+                "Reports",
+                "ACTION_PLANE",
+                "stable",
+                List.of("data-cloud", "aep"),
+                "Operational report generation and retrieval surfaces.",
+                "action-plane-routes",
+                null,
+                metadata -> metadata.canonicalPath().startsWith("/api/v1/reports")
+            )
+        );
+
+        List<RouteSecurityMetadata> routes = new ArrayList<>(RouteSecurityRegistry.allRoutes().values());
+        for (RouteCapabilityDescriptor descriptor : descriptors) {
+            List<RouteSecurityMetadata> matchingRoutes = routes.stream()
+                .filter(descriptor.routePredicate())
+                .toList();
+            if (matchingRoutes.isEmpty()) {
+                continue;
+            }
+
+            Map<String, String> metadata = new LinkedHashMap<>();
+            metadata.put("route_count", Integer.toString(matchingRoutes.size()));
+            metadata.put(
+                "required_access_levels",
+                matchingRoutes.stream()
+                    .map(route -> String.valueOf(route.requiredAccess()))
+                    .distinct()
+                    .sorted()
+                    .reduce((left, right) -> left + "," + right)
+                    .orElse("")
+            );
+            metadata.put(
+                "surface_ids",
+                matchingRoutes.stream()
+                    .map(route -> RouteSurfaceMapping.getSurfaceId(route.method(), route.canonicalPath()))
+                    .filter(surfaceId -> surfaceId != null && !surfaceId.isBlank())
+                    .distinct()
+                    .sorted()
+                    .reduce((left, right) -> left + "," + right)
+                    .orElse("")
+            );
+            metadata.put(
+                "canonical_routes",
+                matchingRoutes.stream()
+                    .map(route -> route.method() + " " + route.canonicalPath())
+                    .distinct()
+                    .sorted()
+                    .reduce((left, right) -> left + ";" + right)
+                    .orElse("")
+            );
+
+            capabilities.put(descriptor.id(), new Capability(
+                descriptor.id(),
+                descriptor.name(),
+                descriptor.type(),
+                descriptor.status(),
+                descriptor.products(),
+                descriptor.description(),
+                descriptor.spiInterface(),
+                descriptor.uiGate(),
+                metadata
+            ));
+        }
+    }
+
+    private static void discoverAudioVideoCapabilities(Map<String, Capability> capabilities) {
+        Optional<JsonNode> root = loadAudioVideoCapabilitiesRoot();
+        if (root.isEmpty()) {
+            return;
+        }
+
+        JsonNode tools = root.get().path("tools");
+        if (!tools.isArray()) {
+            log.warn("Audio-video capabilities catalog does not contain a tools array");
+            return;
+        }
+
+        for (JsonNode tool : tools) {
+            String toolId = tool.path("toolId").asText("");
+            if (toolId.isBlank()) {
+                continue;
+            }
+
+            JsonNode policyTags = tool.path("policyTags");
+            boolean highRisk = containsTag(policyTags, "pii-risk") || containsTag(policyTags, "biometric-risk");
+            Map<String, String> metadata = new LinkedHashMap<>();
+            metadata.put("category", tool.path("category").asText(""));
+            metadata.put("transport", tool.path("transport").asText(""));
+            metadata.put("remote_endpoint", tool.path("remoteEndpoint").asText(""));
+            metadata.put("timeout", tool.path("timeout").asText(""));
+            metadata.put("retryable", tool.path("retryable").asText("false"));
+            metadata.put("contract_path", tool.path("contractPath").asText(""));
+            metadata.put("policy_tags", joinArrayValues(policyTags));
+            metadata.put("required_roles", joinArrayValues(tool.path("accessPolicy").path("requiredRoles")));
+            metadata.put("blocked_action_classes", joinArrayValues(tool.path("accessPolicy").path("blockedActionClasses")));
+            metadata.put("consent_required", Boolean.toString(highRisk));
+            metadata.put("endpoint_health", "runtime-probe-required");
+
+            capabilities.put(toolId, new Capability(
+                toolId,
+                tool.path("name").asText(toolId),
+                "ACTION_PLANE_TOOL",
+                "stable",
+                List.of("data-cloud", "audio-video", "aep"),
+                "Audio-video tool capability registered in the Action Plane catalog.",
+                tool.path("handlerClass").asText(null),
+                null,
+                metadata
+            ));
+        }
+    }
+
+    private static Optional<JsonNode> loadAudioVideoCapabilitiesRoot() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        if (classLoader != null) {
+            try (InputStream inputStream = classLoader.getResourceAsStream(AUDIO_VIDEO_CAPABILITIES_CLASSPATH)) {
+                if (inputStream != null) {
+                    return Optional.ofNullable(YAML_MAPPER.readTree(inputStream));
+                }
+            } catch (Exception exception) {
+                log.warn("Failed to load audio-video capabilities catalog from classpath: {}", exception.getMessage());
+            }
+        }
+
+        Path repoRoot = resolveRepoRoot();
+        if (repoRoot == null) {
+            log.warn("Unable to resolve repository root while loading audio-video capabilities catalog");
+            return Optional.empty();
+        }
+
+        Path capabilitiesPath = repoRoot.resolve(AUDIO_VIDEO_CAPABILITIES_REPO_PATH);
+        if (!Files.exists(capabilitiesPath)) {
+            log.warn("Audio-video capabilities catalog not found at {}", capabilitiesPath);
+            return Optional.empty();
+        }
+
+        try {
+            return Optional.ofNullable(YAML_MAPPER.readTree(capabilitiesPath.toFile()));
+        } catch (Exception exception) {
+            log.warn("Failed to parse audio-video capabilities catalog {}: {}", capabilitiesPath, exception.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    private static Path resolveRepoRoot() {
+        Path current = Paths.get("").toAbsolutePath();
+        while (current != null) {
+            if (Files.exists(current.resolve("gradlew"))) {
+                return current;
+            }
+            current = current.getParent();
+        }
+        return null;
+    }
+
+    private static String joinArrayValues(JsonNode values) {
+        if (!values.isArray()) {
+            return "";
+        }
+        List<String> parts = new ArrayList<>();
+        for (JsonNode value : values) {
+            String text = value.asText("");
+            if (!text.isBlank()) {
+                parts.add(text);
+            }
+        }
+        return String.join(",", parts);
+    }
+
+    private static boolean containsTag(JsonNode tags, String expected) {
+        if (!tags.isArray()) {
+            return false;
+        }
+        for (JsonNode tag : tags) {
+            if (expected.equals(tag.asText())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -405,6 +697,42 @@ public final class SurfaceSchemaGenerator {
         return definitions;
     }
 
+    private static RouteTruthSnapshot generateRouteTruthSnapshot() {
+        RouteTruthSnapshot snapshot = new RouteTruthSnapshot();
+        snapshot.generatedAt = Instant.now().toString();
+
+        Map<String, Integer> routesByLegacyStatus = new TreeMap<>();
+        Map<String, Integer> routesByRuntimeTruthSurface = new TreeMap<>();
+        Map<String, Integer> routesBySurfaceId = new TreeMap<>();
+        Set<String> surfaceIds = new TreeSet<>(RouteSurfaceMapping.getAllSurfaceIds());
+
+        int mappedRouteCount = 0;
+        for (RouteSecurityMetadata route : RouteSecurityRegistry.allRoutes().values()) {
+            increment(routesByLegacyStatus, route.legacyStatus());
+            increment(routesByRuntimeTruthSurface, route.runtimeTruthSurface());
+
+            String surfaceId = RouteSurfaceMapping.getSurfaceId(route.method(), route.canonicalPath());
+            if (surfaceId != null) {
+                mappedRouteCount++;
+                increment(routesBySurfaceId, surfaceId);
+            }
+        }
+
+        snapshot.routeCount = RouteSecurityRegistry.size();
+        snapshot.mappedRouteCount = mappedRouteCount;
+        snapshot.unmappedRouteCount = snapshot.routeCount - mappedRouteCount;
+        snapshot.routesByLegacyStatus = routesByLegacyStatus;
+        snapshot.routesByRuntimeTruthSurface = routesByRuntimeTruthSurface;
+        snapshot.routesBySurfaceId = routesBySurfaceId;
+        snapshot.surfaceIds = List.copyOf(surfaceIds);
+        return snapshot;
+    }
+
+    private static void increment(Map<String, Integer> counts, String key) {
+        String normalizedKey = key == null || key.isBlank() ? "unknown" : key;
+        counts.merge(normalizedKey, 1, Integer::sum);
+    }
+
     private static String formatGateName(String gateId) {
         StringBuilder result = new StringBuilder();
         for (int i = 0; i < gateId.length(); i++) {
@@ -434,6 +762,7 @@ public final class SurfaceSchemaGenerator {
         public List<Capability> aepCapabilities;
         public List<FeatureGate> uiFeatureGates;
         public Map<String, StatusDefinition> statusDefinitions;
+        public RouteTruthSnapshot routeTruth;
     }
 
     @SuppressFBWarnings(
@@ -511,4 +840,30 @@ public final class SurfaceSchemaGenerator {
             this.allowedInProduction = allowedInProduction;
         }
     }
+
+    @SuppressFBWarnings(
+        value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD",
+        justification = "Public fields are intentionally serialized by Jackson as the route surface schema contract.")
+    public static class RouteTruthSnapshot {
+        public String generatedAt;
+        public int routeCount;
+        public int mappedRouteCount;
+        public int unmappedRouteCount;
+        public List<String> surfaceIds;
+        public Map<String, Integer> routesByLegacyStatus;
+        public Map<String, Integer> routesByRuntimeTruthSurface;
+        public Map<String, Integer> routesBySurfaceId;
+    }
+
+    private record RouteCapabilityDescriptor(
+        String id,
+        String name,
+        String type,
+        String status,
+        List<String> products,
+        String description,
+        String spiInterface,
+        String uiGate,
+        Predicate<RouteSecurityMetadata> routePredicate
+    ) {}
 }

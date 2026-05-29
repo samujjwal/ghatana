@@ -83,6 +83,23 @@ class PhrDashboardRoutesTest extends EventloopTestBase {
         assertThat(response.getCode()).isEqualTo(400);
     }
 
+
+    @Test
+    @DisplayName("G11-011: X-Correlation-ID in request is echoed in the response header")
+    void correlationIdIsPropagatedToResponse() throws Exception {
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "patient-1")
+            .withHeader(HttpHeaders.of("X-Role"), "patient")
+            .withHeader(HttpHeaders.of("X-Correlation-ID"), "trace-propagation-test-001")
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID")))
+            .isEqualTo("trace-propagation-test-001");
+    }
     // ── Helpers ────────────────────────────────────────────────────────────────
 
     private static HttpRequest contextRequest(

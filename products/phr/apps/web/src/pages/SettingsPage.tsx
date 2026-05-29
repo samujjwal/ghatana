@@ -1,14 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { Button, Card, CardContent, CardHeader, Select } from '@ghatana/design-system';
 import { logoutSession } from '../api/authApi';
 import { exportPatientBundle } from '../api/patientApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
+import { logError } from '../utils/safeLogger';
 
 export function SettingsPage(): React.ReactElement {
-  const [syncStatus, setSyncStatus] = React.useState<string>(t('settings.sync.initial'));
-  const [logoutPending, setLogoutPending] = React.useState<boolean>(false);
+  const [syncStatus, setSyncStatus] = useState<string>(t('settings.sync.initial'));
+  const [logoutPending, setLogoutPending] = useState<boolean>(false);
+  const [language, setLanguage] = useState<string>('en');
+  const [exporting, setExporting] = useState<boolean>(false);
   const { session, clearSession } = usePhrSession();
   const navigate = useNavigate();
 
@@ -17,12 +20,20 @@ export function SettingsPage(): React.ReactElement {
       setSyncStatus(t('settings.sync.authRequired'));
       return;
     }
-    const response = await exportPatientBundle({
-      tenantId: session.tenantId,
-      principalId: session.principalId,
-      role: session.role,
-    });
-    setSyncStatus(response);
+    setExporting(true);
+    try {
+      const response = await exportPatientBundle({
+        tenantId: session.tenantId,
+        principalId: session.principalId,
+        role: session.role,
+      });
+      setSyncStatus(response);
+    } catch (err: unknown) {
+      logError('Failed to export patient bundle', undefined, { error: err });
+      setSyncStatus('Export failed');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const onLogout = async (): Promise<void> => {
@@ -31,8 +42,8 @@ export function SettingsPage(): React.ReactElement {
       if (session) {
         await logoutSession({ tenantId: session.tenantId, principalId: session.principalId, role: session.role });
       }
-    } catch {
-      // Server-side logout failure must not block local session cleanup.
+    } catch (err: unknown) {
+      logError('Server-side logout failed, proceeding with local cleanup', undefined, { error: err });
     } finally {
       clearSession();
       navigate('/login', { replace: true });
@@ -44,19 +55,45 @@ export function SettingsPage(): React.ReactElement {
       <Card>
         <CardHeader title={t('settings.profile.title')} subheader={t('settings.profile.subheader')} />
         <CardContent>
-          <ul className="stack gap-sm">
-            <li>{t('settings.profile.language')}</li>
-            <li>{t('settings.profile.facility')}</li>
-            <li>{t('settings.profile.emergencySms')}</li>
-          </ul>
+          <div className="stack gap-md">
+            <div>
+              <label htmlFor="language-select">{t('settings.profile.language')}</label>
+              <Select
+                id="language-select"
+                value={language}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setLanguage(e.target.value)}
+                aria-label={t('settings.profile.language')}
+              >
+                <option value="en">English</option>
+                <option value="ne">नेपाली</option>
+              </Select>
+            </div>
+            <div className="stack gap-sm">
+              <div className="row gap-sm align-center">
+                <span>{t('settings.profile.facility')}</span>
+                <span className="muted">{t('common.notAvailable')}</span>
+              </div>
+              <div className="row gap-sm align-center">
+                <span>{t('settings.profile.emergencySms')}</span>
+                <span className="muted">{t('common.notAvailable')}</span>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
       <Card>
         <CardHeader title={t('settings.hie.title')} subheader={t('settings.hie.subheader')} />
         <CardContent>
           <div className="stack gap-md">
-            <Button className="primary-cta" onClick={() => void onSync()}>{t('settings.hie.prepare')}</Button>
-            <code className="code-inline">{syncStatus}</code>
+            <Button 
+              className="primary-cta" 
+              onClick={() => void onSync()}
+              disabled={exporting}
+              aria-busy={exporting}
+            >
+              {exporting ? 'Exporting...' : t('settings.hie.prepare')}
+            </Button>
+            <code className="code-inline" role="status" aria-live="polite">{syncStatus}</code>
           </div>
         </CardContent>
       </Card>

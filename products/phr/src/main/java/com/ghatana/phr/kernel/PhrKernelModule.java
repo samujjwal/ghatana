@@ -391,6 +391,10 @@ public class PhrKernelModule implements KernelModule {
         AuditTrailService auditTrailService = resolveAuditTrailService(context);
         UserRepository userRepository = resolveUserRepository(context);
         KernelSecurityManager securityManager = resolveSecurityManager(context, userRepository);
+        
+        // Create policy evaluator with required services (injected, not static)
+        PhrPolicyEvaluator policyEvaluator = new PhrPolicyEvaluator(consent, treatmentRelationship, fchvAssignment, auditTrailService);
+        context.registerService(PhrPolicyEvaluator.class, policyEvaluator);
 
         PatientRecordService patientRecords = new PatientRecordService(context);
         ConsentManagementService consent = new ConsentManagementService(context, consentCache);
@@ -421,10 +425,6 @@ public class PhrKernelModule implements KernelModule {
         FchvCommunityAssignmentService fchvAssignment = new FchvCommunityAssignmentService(context);
         EmergencyAccessReviewWorkflow emergencyReview = EmergencyAccessReviewWorkflow.fromContext(context);
         EmergencyAccessLogService emergencyAccess = new EmergencyAccessLogService(context, emergencyReview);
-        
-        // Create policy evaluator with required services (injected, not static)
-        PhrPolicyEvaluator policyEvaluator = new PhrPolicyEvaluator(consent, treatmentRelationship, fchvAssignment);
-        context.registerService(PhrPolicyEvaluator.class, policyEvaluator);
         
         // Create route objects with eventloop
         Eventloop eventloop = context.getEventloop();

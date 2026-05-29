@@ -343,8 +343,8 @@ function toTimelineEventType(eventType: string): TimelineEvent['type'] {
 // --- Conditions ---
 
 export async function fetchConditions(principalId: string, context: SessionContext): Promise<ConditionSummary[]> {
-  const body = z.object({ items: z.array(ConditionSummarySchema) })
-    .parse(await phrFetch(`/conditions/${encodeURIComponent(principalId)}`, { context }));
+  const body = z.object({ items: z.array(ConditionSummarySchema), count: z.number() })
+    .parse(await phrFetch(`/conditions/${encodeURIComponent(principalId)}`, { context, expectedSchema: z.object({ items: z.array(ConditionSummarySchema), count: z.number() }) }));
   return body.items;
 }
 
@@ -358,21 +358,29 @@ export async function fetchConditionDetail(conditionId: string, principalId: str
 
 export async function fetchObservations(principalId: string, context: SessionContext): Promise<ObservationSummary[]> {
   const body = z.object({ items: z.array(ObservationSummarySchema) })
-    .parse(await phrFetch(`/clinical/labs/observations?patientId=${encodeURIComponent(principalId)}`, { context }));
+    .parse(await phrFetch(`/api/v1/clinical/observations?patientId=${encodeURIComponent(principalId)}`, { context }));
   return body.items;
 }
 
 export async function fetchObservationDetail(observationId: string, principalId: string, context: SessionContext): Promise<ObservationSummary> {
   return ObservationSummarySchema.parse(
-    await phrFetch(`/clinical/labs/observations/${encodeURIComponent(observationId)}?patientId=${encodeURIComponent(principalId)}`, { context }),
+    await phrFetch(`/api/v1/clinical/observations/${encodeURIComponent(observationId)}?patientId=${encodeURIComponent(principalId)}`, { context }),
   );
+}
+
+// --- Labs ---
+
+export async function fetchLabs(principalId: string, context: SessionContext): Promise<ObservationSummary[]> {
+  const body = z.object({ items: z.array(ObservationSummarySchema) })
+    .parse(await phrFetch(`/api/v1/clinical/labs?patientId=${encodeURIComponent(principalId)}`, { context }));
+  return body.items;
 }
 
 // --- Immunizations ---
 
 export async function fetchImmunizations(principalId: string, context: SessionContext): Promise<ImmunizationSummary[]> {
   const body = z.object({ items: z.array(ImmunizationSummarySchema) })
-    .parse(await phrFetch(`/clinical/immunizations?patientId=${encodeURIComponent(principalId)}`, { context }));
+    .parse(await phrFetch(`/api/v1/clinical/immunizations?patientId=${encodeURIComponent(principalId)}`, { context }));
   return body.items;
 }
 
@@ -494,7 +502,7 @@ function uploadDocumentWithProgress(
 
 export async function fetchMedications(principalId: string, context: SessionContext): Promise<MedicationSummary[]> {
   const body = z.object({ items: z.array(BackendMedicationPrescriptionSchema) })
-    .parse(await phrFetch(`/clinical/medications?patientId=${encodeURIComponent(principalId)}`, { context }));
+    .parse(await phrFetch(`/api/v1/clinical/medications?patientId=${encodeURIComponent(principalId)}`, { context }));
   return body.items.map(toMedicationSummary);
 }
 
@@ -504,7 +512,7 @@ export async function fetchMedicationDetail(
   context: SessionContext,
 ): Promise<MedicationSummary & { interactions: string[]; warnings: string[]; history: Array<{ date: string; action: string }> }> {
   const prescription = BackendMedicationPrescriptionSchema.parse(
-    await phrFetch(`/clinical/medications/prescriptions/${encodeURIComponent(medicationId)}?patientId=${encodeURIComponent(patientId)}`, { context }),
+    await phrFetch(`/api/v1/clinical/medications/prescriptions/${encodeURIComponent(medicationId)}?patientId=${encodeURIComponent(patientId)}`, { context }),
   );
   const medication = toMedicationSummary(prescription);
 
@@ -593,11 +601,14 @@ export async function fetchRecords(
     resourceType?: string;
     dateFrom?: string;
     dateTo?: string;
+    limit?: number;
+    offset?: number;
   },
 ): Promise<PatientRecordSummary[]> {
-  const url = new URL(`${API_BASE_URL}/patients/${encodeURIComponent(patientId)}/records`);
-  url.searchParams.set('limit', '50');
-  url.searchParams.set('offset', '0');
+  const url = new URL(`${API_BASE_URL}/api/v1/records`);
+  url.searchParams.set('patientId', patientId);
+  url.searchParams.set('limit', String(filters?.limit ?? 50));
+  url.searchParams.set('offset', String(filters?.offset ?? 0));
   if (filters?.category) url.searchParams.set('category', filters.category);
   if (filters?.resourceType) url.searchParams.set('resourceType', filters.resourceType);
   if (filters?.dateFrom) url.searchParams.set('dateFrom', filters.dateFrom);

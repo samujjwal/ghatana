@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { Link } from 'react-router-dom';
-import { fetchObservations } from '../api/clinicalApi';
+import { fetchLabs } from '../api/clinicalApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { formatPhrDate, t } from '../i18n/phrI18n';
 import type { ObservationSummary } from '../types';
@@ -13,7 +13,7 @@ function labSeverityClass(status: ObservationSummary['status']): string {
 }
 
 function labStatusLabel(status: ObservationSummary['status']): string {
-  return t(`observations.status.${status}`);
+  return t(`observations.status.${status}` as any);
 }
 
 export function LabsPage(): React.ReactElement {
@@ -24,7 +24,7 @@ export function LabsPage(): React.ReactElement {
 
   useEffect(() => {
     if (!session) return;
-    fetchObservations(session.principalId, {
+    fetchLabs(session.principalId, {
       tenantId: session.tenantId,
       principalId: session.principalId,
       role: session.role,

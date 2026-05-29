@@ -1,0 +1,135 @@
+# G10-008: PHR Scaffold Pack
+#
+# YAPPC evaluation pack for PHR-specific scaffolding.
+# This pack extends YAPPC's generic scaffolding with PHR-specific templates
+# for web routes, backend adapters, and mobile screens.
+#
+# @doc.type pack
+# @doc.purpose PHR scaffolding evaluation pack
+# @doc.layer yappc
+
+pack:
+  id: phr-scaffold-v1
+  name: PHR Scaffold Pack
+  version: 1.0.0
+  description: PHR-specific scaffolding for web, backend, and mobile code generation
+  category: scaffold
+
+capabilities:
+  - id: phr-route-import
+    name: PHR Route Contract Import
+    description: Import PHR route contract and use case baseline files
+    type: import
+    template: phr-route-import
+
+  - id: phr-web-route-generation
+    name: PHR Web Route Generation
+    description: Generate PHR web route and page skeletons
+    type: generation
+    template: phr-web-route
+
+  - id: phr-backend-adapter-generation
+    name: PHR Backend Adapter Generation
+    description: Generate PHR backend route adapter skeletons
+    type: generation
+    template: phr-backend-adapter
+
+  - id: phr-mobile-screen-generation
+    name: PHR Mobile Screen Generation
+    description: Generate PHR mobile screen and API skeletons
+    type: generation
+    template: phr-mobile-screen
+
+  - id: phr-gap-visualization
+    name: PHR Gap Visualization
+    description: Visualize PHR implementation gaps
+    type: visualization
+    template: phr-gap-viz
+
+templates:
+  phr-route-import:
+    input:
+      - phr-route-contract.json
+      - phr-usecase-baseline.json
+    output:
+      - PhrRouteContract
+      - PhrUseCaseBaseline
+
+  phr-web-route:
+    input:
+      - PhrRouteContract
+    output:
+      - WebRouteSkeleton
+    mode:
+      - standard
+      - cleanup
+      - preview
+
+  phr-backend-adapter:
+    input:
+      - PhrRouteContract
+    output:
+      - BackendRouteAdapterSkeleton
+
+  phr-mobile-screen:
+    input:
+      - PhrRouteContract
+    output:
+      - MobileScreenSkeleton
+
+  phr-gap-viz:
+    input:
+      - PhrProductGapModel
+    output:
+      - GapVisualizationReport
+      - GapMarkdownTable
+
+validation:
+  - id: phr-route-contract-schema
+    name: PHR Route Contract Schema Validation
+    description: Validate PHR route contract against JSON schema
+    severity: error
+
+  - id: phr-component-naming
+    name: PHR Component Naming Convention
+    description: Ensure PHR components follow naming conventions
+    severity: warning
+
+  - id: phr-role-completeness
+    name: PHR Role Completeness Check
+    description: Verify all required roles are covered
+    severity: error
+
+generation:
+  web:
+    base_path: products/phr/apps/web/src
+    routes_dir: routes
+    pages_dir: pages
+    api_dir: api
+
+  backend:
+    base_path: products/phr/backend/src/main/java/com/ghatana/phr/backend
+    adapters_dir: adapters
+    handlers_dir: handlers
+
+  mobile:
+    base_path: products/phr/apps/mobile/src
+    screens_dir: screens
+    services_dir: services
+
+gap_detection:
+  categories:
+    - stable_implemented
+    - stable_missing_api
+    - hidden
+    - blocked
+    - preview
+    - test_missing
+
+  severity:
+    stable_missing_api: critical
+    test_missing: high
+    blocked: high
+    hidden: medium
+    preview: low
+    stable_implemented: info

@@ -21,6 +21,7 @@ describe('RouteSurfaceRegistry', () => {
         expect(route.path).toBeDefined();
         expect(route.path.startsWith('/')).toBe(true);
         expect(route.label).toBeTruthy();
+        expect(route.labelKey).toBeTruthy();
         expect(route.lifecycle).toBeOneOf(['active', 'preview', 'deprecated', 'redirect', 'removed', 'boundary']);
         expect(route.minimumShellRole).toBeOneOf(['primary-user', 'operator', 'admin']);
       });

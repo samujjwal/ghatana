@@ -5,6 +5,7 @@
 package com.ghatana.datacloud.launcher.atomic;
 
 import com.ghatana.datacloud.launcher.http.RouteSecurityRegistry;
+import com.ghatana.datacloud.launcher.http.RouteSecurityMetadata;
 import com.ghatana.platform.database.adapter.PostgreSQLAdapter;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.domain.eventstore.TenantContext;
@@ -256,12 +257,12 @@ class AtomicWorkflowFailureInjectionTest extends EventloopTestBase {
     @Test
     @DisplayName("P1-1: Transaction boundary markers are present in critical routes")
     void transactionBoundaryMarkersPresentInCriticalRoutes() {
-        // Given: Critical routes from RouteSecurityRegistry
-        RouteSecurityRegistry.CriticalRoutes criticalRoutes = RouteSecurityRegistry.getCriticalRoutes();
-
-        // Then: All critical mutating routes should have transaction markers
-        for (String route : criticalRoutes.getMutatingRoutes()) {
-            assertThat(orchestrator.hasTransactionBoundary(route))
+        // Given: mutating routes from the route security metadata registry
+        for (RouteSecurityMetadata metadata : RouteSecurityRegistry.allRoutes().values()) {
+            if ("GET".equals(metadata.method())) {
+                continue;
+            }
+            assertThat(orchestrator.hasTransactionBoundary(metadata.canonicalPath()))
                 .isTrue();
         }
     }

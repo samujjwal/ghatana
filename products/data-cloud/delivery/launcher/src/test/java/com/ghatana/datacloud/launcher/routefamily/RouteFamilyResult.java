@@ -154,6 +154,24 @@ public class RouteFamilyResult {
             .build();
     }
 
+    public RouteFamilyResult withRetryCount(int retryCount) {
+        return new Builder()
+            .resourceId(this.resourceId)
+            .status(this.status)
+            .rollbackExecuted(this.rollbackExecuted)
+            .retryCount(retryCount)
+            .auditGenerated(this.auditGenerated)
+            .auditId(this.auditId)
+            .outboxUsed(this.outboxUsed)
+            .outboxId(this.outboxId)
+            .version(this.version)
+            .previousVersion(this.previousVersion)
+            .sourceEnvironment(this.sourceEnvironment)
+            .targetEnvironment(this.targetEnvironment)
+            .errorMessage(this.errorMessage)
+            .build();
+    }
+
     public RouteFamilyResult withAuditGenerated(boolean auditGenerated) {
         return new Builder()
             .resourceId(this.resourceId)

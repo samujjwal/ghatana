@@ -2,6 +2,7 @@ package com.ghatana.phr.api.routes;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.kernel.security.PolicyValidationHelper;
 import com.ghatana.phr.api.validation.PhrRequestValidator;
 import com.ghatana.phr.security.PhrPolicyEvaluator;
 import com.ghatana.platform.http.server.activej.ActiveJHttpExchangeSupport;
@@ -69,10 +70,10 @@ public final class PhrRouteSupport {
             throw new IllegalArgumentException("Unrecognised role: " + role);
         }
 
-        validateTenantId(tenantId.strip());
-        validatePrincipalId(principalId.strip());
+        PolicyValidationHelper.validateTenantId(tenantId.strip());
+        PolicyValidationHelper.validatePrincipalId(principalId.strip());
         if (facilityId != null && !facilityId.isBlank()) {
-            validateFacilityId(facilityId.strip());
+            PolicyValidationHelper.validateFacilityId(facilityId.strip());
         }
 
         String correlationId = extractCorrelationId(request);
@@ -99,53 +100,6 @@ public final class PhrRouteSupport {
     }
 
 
-    /**
-     * Validates that a tenant ID is properly formatted.
-     * 
-     * @param tenantId the tenant ID to validate
-     * @throws IllegalArgumentException if the tenant ID is invalid
-     */
-    static void validateTenantId(String tenantId) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new IllegalArgumentException("Tenant ID cannot be blank");
-        }
-        // Tenant IDs should be alphanumeric with hyphens, 2-50 characters
-        if (!tenantId.matches("^[a-zA-Z0-9-]{2,50}$")) {
-            throw new IllegalArgumentException("Tenant ID must be 2-50 alphanumeric characters with hyphens");
-        }
-    }
-
-    /**
-     * Validates that a principal ID is properly formatted.
-     * 
-     * @param principalId the principal ID to validate
-     * @throws IllegalArgumentException if the principal ID is invalid
-     */
-    static void validatePrincipalId(String principalId) {
-        if (principalId == null || principalId.isBlank()) {
-            throw new IllegalArgumentException("Principal ID cannot be blank");
-        }
-        // Principal IDs should be alphanumeric with hyphens/underscores, 2-100 characters
-        if (!principalId.matches("^[a-zA-Z0-9_-]{2,100}$")) {
-            throw new IllegalArgumentException("Principal ID must be 2-100 alphanumeric characters with hyphens/underscores");
-        }
-    }
-
-    /**
-     * Validates that a facility ID is properly formatted (if provided).
-     * 
-     * @param facilityId the facility ID to validate (may be null/blank for non-facility users)
-     * @throws IllegalArgumentException if the facility ID is provided but invalid
-     */
-    static void validateFacilityId(String facilityId) {
-        if (facilityId == null || facilityId.isBlank()) {
-            return; // Optional for non-facility users
-        }
-        // Facility IDs should be alphanumeric with hyphens, 2-50 characters
-        if (!facilityId.matches("^[a-zA-Z0-9-]{2,50}$")) {
-            throw new IllegalArgumentException("Facility ID must be 2-50 alphanumeric characters with hyphens");
-        }
-    }
 
     static Promise<HttpResponse> jsonResponseWithCorrelation(int statusCode, Object body, String correlationId) {
         return Promise.of(ActiveJHttpExchangeSupport.jsonResponse(JSON, statusCode, body, correlationId));
@@ -192,17 +146,9 @@ public final class PhrRouteSupport {
      * @throws IllegalArgumentException if facility access is not permitted
      */
     static void validateFacilityScope(PhrRequestContext context, String facilityId) {
-        if (facilityId == null || facilityId.isBlank()) {
-            return; // No facility scope required
-        }
-        
-        validateFacilityId(facilityId);
-        
         // Admin and FCHV roles may have broader facility access
         String role = context.role();
-        if ("admin".equals(role) || "fchv".equals(role)) {
-            return; // Skip facility scope check for these roles
-        }
+        PolicyValidationHelper.validateFacilityScope(facilityId, role, "admin", "fchv");
         
         // For clinicians and caregivers, route handlers defer the final facility-scoped
         // PHI decision to PhrPolicyEvaluator.
@@ -217,16 +163,7 @@ public final class PhrRouteSupport {
      * @throws IllegalArgumentException if tenant access is not permitted
      */
     static void validateTenantScope(PhrRequestContext context, String tenantId) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new IllegalArgumentException("Tenant ID cannot be blank");
-        }
-        
-        validateTenantId(tenantId);
-        
-        // The tenant in the request must match the tenant in the context
-        if (!context.tenantId().equals(tenantId)) {
-            throw new IllegalArgumentException("Tenant ID mismatch: request tenant does not match session tenant");
-        }
+        PolicyValidationHelper.validateTenantScope(tenantId, context.tenantId());
     }
 
 
@@ -268,15 +205,6 @@ public final class PhrRouteSupport {
         }
     }
 
-    /**
-     * Extracts the idempotency key from request headers.
-     *
-     * @param request the HTTP request
-     * @return the idempotency key, or null if not present
-     */
-    static String getIdempotencyKey(HttpRequest request) {
-        return extractIdempotencyKey(request);
-    }
 
     /**
      * Validates an idempotency key format.

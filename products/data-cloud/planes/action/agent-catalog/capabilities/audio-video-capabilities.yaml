@@ -26,7 +26,7 @@ tools:
     timeout: 30s
     retryable: true
     accessPolicy:
-      requiredRoles: []
+      requiredRoles: [OPERATOR]
       blockedActionClasses: []
 
   - toolId: "av.text-to-speech"
@@ -41,7 +41,7 @@ tools:
     timeout: 15s
     retryable: true
     accessPolicy:
-      requiredRoles: []
+      requiredRoles: [OPERATOR]
       blockedActionClasses: []
 
   - toolId: "av.vision-analysis"
@@ -56,7 +56,7 @@ tools:
     timeout: 20s
     retryable: true
     accessPolicy:
-      requiredRoles: []
+      requiredRoles: [OPERATOR]
       blockedActionClasses: []
 
   - toolId: "av.multimodal-inference"
@@ -71,5 +71,5 @@ tools:
     timeout: 60s
     retryable: false
     accessPolicy:
-      requiredRoles: []
+      requiredRoles: [OPERATOR]
       blockedActionClasses: []

@@ -22,6 +22,7 @@ export type SessionContext = {
   role: PhrRole;
   persona?: string;
   tier?: string;
+  facilityId?: string;
   correlationId?: string;
   idempotencyKey?: string;
 };
@@ -59,6 +60,9 @@ export function buildPhrHeaders(context: RequestContext = {}): Record<string, st
   }
   if (context.tier) {
     headers['X-Tier'] = context.tier;
+  }
+  if (context.facilityId) {
+    headers['X-Facility-Id'] = context.facilityId;
   }
   if (context.idempotencyKey) {
     headers['X-Idempotency-Key'] = context.idempotencyKey;

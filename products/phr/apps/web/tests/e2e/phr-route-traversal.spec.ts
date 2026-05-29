@@ -1,7 +1,7 @@
 /**
  * PHR web route traversal tests.
  *
- * Verifies that every route in the phrRouteContracts IA is reachable without
+ * Verifies that every stable route in the route contract is reachable without
  * a JavaScript error and renders at least one heading or landmark element.
  *
  * Anti-theater rule: each test navigates to the real page and observes real
@@ -9,8 +9,21 @@
  */
 import { test, expect } from '@playwright/test';
 import { mockPhrEntitlements } from './phr-entitlements';
-import { phrRouteContracts } from '../../src/phrRouteContracts';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import type { PhrRole } from '../../src/auth/PhrAccessContext';
+
+// Load route contract to get all stable routes
+const routeContractPath = join(process.cwd(), 'config', 'phr-route-contract.json');
+const routeContract = JSON.parse(readFileSync(routeContractPath, 'utf-8'));
+
+interface RouteContract {
+  path: string;
+  stability: string;
+  minimumRole: string;
+}
+
+const stableRoutes = routeContract.routes.filter((r: RouteContract) => r.stability === 'stable');
 
 // Routes that genuinely require parameters and cannot be exercised without
 // a fixture record ID. These are excluded from the traversal sweep.
@@ -52,10 +65,10 @@ function roleFor(routePath: string): PhrRole {
 
 // ─── Core patient routes ────────────────────────────────────────────────────
 
-test.describe('PHR route traversal — core patient routes', () => {
-  const coreRoutes = phrRouteContracts
-    .filter((r) => {
-      const path = r.path as string;
+test.describe('PHR route traversal — stable routes', () => {
+  const coreRoutes = stableRoutes
+    .filter((r: RouteContract) => {
+      const path = r.path;
       return (
         !PARAM_ROUTES.has(path) &&
         !ADMIN_ONLY_ROUTES.has(path) &&
@@ -64,11 +77,10 @@ test.describe('PHR route traversal — core patient routes', () => {
         !FCHV_ROUTES.has(path) &&
         !path.includes(':')
       );
-    })
-    .slice(0, 12); // limit to avoid very long suite in CI
+    });
 
   for (const entry of coreRoutes) {
-    const path = entry.path as string;
+    const path = entry.path;
 
     test(`GET ${path} renders without JS errors for patient`, async ({ page }) => {
       const jsErrors: string[] = [];

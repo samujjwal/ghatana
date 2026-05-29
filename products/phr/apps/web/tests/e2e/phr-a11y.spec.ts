@@ -1,5 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { mockPhrEntitlements } from './phr-entitlements';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+// Load route contract to get all stable routes
+const routeContractPath = join(process.cwd(), 'config', 'phr-route-contract.json');
+const routeContract = JSON.parse(readFileSync(routeContractPath, 'utf-8'));
+const stableRoutes = routeContract.routes.filter((r: any) => r.stability === 'stable');
 
 test.describe('PHR accessibility @a11y', () => {
   test('login screen exposes accessible controls', async ({ page }) => {
@@ -46,5 +53,110 @@ test.describe('PHR accessibility @a11y', () => {
     await expect(page.getByRole('alert')).toBeVisible();
     await expect(page.getByText('Permission denied')).toBeVisible();
     await expect(page.getByText(/not available for the current persona/i)).toBeVisible();
+  });
+
+  // Accessibility checks for stable routes
+  test.describe('stable routes have accessible structure', () => {
+    const testableRoutes = stableRoutes
+      .filter((r: any) => !r.path.includes(':') && r.path !== '/login' && r.path !== '/emergency')
+      .slice(0, 5); // Limit to avoid very long suite
+
+    for (const route of testableRoutes) {
+      test(`${route.path} has accessible landmarks and headings`, async ({ page }) => {
+        await mockPhrEntitlements(page);
+        await page.goto(route.path);
+
+        // Check for main landmark
+        const main = page.getByRole('main');
+        const hasMain = await main.count() > 0;
+        
+        // Check for at least one heading
+        const heading = page.getByRole('heading').first();
+        const hasHeading = await heading.count() > 0;
+
+        // Routes should have either main landmark or heading
+        expect(hasMain || hasHeading).toBe(true);
+      });
+
+      test(`${route.path} buttons have accessible names`, async ({ page }) => {
+        await mockPhrEntitlements(page);
+        await page.goto(route.path);
+
+        const buttons = page.getByRole('button');
+        const buttonCount = await buttons.count();
+
+        if (buttonCount > 0) {
+          // Check that buttons have accessible names (via text, aria-label, or title)
+          for (let i = 0; i < Math.min(buttonCount, 5); i++) {
+            const button = buttons.nth(i);
+            const name = await button.getAttribute('aria-label') || 
+                        await button.getAttribute('title') || 
+                        await button.textContent();
+            expect(name?.trim().length).toBeGreaterThan(0);
+          }
+        }
+      });
+
+      test(`${route.path} form inputs have accessible labels`, async ({ page }) => {
+        await mockPhrEntitlements(page);
+        await page.goto(route.path);
+
+        const inputs = page.locator('input, select, textarea');
+        const inputCount = await inputs.count();
+
+        if (inputCount > 0) {
+          // Check that inputs have labels (via aria-label, aria-labelledby, or associated label)
+          for (let i = 0; i < Math.min(inputCount, 5); i++) {
+            const input = inputs.nth(i);
+            const ariaLabel = await input.getAttribute('aria-label');
+            const ariaLabelledby = await input.getAttribute('aria-labelledby');
+            const id = await input.getAttribute('id');
+            
+            // Input should have aria-label, aria-labelledby, or an id that references a label
+            const hasLabel = ariaLabel || ariaLabelledby || id;
+            expect(hasLabel).toBeTruthy();
+          }
+        }
+      });
+    }
+  });
+
+  test('tab navigation works across interactive elements', async ({ page }) => {
+    await mockPhrEntitlements(page);
+    await page.goto('/dashboard');
+
+    // Tab through interactive elements
+    let focusCount = 0;
+    for (let i = 0; i < 10; i++) {
+      await page.keyboard.press('Tab');
+      const focused = page.locator(':focus');
+      const isVisible = await focused.isVisible().catch(() => false);
+      if (isVisible) {
+        focusCount++;
+      }
+    }
+
+    // Should have focused on at least some elements
+    expect(focusCount).toBeGreaterThan(0);
+  });
+
+  test('links have descriptive text or aria-labels', async ({ page }) => {
+    await mockPhrEntitlements(page);
+    await page.goto('/dashboard');
+
+    const links = page.getByRole('link');
+    const linkCount = await links.count();
+
+    if (linkCount > 0) {
+      for (let i = 0; i < Math.min(linkCount, 5); i++) {
+        const link = links.nth(i);
+        const text = await link.textContent();
+        const ariaLabel = await link.getAttribute('aria-label');
+        
+        // Link should have text or aria-label
+        const hasDescription = (text && text.trim().length > 0) || ariaLabel;
+        expect(hasDescription).toBe(true);
+      }
+    }
   });
 });

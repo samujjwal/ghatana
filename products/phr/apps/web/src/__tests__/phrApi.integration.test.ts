@@ -257,7 +257,8 @@ describe('PHR API integration mapping', () => {
       'fetch',
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = new URL(String(input));
-        expect(url.pathname).toBe('/patients/patient-001/records');
+        expect(url.pathname).toBe('/api/v1/records');
+        expect(url.searchParams.get('patientId')).toBe('patient-001');
         expect(url.searchParams.get('category')).toBe('administrative');
         expect(url.searchParams.get('limit')).toBe('50');
         const headers = new Headers(init?.headers);

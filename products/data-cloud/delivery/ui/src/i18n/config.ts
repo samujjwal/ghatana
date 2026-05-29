@@ -61,6 +61,84 @@ const enTranslations: TranslationTree = {
     viewModePresetDescription: 'View mode presets tune UI focus only. Backend permissions are always enforced independently.',
     footerProduct: 'Data Cloud • Ghatana Platform',
   },
+  routes: {
+    home: {
+      label: 'Home',
+      description: 'Dashboard overview and quick actions',
+    },
+    data: {
+      label: 'Data',
+      description: 'Explore and manage data collections',
+    },
+    connectors: {
+      label: 'Connectors',
+      description: 'Manage external data source connectors',
+    },
+    pipelines: {
+      label: 'Pipelines',
+      description: 'Manage data-local plugin workflow execution and history',
+    },
+    query: {
+      label: 'Query',
+      description: 'SQL query editor and execution',
+    },
+    insights: {
+      label: 'Insights',
+      description: 'Analytics, automation insights, and cost optimization',
+    },
+    trust: {
+      label: 'Trust',
+      description: 'Governance, compliance, and audit logs',
+    },
+    events: {
+      label: 'Events',
+      description: 'Real-time event stream explorer',
+    },
+    alerts: {
+      label: 'Alerts',
+      description: 'Operator alert triage console',
+    },
+    memory: {
+      label: 'Memory',
+      description: 'Memory plane viewer',
+    },
+    entities: {
+      label: 'Entities',
+      description: 'Entity browser',
+    },
+    context: {
+      label: 'Context',
+      description: 'Context explorer',
+    },
+    fabric: {
+      label: 'Data Fabric',
+      description: 'Data fabric topology and tier management',
+    },
+    agents: {
+      label: 'Agents',
+      description: 'Agent catalog and manager',
+    },
+    operations: {
+      label: 'Operations',
+      description: 'Operations console and diagnostics',
+    },
+    operationsJobs: {
+      label: 'Job Center',
+      description: 'Background operations timeline and status center',
+    },
+    operationsReleaseTruth: {
+      label: 'Release Truth',
+      description: 'Runtime truth, release gates, and evidence dashboard',
+    },
+    plugins: {
+      label: 'Plugins',
+      description: 'Plugin management surfaces',
+    },
+    settings: {
+      label: 'Settings',
+      description: 'System settings (surface under development)',
+    },
+  },
   // Connectors
   connectors: {
     title: 'Data Sources',

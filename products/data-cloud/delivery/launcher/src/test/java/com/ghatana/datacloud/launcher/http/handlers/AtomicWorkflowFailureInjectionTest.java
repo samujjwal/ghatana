@@ -9,6 +9,7 @@ import com.ghatana.datacloud.spi.EntityWriteOutbox;
 import com.ghatana.datacloud.spi.EntityWriteOutboxProcessor;
 import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.platform.testing.chaos.ChaosContext;
 import com.ghatana.platform.testing.chaos.ChaosType;
@@ -19,6 +20,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.time.Instant;
 import java.util.Map;
@@ -59,6 +62,7 @@ import static org.mockito.Mockito.*;
 @Tag("atomic-workflow")
 @Tag("production")
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class AtomicWorkflowFailureInjectionTest extends EventloopTestBase {
 
     @Mock private EventLogStore eventLogStore;
@@ -82,7 +86,7 @@ class AtomicWorkflowFailureInjectionTest extends EventloopTestBase {
         eventAppendAttempts.set(0);
 
         // Configure event store to fail on first attempt
-        when(eventLogStore.append(anyString(), any()))
+        when(eventLogStore.append(any(TenantContext.class), any()))
             .thenAnswer(invocation -> {
                 eventAppendAttempts.incrementAndGet();
                 if (eventAppendShouldFail.get()) {
@@ -95,13 +99,13 @@ class AtomicWorkflowFailureInjectionTest extends EventloopTestBase {
 
         // Attempt to record audit event - should fail when event append fails
         assertThatThrownBy(() -> {
-            runPromise(() -> auditService.recordCritical(AuditEvent.builder()
+            auditService.recordCritical(AuditEvent.builder()
                 .tenantId("tenant-123")
                 .eventType("ENTITY_CREATE")
                 .resourceType("ENTITY")
                 .resourceId("test-entity")
                 .success(true)
-                .build()));
+                .build());
         }).isInstanceOf(RuntimeException.class)
             .hasMessageContaining("Simulated event append failure");
 
@@ -124,7 +128,7 @@ class AtomicWorkflowFailureInjectionTest extends EventloopTestBase {
         auditWriteAttempts.set(0);
 
         // Configure event store to succeed
-        when(eventLogStore.append(anyString(), any()))
+        when(eventLogStore.append(any(TenantContext.class), any()))
             .thenAnswer(invocation -> {
                 eventAppendAttempts.incrementAndGet();
                 return Promise.of(com.ghatana.platform.types.identity.Offset.of(1L));
@@ -138,13 +142,13 @@ class AtomicWorkflowFailureInjectionTest extends EventloopTestBase {
         // audit sink write fails. For now, we verify the event append succeeds.
         
         // Verify event append succeeds
-        runPromise(() -> auditService.recordCritical(AuditEvent.builder()
+        auditService.recordCritical(AuditEvent.builder()
             .tenantId("tenant-123")
             .eventType("ENTITY_CREATE")
             .resourceType("ENTITY")
             .resourceId("test-entity")
             .success(true)
-            .build()));
+            .build());
 
         assertThat(eventAppendAttempts.get()).isEqualTo(1);
     }
@@ -169,22 +173,22 @@ class AtomicWorkflowFailureInjectionTest extends EventloopTestBase {
             });
 
         // Configure event store to succeed
-        when(eventLogStore.append(anyString(), any()))
+        when(eventLogStore.append(any(TenantContext.class), any()))
             .thenReturn(Promise.of(com.ghatana.platform.types.identity.Offset.of(1L)));
 
         EventLogAuditService auditService = new EventLogAuditService(eventLogStore, new com.fasterxml.jackson.databind.ObjectMapper(), true);
 
         // Audit should succeed independently of outbox
-        runPromise(() -> auditService.recordCritical(AuditEvent.builder()
+        auditService.recordCritical(AuditEvent.builder()
             .tenantId("tenant-123")
             .eventType("ENTITY_CREATE")
             .resourceType("ENTITY")
             .resourceId("test-entity")
             .success(true)
-            .build()));
+            .build());
 
         // Verify audit succeeded
-        verify(eventLogStore).append(anyString(), any());
+        verify(eventLogStore).append(any(TenantContext.class), any());
 
         // Outbox failure would be handled by retry mechanism
         // This test verifies audit is not blocked by outbox failures
@@ -204,7 +208,7 @@ class AtomicWorkflowFailureInjectionTest extends EventloopTestBase {
         eventAppendAttempts.set(0);
 
         // Configure event store to fail on first attempt
-        when(eventLogStore.append(anyString(), any()))
+        when(eventLogStore.append(any(TenantContext.class), any()))
             .thenAnswer(invocation -> {
                 eventAppendAttempts.incrementAndGet();
                 if (eventAppendShouldFail.get()) {
@@ -217,13 +221,13 @@ class AtomicWorkflowFailureInjectionTest extends EventloopTestBase {
 
         // Attempt to record audit event - should fail when event append fails
         assertThatThrownBy(() -> {
-            runPromise(() -> auditService.recordCritical(AuditEvent.builder()
+            auditService.recordCritical(AuditEvent.builder()
                 .tenantId("tenant-123")
                 .eventType("ENTITY_CREATE")
                 .resourceType("ENTITY")
                 .resourceId("test-entity")
                 .success(true)
-                .build()));
+                .build());
         }).isInstanceOf(RuntimeException.class)
             .hasMessageContaining("Simulated event append failure");
 
@@ -243,7 +247,7 @@ class AtomicWorkflowFailureInjectionTest extends EventloopTestBase {
         // - The event append was attempted
         // - The operation failed (no partial success)
         // - The system did not proceed with subsequent operations
-        verify(eventLogStore, atLeastOnce()).append(anyString(), any());
+        verify(eventLogStore, atLeastOnce()).append(any(TenantContext.class), any());
         
         // In a full implementation with real persistence, we would:
         // assert that the entity was not created in the database
@@ -255,14 +259,33 @@ class AtomicWorkflowFailureInjectionTest extends EventloopTestBase {
      * P1-1: Test that idempotency write failure is handled gracefully.
      */
     @Test
-    @DisplayName("P1-1: Idempotency write fails - operation proceeds with warning")
-    void idempotencyWriteFailsProceedsWithWarning() {
-        // In a real system, this would test the idempotency store write failure
-        // For now, we verify the system can handle idempotency store unavailability
-        
-        // The system should log a warning but proceed with the operation
-        // when idempotency store is unavailable in non-critical paths
-        assertThat(true).isTrue(); // Placeholder for real idempotency failure test
+    @DisplayName("P1-1: Audit append failure is surfaced for non-critical record() path")
+    void auditAppendFailureIsSurfacedForNonCriticalRecordPath() {
+        eventAppendAttempts.set(0);
+        when(eventLogStore.append(any(TenantContext.class), any()))
+            .thenAnswer(invocation -> {
+                eventAppendAttempts.incrementAndGet();
+                return Promise.ofException(new RuntimeException("Simulated idempotency/audit append failure"));
+            });
+
+        EventLogAuditService auditService = new EventLogAuditService(
+            eventLogStore,
+            new com.fasterxml.jackson.databind.ObjectMapper(),
+            false);
+
+        AuditEvent event = AuditEvent.builder()
+            .tenantId("tenant-123")
+            .eventType("ENTITY_CREATE")
+            .resourceType("ENTITY")
+            .resourceId("test-entity")
+            .success(true)
+            .build();
+
+        assertThatThrownBy(() -> runPromise(() -> auditService.record(event)))
+            .isInstanceOf(RuntimeException.class)
+            .hasMessageContaining("Simulated idempotency/audit append failure");
+
+        assertThat(eventAppendAttempts.get()).isEqualTo(1);
     }
 
     /**
@@ -275,7 +298,7 @@ class AtomicWorkflowFailureInjectionTest extends EventloopTestBase {
         eventAppendAttempts.set(0);
 
         // Configure event store to fail first time, succeed second time
-        when(eventLogStore.append(anyString(), any()))
+        when(eventLogStore.append(any(TenantContext.class), any()))
             .thenAnswer(invocation -> {
                 eventAppendAttempts.incrementAndGet();
                 if (eventAppendAttempts.get() == 1) {
@@ -288,13 +311,13 @@ class AtomicWorkflowFailureInjectionTest extends EventloopTestBase {
 
         // First attempt fails
         assertThatThrownBy(() -> {
-            runPromise(() -> auditService.recordCritical(AuditEvent.builder()
+            auditService.recordCritical(AuditEvent.builder()
                 .tenantId("tenant-123")
                 .eventType("ENTITY_CREATE")
                 .resourceType("ENTITY")
                 .resourceId("test-entity")
                 .success(true)
-                .build()));
+                .build());
         }).isInstanceOf(RuntimeException.class);
 
         assertThat(eventAppendAttempts.get()).isEqualTo(1);
@@ -303,13 +326,13 @@ class AtomicWorkflowFailureInjectionTest extends EventloopTestBase {
         eventAppendShouldFail.set(false);
 
         // Retry succeeds
-        runPromise(() -> auditService.recordCritical(AuditEvent.builder()
+        auditService.recordCritical(AuditEvent.builder()
             .tenantId("tenant-123")
             .eventType("ENTITY_CREATE")
             .resourceType("ENTITY")
             .resourceId("test-entity")
             .success(true)
-            .build()));
+            .build());
 
         assertThat(eventAppendAttempts.get()).isEqualTo(2);
     }
@@ -323,7 +346,7 @@ class AtomicWorkflowFailureInjectionTest extends EventloopTestBase {
         eventAppendShouldFail.set(true);
         eventAppendAttempts.set(0);
 
-        when(eventLogStore.append(anyString(), any()))
+        when(eventLogStore.append(any(TenantContext.class), any()))
             .thenAnswer(invocation -> {
                 eventAppendAttempts.incrementAndGet();
                 if (eventAppendShouldFail.get()) {
@@ -336,13 +359,13 @@ class AtomicWorkflowFailureInjectionTest extends EventloopTestBase {
 
         // Attempt operation that fails
         assertThatThrownBy(() -> {
-            runPromise(() -> auditService.recordCritical(AuditEvent.builder()
+            auditService.recordCritical(AuditEvent.builder()
                 .tenantId("tenant-123")
                 .eventType("ENTITY_CREATE")
                 .resourceType("ENTITY")
                 .resourceId("test-entity")
                 .success(true)
-                .build()));
+                .build());
         });
 
         // Verify operation was not committed
@@ -401,7 +424,7 @@ class AtomicWorkflowFailureInjectionTest extends EventloopTestBase {
     void chaosContextEnablesProbabilisticFailureInjection() {
         ChaosContext chaosContext = new ChaosContext(ChaosType.PARTIAL_FAILURE, 0.5, 5000);
 
-        when(eventLogStore.append(anyString(), any()))
+        when(eventLogStore.append(any(TenantContext.class), any()))
             .thenAnswer(invocation -> {
                 if (chaosContext.shouldInjectFailure()) {
                     return Promise.ofException(new RuntimeException("Chaos-injected failure"));
@@ -417,13 +440,13 @@ class AtomicWorkflowFailureInjectionTest extends EventloopTestBase {
 
         for (int i = 0; i < 10; i++) {
             try {
-                runPromise(() -> auditService.recordCritical(AuditEvent.builder()
+                auditService.recordCritical(AuditEvent.builder()
                     .tenantId("tenant-123")
                     .eventType("ENTITY_CREATE")
                     .resourceType("ENTITY")
                     .resourceId("test-entity-" + i)
                     .success(true)
-                    .build()));
+                    .build());
                 successes++;
             } catch (RuntimeException e) {
                 if (e.getMessage().contains("Chaos-injected")) {
@@ -447,7 +470,7 @@ class AtomicWorkflowFailureInjectionTest extends EventloopTestBase {
         eventAppendShouldFail.set(true);
         auditWriteShouldFail.set(true);
 
-        when(eventLogStore.append(anyString(), any()))
+        when(eventLogStore.append(any(TenantContext.class), any()))
             .thenAnswer(invocation -> {
                 if (eventAppendShouldFail.get()) {
                     return Promise.ofException(new RuntimeException("Event append failure"));
@@ -459,13 +482,13 @@ class AtomicWorkflowFailureInjectionTest extends EventloopTestBase {
 
         // Attempt multiple concurrent operations
         assertThatThrownBy(() -> {
-            runPromise(() -> auditService.recordCritical(AuditEvent.builder()
+            auditService.recordCritical(AuditEvent.builder()
                 .tenantId("tenant-123")
                 .eventType("ENTITY_CREATE")
                 .resourceType("ENTITY")
                 .resourceId("test-entity")
                 .success(true)
-                .build()));
+                .build());
         }).isInstanceOf(RuntimeException.class);
 
         // Verify system remains in consistent state

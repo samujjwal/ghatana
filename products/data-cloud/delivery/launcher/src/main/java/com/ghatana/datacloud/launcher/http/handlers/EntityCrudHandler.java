@@ -257,6 +257,26 @@ public class EntityCrudHandler {
                 "WebSocket broadcasts and semantic indexing must be processed durably.");
         }
 
+        // DC-P1-05: A configured transaction manager must also be operational.
+        try {
+            Promise<Map<String, Object>> validationPromise = transactionManager.executeInTransaction(
+                "production-validation",
+                () -> Promise.of(Map.of("status", "ok")));
+            if (validationPromise == null) {
+                throw new IllegalStateException("Transaction validation did not return a promise");
+            }
+            if (validationPromise.isException()) {
+                throw validationPromise.getException();
+            }
+            if (!validationPromise.isComplete()) {
+                throw new IllegalStateException("Transaction validation did not complete synchronously");
+            }
+        } catch (Exception error) {
+            throw new IllegalStateException(
+                "DC-P1-05: TransactionManager failed production validation for profile '" + deploymentProfile + "'",
+                error);
+        }
+
         log.info("[EntityCrudHandler] Production requirements validated successfully for profile '{}'", deploymentProfile);
     }
 

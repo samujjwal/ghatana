@@ -197,6 +197,8 @@
     "check:phr-lifecycle-pilot": "node ./scripts/check-phr-lifecycle-pilot.mjs",
     "generate:phr-product-contract": "node ./scripts/generate-phr-product-contract.mjs",
     "check:phr-fhir-validation": "node ./scripts/check-phr-fhir-validation.mjs",
+    "check:phr-route-contract-drift": "node ./scripts/check-phr-route-contract-drift.mjs",
+    "check:phr-mobile-dto-contract": "node ./scripts/check-phr-mobile-dto-contract.mjs",
     "check:flashit-lifecycle-readiness": "node ./scripts/check-flashit-lifecycle-readiness.mjs",
     "check:yappc-platform-provider-readiness": "node ./scripts/check-yappc-platform-provider-readiness.mjs",
     "check:data-cloud-platform-provider-readiness": "node ./scripts/check-data-cloud-platform-provider-readiness.mjs",

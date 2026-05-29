@@ -374,8 +374,10 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Sync without fabric returns pending and does not mutate connection state")
-    void syncWithoutFabricDoesNotMutateState() {
+    @DisplayName("Sync without fabric fails closed in production profile and does not mutate state")
+    void syncWithoutFabricFailsClosedInProductionAndDoesNotMutateState() {
+        DataSourceRegistryHandler productionHandler = new DataSourceRegistryHandler(
+            client, http, null, null, "production");
         lenient().doReturn(TenantResolutionResult.success("test-tenant", null)).when(http).requireTenantIdWithError(any());
         HttpRequest request = RequestContextTestHelper.createTestRequestWithBody(
             "test-tenant",
@@ -383,16 +385,14 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
             "/api/v1/connectors/conn-1/sync",
             ByteBufStrings.wrapUtf8("{}"));
 
-        HttpResponse response = runPromise(() -> handler.handleTriggerSync(request));
+        HttpResponse response = runPromise(() -> productionHandler.handleTriggerSync(request));
 
-        assertThat(response).isNotNull();
-        // Response structure changed - skip assertions for now
-        // assertThat(response.getCode()).isEqualTo(200);
-        // Map<String, Object> body = parseJsonBody(response);
-        // assertThat(body.get("syncStatus")).isEqualTo("pending");
-        // Verification also skipped due to response structure change
-        // verify(client, never()).save(anyString(), anyString(), anyMap());
-        // verify(client, never()).findById(anyString(), anyString(), anyString());
+        assertThat(response.getCode()).isEqualTo(503);
+        Map<String, Object> body = parseJsonBody(response);
+        assertThat(String.valueOf(body.get("message")).toLowerCase())
+            .contains("connector runtime is required");
+        verify(client, never()).save(anyString(), anyString(), anyMap());
+        verify(client, never()).findById(anyString(), anyString(), anyString());
     }
 
     // P1-6: Connector lifecycle hardening tests
@@ -451,15 +451,11 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
 
         HttpResponse response = runPromise(() -> handlerWithFabric.handleEnableConnection(request));
 
-        assertThat(response).isNotNull();
-        // Then response shows validation failure
-        // Response structure changed - skip assertions for now
-        // assertThat(response.getCode()).isEqualTo(400);
-        // Map<String, Object> body = parseJsonBody(response);
-        // assertThat(body.get("enabled")).isEqualTo(false);
-        // assertThat(body.get("validated")).isEqualTo(false);
-        // assertThat(body.get("state")).isEqualTo("ERROR");
-        // assertThat(body.get("validationError")).isEqualTo("Connection refused");
+        assertThat(response.getCode()).isEqualTo(400);
+        Map<String, Object> body = parseJsonBody(response);
+        assertThat(body.get("enabled")).isEqualTo(false);
+        assertThat(body.get("state")).isEqualTo("ERROR");
+        assertThat(body.get("error")).isEqualTo("Connection refused");
     }
 
     @Test
@@ -499,15 +495,12 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
 
         HttpResponse response = runPromise(() -> handlerWithFabric.handleEnableConnection(request));
 
-        assertThat(response).isNotNull();
-        // Then response shows successful enable
-        // Response structure changed - skip assertions for now
-        // assertThat(response.getCode()).isEqualTo(200);
-        // Map<String, Object> body = parseJsonBody(response);
-        // assertThat(body.get("enabled")).isEqualTo(true);
-        // assertThat(body.get("validated")).isEqualTo(true);
-        // assertThat(body.get("state")).isEqualTo("ACTIVE");
-        // assertThat(body.get("latencyMs")).isEqualTo(15);
+        assertThat(response.getCode()).isEqualTo(200);
+        Map<String, Object> body = parseJsonBody(response);
+        assertThat(body.get("enabled")).isEqualTo(true);
+        assertThat(body.get("state")).isEqualTo("ACTIVE");
+        assertThat(body.get("connectionId")).isEqualTo("conn-1");
+        assertThat(body.get("tenantId")).isEqualTo("test-tenant");
     }
 
     @Test

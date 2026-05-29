@@ -57,6 +57,7 @@ public final class PhrClinicalRoutes {
     public AsyncServlet getServlet() {
         return RoutingServlet.builder(eventloop)
             .with("/labs/*", labServlet())
+            .with("/observations/*", observationsServlet())
             .with("/medications/*", medicationServlet())
             .with("/immunizations/*", immunizationServlet())
             .build();
@@ -68,6 +69,15 @@ public final class PhrClinicalRoutes {
             .with(HttpMethod.GET, "/observations/:observationId", this::handleGetLabObservation)
             .with(HttpMethod.GET, "/trends", this::handleGetLabTrend)
             .with(HttpMethod.GET, "/", this::handleListLabObservations)
+            .build();
+    }
+
+
+    private AsyncServlet observationsServlet() {
+        return RoutingServlet.builder(eventloop)
+            .with(HttpMethod.GET, "/", this::handleListLabObservations)
+            .with(HttpMethod.GET, "/:observationId", this::handleGetLabObservation)
+            .with(HttpMethod.GET, "/trends", this::handleGetLabTrend)
             .build();
     }
 
@@ -288,3 +298,4 @@ public final class PhrClinicalRoutes {
         return patientId;
     }
 }
+

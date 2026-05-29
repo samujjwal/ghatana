@@ -59,7 +59,7 @@ public class AIGovernanceManager {
      * @return Promise containing the operation result
      */
     public Promise<AIOperationResult> executeWithAvailabilityCheck(String model, String prompt) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(Runnable::run, () -> {
             boolean available = modelRegistry.isModelAvailable(model).getResult();
             if (!available) {
                 throw new IllegalStateException(
@@ -77,7 +77,7 @@ public class AIGovernanceManager {
      * @return Promise containing the operation result
      */
     public Promise<AIOperationResult> executeWithFallbackPrevention(AIOperationContext context) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(Runnable::run, () -> {
             boolean primaryAvailable = modelRegistry.isModelAvailable(context.getModel()).getResult();
             
             if (!primaryAvailable) {
@@ -93,10 +93,13 @@ public class AIGovernanceManager {
                 
                 if (fallbackAvailable) {
                     String response = llmGateway.complete(fallbackModel, new HashMap<>()).getResult();
-                    return AIOperationResult.success(fallbackModel)
-                        .withFallbackUsed(true)
-                        .withModelUsed(fallbackModel)
-                        .withResponse(response);
+                    return AIOperationResult.builder()
+                        .model(context.getModel())
+                        .status(AIOperationResult.Status.SUCCESS_WITH_FALLBACK)
+                        .fallbackUsed(true)
+                        .modelUsed(fallbackModel)
+                        .response(response)
+                        .build();
                 }
             }
             
@@ -112,7 +115,7 @@ public class AIGovernanceManager {
      * @return Promise containing the operation result
      */
     public Promise<AIOperationResult> executeWithPrivacyRedaction(String model, String prompt) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(Runnable::run, () -> {
             String redactedPrompt = redactPII(prompt);
             return AIOperationResult.success(model).withRedactedPrompt(redactedPrompt);
         });
@@ -126,15 +129,14 @@ public class AIGovernanceManager {
      * @return Promise containing the operation result
      */
     public Promise<AIOperationResult> executeWithStrictPrivacyRedaction(String model, String prompt) {
-        return Promise.ofBlocking(() -> {
-            String redactedPrompt = redactPII(prompt);
-            
-            // Check if any sensitive data remains
-            if (containsSensitiveData(redactedPrompt)) {
+        return Promise.ofBlocking(Runnable::run, () -> {
+            if (containsSensitiveData(prompt)) {
                 throw new IllegalStateException(
                     "P1-3: Unable to redact sensitive data, operation blocked"
                 );
             }
+
+            String redactedPrompt = redactPII(prompt);
             
             return AIOperationResult.success(model).withRedactedPrompt(redactedPrompt);
         });
@@ -148,7 +150,7 @@ public class AIGovernanceManager {
      * @return Promise containing the operation result
      */
     public Promise<AIOperationResult> executeWithProvenanceTracking(String model, String prompt) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(Runnable::run, () -> {
             String response = llmGateway.complete(model, new HashMap<>()).getResult();
             
             Provenance provenance = new Provenance(
@@ -174,7 +176,7 @@ public class AIGovernanceManager {
      * @return Promise containing the operation result
      */
     public Promise<AIOperationResult> executeWithCostBudget(AIOperationContext context) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(Runnable::run, () -> {
             double budget = modelRegistry.getCostBudget(context.getTenantId()).getResult();
             double currentCost = modelRegistry.getCurrentCost(context.getTenantId()).getResult();
             
@@ -197,7 +199,7 @@ public class AIGovernanceManager {
      * @return Promise containing the operation result
      */
     public Promise<AIOperationResult> executeWithQualityThreshold(String model, String prompt, double threshold) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(Runnable::run, () -> {
             double quality = modelRegistry.getModelQuality(model).getResult();
             
             if (quality < threshold) {
@@ -217,7 +219,7 @@ public class AIGovernanceManager {
      * @return Promise containing the operation result
      */
     public Promise<AIOperationResult> executeWithHumanApproval(AIOperationContext context) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(Runnable::run, () -> {
             if (context.getRiskLevel() == AIOperationContext.RiskLevel.CRITICAL && 
                 context.getHumanApprovalId() == null) {
                 throw new IllegalStateException(
@@ -239,8 +241,10 @@ public class AIGovernanceManager {
      * @return Promise containing the operation result
      */
     public Promise<AIOperationResult> executeWithAudit(String model, String prompt) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(Runnable::run, () -> {
             String response = llmGateway.complete(model, new HashMap<>()).getResult();
+            String action = response.startsWith("action: ") ? response.substring("action: ".length()) : response;
+            String provenanceId = UUID.randomUUID().toString();
             
             AuditEvent auditEvent = AuditEvent.builder()
                 .id(UUID.randomUUID().toString())
@@ -253,8 +257,8 @@ public class AIGovernanceManager {
                 .timestamp(Instant.now())
                 .detail("model", model)
                 .detail("prompt", prompt)
-                .detail("action", response)
-                .detail("provenanceId", UUID.randomUUID().toString())
+                .detail("action", action)
+                .detail("provenanceId", provenanceId)
                 .build();
             
             auditService.record(auditEvent);
@@ -273,7 +277,7 @@ public class AIGovernanceManager {
      * @return Promise containing the operation result
      */
     public Promise<AIOperationResult> executeWithSafetyGuardrails(String model, String prompt) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(Runnable::run, () -> {
             if (isHarmful(prompt)) {
                 throw new IllegalStateException(
                     "P1-3: Harmful content detected, operation blocked"
@@ -291,23 +295,48 @@ public class AIGovernanceManager {
      * @return Promise containing the operation result
      */
     public Promise<AIOperationResult> executeWithFullGovernance(AIOperationContext context) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(Runnable::run, () -> {
             // Run all checks
             boolean available = modelRegistry.isModelAvailable(context.getModel()).getResult();
             double quality = modelRegistry.getModelQuality(context.getModel()).getResult();
             double budget = modelRegistry.getCostBudget(context.getTenantId()).getResult();
             double currentCost = modelRegistry.getCurrentCost(context.getTenantId()).getResult();
             boolean safe = !isHarmful(context.getPrompt());
+            String response = llmGateway.complete(context.getModel(), new HashMap<>()).getResult();
+            String provenanceId = UUID.randomUUID().toString();
             
             if (!available || quality < 0.8 || currentCost >= budget || !safe) {
                 throw new IllegalStateException("P1-3: Governance check failed, operation blocked");
             }
+
+            AuditEvent auditEvent = AuditEvent.builder()
+                .id(UUID.randomUUID().toString())
+                .tenantId(context.getTenantId() != null ? context.getTenantId() : "system")
+                .eventType("AI_ACTION")
+                .principal("ai-system")
+                .resourceType("MODEL")
+                .resourceId(context.getModel())
+                .success(true)
+                .timestamp(Instant.now())
+                .detail("model", context.getModel())
+                .detail("prompt", context.getPrompt())
+                .detail("action", response)
+                .detail("provenanceId", provenanceId)
+                .build();
+            auditService.record(auditEvent);
             
-            return AIOperationResult.success(context.getModel())
-                .withModelAvailable(true)
-                .withQualityScore(quality)
-                .withCostEnforced(true)
-                .withSafetyCheckPassed(true);
+            return AIOperationResult.builder()
+                .model(context.getModel())
+                .status(AIOperationResult.Status.SUCCESS)
+                .modelAvailable(true)
+                .qualityScore(quality)
+                .costEnforced(true)
+                .safetyCheckPassed(true)
+                .audited(true)
+                .auditId(auditEvent.getId())
+                .provenanceId(provenanceId)
+                .response(response)
+                .build();
         });
     }
 
@@ -317,13 +346,13 @@ public class AIGovernanceManager {
         // Simple PII redaction - in production, use proper PII detection
         return text
             .replaceAll("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}", "[REDACTED_EMAIL]")
-            .replaceAll("\\d{3}-\\d{3}-\\d{4}", "[REDACTED_PHONE]")
+            .replaceAll("(?:\\d{3}-\\d{4}|\\d{3}-\\d{3}-\\d{4})", "[REDACTED_PHONE]")
             .replaceAll("\\d{3}-\\d{2}-\\d{4}", "[REDACTED_SSN]");
     }
 
     private boolean containsSensitiveData(String text) {
         // Check if any sensitive patterns remain
-        return text.matches(".*\\d{3}-\\d{2}-\\d{4}.*"); // SSN pattern
+        return text.matches(".*\\d{3}-\\d{2}-\\d{4}.*");
     }
 
     private boolean isHarmful(String prompt) {

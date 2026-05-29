@@ -385,3 +385,104 @@ describe('phiEncryptedStorage', () => {
     });
   });
 });
+
+describe('phiEncryptedStorage — AsyncStorage contains ciphertext only (G7-002, G11-005)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    resetPhiStorageAdapter();
+  });
+
+  it('stored value in AsyncStorage is valid base64 and contains no plaintext PHI', async () => {
+    const asyncStore = new Map<string, string>();
+    const secureStore = new Map<string, string>();
+
+    (SecureStore.getItemAsync as jest.MockedFunction<typeof SecureStore.getItemAsync>).mockImplementation(
+      async (key: string) => secureStore.get(key) ?? null,
+    );
+    (SecureStore.setItemAsync as jest.MockedFunction<typeof SecureStore.setItemAsync>).mockImplementation(
+      async (key: string, value: string) => { secureStore.set(key, value); },
+    );
+    (SecureStore.deleteItemAsync as jest.MockedFunction<typeof SecureStore.deleteItemAsync>).mockImplementation(
+      async (key: string) => { secureStore.delete(key); },
+    );
+    (AsyncStorage.setItem as jest.MockedFunction<typeof AsyncStorage.setItem>).mockImplementation(
+      async (key: string, value: string) => { asyncStore.set(key, value); },
+    );
+    (AsyncStorage.getItem as jest.MockedFunction<typeof AsyncStorage.getItem>).mockImplementation(
+      async (key: string) => asyncStore.get(key) ?? null,
+    );
+    (AsyncStorage.removeItem as jest.MockedFunction<typeof AsyncStorage.removeItem>).mockImplementation(
+      async (key: string) => { asyncStore.delete(key); },
+    );
+    (AsyncStorage.getAllKeys as jest.MockedFunction<typeof AsyncStorage.getAllKeys>).mockImplementation(
+      async () => Array.from(asyncStore.keys()),
+    );
+
+    resetPhiStorageAdapter();
+
+    const plaintext = 'patient-name:Ram Bahadur Thapa,dob:1985-04-12,bloodType:A+';
+    await phiSet('phr-phi-cipher:patient-summary', plaintext);
+
+    const storedValue = asyncStore.get('phr-phi-cipher:patient-summary');
+    expect(storedValue).toBeDefined();
+
+    expect(storedValue).not.toBe(plaintext);
+    expect(storedValue).toMatch(/^[A-Za-z0-9+/]+=*$/);
+
+    const decoded = Buffer.from(storedValue!, 'base64');
+    expect(decoded.length).toBeGreaterThan(plaintext.length);
+
+    for (const [, value] of asyncStore.entries()) {
+      expect(value).not.toContain('Ram Bahadur Thapa');
+      expect(value).not.toContain('1985-04-12');
+      expect(value).not.toContain('patient-name:');
+    }
+  });
+
+  it('same plaintext encrypted twice produces distinct ciphertexts (fresh IV per write)', async () => {
+    const asyncStore = new Map<string, string>();
+    const secureStore = new Map<string, string>();
+
+    (SecureStore.getItemAsync as jest.MockedFunction<typeof SecureStore.getItemAsync>).mockImplementation(
+      async (key: string) => secureStore.get(key) ?? null,
+    );
+    (SecureStore.setItemAsync as jest.MockedFunction<typeof SecureStore.setItemAsync>).mockImplementation(
+      async (key: string, value: string) => { secureStore.set(key, value); },
+    );
+    (SecureStore.deleteItemAsync as jest.MockedFunction<typeof SecureStore.deleteItemAsync>).mockImplementation(
+      async (key: string) => { secureStore.delete(key); },
+    );
+    (AsyncStorage.setItem as jest.MockedFunction<typeof AsyncStorage.setItem>).mockImplementation(
+      async (key: string, value: string) => { asyncStore.set(key, value); },
+    );
+    (AsyncStorage.getItem as jest.MockedFunction<typeof AsyncStorage.getItem>).mockImplementation(
+      async (key: string) => asyncStore.get(key) ?? null,
+    );
+    (AsyncStorage.removeItem as jest.MockedFunction<typeof AsyncStorage.removeItem>).mockImplementation(
+      async (key: string) => { asyncStore.delete(key); },
+    );
+    (AsyncStorage.getAllKeys as jest.MockedFunction<typeof AsyncStorage.getAllKeys>).mockImplementation(
+      async () => Array.from(asyncStore.keys()),
+    );
+
+    resetPhiStorageAdapter();
+
+    const samePlaintext = 'identical-patient-value';
+    await phiSet('phr-phi-cipher:record-a', samePlaintext);
+    await phiSet('phr-phi-cipher:record-b', samePlaintext);
+
+    const storedA = asyncStore.get('phr-phi-cipher:record-a');
+    const storedB = asyncStore.get('phr-phi-cipher:record-b');
+
+    expect(storedA).toMatch(/^[A-Za-z0-9+/]+=*$/);
+    expect(storedB).toMatch(/^[A-Za-z0-9+/]+=*$/);
+
+    expect(storedA).not.toBe(storedB);
+
+    expect(storedA).not.toContain(samePlaintext);
+    expect(storedB).not.toContain(samePlaintext);
+  });
+});

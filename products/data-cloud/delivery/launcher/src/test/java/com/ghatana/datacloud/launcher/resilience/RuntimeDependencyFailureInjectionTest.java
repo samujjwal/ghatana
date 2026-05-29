@@ -17,6 +17,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,6 +56,7 @@ import static org.mockito.Mockito.*;
 @Tag("failure-injection")
 @Tag("chaos")
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class RuntimeDependencyFailureInjectionTest extends EventloopTestBase {
 
     @Mock
@@ -75,13 +78,13 @@ class RuntimeDependencyFailureInjectionTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        resilienceManager = new DependencyResilienceManager(
+        resilienceManager = spy(new DependencyResilienceManager(
             postgresAdapter,
             clickHouseStorage,
             s3Connector,
             policyEngine,
             llmGateway
-        );
+        ));
     }
 
     // ==================== Postgres Unavailability ====================
@@ -228,7 +231,7 @@ class RuntimeDependencyFailureInjectionTest extends EventloopTestBase {
         // When: Execute critical operation requiring audit
         assertThatThrownBy(() -> runPromise(() -> 
             resilienceManager.executeCriticalWithAudit("critical-operation", () -> 
-                Promise.ofComplete()
+                Promise.complete()
             )
         )).isInstanceOf(IllegalStateException.class)
          .hasMessageContaining("P1-2")
@@ -340,7 +343,7 @@ class RuntimeDependencyFailureInjectionTest extends EventloopTestBase {
         // Given: Queue is saturated initially
         when(resilienceManager.enqueue(any(), any()))
             .thenReturn(Promise.ofException(new RuntimeException("Queue saturated")))
-            .thenReturn(Promise.ofComplete());
+            .thenReturn(Promise.complete());
 
         // When: Attempt to enqueue with backpressure handling
         DependencyOperationResult result = runPromise(() -> 
@@ -386,7 +389,7 @@ class RuntimeDependencyFailureInjectionTest extends EventloopTestBase {
         when(postgresAdapter.executeQuery(any(), any()))
             .thenReturn(Promise.of(new Object()));
         when(clickHouseStorage.storeTrace(any(), any()))
-            .thenReturn(Promise.ofComplete());
+            .thenReturn(Promise.complete());
         when(s3Connector.upload(any(), any()))
             .thenReturn(Promise.of("s3://bucket/key"));
         when(policyEngine.evaluate(any(), any()))

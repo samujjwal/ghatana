@@ -20,6 +20,7 @@ import java.util.concurrent.TimeoutException;
 public final class ChaosInjector {
 
     private static final ThreadLocal<ChaosContext> CURRENT_CONTEXT = new ThreadLocal<>();
+    private static volatile ChaosContext GLOBAL_CONTEXT;
     private static final Random RANDOM = new Random();
 
     private ChaosInjector() {
@@ -33,6 +34,7 @@ public final class ChaosInjector {
      */
     public static void activate(ChaosContext context) {
         CURRENT_CONTEXT.set(context);
+        GLOBAL_CONTEXT = context;
     }
 
     /**
@@ -40,20 +42,22 @@ public final class ChaosInjector {
      */
     public static void deactivate() {
         CURRENT_CONTEXT.remove();
+        GLOBAL_CONTEXT = null;
     }
 
     /**
      * Returns the current chaos context, if any.
      */
     public static ChaosContext getContext() {
-        return CURRENT_CONTEXT.get();
+        ChaosContext context = CURRENT_CONTEXT.get();
+        return context != null ? context : GLOBAL_CONTEXT;
     }
 
     /**
      * Checks if chaos injection is currently active.
      */
     public static boolean isActive() {
-        ChaosContext ctx = CURRENT_CONTEXT.get();
+        ChaosContext ctx = getContext();
         return ctx != null && ctx.isActive();
     }
 

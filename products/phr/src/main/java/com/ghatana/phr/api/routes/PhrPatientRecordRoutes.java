@@ -281,23 +281,108 @@ public final class PhrPatientRecordRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        return requireSelfOrConsent(context, patientId, "patient-record-detail", "READ")
-            .then(allowed -> {
-                if (!allowed) {
+
+        if (recordId == null || recordId.isBlank()) {
+            return PhrRouteSupport.errorResponse(400, "MISSING_RECORD_ID",
+                "recordId path parameter is required", context.correlationId());
+        }
+
+        return policyEvaluator.canAccessPhiResourceAsync(
+                context, patientId, "patient-record-detail", "READ",
+                context.tenantId(), context.facilityId())
+            .then(decision -> {
+                if (!decision.isAllowed()) {
                     return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
                 }
-                
-                Map<String, Object> response = new java.util.LinkedHashMap<>();
-                response.put("patientId", patientId);
-                response.put("recordId", recordId);
-                response.put("resourceType", "Observation");
-                response.put("status", "active");
-                response.put("accessedAt", Instant.now().toString());
-                response.put("accessedBy", context.principalId());
-                response.put("accessReason", "Patient record detail view");
-                
-                return PhrRouteSupport.jsonResponse(200, response);
+
+                return patientRecordService.getPatient(patientId)
+                    .then(patientOpt -> {
+                        if (patientOpt.isEmpty()) {
+                            return PhrRouteSupport.errorResponse(404, "PATIENT_NOT_FOUND",
+                                "Patient not found", context.correlationId());
+                        }
+
+                        PatientRecordService.Patient patient = patientOpt.get();
+                        Instant accessedAt = Instant.now();
+                        PatientRecordService.Demographics demo = patient.getDemographics();
+                        String familyName = demo != null && demo.getFamilyName() != null
+                            ? demo.getFamilyName() : "";
+
+                        Map<String, Object> record = new java.util.LinkedHashMap<>();
+                        record.put("id", recordId);
+                        record.put("title", "Patient Record - " + familyName);
+                        record.put("resourceType", "Patient");
+                        record.put("category", "administrative");
+                        record.put("updatedAt", patient.getUpdatedAt() != null
+                            ? patient.getUpdatedAt().toString() : accessedAt.toString());
+                        record.put("status", patient.isDeleted() ? "inactive" : "active");
+
+                        Map<String, Object> fhirResource = buildFhirPatientResource(patient, context.role());
+                        String fhirJson;
+                        try {
+                            fhirJson = PhrRouteSupport.JSON.writeValueAsString(fhirResource);
+                        } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+                            fhirJson = "{}";
+                        }
+
+                        Map<String, Object> accessAudit = new java.util.LinkedHashMap<>();
+                        accessAudit.put("accessedAt", accessedAt.toString());
+                        accessAudit.put("accessedBy", context.principalId());
+                        accessAudit.put("accessRole", context.role());
+                        accessAudit.put("tenantId", context.tenantId());
+                        accessAudit.put("correlationId", context.correlationId());
+                        accessAudit.put("policyReason", decision.getReasonCode());
+                        accessAudit.put("requiresAudit", decision.requiresAudit());
+
+                        Map<String, Object> response = new java.util.LinkedHashMap<>();
+                        response.put("record", record);
+                        response.put("fhirJson", fhirJson);
+                        response.put("accessAudit", accessAudit);
+
+                        return PhrRouteSupport.jsonResponse(200, response, context.correlationId());
+                    });
             });
+    }
+
+    private static Map<String, Object> buildFhirPatientResource(
+            PatientRecordService.Patient patient,
+            String role) {
+        PatientRecordService.Demographics demo = patient.getDemographics();
+        Map<String, Object> resource = new java.util.LinkedHashMap<>();
+        resource.put("resourceType", "Patient");
+        resource.put("id", patient.getId());
+
+        boolean showFullPhi = "patient".equals(role) || "clinician".equals(role) || "caregiver".equals(role);
+
+        if (showFullPhi && demo != null) {
+            Map<String, Object> nameEntry = new java.util.LinkedHashMap<>();
+            nameEntry.put("use", "official");
+            nameEntry.put("family", demo.getFamilyName() != null ? demo.getFamilyName() : "");
+            nameEntry.put("given", demo.getGivenName() != null
+                ? List.of(demo.getGivenName()) : List.of());
+            resource.put("name", List.of(nameEntry));
+            if (demo.getDateOfBirth() != null) {
+                resource.put("birthDate", demo.getDateOfBirth());
+            }
+            if (demo.getGender() != null) {
+                resource.put("gender", demo.getGender().toLowerCase());
+            }
+        } else {
+            resource.put("name", List.of(Map.of(
+                "use", "official",
+                "family", "[REDACTED]",
+                "given", List.of("[REDACTED]"))));
+            resource.put("birthDate", "[REDACTED]");
+        }
+
+        resource.put("active", !patient.isDeleted());
+        resource.put("meta", Map.of(
+            "lastUpdated", patient.getUpdatedAt() != null
+                ? patient.getUpdatedAt().toString() : Instant.now().toString(),
+            "source", "phr-patient-record-service"
+        ));
+
+        return resource;
     }
 
     private Promise<HttpResponse> createPatient(PatientRecordService.Patient patient) {

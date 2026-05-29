@@ -12,6 +12,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -50,6 +51,96 @@ class RouteSecurityRegistryInvariantTest {
                             .as("requiresBlockingAudit for %s", entry.getKey())
                             .isTrue();
                 });
+    }
+
+    @Test
+    @DisplayName("plan-mandated sensitive mutations require policy")
+    void planMandatedSensitiveMutationsRequirePolicy() {
+        Map<String, RouteSecurityMetadata> routes = RouteSecurityRegistry.allRoutes();
+
+        assertThat(routes)
+                .isNotEmpty();
+
+        List<String> policyBackedRoutes = List.of(
+                "POST /api/v1/action/pipelines/{pipelineId}/execute",
+                "POST /api/v1/collections/{id}/migrate",
+                "POST /api/v1/entities/{collection}/export",
+                "POST /mcp/v1/tools",
+                "POST /api/v1/plugins/{id}/conformance",
+                "POST /api/v1/plugins/{id}/disable",
+                "POST /api/v1/plugins/{id}/enable",
+                "POST /api/v1/plugins/{id}/upgrade",
+                "POST /api/v1/plugins/{id}/validate"
+        );
+
+        assertThat(policyBackedRoutes)
+                .allSatisfy(routeKey -> assertThat(routes.get(routeKey))
+                        .as("route metadata for %s", routeKey)
+                        .isNotNull()
+                        .extracting(RouteSecurityMetadata::requiresPolicy)
+                        .as("requiresPolicy for %s", routeKey)
+                        .isEqualTo(true));
+    }
+
+    @Test
+        @DisplayName("critical and policy-backed routes resolve access levels")
+        void criticalAndPolicyBackedRoutesResolveAccessLevels() {
+        Map<String, RouteSecurityMetadata> routes = RouteSecurityRegistry.allRoutes();
+
+        assertThat(routes)
+                .isNotEmpty();
+
+        assertThat(routes.entrySet())
+                .filteredOn(entry -> entry.getValue().sensitivity() == EndpointSensitivity.CRITICAL || entry.getValue().requiresPolicy())
+                .allSatisfy(entry -> {
+                    RouteSecurityMetadata metadata = entry.getValue();
+                    DataCloudSecurityFilter.AccessLevel requiredAccess = RouteActionAccessRegistry.requiredAccess(
+                            metadata.method(),
+                            metadata.canonicalPath());
+
+                    assertThat(requiredAccess)
+                            .as("resolved access mapping for %s", entry.getKey())
+                            .isNotNull();
+                    assertThat(requiredAccess.ordinal())
+                            .as("access level floor for %s", entry.getKey())
+                            .isGreaterThanOrEqualTo(DataCloudSecurityFilter.AccessLevel.OPERATOR.ordinal());
+                });
+    }
+
+    @Test
+    @DisplayName("resolved access levels stay in parity with route metadata")
+    void resolvedAccessLevelsStayInParityWithRouteMetadata() {
+        Map<String, RouteSecurityMetadata> routes = RouteSecurityRegistry.allRoutes();
+
+        assertThat(routes)
+                .isNotEmpty();
+
+        assertThat(routes.entrySet())
+                .allSatisfy(entry -> {
+                    RouteSecurityMetadata metadata = entry.getValue();
+                    DataCloudSecurityFilter.AccessLevel resolvedAccess = RouteActionAccessRegistry.requiredAccess(
+                            metadata.method(),
+                            metadata.canonicalPath());
+
+                    assertThat(resolvedAccess)
+                            .as("resolved access mapping for %s", entry.getKey())
+                            .isEqualTo(metadata.requiredAccess());
+                });
+    }
+
+    @Test
+    @DisplayName("runtime lookup prefers specific static routes over parameterized matches")
+    void runtimeLookupPrefersSpecificStaticRoutes() {
+        RouteSecurityMetadata contextSnapshot = RouteSecurityRegistry.lookupRuntimePath("GET", "/api/v1/context/snapshot")
+                .orElseThrow(() -> new AssertionError("Missing runtime metadata for /api/v1/context/snapshot"));
+        RouteSecurityMetadata entitiesSimilar = RouteSecurityRegistry.lookupRuntimePath("GET", "/api/v1/entities/orders/similar")
+                .orElseThrow(() -> new AssertionError("Missing runtime metadata for /api/v1/entities/{collection}/similar"));
+
+        assertThat(contextSnapshot.canonicalPath()).isEqualTo("/api/v1/context/snapshot");
+        assertThat(contextSnapshot.requiredAccess()).isEqualTo(DataCloudSecurityFilter.AccessLevel.OPERATOR);
+
+        assertThat(entitiesSimilar.canonicalPath()).isEqualTo("/api/v1/entities/{collection}/similar");
+        assertThat(entitiesSimilar.requiredAccess()).isEqualTo(DataCloudSecurityFilter.AccessLevel.OPERATOR);
     }
 
     @Test

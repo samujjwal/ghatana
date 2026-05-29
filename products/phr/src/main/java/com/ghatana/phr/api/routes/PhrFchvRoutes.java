@@ -65,27 +65,46 @@ public final class PhrFchvRoutes {
                 context.correlationId());
         }
 
+        // FCHV dashboard with community assignment, scoped patient list, and vitals capture links
         return Promise.of(List.of(
             Map.of(
                 "id", "patient-001",
                 "name", "[REDACTED]",
                 "village", "Sindhuli-3",
                 "riskLevel", "high",
-                "lastContact", "2026-05-20"
+                "lastContact", "2026-05-20",
+                "pendingVitals", true
             ),
             Map.of(
                 "id", "patient-002",
                 "name", "[REDACTED]",
                 "village", "Sindhuli-5",
                 "riskLevel", "low",
-                "lastContact", "2026-05-22"
+                "lastContact", "2026-05-22",
+                "pendingVitals", false
             )
         )).then(patients -> PhrRouteSupport.jsonResponse(200,
             Map.of(
-                "principalId", context.principalId(),
+                "fchvId", context.principalId(),
                 "tenantId", context.tenantId(),
-                "items", patients,
-                "count", patients.size()
+                "communityAssignment", Map.of(
+                    "village", "Sindhuli",
+                    "ward", "3",
+                    "assignedHouseholds", 150,
+                    "activePatients", patients.size()
+                ),
+                "patients", patients,
+                "workQueue", Map.of(
+                    "pendingVitals", 1,
+                    "followUpVisits", 0,
+                    "urgentAlerts", 0
+                ),
+                "vitalsCapture", Map.of(
+                    "enabled", true,
+                    "offlineMode", true,
+                    "syncPending", false
+                ),
+                "generatedAt", java.time.Instant.now().toString()
             ),
             context.correlationId()));
     }
@@ -123,8 +142,8 @@ public final class PhrFchvRoutes {
             Map.of(
                 "fchvId", context.principalId(),
                 "tenantId", context.tenantId(),
-                "patients", patients,
-                "total", patients.size()
+                "items", patients,
+                "count", patients.size()
             ),
             context.correlationId()));
     }

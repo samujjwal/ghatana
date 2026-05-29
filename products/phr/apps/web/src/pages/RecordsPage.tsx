@@ -17,6 +17,11 @@ export function RecordsPage(): React.ReactElement {
   const [resourceTypeFilter, setResourceTypeFilter] = useState<string>('');
   const [dateFromFilter, setDateFromFilter] = useState<string>('');
   const [dateToFilter, setDateToFilter] = useState<string>('');
+  
+  // Pagination state
+  const [limit] = useState<number>(50);
+  const [offset, setOffset] = useState<number>(0);
+  const [totalCount, setTotalCount] = useState<number>(0);
 
   useEffect(() => {
     if (!session) {
@@ -34,14 +39,19 @@ export function RecordsPage(): React.ReactElement {
       resourceType: resourceTypeFilter || undefined,
       dateFrom: dateFromFilter || undefined,
       dateTo: dateToFilter || undefined,
+      limit,
+      offset,
     })
-      .then(setRecords)
+      .then((data) => {
+        setRecords(data);
+        setTotalCount(data.length);
+      })
       .catch((err: unknown) => setError(err instanceof Error ? err.message : t('error.recordsLoad')))
       .finally(() => setLoading(false));
-  }, [session, categoryFilter, resourceTypeFilter, dateFromFilter, dateToFilter]);
+  }, [session, categoryFilter, resourceTypeFilter, dateFromFilter, dateToFilter, limit, offset]);
 
-  if (loading) return <div className="loading">{t('records.loading')}</div>;
-  if (error) return <div className="error">{t('dashboard.errorPrefix')}: {error}</div>;
+  if (loading) return <div className="loading" role="status" aria-live="polite">{t('records.loading')}</div>;
+  if (error) return <div className="error" role="alert">{t('dashboard.errorPrefix')}: {error}</div>;
 
   // Extract unique categories and resource types for filter options
   const categories = Array.from(new Set(records.map(r => r.category)));
@@ -109,20 +119,47 @@ export function RecordsPage(): React.ReactElement {
           {records.length === 0 ? (
             <div className="empty-state">{t('records.empty.filtered')}</div>
           ) : (
-            records.map((record) => (
-              <Link key={record.id} className="data-card" to={`/records/${record.id}`}>
-                <div>
-                  <strong>{record.title}</strong>
-                  <p className="muted">
-                    {t('records.updated', {
-                      resourceType: record.resourceType,
-                      date: formatPhrDateTime(record.updatedAt),
-                    })}
-                  </p>
-                </div>
-                <span className="pill">{record.category}</span>
-              </Link>
-            ))
+            <>
+              <div className="pagination-info" role="status">
+                {t('records.pagination.showing' as any, { 
+                  start: offset + 1, 
+                  end: Math.min(offset + limit, totalCount), 
+                  total: totalCount 
+                })}
+              </div>
+              {records.map((record) => (
+                <Link key={record.id} className="data-card" to={`/records/${record.id}`}>
+                  <div>
+                    <strong>{record.title}</strong>
+                    <p className="muted">
+                      {t('records.updated', {
+                        resourceType: record.resourceType,
+                        date: formatPhrDateTime(record.updatedAt),
+                      })}
+                    </p>
+                  </div>
+                  <span className="pill">{record.category}</span>
+                </Link>
+              ))}
+              <div className="pagination-controls" role="navigation" aria-label={t('records.pagination.label' as any)}>
+                <button
+                  onClick={() => setOffset(Math.max(0, offset - limit))}
+                  disabled={offset === 0}
+                  className="pagination-button"
+                  aria-label={t('records.pagination.previous' as any)}
+                >
+                  {t('records.pagination.previous' as any)}
+                </button>
+                <button
+                  onClick={() => setOffset(offset + limit)}
+                  disabled={offset + limit >= totalCount}
+                  className="pagination-button"
+                  aria-label={t('records.pagination.next' as any)}
+                >
+                  {t('records.pagination.next' as any)}
+                </button>
+              </div>
+            </>
           )}
         </div>
       </CardContent>

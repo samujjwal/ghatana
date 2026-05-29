@@ -7,6 +7,7 @@ import com.ghatana.datacloud.plugins.knowledgegraph.KnowledgeGraphPlugin;
 import com.ghatana.datacloud.plugins.lineage.LineagePlugin;
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.governance.PolicyEngine;
 import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.platform.security.port.JwtTokenProviders;
 import io.activej.promise.Promise;
@@ -50,6 +51,7 @@ class DataCloudHttpServerMcpToolsTest {
     private EntityStore entityStore;
     private LineagePlugin lineagePlugin;
     private KnowledgeGraphPlugin knowledgeGraphPlugin;
+    private PolicyEngine policyEngine;
     private DataCloudHttpServer server;
     private HttpClient httpClient;
     private int port;
@@ -60,6 +62,7 @@ class DataCloudHttpServerMcpToolsTest {
         entityStore = mock(EntityStore.class); 
         lineagePlugin = mock(LineagePlugin.class); 
         knowledgeGraphPlugin = mock(KnowledgeGraphPlugin.class); 
+        policyEngine = mock(PolicyEngine.class);
         httpClient = HttpClient.newHttpClient(); 
 
         when(client.entityStore()).thenReturn(entityStore); 
@@ -98,10 +101,12 @@ class DataCloudHttpServerMcpToolsTest {
         when(knowledgeGraphPlugin.queryEdges(any())).thenReturn(Promise.of(List.of())); 
         when(client.appendEvent(eq(TENANT_ID), any(DataCloudClient.Event.class))) 
             .thenReturn(Promise.of(DataCloudClient.Offset.of(42L))); 
+        when(policyEngine.evaluate(any(), any())).thenReturn(Promise.of(Boolean.TRUE));
 
         port = randomPort(); 
         server = new DataCloudHttpServer(client, port) 
             .withJwtProvider(jwtProvider()) 
+            .withPolicyEngine(policyEngine)
             .withLineagePlugin(lineagePlugin) 
             .withKnowledgeGraphPlugin(knowledgeGraphPlugin); 
         server.start(); 
@@ -154,7 +159,7 @@ class DataCloudHttpServerMcpToolsTest {
             }
             """;
 
-        HttpRequest request = authenticatedRequest("/mcp/v1/tools")
+        HttpRequest request = authenticatedRequest("/mcp/v1/tools", "operator")
             .header("Content-Type", "application/json") 
             .POST(HttpRequest.BodyPublishers.ofString(body)) 
             .build(); 
@@ -168,18 +173,48 @@ class DataCloudHttpServerMcpToolsTest {
         assertThat(json.path("result").path("content").get(0).path("text").asText()).contains("entityCount");
     }
 
+    @Test
+    void rejectsViewerJsonRpcToolCallRequests() throws IOException, InterruptedException {
+        String body = """
+            {
+              "jsonrpc": "2.0",
+              "id": "req-2",
+              "method": "tools/call",
+              "params": {
+                "name": "data_cloud_get_context",
+                "arguments": {
+                  "collection": "orders"
+                }
+              }
+            }
+            """;
+
+        HttpRequest request = authenticatedRequest("/mcp/v1/tools")
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(body))
+            .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode()).isEqualTo(403);
+    }
+
     private HttpRequest.Builder authenticatedRequest(String path) { 
+        return authenticatedRequest(path, "viewer");
+    }
+
+    private HttpRequest.Builder authenticatedRequest(String path, String role) {
         return HttpRequest.newBuilder() 
             .uri(URI.create("http://localhost:" + port + path + "?tenantId=" + TENANT_ID)) 
-            .header("Authorization", "Bearer " + createToken()); 
+            .header("Authorization", "Bearer " + createToken(role)); 
     }
 
     private JwtTokenProvider jwtProvider() { 
         return JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L); 
     }
 
-    private String createToken() { 
-        return jwtProvider().createToken("integration-user", List.of("viewer"), Map.of("tenant_id", TENANT_ID));
+    private String createToken(String role) { 
+        return jwtProvider().createToken("integration-user", List.of(role), Map.of("tenant_id", TENANT_ID));
     }
 
     private int randomPort() throws IOException { 

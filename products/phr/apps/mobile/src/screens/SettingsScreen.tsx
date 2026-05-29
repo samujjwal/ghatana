@@ -1,6 +1,6 @@
 import React from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { t } from '../i18n/phrMobileI18n';
+import { t, setLocale, getLocale } from '../i18n/phrMobileI18n';
 import { phiClearAll, phiIsBiometricPolicyEnabled } from '../services/phiEncryptedStorage';
 import { clearDashboardOffline, getDashboardOfflineTimestamp } from '../services/offlineStore';
 import type { MobileSession } from '../types';
@@ -16,6 +16,7 @@ export function SettingsScreen({ onSyncOffline, onLogout, syncMessage, session }
   const [cacheTimestamp, setCacheTimestamp] = React.useState<number | null>(null);
   const [cacheActionMessage, setCacheActionMessage] = React.useState<string>('');
   const [biometricPolicyState, setBiometricPolicyState] = React.useState<'checking' | 'enabled' | 'disabled' | 'unavailable'>('checking');
+  const [currentLocale, setCurrentLocale] = React.useState<string>('en');
   
   React.useEffect(() => {
     let active = true;
@@ -41,6 +42,7 @@ export function SettingsScreen({ onSyncOffline, onLogout, syncMessage, session }
           setBiometricPolicyState('unavailable');
         }
       });
+    setCurrentLocale(getLocale());
     return () => {
       active = false;
     };
@@ -77,6 +79,17 @@ export function SettingsScreen({ onSyncOffline, onLogout, syncMessage, session }
       });
   };
 
+  const handleLanguageChange = (newLocale: string): void => {
+    void setLocale(newLocale).then(() => {
+      setCurrentLocale(newLocale);
+    });
+  };
+
+  const availableLocales: { code: string; label: string }[] = [
+    { code: 'en', label: 'English' },
+    { code: 'ne', label: 'नेपाली' },
+  ];
+
   const isCacheStale = cacheTimestamp ? Date.now() - cacheTimestamp > 24 * 60 * 60 * 1000 : true;
   const biometricPolicyLabelByState: Record<typeof biometricPolicyState, string> = {
     checking: t('settings.biometricPolicyChecking'),
@@ -95,7 +108,30 @@ export function SettingsScreen({ onSyncOffline, onLogout, syncMessage, session }
         <Text style={styles.label}>{t('login.nationalIdLabel')}</Text>
         <Text style={styles.value}>{session.principalId}</Text>
         <Text style={styles.label}>{t('settings.languageLabel')}</Text>
-        <Text style={styles.value}>{session.role}</Text>
+        <View style={styles.localeContainer}>
+          {availableLocales.map((locale) => (
+            <Pressable
+              key={locale.code}
+              onPress={() => handleLanguageChange(locale.code)}
+              style={[
+                styles.localeButton,
+                currentLocale === locale.code ? styles.localeButtonActive : styles.localeButtonInactive,
+              ]}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: currentLocale === locale.code }}
+              accessibilityLabel={locale.label}
+            >
+              <Text
+                style={[
+                  styles.localeButtonText,
+                  currentLocale === locale.code ? styles.localeButtonTextActive : styles.localeButtonTextInactive,
+                ]}
+              >
+                {locale.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
 
       <Text style={styles.sectionTitle}>{t('settings.cacheStatus')}</Text>
@@ -145,6 +181,13 @@ const styles = StyleSheet.create({
   card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#d5dded', gap: 8 },
   label: { color: '#4b5c77', fontWeight: '600', fontSize: 14 },
   value: { color: '#0b1b35', fontSize: 16 },
+  localeContainer: { flexDirection: 'row', gap: 8, marginTop: 4 },
+  localeButton: { flex: 1, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#d5dded', alignItems: 'center' },
+  localeButtonActive: { backgroundColor: '#123c84', borderColor: '#123c84' },
+  localeButtonInactive: { backgroundColor: '#fff' },
+  localeButtonText: { fontSize: 14, fontWeight: '600' },
+  localeButtonTextActive: { color: '#fff' },
+  localeButtonTextInactive: { color: '#4b5c77' },
   fresh: { color: '#059669' },
   stale: { color: '#dc2626' },
   description: { color: '#4b5c77', fontSize: 13, marginTop: 4 },

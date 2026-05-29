@@ -455,3 +455,54 @@ export const PhrSessionSchema = z.object({
   name: z.string(),
   expiresAt: z.string(),
 });
+
+// --- List Response Schemas ---
+
+export const ListResponseSchema = <T extends z.ZodType>(itemSchema: T) =>
+  z.object({
+    items: z.array(itemSchema),
+    count: z.number(),
+  });
+
+export const ConditionsListSchema = ListResponseSchema(ConditionSummarySchema);
+export const ObservationsListSchema = ListResponseSchema(ObservationSummarySchema);
+export const ImmunizationsListSchema = ListResponseSchema(ImmunizationSummarySchema);
+export const DocumentsListSchema = ListResponseSchema(DocumentSummarySchema);
+export const MedicationsListSchema = ListResponseSchema(BackendMedicationPrescriptionSchema);
+export const AppointmentsListSchema = ListResponseSchema(AppointmentSummarySchema);
+export const ProvidersListSchema = ListResponseSchema(ProviderAvailabilitySchema);
+export const NotificationsListSchema = ListResponseSchema(NotificationSummarySchema);
+export const DependentsListSchema = ListResponseSchema(DependentEntrySchema);
+export const PatientRosterListSchema = ListResponseSchema(PatientRosterEntrySchema);
+export const FchvDashboardListSchema = ListResponseSchema(FchvPatientEntrySchema);
+
+// --- Action Response Schemas ---
+
+export const MarkNotificationReadSchema = z.object({
+  notificationId: z.string(),
+  read: z.boolean(),
+});
+
+export const NotificationActionSchema = z.object({
+  notificationId: z.string(),
+  action: z.string(),
+  result: z.unknown(),
+});
+
+export const NotificationPreferencesSchema = z.object({
+  emailEnabled: z.boolean(),
+  smsEnabled: z.boolean(),
+  inAppEnabled: z.boolean(),
+});
+
+export const NotificationPreferencesUpdateSchema = z.object({
+  principalId: z.string(),
+  preferences: NotificationPreferencesSchema,
+  updated: z.boolean(),
+});
+
+export const EmergencyReviewRequestSchema = z.object({
+  eventId: z.string(),
+  reviewNote: z.string(),
+  reviewerId: z.string(),
+});

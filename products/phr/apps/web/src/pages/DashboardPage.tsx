@@ -27,9 +27,9 @@ export function DashboardPage(): React.ReactElement {
       .finally(() => setLoading(false));
   }, [session]);
 
-  if (loading) return <div className="loading">{t('dashboard.loading')}</div>;
-  if (error) return <div className="error">{t('dashboard.errorPrefix')}: {error}</div>;
-  if (!data) return <div className="error">{t('dashboard.empty')}</div>;
+  if (loading) return <div className="loading" role="status" aria-live="polite">{t('dashboard.loading')}</div>;
+  if (error) return <div className="error" role="alert">{t('dashboard.errorPrefix')}: {error}</div>;
+  if (!data) return <div className="empty" role="status">{t('dashboard.empty')}</div>;
 
   const { patient, consents, appointments, labs, medications } = data;
 

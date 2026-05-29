@@ -134,7 +134,7 @@ export function ConsentPage(): React.ReactElement {
     }
   };
 
-  if (loading) return <div className="loading">{t('consents.loading')}</div>;
+  if (loading) return <div className="loading" role="status" aria-live="polite">{t('consents.loading')}</div>;
   if (loadError) return <div role="alert" className="error">{t('dashboard.errorPrefix')}: {loadError}</div>;
 
   return (

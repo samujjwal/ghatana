@@ -218,6 +218,6 @@ class DataCloudSecurityFailClosedTest extends EventloopTestBase {
             filter.apply(req -> Promise.of(HttpResponse.ok200().build())).serve(request));
 
         // Should not be blocked by fail-closed (route exists in registry)
-        assertThat(response).isNotNull();
+        assertThat(response.getCode()).isEqualTo(200);
     }
 }

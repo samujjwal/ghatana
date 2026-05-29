@@ -11,22 +11,6 @@ sourceSets {
             exclude("**/*.generated.java")
         }
     }
-    named("test") {
-        java {
-            // Exclude test files that reference quarantined or non-existent platform classes
-            exclude("**/ai/AIGovernanceBehavioralProofTest.java")
-            exclude("**/ai/AIGovernanceManager.java")
-            exclude("**/atomic/AtomicWorkflowFailureInjectionTest.java")
-            exclude("**/atomic/AtomicWorkflowOrchestrator.java")
-            exclude("**/atomic/AtomicWorkflowState.java")
-            exclude("**/resilience/DependencyResilienceManager.java")
-            exclude("**/resilience/RuntimeDependencyFailureInjectionTest.java")
-            exclude("**/routefamily/RouteFamilyAtomicWorkflowTest.java")
-            exclude("**/routefamily/RouteFamilyTestHarness.java")
-            exclude("**/http/handlers/DependencyFailureInjectionTest.java")
-            exclude("**/http/handlers/AtomicWorkflowFailureInjectionTest.java")
-        }
-    }
 }
 
 val runLauncher by tasks.registering(JavaExec::class) {

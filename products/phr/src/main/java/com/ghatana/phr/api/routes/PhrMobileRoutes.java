@@ -45,6 +45,37 @@ public final class PhrMobileRoutes {
         this.notificationSender = Objects.requireNonNull(notificationSender, "notificationSender must not be null");
     }
 
+    private static String formatNotificationTitle(String notificationType) {
+        if (notificationType == null || notificationType.isBlank()) {
+            return "Notification";
+        }
+        return switch (notificationType) {
+            case "CONSENT_GRANTED" -> "Consent Granted";
+            case "CONSENT_REVOKED" -> "Consent Revoked";
+            case "CONSENT_EXPIRING" -> "Consent Expiring Soon";
+            case "APPOINTMENT_CONFIRMED" -> "Appointment Confirmed";
+            case "APPOINTMENT_REMINDER" -> "Appointment Reminder";
+            case "APPOINTMENT_CANCELLED" -> "Appointment Cancelled";
+            case "LAB_RESULT_AVAILABLE" -> "Lab Result Available";
+            case "DOCUMENT_READY" -> "Document Ready";
+            case "EMERGENCY_ACCESS_REVIEW" -> "Emergency Access Review Required";
+            case "PRESCRIPTION_READY" -> "Prescription Ready";
+            default -> notificationType.replace('_', ' ')
+                .substring(0, 1).toUpperCase()
+                + notificationType.replace('_', ' ').substring(1).toLowerCase();
+        };
+    }
+
+    private static String formatNotificationDetail(String referenceType, String referenceId) {
+        if (referenceType == null || referenceType.isBlank()) {
+            return referenceId != null ? "Reference: " + referenceId : "No additional details";
+        }
+        if (referenceId == null || referenceId.isBlank()) {
+            return referenceType;
+        }
+        return referenceType + ": " + referenceId;
+    }
+
     /**
      * Returns the routing servlet for mobile dashboard endpoints.
      *
@@ -98,8 +129,9 @@ public final class PhrMobileRoutes {
                                 "id", doc.getId(),
                                 "title", doc.getTitle(),
                                 "summary", doc.getDescription() != null ? doc.getDescription() : "",
-                                "documentType", doc.getDocumentType(),
-                                "createdAt", doc.getCreatedAt().toString()
+                                "fhirPreview", doc.getDocumentType() != null
+                                    ? doc.getDocumentType() + "/" + doc.getId()
+                                    : "Document/" + doc.getId()
                             ))
                             .limit(10)
                             .toList();
@@ -122,14 +154,16 @@ public final class PhrMobileRoutes {
                                 return notificationSender.getPendingNotifications(context.principalId(), 10)
                                     .then(notifications -> {
                                         List<Map<String, Object>> notificationList = notifications.stream()
-                                            .map(entry -> Map.<String, Object>of(
-                                                "id", entry.id(),
-                                                "type", entry.notificationType(),
-                                                "referenceId", entry.referenceId(),
-                                                "referenceType", entry.referenceType(),
-                                                "status", entry.status().name(),
-                                                "createdAt", entry.createdAt() != null ? entry.createdAt().toString() : ""
-                                            ))
+                                            .map(entry -> {
+                                                String title = formatNotificationTitle(entry.notificationType());
+                                                String detail = formatNotificationDetail(
+                                                    entry.referenceType(), entry.referenceId());
+                                                return Map.<String, Object>of(
+                                                    "id", entry.id(),
+                                                    "title", title,
+                                                    "detail", detail
+                                                );
+                                            })
                                             .toList();
                                         
                                         return PhrRouteSupport.jsonResponse(200, Map.of(

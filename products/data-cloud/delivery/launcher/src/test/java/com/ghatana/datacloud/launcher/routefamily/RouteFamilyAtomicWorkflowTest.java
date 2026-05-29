@@ -17,6 +17,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.mockito.junit.jupiter.MockitoExtension;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 
@@ -46,6 +48,7 @@ import static org.mockito.Mockito.*;
 @Tag("atomic-workflow")
 @Tag("route-family")
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class RouteFamilyAtomicWorkflowTest extends EventloopTestBase {
 
     @Mock

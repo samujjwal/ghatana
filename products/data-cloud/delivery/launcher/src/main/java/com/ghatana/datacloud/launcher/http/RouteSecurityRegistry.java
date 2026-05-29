@@ -68,7 +68,7 @@ public final class RouteSecurityRegistry {
         route(map, "DELETE", "/api/v1/action/pipelines/{pipelineId}", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "action_plane", "active", "DELETE /api/v1/action/pipelines/{pipelineId}");
         route(map, "GET", "/api/v1/action/pipelines/{pipelineId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "action_plane", "active", "GET /api/v1/action/pipelines/{pipelineId}");
         route(map, "PUT", "/api/v1/action/pipelines/{pipelineId}", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, true, "action_plane", "active", "PUT /api/v1/action/pipelines/{pipelineId}");
-        route(map, "POST", "/api/v1/action/pipelines/{pipelineId}/execute", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "action_plane", "active", "POST /api/v1/action/pipelines/{pipelineId}/execute");
+        route(map, "POST", "/api/v1/action/pipelines/{pipelineId}/execute", EndpointSensitivity.SENSITIVE, true, true, true, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "action_plane", "active", "POST /api/v1/action/pipelines/{pipelineId}/execute");
         route(map, "GET", "/api/v1/action/pipelines/{pipelineId}/executions", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "action_plane", "active", "GET /api/v1/action/pipelines/{pipelineId}/executions");
         route(map, "GET", "/api/v1/action/pipelines/{pipelineId}/executions/{executionId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "action_plane", "active", "GET /api/v1/action/pipelines/{pipelineId}/executions/{executionId}");
         route(map, "POST", "/api/v1/action/pipelines/{pipelineId}/executions/{executionId}/cancel", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "action_plane", "active", "POST /api/v1/action/pipelines/{pipelineId}/executions/{executionId}/cancel");
@@ -152,7 +152,7 @@ public final class RouteSecurityRegistry {
         route(map, "GET", "/api/v1/collections", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/collections");
         route(map, "POST", "/api/v1/collections/{collection}/metadata", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/collections/{collection}/metadata");
         route(map, "GET", "/api/v1/collections/{id}/cost-report", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/collections/{id}/cost-report");
-        route(map, "POST", "/api/v1/collections/{id}/migrate", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/collections/{id}/migrate");
+        route(map, "POST", "/api/v1/collections/{id}/migrate", EndpointSensitivity.SENSITIVE, true, true, true, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/collections/{id}/migrate");
         route(map, "POST", "/api/v1/compliance/evidence-package", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/compliance/evidence-package");
         route(map, "GET", "/api/v1/compliance/legal-holds", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.AUDITOR, true, "data_cloud", "active", "GET /api/v1/compliance/legal-holds");
         route(map, "POST", "/api/v1/compliance/legal-holds", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/compliance/legal-holds");
@@ -200,7 +200,7 @@ public final class RouteSecurityRegistry {
         route(map, "DELETE", "/api/v1/entities/{collection}/batch", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "DELETE /api/v1/entities/{collection}/batch");
         route(map, "POST", "/api/v1/entities/{collection}/batch", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/entities/{collection}/batch");
         route(map, "GET", "/api/v1/entities/{collection}/export", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/entities/{collection}/export");
-        route(map, "POST", "/api/v1/entities/{collection}/export", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/entities/{collection}/export");
+        route(map, "POST", "/api/v1/entities/{collection}/export", EndpointSensitivity.SENSITIVE, true, true, true, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/entities/{collection}/export");
         route(map, "POST", "/api/v1/entities/{collection}/infer-schema", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/entities/{collection}/infer-schema");
         route(map, "GET", "/api/v1/entities/{collection}/query/stream", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/entities/{collection}/query/stream");
         route(map, "GET", "/api/v1/entities/{collection}/search", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/entities/{collection}/search");
@@ -256,12 +256,12 @@ public final class RouteSecurityRegistry {
         route(map, "POST", "/api/v1/pipelines/draft", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/pipelines/draft");
         route(map, "GET", "/api/v1/plugins", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "compatibility-only", "GET /api/v1/plugins");
         route(map, "GET", "/api/v1/plugins/{id}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "compatibility-only", "GET /api/v1/plugins/{id}");
-        route(map, "POST", "/api/v1/plugins/{id}/conformance", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/plugins/{id}/conformance");
-        route(map, "POST", "/api/v1/plugins/{id}/disable", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/plugins/{id}/disable");
-        route(map, "POST", "/api/v1/plugins/{id}/enable", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/plugins/{id}/enable");
+        route(map, "POST", "/api/v1/plugins/{id}/conformance", EndpointSensitivity.SENSITIVE, true, true, true, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/plugins/{id}/conformance");
+        route(map, "POST", "/api/v1/plugins/{id}/disable", EndpointSensitivity.SENSITIVE, true, true, true, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/plugins/{id}/disable");
+        route(map, "POST", "/api/v1/plugins/{id}/enable", EndpointSensitivity.SENSITIVE, true, true, true, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/plugins/{id}/enable");
         route(map, "GET", "/api/v1/plugins/{id}/sandbox", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "compatibility-only", "GET /api/v1/plugins/{id}/sandbox");
-        route(map, "POST", "/api/v1/plugins/{id}/upgrade", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/plugins/{id}/upgrade");
-        route(map, "POST", "/api/v1/plugins/{id}/validate", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/plugins/{id}/validate");
+        route(map, "POST", "/api/v1/plugins/{id}/upgrade", EndpointSensitivity.SENSITIVE, true, true, true, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/plugins/{id}/upgrade");
+        route(map, "POST", "/api/v1/plugins/{id}/validate", EndpointSensitivity.SENSITIVE, true, true, true, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/plugins/{id}/validate");
         route(map, "GET", "/api/v1/plugins/marketplace", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "compatibility-only", "GET /api/v1/plugins/marketplace");
         route(map, "GET", "/api/v1/queries/estimate", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/queries/estimate");
         route(map, "POST", "/api/v1/queries/explain", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/queries/explain");
@@ -335,7 +335,7 @@ public final class RouteSecurityRegistry {
         route(map, "GET", "/info", EndpointSensitivity.PUBLIC, false, false, false, false, DataCloudSecurityFilter.AccessLevel.NONE, true, "none", "active", "GET /info");
         route(map, "GET", "/live", EndpointSensitivity.PUBLIC, false, false, false, false, DataCloudSecurityFilter.AccessLevel.NONE, true, "none", "active", "GET /live");
         route(map, "GET", "/mcp/v1/tools", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "mcp", "active", "GET /mcp/v1/tools");
-        route(map, "POST", "/mcp/v1/tools", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, false, "mcp", "active", "POST /mcp/v1/tools");
+        route(map, "POST", "/mcp/v1/tools", EndpointSensitivity.SENSITIVE, true, true, true, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "mcp", "active", "POST /mcp/v1/tools");
         route(map, "GET", "/metrics", EndpointSensitivity.PUBLIC, false, false, false, false, DataCloudSecurityFilter.AccessLevel.NONE, true, "none", "active", "GET /metrics");
         route(map, "GET", "/ready", EndpointSensitivity.PUBLIC, false, false, false, false, DataCloudSecurityFilter.AccessLevel.NONE, true, "none", "active", "GET /ready");
         METADATA_BY_ROUTE = Collections.unmodifiableMap(map);
@@ -397,12 +397,35 @@ public final class RouteSecurityRegistry {
 
     public static Optional<RouteSecurityMetadata> lookupRuntimePath(String method, String path) {
         String requestKey = method.toUpperCase() + " " + stripQuery(path);
+        RouteSecurityMetadata bestMatch = null;
+        int bestParameterCount = Integer.MAX_VALUE;
+        int bestPathLength = -1;
+
         for (Map.Entry<String, Pattern> entry : MATCHERS_BY_ROUTE.entrySet()) {
             if (entry.getValue().matcher(requestKey).matches()) {
-                return Optional.of(METADATA_BY_ROUTE.get(entry.getKey()));
+                RouteSecurityMetadata candidate = METADATA_BY_ROUTE.get(entry.getKey());
+                int parameterCount = countPathParameters(candidate.canonicalPath());
+                int pathLength = candidate.canonicalPath().length();
+
+                if (parameterCount < bestParameterCount
+                        || (parameterCount == bestParameterCount && pathLength > bestPathLength)) {
+                    bestMatch = candidate;
+                    bestParameterCount = parameterCount;
+                    bestPathLength = pathLength;
+                }
             }
         }
-        return Optional.empty();
+        return Optional.ofNullable(bestMatch);
+    }
+
+    private static int countPathParameters(String canonicalPath) {
+        int count = 0;
+        for (int i = 0; i < canonicalPath.length(); i++) {
+            if (canonicalPath.charAt(i) == '{') {
+                count++;
+            }
+        }
+        return count;
     }
 
     public static RouteSecurityMetadata requireForRequest(String method, String path, String profile) {

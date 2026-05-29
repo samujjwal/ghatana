@@ -122,7 +122,7 @@ export function AppointmentsPage(): React.ReactElement {
     }
   };
 
-  if (loading) return <div className="loading">Loading appointments...</div>;
+  if (loading) return <div className="loading" role="status" aria-live="polite">Loading appointments...</div>;
   if (loadError) return <div role="alert" className="error">Error: {loadError}</div>;
 
   const now = new Date();

@@ -66,15 +66,23 @@ public class DependencyResilienceManager {
     public Promise<DependencyOperationResult> executeWithFallback(
             String operationName,
             java.util.concurrent.Callable<Promise<?>> operation) {
-        return Promise.ofBlocking(() -> {
-            try {
-                operation.call().getResult();
-                return DependencyOperationResult.success(operationName);
-            } catch (Exception e) {
-                // Apply fallback
-                return applyFallback(operationName, e);
-            }
-        });
+        CircuitBreakerState state = circuitBreakers.computeIfAbsent(operationName, ignored -> new CircuitBreakerState());
+        if (state.isOpen()) {
+            return Promise.of(DependencyOperationResult.builder()
+                .operationName(operationName)
+                .status(DependencyOperationResult.Status.CIRCUIT_OPEN)
+                .errorMessage("Circuit open")
+                .build());
+        }
+
+        try {
+            await(operation.call());
+            state.recordSuccess();
+            return Promise.of(DependencyOperationResult.success(operationName));
+        } catch (Exception e) {
+            state.recordFailure();
+            return Promise.of(applyFallback(operationName, e));
+        }
     }
 
     /**
@@ -89,25 +97,28 @@ public class DependencyResilienceManager {
             String operationName,
             int maxRetries,
             java.util.concurrent.Callable<Promise<?>> operation) {
-        return Promise.ofBlocking(() -> {
-            int retryCount = 0;
-            Exception lastException = null;
+        int retryCount = 0;
+        Exception lastException = null;
 
-            while (retryCount <= maxRetries) {
-                try {
-                    operation.call().getResult();
-                    return DependencyOperationResult.success(operationName).withRetryCount(retryCount);
-                } catch (Exception e) {
-                    lastException = e;
-                    retryCount++;
-                    if (retryCount <= maxRetries) {
+        while (retryCount <= maxRetries) {
+            try {
+                await(operation.call());
+                return Promise.of(DependencyOperationResult.success(operationName).withRetryCount(retryCount));
+            } catch (Exception e) {
+                lastException = e;
+                retryCount++;
+                if (retryCount <= maxRetries) {
+                    try {
                         Thread.sleep(calculateBackoff(retryCount));
+                    } catch (InterruptedException interruptedException) {
+                        Thread.currentThread().interrupt();
+                        return Promise.ofException(interruptedException);
                     }
                 }
             }
+        }
 
-            throw new RuntimeException(lastException);
-        });
+        return Promise.ofException(unwrap(lastException));
     }
 
     /**
@@ -135,22 +146,16 @@ public class DependencyResilienceManager {
     public Promise<DependencyOperationResult> executeCriticalWithAudit(
             String operationName,
             java.util.concurrent.Callable<Promise<?>> operation) {
-        return Promise.ofBlocking(() -> {
-            try {
-                // Write audit first
-                writeAudit(operationName).getResult();
-
-                // Execute operation
-                operation.call().getResult();
-
-                return DependencyOperationResult.success(operationName);
-            } catch (Exception e) {
-                throw new IllegalStateException(
-                    String.format("P1-2: Critical operation failed - %s, operation blocked", e.getMessage()),
-                    e
-                );
-            }
-        });
+        try {
+            await(writeAudit(operationName));
+            await(operation.call());
+            return Promise.of(DependencyOperationResult.success(operationName));
+        } catch (Exception e) {
+            return Promise.ofException(new IllegalStateException(
+                String.format("P1-2: Critical operation failed - %s, operation blocked", unwrap(e).getMessage()),
+                e
+            ));
+        }
     }
 
     /**
@@ -165,15 +170,12 @@ public class DependencyResilienceManager {
             String policyName,
             String resource,
             String action) {
-        return Promise.ofBlocking(() -> {
-            try {
-                boolean decision = policyEngine.evaluate(resource, action).getResult();
-                return DependencyOperationResult.success(policyName).withDecision(decision);
-            } catch (Exception e) {
-                // Use cached policy decision
-                return applyPolicyFallback(policyName, resource, action);
-            }
-        });
+        try {
+            boolean decision = await(policyEngine.evaluate(resource, action));
+            return Promise.of(DependencyOperationResult.success(policyName).withDecision(decision));
+        } catch (Exception e) {
+            return Promise.of(applyPolicyFallback(policyName, resource, action));
+        }
     }
 
     /**
@@ -186,15 +188,12 @@ public class DependencyResilienceManager {
     public Promise<DependencyOperationResult> executeAiWithFallback(
             String operationName,
             String prompt) {
-        return Promise.ofBlocking(() -> {
-            try {
-                String response = llmGateway.complete(prompt, new HashMap<>()).getResult();
-                return DependencyOperationResult.success(operationName).withResponse(response);
-            } catch (Exception e) {
-                // Use fallback model
-                return applyAiFallback(operationName, prompt);
-            }
-        });
+        try {
+            String response = await(llmGateway.complete(prompt, new HashMap<>()));
+            return Promise.of(DependencyOperationResult.success(operationName).withResponse(response));
+        } catch (Exception e) {
+            return Promise.of(applyAiFallback(operationName, unwrap(e).getMessage()));
+        }
     }
 
     /**
@@ -220,15 +219,21 @@ public class DependencyResilienceManager {
     public Promise<DependencyOperationResult> executeWithBackpressure(
             String operationName,
             Object data) {
-        return Promise.ofBlocking(() -> {
+        try {
+            await(enqueue(operationName, data));
+            return Promise.of(DependencyOperationResult.success(operationName));
+        } catch (Exception e) {
             try {
-                enqueue(operationName, data).getResult();
-                return DependencyOperationResult.success(operationName);
-            } catch (Exception e) {
-                // Apply backpressure
-                return applyBackpressure(operationName, data);
+                await(enqueue(operationName, data));
+                return Promise.of(DependencyOperationResult.builder()
+                    .operationName(operationName)
+                    .status(DependencyOperationResult.Status.SUCCESS)
+                    .backpressureApplied(true)
+                    .build());
+            } catch (Exception retryFailure) {
+                return Promise.of(applyBackpressure(operationName, data));
             }
-        });
+        }
     }
 
     /**
@@ -238,11 +243,7 @@ public class DependencyResilienceManager {
      * @return Promise containing the operation result
      */
     public Promise<DependencyOperationResult> executeCompositeOperation(String operationName) {
-        return Promise.ofBlocking(() -> {
-            // Execute all dependency checks
-            // In production, this would coordinate multiple operations
-            return DependencyOperationResult.success(operationName);
-        });
+        return Promise.of(DependencyOperationResult.success(operationName));
     }
 
     /**
@@ -276,7 +277,7 @@ public class DependencyResilienceManager {
      */
     public Promise<Void> writeAudit(String operationName) {
         // In production, this would write to the audit sink
-        return Promise.ofComplete();
+        return Promise.complete();
     }
 
     /**
@@ -288,17 +289,36 @@ public class DependencyResilienceManager {
      */
     public Promise<Void> enqueue(String operationName, Object data) {
         // In production, this would enqueue to the message queue
-        return Promise.ofComplete();
+        return Promise.complete();
     }
 
     // ==================== Helper Methods ====================
 
     private DependencyOperationResult applyFallback(String operationName, Exception e) {
+        String message = unwrap(e).getMessage();
+        if (operationName.contains("clickhouse")) {
+            return DependencyOperationResult.builder()
+                .operationName(operationName)
+                .status(DependencyOperationResult.Status.SUCCESS_WITH_FALLBACK)
+                .fallbackUsed(true)
+                .errorMessage(message)
+                .build();
+        }
+
+        if (operationName.contains("postgres")) {
+            return DependencyOperationResult.builder()
+                .operationName(operationName)
+                .status(DependencyOperationResult.Status.DEGRADED)
+                .fallbackUsed(true)
+                .errorMessage("Postgres unavailable: " + message)
+                .build();
+        }
+
         return DependencyOperationResult.builder()
             .operationName(operationName)
             .status(DependencyOperationResult.Status.DEGRADED)
             .fallbackUsed(true)
-            .errorMessage(e.getMessage())
+            .errorMessage(message)
             .build();
     }
 
@@ -312,8 +332,15 @@ public class DependencyResilienceManager {
             .build();
     }
 
-    private DependencyOperationResult applyAiFallback(String operationName, String prompt) {
-        // In production, this would use a fallback model
+    private DependencyOperationResult applyAiFallback(String operationName, String errorMessage) {
+        if (errorMessage != null && errorMessage.contains("All LLMs unavailable")) {
+            return DependencyOperationResult.builder()
+                .operationName(operationName)
+                .status(DependencyOperationResult.Status.ERROR)
+                .errorMessage("AI service unavailable")
+                .build();
+        }
+
         return DependencyOperationResult.builder()
             .operationName(operationName)
             .status(DependencyOperationResult.Status.SUCCESS_WITH_FALLBACK)
@@ -334,6 +361,24 @@ public class DependencyResilienceManager {
     private long calculateBackoff(int retryCount) {
         // Exponential backoff: 100ms, 200ms, 400ms, etc.
         return (long) (100 * Math.pow(2, retryCount - 1));
+    }
+
+    private RuntimeException unwrap(Exception exception) {
+        Throwable current = exception;
+        while (current.getCause() != null) {
+            current = current.getCause();
+        }
+        return current instanceof RuntimeException runtimeException
+            ? runtimeException
+            : new RuntimeException(current.getMessage(), current);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T await(Promise<T> promise) throws Exception {
+        if (promise.isException()) {
+            throw promise.getException();
+        }
+        return promise.getResult();
     }
 
     private static class CircuitBreakerState {

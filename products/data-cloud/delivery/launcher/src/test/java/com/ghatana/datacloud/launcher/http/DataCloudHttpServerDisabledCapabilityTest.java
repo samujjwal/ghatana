@@ -1,5 +1,6 @@
 package com.ghatana.datacloud.launcher.http;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.platform.observability.MetricsCollector;
 import org.junit.jupiter.api.AfterEach;
@@ -15,6 +16,9 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -43,6 +47,7 @@ class DataCloudHttpServerDisabledCapabilityTest {
     private DataCloudHttpServer server;
     private int port;
     private HttpClient httpClient;
+    private final ObjectMapper mapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() throws Exception {
@@ -110,8 +115,8 @@ class DataCloudHttpServerDisabledCapabilityTest {
     class WorkflowExecutionDisabledTests {
 
         @Test
-        @DisplayName("POST /api/v1/pipelines/:id/execute returns 501 when workflow execution capability is absent")
-        void executePipeline_withoutWorkflowPlugin_returns501() throws Exception {
+        @DisplayName("POST /api/v1/pipelines/:id/execute returns 404 when workflow execution capability route is absent")
+        void executePipeline_withoutWorkflowPlugin_returns404() throws Exception {
             server = new DataCloudHttpServer(mockClient, port)
                     .withMetricsCollector(mockMetrics);
             server.start();
@@ -119,9 +124,7 @@ class DataCloudHttpServerDisabledCapabilityTest {
 
             HttpResponse<String> response = post("/api/v1/pipelines/my-pipeline/execute");
 
-            // Response structure changed - skip assertion for now
-            assertThat(response).isNotNull();
-            // assertThat(response.statusCode()).isEqualTo(501);
+            assertThat(response.statusCode()).isEqualTo(404);
         }
     }
 
@@ -272,8 +275,12 @@ class DataCloudHttpServerDisabledCapabilityTest {
             HttpResponse<String> response = get("/api/v1/surfaces");
 
             assertThat(response.statusCode()).isEqualTo(200);
-            // Response structure changed - skip assertion for now
-            // assertThat(response.body()).contains("\"alerts\"");
+            Map<String, Map<String, Object>> surfacesById = surfacesById(response.body());
+            assertThat(surfacesById)
+                .as("governance capability surfaces are required for alerting workflows")
+                .containsKeys("governance.audit", "governance.policyEngine");
+            assertThat(String.valueOf(surfacesById.get("governance.audit").get("state"))).isIn("DISABLED", "DEGRADED", "LIVE");
+            assertThat(String.valueOf(surfacesById.get("governance.policyEngine").get("state"))).isIn("DISABLED", "DEGRADED", "LIVE");
         }
     }
 
@@ -291,9 +298,31 @@ class DataCloudHttpServerDisabledCapabilityTest {
             HttpResponse<String> response = get("/api/v1/surfaces");
 
             assertThat(response.statusCode()).isEqualTo(200);
-            // Response structure changed - skip assertions for now
-            // assertThat(response.body()).contains("\"dataFabric\"");
-            // assertThat(response.body()).contains("\"unavailable\"");
+            Map<String, Map<String, Object>> surfacesById = surfacesById(response.body());
+            assertThat(surfacesById)
+                .as("data plane capability should include entity store surface")
+                .containsKey("data.entityStore");
+            assertThat(String.valueOf(surfacesById.get("data.entityStore").get("state")))
+                .as("data entity store is expected to be non-live in default local profile")
+                .isIn("DEGRADED", "DISABLED");
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> surfaces(String responseBody) throws IOException {
+        Map<String, Object> body = mapper.readValue(responseBody, Map.class);
+        Map<String, Object> data = (Map<String, Object>) body.get("data");
+        return (List<Map<String, Object>>) data.get("surfaces");
+    }
+
+    private Map<String, Map<String, Object>> surfacesById(String responseBody) throws IOException {
+        Map<String, Map<String, Object>> index = new LinkedHashMap<>();
+        for (Map<String, Object> surface : surfaces(responseBody)) {
+            Object surfaceId = surface.get("surfaceId");
+            if (surfaceId instanceof String id) {
+                index.put(id, surface);
+            }
+        }
+        return index;
     }
 }

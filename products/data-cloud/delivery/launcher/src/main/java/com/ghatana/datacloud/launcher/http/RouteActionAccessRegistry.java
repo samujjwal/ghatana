@@ -184,7 +184,7 @@ final class RouteActionAccessRegistry {
         Map.entry("GET /api/v1/release-readiness/:productId/:productVersion/:releaseTarget", DataCloudSecurityFilter.AccessLevel.ADMIN),
         Map.entry("GET /api/v1/settings/security", DataCloudSecurityFilter.AccessLevel.ADMIN),
         Map.entry("GET /api/v1/sovereign/audit", DataCloudSecurityFilter.AccessLevel.OPERATOR),
-        Map.entry("GET /api/v1/sovereign/backup", DataCloudSecurityFilter.AccessLevel.OPERATOR),
+        Map.entry("GET /api/v1/sovereign/backup", DataCloudSecurityFilter.AccessLevel.AUDITOR),
         Map.entry("GET /api/v1/sovereign/conformance", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("GET /api/v1/sovereign/data-residency", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("GET /api/v1/sovereign/data-subject-controls", DataCloudSecurityFilter.AccessLevel.OPERATOR),
@@ -291,7 +291,7 @@ final class RouteActionAccessRegistry {
         Map.entry("POST /api/v1/compliance/legal-holds/:id/release", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("POST /api/v1/connectors", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("POST /api/v1/connectors/:connectionId/disable", DataCloudSecurityFilter.AccessLevel.ADMIN),
-        Map.entry("POST /api/v1/connectors/:connectionId/enable", DataCloudSecurityFilter.AccessLevel.ADMIN),
+        Map.entry("POST /api/v1/connectors/:connectionId/enable", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("POST /api/v1/connectors/:connectionId/rotate-credentials", DataCloudSecurityFilter.AccessLevel.ADMIN),
         Map.entry("POST /api/v1/connectors/:connectionId/sync", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("POST /api/v1/connectors/:connectionId/test", DataCloudSecurityFilter.AccessLevel.ADMIN),
@@ -372,7 +372,7 @@ final class RouteActionAccessRegistry {
         Map.entry("POST /api/v1/workflows/validate", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("POST /data-fabric/connectors", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("POST /data-fabric/connectors/:connectionId/disable", DataCloudSecurityFilter.AccessLevel.ADMIN),
-        Map.entry("POST /data-fabric/connectors/:connectionId/enable", DataCloudSecurityFilter.AccessLevel.ADMIN),
+        Map.entry("POST /data-fabric/connectors/:connectionId/enable", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("POST /data-fabric/connectors/:connectionId/sync", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("POST /data-fabric/connectors/:connectionId/test", DataCloudSecurityFilter.AccessLevel.ADMIN),
         Map.entry("POST /governance/degradation", DataCloudSecurityFilter.AccessLevel.OPERATOR),
@@ -407,8 +407,20 @@ final class RouteActionAccessRegistry {
     }
 
     static DataCloudSecurityFilter.AccessLevel requiredAccess(String method, String path) {
+        DataCloudSecurityFilter.AccessLevel metadataAccessLevel = RouteSecurityRegistry.lookupRuntimePath(method, path)
+                .map(RouteSecurityMetadata::requiredAccess)
+                .orElse(null);
+        if (metadataAccessLevel != null) {
+            return metadataAccessLevel;
+        }
+
         String normalized = normalizePath(path);
-        return ACCESS_BY_ACTION.get(method.toUpperCase() + " " + normalized);
+        String key = method.toUpperCase() + " " + normalized;
+        DataCloudSecurityFilter.AccessLevel accessLevel = ACCESS_BY_ACTION.get(key);
+        if (accessLevel != null) {
+            return accessLevel;
+        }
+        return null;
     }
 
     private static String normalizePath(String path) {

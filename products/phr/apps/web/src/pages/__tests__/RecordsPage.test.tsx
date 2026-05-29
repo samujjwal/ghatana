@@ -100,6 +100,8 @@ describe('RecordsPage', () => {
         dateFrom: undefined,
         dateTo: undefined,
         resourceType: undefined,
+        limit: 50,
+        offset: 0,
       },
     ));
   });

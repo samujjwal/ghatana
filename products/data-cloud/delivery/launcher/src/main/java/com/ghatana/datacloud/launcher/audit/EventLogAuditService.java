@@ -151,10 +151,11 @@ public final class EventLogAuditService implements AuditService, AuditSummaryPro
                 }
             } catch (Exception error) {
                 if (failClosedForCritical) {
+                    String detail = error.getMessage() != null ? ": " + error.getMessage() : "";
                     throw new IllegalStateException(
                         "DC-P1-09: Failed to record critical audit event for operation " + 
                         event.getEventType() + " on " + event.getResourceType() + 
-                        " - operation blocked due to audit sink failure", error);
+                        " - operation blocked due to audit sink failure" + detail, error);
                 }
                 throw error;
             }

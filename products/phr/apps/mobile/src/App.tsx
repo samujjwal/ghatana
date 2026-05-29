@@ -178,8 +178,13 @@ export default function App(): React.ReactElement {
         if (!currentSession) {
           // Session was cleared (expired or revoked)
           await handleLogout();
-        } else if (currentSession.role !== session.role || currentSession.principalId !== session.principalId) {
-          // Role or principal changed - clear offline cache and update session
+        } else if (
+          currentSession.role !== session.role ||
+          currentSession.principalId !== session.principalId ||
+          currentSession.persona !== session.persona ||
+          currentSession.tier !== session.tier
+        ) {
+          // Role, principal, persona, or tier changed - clear offline cache and update session
           await clearDashboardOffline();
           setSession(currentSession);
           setDashboard(null);

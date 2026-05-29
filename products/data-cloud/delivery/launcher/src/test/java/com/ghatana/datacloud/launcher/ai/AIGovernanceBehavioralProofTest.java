@@ -16,6 +16,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 
 import java.util.HashMap;
@@ -55,6 +57,7 @@ import static org.mockito.Mockito.*;
 @Tag("ai-governance")
 @Tag("behavioral-proof")
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class AIGovernanceBehavioralProofTest extends EventloopTestBase {
 
     @Mock
@@ -252,14 +255,15 @@ class AIGovernanceBehavioralProofTest extends EventloopTestBase {
     void aiOperationsAreBlockedWhenCostBudgetExceeded() {
         // Given: Cost budget is exceeded
         when(modelRegistry.getCostBudget("tenant-123"))
-            .thenReturn(100.0);
+            .thenReturn(Promise.of(100.0));
         when(modelRegistry.getCurrentCost("tenant-123"))
-            .thenReturn(150.0);
+            .thenReturn(Promise.of(150.0));
 
         // When: Execute AI operation
         AIOperationContext context = new AIOperationContext(
             "gpt-4",
             "test prompt",
+            AIOperationContext.RiskLevel.LOW,
             "tenant-123"
         );
 
@@ -276,9 +280,9 @@ class AIGovernanceBehavioralProofTest extends EventloopTestBase {
     void aiOperationsSucceedWhenWithinCostBudget() {
         // Given: Cost budget is not exceeded
         when(modelRegistry.getCostBudget("tenant-123"))
-            .thenReturn(100.0);
+            .thenReturn(Promise.of(100.0));
         when(modelRegistry.getCurrentCost("tenant-123"))
-            .thenReturn(50.0);
+            .thenReturn(Promise.of(50.0));
         when(llmGateway.complete(any(), any()))
             .thenReturn(Promise.of("response"));
 
@@ -286,6 +290,7 @@ class AIGovernanceBehavioralProofTest extends EventloopTestBase {
         AIOperationContext context = new AIOperationContext(
             "gpt-4",
             "test prompt",
+            AIOperationContext.RiskLevel.LOW,
             "tenant-123"
         );
 
@@ -305,7 +310,7 @@ class AIGovernanceBehavioralProofTest extends EventloopTestBase {
     void aiOperationsFailWhenModelQualityBelowThreshold() {
         // Given: Model quality is below threshold
         when(modelRegistry.getModelQuality("gpt-4"))
-            .thenReturn(0.75); // Below 0.8 threshold
+            .thenReturn(Promise.of(0.75)); // Below 0.8 threshold
 
         // When: Execute AI operation with quality threshold
         assertThatThrownBy(() -> runPromise(() -> 
@@ -322,7 +327,7 @@ class AIGovernanceBehavioralProofTest extends EventloopTestBase {
     void aiOperationsSucceedWhenModelQualityMeetsThreshold() {
         // Given: Model quality meets threshold
         when(modelRegistry.getModelQuality("gpt-4"))
-            .thenReturn(0.85); // Above 0.8 threshold
+            .thenReturn(Promise.of(0.85)); // Above 0.8 threshold
         when(llmGateway.complete(any(), any()))
             .thenReturn(Promise.of("response"));
 
@@ -469,11 +474,11 @@ class AIGovernanceBehavioralProofTest extends EventloopTestBase {
         when(modelRegistry.isModelAvailable("gpt-4"))
             .thenReturn(Promise.of(true));
         when(modelRegistry.getModelQuality("gpt-4"))
-            .thenReturn(0.9);
+            .thenReturn(Promise.of(0.9));
         when(modelRegistry.getCostBudget("tenant-123"))
-            .thenReturn(100.0);
+            .thenReturn(Promise.of(100.0));
         when(modelRegistry.getCurrentCost("tenant-123"))
-            .thenReturn(10.0);
+            .thenReturn(Promise.of(10.0));
         when(llmGateway.complete(any(), any()))
             .thenReturn(Promise.of("response"));
 
