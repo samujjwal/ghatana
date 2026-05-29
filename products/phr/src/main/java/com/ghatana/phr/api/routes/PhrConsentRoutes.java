@@ -145,7 +145,7 @@ public final class PhrConsentRoutes {
         String requestedAction = action.toUpperCase();
         PhrPolicyEvaluator.PolicyDecision decision = policyEvaluator.canCheckConsent(context, patientId, accessorId);
         if (!decision.isAllowed()) {
-            return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+            return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
         }
         return consentService.validateAccess(patientId, accessorId, resourceType, requestedAction)
             .then(result -> {
@@ -180,10 +180,12 @@ public final class PhrConsentRoutes {
     }
 
     private static ConsentManagementService.ConsentGrant parseGrant(String json, String idempotencyKey) {
-        // B-018: Use DTO validation instead of manual JSON parsing
-        CreateConsentGrantRequest request = PhrRouteSupport.parseAndValidateJson(
-            json, CreateConsentGrantRequest.class, "CreateConsentGrantRequest"
-        );
+        CreateConsentGrantRequest request;
+        try {
+            request = PhrRouteSupport.JSON.readValue(json, CreateConsentGrantRequest.class);
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Invalid CreateConsentGrantRequest payload", ex);
+        }
         
         // Convert DTO to service model
         CreateConsentGrantRequest.ConsentScopeDto scopeDto = request.getScope();

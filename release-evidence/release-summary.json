@@ -1,8 +1,9 @@
 {
-  "generatedAt": "2026-05-26T04:19:39.508Z",
-  "sourceCommit": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+  "generatedAt": "2026-05-29T23:18:10.697Z",
+  "sourceCommit": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3",
   "sourceBranch": "main",
   "productScope": [
+    "digital-marketing",
     "phr"
   ],
   "releaseEnvironment": "staging",
@@ -21,12 +22,12 @@
     "runtimeProfile": {
       "available": true,
       "pass": true,
-      "checkCount": 14
+      "checkCount": 9
     },
     "atomicWorkflow": {
       "available": true,
       "pass": true,
-      "criticalMutatingRouteCount": 53
+      "criticalMutatingRouteCount": 55
     },
     "implementationPlanCoverage": {
       "available": true,
@@ -71,12 +72,12 @@
       "productCostBudgetsPass": true,
       "productDomainInvariantsPass": true,
       "openApiBreakingChangesPass": true,
-      "affectedProductCount": 1
+      "affectedProductCount": 2
     },
     "perProductReleaseReadiness": {
       "available": true,
       "pass": true,
-      "productCount": 1,
+      "productCount": 2,
       "failedProductCount": 0,
       "releaseTargetScore": 4,
       "dimensionValidation": {

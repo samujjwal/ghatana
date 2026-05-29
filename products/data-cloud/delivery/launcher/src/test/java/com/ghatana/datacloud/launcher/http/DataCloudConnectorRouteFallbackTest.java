@@ -34,6 +34,8 @@ import static org.mockito.Mockito.mock;
 @DisplayName("DataCloudRouterBuilder connector fallback routes")
 class DataCloudConnectorRouteFallbackTest extends EventloopTestBase {
 
+        private static final String DEPLOYMENT_PROFILE = "test";
+
     private static final HttpHandlerSupport HTTP_SUPPORT = new HttpHandlerSupport(
             new ObjectMapper(),
             "*",
@@ -49,7 +51,7 @@ class DataCloudConnectorRouteFallbackTest extends EventloopTestBase {
     @DisplayName("GET /api/v1/connectors returns 503 when connector handler is unavailable")
     void connectorsListReturns503WhenHandlerUnavailable() {
         RoutingServlet router = new DataCloudRouterBuilder(Eventloop.create())
-                .withConnectorRoutes(null, HTTP_SUPPORT)
+                                .withConnectorRoutes(null, HTTP_SUPPORT, DEPLOYMENT_PROFILE)
                 .build();
 
         HttpResponse response = runPromise(() -> router.serve(
@@ -66,7 +68,7 @@ class DataCloudConnectorRouteFallbackTest extends EventloopTestBase {
     @DisplayName("GET /data-fabric/metrics returns 503 when connector handler is unavailable")
     void dataFabricMetricsReturns503WhenHandlerUnavailable() {
         RoutingServlet router = new DataCloudRouterBuilder(Eventloop.create())
-                .withConnectorRoutes(null, HTTP_SUPPORT)
+                                .withConnectorRoutes(null, HTTP_SUPPORT, DEPLOYMENT_PROFILE)
                 .build();
 
         HttpResponse response = runPromise(() -> router.serve(
@@ -86,7 +88,7 @@ class DataCloudConnectorRouteFallbackTest extends EventloopTestBase {
                 DataSourceRegistryHandler handler = mock(DataSourceRegistryHandler.class);
 
                 RoutingServlet router = new DataCloudRouterBuilder(Eventloop.create())
-                                .withConnectorRoutes(handler, HTTP_SUPPORT)
+                                .withConnectorRoutes(handler, HTTP_SUPPORT, DEPLOYMENT_PROFILE)
                                 .build();
 
                 HttpResponse response = runPromise(() -> router.serve(

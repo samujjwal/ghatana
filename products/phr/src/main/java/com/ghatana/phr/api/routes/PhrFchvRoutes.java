@@ -202,7 +202,7 @@ public final class PhrFchvRoutes {
             context.facilityId()
         ).then(decision -> {
             if (!decision.isAllowed()) {
-                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
             }
 
             return Promise.of(
@@ -235,7 +235,7 @@ public final class PhrFchvRoutes {
             context.facilityId()
         ).then(decision -> {
             if (!decision.isAllowed()) {
-                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
             }
 
             return Promise.of(

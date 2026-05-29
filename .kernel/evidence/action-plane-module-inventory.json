@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-05-29T01:11:23.062Z",
+  "generatedAt": "2026-05-29T23:18:18.796Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/check-action-plane-module-inventory.mjs",
     "source": "scripts/check-action-plane-module-inventory.mjs",
     "command": "pnpm check:action-plane-module-inventory",
-    "commit": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8"
+    "commit": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3"
   },
   "source": {
     "inventory": "products/data-cloud/docs/architecture/ACTION_PLANE_MODULE_INVENTORY.md",
@@ -21,10 +21,10 @@
     {
       "module": ":products:data-cloud:planes:action",
       "gradleIncluded": "yes",
-      "ownershipClassification": "Temporary compatibility module",
-      "implementationState": "temporary",
+      "ownershipClassification": "Data-Cloud-owned persistence/metadata/governance module",
+      "implementationState": "active",
       "releaseBlocking": "yes",
-      "migrationDestination": "Split root aggregator after AEP module migration"
+      "migrationDestination": "Remains as Data-Cloud Action Plane root aggregator"
     },
     {
       "module": ":products:data-cloud:planes:action:operator-contracts",
@@ -32,7 +32,7 @@
       "ownershipClassification": "AEP-owned semantic module temporarily co-located",
       "implementationState": "active",
       "releaseBlocking": "yes",
-      "migrationDestination": "`products/aep/operator-contracts`"
+      "migrationDestination": "Remains co-located for Data Cloud-AEP integration"
     },
     {
       "module": ":products:data-cloud:planes:action:central-runtime",
@@ -40,7 +40,7 @@
       "ownershipClassification": "AEP-owned semantic module temporarily co-located",
       "implementationState": "active",
       "releaseBlocking": "yes",
-      "migrationDestination": "`products/aep/central-runtime`"
+      "migrationDestination": "Remains co-located for Data Cloud-AEP integration"
     },
     {
       "module": ":products:data-cloud:planes:action:engine",
@@ -48,7 +48,7 @@
       "ownershipClassification": "AEP-owned semantic module temporarily co-located",
       "implementationState": "active",
       "releaseBlocking": "yes",
-      "migrationDestination": "`products/aep/engine`"
+      "migrationDestination": "Remains co-located for Data Cloud-AEP integration"
     },
     {
       "module": ":products:data-cloud:planes:action:registry",
@@ -88,7 +88,7 @@
       "ownershipClassification": "AEP-owned semantic module temporarily co-located",
       "implementationState": "active",
       "releaseBlocking": "yes",
-      "migrationDestination": "`products/aep/agent-runtime`"
+      "migrationDestination": "Remains co-located for Data Cloud-AEP integration"
     },
     {
       "module": ":products:data-cloud:planes:action:api",
@@ -120,15 +120,15 @@
       "ownershipClassification": "AEP-owned semantic module temporarily co-located",
       "implementationState": "active",
       "releaseBlocking": "yes",
-      "migrationDestination": "`products/aep/orchestrator`"
+      "migrationDestination": "Remains co-located for Data Cloud-AEP integration"
     },
     {
       "module": ":products:data-cloud:planes:action:server",
       "gradleIncluded": "yes",
-      "ownershipClassification": "Temporary compatibility module",
-      "implementationState": "temporary",
+      "ownershipClassification": "Data-Cloud-owned persistence/metadata/governance module",
+      "implementationState": "active",
       "releaseBlocking": "yes",
-      "migrationDestination": "Remove after routes move to delivery/API or AEP"
+      "migrationDestination": "Remains in Data-Cloud delivery surface"
     },
     {
       "module": ":products:data-cloud:planes:action:identity",
@@ -149,24 +149,24 @@
     {
       "module": ":products:data-cloud:planes:action:kernel-bridge",
       "gradleIncluded": "yes",
-      "ownershipClassification": "Migration-only module",
+      "ownershipClassification": "Temporary compatibility module",
       "implementationState": "temporary",
       "releaseBlocking": "yes",
-      "migrationDestination": "`products/data-cloud/extensions/kernel-bridge`"
+      "migrationDestination": "`products/data-cloud/extensions/kernel-bridge` (completed)"
     },
     {
       "module": ":products:data-cloud:planes:action:gateway",
       "gradleIncluded": "no",
       "ownershipClassification": "Migration-only module",
-      "implementationState": "planned",
+      "implementationState": "temporary",
       "releaseBlocking": "no",
-      "migrationDestination": "Not generated; route work belongs in delivery/API"
+      "migrationDestination": "Route work moved to delivery/API"
     },
     {
       "module": ":products:data-cloud:planes:action:k8s:multi-region",
       "gradleIncluded": "no",
       "ownershipClassification": "Migration-only module",
-      "implementationState": "planned",
+      "implementationState": "temporary",
       "releaseBlocking": "no",
       "migrationDestination": "Deployment assets under `products/data-cloud/deploy`"
     },
@@ -174,9 +174,9 @@
       "module": ":products:data-cloud:planes:action:agent-catalog",
       "gradleIncluded": "no",
       "ownershipClassification": "Migration-only module",
-      "implementationState": "planned",
+      "implementationState": "temporary",
       "releaseBlocking": "no",
-      "migrationDestination": "`products/data-cloud/extensions/agent-catalog`"
+      "migrationDestination": "`products/data-cloud/extensions/agent-catalog` (completed)"
     }
   ],
   "violations": []

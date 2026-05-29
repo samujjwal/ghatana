@@ -119,6 +119,31 @@
           "testId": {
             "type": "string",
             "description": "Test ID for route verification"
+          },
+          "surface": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["web", "mobile", "backend", "hidden"]
+            },
+            "description": "Platforms where this route is available"
+          },
+          "i18nKey": {
+            "type": "string",
+            "description": "i18n key for label and description"
+          },
+          "descriptionI18nKey": {
+            "type": "string",
+            "description": "i18n key for description only"
+          },
+          "routeType": {
+            "type": "string",
+            "enum": ["page", "detail", "action", "system"],
+            "description": "Route type classification"
+          },
+          "visibilityReason": {
+            "type": "string",
+            "description": "Reason for hidden/blocked visibility"
           }
         },
         "additionalProperties": false,

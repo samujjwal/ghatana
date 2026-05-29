@@ -93,7 +93,7 @@ async function fhirGet(resourceType: string, id: string | undefined, context: Se
 // --- Public ---
 
 export async function fetchDashboardData(context: SessionContext): Promise<DashboardData> {
-  const dashboard = BackendDashboardSchema.parse(await phrFetch('/dashboard', { context }));
+  const dashboard = await phrFetch('/api/v1/dashboard', { context, expectedSchema: BackendDashboardSchema });
   return dashboardSchema.parse({
     patient: {
       id: dashboard.principalId,
@@ -120,7 +120,7 @@ export async function fetchDashboardData(context: SessionContext): Promise<Dashb
 export async function exportPatientBundle(context: SessionContext): Promise<string> {
   return phrFetch('/fhir/Patient/current/$export', {
     method: 'POST',
-    context,
+    context: withIdempotency(context),
     contentType: 'application/json',
     expectedSchema: ExportPatientBundleSchema,
   });
@@ -132,22 +132,18 @@ export async function fetchReleaseReadiness(options: {
   tenantId: string;
   principalId: string;
 }): Promise<PhrReleaseReadiness> {
-  const url = new URL(`${API_BASE_URL}/release-readiness`);
+  const url = new URL(`${API_BASE_URL}/api/v1/release-readiness`);
   url.searchParams.set('environment', options.environment);
-  const response = await fetch(url.toString(), {
-    headers: buildPhrHeaders({
+  return phrFetch(`${url.pathname}${url.search}`, {
+    context: {
       tenantId: options.tenantId,
       principalId: options.principalId,
       role: options.role,
       persona: options.role,
       tier: 'clinical',
-    }),
+    },
+    expectedSchema: PhrReleaseReadinessSchema,
   });
-  if (!response.ok) {
-    throw new PhrApiError(`PHR release readiness failed with status ${response.status}`, response.status);
-  }
-  const data = await response.json();
-  return PhrReleaseReadinessSchema.parse(data);
 }
 
 export async function fetchAuditEvents(options: {
@@ -164,7 +160,7 @@ export async function fetchAuditEvents(options: {
     principalId: options.principalId,
     role: options.role,
   };
-  const url = new URL(`${API_BASE_URL}/audit/events`);
+  const url = new URL(`${API_BASE_URL}/api/v1/audit/events`);
   if (options.patientId) url.searchParams.set('patientId', options.patientId);
   if (options.filter && options.filter !== 'all') url.searchParams.set('filter', options.filter);
   url.searchParams.set('page', String(options.page ?? 0));
@@ -196,7 +192,7 @@ export async function createConsentGrant(
     FhirConsentSchema.transform(fhirConsentToGrant),
     ConsentGrantSchema,
   ]);
-  return phrFetch('/consents/grants', {
+  return phrFetch('/api/v1/consents/grants', {
     method: 'POST',
     body: JSON.stringify(validated),
     context: withIdempotency(context),
@@ -212,13 +208,14 @@ export async function revokeConsentGrant(
   if (!grantId || !patientId) {
     throw new PhrApiError('grantId and patientId are required to revoke consent', 400, 'Consent');
   }
-  const url = new URL(`${API_BASE_URL}/consents/grants/${encodeURIComponent(grantId)}/revoke`);
+  const url = new URL(`${API_BASE_URL}/api/v1/consents/grants/${encodeURIComponent(grantId)}/revoke`);
   url.searchParams.set('patientId', patientId);
   const data = await phrFetch(`${url.pathname}${url.search}`, {
     method: 'POST',
     context: withIdempotency(context),
+    expectedSchema: ConsentRevokeResultSchema,
   });
-  return ConsentRevokeResultSchema.parse(data);
+  return data;
 }
 
 export async function createAppointmentRequest(
@@ -226,12 +223,13 @@ export async function createAppointmentRequest(
   context: MutationSessionContext,
 ): Promise<AppointmentCreateResult> {
   const validated = AppointmentRequestSchema.parse(request);
-  const data = await phrFetch('/appointments', {
+  const data = await phrFetch('/api/v1/appointments', {
     method: 'POST',
     body: JSON.stringify(validated),
     context: withIdempotency(context),
+    expectedSchema: AppointmentCreateResultSchema,
   });
-  return AppointmentCreateResultSchema.parse(data);
+  return data;
 }
 
 export async function requestEmergencyAccess(
@@ -239,40 +237,43 @@ export async function requestEmergencyAccess(
   context: MutationSessionContext,
 ): Promise<EmergencyAccessEvent> {
   const validated = EmergencyAccessRequestSchema.parse(request);
-  const data = await phrFetch('/emergency/access', {
+  const data = await phrFetch('/api/v1/emergency/access', {
     method: 'POST',
     body: JSON.stringify(validated),
     context: withIdempotency(context),
+    expectedSchema: EmergencyAccessEventSchema,
   });
-  return EmergencyAccessEventSchema.parse(data);
+  return data;
 }
 
 export async function reviewEmergencyAccess(
   review: EmergencyReviewRequest,
   context: MutationSessionContext,
 ): Promise<EmergencyAccessEvent> {
-  const data = await phrFetch(`/emergency/reviews/${encodeURIComponent(review.eventId)}`, {
+  const data = await phrFetch(`/api/v1/emergency/reviews/${encodeURIComponent(review.eventId)}`, {
     method: 'POST',
     body: JSON.stringify({ reviewNote: review.reviewNote, reviewerId: review.reviewerId }),
     context: withIdempotency(context),
+    expectedSchema: EmergencyAccessEventSchema,
   });
-  return EmergencyAccessEventSchema.parse(data);
+  return data;
 }
 
 export async function loginWithCredentials(request: PhrLoginRequest): Promise<PhrSession> {
   if (!request.nationalId.trim() || !request.password) {
     throw new PhrApiError('National ID and password are required', 400);
   }
-  const data = await phrFetch('/auth/login', {
+  const data = await phrFetch('/api/v1/auth/login', {
     method: 'POST',
     body: JSON.stringify({ nationalId: request.nationalId, password: request.password }),
+    context: { idempotencyKey: crypto.randomUUID() },
     expectedSchema: PhrSessionSchema,
   });
   return data;
 }
 
 export async function logoutSession(context: SessionContext): Promise<void> {
-  await phrFetch('/auth/logout', {
+  await phrFetch('/api/v1/auth/logout', {
     method: 'POST',
     context,
   });
@@ -281,20 +282,21 @@ export async function logoutSession(context: SessionContext): Promise<void> {
 // --- Patient ---
 
 export async function fetchPatientProfile(context: SessionContext): Promise<PatientProfileExtended> {
-  const data = await phrFetch('/profile', { context });
-  return PatientProfileExtendedSchema.parse(data);
+  const data = await phrFetch('/api/v1/profile', { context, expectedSchema: PatientProfileExtendedSchema });
+  return data;
 }
 
 export async function updatePatientProfile(
   update: PatientProfileUpdateRequest,
   context: MutationSessionContext,
 ): Promise<PatientProfileExtended> {
-  const data = await phrFetch('/profile', {
+  const data = await phrFetch('/api/v1/profile', {
     method: 'PUT',
     body: JSON.stringify(update),
     context: withIdempotency(context),
+    expectedSchema: PatientProfileExtendedSchema,
   });
-  return PatientProfileExtendedSchema.parse(data);
+  return data;
 }
 
 // --- Timeline ---
@@ -307,10 +309,10 @@ export async function fetchTimeline(
   },
 ): Promise<TimelineEvent[]> {
   const path = filters?.category
-    ? `/timeline/${encodeURIComponent(principalId)}/category/${encodeURIComponent(filters.category)}`
-    : `/timeline/${encodeURIComponent(principalId)}`;
+    ? `/api/v1/records/timeline/${encodeURIComponent(principalId)}/category/${encodeURIComponent(filters.category)}`
+    : `/api/v1/records/timeline/${encodeURIComponent(principalId)}`;
 
-  const body = TimelinePageSchema.parse(await phrFetch(path, { context }));
+  const body = await phrFetch(path, { context, expectedSchema: TimelinePageSchema });
 
   return body.items.map(item => {
     const type = toTimelineEventType(item.eventType);
@@ -343,59 +345,48 @@ function toTimelineEventType(eventType: string): TimelineEvent['type'] {
 // --- Conditions ---
 
 export async function fetchConditions(principalId: string, context: SessionContext): Promise<ConditionSummary[]> {
-  const body = z.object({ items: z.array(ConditionSummarySchema), count: z.number() })
-    .parse(await phrFetch(`/conditions/${encodeURIComponent(principalId)}`, { context, expectedSchema: z.object({ items: z.array(ConditionSummarySchema), count: z.number() }) }));
+  const body = await phrFetch(`/api/v1/clinical/conditions?patientId=${encodeURIComponent(principalId)}`, { context, expectedSchema: z.object({ items: z.array(ConditionSummarySchema), count: z.number() }) });
   return body.items;
 }
 
 export async function fetchConditionDetail(conditionId: string, principalId: string, context: SessionContext): Promise<ConditionSummary> {
-  return ConditionSummarySchema.parse(
-    await phrFetch(`/conditions/${encodeURIComponent(conditionId)}?patientId=${encodeURIComponent(principalId)}`, { context }),
-  );
+  return await phrFetch(`/api/v1/clinical/conditions/${encodeURIComponent(conditionId)}?patientId=${encodeURIComponent(principalId)}`, { context, expectedSchema: ConditionSummarySchema });
 }
 
 // --- Observations ---
 
 export async function fetchObservations(principalId: string, context: SessionContext): Promise<ObservationSummary[]> {
-  const body = z.object({ items: z.array(ObservationSummarySchema) })
-    .parse(await phrFetch(`/api/v1/clinical/observations?patientId=${encodeURIComponent(principalId)}`, { context }));
+  const body = await phrFetch(`/api/v1/clinical/observations?patientId=${encodeURIComponent(principalId)}`, { context, expectedSchema: z.object({ items: z.array(ObservationSummarySchema) }) });
   return body.items;
 }
 
 export async function fetchObservationDetail(observationId: string, principalId: string, context: SessionContext): Promise<ObservationSummary> {
-  return ObservationSummarySchema.parse(
-    await phrFetch(`/api/v1/clinical/observations/${encodeURIComponent(observationId)}?patientId=${encodeURIComponent(principalId)}`, { context }),
-  );
+  return await phrFetch(`/api/v1/clinical/observations/${encodeURIComponent(observationId)}?patientId=${encodeURIComponent(principalId)}`, { context, expectedSchema: ObservationSummarySchema });
 }
 
 // --- Labs ---
 
 export async function fetchLabs(principalId: string, context: SessionContext): Promise<ObservationSummary[]> {
-  const body = z.object({ items: z.array(ObservationSummarySchema) })
-    .parse(await phrFetch(`/api/v1/clinical/labs?patientId=${encodeURIComponent(principalId)}`, { context }));
+  const body = await phrFetch(`/api/v1/clinical/labs?patientId=${encodeURIComponent(principalId)}`, { context, expectedSchema: z.object({ items: z.array(ObservationSummarySchema) }) });
   return body.items;
 }
 
 // --- Immunizations ---
 
 export async function fetchImmunizations(principalId: string, context: SessionContext): Promise<ImmunizationSummary[]> {
-  const body = z.object({ items: z.array(ImmunizationSummarySchema) })
-    .parse(await phrFetch(`/api/v1/clinical/immunizations?patientId=${encodeURIComponent(principalId)}`, { context }));
+  const body = await phrFetch(`/api/v1/clinical/immunizations?patientId=${encodeURIComponent(principalId)}`, { context, expectedSchema: z.object({ items: z.array(ImmunizationSummarySchema) }) });
   return body.items;
 }
 
 // --- Documents ---
 
 export async function fetchDocuments(principalId: string, context: SessionContext): Promise<DocumentSummary[]> {
-  const body = z.object({ items: z.array(DocumentSummarySchema) })
-    .parse(await phrFetch(`/documents?patientId=${encodeURIComponent(principalId)}`, { context }));
+  const body = await phrFetch(`/api/v1/records/documents?patientId=${encodeURIComponent(principalId)}`, { context, expectedSchema: z.object({ items: z.array(DocumentSummarySchema) }) });
   return body.items;
 }
 
 export async function fetchDocumentDetail(documentId: string, principalId: string, context: SessionContext): Promise<DocumentDetail> {
-  return DocumentDetailSchema.parse(
-    await phrFetch(`/documents/${encodeURIComponent(documentId)}?patientId=${encodeURIComponent(principalId)}`, { context }),
-  );
+  return await phrFetch(`/api/v1/records/documents/${encodeURIComponent(documentId)}?patientId=${encodeURIComponent(principalId)}`, { context, expectedSchema: DocumentDetailSchema });
 }
 
 export async function downloadDocument(
@@ -403,10 +394,11 @@ export async function downloadDocument(
   patientId: string,
   context: SessionContext,
 ): Promise<{ downloadUrl: string; expiresAt: string }> {
-  return DownloadDocumentResponseSchema.parse(await phrFetch(`/documents/${encodeURIComponent(documentId)}/download?patientId=${encodeURIComponent(patientId)}`, {
+  return await phrFetch(`/api/v1/records/documents/${encodeURIComponent(documentId)}/download?patientId=${encodeURIComponent(patientId)}`, {
     method: 'POST',
-    context,
-  }));
+    context: withIdempotency(context),
+    expectedSchema: DownloadDocumentResponseSchema,
+  });
 }
 
 export async function uploadDocument(
@@ -427,14 +419,15 @@ export async function uploadDocument(
     return uploadDocumentWithProgress(patientId, formData, uploadContext, options);
   }
 
-  const data = await phrFetch(`/documents?patientId=${encodeURIComponent(patientId)}`, {
+  const data = await phrFetch(`/api/v1/records/documents?patientId=${encodeURIComponent(patientId)}`, {
     method: 'POST',
     body: formData,
     context: uploadContext,
+    expectedSchema: DocumentUploadInitResultSchema,
     contentType: '',
     signal: options.signal,
   });
-  return DocumentUploadInitResultSchema.parse(data);
+  return data;
 }
 
 function uploadDocumentWithProgress(
@@ -445,7 +438,7 @@ function uploadDocumentWithProgress(
 ): Promise<{ id: string; status: string; ocrStatus: string }> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    const path = `/documents?patientId=${encodeURIComponent(patientId)}`;
+    const path = `/api/v1/records/documents?patientId=${encodeURIComponent(patientId)}`;
     xhr.open('POST', `${API_BASE_URL}${path}`);
 
     const headers = buildPhrHeaders(context);
@@ -501,8 +494,7 @@ function uploadDocumentWithProgress(
 // --- Medications ---
 
 export async function fetchMedications(principalId: string, context: SessionContext): Promise<MedicationSummary[]> {
-  const body = z.object({ items: z.array(BackendMedicationPrescriptionSchema) })
-    .parse(await phrFetch(`/api/v1/clinical/medications?patientId=${encodeURIComponent(principalId)}`, { context }));
+  const body = await phrFetch(`/api/v1/clinical/medications?patientId=${encodeURIComponent(principalId)}`, { context, expectedSchema: z.object({ items: z.array(BackendMedicationPrescriptionSchema) }) });
   return body.items.map(toMedicationSummary);
 }
 
@@ -511,9 +503,7 @@ export async function fetchMedicationDetail(
   medicationId: string,
   context: SessionContext,
 ): Promise<MedicationSummary & { interactions: string[]; warnings: string[]; history: Array<{ date: string; action: string }> }> {
-  const prescription = BackendMedicationPrescriptionSchema.parse(
-    await phrFetch(`/api/v1/clinical/medications/prescriptions/${encodeURIComponent(medicationId)}?patientId=${encodeURIComponent(patientId)}`, { context }),
-  );
+  const prescription = await phrFetch(`/api/v1/clinical/medications/prescriptions/${encodeURIComponent(medicationId)}?patientId=${encodeURIComponent(patientId)}`, { context, expectedSchema: BackendMedicationPrescriptionSchema });
   const medication = toMedicationSummary(prescription);
 
   return MedicationDetailSchema.parse({
@@ -538,16 +528,11 @@ function toMedicationSummary(prescription: z.infer<typeof BackendMedicationPresc
 // --- Appointments ---
 
 export async function fetchAppointments(principalId: string, context: SessionContext): Promise<AppointmentSummary[]> {
-  const body = z.object({ items: z.array(AppointmentSummarySchema) })
-    .parse(await phrFetch(`/appointments?patientId=${encodeURIComponent(principalId)}`, { context }));
+  const body = await phrFetch(`/api/v1/appointments?patientId=${encodeURIComponent(principalId)}`, { context, expectedSchema: z.object({ items: z.array(AppointmentSummarySchema) }) });
   return body.items;
 }
 
-export async function fetchProviders(context: SessionContext): Promise<Array<{ id: string; name: string; specialty: string; availableSlots: string[] }>> {
-  const body = z.object({ items: z.array(ProviderAvailabilitySchema) })
-    .parse(await phrFetch('/providers', { context }));
-  return body.items;
-}
+// fetchProviders removed - /api/v1/providers not in route contract
 
 export async function bookAppointment(
   patientId: string,
@@ -556,12 +541,13 @@ export async function bookAppointment(
   notes: string | undefined,
   context: MutationSessionContext,
 ): Promise<{ id: string; status: string }> {
-  const data = await phrFetch('/appointments', {
+  const data = await phrFetch('/api/v1/appointments', {
     method: 'POST',
     body: JSON.stringify({ patientId, providerId, slot, notes }),
     context: withIdempotency(context),
+    expectedSchema: AppointmentBookingResultSchema,
   });
-  return AppointmentBookingResultSchema.parse(data);
+  return data;
 }
 
 export async function cancelAppointment(
@@ -569,12 +555,13 @@ export async function cancelAppointment(
   patientId: string,
   context: MutationSessionContext,
 ): Promise<{ success: boolean }> {
-  const data = await phrFetch(`/appointments/${encodeURIComponent(appointmentId)}/cancel`, {
+  const data = await phrFetch(`/api/v1/appointments/${encodeURIComponent(appointmentId)}/cancel`, {
     method: 'POST',
     body: JSON.stringify({ patientId }),
     context: withIdempotency(context),
+    expectedSchema: AppointmentCancelResultSchema,
   });
-  return AppointmentCancelResultSchema.parse(data);
+  return data;
 }
 
 export async function rescheduleAppointment(
@@ -583,12 +570,13 @@ export async function rescheduleAppointment(
   newSlot: string,
   context: MutationSessionContext,
 ): Promise<{ id: string; status: string }> {
-  const data = await phrFetch(`/appointments/${encodeURIComponent(appointmentId)}/reschedule`, {
+  const data = await phrFetch(`/api/v1/appointments/${encodeURIComponent(appointmentId)}/reschedule`, {
     method: 'POST',
     body: JSON.stringify({ patientId, newSlot }),
     context: withIdempotency(context),
+    expectedSchema: AppointmentBookingResultSchema,
   });
-  return AppointmentBookingResultSchema.parse(data);
+  return data;
 }
 
 // --- Records ---
@@ -626,9 +614,7 @@ export async function fetchRecordDetail(
   recordId: string,
   context: SessionContext,
 ): Promise<{ record: PatientRecordSummary; fhirJson: string; accessAudit: { accessedAt: string; accessedBy: string } }> {
-  const response = PatientRecordAccessSchema.parse(
-    await phrFetch(`/patient-records/${encodeURIComponent(patientId)}/records/${encodeURIComponent(recordId)}`, { context }),
-  );
+  const response = await phrFetch(`/api/v1/records/${encodeURIComponent(recordId)}?patientId=${encodeURIComponent(patientId)}`, { context, expectedSchema: PatientRecordAccessSchema });
 
   // Fetch the actual FHIR resource
   const fhirData = await fhirGet(response.resourceType, recordId, context);
@@ -654,8 +640,8 @@ export async function fetchOcrDocument(
   docId: string,
   context: SessionContext,
 ): Promise<OcrReviewDocument> {
-  const data = await phrFetch(`/documents/${encodeURIComponent(docId)}/ocr`, { context });
-  return OcrReviewDocumentSchema.parse(data);
+  const data = await phrFetch(`/api/v1/records/documents/${encodeURIComponent(docId)}/ocr`, { context, expectedSchema: OcrReviewDocumentSchema });
+  return data;
 }
 
 export async function confirmOcrDocument(
@@ -663,30 +649,31 @@ export async function confirmOcrDocument(
   context: MutationSessionContext,
   correctedText?: string,
 ): Promise<OcrReviewDocument> {
-  const data = await phrFetch(`/documents/${encodeURIComponent(docId)}/ocr/confirm`, {
+  const data = await phrFetch(`/api/v1/records/documents/${encodeURIComponent(docId)}/ocr/confirm`, {
     method: 'POST',
     body: correctedText ? JSON.stringify({ correctedText }) : undefined,
     context: withIdempotency(context),
+    expectedSchema: OcrReviewDocumentSchema,
   });
-  return OcrReviewDocumentSchema.parse(data);
+  return data;
 }
 
 export async function rejectOcrDocument(
   docId: string,
   context: MutationSessionContext,
 ): Promise<{ documentId: string; rejected: boolean }> {
-  const data = await phrFetch(`/documents/${encodeURIComponent(docId)}/ocr/reject`, {
+  const data = await phrFetch(`/api/v1/records/documents/${encodeURIComponent(docId)}/ocr/reject`, {
     method: 'POST',
     context: withIdempotency(context),
+    expectedSchema: OcrRejectResultSchema,
   });
-  return OcrRejectResultSchema.parse(data);
+  return data;
 }
 
 // --- Notifications ---
 
 export async function fetchNotifications(principalId: string, context: SessionContext): Promise<NotificationSummary[]> {
-  const body = z.object({ items: z.array(NotificationSummarySchema) })
-    .parse(await phrFetch(`/notifications?principalId=${encodeURIComponent(principalId)}`, { context }));
+  const body = await phrFetch(`/api/v1/notifications?principalId=${encodeURIComponent(principalId)}`, { context, expectedSchema: z.object({ items: z.array(NotificationSummarySchema) }) });
   return body.items;
 }
 
@@ -697,7 +684,7 @@ export async function markNotificationRead(
   if (!notificationId.trim()) {
     throw new PhrApiError('notificationId is required to mark a notification as read', 400, 'Notification');
   }
-  return phrFetch(`/notifications/${encodeURIComponent(notificationId)}/read`, {
+  return phrFetch(`/api/v1/notifications/${encodeURIComponent(notificationId)}/read`, {
     method: 'POST',
     context: withIdempotency(context),
     expectedSchema: z.object({
@@ -707,29 +694,5 @@ export async function markNotificationRead(
   });
 }
 
-// --- Provider ---
-
-export async function fetchProviderPatients(
-  context: SessionContext,
-): Promise<PatientRosterEntry[]> {
-  const body = z.object({ items: z.array(PatientRosterEntrySchema) })
-    .parse(await phrFetch('/provider/patients', { context }));
-  return body.items;
-}
-
-// --- Caregiver ---
-
-export async function fetchCaregiverDependents(context: SessionContext): Promise<DependentEntry[]> {
-  const body = z.object({ items: z.array(DependentEntrySchema) })
-    .parse(await phrFetch('/caregiver/dependents', { context }));
-  return body.items;
-}
-
-// --- FCHV ---
-
-export async function fetchFchvDashboard(context: SessionContext): Promise<FchvPatientEntry[]> {
-  const body = z.object({ items: z.array(FchvPatientEntrySchema) })
-    .parse(await phrFetch('/fchv/dashboard', { context }));
-  return body.items;
-}
+// Provider, Caregiver, FCHV routes removed - marked as hidden in route contract
 

@@ -102,7 +102,6 @@ public final class PhrMobileRoutes {
                 context.correlationId());
         }
 
-        // Fetch patient data
         return patientRecordService.getPatient(context.principalId())
             .then(opt -> {
                 if (opt.isEmpty()) {
@@ -111,8 +110,7 @@ public final class PhrMobileRoutes {
                         context.correlationId());
                 }
                 var patient = opt.get();
-                
-                // Build mobile dashboard response
+
                 Map<String, Object> patientData = Map.of(
                     "id", patient.getId(),
                     "name", patient.getDemographics().getFullName(),
@@ -120,8 +118,7 @@ public final class PhrMobileRoutes {
                     "bloodType", patient.getMedicalHistory() != null ? "O+" : "Unknown",
                     "district", patient.getDemographics().getDistrict()
                 );
-                
-                // Fetch records from document service
+
                 return documentService.getPatientDocuments(context.principalId(), context.principalId())
                     .then(documents -> {
                         List<Map<String, Object>> records = documents.stream()
@@ -135,8 +132,7 @@ public final class PhrMobileRoutes {
                             ))
                             .limit(10)
                             .toList();
-                        
-                        // Fetch consents from consent service
+
                         return consentService.getPatientGrants(context.principalId())
                             .then(grants -> {
                                 List<Map<String, Object>> consents = grants.stream()
@@ -149,15 +145,13 @@ public final class PhrMobileRoutes {
                                     ))
                                     .limit(10)
                                     .toList();
-                                
-                                // Fetch notifications from notification service
+
                                 return notificationSender.getPendingNotifications(context.principalId(), 10)
                                     .then(notifications -> {
                                         List<Map<String, Object>> notificationList = notifications.stream()
                                             .map(entry -> {
                                                 String title = formatNotificationTitle(entry.notificationType());
-                                                String detail = formatNotificationDetail(
-                                                    entry.referenceType(), entry.referenceId());
+                                                String detail = formatNotificationDetail(entry.referenceType(), entry.referenceId());
                                                 return Map.<String, Object>of(
                                                     "id", entry.id(),
                                                     "title", title,
@@ -165,7 +159,7 @@ public final class PhrMobileRoutes {
                                                 );
                                             })
                                             .toList();
-                                        
+
                                         return PhrRouteSupport.jsonResponse(200, Map.of(
                                             "patient", patientData,
                                             "records", records,

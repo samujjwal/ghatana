@@ -8,6 +8,9 @@ export class PhrApiError extends Error {
     public readonly statusCode: number,
     public readonly resourceType?: string,
     public readonly correlationId?: string,
+    public readonly error?: string,
+    public readonly code?: string,
+    public readonly details?: unknown,
   ) {
     super(message);
     this.name = 'PhrApiError';
@@ -81,6 +84,7 @@ export async function phrFetch<T>(
     contentType?: string;
     expectedSchema?: z.ZodType<T>;
     signal?: AbortSignal;
+    retry?: boolean;
   } = {},
 ): Promise<T> {
   const {
@@ -91,6 +95,7 @@ export async function phrFetch<T>(
     contentType = 'application/json',
     expectedSchema,
     signal,
+    retry = true,
   } = options;
 
   const headers = buildPhrHeaders(context);
@@ -99,28 +104,76 @@ export async function phrFetch<T>(
     headers['Content-Type'] = contentType;
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers,
-    body,
-    signal,
-  });
+  // Determine if retry is allowed
+  const allowRetry = retry && (method === 'GET' || context.idempotencyKey !== undefined);
+  const maxRetries = allowRetry ? 3 : 0;
+  const retryDelay = 1000; // 1 second base delay
 
-  if (!response.ok) {
-    throw new PhrApiError(
-      `PHR request failed: ${method} ${path} returned ${response.status}`,
-      response.status,
-      undefined,
-      headers['X-Correlation-ID'],
-    );
+  let lastError: Error | undefined;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${path}`, {
+        method,
+        headers,
+        body,
+        signal,
+      });
+
+      if (!response.ok) {
+        let errorBody: unknown;
+        try {
+          const errorText = await response.text();
+          errorBody = errorText.length > 0 ? JSON.parse(errorText) : undefined;
+        } catch {
+          // If parsing fails, errorBody remains undefined
+        }
+
+        const backendError = typeof errorBody === 'object' && errorBody !== null ? errorBody as Record<string, unknown> : undefined;
+        
+        throw new PhrApiError(
+          `PHR request failed: ${method} ${path} returned ${response.status}`,
+          response.status,
+          undefined,
+          headers['X-Correlation-ID'],
+          typeof backendError?.error === 'string' ? backendError.error : undefined,
+          typeof backendError?.code === 'string' ? backendError.code : undefined,
+          backendError?.details,
+        );
+      }
+
+      const responseBody = await response.text();
+      const contentTypeHeader = response.headers.get('Content-Type') ?? '';
+      const data: unknown = responseBody.length === 0
+        ? undefined
+        : contentTypeHeader.includes('application/json')
+          ? JSON.parse(responseBody)
+          : responseBody;
+      return expectedSchema ? expectedSchema.parse(data) : (data as T);
+    } catch (error) {
+      lastError = error as Error;
+      
+      // Don't retry on abort signal
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw error;
+      }
+
+      // Don't retry on 4xx errors (client errors)
+      if (error instanceof PhrApiError && error.statusCode >= 400 && error.statusCode < 500) {
+        throw error;
+      }
+
+      // If this was the last attempt, throw the error
+      if (attempt === maxRetries) {
+        throw error;
+      }
+
+      // Wait before retrying with exponential backoff
+      const delay = retryDelay * Math.pow(2, attempt);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
   }
 
-  const responseBody = await response.text();
-  const contentTypeHeader = response.headers.get('Content-Type') ?? '';
-  const data: unknown = responseBody.length === 0
-    ? undefined
-    : contentTypeHeader.includes('application/json')
-      ? JSON.parse(responseBody)
-      : responseBody;
-  return expectedSchema ? expectedSchema.parse(data) : (data as T);
+  // This should never be reached, but TypeScript needs it
+  throw lastError || new Error('Unknown error in phrFetch');
 }

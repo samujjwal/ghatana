@@ -80,9 +80,9 @@ public final class PhrPatientRecordRoutes {
                     return createPatient(patient);
                 }
                 return mayAccessPatient(context, patientId, RESOURCE_TYPE, "WRITE")
-                    .then(allowed -> allowed
+                    .then(decision -> decision.isAllowed()
                         ? createPatient(patient)
-                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
+                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
             });
     }
 
@@ -97,9 +97,9 @@ public final class PhrPatientRecordRoutes {
         }
 
         return requireSelfOrConsent(context, patientId, RESOURCE_TYPE, "READ")
-            .then(allowed -> {
-                if (!allowed) {
-                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+            .then(decision -> {
+                if (!decision.isAllowed()) {
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
                 }
                 return patientRecordService.getPatient(patientId)
                     .then(patient -> patient
@@ -119,9 +119,9 @@ public final class PhrPatientRecordRoutes {
         }
 
         return requireSelfOrConsent(context, patientId, RESOURCE_TYPE, "WRITE")
-            .then(allowed -> {
-                if (!allowed) {
-                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+            .then(decision -> {
+                if (!decision.isAllowed()) {
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
                 }
                 return request.loadBody()
                     .then(body -> {
@@ -155,9 +155,9 @@ public final class PhrPatientRecordRoutes {
         }
 
         return requireSelfOrConsent(context, patientId, RESOURCE_TYPE, "SEARCH")
-            .then(allowed -> {
-                if (!allowed) {
-                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+            .then(decision -> {
+                if (!decision.isAllowed()) {
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
                 }
                 return patientRecordService.searchPatients(
                         "patientId = :patientId",
@@ -184,9 +184,9 @@ public final class PhrPatientRecordRoutes {
         }
 
         return requireSelfOrConsent(context, patientId, "patient-record-history", "READ")
-            .then(allowed -> {
-                if (!allowed) {
-                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+            .then(decision -> {
+                if (!decision.isAllowed()) {
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
                 }
                 return patientRecordService.getPatient(patientId)
                     .then(patient -> patient
@@ -225,9 +225,9 @@ public final class PhrPatientRecordRoutes {
         String dateTo = request.getQueryParameter("dateTo");
 
         return requireSelfOrConsent(context, patientId, "patient-record-list", "READ")
-            .then(allowed -> {
-                if (!allowed) {
-                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+            .then(decision -> {
+                if (!decision.isAllowed()) {
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
                 }
                 return patientRecordService.getPatient(patientId)
                     .then(patient -> patient
@@ -292,7 +292,7 @@ public final class PhrPatientRecordRoutes {
                 context.tenantId(), context.facilityId())
             .then(decision -> {
                 if (!decision.isAllowed()) {
-                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
                 }
 
                 return patientRecordService.getPatient(patientId)
@@ -390,16 +390,15 @@ public final class PhrPatientRecordRoutes {
             .then(created -> PhrRouteSupport.jsonResponse(201, created));
     }
 
-    private Promise<Boolean> requireSelfOrConsent(
+    private Promise<PhrPolicyEvaluator.PolicyDecision> requireSelfOrConsent(
             PhrRouteSupport.PhrRequestContext context,
             String patientId,
             String resourceType,
             String action) {
-        return mayAccessPatient(context, patientId, resourceType, action)
-            .map(Boolean::booleanValue);
+        return mayAccessPatient(context, patientId, resourceType, action);
     }
 
-    private Promise<Boolean> mayAccessPatient(
+    private Promise<PhrPolicyEvaluator.PolicyDecision> mayAccessPatient(
             PhrRouteSupport.PhrRequestContext context,
             String patientId,
             String resourceType,
@@ -410,8 +409,7 @@ public final class PhrPatientRecordRoutes {
                 resourceType,
                 action,
                 context.tenantId(),
-                context.facilityId())
-            .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);
+                context.facilityId());
     }
 
     private static PatientRecordService.Patient parsePatient(String json, String pathPatientId) {

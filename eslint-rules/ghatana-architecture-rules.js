@@ -943,57 +943,42 @@ module.exports = {
       create(context) {
         const currentFilePath = context.getFilename();
 
-        // Only enforce for files inside products/yappc/
+        // Only enforce for YAPPC product
         if (!currentFilePath.includes("/products/yappc/")) return {};
 
-        // Allowed contract facades (task 3.1.5)
-        const ALLOWED_FACADES = [
-          "@data-cloud/api",
-          "@aep/api",
-        ];
-
-        // Platform modules that should be accessed through contract facades
-        // These represent platform-like capabilities that belong in Data Cloud+AEP
-        const CONTRACT_FACADE_MODULES = [
-          // Agent platform - should use @data-cloud/api agent facade
+        // Blocked platform modules that should use facades
+        const BLOCKED_PLATFORM = [
           "@ghatana/agent-core",
-          "@ghatana/ai-integration",
-          // Workflow platform - should use @aep/api workflow facade
           "@ghatana/workflow",
-          // Vector/search platform - should use @data-cloud/api search facade
-          "@ghatana/vector",
-          // Event cloud - should use @data-cloud/api event facade
-          "@ghatana/event-cloud",
+          "@ghatana/vector-search",
+          "@ghatana/ai-integration",
         ];
 
-        // Map blocked modules to their recommended facades (task 3.1.5)
-        const FACADE_SUGGESTIONS = {
-          "@ghatana/agent-core": "Use @data-cloud/api agent contract facade instead.",
-          "@ghatana/ai-integration": "Use @data-cloud/api AI integration facade instead.",
-          "@ghatana/workflow": "Use @aep/api workflow contract facade instead.",
-          "@ghatana/vector": "Use @data-cloud/api vector search facade instead.",
-          "@ghatana/event-cloud": "Use @data-cloud/api event cloud facade instead.",
-        };
+        // Allowed facade paths
+        const ALLOWED_FACADES = [
+          "@data-cloud/contracts/agent",
+          "@data-cloud/contracts/workflow",
+          "@aep/contracts/ai",
+        ];
 
         function checkImport(node, importPath) {
-          // Allow imports from allowed facades (task 3.1.5)
-          for (const facade of ALLOWED_FACADES) {
-            if (importPath === facade || importPath.startsWith(`${facade}/`)) {
-              return; // Allowed, skip check
-            }
-          }
+          for (const blocked of BLOCKED_PLATFORM) {
+            if (importPath === blocked || importPath.startsWith(`${blocked}/`)) {
+              // Check if it's using an allowed facade
+              const isUsingFacade = ALLOWED_FACADES.some(facade =>
+                importPath.includes(facade)
+              );
 
-          // Check for blocked direct platform imports
-          for (const module of CONTRACT_FACADE_MODULES) {
-            if (importPath === module || importPath.startsWith(`${module}/`)) {
-              // Find the appropriate suggestion
-              let suggestion = FACADE_SUGGESTIONS[module] || "Use the appropriate Data Cloud or AEP contract facade instead.";
-              context.report({
-                node,
-                messageId: "directPlatformImport",
-                data: { import: importPath, suggestion },
-              });
-              return;
+              if (!isUsingFacade) {
+                context.report({
+                  node,
+                  messageId: "directPlatformImport",
+                  data: {
+                    import: importPath,
+                    suggestion: "Use the typed contract facade from @data-cloud/contracts or @aep/contracts instead.",
+                  },
+                });
+              }
             }
           }
         }
@@ -1002,21 +987,87 @@ module.exports = {
           ImportDeclaration(node) {
             checkImport(node, node.source.value);
           },
-          ExportNamedDeclaration(node) {
-            if (node.source) {
-              checkImport(node, node.source.value);
-            }
-          },
-          ExportAllDeclaration(node) {
-            checkImport(node, node.source.value);
-          },
+        };
+      },
+    },
+
+    /**
+     * Rule: no-direct-fetch-in-api
+     *
+     * Prevents direct `fetch` calls in PHR API modules.
+     * All API calls must go through `phrFetch` from `requestApi.ts`.
+     *
+     * This ensures consistent error handling, schema validation,
+     * idempotency, and retry logic across all API calls.
+     *
+     * Exception: `requestApi.ts` itself is allowed to use `fetch`.
+     */
+    "no-direct-fetch-in-api": {
+      meta: {
+        type: "error",
+        docs: {
+          description:
+            "Disallow direct fetch calls in PHR API modules; use phrFetch instead",
+          category: "Architecture",
+          recommended: true,
+        },
+        schema: [],
+        messages: {
+          directFetch:
+            "🚫 Direct 'fetch' call detected in API module. " +
+            "Use 'phrFetch' from './requestApi' instead for consistent error handling, schema validation, and retry logic.",
+        },
+      },
+
+      create(context) {
+        const currentFilePath = context.getFilename();
+
+        // Only enforce for PHR API directory
+        if (!currentFilePath.includes("/products/phr/apps/web/src/api/")) return {};
+
+        // Allow requestApi.ts itself (it defines phrFetch)
+        if (currentFilePath.endsWith("requestApi.ts")) return {};
+
+        // Also allow test files
+        if (currentFilePath.includes("__tests__")) return {};
+
+        return {
           CallExpression(node) {
-            // Check dynamic imports
+            // Check for direct fetch calls
             if (
-              node.callee.type === "Import" &&
-              node.arguments[0]?.type === "Literal"
+              node.callee.type === "Identifier" &&
+              node.callee.name === "fetch"
             ) {
-              checkImport(node, node.arguments[0].value);
+              context.report({
+                node,
+                messageId: "directFetch",
+              });
+            }
+            // Check for globalThis.fetch
+            if (
+              node.callee.type === "MemberExpression" &&
+              node.callee.object.type === "Identifier" &&
+              node.callee.object.name === "globalThis" &&
+              node.callee.property.type === "Identifier" &&
+              node.callee.property.name === "fetch"
+            ) {
+              context.report({
+                node,
+                messageId: "directFetch",
+              });
+            }
+            // Check for window.fetch
+            if (
+              node.callee.type === "MemberExpression" &&
+              node.callee.object.type === "Identifier" &&
+              node.callee.object.name === "window" &&
+              node.callee.property.type === "Identifier" &&
+              node.callee.property.name === "fetch"
+            ) {
+              context.report({
+                node,
+                messageId: "directFetch",
+              });
             }
           },
         };

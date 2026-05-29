@@ -255,9 +255,9 @@ public final class PhrAdministrativeRoutes {
                     return PhrRouteSupport.errorResponse(404, "TELEMEDICINE_SESSION_NOT_FOUND", "Telemedicine session not found");
                 }
                 return requireAccess(context, session.get().patientId(), "telemedicine", "READ")
-                    .then(allowed -> allowed
+                    .then(decision -> decision.isAllowed()
                         ? PhrRouteSupport.jsonResponse(200, session.get())
-                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
+                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
             });
     }
 
@@ -306,9 +306,9 @@ public final class PhrAdministrativeRoutes {
                     return PhrRouteSupport.errorResponse(404, "REFERRAL_NOT_FOUND", "Referral not found");
                 }
                 return requireAccess(context, referral.get().patientId(), "referrals", "READ")
-                    .then(allowed -> allowed
+                    .then(decision -> decision.isAllowed()
                         ? PhrRouteSupport.jsonResponse(200, referral.get())
-                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
+                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
             });
     }
 
@@ -351,9 +351,9 @@ public final class PhrAdministrativeRoutes {
                     return PhrRouteSupport.errorResponse(404, "BILLING_ENCOUNTER_NOT_FOUND", "Billing encounter not found");
                 }
                 return requireAccess(context, encounter.get().patientId(), "billing", "READ")
-                    .then(allowed -> allowed
+                    .then(decision -> decision.isAllowed()
                         ? PhrRouteSupport.jsonResponse(200, encounter.get())
-                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
+                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
             });
     }
 
@@ -381,9 +381,9 @@ public final class PhrAdministrativeRoutes {
                     return PhrRouteSupport.errorResponse(404, "CLAIM_NOT_FOUND", "Claim not found");
                 }
                 return requireAccess(context, claim.get().patientId(), "billing", "READ")
-                    .then(allowed -> allowed
+                    .then(decision -> decision.isAllowed()
                         ? PhrRouteSupport.jsonResponse(200, claim.get())
-                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
+                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
             });
     }
 
@@ -438,9 +438,12 @@ public final class PhrAdministrativeRoutes {
                     return PhrRouteSupport.errorResponse(400, "INVALID_" + resourceType.toUpperCase().replace('-', '_'), ex.getMessage());
                 }
                 return requireAccess(finalContext, patientId, resourceType, action)
-                    .then(allowed -> allowed
-                        ? handler.apply(value)
-                        : PhrRouteSupport.policyDenialResponse(403, finalContext.correlationId()));
+                    .then(decision -> {
+                        if (decision.isAllowed()) {
+                            return handler.apply(value);
+                        }
+                        return PhrRouteSupport.policyDenialResponse(403, finalContext.correlationId(), decision.getReasonCode());
+                    });
             });
     }
 
@@ -458,12 +461,15 @@ public final class PhrAdministrativeRoutes {
             return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT_SCOPE", ex.getMessage());
         }
         return requireAccess(context, patientId, resourceType, action)
-            .then(allowed -> allowed
-                ? handler.apply(patientId)
-                : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
+            .then(decision -> {
+                if (decision.isAllowed()) {
+                    return handler.apply(patientId);
+                }
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
+            });
     }
 
-    private Promise<Boolean> requireAccess(
+    private Promise<PhrPolicyEvaluator.PolicyDecision> requireAccess(
             PhrRouteSupport.PhrRequestContext context,
             String patientId,
             String resourceType,
@@ -474,8 +480,7 @@ public final class PhrAdministrativeRoutes {
                 resourceType,
                 action,
                 context.tenantId(),
-                context.facilityId())
-            .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);
+                context.facilityId());
     }
 
     private static String principalFrom(HttpRequest request) {

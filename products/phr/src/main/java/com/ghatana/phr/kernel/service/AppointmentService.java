@@ -227,6 +227,48 @@ public class AppointmentService extends PhrServiceBase {
     }
 
     /**
+     * Gets the next upcoming appointment for a patient.
+     *
+     * @param patientId the patient identifier
+     * @return Promise containing the next appointment or empty if none
+     */
+    public Promise<Appointment> getNextAppointment(String patientId) {
+        if (!running) {
+            return Promise.of(null);
+        }
+
+        String sanitizedPatientId = PhrInputSanitizationUtils.requireSafeIdentifier(patientId, "patientId");
+        PhrRateLimitUtils.requireAllowed(
+            queryAppointmentLimiter,
+            sanitizedPatientId,
+            "Appointment query rate limit exceeded for patient: " + sanitizedPatientId
+        );
+
+        String query = "patientId = :patientId AND scheduledTime > :now AND status != :cancelled";
+        Map<String, Object> params = new ConcurrentHashMap<>();
+        params.put("patientId", sanitizedPatientId);
+        params.put("now", Instant.now().toString());
+        params.put("cancelled", "CANCELLED");
+
+        DataQueryRequest request = new DataQueryRequest(
+            APPOINTMENT_DATASET,
+            query,
+            params,
+            1,
+            0
+        );
+
+        return dataCloud.queryData(request)
+            .map(QueryResult::getResults)
+            .map(results -> results.stream()
+                .map(r -> deserialize(r.getData(), Appointment.class))
+                .filter(Objects::nonNull)
+                .sorted((a, b) -> a.getScheduledTime().compareTo(b.getScheduledTime()))
+                .findFirst()
+                .orElse(null));
+    }
+
+    /**
      * Gets appointments for a patient.
      *
      * @param patientId the patient identifier

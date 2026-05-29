@@ -1,537 +1,444 @@
-﻿Below is the reorganized implementation backlog for commit `25810a0cbcc9e37e7a0f0b969207e822b5c3d5b2`, grouped by **files or tightly related file sets** so implementation and verification can be done in fewer passes.
+﻿Executed/reviewed against `samujjwal/ghatana` commit `31cebc74511891d5be957a3d04afa3261312642a`. This commit itself is a bot changelog update, so the task reorganization below is based on the full snapshot at that ref, not the small changelog diff. 
 
-The current snapshot already moved some earlier blockers forward: the route contract is now richer, `fchv` is a first-class PHR role, route entitlements load from `products/phr/config/phr-route-contract.json`, mobile dashboard calls now send tenant/principal/role headers, and mobile offline PHI caching uses an encrypted storage adapter.    
+Key current-state corrections before the backlog:
 
-I am not including evidence-generation work except where a check is needed to verify implementation correctness.
+The PHR web route manifest now uses `products/phr/config/phr-route-contract.json` as the canonical route source, rather than hardcoding route definitions in TypeScript.  The route contract already includes many more stable routes than the previous audit, including dashboard, records, consents, appointments, settings, labs, medications, medication detail, conditions, observations, immunizations, documents, upload, OCR, timeline, profile, notifications, emergency, emergency reviews, release readiness, and audit.   
+
+The backend entitlement route now also loads the same route contract file, validates required fields, excludes `hidden`/`blocked` routes, and fails closed if the contract is invalid or missing.   
+
+Mobile PHI storage has also advanced: the offline cache now uses encrypted storage, session binding, TTL, restricted field stripping, and cache invalidation semantics.    The encrypted adapter uses SecureStore, AsyncStorage ciphertext, AES-GCM, key rotation, biometric policy, and security event logging.  
+
+The remaining work should therefore be organized around **contract/API alignment, route/page completion, policy enforcement, mobile verification, and cleanup**, not around recreating things that now exist.
 
 ---
 
 # Verification Strategy
 
-Use **7 grouped verification passes** instead of one pass per task.
+To minimize verification rounds, implement tasks in **file-group batches**. Each batch below has one focused verification pass. Avoid scattering one route’s UI/API/policy/test changes across multiple waves.
 
-| Pass | Scope                                   | Run after completing                |
-| ---- | --------------------------------------- | ----------------------------------- |
-| V1   | Backend compile + route wiring          | Groups 1–3                          |
-| V2   | Backend security/policy/API contracts   | Groups 3–5                          |
-| V3   | Route contract drift + navigation       | Group 2 + related web shell changes |
-| V4   | Web route/page E2E                      | Groups 6–7                          |
-| V5   | Mobile privacy/session/offline E2E      | Group 8                             |
-| V6   | Kernel/YAPPC generation/contract checks | Groups 9–10                         |
-| V7   | Full required product check             | All groups                          |
+Recommended verification batches:
+
+| Verification Batch                     | Purpose                                                                               | Run after completing |
+| -------------------------------------- | ------------------------------------------------------------------------------------- | -------------------- |
+| **V1 — Route Contract Parity**         | Validate route JSON → web routes → backend mounts → entitlement payload               | Groups 1–2           |
+| **V2 — Shared API Client Contract**    | Validate web API modules use the same request wrapper, schemas, paths, errors         | Group 3              |
+| **V3 — PHI Policy and Backend Access** | Validate all backend PHI routes use policy evaluator and correlation/error handling   | Groups 4–5           |
+| **V4 — Web Stable Route UX**           | Traverse all stable web routes and actions once                                       | Groups 6–11          |
+| **V5 — Mobile Security and UX**        | Validate encrypted PHI, session binding, i18n, emergency, logout, offline flows       | Groups 12–13         |
+| **V6 — Cross-Cutting Quality**         | Validate i18n, a11y, privacy, o11y, legacy deletion                                   | Groups 14–17         |
+| **V7 — Kernel/YAPPC Enablement**       | Validate PHR remains Kernel-native and YAPPC generates against the canonical contract | Groups 18–19         |
+
+No evidence-generation-heavy work is included. Where release readiness is touched, the task is limited to contract/runtime wiring, not creating new evidence packs.
 
 ---
 
-# Group 1 — Backend Composition and Route Wiring
+# Group 5 — Backend Route Family Completion
 
 ## Files
 
-```text
-products/phr/src/main/java/com/ghatana/phr/kernel/PhrKernelModule.java
-products/phr/src/main/java/com/ghatana/phr/api/PhrHttpServer.java
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrAuthRoutes.java
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrAuditRoutes.java
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrProviderRoutes.java
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrCaregiverRoutes.java
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrFchvRoutes.java
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrNotificationRoutes.java
-```
+* `PhrDashboardRoutes.java`
+* `PhrPatientRecordRoutes.java`
+* `PhrPatientProfileRoutes.java`
+* `PhrClinicalRoutes.java`
+* `PhrDocumentImagingRoutes.java`
+* `PhrConsentRoutes.java`
+* `PhrAdministrativeRoutes.java`
+* `PhrEmergencyRoutes.java`
+* `PhrAuditRoutes.java`
+* `PhrNotificationRoutes.java`
+* `PhrProviderRoutes.java`
+* `PhrCaregiverRoutes.java`
+* `PhrFchvRoutes.java`
+* `PhrMobileRoutes.java`
+* `PhrHttpServer.java`
+
+## Current State
+
+`PhrHttpServer` now composes many route families: dashboard, patient profile, audit, provider, caregiver, FCHV, mobile, notifications, and others.  It mounts the route families in `getServlet()`.  `PhrClinicalRoutes` already routes labs, observations, medications, and immunizations and uses `PhrPolicyEvaluator` for access.  
 
 ## Tasks
 
-| ID     | Priority | Change                                                                                                                                                                                                              |
-| ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ~~G1-001~~ | P0 ✅ | Instantiate and wire `PhrAuthRoutes` in `PhrKernelModule`; currently `PhrHttpServer` supports `/auth/*`, but `PhrKernelModule` still passes `null` for `authRoutes`.                                                |
-| ~~G1-002~~ | P0 ✅ | Instantiate and wire `PhrAuditRoutes`; do not keep audit as a nullable route.                                                                                                                                       |
-| ~~G1-003~~ | P1 ✅ | Instantiate and wire `PhrProviderRoutes`; `/provider/*` is mounted only when non-null.                                                                                                                              |
-| ~~G1-004~~ | P1 ✅ | Instantiate and wire `PhrCaregiverRoutes`; `/caregiver/*` is mounted only when non-null.                                                                                                                            |
-| ~~G1-005~~ | P1 ✅ | Instantiate and wire `PhrFchvRoutes`; `/fchv/*` is mounted only when non-null.                                                                                                                                      |
-| ~~G1-006~~ | P1 ✅ | Instantiate and wire `PhrNotificationRoutes`; `/notifications/*` is mounted only when non-null.                                                                                                                     |
-| ~~G1-007~~ | P0 ✅ | Delete legacy nullable route wiring from production constructors in `PhrHttpServer`; keep test fixtures explicit instead of allowing production `null` route adapters.                                              |
-| ~~G1-008~~ | P0 ✅ | Replace overloaded partial constructors with one production constructor that requires all production route adapters.                                                                                                |
-| ~~G1-009~~ | P1 ✅ | Keep a dedicated test-only factory if tests need partial route sets; do not expose partial/null constructors in production code.                                                                                    |
-| ~~G1-010~~ | P0 ✅ | Verify `/release-readiness` route mounting. `PhrHttpServer` mounts `/release-readiness` directly while the release servlet exposes `/`; confirm ActiveJ behavior and change to `/release-readiness/*` if required.  |
+| ID     | Priority | Change                                                                                                                                                                                                  |
+| ------ | -------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| G5-T03 |       P1 | Complete `PhrDashboardRoutes`: backend-owned dashboard must include profile, appointments, active meds, observations/labs, conditions, documents, alerts, consent/access alerts.                        |
+| G5-T04 |       P1 | Complete `PhrPatientProfileRoutes`: GET/PATCH, field policy, validation, audit.                                                                                                                         |
+| G5-T05 |       P1 | Complete `PhrPatientRecordRoutes`: list, filters, detail, timeline, provenance, redaction.                                                                                                              |
+| G5-T06 |       P1 | Complete clinical routes for conditions if not already a separate route family. Route JSON declares `/conditions`, but `PhrClinicalRoutes` shown only covers labs, observations, meds, immunizations.   |
+| G5-T07 |       P1 | Complete observation trends and detail contract.                                                                                                                                                        |
+| G5-T08 |       P1 | Complete medication detail/history/warnings/refill/discontinue policy.                                                                                                                                  |
+| G5-T09 |       P1 | Complete immunization history/detail.                                                                                                                                                                   |
+| G5-T10 |       P1 | Complete document list/detail/download/upload/OCR confirm/reject contract.                                                                                                                              |
+| G5-T11 |       P1 | Complete consent create/revoke/list/check with scoped actions and resources.                                                                                                                            |
+| G5-T12 |       P1 | Complete appointment book/reschedule/cancel/provider slot APIs.                                                                                                                                         |
+| G5-T13 |       P1 | Complete emergency request/review/pending/overdue APIs.                                                                                                                                                 |
+| G5-T14 |       P1 | Complete audit list/detail/export APIs.                                                                                                                                                                 |
+| G5-T15 |       P1 | Complete notifications list/read/unread APIs with PHI redaction.                                                                                                                                        |
+| G5-T16 |       P1 | Complete provider dashboard/patient search/patient summary APIs before un-hiding provider routes.                                                                                                       |
+| G5-T17 |       P1 | Complete caregiver dependents list/detail APIs before un-hiding caregiver route.                                                                                                                        |
+| G5-T18 |       P1 | Complete FCHV dashboard/registration/vitals APIs before un-hiding FCHV route.                                                                                                                           |
+| G5-T19 |       P2 | Delete unused old controller classes if route adapters now own production traffic.                                                                                                                      |
 
-## Verification Pass V1
+## Verification
 
-Run backend compile and HTTP route smoke tests:
+One route family pass:
 
 ```bash
-./gradlew :products:phr:compileJava
-./gradlew :products:phr:test --tests '*PhrHttpServer*'
-```
-
-Add smoke coverage for:
-
-```text
-/auth/login
-/auth/logout
-/audit/events
-/provider/dashboard
-/provider/patients
-/caregiver/dependents
-/fchv/dashboard
-/notifications
-/mobile/dashboard
-/release-readiness
+./gradlew :products:phr:test --tests '*Routes*' --tests '*PhrHttpServer*'
+node scripts/check-phr-route-contract.mjs --check-backend
 ```
 
 ---
 
-# Group 2 — Canonical Route Contract, Entitlements, and Web Route Map
+# Group 6 — Web Stable Page Completion
 
 ## Files
 
-```text
-products/phr/config/phr-route-contract.json
-products/phr/apps/web/src/phrRouteContracts.ts
-products/phr/apps/web/src/phrRouteElements.tsx
-products/phr/apps/web/src/routes.tsx
-products/phr/apps/web/src/layout/PhrProductShell.tsx
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrEntitlementRoutes.java
-platform/typescript/product-shell/src/**
-```
+* All pages imported in `products/phr/apps/web/src/phrRouteElements.tsx`
+* Web components under `products/phr/apps/web/src/components/**`
+* Web i18n files
+
+## Current State
+
+`phrRouteElements.tsx` imports and maps pages for the stable routes and hidden role routes.  
 
 ## Tasks
 
-| ID     | Priority | Change                                                                                                                                                                     |
-| ------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ~~G2-001~~ | P0 ✅ | Make `products/phr/config/phr-route-contract.json` the **only editable PHR route source**. The TS file currently duplicates the route contract.                            |
-| ~~G2-002~~ | P0 ✅ | Generate `phrRouteContracts.ts` from `phr-route-contract.json`; mark generated file clearly.                                                                               |
-| ~~G2-003~~ | P0 ✅ | Delete manual route duplication in `phrRouteContracts.ts` after generation is in place.                                                                                    |
-| ~~G2-004~~ | P0 ✅ | Ensure backend `PhrEntitlementRoutes` reads the same canonical contract and returns all needed route metadata. It already loads JSON and fails closed if missing/invalid.  |
-| ~~G2-005~~ | P0 ✅ | Add required route metadata for every stable route: `apiEndpoint`, `policyId`, `testId`. Several stable entries still lack these.                                          |
-| ~~G2-006~~ | P0 ✅ | Enforce `hidden` route behavior consistently. Hidden routes currently map to real pages in `phrRouteElements.tsx`.                                                         |
-| ~~G2-007~~ | P0 ✅ | Delete the older `featureFlag` model after `stability` is canonical. The TS interface still has both `featureFlag` and `stability`.                                        |
-| ~~G2-008~~ | P1 ✅ | Move allowed stability values into the platform route contract: `stable`, `preview`, `blocked`, `hidden`.                                                                  |
-| ~~G2-009~~ | P1 ✅ | Add JSON schema for `phr-route-contract.json`.                                                                                                                             |
-| ~~G2-010~~ | P1 ✅ | Update `PhrEntitlementRoutes` to preserve `apiEndpoint`, `policyId`, `testId`, `stability`, `group`, `personas`, and `tiers` in entitlement output.                        |
-| ~~G2-011~~ | P1 ✅ | Remove dual path lookup for route contract once runtime packaging is fixed. Current route loader searches repo path then module path.                                      |
-| ~~G2-012~~ | P1 ✅ | Add `fchv` role support to shared product-shell role evaluator if not already supported by generated role order. The PHR contract now includes `fchv`.                     |
-| ~~G2-013~~ | P1 ✅ | Add route contract drift check: JSON ↔ generated TS ↔ backend entitlement response.                                                                                        |
-| ~~G2-014~~ | P2 ✅ | Add navigation grouping test to ensure stable routes appear, hidden routes do not appear, and blocked routes produce forbidden UI.                                         |
+| ID     | Priority | Change                                                                                                     |
+| ------ | -------: | ---------------------------------------------------------------------------------------------------------- |
+| G6-T01 |       P0 | For every `stable` page, verify it is not static/mock-only. Wire to API or mark route hidden.              |
+| G6-T02 |       P0 | Delete or quarantine old placeholder page content for hidden provider/caregiver/FCHV pages.                |
+| G6-T03 |       P1 | Add consistent loading/error/empty/unauthorized/degraded states to every stable page.                      |
+| G6-T04 |       P1 | Add consistent page header/title/subtitle/actions using design-system/product-shell patterns.              |
+| G6-T05 |       P1 | Dashboard: render backend dashboard contract, not local composition.                                       |
+| G6-T06 |       P1 | Records: filters, pagination, row click to detail, provenance summary.                                     |
+| G6-T07 |       P1 | Record detail: FHIR viewer, redaction, provenance, secure copy/download controls.                          |
+| G6-T08 |       P1 | Profile: view/edit allowed fields, validation, audit result.                                               |
+| G6-T09 |       P1 | Timeline: grouped clinical events and filters.                                                             |
+| G6-T10 |       P1 | Conditions: active/resolved grouping and detail.                                                           |
+| G6-T11 |       P1 | Observations: trends, metric selector, abnormal state, chart alternative text.                             |
+| G6-T12 |       P1 | Labs: lab-focused list and detail; clarify relationship to observations.                                   |
+| G6-T13 |       P1 | Medications: active/history, detail route, adherence source, warnings.                                     |
+| G6-T14 |       P1 | Immunizations: history/status and permanent-retention indicator.                                           |
+| G6-T15 |       P1 | Documents: list/detail/download/upload navigation.                                                         |
+| G6-T16 |       P1 | Upload: type/size/progress/retry/cancel.                                                                   |
+| G6-T17 |       P1 | OCR: accept/edit/reject/confirm, confidence, provenance.                                                   |
+| G6-T18 |       P1 | Notifications: redacted feed, read/unread, safe empty state.                                               |
+| G6-T19 |       P1 | Consents: grant/revoke/expiry/scope/resource/action fields.                                                |
+| G6-T20 |       P1 | Appointments: provider search, slots, book/reschedule/cancel, conflict state.                              |
+| G6-T21 |       P1 | Emergency: reason, patient ID, request result, audit ID, safe error.                                       |
+| G6-T22 |       P1 | Emergency reviews: pending/overdue queue, decision notes, reviewer context.                                |
+| G6-T23 |       P1 | Audit: backend filters, pagination, detail drawer, export if policy allows.                                |
+| G6-T24 |       P2 | Release readiness: keep minimal and runtime-backed; do not expand evidence generation now.                 |
+| G6-T25 |       P2 | Delete any page-specific duplicate button/card/input implementations when design-system equivalent exists. |
 
-## Verification Pass V3
+## Verification
+
+One stable route UI pass:
+
+```bash
+pnpm --dir products/phr/apps/web exec vitest run src/pages src/api
+pnpm --dir products/phr/apps/web exec playwright test e2e/phr-stable-routes.spec.ts
+```
+
+---
+
+# Group 7 — Hidden Role Surfaces: Provider, Caregiver, FCHV
+
+## Files
+
+* `products/phr/config/phr-route-contract.json`
+* `ProviderDashboardPage.tsx`
+* `ProviderPatientsPage.tsx`
+* `CaregiverDependentsPage.tsx`
+* `FchvDashboardPage.tsx`
+* `PhrProviderRoutes.java`
+* `PhrCaregiverRoutes.java`
+* `PhrFchvRoutes.java`
+
+## Current State
+
+Provider, caregiver, and FCHV routes are present but `stability: "hidden"` in the canonical route contract.  `phrRouteElements.tsx` still imports and maps their page components, but hidden routes render `NotFoundPage` rather than the mapped component. 
+
+## Tasks
+
+| ID     | Priority | Change                                                                                                                                        |
+| ------ | -------: | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| G7-T01 |       P0 | Decide per hidden route: implement now, keep hidden and delete placeholder UI, or remove from current contract and keep only in IA docs.      |
+| G7-T02 |       P1 | Provider dashboard: implement real provider work queue, appointments, recent patients, alerts before changing route to `preview` or `stable`. |
+| G7-T03 |       P1 | Provider patients: implement patient search/list/summary, consent/treatment policy, no unrestricted search.                                   |
+| G7-T04 |       P1 | Caregiver dependents: implement grant-scoped dependents list/detail.                                                                          |
+| G7-T05 |       P1 | FCHV dashboard: implement assignment-scoped dashboard and community health actions.                                                           |
+| G7-T06 |       P1 | Add role-specific API tests before un-hiding any route.                                                                                       |
+| G7-T07 |       P1 | Add route visibility tests: hidden routes absent from entitlement payload/nav. Backend entitlement currently skips hidden/blocked routes.     |
+| G7-T08 |       P2 | Delete placeholder page components if implementation is not planned in the next iteration. No stale placeholder code.                         |
+
+## Verification
+
+One hidden-role surface pass:
+
+```bash
+node scripts/check-phr-route-contract.mjs --check-hidden
+pnpm --dir products/phr/apps/web exec vitest run src/__tests__/hiddenRoutes.test.tsx
+./gradlew :products:phr:test --tests '*Provider*' --tests '*Caregiver*' --tests '*Fchv*'
+```
+
+---
+
+# Group 8 — Mobile API, Session, Offline, and Emergency
+
+## Files
+
+* `products/phr/apps/mobile/src/services/phrMobileApi.ts`
+* `products/phr/apps/mobile/src/services/offlineStore.ts`
+* `products/phr/apps/mobile/src/services/phiEncryptedStorage.ts`
+* `products/phr/apps/mobile/src/services/mobileSessionStore.ts`
+* `products/phr/apps/mobile/src/App.tsx`
+* Mobile screens
+
+## Current State
+
+Mobile API calls now include session headers for dashboard and emergency access.   Logout clears encrypted PHI cache and local session.  Offline cache is encrypted and session-bound.  
+
+## Tasks
+
+| ID     | Priority | Change                                                                                                                                   |
+| ------ | -------: | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| G8-T01 |       P0 | Add tests for `fetchMobileDashboard(session)` proving all required headers are sent.                                                     |
+| G8-T02 |       P0 | Add tests for `requestMobileEmergencyAccess` proving justification length, session headers, resources accessed, and safe error behavior. |
+| G8-T03 |       P0 | Add tests for `logoutMobile`: server failure still clears PHI/session.                                                                   |
+| G8-T04 |       P0 | Verify consent revocation calls `clearDashboardOffline` or refreshes cache immediately.                                                  |
+| G8-T05 |       P0 | Add tests for session mismatch: cached PHI must not load under different tenant/principal/role.                                          |
+| G8-T06 |       P0 | Add tests for restricted field stripping before cache save.                                                                              |
+| G8-T07 |       P1 | Add mobile record detail screen and navigation from records list.                                                                        |
+| G8-T08 |       P1 | Add mobile explicit logout UI.                                                                                                           |
+| G8-T09 |       P1 | Add offline state banner: online, offline cached, expired cache, no cache.                                                               |
+| G8-T10 |       P1 | Add cache timestamp display using `getDashboardOfflineTimestamp`.                                                                        |
+| G8-T11 |       P1 | Add biometric policy UI/control only if product policy allows users/admins to configure it.                                              |
+| G8-T12 |       P1 | Add emergency screen state machine: enter patient, justification, biometric, submit, approved summary, denied, audit ID.                 |
+| G8-T13 |       P1 | Ensure no PHI appears in push notification title/body.                                                                                   |
+| G8-T14 |       P2 | Delete older mobile cache/session helpers superseded by encrypted/session-bound helpers.                                                 |
+| G8-T15 |       P2 | Add script to fail direct PHI-bearing AsyncStorage calls outside `phiEncryptedStorage.ts`.                                               |
+
+## Verification
+
+One mobile security/UX pass:
+
+```bash
+pnpm --dir products/phr/apps/mobile test
+node scripts/check-phr-mobile-storage-boundary.mjs
+node scripts/check-phr-mobile-i18n.mjs
+```
+
+---
+
+# Group 9 — i18n and User-Visible Text
+
+## Files
+
+* `products/phr/apps/web/src/i18n/**`
+* `products/phr/apps/web/src/locales/**`
+* `products/phr/apps/mobile/src/i18n/**`
+* `products/phr/apps/mobile/src/**`
+* `products/phr/config/phr-route-contract.json`
+
+## Tasks
+
+| ID     | Priority | Change                                                                                                                                           |
+| ------ | -------: | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| G9-T01 |       P0 | Remove raw English route labels/descriptions from UI rendering path. Either route contract stores i18n keys or UI maps route IDs to locale keys. |
+| G9-T02 |       P0 | Add mobile raw-string check.                                                                                                                     |
+| G9-T03 |       P1 | Add missing Nepali translations for all new web pages.                                                                                           |
+| G9-T04 |       P1 | Add missing Nepali translations for all mobile screens/services.                                                                                 |
+| G9-T05 |       P1 | Add pseudo-locale tests for web stable routes.                                                                                                   |
+| G9-T06 |       P1 | Add pseudo-locale tests for mobile screens.                                                                                                      |
+| G9-T07 |       P1 | Add locale switcher in web settings.                                                                                                             |
+| G9-T08 |       P1 | Add locale switcher in mobile settings.                                                                                                          |
+| G9-T09 |       P2 | Delete duplicate/obsolete locale keys after route label refactor.                                                                                |
+| G9-T10 |       P2 | Add missing formatters for dates, times, percentages, lab values, dosage display, appointment times.                                             |
+
+## Verification
+
+One i18n pass:
+
+```bash
+node scripts/check-phr-i18n.mjs
+pnpm check:i18n-conformance
+```
+
+---
+
+# Group 10 — Accessibility
+
+## Files
+
+* All web pages under `products/phr/apps/web/src/pages`
+* All mobile screens under `products/phr/apps/mobile/src/screens`
+* Shared PHR components
+* Playwright/mobile tests
+
+## Tasks
+
+| ID      | Priority | Change                                                                           |
+| ------- | -------: | -------------------------------------------------------------------------------- |
+| G10-T01 |       P1 | Add route-level accessibility test for every stable web route.                   |
+| G10-T02 |       P1 | Add mobile screen-level accessibility test for every mobile screen.              |
+| G10-T03 |       P1 | Add error focus management to login, profile, consent, appointment, upload, OCR. |
+| G10-T04 |       P1 | Add accessible chart alternatives for observations/labs trends.                  |
+| G10-T05 |       P1 | Add semantic list/table handling for records, audit, medications, documents.     |
+| G10-T06 |       P1 | Add accessible labels/hints to all mobile Pressables and tabs.                   |
+| G10-T07 |       P2 | Add keyboard navigation tests for web shell/sidebar/user menu.                   |
+| G10-T08 |       P2 | Add contrast check for status badges/pills.                                      |
+| G10-T09 |       P2 | Delete custom controls that duplicate accessible design-system controls.         |
+
+## Verification
+
+One accessibility pass:
+
+```bash
+pnpm --dir products/phr/apps/web exec playwright test e2e/phr-a11y.spec.ts
+pnpm check:a11y-behavioral-proof
+```
+
+---
+
+# Group 11 — Observability, Logs, and Safe Diagnostics
+
+## Files
+
+* `PhrRouteSupport.java`
+* `PhrPolicyEvaluator.java`
+* PHR route adapters
+* Web `requestApi.ts`
+* Mobile `phrMobileApi.ts`
+* Mobile `phiEncryptedStorage.ts`
+* Logging/telemetry helpers
+
+## Tasks
+
+| ID      | Priority | Change                                                                               |
+| ------- | -------: | ------------------------------------------------------------------------------------ |
+| G11-T01 |       P0 | Ensure every backend response includes correlation ID.                               |
+| G11-T02 |       P0 | Ensure web and mobile display/report correlation ID in safe error states.            |
+| G11-T03 |       P0 | Add static check for PHI/PII logging.                                                |
+| G11-T04 |       P1 | Add policy denied metrics without PHI.                                               |
+| G11-T05 |       P1 | Add emergency access metrics without PHI.                                            |
+| G11-T06 |       P1 | Add consent create/revoke/check metrics without PHI.                                 |
+| G11-T07 |       P1 | Add mobile offline cache hit/miss/stale counters without PHI.                        |
+| G11-T08 |       P1 | Add frontend/mobile telemetry wrappers that never include request/response payloads. |
+| G11-T09 |       P2 | Delete unsafe ad-hoc logs after telemetry wrappers exist.                            |
+| G11-T10 |       P2 | Add log redaction test fixtures.                                                     |
+
+## Verification
+
+One o11y/privacy pass:
+
+```bash
+node scripts/check-phr-phi-log-safety.mjs
+node scripts/check-observability-conformance.mjs
+```
+
+---
+
+# Group 12 — Legacy Code Deletion / Fix-Forward Cleanup
+
+## Files
+
+* Route files, API modules, page placeholders, old mocks, duplicate helpers, stale docs.
+
+## Tasks
+
+| ID      | Priority | Change                                                                                                 |
+| ------- | -------: | ------------------------------------------------------------------------------------------------------ |
+| G12-T01 |       P0 | Delete old hardcoded route lists now superseded by `phr-route-contract.json`.                          |
+| G12-T02 |       P0 | Delete non-`api/v1` legacy backend mounts after clients and contract are aligned.                      |
+| G12-T03 |       P0 | Delete direct web API `fetch` calls after `phrFetch` adoption.                                         |
+| G12-T04 |       P0 | Delete direct PHI AsyncStorage usage after encrypted storage verification.                             |
+| G12-T05 |       P1 | Delete mock/demo data imports from production web pages.                                               |
+| G12-T06 |       P1 | Delete placeholder page components for hidden routes not being implemented in this iteration.          |
+| G12-T07 |       P1 | Delete obsolete `FeatureFlagPage` if no route uses it.                                                 |
+| G12-T08 |       P1 | Delete duplicate validation helpers after `PhrRequestValidator`/route support validation is canonical. |
+| G12-T09 |       P1 | Delete stale docs that claim feature completeness where code is not stable.                            |
+| G12-T10 |       P2 | Delete old YAPPC PHR templates that generate non-contract-based routes.                                |
+| G12-T11 |       P2 | Add orphan-file check for PHR pages/API modules/routes.                                                |
+
+## Verification
+
+One cleanup pass:
+
+```bash
+node scripts/check-phr-legacy-cleanup.mjs
+pnpm check:production-stubs
+pnpm check:deprecated-imports
+```
+
+---
+
+# Group 13 — Kernel Platform Support Needed by PHR
+
+## Files / Areas
+
+* `platform/typescript/product-shell`
+* `@ghatana/kernel-product-contracts`
+* Kernel security/policy package
+* Kernel lifecycle/product checks
+* Product scaffolding/check scripts
+
+## Tasks
+
+| ID      | Priority | Change                                                                                                                         |
+| ------- | -------: | ------------------------------------------------------------------------------------------------------------------------------ |
+| KER-T01 |       P0 | Move the full PHR route contract schema into `@ghatana/kernel-product-contracts`; PHR currently imports only `RouteStability`. |
+| KER-T02 |       P0 | Add Kernel validator for route contract → page/API/policy/test parity.                                                         |
+| KER-T03 |       P0 | Add Kernel policy registry validation for every `policyId` in PHR route contract.                                              |
+| KER-T04 |       P1 | Add shared PHI classification registry used by backend/mobile/web.                                                             |
+| KER-T05 |       P1 | Add mobile PHI storage compliance gate.                                                                                        |
+| KER-T06 |       P1 | Add canonical hidden/blocked route semantics to product-shell and entitlement parsing.                                         |
+| KER-T07 |       P1 | Add product route generation utilities for TS and Java.                                                                        |
+| KER-T08 |       P1 | Add product API path consistency check.                                                                                        |
+| KER-T09 |       P1 | Add product i18n/a11y/mobile privacy checks that can run per product.                                                          |
+| KER-T10 |       P2 | Keep release-readiness minimal in this iteration; only ensure PHR can call runtime readiness without local path drift.         |
+| KER-T11 |       P2 | Delete old Kernel/product-shell fallback route utilities after route-contract flow is canonical.                               |
+
+## Verification
+
+One Kernel support pass:
 
 ```bash
 pnpm check:route-entitlement-contracts
 pnpm check:product-ui-contracts
-pnpm --dir products/phr/apps/web test
-```
-
-Add a dedicated check:
-
-```bash
-node scripts/check-phr-route-contract-drift.mjs
-```
-
-Expected assertions:
-
-```text
-phr-route-contract.json is valid
-phrRouteContracts.ts is generated from it
-PhrEntitlementRoutes returns the same stable/hidden route set
-Hidden routes are not discoverable
-Direct hidden route access is denied unless explicitly enabled
+pnpm check:product-manifest-contracts
+pnpm check:kernel-boundaries
 ```
 
 ---
 
-# Group 3 — PHR Policy, Route Support, and Security Helpers
+# Group 14 — YAPPC Support Needed by PHR
 
-## Files
+## Files / Areas
 
-```text
-products/phr/src/main/java/com/ghatana/phr/security/PhrPolicyEvaluator.java
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrRouteSupport.java
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrPatientRecordRoutes.java
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrClinicalRoutes.java
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrConsentRoutes.java
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrAdministrativeRoutes.java
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrDocumentImagingRoutes.java
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrEmergencyRoutes.java
-```
+* `products/yappc/core/scaffold/**`
+* `products/yappc/frontend/web/src/lib/canvas-ai/**`
+* YAPPC product model/generator packages
+* YAPPC docs/templates
 
 ## Tasks
 
-| ID     | Priority | Change                                                                                                                                                                                                                  |
-| ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ~~G3-001~~ | P0 ✅ | Delete deprecated sync policy methods in `PhrPolicyEvaluator`. No deprecation path; fix forward only.                                                                                                                   |
-| ~~G3-002~~ | P0 ✅ | Make all PHI access paths call async `PhrPolicyEvaluator` only.                                                                                                                                                         |
-| ~~G3-003~~ | P0 ✅ | Make `PhrPolicyEvaluator` mandatory in `PhrPatientRecordRoutes`; delete nullable constructor and fallback path. Current patient route accepts null policy evaluator and falls back.                                     |
-| ~~G3-004~~ | P0 ✅ | Remove any production use of role-only PHI access.                                                                                                                                                                      |
-| ~~G3-005~~ | P0 ✅ | Replace wildcard caregiver consent check with resource-specific consent scope. Current caregiver check validates `*`.                                                                                                   |
-| ~~G3-006~~ | P0 ✅ | Require explicit admin PHI justification. Current admin access is allowed with audit requirement but no enforced justification.                                                                                         |
-| ~~G3-007~~ | P0 ✅ | Require clinician consent-management authorization. Current clinician consent-management path allows clinician directly.                                                                                                |
-| ~~G3-008~~ | P0 ✅ | Apply `PhrPolicyEvaluator` to `PhrClinicalRoutes`; current clinical route still allows patient self or admin directly and otherwise uses consent service, not policy evaluator.                                         |
-| ~~G3-009~~ | P0 ✅ | Apply `PhrPolicyEvaluator` to administrative, document/imaging, consent, emergency, provider, caregiver, FCHV routes.                                                                                                   |
-| ~~G3-010~~ | P1 ✅ | Move tenant/principal/facility validation to a shared Kernel policy helper later; for now keep PHR helper but make behavior real. Current facility scope comments say full policy would query assignment but does not.  |
-| ~~G3-011~~ | P1 ✅ | Emit audit event whenever `PolicyDecision.requiresAudit()` or `isEmergencyOverride()` is true.                                                                                                                          |
-| ~~G3-012~~ | P1 ✅ | Use correlation-aware responses consistently in all routes. `PhrRouteSupport` now has correlation-aware helpers.                                                                                                        |
-| ~~G3-013~~ | P1 ✅ | Consolidate duplicated idempotency helpers. `PhrRouteSupport` has both `extractIdempotencyKey` and `getIdempotencyKey` patterns.                                                                                        |
-| ~~G3-014~~ | P1 ✅ | Add actual idempotency persistence for mutation routes; do not only parse headers.                                                                                                                                      |
-| ~~G3-015~~ | P2 ✅ | Replace restricted-field substring matching with canonical field classification registry. Current matching is heuristic.                                                                                                |
-
-## Verification Pass V2
-
-```bash
-./gradlew :products:phr:test --tests '*Policy*'
-./gradlew :products:phr:test --tests '*Route*'
-```
-
-Minimum access matrix:
-
-```text
-patient own record: allow
-patient other patient: deny
-caregiver with specific grant: allow
-caregiver without grant: deny
-clinician with treatment relationship: allow
-clinician without relationship: deny unless emergency flow
-admin without justification: deny
-admin with justification: allow + audit
-fchv assigned community: allow limited scope
-fchv outside assignment: deny
-```
-
----
-
-# Group 4 — Backend Contract Alignment for Current Stable Routes
-
-## Files
-
-```text
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrPatientRecordRoutes.java
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrClinicalRoutes.java
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrMobileRoutes.java
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrDocumentImagingRoutes.java
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrNotificationRoutes.java
-products/phr/apps/web/src/api/phrApi.ts
-products/phr/apps/mobile/src/services/phrMobileApi.ts
-products/phr/apps/mobile/src/types.ts
-products/phr/apps/web/src/types.ts
-```
-
-## Tasks
-
-| ID     | Priority | Change                                                                                                                                                |
-| ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ~~G4-001~~ | P0 ✅ | Fix mobile records DTO mismatch. Mobile validates `fhirPreview`, while backend mobile route returns document metadata without `fhirPreview`.          |
-| ~~G4-002~~ | P0 ✅ | Fix mobile notifications DTO mismatch. Mobile validates `title/detail`, while backend returns `type/referenceId/referenceType/status/createdAt`.      |
-| ~~G4-003~~ | P0 ✅ | Fix mobile consent DTO compatibility and revoke flow around `grantId/patientId`.                                                                      |
-| ~~G4-004~~ | P0 ✅ | Replace placeholder record-detail response with actual FHIR/resource lookup, redaction, and audit. Current code explicitly returns placeholder data.  |
-| ~~G4-005~~ | P1 ✅ | Add backend dashboard endpoint matching route contract `/api/v1/dashboard`; currently route contract declares it.                                     |
-| ~~G4-006~~ | P1 ✅ | Align records endpoint naming. Route contract says `/api/v1/records`, but backend mounts patient records under `/patients/*`.                         |
-| ~~G4-007~~ | P1 ✅ | Align document route naming. Web contract has `/documents`, but server mounts document/imaging routes under `/records/*`.                             |
-| ~~G4-008~~ | P1 ✅ | Ensure observations page calls `/clinical/labs/trends` or create canonical `/observations` endpoint; route contract says `/observations`.             |
-| ~~G4-009~~ | P1 ✅ | Add backend notification route and wire it through module.                                                                                            |
-| ~~G4-010~~ | P1 ✅ | Align web `buildPhrHeaders` with backend header expectations; web already centralizes correlation and identity headers.                               |
-| ~~G4-011~~ | P1 ✅ | Add typed Zod schemas for every new API client response, not only partial FHIR/dashboard schemas.                                                     |
-| ~~G4-012~~ | P2 ✅ | Normalize list response shapes: `items/count/limit/offset` or one standard envelope everywhere.                                                       |
-
-## Verification Pass V2 + V5
-
-Backend contract tests plus web/mobile API client schema tests:
-
-```bash
-./gradlew :products:phr:test --tests '*Contract*'
-pnpm --dir products/phr/apps/web test
-pnpm --dir products/phr/apps/mobile test
-```
-
----
-
-# Group 5 — Web Pages by Route Set
-
-The route map now imports actual page components for the expanded IA surface. 
-
-## Files
-
-```text
-products/phr/apps/web/src/pages/DashboardPage.tsx
-products/phr/apps/web/src/pages/RecordsPage.tsx
-products/phr/apps/web/src/pages/RecordDetailPage.tsx
-products/phr/apps/web/src/pages/ProfilePage.tsx
-products/phr/apps/web/src/pages/TimelinePage.tsx
-products/phr/apps/web/src/pages/ConditionsPage.tsx
-products/phr/apps/web/src/pages/LabsPage.tsx
-products/phr/apps/web/src/pages/ObservationsPage.tsx
-products/phr/apps/web/src/pages/MedicationsPage.tsx
-products/phr/apps/web/src/pages/ImmunizationsPage.tsx
-products/phr/apps/web/src/pages/DocumentsPage.tsx
-products/phr/apps/web/src/pages/DocumentUploadPage.tsx
-products/phr/apps/web/src/pages/OcrReviewPage.tsx
-products/phr/apps/web/src/pages/ConsentPage.tsx
-products/phr/apps/web/src/pages/AppointmentsPage.tsx
-products/phr/apps/web/src/pages/NotificationsPage.tsx
-products/phr/apps/web/src/pages/EmergencyAccessPage.tsx
-products/phr/apps/web/src/pages/EmergencyReviewsPage.tsx
-products/phr/apps/web/src/pages/AuditPage.tsx
-products/phr/apps/web/src/pages/ReleaseCockpitPage.tsx
-products/phr/apps/web/src/pages/SettingsPage.tsx
-```
-
-## Tasks
-
-| ID     | Priority | Change                                                                                           |
-| ------ | -------- | ------------------------------------------------------------------------------------------------ |
-| ~~G5-001~~ | P1 ✅ | For every stable route page, verify it is backend-backed and not demo/static-only.               |
-| ~~G5-002~~ | P1 ✅ | Use route contract `apiEndpoint` for page/API mapping once every route has it.                   |
-| ~~G5-003~~ | P1 ✅ | Add loading, error, empty, forbidden, and degraded states to every stable page.                  |
-| ~~G5-004~~ | P1 ✅ | Dashboard: move to backend-owned dashboard contract.                                             |
-| ~~G5-005~~ | P1 ✅ | Records: use canonical records endpoint; add filters/pagination.                                 |
-| ~~G5-006~~ | P0 ✅ | Record detail: display actual FHIR/resource payload returned by fixed backend endpoint.          |
-| ~~G5-007~~ | P1 ✅ | Profile: support GET/PATCH, dirty state, validation, rollback.                                   |
-| ~~G5-008~~ | P1 ✅ | Timeline: use backend timeline events; group by date/category.                                   |
-| ~~G5-009~~ | P1 ✅ | Conditions: active/resolved tabs and detail drilldown.                                           |
-| ~~G5-010~~ | P1 ✅ | Observations: trend chart, date/metric selector, abnormal state.                                 |
-| ~~G5-011~~ | P1 ✅ | Labs: align with observation/lab route naming and backend DTO.                                   |
-| ~~G5-012~~ | P1 ✅ | Medications: active/history/detail, refill/discontinue only when supported.                      |
-| ~~G5-013~~ | P1 ✅ | Immunizations: list/detail, permanent retention indicator, audit awareness.                      |
-| ~~G5-014~~ | P1 ✅ | Documents: list/filter/preview/download policy.                                                  |
-| ~~G5-015~~ | P1 ✅ | Upload: file type/size/progress/retry/audit.                                                     |
-| ~~G5-016~~ | P1 ✅ | OCR review: accept/edit/reject, confidence badges, FHIR draft confirmation.                      |
-| ~~G5-017~~ | P1 ✅ | Consent: create/revoke/update/expiry workflow and rollback on failure.                           |
-| ~~G5-018~~ | P1 ✅ | Appointments: slot search, conflict handling, request state.                                     |
-| ~~G5~~G5~~~~ PG5✅✅| Notifications: backend-backed and PHI-redacted.                                                  |
-| ~~G5-020~~ | P1 ✅ | Emergency: reason, status, audit, notification.                                                  |
-| ~~G5-021~~ | P1 ✅ | Emergency reviews: pending/overdue/review action.                                                |
-| ~~G5-022~~ | P1 ✅ | Audit: backend-backed pagination/filter/detail/export.                                           |
-| ~~G5~~G5~~~~ PGP✅2| Release readiness: keep UI, but route should call Kernel-backed readiness service after Group 9. |
-| ~~G5-024~~ | P2 ✅ | Settings: add language switch, sync/export status, logout consistency.                           |
-
-## Verification Pass V4
-
-One Playwright route traversal suite:
-
-```bash
-pnpm --dir products/phr/apps/web exec playwright test e2e/phr-stable-routes.spec.ts
-```
-
-Assertions per route:
-
-```text
-renders
-uses backend or declared mock only in dev
-has loading/error/empty/forbidden states
-has i18n text
-has accessible landmark/title
-primary actions work or are hidden
-no hidden route appears in navigation
-```
-
----
-
-# Group 6 — Hidden Provider, Caregiver, and FCHV Routes
-
-## Files
-
-```text
-products/phr/apps/web/src/pages/ProviderDashboardPage.tsx
-products/phr/apps/web/src/pages/ProviderPatientsPage.tsx
-products/phr/apps/web/src/pages/CaregiverDependentsPage.tsx
-products/phr/apps/web/src/pages/FchvDashboardPage.tsx
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrProviderRoutes.java
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrCaregiverRoutes.java
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrFchvRoutes.java
-products/phr/config/phr-route-contract.json
-```
-
-## Tasks
-
-| ID     | Priority | Change                                                                                                                      |
-| ------ | -------- | --------------------------------------------------------------------------------------------------------------------------- |
-| ~~G6-001~~ | P0 ✅ | Keep these routes truly hidden/inaccessible until route/API/test coverage is complete. Current contract marks them hidden.  |
-| ~~G6-002~~ | P1 ✅ | Provider dashboard: implement work queue, appointments, recent patients, alerts.                                            |
-| ~~G6-003~~ | P1 ✅ | Provider patients: implement consent/treatment-aware search and roster.                                                     |
-| ~~G6-004~~ | P1 ✅ | Provider patient detail/summary route must be added before exposing provider patients.                                      |
-| ~~G6-005~~ | P1 ✅ | Caregiver dependents: implement dependent list, detail, grant expiry/revocation behavior.                                   |
-| ~~G6-006~~ | P1 ✅ | FCHV dashboard: implement community assignment, scoped patient list, vitals capture links.                                  |
-| ~~G6-007~~ | P1 ✅ | Add route contract entries for provider patient detail and FCHV patient/vitals if implemented.                              |
-| ~~G6-008~~ | P1 ✅ | Only switch stability from `hidden` to `preview` or `stable` after route/page/API/test coverage is complete.                |
-| ~~G6-009~~ | P2 ✅ | Add role-specific shell/navigation grouping for provider/caregiver/FCHV once unhidden.                                      |
-
-## Verification Pass V4
-
-Same web E2E run, plus direct-access tests for hidden routes:
-
-```text
-hidden route not visible in nav
-direct URL blocked unless preview flag enabled
-preview route shows clear preview state
-stable route has full backend-backed workflow
-```
-
----
-
-# Group 7 — Mobile App, Encrypted PHI Storage, and Mobile API Contract
-
-## Files
-
-```text
-products/phr/apps/mobile/src/App.tsx
-products/phr/apps/mobile/src/services/phrMobileApi.ts
-products/phr/apps/mobile/src/services/offlineStore.ts
-products/phr/apps/mobile/src/services/phiEncryptedStorage.ts
-products/phr/apps/mobile/src/services/mobileSessionStore.ts
-products/phr/apps/mobile/src/services/biometricAuth.ts
-products/phr/apps/mobile/src/services/pushNotifications.ts
-products/phr/apps/mobile/src/i18n/phrMobileI18n.ts
-products/phr/apps/mobile/src/screens/*.tsx
-products/phr/apps/mobile/src/types.ts
-products/phr/src/main/java/com/ghatana/phr/api/routes/PhrMobileRoutes.java
-```
-
-## Tasks
-
-| ID     | Priority | Change                                                                                                                                                                                                         |
-| ------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ~~G7-001~~ | P0 ✅ | Fix backend/mobile dashboard DTO mismatch for records and notifications.                                                                                                                                       |
-| ~~G7-002~~ | P0 ✅ | Add test proving `AsyncStorage` contains ciphertext only. The encrypted storage adapter stores ciphertext in AsyncStorage and key material in SecureStore.                                                     |
-| ~~G7-003~~ | P0 ✅ | Verify WebCrypto, `btoa`, and `atob` availability in the target React Native runtime; add polyfills/adapters if needed.                                                                                        |
-| ~~G7-004~~ | P0 ✅ | Replace local-only tamper/integrity claims with real attestation or rename them to local integrity checks. Current code comments say production would verify against server-side attestation.                  |
-| ~~G7-005~~ | P1 ✅ | Ensure `phiClearAll`, `clearDashboardOffline`, and `clearMobileSession` are called on logout, session expiry, role/persona/tier change, and consent revoke. Current logout and revoke paths clear local PHI.   |
-| ~~G7-006~~ | P1 ✅ | Extend session change detection to persona/tier/facility, not only role/principal. Current foreground logic checks role/principal.                                                                             |
-| ~~G7-007~~ | P1 ✅ | Add mobile record detail screen and navigation from record list.                                                                                                                                               |
-| ~~G7-008~~ | P1 ✅ | Add mobile language switcher in settings.                                                                                                                                                                      |
-| ~~G7-009~~ | P1 ✅ | Add stale offline cache timestamp display using `getDashboardOfflineTimestamp`.                                                                                                                                |
-| ~~G7-010~~ | P1 ✅ | Ensure push notification UI does not display sensitive token or PHI. Current app writes push token into sync message.                                                                                          |
-| ~~G7-011~~ | P1 ✅ | Ensure all mobile screens use `t()` and no raw user-visible strings remain. App-level i18n is now present.                                                                                                     |
-| ~~G7-012~~ | P1 ✅ | Add accessibility labels/hints to all mobile Pressables/Inputs/cards. Tab bar already has roles/labels.                                                                                                        |
-| ~~G7-013~~ | P2 ✅ | Add low-connectivity action queue for FCHV/patient actions only after route/API support is real.                                                                                                               |
-
-## Verification Pass V5
-
-```bash
-pnpm --dir products/phr/apps/mobile test
-```
-
-Required tests:
-
-```text
-login success saves secure session
-dashboard sends tenant/principal/role/persona/tier/correlation headers
-offline dashboard uses encrypted storage
-plaintext patient name is absent from AsyncStorage
-cache rejected on session mismatch
-logout clears PHI/session
-consent revoke clears PHI
-offline banner appears when disconnected
-mobile strings are i18n-backed
-```
-
----
-
-# Group 8 — PHR API Client and Shared Types
-
-## Files
-
-```text
-products/phr/apps/web/src/api/phrApi.ts
-products/phr/apps/web/src/types.ts
-products/phr/apps/mobile/src/services/phrMobileApi.ts
-products/phr/apps/mobile/src/types.ts
-products/phr/apps/web/src/i18n/phrI18n.ts
-products/phr/apps/mobile/src/i18n/phrMobileI18n.ts
-```
-
-## Tasks
-
-| ID     | Priority | Change                                                                                                                                                                                                      |
-| ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ~~G8-001~~ | P1 ✅ | Split `phrApi.ts` into focused modules: auth, dashboard, records, consent, clinical, documents, emergency, audit, release. It is now very broad and mixes FHIR transformation, headers, schemas, and APIs.  |
-| ~~G8-002~~ | P1 ✅ | Keep `buildPhrHeaders` as the single web header builder.                                                                                                                                                    |
-| ~~G8-003~~ | P1 ✅ | Add equivalent single mobile header builder and reuse it for all mobile calls.                                                                                                                              |
-| ~~G8-004~~ | P1 ✅ | Make web and mobile share DTO contracts where possible.                                                                                                                                                     |
-| ~~G8-005~~ | P1 ✅ | Add schema validation for all API responses, not only dashboard/FHIR/mobile.                                                                                                                                |
-| ~~G8-006~~ | P1 ✅ | Replace fallback “Unknown/General/TBD” values with explicit missing-data states where clinically relevant.                                                                                                  |
-| ~~G8-007~~ | P2 ✅ | Move FHIR-to-UI transforms into a dedicated adapter file.                                                                                                                                                   |
-| ~~G8-008~~ | P2 ✅ | Add contract tests for every exported API function.                                                                                                                                                         |
-
-## Verification Pass V4 + V5
-
-Run web/mobile unit tests once after this group because it affects both apps.
-
----
-
-# Group 9 — Kernel Platform Tasks Required by PHR
-
-## Files
-
-```text
-platform/typescript/product-shell/src/**
-platform/typescript/kernel-lifecycle/src/**
-platform-kernel/**
-scripts/check-route-entitlement-contracts.mjs
-scripts/check-product-ui-contracts.mjs
-scripts/check-i18n-*.mjs
-scripts/check-a11y-*.mjs
-```
-
-## Tasks
-
-| ID     | Priority | Change                                                                                                      |
-| ------ | -------- | ----------------------------------------------------------------------------------------------------------- |
-| ~~G9-001~~ | P0 ✅ | Promote PHR route contract shape into a reusable Kernel product-route contract schema.                      |
-| ~~G9-002~~ | P0 ✅ | Add Kernel generator for product route contracts → frontend route TS → backend entitlement adapter payload. |
-| ~~G9-003~~ | P1 ✅ | Move route stability semantics into Kernel/product-shell.                                                   |
-| ~~G9-004~~ | P1 ✅ | Add Kernel hidden/preview/blocked direct-access behavior.                                                   |
-| ~~G9-005~~ | P1 ✅ | Promote PHI/patient-data policy primitives to Kernel privacy/security contracts; PHR extends them.          |
-| ~~G9-006~~ | P1 ✅ | Add Kernel mobile-offline-PHI policy contract: encryption, TTL, session binding, revocation clear.          |
-| ~~G9-007~~ | P1 ✅ | Move release-readiness runtime service behind Kernel API; PHR route becomes a thin adapter.                 |
-| ~~G9-008~~ | P1 ✅ | Add Kernel correlation ID propagation contract and helper for web/mobile/backend.                           |
-| ~~G9-009~~ | P2 ✅ | Add shared product i18n/a11y route-surface gate for web and mobile products.                                |
-| ~~G9-010~~ | P2 ✅ | Add check that production modules do not pass `null` route adapters.                                        |
-
-## Verification Pass V6
-
-```bash
-pnpm check:route-entitlement-contracts
-pnpm check:kernel-product-boundary-audit
-pnpm check:kernel-lifecycle-truth
-```
-
-Add or update checks for:
-
-```text
-route contract generation
-no nullable production route wiring
-mobile PHI policy conformance
-hidden route enforcement
-```
-
----
-
-# Group 10 — YAPPC Tasks Required by PHR
-
-## Files
-
-```text
-products/yappc/core/scaffold/api/src/main/java/com/ghatana/yappc/api/YappcApi.java
-products/yappc/core/scaffold/api/src/main/java/com/ghatana/yappc/api/service/**
-products/yappc/core/scaffold/**
-products/yappc/frontend/web/src/**
-products/yappc/frontend/web/src/lib/canvas-ai/**
-```
-
-## Tasks
-
-| ID      | Priority | Change                                                                                                     |
-| ------- | -------- | ---------------------------------------------------------------------------------------------------------- |
-| ~~G10-001~~ | P1 ✅ | Add PHR IA importer that reads `phr-route-contract.json` and future `phr-usecase-baseline.json`.           |
-| ~~G10-002~~ | P1 ✅ | Add YAPPC product model support for route/page/API/test/policy gaps.                                       |
-| ~~G10-003~~ | P1 ✅ | Generate PHR web route/page skeletons from Kernel route contract.                                          |
-| ~~G10-004~~ | P1 ✅ | Generate PHR backend route adapter skeletons from Kernel route contract.                                   |
-| ~~G10-005~~ | P1 ✅ | Generate PHR mobile screen/API skeletons from Kernel route contract.                                       |
-| ~~G10-006~~ | P1 ✅ | Add generation mode that emits “delete duplicate legacy path” tasks instead of deprecation tasks.          |
-| ~~G10-007~~ | P1 ✅ | Add PHR gap visualization: stable implemented, stable missing API, hidden, blocked, preview, test missing. |
-| ~~G10-008~~ | P1 ✅ | Add PHR pack under scaffold packs.                                                                         |
-| ~~G10-009~~ | P2 ✅ | Add backlog export grouped by verification pass.                                                           |
-| ~~G10-010~~ | P2 ✅ | Add product completeness preview for web/mobile/backend parity.                                            |
-
-YAPPC’s current API is still generic pack/project/feature/template/dependency access, so this work should extend it for Kernel-native product generation rather than creating a separate PHR-specific generator.  
-
-## Verification Pass V6
+| ID        | Priority | Change                                                                                                                     |
+| --------- | -------: | -------------------------------------------------------------------------------------------------------------------------- |
+| YAPPC-T01 |       P1 | Add importer for `products/phr/config/phr-route-contract.json`.                                                            |
+| YAPPC-T02 |       P1 | Visualize route/page/API/policy/test status from the PHR contract.                                                         |
+| YAPPC-T03 |       P1 | Generate PHR page skeletons from canonical route contract, not manual prompts.                                             |
+| YAPPC-T04 |       P1 | Generate PHR web API client skeletons using `phrFetch`.                                                                    |
+| YAPPC-T05 |       P1 | Generate PHR backend ActiveJ route skeletons using `PhrRouteSupport` and `PhrPolicyEvaluator`.                             |
+| YAPPC-T06 |       P1 | Generate tests from `testId`.                                                                                              |
+| YAPPC-T07 |       P1 | Add fix-forward cleanup mode: generated replacement should remove obsolete placeholder/legacy file in same plan.           |
+| YAPPC-T08 |       P2 | Add mobile screen skeleton generation with secure session/i18n/a11y defaults.                                              |
+| YAPPC-T09 |       P2 | Delete old PHR scaffold templates that bypass route contract.                                                              |
+| YAPPC-T10 |       P2 | Do not expand evidence-generation workflows in this iteration. Keep focus on generation correctness and gap visualization. |
+
+## Verification
+
+One YAPPC pass:
 
 ```bash
 pnpm check:yappc-kernel-bridge-contracts
@@ -539,81 +446,52 @@ pnpm check:yappc-feature-completeness-matrix
 pnpm check:yappc-kernel-artifact-roundtrip
 ```
 
-Add:
-
-```bash
-pnpm check:yappc-phr-ia-import
-pnpm check:yappc-phr-generation-roundtrip
-```
-
 ---
 
-# Group 11 — Tests and Checks to Add or Update
+# Final Minimal Verification Plan
 
-## Files
+After completing the groups, run verification in this order:
 
-```text
-scripts/check-phr-route-contract-drift.mjs
-scripts/check-phr-mobile-privacy.mjs
-scripts/check-phr-policy-enforcement.mjs
-scripts/check-phr-route-implementation-map.mjs
-products/phr/src/test/**
-products/phr/apps/web/src/**/*.test.tsx
-products/phr/apps/web/e2e/**
-products/phr/apps/mobile/src/**/*.test.tsx
-products/yappc/**/__tests__/**
-```
+1. **Route/API Contract**
 
-## Tasks
+   ```bash
+   node scripts/check-phr-route-contract.mjs
+   node scripts/check-phr-api-client-boundaries.mjs
+   ```
 
-| ID      | Priority | Change                                                                          |
-| ------- | -------- | ------------------------------------------------------------------------------- |
-| ~~G11-001~~ | P0 ✅ | Add backend compile check to required PHR verification path.                    |
-| ~~G11-002~~ | P0 ✅ | Add route contract drift check.                                                 |
-| ~~G11-003~~ | P0 ✅ | Add patient/PHI policy access matrix test.                                      |
-| ~~G11-004~~ | P0 ✅ | Add mobile DTO contract test against `PhrMobileRoutes`.                         |
-| ~~G11-005~~ | P0 ✅ | Add encrypted PHI cache test: no plaintext patient data in AsyncStorage.        |
-| ~~G11-006~~ | P1 ✅ | Add hidden/stable route visibility tests.                                       |
-| ~~G11-007~~ | P1 ✅ | Add web route traversal E2E for every stable route.                             |
-| ~~G11-008~~ | P1 ✅ | Add web action E2E for consent, appointments, documents, OCR, emergency, audit. |
-| ~~G11-009~~ | P1 ✅ | Add mobile session restore/expiry/logout/offline tests.                         |
-| ~~G11-010~~ | P1 ✅ | Add mobile consent revoke clears cache test.                                    |
-| ~~G11-011~~ | P1 ✅ | Add correlation ID propagation tests.                                           |
-| ~~G11-012~~ | P1 ✅ | Add i18n raw-string checks for PHR web/mobile.                                  |
-| ~~G11-013~~ | P1 ✅ | Add accessibility checks for web routes and mobile tab/buttons/forms.           |
-| ~~G11-014~~ | P1 ✅ | Add YAPPC PHR IA import/generation roundtrip tests.                             |
-| ~~G11-015~~ | P2 ✅ | Add performance smoke for records, audit, mobile dashboard.                     |
+2. **Backend Policy and Routes**
 
-## Verification Pass V7
+   ```bash
+   ./gradlew :products:phr:test --tests '*Routes*' --tests '*Policy*' --tests '*PhrHttpServer*'
+   ```
 
-After all groups:
+3. **Web**
 
-```bash
-pnpm check:required
-pnpm check:architecture-boundaries
-pnpm check:i18n-conformance
-pnpm check:a11y-behavioral-proof
-pnpm check:phr-production-workflows
-pnpm check:phr-lifecycle-readiness
-pnpm check:yappc-kernel-bridge-contracts
-```
+   ```bash
+   pnpm --dir products/phr/apps/web exec vitest run
+   pnpm --dir products/phr/apps/web exec playwright test
+   ```
 
----
+4. **Mobile**
 
-# Recommended Implementation Order
+   ```bash
+   pnpm --dir products/phr/apps/mobile test
+   node scripts/check-phr-mobile-storage-boundary.mjs
+   ```
 
-| Order | Group                                     | Why                                                             |
-| ----: | ----------------------------------------- | --------------------------------------------------------------- |
-|     1 | Group 1 — Backend composition/wiring      | Removes null production route paths and makes APIs reachable.   |
-|     2 | Group 3 — Policy/security helpers         | Prevents building more UI/API on legacy role-only access.       |
-|     3 | Group 4 — Backend DTO/contract alignment  | Fixes mobile/web/backend mismatches before E2E.                 |
-|     4 | Group 2 — Route contract canonicalization | Prevents new route drift while pages are completed.             |
-|     5 | Group 7 — Mobile contract/privacy         | Mobile PHI and DTO correctness are high risk.                   |
-|     6 | Group 5 — Stable web pages                | Complete user-facing PHR journeys.                              |
-|     7 | Group 6 — Hidden provider/caregiver/FCHV  | Implement or keep truly hidden; do not expose incomplete flows. |
-|     8 | Group 8 — API client/types split          | Clean up after contracts are settled.                           |
-|     9 | Group 9 — Kernel platform extraction      | Promote proven PHR patterns into Kernel.                        |
-|    10 | Group 10 — YAPPC acceleration             | Generate only after Kernel/PHR contracts are stable.            |
-|    11 | Group 11 — Final checks                   | Lock in verification coverage.                                  |
+5. **Cross-Cutting**
 
-This organization lets you implement related changes together and verify them in grouped passes instead of repeatedly re-running full checks after every small file change.
+   ```bash
+   pnpm check:i18n-conformance
+   pnpm check:a11y-behavioral-proof
+   node scripts/check-phr-phi-log-safety.mjs
+   ```
+
+6. **Kernel/YAPPC**
+
+   ```bash
+   pnpm check:route-entitlement-contracts
+   pnpm check:yappc-kernel-bridge-contracts
+   ```
+
+This organization keeps related file changes together and avoids repeated full-suite verification after every individual task.

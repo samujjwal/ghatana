@@ -189,7 +189,7 @@ public final class PhrCaregiverRoutes {
             context.facilityId()
         ).then(decision -> {
             if (!decision.isAllowed()) {
-                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
             }
 
                 return patientRecordService.getPatient(patientId)
@@ -232,7 +232,7 @@ public final class PhrCaregiverRoutes {
             context.facilityId()
         ).then(decision -> {
             if (!decision.isAllowed()) {
-                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
             }
 
                 return patientRecordService.getPatient(patientId)

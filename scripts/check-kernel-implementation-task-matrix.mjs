@@ -99,19 +99,19 @@ function parsePlanTasksFromGroupedSection(planSource) {
       continue;
     }
 
-    if (/^\*\*Change areas:\*\*/.test(line)) {
+    if (/^\*\*(Change areas|Change):\*\*/.test(line)) {
       inChangeArea = true;
       inExactChanges = false;
       continue;
     }
 
-    if (/^\*\*Exact changes:\*\*/.test(line)) {
+    if (/^\*\*(Exact changes|Exact work):\*\*/.test(line)) {
       inExactChanges = true;
       inChangeArea = false;
       continue;
     }
 
-    if (/^\*\*(Verification|Acceptance criteria):\*\*/.test(line) || /^###\s+Group\s+\d+\s+—/.test(line)) {
+    if (/^\*\*(Acceptance criteria|Acceptance):\*\*/.test(line) || /^###\s+Group\s+\d+\s+—/.test(line)) {
       inChangeArea = false;
       inExactChanges = false;
     }

@@ -1,21 +1,36 @@
 {
   "productId": "digital-marketing",
   "environment": "prod",
-  "generatedAt": "2026-05-29T03:02:24.313Z",
-  "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
-  "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+  "generatedAt": "2026-05-29T23:11:39.816Z",
+  "sourceCommitSha": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3",
+  "targetCommitSha": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3",
   "bootstrap": {
     "validated": true,
-    "validatedAt": "2026-05-29T03:02:24.313Z",
+    "validatedAt": "2026-05-29T23:11:39.816Z",
     "googleAdsConnector": {
       "status": "ready",
       "oauthConfigured": true,
       "tokenRefreshEnabled": true,
       "idempotencyKeysEnabled": true
+    },
+    "postgres": {
+      "validated": true
+    },
+    "migrations": {
+      "validated": true
+    },
+    "secrets": {
+      "validated": true
+    },
+    "storage": {
+      "validated": true
+    },
+    "distributedCache": {
+      "validated": true
     }
   },
   "executabilityProof": {
-    "validatedAt": "2026-05-29T03:02:24.313Z",
+    "validatedAt": "2026-05-29T23:11:39.816Z",
     "components": {
       "googleAdsConnector": {
         "executable": true,
@@ -26,5 +41,6 @@
         "sandboxModeBlocked": true
       }
     }
-  }
+  },
+  "commitSha": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3"
 }

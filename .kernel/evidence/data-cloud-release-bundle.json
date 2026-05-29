@@ -1,15 +1,20 @@
 {
   "pass": true,
   "generatedAt": "2026-05-26T23:03:00.000Z",
-  "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
-  "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+  "sourceCommitSha": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3",
+  "targetCommitSha": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3",
+  "targetEnvironment": "staging",
+  "validationStatus": "validated",
+  "reviewDueAt": "2026-05-30T23:03:00.000Z",
+  "expiresAt": "2026-05-31T23:03:00.000Z",
   "evidenceRun": {
     "generatedBy": "scripts/generate-data-cloud-release-bundle.mjs",
     "source": "scripts/generate-data-cloud-release-bundle.mjs",
     "command": "pnpm generate:data-cloud-release-bundle",
-    "commit": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
-    "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
-    "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8"
+    "commit": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3",
+    "sourceCommitSha": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3",
+    "targetCommitSha": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3",
+    "targetEnvironment": "staging"
   },
   "summary": {
     "totalViolations": 0,

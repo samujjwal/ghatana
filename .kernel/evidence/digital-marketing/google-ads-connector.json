@@ -1,11 +1,26 @@
 {
   "productId": "digital-marketing",
   "evidenceType": "google-ads-connector",
-  "generatedAt": "2026-05-27T19:58:28.453Z",
-  "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
-  "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+  "generatedAt": "2026-05-29T23:11:39.816Z",
+  "sourceCommitSha": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3",
+  "targetCommitSha": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3",
   "targetEnvironment": "staging",
-  "validationStatus": "validated",
+  "validationStatus": {
+    "0": "v",
+    "1": "a",
+    "2": "l",
+    "3": "i",
+    "4": "d",
+    "5": "a",
+    "6": "t",
+    "7": "e",
+    "8": "d",
+    "validatedAt": "2026-05-29T23:11:39.816Z",
+    "overallStatus": "passed",
+    "allProductionGuaranteesMet": true,
+    "stagingSandboxMode": true,
+    "prodProductionMode": true
+  },
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/check-product-family-asset-registry.mjs",
@@ -18,5 +33,29 @@
   },
   "oauthConfigured": true,
   "tokenRefreshEnabled": true,
-  "idempotencyKeysEnabled": true
+  "idempotencyKeysEnabled": true,
+  "commitSha": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3",
+  "evidenceFreshness": {
+    "status": "current",
+    "lastVerifiedAt": "2026-05-29T23:11:39.816Z",
+    "verifiedAtCommitSha": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3",
+    "verificationMethod": "automated-connector-runtime-proof-and-env-bootstrap-validation",
+    "allGuaranteesVerified": true
+  },
+  "executableProof": {
+    "validatedAt": "2026-05-29T23:11:39.816Z",
+    "commands": [
+      "node ./scripts/run-gradle-wrapper.mjs :products:digital-marketing:dm-application:test --rerun-tasks --tests com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsConnectorReadinessServiceImplTest",
+      "node ./scripts/run-gradle-wrapper.mjs :products:digital-marketing:dm-api:test --rerun-tasks --tests com.ghatana.digitalmarketing.api.DmosConnectorReadinessServletTest"
+    ],
+    "tests": [
+      "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/googleads/DmGoogleAdsConnectorReadinessServiceImplTest.java",
+      "products/digital-marketing/dm-api/src/test/java/com/ghatana/digitalmarketing/api/DmosConnectorReadinessServletTest.java"
+    ],
+    "passed": true
+  },
+  "evidenceRefs": [
+    "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/googleads/DmGoogleAdsConnectorReadinessServiceImplTest.java",
+    "products/digital-marketing/dm-api/src/test/java/com/ghatana/digitalmarketing/api/DmosConnectorReadinessServletTest.java"
+  ]
 }

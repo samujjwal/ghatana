@@ -1,21 +1,21 @@
 {
-  "generatedAt": "2026-05-29T02:07:04.536Z",
+  "generatedAt": "2026-05-29T23:09:34.670Z",
   "status": "passed",
   "summary": {
-    "requiredTaskCount": 51,
-    "parsedTaskCount": 51,
+    "requiredTaskCount": 63,
+    "parsedTaskCount": 63,
     "statusCounts": {
-      "Partial": 48,
+      "Partial": 60,
       "Planned": 3
     },
-    "averageMaturityDepth": 2.08,
-    "warningCount": 0,
+    "averageMaturityDepth": 2.06,
+    "warningCount": 57,
     "violationCount": 0
   },
   "incrementalRoadmap": {
-    "generatedAt": "2026-05-29T02:07:04.537Z",
+    "generatedAt": "2026-05-29T23:09:34.671Z",
     "targetMaturityDepth": 5,
-    "remainingTaskCount": 51,
+    "remainingTaskCount": 63,
     "deferredTaskIds": [],
     "waveBuckets": {
       "wave-1-foundation": [
@@ -75,13 +75,25 @@
         48,
         49,
         50,
-        51
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63
       ]
     },
     "tasks": [
       {
         "id": 8,
-        "title": "Canonical Data Cloud Domain/Journey Pass: Move quality advisory out of client-side heuristic logic into Data Quality/Intelligence endpoint.",
+        "title": "Runtime Truth and Capability Registry Consolidation: `pnpm --filter @ghatana/data-cloud-ui test`",
         "status": "Planned",
         "maturityDepth": 1,
         "targetDepth": 5,
@@ -96,7 +108,7 @@
       },
       {
         "id": 5,
-        "title": "Runtime Truth, Route Truth, and Contract Convergence: Promote API contract and integration test modules from advisory when they validate production routes.",
+        "title": "Runtime Truth and Capability Registry Consolidation: `./gradlew :products:data-cloud:delivery:launcher:test`",
         "status": "Planned",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -111,7 +123,7 @@
       },
       {
         "id": 7,
-        "title": "Canonical Data Cloud Domain/Journey Pass: Replace `storageSize: 0` and client-derived collection stats with backend-owned stats.",
+        "title": "Runtime Truth and Capability Registry Consolidation: `pnpm check:truth-surfaces`",
         "status": "Planned",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -126,7 +138,7 @@
       },
       {
         "id": 9,
-        "title": "Canonical Data Cloud Domain/Journey Pass: Connect connector sync results to collection creation/update.",
+        "title": "Backend Capability Contracts and Permission Enforcement: Create route/action permission matrix.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -141,7 +153,7 @@
       },
       {
         "id": 10,
-        "title": "Canonical Data Cloud Domain/Journey Pass: Define one journey contract: connector → sync → collection → schema → quality → lineage → trust.",
+        "title": "Backend Capability Contracts and Permission Enforcement: Require policy checks for critical mutations, agent tool calls, AV PII/biometric tools, plugin install/upgrade, exports, deletion, model promotion, and tier migration.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -156,7 +168,7 @@
       },
       {
         "id": 11,
-        "title": "Outcome-First UI / 0 Cognitive Load Pass: Default nav: Home, Data, Query, Pipelines, Trust, Operations.",
+        "title": "Backend Capability Contracts and Permission Enforcement: Replace empty AV `requiredRoles` with explicit roles or policy expressions.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -171,7 +183,7 @@
       },
       {
         "id": 12,
-        "title": "Outcome-First UI / 0 Cognitive Load Pass: Move Agents, Memory, Context, Fabric, Plugins, Runtime Truth, Release Truth, Alerts into role/contextual surfaces.",
+        "title": "Backend Capability Contracts and Permission Enforcement: Ensure audit reason/break-glass is enforced server-side.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -186,7 +198,7 @@
       },
       {
         "id": 13,
-        "title": "Outcome-First UI / 0 Cognitive Load Pass: Use route registry icons instead of mapping all generated nav icons to `Activity`.",
+        "title": "Backend Capability Contracts and Permission Enforcement: API tests for authenticated/unauthenticated/wrong-tenant/wrong-role cases.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -201,7 +213,7 @@
       },
       {
         "id": 14,
-        "title": "Outcome-First UI / 0 Cognitive Load Pass: Rename “Product mode” / role switcher to avoid permission confusion.",
+        "title": "Backend Capability Contracts and Permission Enforcement: AV tool access denial tests.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -216,7 +228,7 @@
       },
       {
         "id": 15,
-        "title": "Outcome-First UI / 0 Cognitive Load Pass: Replace hover-only row actions with keyboard-visible action menus.",
+        "title": "Backend Capability Contracts and Permission Enforcement: Agent tool policy tests.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -231,7 +243,7 @@
       },
       {
         "id": 16,
-        "title": "Outcome-First UI / 0 Cognitive Load Pass: Replace hardcoded strings with i18n keys.",
+        "title": "Backend Capability Contracts and Permission Enforcement: Break-glass audit tests.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -246,7 +258,7 @@
       },
       {
         "id": 17,
-        "title": "AEP / Action Plane Completion Pass: Complete unified operator model.",
+        "title": "Data Cloud Core E2E Completion: Implement real connector contract or keep connectors hidden until ready.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -261,7 +273,7 @@
       },
       {
         "id": 18,
-        "title": "AEP / Action Plane Completion Pass: Implement PatternSpec compiler and lifecycle.",
+        "title": "Data Cloud Core E2E Completion: Add import/ingest job status.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -276,7 +288,7 @@
       },
       {
         "id": 19,
-        "title": "AEP / Action Plane Completion Pass: Complete EventCloud SPI boundary.",
+        "title": "Data Cloud Core E2E Completion: Ensure entity writes produce event, audit, lineage/context update, idempotency record, and observability trace.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -291,7 +303,7 @@
       },
       {
         "id": 20,
-        "title": "AEP / Action Plane Completion Pass: Implement learning → recommendation → review → promotion → rollback loop.",
+        "title": "Data Cloud Core E2E Completion: Add server-backed empty/error/degraded states.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -306,7 +318,7 @@
       },
       {
         "id": 21,
-        "title": "AEP / Action Plane Completion Pass: Make replay-safe agent execution mandatory for pattern-linked agents.",
+        "title": "Data Cloud Core E2E Completion: Integration test with durable local fixture store.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -321,7 +333,7 @@
       },
       {
         "id": 22,
-        "title": "AEP / Action Plane Completion Pass: Retire or hide legacy root action routes behind feature flags.",
+        "title": "Data Cloud Core E2E Completion: UI E2E against backend.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -336,7 +348,7 @@
       },
       {
         "id": 23,
-        "title": "Agent Governance, Mastery, and Safety Pass: Fix documented safety issues: approval/verification flag preservation, tenant source correctness, release tenant ID, mastery item state history validation.",
+        "title": "Data Cloud Core E2E Completion: Contract test for import/ingest status and lineage.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -351,7 +363,7 @@
       },
       {
         "id": 24,
-        "title": "Agent Governance, Mastery, and Safety Pass: Separate execution strategy from supervision level.",
+        "title": "Action Plane Lifecycle Completion: Consolidate duplicate registry service entry points or document exact adapter ownership.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -366,7 +378,7 @@
       },
       {
         "id": 25,
-        "title": "Agent Governance, Mastery, and Safety Pass: Enforce policy/tool/memory/replay/guardrail declarations for agent capabilities.",
+        "title": "Action Plane Lifecycle Completion: Implement canonical lifecycle: draft → validate → publish → run → observe → retry/cancel/rollback.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -381,7 +393,7 @@
       },
       {
         "id": 26,
-        "title": "Agent Governance, Mastery, and Safety Pass: Add tenant-scoped agent release and mastery queries.",
+        "title": "Action Plane Lifecycle Completion: Add HITL queue: pending → approve/reject/escalate → learned.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -396,7 +408,7 @@
       },
       {
         "id": 27,
-        "title": "Audio-Video Productization and Data Cloud Integration: Add product manifest and lifecycle profile or explicitly keep it hidden as experimental.",
+        "title": "Action Plane Lifecycle Completion: Add pattern lifecycle: define → deploy → match → explain → feedback → version.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -411,7 +423,7 @@
       },
       {
         "id": 28,
-        "title": "Audio-Video Productization and Data Cloud Integration: Enforce media privacy, content safety, artifact retention, biometric-risk, and consent policy.",
+        "title": "Action Plane Lifecycle Completion: Emit run ledger/audit/trace for each action.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -426,7 +438,7 @@
       },
       {
         "id": 29,
-        "title": "Audio-Video Productization and Data Cloud Integration: Connect STT/TTS/Vision/Multimodal outputs to Data Cloud datasets/events/catalog.",
+        "title": "Action Plane Lifecycle Completion: `:products:data-cloud:planes:action:*:test`",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -441,7 +453,7 @@
       },
       {
         "id": 30,
-        "title": "Audio-Video Productization and Data Cloud Integration: Add runtime truth for each media processing dependency.",
+        "title": "Action Plane Lifecycle Completion: API tests for `/api/v1/action/*`",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -456,7 +468,7 @@
       },
       {
         "id": 31,
-        "title": "Audio-Video Productization and Data Cloud Integration: Add minimal operator UI only after backend lifecycle is coherent.",
+        "title": "Action Plane Lifecycle Completion: UI E2E for pipeline + review + agent flow.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -471,7 +483,7 @@
       },
       {
         "id": 32,
-        "title": "Shared Library Boundary Cleanup: Apply the architecture rule: keep only primitives used by three or more unrelated products in platform.",
+        "title": "Audio-Video as First-Class Data Cloud Modality: Add media asset model: source, consent, retention, classification, transcript, extracted events, embeddings, lineage.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -486,7 +498,7 @@
       },
       {
         "id": 33,
-        "title": "Shared Library Boundary Cleanup: Move Action Plane runtime semantics to `planes/action`.",
+        "title": "Audio-Video as First-Class Data Cloud Modality: Add ingestion workflow and status.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -501,7 +513,7 @@
       },
       {
         "id": 34,
-        "title": "Shared Library Boundary Cleanup: Move Data Cloud storage-plane event routing to `planes/event`.",
+        "title": "Audio-Video as First-Class Data Cloud Modality: Add search/index integration.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -516,7 +528,7 @@
       },
       {
         "id": 35,
-        "title": "Shared Library Boundary Cleanup: Move retention/redaction/provenance/evidence implementations to `planes/governance`.",
+        "title": "Audio-Video as First-Class Data Cloud Modality: Enforce PII/biometric policy before STT/vision/multimodal calls.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -531,7 +543,7 @@
       },
       {
         "id": 36,
-        "title": "Shared Library Boundary Cleanup: Move Data Cloud OpenAPI/schemas into `products/data-cloud/contracts`.",
+        "title": "Audio-Video as First-Class Data Cloud Modality: Add AV operation audit and trace IDs.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -546,7 +558,7 @@
       },
       {
         "id": 37,
-        "title": "Security, Privacy, and Permission Matrix Pass: Register production validators centrally and prove they execute at startup.",
+        "title": "Audio-Video as First-Class Data Cloud Modality: AV contract interop tests.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -561,7 +573,7 @@
       },
       {
         "id": 38,
-        "title": "Security, Privacy, and Permission Matrix Pass: Add permission matrix tests for viewer/operator/admin.",
+        "title": "Audio-Video as First-Class Data Cloud Modality: Agent tool policy tests.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -576,7 +588,7 @@
       },
       {
         "id": 39,
-        "title": "Security, Privacy, and Permission Matrix Pass: Add tenant mismatch, missing tenant, missing audit, missing policy, policy denial, audit failure tests.",
+        "title": "Audio-Video as First-Class Data Cloud Modality: Media ingestion integration test.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -591,7 +603,7 @@
       },
       {
         "id": 40,
-        "title": "Security, Privacy, and Permission Matrix Pass: Add audio-video PII/biometric policy enforcement.",
+        "title": "Audio-Video as First-Class Data Cloud Modality: Large file/stream timeout tests.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -606,7 +618,7 @@
       },
       {
         "id": 41,
-        "title": "Security, Privacy, and Permission Matrix Pass: Add break-glass tests.",
+        "title": "UI/UX, i18n, and Cognitive Load Pass: Replace route labels/descriptions with i18n keys.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -621,7 +633,7 @@
       },
       {
         "id": 42,
-        "title": "Observability, Reliability, and Idempotency Pass: Extend idempotency beyond entity writes to pipelines, events, governance, analytics, plugins, and agent actions.",
+        "title": "UI/UX, i18n, and Cognitive Load Pass: Standardize page headers, cards, tables, actions, filters, drilldowns, empty/loading/error states.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -636,7 +648,7 @@
       },
       {
         "id": 43,
-        "title": "Observability, Reliability, and Idempotency Pass: Add correlation IDs to every run/job/action/agent/media flow.",
+        "title": "UI/UX, i18n, and Cognitive Load Pass: Keep preview surfaces non-discoverable unless role/runtime truth allows.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -651,7 +663,7 @@
       },
       {
         "id": 44,
-        "title": "Observability, Reliability, and Idempotency Pass: Add durable job/run status, retry/cancel/rollback states.",
+        "title": "UI/UX, i18n, and Cognitive Load Pass: Make AI/agent/AEP labels outcome-based: “Review decisions,” “Automate pipeline,” “Explain anomaly,” not raw technical labels.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -666,7 +678,7 @@
       },
       {
         "id": 45,
-        "title": "Observability, Reliability, and Idempotency Pass: Add dead-letter/failure visibility for async workflows.",
+        "title": "UI/UX, i18n, and Cognitive Load Pass: Add a11y coverage for keyboard and screen-reader states.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -681,7 +693,7 @@
       },
       {
         "id": 46,
-        "title": "Observability, Reliability, and Idempotency Pass: Surface failed jobs in Operations without requiring logs.",
+        "title": "UI/UX, i18n, and Cognitive Load Pass: `pnpm check:i18n-conformance`",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -696,7 +708,7 @@
       },
       {
         "id": 47,
-        "title": "Test Consolidation Pass: Promote API contract and integration tests from advisory to release-blocking once stable.",
+        "title": "UI/UX, i18n, and Cognitive Load Pass: `pnpm check:a11y-maturity`",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -711,7 +723,7 @@
       },
       {
         "id": 48,
-        "title": "Test Consolidation Pass: Add one golden path E2E per main journey.",
+        "title": "UI/UX, i18n, and Cognitive Load Pass: UI component tests.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -726,7 +738,7 @@
       },
       {
         "id": 49,
-        "title": "Test Consolidation Pass: Add role/tenant matrix E2E.",
+        "title": "UI/UX, i18n, and Cognitive Load Pass: Playwright journey tests.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -741,7 +753,7 @@
       },
       {
         "id": 50,
-        "title": "Test Consolidation Pass: Add pseudo-locale and raw-string enforcement.",
+        "title": "Shared Library Boundary Cleanup: Audit platform modules against the “three unrelated products” rule.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -756,7 +768,187 @@
       },
       {
         "id": 51,
-        "title": "Test Consolidation Pass: Add keyboard/a11y tests for tables, nav, disabled surfaces, dialogs, and row actions.",
+        "title": "Shared Library Boundary Cleanup: Move Data Cloud-specific policy, event, agent, governance, and runtime semantics out of generic platform modules.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 52,
+        "title": "Shared Library Boundary Cleanup: Add architecture tests for forbidden imports.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 53,
+        "title": "Shared Library Boundary Cleanup: `pnpm check:architecture-boundaries`",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 54,
+        "title": "Shared Library Boundary Cleanup: Gradle module tests.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 55,
+        "title": "Shared Library Boundary Cleanup: Circular dependency check.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 56,
+        "title": "Deterministic Real E2E Test Pass: Keep mocked render tests, but do not treat them as production proof.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 57,
+        "title": "Deterministic Real E2E Test Pass: Add backend-backed tests for core journeys.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 58,
+        "title": "Deterministic Real E2E Test Pass: Add one fixture profile: tenant, roles, data source, entities, events, pipeline, review item, agent, AV sample metadata.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 59,
+        "title": "Deterministic Real E2E Test Pass: Add verification matrix mapping each readiness dimension to tests.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 60,
+        "title": "Deterministic Real E2E Test Pass: `./gradlew :products:data-cloud:integration-tests:test`",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 61,
+        "title": "Deterministic Real E2E Test Pass: `./gradlew :products:data-cloud:delivery:api-contract-tests:test`",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 62,
+        "title": "Deterministic Real E2E Test Pass: `pnpm --filter @ghatana/data-cloud-ui test`",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 63,
+        "title": "Deterministic Real E2E Test Pass: Playwright E2E suite.",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -771,7 +963,7 @@
       },
       {
         "id": 1,
-        "title": "Runtime Truth, Route Truth, and Contract Convergence: Finish route manifest Phase 2–4: manifest → UI runtime truth, OpenAPI validator, SDK metadata.",
+        "title": "Runtime Truth and Capability Registry Consolidation: Replace manual schema enumeration with generated/registered capability providers.",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -786,7 +978,7 @@
       },
       {
         "id": 2,
-        "title": "Runtime Truth, Route Truth, and Contract Convergence: Rename UI `RouteCapabilityRegistry` terminology to `RouteSurfaceRegistry` / runtime truth aligned names.",
+        "title": "Runtime Truth and Capability Registry Consolidation: Add Action Plane capabilities for pipelines, patterns, runs, reviews, agents, learning, deployments, and reports.",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -801,7 +993,7 @@
       },
       {
         "id": 3,
-        "title": "Runtime Truth, Route Truth, and Contract Convergence: Fix documented `RouteSecurityRegistry.java` path mismatch.",
+        "title": "Runtime Truth and Capability Registry Consolidation: Add AV tool surfaces with policy tags, consent requirements, endpoint health, timeout/retry metadata.",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -816,7 +1008,7 @@
       },
       {
         "id": 4,
-        "title": "Runtime Truth, Route Truth, and Contract Convergence: Make route aliases explicitly classified as canonical, compatibility, preview, or hidden.",
+        "title": "Runtime Truth and Capability Registry Consolidation: Add parity test: route registry ↔ OpenAPI ↔ backend runtime truth ↔ UI gates.",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -831,7 +1023,7 @@
       },
       {
         "id": 6,
-        "title": "Canonical Data Cloud Domain/Journey Pass: Promote `dc_collections` from generic entity metadata to a typed collection registry contract.",
+        "title": "Runtime Truth and Capability Registry Consolidation: `./gradlew :products:data-cloud:delivery:api-contract-tests:test`",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -855,14 +1047,13 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 1,
-      "title": "Runtime Truth, Route Truth, and Contract Convergence: Finish route manifest Phase 2–4: manifest → UI runtime truth, OpenAPI validator, SDK metadata.",
+      "title": "Runtime Truth and Capability Registry Consolidation: Replace manual schema enumeration with generated/registered capability providers.",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java",
-        "products/data-cloud/config/route-manifest.json",
-        "products/data-cloud/planes/action/server/src/main/resources/openapi.yaml",
-        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts",
-        "products/data-cloud/docs/ROUTE_MANIFEST_SYSTEM.md",
-        "scripts/generate-production-readiness-task-map.mjs"
+        "products/data-cloud/delivery/launcher/.../SurfaceSchemaGenerator.java",
+        "products/data-cloud/delivery/launcher/.../SurfaceRegistryHandler.java",
+        "products/data-cloud/delivery/launcher/.../DataCloudHttpServer.java",
+        "products/data-cloud/delivery/ui/src/api/surfaces.service.ts",
+        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts"
       ]
     },
     {
@@ -873,14 +1064,13 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 2,
-      "title": "Runtime Truth, Route Truth, and Contract Convergence: Rename UI `RouteCapabilityRegistry` terminology to `RouteSurfaceRegistry` / runtime truth aligned names.",
+      "title": "Runtime Truth and Capability Registry Consolidation: Add Action Plane capabilities for pipelines, patterns, runs, reviews, agents, learning, deployments, and reports.",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java",
-        "products/data-cloud/config/route-manifest.json",
-        "products/data-cloud/planes/action/server/src/main/resources/openapi.yaml",
-        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts",
-        "products/data-cloud/docs/ROUTE_MANIFEST_SYSTEM.md",
-        "scripts/generate-production-readiness-task-map.mjs"
+        "products/data-cloud/delivery/launcher/.../SurfaceSchemaGenerator.java",
+        "products/data-cloud/delivery/launcher/.../SurfaceRegistryHandler.java",
+        "products/data-cloud/delivery/launcher/.../DataCloudHttpServer.java",
+        "products/data-cloud/delivery/ui/src/api/surfaces.service.ts",
+        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts"
       ]
     },
     {
@@ -891,14 +1081,13 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 3,
-      "title": "Runtime Truth, Route Truth, and Contract Convergence: Fix documented `RouteSecurityRegistry.java` path mismatch.",
+      "title": "Runtime Truth and Capability Registry Consolidation: Add AV tool surfaces with policy tags, consent requirements, endpoint health, timeout/retry metadata.",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java",
-        "products/data-cloud/config/route-manifest.json",
-        "products/data-cloud/planes/action/server/src/main/resources/openapi.yaml",
-        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts",
-        "products/data-cloud/docs/ROUTE_MANIFEST_SYSTEM.md",
-        "scripts/generate-production-readiness-task-map.mjs"
+        "products/data-cloud/delivery/launcher/.../SurfaceSchemaGenerator.java",
+        "products/data-cloud/delivery/launcher/.../SurfaceRegistryHandler.java",
+        "products/data-cloud/delivery/launcher/.../DataCloudHttpServer.java",
+        "products/data-cloud/delivery/ui/src/api/surfaces.service.ts",
+        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts"
       ]
     },
     {
@@ -909,14 +1098,13 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 4,
-      "title": "Runtime Truth, Route Truth, and Contract Convergence: Make route aliases explicitly classified as canonical, compatibility, preview, or hidden.",
+      "title": "Runtime Truth and Capability Registry Consolidation: Add parity test: route registry ↔ OpenAPI ↔ backend runtime truth ↔ UI gates.",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java",
-        "products/data-cloud/config/route-manifest.json",
-        "products/data-cloud/planes/action/server/src/main/resources/openapi.yaml",
-        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts",
-        "products/data-cloud/docs/ROUTE_MANIFEST_SYSTEM.md",
-        "scripts/generate-production-readiness-task-map.mjs"
+        "products/data-cloud/delivery/launcher/.../SurfaceSchemaGenerator.java",
+        "products/data-cloud/delivery/launcher/.../SurfaceRegistryHandler.java",
+        "products/data-cloud/delivery/launcher/.../DataCloudHttpServer.java",
+        "products/data-cloud/delivery/ui/src/api/surfaces.service.ts",
+        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts"
       ]
     },
     {
@@ -927,14 +1115,13 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 5,
-      "title": "Runtime Truth, Route Truth, and Contract Convergence: Promote API contract and integration test modules from advisory when they validate production routes.",
+      "title": "Runtime Truth and Capability Registry Consolidation: `./gradlew :products:data-cloud:delivery:launcher:test`",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java",
-        "products/data-cloud/config/route-manifest.json",
-        "products/data-cloud/planes/action/server/src/main/resources/openapi.yaml",
-        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts",
-        "products/data-cloud/docs/ROUTE_MANIFEST_SYSTEM.md",
-        "scripts/generate-production-readiness-task-map.mjs"
+        "products/data-cloud/delivery/launcher/.../SurfaceSchemaGenerator.java",
+        "products/data-cloud/delivery/launcher/.../SurfaceRegistryHandler.java",
+        "products/data-cloud/delivery/launcher/.../DataCloudHttpServer.java",
+        "products/data-cloud/delivery/ui/src/api/surfaces.service.ts",
+        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts"
       ]
     },
     {
@@ -945,14 +1132,13 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 6,
-      "title": "Canonical Data Cloud Domain/Journey Pass: Promote `dc_collections` from generic entity metadata to a typed collection registry contract.",
+      "title": "Runtime Truth and Capability Registry Consolidation: `./gradlew :products:data-cloud:delivery:api-contract-tests:test`",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/EntityCrudHandler.java",
-        "products/data-cloud/delivery/ui/src/lib/api/collections.ts",
-        "products/data-cloud/delivery/ui/src/pages/DataExplorer.tsx",
-        "products/data-cloud/delivery/ui/src/api/quality.service.ts",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/connectors/InMemoryConnectorSyncJobService.java",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataProductHandler.java"
+        "products/data-cloud/delivery/launcher/.../SurfaceSchemaGenerator.java",
+        "products/data-cloud/delivery/launcher/.../SurfaceRegistryHandler.java",
+        "products/data-cloud/delivery/launcher/.../DataCloudHttpServer.java",
+        "products/data-cloud/delivery/ui/src/api/surfaces.service.ts",
+        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts"
       ]
     },
     {
@@ -963,14 +1149,13 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 7,
-      "title": "Canonical Data Cloud Domain/Journey Pass: Replace `storageSize: 0` and client-derived collection stats with backend-owned stats.",
+      "title": "Runtime Truth and Capability Registry Consolidation: `pnpm check:truth-surfaces`",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/EntityCrudHandler.java",
-        "products/data-cloud/delivery/ui/src/lib/api/collections.ts",
-        "products/data-cloud/delivery/ui/src/pages/DataExplorer.tsx",
-        "products/data-cloud/delivery/ui/src/api/quality.service.ts",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/connectors/InMemoryConnectorSyncJobService.java",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataProductHandler.java"
+        "products/data-cloud/delivery/launcher/.../SurfaceSchemaGenerator.java",
+        "products/data-cloud/delivery/launcher/.../SurfaceRegistryHandler.java",
+        "products/data-cloud/delivery/launcher/.../DataCloudHttpServer.java",
+        "products/data-cloud/delivery/ui/src/api/surfaces.service.ts",
+        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts"
       ]
     },
     {
@@ -981,14 +1166,13 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 8,
-      "title": "Canonical Data Cloud Domain/Journey Pass: Move quality advisory out of client-side heuristic logic into Data Quality/Intelligence endpoint.",
+      "title": "Runtime Truth and Capability Registry Consolidation: `pnpm --filter @ghatana/data-cloud-ui test`",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/EntityCrudHandler.java",
-        "products/data-cloud/delivery/ui/src/lib/api/collections.ts",
-        "products/data-cloud/delivery/ui/src/pages/DataExplorer.tsx",
-        "products/data-cloud/delivery/ui/src/api/quality.service.ts",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/connectors/InMemoryConnectorSyncJobService.java",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataProductHandler.java"
+        "products/data-cloud/delivery/launcher/.../SurfaceSchemaGenerator.java",
+        "products/data-cloud/delivery/launcher/.../SurfaceRegistryHandler.java",
+        "products/data-cloud/delivery/launcher/.../DataCloudHttpServer.java",
+        "products/data-cloud/delivery/ui/src/api/surfaces.service.ts",
+        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts"
       ]
     },
     {
@@ -999,14 +1183,11 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 9,
-      "title": "Canonical Data Cloud Domain/Journey Pass: Connect connector sync results to collection creation/update.",
+      "title": "Backend Capability Contracts and Permission Enforcement: Create route/action permission matrix.",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/EntityCrudHandler.java",
-        "products/data-cloud/delivery/ui/src/lib/api/collections.ts",
-        "products/data-cloud/delivery/ui/src/pages/DataExplorer.tsx",
-        "products/data-cloud/delivery/ui/src/api/quality.service.ts",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/connectors/InMemoryConnectorSyncJobService.java",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataProductHandler.java"
+        "DataCloudSecurityFilter",
+        "HttpHandlerSupport",
+        "DataCloudRouterBuilder"
       ]
     },
     {
@@ -1017,14 +1198,11 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 10,
-      "title": "Canonical Data Cloud Domain/Journey Pass: Define one journey contract: connector → sync → collection → schema → quality → lineage → trust.",
+      "title": "Backend Capability Contracts and Permission Enforcement: Require policy checks for critical mutations, agent tool calls, AV PII/biometric tools, plugin install/upgrade, exports, deletion, model promotion, and tier migration.",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/EntityCrudHandler.java",
-        "products/data-cloud/delivery/ui/src/lib/api/collections.ts",
-        "products/data-cloud/delivery/ui/src/pages/DataExplorer.tsx",
-        "products/data-cloud/delivery/ui/src/api/quality.service.ts",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/connectors/InMemoryConnectorSyncJobService.java",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataProductHandler.java"
+        "DataCloudSecurityFilter",
+        "HttpHandlerSupport",
+        "DataCloudRouterBuilder"
       ]
     },
     {
@@ -1035,13 +1213,11 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 11,
-      "title": "Outcome-First UI / 0 Cognitive Load Pass: Default nav: Home, Data, Query, Pipelines, Trust, Operations.",
+      "title": "Backend Capability Contracts and Permission Enforcement: Replace empty AV `requiredRoles` with explicit roles or policy expressions.",
       "whereRefs": [
-        "products/data-cloud/delivery/ui/src/layouts/DefaultLayout.tsx",
-        "products/data-cloud/delivery/ui/src/routes.tsx",
-        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts",
-        "products/data-cloud/delivery/ui/src/pages/DataExplorer.tsx",
-        "products/data-cloud/delivery/ui/src/i18n/config.ts"
+        "DataCloudSecurityFilter",
+        "HttpHandlerSupport",
+        "DataCloudRouterBuilder"
       ]
     },
     {
@@ -1052,13 +1228,11 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 12,
-      "title": "Outcome-First UI / 0 Cognitive Load Pass: Move Agents, Memory, Context, Fabric, Plugins, Runtime Truth, Release Truth, Alerts into role/contextual surfaces.",
+      "title": "Backend Capability Contracts and Permission Enforcement: Ensure audit reason/break-glass is enforced server-side.",
       "whereRefs": [
-        "products/data-cloud/delivery/ui/src/layouts/DefaultLayout.tsx",
-        "products/data-cloud/delivery/ui/src/routes.tsx",
-        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts",
-        "products/data-cloud/delivery/ui/src/pages/DataExplorer.tsx",
-        "products/data-cloud/delivery/ui/src/i18n/config.ts"
+        "DataCloudSecurityFilter",
+        "HttpHandlerSupport",
+        "DataCloudRouterBuilder"
       ]
     },
     {
@@ -1069,13 +1243,11 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 13,
-      "title": "Outcome-First UI / 0 Cognitive Load Pass: Use route registry icons instead of mapping all generated nav icons to `Activity`.",
+      "title": "Backend Capability Contracts and Permission Enforcement: API tests for authenticated/unauthenticated/wrong-tenant/wrong-role cases.",
       "whereRefs": [
-        "products/data-cloud/delivery/ui/src/layouts/DefaultLayout.tsx",
-        "products/data-cloud/delivery/ui/src/routes.tsx",
-        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts",
-        "products/data-cloud/delivery/ui/src/pages/DataExplorer.tsx",
-        "products/data-cloud/delivery/ui/src/i18n/config.ts"
+        "DataCloudSecurityFilter",
+        "HttpHandlerSupport",
+        "DataCloudRouterBuilder"
       ]
     },
     {
@@ -1086,13 +1258,11 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 14,
-      "title": "Outcome-First UI / 0 Cognitive Load Pass: Rename “Product mode” / role switcher to avoid permission confusion.",
+      "title": "Backend Capability Contracts and Permission Enforcement: AV tool access denial tests.",
       "whereRefs": [
-        "products/data-cloud/delivery/ui/src/layouts/DefaultLayout.tsx",
-        "products/data-cloud/delivery/ui/src/routes.tsx",
-        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts",
-        "products/data-cloud/delivery/ui/src/pages/DataExplorer.tsx",
-        "products/data-cloud/delivery/ui/src/i18n/config.ts"
+        "DataCloudSecurityFilter",
+        "HttpHandlerSupport",
+        "DataCloudRouterBuilder"
       ]
     },
     {
@@ -1103,13 +1273,11 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 15,
-      "title": "Outcome-First UI / 0 Cognitive Load Pass: Replace hover-only row actions with keyboard-visible action menus.",
+      "title": "Backend Capability Contracts and Permission Enforcement: Agent tool policy tests.",
       "whereRefs": [
-        "products/data-cloud/delivery/ui/src/layouts/DefaultLayout.tsx",
-        "products/data-cloud/delivery/ui/src/routes.tsx",
-        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts",
-        "products/data-cloud/delivery/ui/src/pages/DataExplorer.tsx",
-        "products/data-cloud/delivery/ui/src/i18n/config.ts"
+        "DataCloudSecurityFilter",
+        "HttpHandlerSupport",
+        "DataCloudRouterBuilder"
       ]
     },
     {
@@ -1120,13 +1288,11 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 16,
-      "title": "Outcome-First UI / 0 Cognitive Load Pass: Replace hardcoded strings with i18n keys.",
+      "title": "Backend Capability Contracts and Permission Enforcement: Break-glass audit tests.",
       "whereRefs": [
-        "products/data-cloud/delivery/ui/src/layouts/DefaultLayout.tsx",
-        "products/data-cloud/delivery/ui/src/routes.tsx",
-        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts",
-        "products/data-cloud/delivery/ui/src/pages/DataExplorer.tsx",
-        "products/data-cloud/delivery/ui/src/i18n/config.ts"
+        "DataCloudSecurityFilter",
+        "HttpHandlerSupport",
+        "DataCloudRouterBuilder"
       ]
     },
     {
@@ -1137,14 +1303,8 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 17,
-      "title": "AEP / Action Plane Completion Pass: Complete unified operator model.",
-      "whereRefs": [
-        "products/data-cloud/planes/action/*",
-        "products/aep/*",
-        "products/data-cloud/planes/action/server/src/main/resources/openapi.yaml",
-        "products/data-cloud/planes/action/server/src/main/java/com/ghatana/aep/server/http/controllers",
-        "products/data-cloud/docs/aep/README.md"
-      ]
+      "title": "Data Cloud Core E2E Completion: Implement real connector contract or keep connectors hidden until ready.",
+      "whereRefs": []
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -1154,14 +1314,8 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 18,
-      "title": "AEP / Action Plane Completion Pass: Implement PatternSpec compiler and lifecycle.",
-      "whereRefs": [
-        "products/data-cloud/planes/action/*",
-        "products/aep/*",
-        "products/data-cloud/planes/action/server/src/main/resources/openapi.yaml",
-        "products/data-cloud/planes/action/server/src/main/java/com/ghatana/aep/server/http/controllers",
-        "products/data-cloud/docs/aep/README.md"
-      ]
+      "title": "Data Cloud Core E2E Completion: Add import/ingest job status.",
+      "whereRefs": []
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -1171,14 +1325,8 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 19,
-      "title": "AEP / Action Plane Completion Pass: Complete EventCloud SPI boundary.",
-      "whereRefs": [
-        "products/data-cloud/planes/action/*",
-        "products/aep/*",
-        "products/data-cloud/planes/action/server/src/main/resources/openapi.yaml",
-        "products/data-cloud/planes/action/server/src/main/java/com/ghatana/aep/server/http/controllers",
-        "products/data-cloud/docs/aep/README.md"
-      ]
+      "title": "Data Cloud Core E2E Completion: Ensure entity writes produce event, audit, lineage/context update, idempotency record, and observability trace.",
+      "whereRefs": []
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -1188,14 +1336,8 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 20,
-      "title": "AEP / Action Plane Completion Pass: Implement learning → recommendation → review → promotion → rollback loop.",
-      "whereRefs": [
-        "products/data-cloud/planes/action/*",
-        "products/aep/*",
-        "products/data-cloud/planes/action/server/src/main/resources/openapi.yaml",
-        "products/data-cloud/planes/action/server/src/main/java/com/ghatana/aep/server/http/controllers",
-        "products/data-cloud/docs/aep/README.md"
-      ]
+      "title": "Data Cloud Core E2E Completion: Add server-backed empty/error/degraded states.",
+      "whereRefs": []
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -1205,14 +1347,8 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 21,
-      "title": "AEP / Action Plane Completion Pass: Make replay-safe agent execution mandatory for pattern-linked agents.",
-      "whereRefs": [
-        "products/data-cloud/planes/action/*",
-        "products/aep/*",
-        "products/data-cloud/planes/action/server/src/main/resources/openapi.yaml",
-        "products/data-cloud/planes/action/server/src/main/java/com/ghatana/aep/server/http/controllers",
-        "products/data-cloud/docs/aep/README.md"
-      ]
+      "title": "Data Cloud Core E2E Completion: Integration test with durable local fixture store.",
+      "whereRefs": []
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -1222,14 +1358,8 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 22,
-      "title": "AEP / Action Plane Completion Pass: Retire or hide legacy root action routes behind feature flags.",
-      "whereRefs": [
-        "products/data-cloud/planes/action/*",
-        "products/aep/*",
-        "products/data-cloud/planes/action/server/src/main/resources/openapi.yaml",
-        "products/data-cloud/planes/action/server/src/main/java/com/ghatana/aep/server/http/controllers",
-        "products/data-cloud/docs/aep/README.md"
-      ]
+      "title": "Data Cloud Core E2E Completion: UI E2E against backend.",
+      "whereRefs": []
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -1239,15 +1369,8 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 23,
-      "title": "Agent Governance, Mastery, and Safety Pass: Fix documented safety issues: approval/verification flag preservation, tenant source correctness, release tenant ID, mastery item state history validation.",
-      "whereRefs": [
-        "platform/java/agent-core",
-        "products/data-cloud/planes/action/registry/src",
-        "products/data-cloud/planes/action/orchestrator/src",
-        "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/memory/retrieval/mastery",
-        "products/data-cloud/planes/context",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java"
-      ]
+      "title": "Data Cloud Core E2E Completion: Contract test for import/ingest status and lineage.",
+      "whereRefs": []
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -1257,14 +1380,9 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 24,
-      "title": "Agent Governance, Mastery, and Safety Pass: Separate execution strategy from supervision level.",
+      "title": "Action Plane Lifecycle Completion: Consolidate duplicate registry service entry points or document exact adapter ownership.",
       "whereRefs": [
-        "platform/java/agent-core",
-        "products/data-cloud/planes/action/registry/src",
-        "products/data-cloud/planes/action/orchestrator/src",
-        "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/memory/retrieval/mastery",
-        "products/data-cloud/planes/context",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java"
+        "products/data-cloud/planes/action/*"
       ]
     },
     {
@@ -1275,14 +1393,9 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 25,
-      "title": "Agent Governance, Mastery, and Safety Pass: Enforce policy/tool/memory/replay/guardrail declarations for agent capabilities.",
+      "title": "Action Plane Lifecycle Completion: Implement canonical lifecycle: draft → validate → publish → run → observe → retry/cancel/rollback.",
       "whereRefs": [
-        "platform/java/agent-core",
-        "products/data-cloud/planes/action/registry/src",
-        "products/data-cloud/planes/action/orchestrator/src",
-        "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/memory/retrieval/mastery",
-        "products/data-cloud/planes/context",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java"
+        "products/data-cloud/planes/action/*"
       ]
     },
     {
@@ -1293,14 +1406,9 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 26,
-      "title": "Agent Governance, Mastery, and Safety Pass: Add tenant-scoped agent release and mastery queries.",
+      "title": "Action Plane Lifecycle Completion: Add HITL queue: pending → approve/reject/escalate → learned.",
       "whereRefs": [
-        "platform/java/agent-core",
-        "products/data-cloud/planes/action/registry/src",
-        "products/data-cloud/planes/action/orchestrator/src",
-        "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/memory/retrieval/mastery",
-        "products/data-cloud/planes/context",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java"
+        "products/data-cloud/planes/action/*"
       ]
     },
     {
@@ -1311,13 +1419,9 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 27,
-      "title": "Audio-Video Productization and Data Cloud Integration: Add product manifest and lifecycle profile or explicitly keep it hidden as experimental.",
+      "title": "Action Plane Lifecycle Completion: Add pattern lifecycle: define → deploy → match → explain → feedback → version.",
       "whereRefs": [
-        "products/audio-video/*",
-        "products/data-cloud/planes/action/registry/src",
-        "products/audio-video/libs/java/common/src/main/java/com/ghatana/media",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataProductHandler.java",
-        "products/data-cloud/planes/operations"
+        "products/data-cloud/planes/action/*"
       ]
     },
     {
@@ -1328,13 +1432,9 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 28,
-      "title": "Audio-Video Productization and Data Cloud Integration: Enforce media privacy, content safety, artifact retention, biometric-risk, and consent policy.",
+      "title": "Action Plane Lifecycle Completion: Emit run ledger/audit/trace for each action.",
       "whereRefs": [
-        "products/audio-video/*",
-        "products/data-cloud/planes/action/registry/src",
-        "products/audio-video/libs/java/common/src/main/java/com/ghatana/media",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataProductHandler.java",
-        "products/data-cloud/planes/operations"
+        "products/data-cloud/planes/action/*"
       ]
     },
     {
@@ -1345,13 +1445,9 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 29,
-      "title": "Audio-Video Productization and Data Cloud Integration: Connect STT/TTS/Vision/Multimodal outputs to Data Cloud datasets/events/catalog.",
+      "title": "Action Plane Lifecycle Completion: `:products:data-cloud:planes:action:*:test`",
       "whereRefs": [
-        "products/audio-video/*",
-        "products/data-cloud/planes/action/registry/src",
-        "products/audio-video/libs/java/common/src/main/java/com/ghatana/media",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataProductHandler.java",
-        "products/data-cloud/planes/operations"
+        "products/data-cloud/planes/action/*"
       ]
     },
     {
@@ -1362,13 +1458,9 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 30,
-      "title": "Audio-Video Productization and Data Cloud Integration: Add runtime truth for each media processing dependency.",
+      "title": "Action Plane Lifecycle Completion: API tests for `/api/v1/action/*`",
       "whereRefs": [
-        "products/audio-video/*",
-        "products/data-cloud/planes/action/registry/src",
-        "products/audio-video/libs/java/common/src/main/java/com/ghatana/media",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataProductHandler.java",
-        "products/data-cloud/planes/operations"
+        "products/data-cloud/planes/action/*"
       ]
     },
     {
@@ -1379,13 +1471,9 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 31,
-      "title": "Audio-Video Productization and Data Cloud Integration: Add minimal operator UI only after backend lifecycle is coherent.",
+      "title": "Action Plane Lifecycle Completion: UI E2E for pipeline + review + agent flow.",
       "whereRefs": [
-        "products/audio-video/*",
-        "products/data-cloud/planes/action/registry/src",
-        "products/audio-video/libs/java/common/src/main/java/com/ghatana/media",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataProductHandler.java",
-        "products/data-cloud/planes/operations"
+        "products/data-cloud/planes/action/*"
       ]
     },
     {
@@ -1396,15 +1484,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 32,
-      "title": "Shared Library Boundary Cleanup: Apply the architecture rule: keep only primitives used by three or more unrelated products in platform.",
+      "title": "Audio-Video as First-Class Data Cloud Modality: Add media asset model: source, consent, retention, classification, transcript, extracted events, embeddings, lineage.",
       "whereRefs": [
-        "platform/java/agent-core",
-        "platform/java/workflow",
-        "platform/java/messaging",
-        "platform/java/ai-integration",
-        "platform/java/data-governance",
-        "platform/contracts",
-        "products/data-cloud/planes"
+        "products/audio-video/*",
+        "products/data-cloud/planes/action/agent-catalog/capabilities/audio-video-capabilities.yaml"
       ]
     },
     {
@@ -1415,15 +1498,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 33,
-      "title": "Shared Library Boundary Cleanup: Move Action Plane runtime semantics to `planes/action`.",
+      "title": "Audio-Video as First-Class Data Cloud Modality: Add ingestion workflow and status.",
       "whereRefs": [
-        "platform/java/agent-core",
-        "platform/java/workflow",
-        "platform/java/messaging",
-        "platform/java/ai-integration",
-        "platform/java/data-governance",
-        "platform/contracts",
-        "products/data-cloud/planes"
+        "products/audio-video/*",
+        "products/data-cloud/planes/action/agent-catalog/capabilities/audio-video-capabilities.yaml"
       ]
     },
     {
@@ -1434,15 +1512,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 34,
-      "title": "Shared Library Boundary Cleanup: Move Data Cloud storage-plane event routing to `planes/event`.",
+      "title": "Audio-Video as First-Class Data Cloud Modality: Add search/index integration.",
       "whereRefs": [
-        "platform/java/agent-core",
-        "platform/java/workflow",
-        "platform/java/messaging",
-        "platform/java/ai-integration",
-        "platform/java/data-governance",
-        "platform/contracts",
-        "products/data-cloud/planes"
+        "products/audio-video/*",
+        "products/data-cloud/planes/action/agent-catalog/capabilities/audio-video-capabilities.yaml"
       ]
     },
     {
@@ -1453,15 +1526,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 35,
-      "title": "Shared Library Boundary Cleanup: Move retention/redaction/provenance/evidence implementations to `planes/governance`.",
+      "title": "Audio-Video as First-Class Data Cloud Modality: Enforce PII/biometric policy before STT/vision/multimodal calls.",
       "whereRefs": [
-        "platform/java/agent-core",
-        "platform/java/workflow",
-        "platform/java/messaging",
-        "platform/java/ai-integration",
-        "platform/java/data-governance",
-        "platform/contracts",
-        "products/data-cloud/planes"
+        "products/audio-video/*",
+        "products/data-cloud/planes/action/agent-catalog/capabilities/audio-video-capabilities.yaml"
       ]
     },
     {
@@ -1472,15 +1540,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 36,
-      "title": "Shared Library Boundary Cleanup: Move Data Cloud OpenAPI/schemas into `products/data-cloud/contracts`.",
+      "title": "Audio-Video as First-Class Data Cloud Modality: Add AV operation audit and trace IDs.",
       "whereRefs": [
-        "platform/java/agent-core",
-        "platform/java/workflow",
-        "platform/java/messaging",
-        "platform/java/ai-integration",
-        "platform/java/data-governance",
-        "platform/contracts",
-        "products/data-cloud/planes"
+        "products/audio-video/*",
+        "products/data-cloud/planes/action/agent-catalog/capabilities/audio-video-capabilities.yaml"
       ]
     },
     {
@@ -1491,12 +1554,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 37,
-      "title": "Security, Privacy, and Permission Matrix Pass: Register production validators centrally and prove they execute at startup.",
+      "title": "Audio-Video as First-Class Data Cloud Modality: AV contract interop tests.",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudSecurityFilter.java",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/",
-        "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/"
+        "products/audio-video/*",
+        "products/data-cloud/planes/action/agent-catalog/capabilities/audio-video-capabilities.yaml"
       ]
     },
     {
@@ -1507,12 +1568,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 38,
-      "title": "Security, Privacy, and Permission Matrix Pass: Add permission matrix tests for viewer/operator/admin.",
+      "title": "Audio-Video as First-Class Data Cloud Modality: Agent tool policy tests.",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudSecurityFilter.java",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/",
-        "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/"
+        "products/audio-video/*",
+        "products/data-cloud/planes/action/agent-catalog/capabilities/audio-video-capabilities.yaml"
       ]
     },
     {
@@ -1523,12 +1582,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 39,
-      "title": "Security, Privacy, and Permission Matrix Pass: Add tenant mismatch, missing tenant, missing audit, missing policy, policy denial, audit failure tests.",
+      "title": "Audio-Video as First-Class Data Cloud Modality: Media ingestion integration test.",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudSecurityFilter.java",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/",
-        "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/"
+        "products/audio-video/*",
+        "products/data-cloud/planes/action/agent-catalog/capabilities/audio-video-capabilities.yaml"
       ]
     },
     {
@@ -1539,12 +1596,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 40,
-      "title": "Security, Privacy, and Permission Matrix Pass: Add audio-video PII/biometric policy enforcement.",
+      "title": "Audio-Video as First-Class Data Cloud Modality: Large file/stream timeout tests.",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudSecurityFilter.java",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/",
-        "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/"
+        "products/audio-video/*",
+        "products/data-cloud/planes/action/agent-catalog/capabilities/audio-video-capabilities.yaml"
       ]
     },
     {
@@ -1555,12 +1610,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 41,
-      "title": "Security, Privacy, and Permission Matrix Pass: Add break-glass tests.",
+      "title": "UI/UX, i18n, and Cognitive Load Pass: Replace route labels/descriptions with i18n keys.",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudSecurityFilter.java",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java",
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/",
-        "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/"
+        "DefaultLayout.tsx",
+        "RouteSurfaceRegistry.ts"
       ]
     },
     {
@@ -1571,12 +1624,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 42,
-      "title": "Observability, Reliability, and Idempotency Pass: Extend idempotency beyond entity writes to pipelines, events, governance, analytics, plugins, and agent actions.",
+      "title": "UI/UX, i18n, and Cognitive Load Pass: Standardize page headers, cards, tables, actions, filters, drilldowns, empty/loading/error states.",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/",
-        "products/data-cloud/delivery/ui/src/pages/OperationsConsolePage.tsx",
-        "products/data-cloud/delivery/ui/src/pages/RuntimeTruthPage.tsx",
-        "products/data-cloud/planes/action/agent-runtime"
+        "DefaultLayout.tsx",
+        "RouteSurfaceRegistry.ts"
       ]
     },
     {
@@ -1587,12 +1638,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 43,
-      "title": "Observability, Reliability, and Idempotency Pass: Add correlation IDs to every run/job/action/agent/media flow.",
+      "title": "UI/UX, i18n, and Cognitive Load Pass: Keep preview surfaces non-discoverable unless role/runtime truth allows.",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/",
-        "products/data-cloud/delivery/ui/src/pages/OperationsConsolePage.tsx",
-        "products/data-cloud/delivery/ui/src/pages/RuntimeTruthPage.tsx",
-        "products/data-cloud/planes/action/agent-runtime"
+        "DefaultLayout.tsx",
+        "RouteSurfaceRegistry.ts"
       ]
     },
     {
@@ -1603,12 +1652,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 44,
-      "title": "Observability, Reliability, and Idempotency Pass: Add durable job/run status, retry/cancel/rollback states.",
+      "title": "UI/UX, i18n, and Cognitive Load Pass: Make AI/agent/AEP labels outcome-based: “Review decisions,” “Automate pipeline,” “Explain anomaly,” not raw technical labels.",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/",
-        "products/data-cloud/delivery/ui/src/pages/OperationsConsolePage.tsx",
-        "products/data-cloud/delivery/ui/src/pages/RuntimeTruthPage.tsx",
-        "products/data-cloud/planes/action/agent-runtime"
+        "DefaultLayout.tsx",
+        "RouteSurfaceRegistry.ts"
       ]
     },
     {
@@ -1619,12 +1666,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 45,
-      "title": "Observability, Reliability, and Idempotency Pass: Add dead-letter/failure visibility for async workflows.",
+      "title": "UI/UX, i18n, and Cognitive Load Pass: Add a11y coverage for keyboard and screen-reader states.",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/",
-        "products/data-cloud/delivery/ui/src/pages/OperationsConsolePage.tsx",
-        "products/data-cloud/delivery/ui/src/pages/RuntimeTruthPage.tsx",
-        "products/data-cloud/planes/action/agent-runtime"
+        "DefaultLayout.tsx",
+        "RouteSurfaceRegistry.ts"
       ]
     },
     {
@@ -1635,12 +1680,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 46,
-      "title": "Observability, Reliability, and Idempotency Pass: Surface failed jobs in Operations without requiring logs.",
+      "title": "UI/UX, i18n, and Cognitive Load Pass: `pnpm check:i18n-conformance`",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/",
-        "products/data-cloud/delivery/ui/src/pages/OperationsConsolePage.tsx",
-        "products/data-cloud/delivery/ui/src/pages/RuntimeTruthPage.tsx",
-        "products/data-cloud/planes/action/agent-runtime"
+        "DefaultLayout.tsx",
+        "RouteSurfaceRegistry.ts"
       ]
     },
     {
@@ -1651,12 +1694,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 47,
-      "title": "Test Consolidation Pass: Promote API contract and integration tests from advisory to release-blocking once stable.",
+      "title": "UI/UX, i18n, and Cognitive Load Pass: `pnpm check:a11y-maturity`",
       "whereRefs": [
-        "products/data-cloud/integration-tests",
-        "products/data-cloud/delivery/ui/e2e",
-        "products/data-cloud/delivery/ui/src/__tests__/api",
-        "products/data-cloud/delivery/ui/src/__tests__/routes"
+        "DefaultLayout.tsx",
+        "RouteSurfaceRegistry.ts"
       ]
     },
     {
@@ -1667,12 +1708,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 48,
-      "title": "Test Consolidation Pass: Add one golden path E2E per main journey.",
+      "title": "UI/UX, i18n, and Cognitive Load Pass: UI component tests.",
       "whereRefs": [
-        "products/data-cloud/integration-tests",
-        "products/data-cloud/delivery/ui/e2e",
-        "products/data-cloud/delivery/ui/src/__tests__/api",
-        "products/data-cloud/delivery/ui/src/__tests__/routes"
+        "DefaultLayout.tsx",
+        "RouteSurfaceRegistry.ts"
       ]
     },
     {
@@ -1683,12 +1722,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 49,
-      "title": "Test Consolidation Pass: Add role/tenant matrix E2E.",
+      "title": "UI/UX, i18n, and Cognitive Load Pass: Playwright journey tests.",
       "whereRefs": [
-        "products/data-cloud/integration-tests",
-        "products/data-cloud/delivery/ui/e2e",
-        "products/data-cloud/delivery/ui/src/__tests__/api",
-        "products/data-cloud/delivery/ui/src/__tests__/routes"
+        "DefaultLayout.tsx",
+        "RouteSurfaceRegistry.ts"
       ]
     },
     {
@@ -1699,12 +1736,11 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 50,
-      "title": "Test Consolidation Pass: Add pseudo-locale and raw-string enforcement.",
+      "title": "Shared Library Boundary Cleanup: Audit platform modules against the “three unrelated products” rule.",
       "whereRefs": [
-        "products/data-cloud/integration-tests",
-        "products/data-cloud/delivery/ui/e2e",
-        "products/data-cloud/delivery/ui/src/__tests__/api",
-        "products/data-cloud/delivery/ui/src/__tests__/routes"
+        "platform/java/*",
+        "platform-kernel/*",
+        "products/data-cloud/planes/*"
       ]
     },
     {
@@ -1715,15 +1751,220 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 51,
-      "title": "Test Consolidation Pass: Add keyboard/a11y tests for tables, nav, disabled surfaces, dialogs, and row actions.",
+      "title": "Shared Library Boundary Cleanup: Move Data Cloud-specific policy, event, agent, governance, and runtime semantics out of generic platform modules.",
       "whereRefs": [
-        "products/data-cloud/integration-tests",
-        "products/data-cloud/delivery/ui/e2e",
-        "products/data-cloud/delivery/ui/src/__tests__/api",
-        "products/data-cloud/delivery/ui/src/__tests__/routes"
+        "platform/java/*",
+        "platform-kernel/*",
+        "products/data-cloud/planes/*"
       ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 52,
+      "title": "Shared Library Boundary Cleanup: Add architecture tests for forbidden imports.",
+      "whereRefs": [
+        "platform/java/*",
+        "platform-kernel/*",
+        "products/data-cloud/planes/*"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 53,
+      "title": "Shared Library Boundary Cleanup: `pnpm check:architecture-boundaries`",
+      "whereRefs": [
+        "platform/java/*",
+        "platform-kernel/*",
+        "products/data-cloud/planes/*"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 54,
+      "title": "Shared Library Boundary Cleanup: Gradle module tests.",
+      "whereRefs": [
+        "platform/java/*",
+        "platform-kernel/*",
+        "products/data-cloud/planes/*"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 55,
+      "title": "Shared Library Boundary Cleanup: Circular dependency check.",
+      "whereRefs": [
+        "platform/java/*",
+        "platform-kernel/*",
+        "products/data-cloud/planes/*"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 56,
+      "title": "Deterministic Real E2E Test Pass: Keep mocked render tests, but do not treat them as production proof.",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 57,
+      "title": "Deterministic Real E2E Test Pass: Add backend-backed tests for core journeys.",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 58,
+      "title": "Deterministic Real E2E Test Pass: Add one fixture profile: tenant, roles, data source, entities, events, pipeline, review item, agent, AV sample metadata.",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 59,
+      "title": "Deterministic Real E2E Test Pass: Add verification matrix mapping each readiness dimension to tests.",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 60,
+      "title": "Deterministic Real E2E Test Pass: `./gradlew :products:data-cloud:integration-tests:test`",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 61,
+      "title": "Deterministic Real E2E Test Pass: `./gradlew :products:data-cloud:delivery:api-contract-tests:test`",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 62,
+      "title": "Deterministic Real E2E Test Pass: `pnpm --filter @ghatana/data-cloud-ui test`",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 63,
+      "title": "Deterministic Real E2E Test Pass: Playwright E2E suite.",
+      "whereRefs": []
     }
   ],
-  "warnings": [],
+  "warnings": [
+    "Task 1 references non-existing path \"products/data-cloud/delivery/launcher/.../SurfaceSchemaGenerator.java\"",
+    "Task 1 references non-existing path \"products/data-cloud/delivery/launcher/.../SurfaceRegistryHandler.java\"",
+    "Task 1 references non-existing path \"products/data-cloud/delivery/launcher/.../DataCloudHttpServer.java\"",
+    "Task 2 references non-existing path \"products/data-cloud/delivery/launcher/.../SurfaceSchemaGenerator.java\"",
+    "Task 2 references non-existing path \"products/data-cloud/delivery/launcher/.../SurfaceRegistryHandler.java\"",
+    "Task 2 references non-existing path \"products/data-cloud/delivery/launcher/.../DataCloudHttpServer.java\"",
+    "Task 3 references non-existing path \"products/data-cloud/delivery/launcher/.../SurfaceSchemaGenerator.java\"",
+    "Task 3 references non-existing path \"products/data-cloud/delivery/launcher/.../SurfaceRegistryHandler.java\"",
+    "Task 3 references non-existing path \"products/data-cloud/delivery/launcher/.../DataCloudHttpServer.java\"",
+    "Task 4 references non-existing path \"products/data-cloud/delivery/launcher/.../SurfaceSchemaGenerator.java\"",
+    "Task 4 references non-existing path \"products/data-cloud/delivery/launcher/.../SurfaceRegistryHandler.java\"",
+    "Task 4 references non-existing path \"products/data-cloud/delivery/launcher/.../DataCloudHttpServer.java\"",
+    "Task 5 references non-existing path \"products/data-cloud/delivery/launcher/.../SurfaceSchemaGenerator.java\"",
+    "Task 5 references non-existing path \"products/data-cloud/delivery/launcher/.../SurfaceRegistryHandler.java\"",
+    "Task 5 references non-existing path \"products/data-cloud/delivery/launcher/.../DataCloudHttpServer.java\"",
+    "Task 6 references non-existing path \"products/data-cloud/delivery/launcher/.../SurfaceSchemaGenerator.java\"",
+    "Task 6 references non-existing path \"products/data-cloud/delivery/launcher/.../SurfaceRegistryHandler.java\"",
+    "Task 6 references non-existing path \"products/data-cloud/delivery/launcher/.../DataCloudHttpServer.java\"",
+    "Task 7 references non-existing path \"products/data-cloud/delivery/launcher/.../SurfaceSchemaGenerator.java\"",
+    "Task 7 references non-existing path \"products/data-cloud/delivery/launcher/.../SurfaceRegistryHandler.java\"",
+    "Task 7 references non-existing path \"products/data-cloud/delivery/launcher/.../DataCloudHttpServer.java\"",
+    "Task 8 references non-existing path \"products/data-cloud/delivery/launcher/.../SurfaceSchemaGenerator.java\"",
+    "Task 8 references non-existing path \"products/data-cloud/delivery/launcher/.../SurfaceRegistryHandler.java\"",
+    "Task 8 references non-existing path \"products/data-cloud/delivery/launcher/.../DataCloudHttpServer.java\"",
+    "Task 17 has no parsed Where references in implementation plan",
+    "Task 18 has no parsed Where references in implementation plan",
+    "Task 19 has no parsed Where references in implementation plan",
+    "Task 20 has no parsed Where references in implementation plan",
+    "Task 21 has no parsed Where references in implementation plan",
+    "Task 22 has no parsed Where references in implementation plan",
+    "Task 23 has no parsed Where references in implementation plan",
+    "Task 41 references non-existing path \"DefaultLayout.tsx\"",
+    "Task 41 references non-existing path \"RouteSurfaceRegistry.ts\"",
+    "Task 42 references non-existing path \"DefaultLayout.tsx\"",
+    "Task 42 references non-existing path \"RouteSurfaceRegistry.ts\"",
+    "Task 43 references non-existing path \"DefaultLayout.tsx\"",
+    "Task 43 references non-existing path \"RouteSurfaceRegistry.ts\"",
+    "Task 44 references non-existing path \"DefaultLayout.tsx\"",
+    "Task 44 references non-existing path \"RouteSurfaceRegistry.ts\"",
+    "Task 45 references non-existing path \"DefaultLayout.tsx\"",
+    "Task 45 references non-existing path \"RouteSurfaceRegistry.ts\"",
+    "Task 46 references non-existing path \"DefaultLayout.tsx\"",
+    "Task 46 references non-existing path \"RouteSurfaceRegistry.ts\"",
+    "Task 47 references non-existing path \"DefaultLayout.tsx\"",
+    "Task 47 references non-existing path \"RouteSurfaceRegistry.ts\"",
+    "Task 48 references non-existing path \"DefaultLayout.tsx\"",
+    "Task 48 references non-existing path \"RouteSurfaceRegistry.ts\"",
+    "Task 49 references non-existing path \"DefaultLayout.tsx\"",
+    "Task 49 references non-existing path \"RouteSurfaceRegistry.ts\"",
+    "Task 56 has no parsed Where references in implementation plan",
+    "Task 57 has no parsed Where references in implementation plan",
+    "Task 58 has no parsed Where references in implementation plan",
+    "Task 59 has no parsed Where references in implementation plan",
+    "Task 60 has no parsed Where references in implementation plan",
+    "Task 61 has no parsed Where references in implementation plan",
+    "Task 62 has no parsed Where references in implementation plan",
+    "Task 63 has no parsed Where references in implementation plan"
+  ],
   "violations": []
 }

@@ -37,43 +37,62 @@ import java.util.Objects;
 /**
  * ActiveJ HTTP server exposing the PHR product's FHIR and operational API.
  *
+ * <h2>Canonical API Base Path</h2>
+ * All PHR API endpoints use `/api/v1` as the canonical base path per the route contract.
+ * Legacy non-versioned paths have been removed in favor of consistent `/api/v1/*` mounting.
+ *
  * <h2>Endpoints</h2>
  * <pre>
+ *   FHIR R4 Server:
  *   POST   /fhir/:resourceType                          — Create a FHIR R4 resource
  *   GET    /fhir/:resourceType/:id                      — Read a FHIR R4 resource by ID
  *   GET    /fhir/:resourceType                          — Search FHIR R4 resources
- *   POST   /patients                                    — Create a patient record
- *   GET    /patients?patientId=:id                      — Search patient records
- *   GET    /patients/:patientId                         — Read a patient record
- *   PUT    /patients/:patientId                         — Update a patient record
- *   GET    /patients/:patientId/history                 — Read patient record history
- *   POST   /consents/grants                             — Grant consent
- *   POST   /consents/grants/:grantId/revoke             — Revoke consent
- *   GET    /consents/check                              — Check consent
- *   GET    /consents?patientId=:id                      — List patient consent grants
- *   POST   /clinical/labs/observations                  — Record a lab observation
- *   GET    /clinical/labs?patientId=:id                 — List patient lab observations
- *   POST   /clinical/medications/prescriptions          — Create a medication prescription
- *   GET    /clinical/medications?patientId=:id          — List patient medications
- *   POST   /clinical/immunizations                      — Record an immunization
- *   GET    /clinical/immunizations?patientId=:id        — List patient immunizations
- *   POST   /emergency/access                            — Request break-glass emergency access
- *   POST   /emergency/reviews/:eventId                  — Review a break-glass event
- *   GET    /emergency/reviews/pending                   — List pending emergency reviews
- *   POST   /admin/telemedicine/sessions                 — Schedule a telemedicine session
- *   POST   /admin/referrals                             — Create a referral
- *   POST   /admin/billing/encounters                    — Create a billing encounter
- *   POST   /records/documents                           — Upload a patient document
- *   POST   /records/imaging/orders                      — Create an imaging order
- *   POST   /appointments                               — Patient self-scheduling request
- *   GET    /audit/events                               — Paginated audit event trail
- *   POST   /auth/login                                 — Session bootstrap via credentials
- *   POST   /auth/logout                                — Session termination
+ *
+ *   Patient Core Routes:
+ *   GET    /api/v1/dashboard                            — Patient dashboard summary
+ *   GET    /api/v1/records                               — Patient health records list
+ *   GET    /api/v1/records/:recordId                     — Detailed record view
+ *   GET    /api/v1/records/timeline                      — Health timeline
+ *   GET    /api/v1/records/documents                    — Document list
+ *   POST   /api/v1/records/documents                    — Upload a patient document
+ *   GET    /api/v1/records/documents/:docId/ocr          — OCR document review
+ *   GET    /api/v1/consents                              — Consent management
+ *   POST   /api/v1/consents/grants                       — Grant consent
+ *   POST   /api/v1/consents/grants/:grantId/revoke       — Revoke consent
+ *   GET    /api/v1/consents/check                        — Check consent
+ *   GET    /api/v1/appointments                          — Appointment scheduling
+ *   POST   /api/v1/appointments                          — Patient self-scheduling request
+ *   GET    /api/v1/profile                               — Patient profile
+ *   GET    /api/v1/profile/settings                      — Profile and settings
+ *   GET    /api/v1/notifications                         — Patient notifications
+ *
+ *   Clinical Routes:
+ *   GET    /api/v1/clinical/labs                         — Lab results
+ *   GET    /api/v1/clinical/medications                  — Medication management
+ *   GET    /api/v1/clinical/medications/prescriptions/:medicationId — Medication detail
+ *   GET    /api/v1/clinical/conditions                  — Health conditions
+ *   GET    /api/v1/clinical/observations                 — Clinical observations
+ *   GET    /api/v1/clinical/immunizations                 — Immunization records
+ *
+ *   Governance & Emergency:
+ *   POST   /api/v1/emergency/access                      — Request break-glass emergency access
+ *   GET    /api/v1/emergency/reviews                     — Emergency access review
+ *   GET    /api/v1/audit/events                          — Paginated audit event trail
+ *   GET    /api/v1/release-readiness                      — Admin release readiness runtime truth
+ *   POST   /api/v1/auth/login                           — Session bootstrap via credentials
+ *   POST   /api/v1/auth/logout                          — Session termination
+ *
+ *   Role-Specific Routes (hidden until implementation complete):
+ *   GET    /api/v1/provider/dashboard                    — Provider dashboard
+ *   GET    /api/v1/provider/patients                     — Provider patient list
+ *   GET    /api/v1/caregiver/dependents                   — Caregiver dependent management
+ *   GET    /api/v1/fchv/dashboard                        — FCHV community health dashboard
+ *   GET    /api/v1/mobile/dashboard                      — Mobile patient dashboard (session-header auth)
+ *
+ *   System Routes:
  *   GET    /route-entitlements                          — Route/content entitlement payload
- *   GET    /release-readiness                           — Admin release readiness runtime truth
  *   GET    /health                                      — Liveness probe
  *   GET    /ready                                       — Readiness probe
- *   GET    /mobile/dashboard                            — Mobile patient dashboard (session-header auth)
  * </pre>
  *
  * <p>Register the servlet returned by {@link #getServlet()} into the product-level router.
@@ -212,28 +231,27 @@ public final class PhrHttpServer implements KernelLifecycleAware {
             .with("/api/v1/dashboard", dashboardRoutes.getServlet())
             .with("/api/v1/records", patientRecordRoutes.getServlet())
             .with("/api/v1/records/*", patientRecordRoutes.getServlet())
-            .with("/consents/*", consentRoutes.getServlet())
+            .with("/api/v1/consents/*", consentRoutes.getServlet())
             .with("/api/v1/clinical/*", clinicalRoutes.getServlet())
-            .with("/emergency/*", emergencyRoutes.getServlet())
-            .with("/admin/*", administrativeRoutes.getServlet())
-            .with("/phr/billing/*", administrativeRoutes.getBillingServlet())
-            .with("/api/v1/records/documents", documentImagingRoutes.getServlet())
-            .with("/api/v1/records/documents/*", documentImagingRoutes.getDocumentServlet())
-            .with("/release-readiness", releaseReadinessRoutes.getServlet())
-            .with("/appointments/*", administrativeRoutes.getPatientFacingServlet())
-            .with("/audit/*", auditRoutes.getServlet())
-            .with("/auth/*", authRoutes.getServlet())
-            .with("/provider/*", providerRoutes.getServlet())
-            .with("/caregiver/*", caregiverRoutes.getServlet())
-            .with("/fchv/*", fchvRoutes.getServlet())
-            .with("/mobile/*", mobileRoutes.getServlet())
+            .with("/api/v1/emergency/*", emergencyRoutes.getServlet())
+            .with("/api/v1/release-readiness", releaseReadinessRoutes.getServlet())
+            .with("/api/v1/appointments/*", administrativeRoutes.getPatientFacingServlet())
+            .with("/api/v1/audit/*", auditRoutes.getServlet())
+            .with("/api/v1/auth/*", authRoutes.getServlet())
+            .with("/api/v1/provider/*", providerRoutes.getServlet())
+            .with("/api/v1/caregiver/*", caregiverRoutes.getServlet())
+            .with("/api/v1/fchv/*", fchvRoutes.getServlet())
+            .with("/api/v1/mobile/*", mobileRoutes.getServlet())
             .with("/api/v1/notifications", notificationRoutes.getServlet())
             .with("/api/v1/notifications/*", notificationRoutes.getServlet())
-            .with("/profile", patientProfileRoutes.getServlet());
-        return builder
+            .with("/api/v1/profile", patientProfileRoutes.getServlet())
+            .with("/api/v1/profile/settings", patientProfileRoutes.getServlet())
+            .with("/api/v1/records/documents", documentImagingRoutes.getServlet())
+            .with("/api/v1/records/documents/*", documentImagingRoutes.getDocumentServlet())
             .with("/route-entitlements", entitlementRoutes.getServlet())
             .with("/health", healthRoutes.getServlet())
-            .with("/ready", healthRoutes.getReadyServlet())
-            .build();
+            .with("/ready", healthRoutes.getReadyServlet());
+
+        return builder.build();
     }
 }

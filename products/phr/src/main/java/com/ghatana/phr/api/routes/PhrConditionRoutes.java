@@ -1,5 +1,6 @@
 package com.ghatana.phr.api.routes;
 
+import com.ghatana.phr.kernel.service.PatientRecordServiceExtensions;
 import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
@@ -30,10 +31,15 @@ public final class PhrConditionRoutes {
 
     private final Eventloop eventloop;
     private final PhrPolicyEvaluator policyEvaluator;
+    private final PatientRecordServiceExtensions patientRecordServiceExtensions;
 
-    public PhrConditionRoutes(Eventloop eventloop, PhrPolicyEvaluator policyEvaluator) {
+    public PhrConditionRoutes(
+            Eventloop eventloop,
+            PhrPolicyEvaluator policyEvaluator,
+            PatientRecordServiceExtensions patientRecordServiceExtensions) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
+        this.patientRecordServiceExtensions = Objects.requireNonNull(patientRecordServiceExtensions, "patientRecordServiceExtensions must not be null");
     }
 
     /**
@@ -58,18 +64,24 @@ public final class PhrConditionRoutes {
         String patientId = request.getPathParameter("patientId");
         return policyEvaluator.canAccessPatientRecordAsync(context, patientId).then(decision -> {
             if (!decision.isAllowed()) {
-                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
             }
 
-            return Promise.of(List.of(
-                Map.of(
-                    "id", "cond-1",
-                    "code", "E11",
-                    "display", "Type 2 diabetes mellitus",
-                    "status", "active",
-                    "onsetDate", "2018-03-01"
-                )
-            )).then(conditions -> PhrRouteSupport.jsonResponseWithCorrelation(200, Map.of("items", conditions), context.correlationId()));
+            return patientRecordServiceExtensions.getActiveConditions(patientId)
+                .map(conditions -> {
+                    List<Map<String, Object>> conditionMaps = conditions.stream()
+                        .map(cond -> Map.of(
+                            "id", cond.getId() != null ? cond.getId() : "unknown",
+                            "code", cond.getCode() != null ? cond.getCode() : "",
+                            "display", cond.getDisplay() != null ? cond.getDisplay() : "",
+                            "status", cond.getStatus() != null ? cond.getStatus() : "active",
+                            "onsetDate", cond.getOnsetDate() != null ? cond.getOnsetDate() : "",
+                            "chronicity", cond.getChronicity() != null ? cond.getChronicity() : ""
+                        ))
+                        .toList();
+                    
+                    return PhrRouteSupport.jsonResponseWithCorrelation(200, Map.of("items", conditionMaps), context.correlationId());
+                });
         });
     }
 }

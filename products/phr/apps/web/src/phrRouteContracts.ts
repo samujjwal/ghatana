@@ -23,6 +23,11 @@ export interface PhrRouteContract extends ProductRouteCapability {
   readonly apiEndpoint?: string;
   readonly policyId?: string;
   readonly testId?: string;
+  readonly surface?: readonly ('web' | 'mobile' | 'backend' | 'hidden')[];
+  readonly i18nKey?: string;
+  readonly descriptionI18nKey?: string;
+  readonly routeType?: 'page' | 'detail' | 'action' | 'system';
+  readonly visibilityReason?: string;
 }
 
 interface PhrRouteContractSource {

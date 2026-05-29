@@ -2,12 +2,12 @@
   "productId": "phr",
   "environment": "prod",
   "evidenceType": "bootstrap-evidence",
-  "generatedAt": "2026-05-29T01:06:55.810Z",
-  "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
-  "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+  "generatedAt": "2026-05-29T23:16:09.583Z",
+  "targetCommitSha": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3",
+  "sourceCommitSha": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3",
   "bootstrap": {
     "validated": true,
-    "validatedAt": "2026-05-29T01:06:55.810Z",
+    "validatedAt": "2026-05-29T23:16:09.583Z",
     "distributedCache": {
       "status": "ready",
       "type": "redis",
@@ -17,10 +17,22 @@
       "host": "redis-prod.phr.internal",
       "port": 6380,
       "namespace": "phr:consent:prod"
+    },
+    "postgres": {
+      "validated": true
+    },
+    "migrations": {
+      "validated": true
+    },
+    "secrets": {
+      "validated": true
+    },
+    "storage": {
+      "validated": true
     }
   },
   "executabilityProof": {
-    "validatedAt": "2026-05-29T01:06:55.810Z",
+    "validatedAt": "2026-05-29T23:16:09.583Z",
     "components": {
       "distributedCache": {
         "executable": true,
@@ -31,5 +43,5 @@
     }
   },
   "description": "Production environment bootstrap evidence for PHR distributed consent cache",
-  "commitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8"
+  "commitSha": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3"
 }

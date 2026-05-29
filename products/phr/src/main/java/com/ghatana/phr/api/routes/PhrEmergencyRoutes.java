@@ -159,8 +159,16 @@ public final class PhrEmergencyRoutes {
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
-        if (!context.principalId().equals(patientId) && !("clinician".equals(context.role()) || "admin".equals(context.role()))) {
-            return PhrRouteSupport.errorResponse(403, "EMERGENCY_LOG_DENIED", "Patient emergency log is not visible to this principal");
+        if (!context.principalId().equals(patientId)) {
+            return policyEvaluator.canAccessEmergency(context, patientId, "view emergency log")
+                .then(decision -> decision.isAllowed()
+                    ? emergencyAccessLogService.getPatientEmergencyLog(patientId)
+                        .then(events -> PhrRouteSupport.jsonResponse(200, Map.of(
+                            "patientId", patientId,
+                            "items", events,
+                            "count", events.size()
+                        )))
+                    : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
         }
         return emergencyAccessLogService.getPatientEmergencyLog(patientId)
             .then(events -> PhrRouteSupport.jsonResponse(200, Map.of(
@@ -245,9 +253,12 @@ public final class PhrEmergencyRoutes {
     private static boolean canReadEvent(
             PhrRouteSupport.PhrRequestContext context,
             EmergencyAccessLogService.EmergencyAccessEvent event) {
-        return "clinician".equals(context.role()) || "admin".equals(context.role())
-            || context.principalId().equals(event.patientId())
-            || context.principalId().equals(event.accessorId());
+        // Self-access always allowed
+        if (context.principalId().equals(event.patientId()) || context.principalId().equals(event.accessorId())) {
+            return true;
+        }
+        // Clinician and admin can view emergency events
+        return "clinician".equals(context.role()) || "admin".equals(context.role());
     }
 
     /**

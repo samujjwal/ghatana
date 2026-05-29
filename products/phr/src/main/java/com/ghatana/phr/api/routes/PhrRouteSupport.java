@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.kernel.security.PolicyValidationHelper;
 import com.ghatana.phr.api.validation.PhrRequestValidator;
-import com.ghatana.phr.security.PhrPolicyEvaluator;
 import com.ghatana.platform.http.server.activej.ActiveJHttpExchangeSupport;
 import io.activej.bytebuf.ByteBuf;
 import io.activej.http.HttpHeaders;
@@ -131,10 +130,23 @@ public final class PhrRouteSupport {
      *
      * @param statusCode the HTTP status code
      * @param correlationId the correlation ID for tracing
+     * @param reasonCode the machine-readable reason code (safe to expose)
+     * @return Promise containing the error response
+     */
+    static Promise<HttpResponse> policyDenialResponse(int statusCode, String correlationId, String reasonCode) {
+        return errorResponse(statusCode, reasonCode != null ? reasonCode : "POLICY_DENIED", "Access denied by policy", correlationId);
+    }
+
+    /**
+     * Returns a safe policy denial response with only safe information.
+     * Internal details are logged but not exposed to the client.
+     *
+     * @param statusCode the HTTP status code
+     * @param correlationId the correlation ID for tracing
      * @return Promise containing the error response
      */
     static Promise<HttpResponse> policyDenialResponse(int statusCode, String correlationId) {
-        return errorResponse(statusCode, "POLICY_DENIED", "Access denied by policy", correlationId);
+        return policyDenialResponse(statusCode, correlationId, "POLICY_DENIED");
     }
 
     /**
@@ -247,34 +259,7 @@ public final class PhrRouteSupport {
      * @throws IllegalArgumentException if JSON parsing or validation fails
      */
     static <T> T parseAndValidateJson(ByteBuf body, Class<T> dtoClass, String dtoName) {
-        String json = body.getString(StandardCharsets.UTF_8);
-        try {
-            T dto = JSON.readValue(json, dtoClass);
-            PhrRequestValidator.validate(dto, dtoName);
-            return dto;
-        } catch (JsonProcessingException ex) {
-            throw new IllegalArgumentException("Invalid JSON in " + dtoName + ": " + ex.getMessage(), ex);
-        }
-    }
-
-    /**
-     * B-018: Parses JSON string to a DTO and validates it using Bean Validation.
-     *
-     * @param json the JSON string
-     * @param dtoClass the target DTO class
-     * @param dtoName the name of the DTO for error messages
-     * @param <T> the DTO type
-     * @return the validated DTO
-     * @throws IllegalArgumentException if JSON parsing or validation fails
-     */
-    static <T> T parseAndValidateJson(String json, Class<T> dtoClass, String dtoName) {
-        try {
-            T dto = JSON.readValue(json, dtoClass);
-            PhrRequestValidator.validate(dto, dtoName);
-            return dto;
-        } catch (JsonProcessingException ex) {
-            throw new IllegalArgumentException("Invalid JSON in " + dtoName + ": " + ex.getMessage(), ex);
-        }
+        return parseAndValidate(body.getString(StandardCharsets.UTF_8), dtoClass, dtoName);
     }
 
     private static String firstHeader(HttpRequest request, String... names) {

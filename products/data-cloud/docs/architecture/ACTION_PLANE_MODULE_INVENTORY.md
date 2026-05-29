@@ -10,26 +10,26 @@ Data-Cloud's Action Plane is AEP-powered. Data-Cloud owns persisted action metad
 
 | Gradle Module | Gradle Included? | Ownership Classification | Implementation State | Release Blocking? | Migration Destination |
 | --- | --- | --- | --- | --- | --- |
-| `:products:data-cloud:planes:action` | yes | Data-Cloud-owned aggregator module | active | no | Remains as Data-Cloud Action Plane root aggregator |
-| `:products:data-cloud:planes:action:operator-contracts` | yes | AEP-owned semantic module permanently co-located | active | no | Remains co-located for Data Cloud-AEP integration |
-| `:products:data-cloud:planes:action:central-runtime` | yes | AEP-owned semantic module permanently co-located | active | no | Remains co-located for Data Cloud-AEP integration |
-| `:products:data-cloud:planes:action:engine` | yes | AEP-owned semantic module permanently co-located | active | no | Remains co-located for Data Cloud-AEP integration |
-| `:products:data-cloud:planes:action:registry` | yes | Data-Cloud-owned persistence/metadata/governance module | active | no | Remains in Data-Cloud registry surface |
-| `:products:data-cloud:planes:action:analytics` | yes | Data-Cloud-owned persistence/metadata/governance module | active | no | Remains in Data-Cloud analytics surface |
-| `:products:data-cloud:planes:action:security` | yes | Data-Cloud-owned persistence/metadata/governance module | active | no | Remains in Data-Cloud security surface |
-| `:products:data-cloud:planes:action:event-bridge` | yes | Data-Cloud-owned persistence/metadata/governance module | active | no | Remains as Data-Cloud persistence bridge |
-| `:products:data-cloud:planes:action:agent-runtime` | yes | AEP-owned semantic module permanently co-located | active | no | Remains co-located for Data Cloud-AEP integration |
-| `:products:data-cloud:planes:action:api` | yes | Data-Cloud-owned persistence/metadata/governance module | active | no | Remains in Data-Cloud API surface |
-| `:products:data-cloud:planes:action:scaling` | yes | Data-Cloud-owned persistence/metadata/governance module | active | no | Remains in Data-Cloud operations surface |
-| `:products:data-cloud:planes:action:observability` | yes | Data-Cloud-owned persistence/metadata/governance module | active | no | Remains in Data-Cloud observability surface |
-| `:products:data-cloud:planes:action:orchestrator` | yes | AEP-owned semantic module permanently co-located | active | no | Remains co-located for Data Cloud-AEP integration |
-| `:products:data-cloud:planes:action:server` | yes | Data-Cloud-owned HTTP server module | active | no | Remains in Data-Cloud delivery surface |
-| `:products:data-cloud:planes:action:identity` | yes | Data-Cloud-owned persistence/metadata/governance module | active | no | Remains in Data-Cloud identity surface |
-| `:products:data-cloud:planes:action:compliance` | yes | Data-Cloud-owned persistence/metadata/governance module | active | no | Remains in Data-Cloud compliance surface |
-| `:products:data-cloud:planes:action:kernel-bridge` | yes | Migration-completed module | completed | no | `products/data-cloud/extensions/kernel-bridge` (completed) |
-| `:products:data-cloud:planes:action:gateway` | no | Deprecated module | deprecated | no | Route work moved to delivery/API |
-| `:products:data-cloud:planes:action:k8s:multi-region` | no | Deployment module | planned | no | Deployment assets under `products/data-cloud/deploy` |
-| `:products:data-cloud:planes:action:agent-catalog` | no | Migration-completed module | completed | no | `products/data-cloud/extensions/agent-catalog` (completed) |
+| `:products:data-cloud:planes:action` | yes | Data-Cloud-owned persistence/metadata/governance module | active | yes | Remains as Data-Cloud Action Plane root aggregator |
+| `:products:data-cloud:planes:action:operator-contracts` | yes | AEP-owned semantic module temporarily co-located | active | yes | Remains co-located for Data Cloud-AEP integration |
+| `:products:data-cloud:planes:action:central-runtime` | yes | AEP-owned semantic module temporarily co-located | active | yes | Remains co-located for Data Cloud-AEP integration |
+| `:products:data-cloud:planes:action:engine` | yes | AEP-owned semantic module temporarily co-located | active | yes | Remains co-located for Data Cloud-AEP integration |
+| `:products:data-cloud:planes:action:registry` | yes | Data-Cloud-owned persistence/metadata/governance module | active | yes | Remains in Data-Cloud registry surface |
+| `:products:data-cloud:planes:action:analytics` | yes | Data-Cloud-owned persistence/metadata/governance module | active | yes | Remains in Data-Cloud analytics surface |
+| `:products:data-cloud:planes:action:security` | yes | Data-Cloud-owned persistence/metadata/governance module | active | yes | Remains in Data-Cloud security surface |
+| `:products:data-cloud:planes:action:event-bridge` | yes | Data-Cloud-owned persistence/metadata/governance module | active | yes | Remains as Data-Cloud persistence bridge |
+| `:products:data-cloud:planes:action:agent-runtime` | yes | AEP-owned semantic module temporarily co-located | active | yes | Remains co-located for Data Cloud-AEP integration |
+| `:products:data-cloud:planes:action:api` | yes | Data-Cloud-owned persistence/metadata/governance module | active | yes | Remains in Data-Cloud API surface |
+| `:products:data-cloud:planes:action:scaling` | yes | Data-Cloud-owned persistence/metadata/governance module | active | yes | Remains in Data-Cloud operations surface |
+| `:products:data-cloud:planes:action:observability` | yes | Data-Cloud-owned persistence/metadata/governance module | active | yes | Remains in Data-Cloud observability surface |
+| `:products:data-cloud:planes:action:orchestrator` | yes | AEP-owned semantic module temporarily co-located | active | yes | Remains co-located for Data Cloud-AEP integration |
+| `:products:data-cloud:planes:action:server` | yes | Data-Cloud-owned persistence/metadata/governance module | active | yes | Remains in Data-Cloud delivery surface |
+| `:products:data-cloud:planes:action:identity` | yes | Data-Cloud-owned persistence/metadata/governance module | active | yes | Remains in Data-Cloud identity surface |
+| `:products:data-cloud:planes:action:compliance` | yes | Data-Cloud-owned persistence/metadata/governance module | active | yes | Remains in Data-Cloud compliance surface |
+| `:products:data-cloud:planes:action:kernel-bridge` | yes | Temporary compatibility module | temporary | yes | `products/data-cloud/extensions/kernel-bridge` (completed) |
+| `:products:data-cloud:planes:action:gateway` | no | Migration-only module | temporary | no | Route work moved to delivery/API |
+| `:products:data-cloud:planes:action:k8s:multi-region` | no | Migration-only module | temporary | no | Deployment assets under `products/data-cloud/deploy` |
+| `:products:data-cloud:planes:action:agent-catalog` | no | Migration-only module | temporary | no | `products/data-cloud/extensions/agent-catalog` (completed) |
 
 ## Ownership Rules
 

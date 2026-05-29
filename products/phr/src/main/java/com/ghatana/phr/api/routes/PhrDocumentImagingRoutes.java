@@ -278,10 +278,10 @@ public final class PhrDocumentImagingRoutes {
         }
         PhrRouteSupport.PhrRequestContext finalContext = context;
         return requireAccess(context, patientId, "documents", "READ")
-            .then(allowed -> allowed
+            .then(decision -> decision.isAllowed()
                 ? documentService.getPatientDocuments(patientId, finalContext.principalId())
                     .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size())))
-                : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
+                : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
     }
 
     private Promise<HttpResponse> handleCreateImagingOrder(HttpRequest request) {
@@ -303,9 +303,9 @@ public final class PhrDocumentImagingRoutes {
                     return PhrRouteSupport.errorResponse(404, "IMAGING_ORDER_NOT_FOUND", "Imaging order not found");
                 }
                 return requireAccess(context, order.get().patientId(), "imaging", "READ")
-                    .then(allowed -> allowed
+                    .then(decision -> decision.isAllowed()
                         ? PhrRouteSupport.jsonResponse(200, order.get())
-                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
+                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
             });
     }
 
@@ -362,10 +362,10 @@ public final class PhrDocumentImagingRoutes {
                 ImagingService.ImagingStudy study = studyOpt.get();
                 
                 return requireAccess(context, study.patientId(), "imaging", "DOWNLOAD")
-                    .then(allowed -> {
-                        if (!allowed) {
+                    .then(decision -> {
+                        if (!decision.isAllowed()) {
                             auditImagingAccessDenied(context, study.patientId(), studyId, "imaging-study");
-                            return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+                            return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
                         }
 
                         String correlationId = PhrTraceContext.newCorrelationId("phr_imaging_download");
@@ -421,10 +421,10 @@ public final class PhrDocumentImagingRoutes {
                 ImagingService.ImagingStudy study = studyOpt.get();
                 
                 return requireAccess(context, study.patientId(), "imaging", "DOWNLOAD")
-                    .then(allowed -> {
-                        if (!allowed) {
+                    .then(decision -> {
+                        if (!decision.isAllowed()) {
                             auditImagingAccessDenied(context, study.patientId(), seriesId, "imaging-series");
-                            return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+                            return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
                         }
 
                         String correlationId = PhrTraceContext.newCorrelationId("phr_imaging_series_download");
@@ -461,9 +461,9 @@ public final class PhrDocumentImagingRoutes {
                     return PhrRouteSupport.errorResponse(400, "INVALID_DOCUMENT_UPLOAD", ex.getMessage());
                 }
                 return requireAccess(finalContext, value.getPatientId(), "documents", "WRITE")
-                    .then(allowed -> {
-                        if (!allowed) {
-                            return PhrRouteSupport.policyDenialResponse(403, finalContext.correlationId());
+                    .then(decision -> {
+                        if (!decision.isAllowed()) {
+                            return PhrRouteSupport.policyDenialResponse(403, finalContext.correlationId(), decision.getReasonCode());
                         }
                         String correlationId = PhrTraceContext.newCorrelationId("phr_document_upload");
                         return handler.apply(value)
@@ -501,9 +501,9 @@ public final class PhrDocumentImagingRoutes {
                     return PhrRouteSupport.errorResponse(400, "INVALID_" + resourceType.toUpperCase(), ex.getMessage());
                 }
                 return requireAccess(finalContext, patientId, resourceType, action)
-                    .then(allowed -> allowed
+                    .then(decision -> decision.isAllowed()
                         ? handler.apply(value)
-                        : PhrRouteSupport.policyDenialResponse(403, finalContext.correlationId()));
+                        : PhrRouteSupport.policyDenialResponse(403, finalContext.correlationId(), decision.getReasonCode()));
             });
     }
 
@@ -521,12 +521,12 @@ public final class PhrDocumentImagingRoutes {
             return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT_SCOPE", ex.getMessage());
         }
         return requireAccess(context, patientId, resourceType, action)
-            .then(allowed -> allowed
+            .then(decision -> decision.isAllowed()
                 ? handler.apply(patientId)
-                : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
+                : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
     }
 
-    private Promise<Boolean> requireAccess(
+    private Promise<PhrPolicyEvaluator.PolicyDecision> requireAccess(
             PhrRouteSupport.PhrRequestContext context,
             String patientId,
             String resourceType,
@@ -537,8 +537,7 @@ public final class PhrDocumentImagingRoutes {
                 resourceType,
                 action,
                 context.tenantId(),
-                context.facilityId())
-            .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);
+                context.facilityId());
     }
 
     private static DocumentService.DocumentUploadRequest parseUpload(String json) throws java.io.IOException {

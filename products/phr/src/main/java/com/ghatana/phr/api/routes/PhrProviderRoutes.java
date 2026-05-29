@@ -88,45 +88,59 @@ public final class PhrProviderRoutes {
         }
 
         // Provider dashboard with work queue, appointments, recent patients, and alerts
-        return patientRecordService.searchPatients(
-            "deleted = false",
-            Map.of(),
-            10,
-            0
-        ).then(patients -> {
-            List<Map<String, Object>> recentPatients = patients.stream()
-                .limit(5)
-                .map(patient -> Map.<String, Object>of(
-                    "id", patient.getId(),
-                    "name", patient.getDemographics().getFullName(),
-                    "age", patient.getDemographics().getAge(),
-                    "status", "active",
-                    "lastVisit", patient.getMedicalHistory() != null ? "Recent" : "Unknown"
-                ))
-                .toList();
+        // Use a generic patient ID for dashboard-level policy check (facility-scoped access)
+        return policyEvaluator.canAccessPhiResourceAsync(
+                context,
+                "dashboard-scope",
+                "provider-dashboard",
+                "READ",
+                context.tenantId(),
+                context.facilityId())
+            .then(decision -> {
+                if (!decision.isAllowed()) {
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
+                }
+                return patientRecordService.searchPatients(
+                    "deleted = false",
+                    Map.of(),
+                    10,
+                    0
+                ).then(patients -> {
+                    List<Map<String, Object>> recentPatients = patients.stream()
+                        .limit(5)
+                        .map(patient -> Map.<String, Object>of(
+                            "id", patient.getId(),
+                            "name", patient.getDemographics().getFullName(),
+                            "age", patient.getDemographics().getAge(),
+                            "status", "active",
+                            "lastVisit", patient.getMedicalHistory() != null ? "Recent" : "Unknown"
+                        ))
+                        .toList();
 
-            return PhrRouteSupport.jsonResponse(200, Map.of(
-                "providerId", context.principalId(),
-                "tenantId", context.tenantId(),
-                "workQueue", Map.of(
-                    "pendingReviews", 0,
-                    "pendingEncounters", 0,
-                    "urgentPatients", 0
-                ),
-                "appointments", Map.of(
-                    "todayCount", 0,
-                    "upcomingCount", 0,
-                    "nextAppointment", (Object) null
-                ),
-                "recentPatients", recentPatients,
-                "alerts", Map.of(
-                    "expiringConsents", 0,
-                    "emergencyAccessRequests", 0,
-                    "criticalLabs", 0
-                ),
-                "generatedAt", java.time.Instant.now().toString()
-            ), context.correlationId());
-        });
+                    Map<String, Object> appointments = new java.util.LinkedHashMap<>();
+                    appointments.put("todayCount", 0);
+                    appointments.put("upcomingCount", 0);
+                    appointments.put("nextAppointment", null);
+
+                    return PhrRouteSupport.jsonResponse(200, Map.of(
+                        "providerId", context.principalId(),
+                        "tenantId", context.tenantId(),
+                        "workQueue", Map.of(
+                            "pendingReviews", 0,
+                            "pendingEncounters", 0,
+                            "urgentPatients", 0
+                        ),
+                        "appointments", appointments,
+                        "recentPatients", recentPatients,
+                        "alerts", Map.of(
+                            "expiringConsents", 0,
+                            "emergencyAccessRequests", 0,
+                            "criticalLabs", 0
+                        ),
+                        "generatedAt", java.time.Instant.now().toString()
+                    ), context.correlationId());
+                });
+            });
     }
 
     private Promise<HttpResponse> handleGetPatients(HttpRequest request) {
@@ -147,27 +161,40 @@ public final class PhrProviderRoutes {
         String limitParam = request.getQueryParameter("limit");
         int limit = limitParam != null ? Integer.parseInt(limitParam) : 50;
 
-        return patientRecordService.searchPatients(
-            "deleted = false",
-            Map.of(),
-            limit,
-            0
-        ).then(patients -> {
-            List<Map<String, Object>> patientSummaries = patients.stream()
-                .map(patient -> Map.<String, Object>of(
-                    "id", patient.getId(),
-                    "name", patient.getDemographics().getFullName(),
-                    "age", patient.getDemographics().getAge(),
-                    "status", "active",
-                    "hasConsent", true,
-                    "lastVisit", patient.getMedicalHistory() != null ? "Recent" : "Unknown"
-                ))
-                .toList();
-            return PhrRouteSupport.jsonResponse(200, Map.of(
-                "items", patientSummaries,
-                "count", patientSummaries.size()
-            ), context.correlationId());
-        });
+        // Policy check for facility-scoped patient roster access
+        return policyEvaluator.canAccessPhiResourceAsync(
+                context,
+                "roster-scope",
+                "patient-roster",
+                "READ",
+                context.tenantId(),
+                context.facilityId())
+            .then(decision -> {
+                if (!decision.isAllowed()) {
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
+                }
+                return patientRecordService.searchPatients(
+                    "deleted = false",
+                    Map.of(),
+                    limit,
+                    0
+                ).then(patients -> {
+                    List<Map<String, Object>> patientSummaries = patients.stream()
+                        .map(patient -> Map.<String, Object>of(
+                            "id", patient.getId(),
+                            "name", patient.getDemographics().getFullName(),
+                            "age", patient.getDemographics().getAge(),
+                            "status", "active",
+                            "hasConsent", true,
+                            "lastVisit", patient.getMedicalHistory() != null ? "Recent" : "Unknown"
+                        ))
+                        .toList();
+                    return PhrRouteSupport.jsonResponse(200, Map.of(
+                        "items", patientSummaries,
+                        "count", patientSummaries.size()
+                    ), context.correlationId());
+                });
+            });
     }
 
     private Promise<HttpResponse> handleGetPatientSummary(HttpRequest request) {
@@ -188,7 +215,7 @@ public final class PhrProviderRoutes {
             context.facilityId()
         ).then(decision -> {
             if (!decision.isAllowed()) {
-                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
             }
             
             return patientRecordService.getPatient(patientId)
@@ -230,7 +257,7 @@ public final class PhrProviderRoutes {
             context.facilityId()
         ).then(decision -> {
             if (!decision.isAllowed()) {
-                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
             }
             
             return patientRecordService.getPatient(patientId)
@@ -290,7 +317,7 @@ public final class PhrProviderRoutes {
             context.facilityId()
         ).then(decision -> {
             if (!decision.isAllowed()) {
-                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
             }
             
             return request.loadBody()
@@ -354,7 +381,7 @@ public final class PhrProviderRoutes {
             context.facilityId()
         ).then(decision -> {
             if (!decision.isAllowed()) {
-                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
             }
             
             PatientOperationContext ctx = new PatientOperationContext(
@@ -406,7 +433,7 @@ public final class PhrProviderRoutes {
             context.facilityId()
         ).then(decision -> {
             if (!decision.isAllowed()) {
-                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
             }
             
             return request.loadBody()
@@ -470,7 +497,7 @@ public final class PhrProviderRoutes {
             context.facilityId()
         ).then(decision -> {
             if (!decision.isAllowed()) {
-                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
             }
             
             PatientOperationContext ctx = new PatientOperationContext(
@@ -513,7 +540,7 @@ public final class PhrProviderRoutes {
             context.facilityId()
         ).then(decision -> {
             if (!decision.isAllowed()) {
-                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
             }
             
             return request.loadBody()

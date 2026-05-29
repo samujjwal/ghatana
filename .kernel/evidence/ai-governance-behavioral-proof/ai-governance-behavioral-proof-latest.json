@@ -1,11 +1,11 @@
 {
   "timestamp": "generated-on-demand",
-  "generatedAt": "2026-05-29T01:10:46.506Z",
+  "generatedAt": "2026-05-29T23:26:28.281Z",
   "evidenceRun": {
     "generatedBy": "scripts/check-ai-governance-behavioral-proof.mjs",
     "command": "pnpm check:ai-governance-behavioral-proof",
     "source": "scripts/check-ai-governance-behavioral-proof.mjs",
-    "commit": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8"
+    "commit": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3"
   },
   "violations": [],
   "warnings": [],

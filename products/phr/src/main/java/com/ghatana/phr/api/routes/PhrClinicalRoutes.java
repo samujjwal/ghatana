@@ -119,9 +119,9 @@ public final class PhrClinicalRoutes {
                     return PhrRouteSupport.errorResponse(404, "LAB_OBSERVATION_NOT_FOUND", "Lab observation not found");
                 }
                 return requireAccess(context, observation.get().patientId(), "lab-results", "READ")
-                    .then(allowed -> allowed
+                    .then(decision -> decision.isAllowed()
                         ? PhrRouteSupport.jsonResponse(200, observation.get())
-                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
+                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
             });
     }
 
@@ -161,9 +161,9 @@ public final class PhrClinicalRoutes {
                     return PhrRouteSupport.errorResponse(404, "PRESCRIPTION_NOT_FOUND", "Prescription not found");
                 }
                 return requireAccess(context, prescription.get().patientId(), "medications", "READ")
-                    .then(allowed -> allowed
+                    .then(decision -> decision.isAllowed()
                         ? PhrRouteSupport.jsonResponse(200, prescription.get())
-                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
+                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
             });
     }
 
@@ -213,9 +213,9 @@ public final class PhrClinicalRoutes {
                     return PhrRouteSupport.errorResponse(404, "IMMUNIZATION_NOT_FOUND", "Immunization not found");
                 }
                 return requireAccess(context, immunization.get().patientId(), "immunizations", "READ")
-                    .then(allowed -> allowed
+                    .then(decision -> decision.isAllowed()
                         ? PhrRouteSupport.jsonResponse(200, immunization.get())
-                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
+                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
             });
     }
 
@@ -249,9 +249,9 @@ public final class PhrClinicalRoutes {
                     return PhrRouteSupport.errorResponse(400, "INVALID_" + resourceType.toUpperCase().replace('-', '_'), ex.getMessage());
                 }
                 return requireAccess(finalContext, patientId, resourceType, action)
-                    .then(allowed -> allowed
+                    .then(decision -> decision.isAllowed()
                         ? handler.apply(value)
-                        : PhrRouteSupport.policyDenialResponse(403, finalContext.correlationId()));
+                        : PhrRouteSupport.policyDenialResponse(403, finalContext.correlationId(), decision.getReasonCode()));
             });
     }
 
@@ -269,12 +269,12 @@ public final class PhrClinicalRoutes {
             return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT_SCOPE", ex.getMessage());
         }
         return requireAccess(context, patientId, resourceType, action)
-            .then(allowed -> allowed
+            .then(decision -> decision.isAllowed()
                 ? handler.apply(patientId)
-                : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
+                : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
     }
 
-    private Promise<Boolean> requireAccess(
+    private Promise<PhrPolicyEvaluator.PolicyDecision> requireAccess(
             PhrRouteSupport.PhrRequestContext context,
             String patientId,
             String resourceType,
@@ -285,8 +285,7 @@ public final class PhrClinicalRoutes {
                 resourceType,
                 action,
                 context.tenantId(),
-                context.facilityId())
-            .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);
+                context.facilityId());
     }
 
     private static String patientIdFrom(String json) throws java.io.IOException {

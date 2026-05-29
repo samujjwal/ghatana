@@ -83,7 +83,7 @@ public final class PhrAuditRoutes {
 
         PhrPolicyEvaluator.PolicyDecision auditDecision = policyEvaluator.canQueryAuditEvents(context, patientIdParam);
         if (!auditDecision.isAllowed()) {
-            return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+            return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), auditDecision.getReasonCode());
         }
 
         String effectiveEntityId;
@@ -163,7 +163,7 @@ public final class PhrAuditRoutes {
             PhrPolicyEvaluator.PolicyDecision detailDecision =
                 policyEvaluator.canViewAuditEvent(context, event.getUserId(), event.getEntityId());
             if (!detailDecision.isAllowed()) {
-                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), detailDecision.getReasonCode());
             }
 
             return PhrRouteSupport.jsonResponse(200, toEventDto(event));
@@ -182,7 +182,7 @@ public final class PhrAuditRoutes {
 
         PhrPolicyEvaluator.PolicyDecision exportDecision = policyEvaluator.canViewAuditTrail(context);
         if (!exportDecision.isAllowed()) {
-            return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+            return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), exportDecision.getReasonCode());
         }
 
         String patientIdParam = request.getQueryParameter("patientId");

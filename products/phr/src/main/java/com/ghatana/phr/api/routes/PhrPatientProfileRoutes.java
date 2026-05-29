@@ -155,6 +155,13 @@ public final class PhrPatientProfileRoutes {
                     response.put("status", "updated");
                     response.put("principalId", context.principalId());
                     response.put("updatedFields", validatedUpdates.keySet());
+                    response.put("audit", Map.of(
+                        "action", "PROFILE_UPDATE",
+                        "actor", context.principalId(),
+                        "actorRole", context.role(),
+                        "timestamp", Instant.now().toString(),
+                        "correlationId", context.correlationId()
+                    ));
                     
                     return PhrRouteSupport.jsonResponseWithCorrelation(200, response, context.correlationId());
                 } catch (Exception ex) {

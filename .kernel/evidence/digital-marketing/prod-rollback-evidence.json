@@ -1,9 +1,9 @@
 {
   "productId": "digital-marketing",
   "evidenceType": "prod-rollback-evidence",
-  "generatedAt": "2026-05-27T19:58:28.453Z",
-  "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
-  "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+  "generatedAt": "2026-05-29T23:11:39.816Z",
+  "sourceCommitSha": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3",
+  "targetCommitSha": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3",
   "targetEnvironment": "staging",
   "validationStatus": "validated",
   "pass": true,
@@ -15,5 +15,24 @@
     "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
     "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
     "targetEnvironment": "staging"
+  },
+  "environment": "prod",
+  "deploymentManifestHistory": {
+    "validated": true,
+    "lastSuccessfulDeployment": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3"
+  },
+  "artifactSelectionPolicy": {
+    "strategy": "previous-artifact",
+    "validated": true
+  },
+  "approvalContract": {
+    "validated": true,
+    "requiredApprovals": [
+      "release-manager"
+    ]
+  },
+  "rollback": {
+    "validated": true,
+    "validatedAt": "2026-05-29T22:19:03.587Z"
   }
 }

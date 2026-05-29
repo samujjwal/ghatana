@@ -1,5 +1,11 @@
 package com.ghatana.phr.api.routes;
 
+import com.ghatana.phr.kernel.service.AppointmentService;
+import com.ghatana.phr.kernel.service.MedicationServiceExtensions;
+import com.ghatana.phr.kernel.service.PatientRecordServiceExtensions;
+import com.ghatana.phr.kernel.service.DocumentServiceExtensions;
+import com.ghatana.phr.kernel.service.ConsentManagementServiceExtensions;
+import com.ghatana.phr.kernel.service.EmergencyAccessLogServiceExtensions;
 import com.ghatana.phr.repository.UserRepository;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
@@ -32,10 +38,30 @@ public final class PhrDashboardRoutes {
 
     private final Eventloop eventloop;
     private final UserRepository userRepository;
+    private final AppointmentService appointmentService;
+    private final MedicationServiceExtensions medicationServiceExtensions;
+    private final PatientRecordServiceExtensions patientRecordServiceExtensions;
+    private final DocumentServiceExtensions documentServiceExtensions;
+    private final ConsentManagementServiceExtensions consentServiceExtensions;
+    private final EmergencyAccessLogServiceExtensions emergencyAccessLogServiceExtensions;
 
-    public PhrDashboardRoutes(Eventloop eventloop, UserRepository userRepository) {
+    public PhrDashboardRoutes(
+            Eventloop eventloop,
+            UserRepository userRepository,
+            AppointmentService appointmentService,
+            MedicationServiceExtensions medicationServiceExtensions,
+            PatientRecordServiceExtensions patientRecordServiceExtensions,
+            DocumentServiceExtensions documentServiceExtensions,
+            ConsentManagementServiceExtensions consentServiceExtensions,
+            EmergencyAccessLogServiceExtensions emergencyAccessLogServiceExtensions) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.userRepository = Objects.requireNonNull(userRepository, "userRepository must not be null");
+        this.appointmentService = Objects.requireNonNull(appointmentService, "appointmentService must not be null");
+        this.medicationServiceExtensions = Objects.requireNonNull(medicationServiceExtensions, "medicationServiceExtensions must not be null");
+        this.patientRecordServiceExtensions = Objects.requireNonNull(patientRecordServiceExtensions, "patientRecordServiceExtensions must not be null");
+        this.documentServiceExtensions = Objects.requireNonNull(documentServiceExtensions, "documentServiceExtensions must not be null");
+        this.consentServiceExtensions = Objects.requireNonNull(consentServiceExtensions, "consentServiceExtensions must not be null");
+        this.emergencyAccessLogServiceExtensions = Objects.requireNonNull(emergencyAccessLogServiceExtensions, "emergencyAccessLogServiceExtensions must not be null");
     }
 
     /**
@@ -80,37 +106,76 @@ public final class PhrDashboardRoutes {
         profileSummary.put("active", user.isActive());
         dashboard.put("profileSummary", profileSummary);
 
-        dashboard.put("nextAppointment", null);
+        // Fetch next appointment
+        return appointmentService.getNextAppointment(context.principalId())
+            .map(nextAppointment -> {
+                dashboard.put("nextAppointment", nextAppointment != null 
+                    ? Map.of(
+                        "appointmentId", nextAppointment.getAppointmentId(),
+                        "scheduledTime", nextAppointment.getScheduledTime().toString(),
+                        "provider", nextAppointment.getProvider(),
+                        "type", nextAppointment.getType()
+                    )
+                    : null);
 
-        dashboard.put("medications", Map.of(
-            "activeCount", 0,
-            "adherenceAlert", false
-        ));
+                // Fetch active medications count
+                return medicationServiceExtensions.getActiveMedicationCount(context.principalId())
+                    .map(medicationCount -> {
+                        dashboard.put("medications", Map.of(
+                            "activeCount", medicationCount,
+                            "adherenceAlert", medicationCount > 5 // Alert if >5 active meds
+                        ));
 
-        dashboard.put("recentObservations", Map.of(
-            "count", 0,
-            "hasCritical", false
-        ));
+                        // Fetch recent observations
+                        return patientRecordServiceExtensions.getRecentObservations(context.principalId(), 5)
+                            .map(observations -> {
+                                boolean hasCritical = observations.stream()
+                                    .anyMatch(obs -> "critical".equalsIgnoreCase(obs.getSeverity()));
+                                dashboard.put("recentObservations", Map.of(
+                                    "count", observations.size(),
+                                    "hasCritical", hasCritical
+                                ));
 
-        dashboard.put("activeConditions", Map.of(
-            "count", 0,
-            "hasChronic", false
-        ));
+                                // Fetch active conditions
+                                return patientRecordServiceExtensions.getActiveConditions(context.principalId())
+                                    .map(conditions -> {
+                                        boolean hasChronic = conditions.stream()
+                                            .anyMatch(cond -> "chronic".equalsIgnoreCase(cond.getChronicity()));
+                                        dashboard.put("activeConditions", Map.of(
+                                            "count", conditions.size(),
+                                            "hasChronic", hasChronic
+                                        ));
 
-        dashboard.put("documents", Map.of(
-            "totalCount", 0,
-            "pendingOcr", 0
-        ));
+                                        // Fetch documents
+                                        return documentServiceExtensions.getDocumentCount(context.principalId())
+                                            .map(docCount -> {
+                                                dashboard.put("documents", Map.of(
+                                                    "totalCount", docCount,
+                                                    "pendingOcr", 0 // TODO: Implement OCR pending count
+                                                ));
 
-        // Access alerts widget
-        Map<String, Object> accessAlerts = new LinkedHashMap<>();
-        accessAlerts.put("expiringConsents", 0);
-        accessAlerts.put("emergencyAccessPending", false);
-        dashboard.put("accessAlerts", accessAlerts);
+                                                // Fetch access alerts
+                                                return consentServiceExtensions.getExpiringConsents(context.principalId())
+                                                    .map(expiringCount -> {
+                                                        return emergencyAccessLogServiceExtensions.hasPendingEmergencyAccess(context.principalId())
+                                                            .map(hasPending -> {
+                                                                Map<String, Object> accessAlerts = new LinkedHashMap<>();
+                                                                accessAlerts.put("expiringConsents", expiringCount);
+                                                                accessAlerts.put("emergencyAccessPending", hasPending);
+                                                                dashboard.put("accessAlerts", accessAlerts);
 
-        // Freshness timestamp
-        dashboard.put("generatedAt", Instant.now().toString());
+                                                                // Freshness timestamp
+                                                                dashboard.put("generatedAt", Instant.now().toString());
 
-        return PhrRouteSupport.jsonResponseWithCorrelation(200, dashboard, context.correlationId());
+                                                                return PhrRouteSupport.jsonResponseWithCorrelation(200, dashboard, context.correlationId());
+                                                            });
+                                                    });
+                                            });
+                                    });
+                            });
+                    });
+            })
+            .recoverWithException(ex -> PhrRouteSupport.errorResponse(500, "DASHBOARD_ERROR", 
+                "Failed to build dashboard: " + ex.getMessage()));
     }
 }
