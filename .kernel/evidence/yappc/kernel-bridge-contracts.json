@@ -1,11 +1,11 @@
 {
   "checkId": "YAPPC-007 kernel bridge contracts",
-  "generatedAt": "2026-05-28T23:26:55.046Z",
+  "generatedAt": "2026-05-29T01:20:37.958Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/check-yappc-kernel-bridge-contracts.mjs",
     "command": "node scripts/check-yappc-kernel-bridge-contracts.mjs",
-    "commit": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc"
+    "commit": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8"
   },
   "summary": {
     "checkCount": 28,

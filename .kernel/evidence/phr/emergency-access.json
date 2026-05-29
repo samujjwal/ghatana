@@ -2,7 +2,7 @@
   "productId": "phr",
   "evidenceType": "emergency-access-audit",
   "generatedAt": "2025-06-01T00:00:00Z",
-  "targetCommitSha": "test-evidence-commit-001",
+  "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
   "auditTrailEnabled": true,
   "reviewWorkflowEnabled": true,
   "description": "Emergency access is fully audit-logged and requires post-hoc review",
@@ -19,7 +19,10 @@
   },
   "reviewWorkflow": {
     "requiredWithin": "PT72H",
-    "approverRoles": ["PROVIDER_ADMIN", "PHR_ADMIN"],
+    "approverRoles": [
+      "PROVIDER_ADMIN",
+      "PHR_ADMIN"
+    ],
     "escalationEnabled": true,
     "notificationsEnabled": true
   },

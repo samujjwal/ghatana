@@ -70,6 +70,59 @@ Verification evidence from this pass:
 - `./gradlew :products:data-cloud:delivery:launcher:test --tests "com.ghatana.datacloud.launcher.http.DataCloudHttpServerGovernanceTest"` -> `BUILD SUCCESSFUL`.
 - `./gradlew :products:data-cloud:integration-tests:test --tests "com.ghatana.datacloud.integration.ProductionTenantAuthProfileTest"` -> `BUILD SUCCESSFUL`.
 
+### Implementation Status Update (2026-05-28, Release-Ops Continuation)
+
+Scope executed in this pass: Group 4 release-ops wave continuation for Data Cloud readiness artifacts and gate execution.
+
+- [x] Ran Kernel Waves 3-4 execution and isolated first failing release-ops blocker.
+- [x] Updated Data Cloud promotion commit pins in readiness evidence to current HEAD at execution time.
+- [x] Refreshed Data Cloud evidence artifacts required by release gate:
+  - active modules
+  - action-plane boundaries and module inventory
+  - agent capability/runtime exclusion/usage audit evidence
+  - runtime profile, audit completeness, operations readiness, security SBOM
+  - production readiness task map regeneration
+- [x] Added bootstrap guard in provider-readiness script to prevent circular dependency during product-release-readiness bootstrap runs.
+- [x] Added missing tenant isolation evidence artifact at expected release-bundle path (`.kernel/evidence/data-cloud/tenant-isolation-governance-validation.json`).
+
+Current blocker after this pass:
+
+- [ ] `pnpm check:data-cloud-release-gate` now fails at `check:evidence-current-commit` because of repo-wide stale evidence files outside the Data Cloud scope (notably Digital Marketing and PHR evidence snapshots pinned to older commits). This is cross-product freshness debt, not a remaining Data Cloud handler/route/auth implementation defect.
+
+Verification evidence from this pass:
+
+- `node ./scripts/run-kernel-implementation-waves.mjs --waves wave-3-quality-performance,wave-4-release-ops --execute` -> progresses through Wave 3 checks and fails in Wave 4 at release evidence freshness constraints.
+- `pnpm check:data-cloud-release-runtime-profile` -> passed; evidence refreshed.
+- `pnpm check:data-cloud-platform-providers` -> passed.
+- `pnpm check:data-cloud-operations-readiness` -> passed after runtime profile refresh.
+- `pnpm check:data-cloud-security-sbom-proof` -> passed.
+
+### Implementation Status Update (2026-05-29, Task Matrix Traceability Hardening)
+
+Scope executed in this pass: verification-tracking hardening only. No functional Group 2-10 feature work is marked complete in this pass.
+
+- [x] Normalized all Group 1-10 `Change areas` entries in the implementation plan to concrete repository paths (removed placeholders and non-path references).
+- [x] Eliminated kernel implementation task-matrix warning noise caused by non-existent path references in the plan.
+- [x] Re-validated Wave 1 foundation execution after path normalization.
+- [x] Re-validated Data Cloud UI contract checks tied to route/runtime truth contracts.
+
+Explicitly not marked complete in this pass:
+
+- [ ] Group 2 canonical journey contract completion.
+- [ ] Group 3 UI simplification and i18n/a11y closure.
+- [ ] Groups 4-10 architecture, hardening, and consolidated release-blocking test promotion.
+
+Verification evidence from this pass:
+
+- `pnpm check:kernel-implementation-task-matrix` -> passed, no path-reference warnings.
+- `node ./scripts/run-kernel-implementation-waves.mjs --waves wave-1-foundation --execute` -> passed.
+- `pnpm check:data-cloud-ui-contracts` -> passed (`56/56` tests).
+
+Notes:
+
+- `pnpm check:route-entitlement-contracts` was started and reached successful Kernel + PHR stages before being intentionally interrupted during DMOS stage to avoid long-running cross-product execution without a focused blocker.
+- Next execution slice should continue with a fail-fast Wave 2 strategy (one failing check at a time, then fix+reverify) to satisfy efficient completion requirements.
+
 ---
 
 ## 2. Scope inspected

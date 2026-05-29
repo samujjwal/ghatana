@@ -1,7 +1,207 @@
 {
-  "generatedAt": "2026-05-26T00:00:00Z",
+  "schemaVersion": "1.0.0",
   "productId": "phr",
-  "evidenceType": "lifecycle-evidence-pack",
-  "status": "present",
-  "notes": "Placeholder lifecycle evidence pack required by release rollback drill gate."
+  "checkedAt": "2026-05-29T01:21:51.804Z",
+  "smokeEnabled": true,
+  "evidenceCategories": [
+    "baseline",
+    "plan",
+    "validate",
+    "test",
+    "build",
+    "package",
+    "deploy",
+    "verify",
+    "rollback",
+    "gate-results",
+    "health",
+    "approvals",
+    "provenance",
+    "product-domain-correctness"
+  ],
+  "checks": {
+    "smokePhases": [
+      {
+        "phase": "validate",
+        "status": "ok",
+        "runId": "2026-05-29T01-21-52-04165066",
+        "correlationId": "corr-2026-05-29T01-21-52-04165066",
+        "productUnitId": "phr",
+        "providerMode": "bootstrap",
+        "startedAt": "2026-05-29T01:21:52.885Z",
+        "completedAt": "2026-05-29T01:21:52.885Z",
+        "durationMs": 0,
+        "evidenceRefs": [
+          ".kernel/out/products/phr/validate/2026-05-29T01-21-52-04165066/lifecycle-plan.json",
+          ".kernel/out/products/phr/validate/2026-05-29T01-21-52-04165066/phr/2026-05-29T01-21-52-04165066/validate/gate-result-manifest.json",
+          ".kernel/out/products/phr/validate/2026-05-29T01-21-52-04165066/phr/2026-05-29T01-21-52-04165066/validate/lifecycle-events.json",
+          ".kernel/out/products/phr/validate/2026-05-29T01-21-52-04165066/phr/2026-05-29T01-21-52-04165066/validate/lifecycle-health-snapshot.json",
+          ".kernel/out/products/phr/validate/2026-05-29T01-21-52-04165066/phr/2026-05-29T01-21-52-04165066/validate/lifecycle-result.json"
+        ],
+        "manifests": {
+          "lifecyclePlan": ".kernel/out/products/phr/validate/2026-05-29T01-21-52-04165066/lifecycle-plan.json",
+          "lifecycleResult": ".kernel/out/products/phr/validate/2026-05-29T01-21-52-04165066/phr/2026-05-29T01-21-52-04165066/validate/lifecycle-result.json",
+          "lifecycleHealthSnapshot": ".kernel/out/products/phr/validate/2026-05-29T01-21-52-04165066/phr/2026-05-29T01-21-52-04165066/validate/lifecycle-health-snapshot.json",
+          "gateResultManifest": ".kernel/out/products/phr/validate/2026-05-29T01-21-52-04165066/phr/2026-05-29T01-21-52-04165066/validate/gate-result-manifest.json",
+          "lifecycleEvents": ".kernel/out/products/phr/validate/2026-05-29T01-21-52-04165066/phr/2026-05-29T01-21-52-04165066/validate/lifecycle-events.json",
+          "runId": "2026-05-29T01-21-52-04165066",
+          "correlationId": "corr-2026-05-29T01-21-52-04165066",
+          "providerMode": "bootstrap"
+        }
+      },
+      {
+        "phase": "test",
+        "status": "ok",
+        "runId": "2026-05-29T01-21-53-40dc9d86",
+        "correlationId": "corr-2026-05-29T01-21-53-40dc9d86",
+        "productUnitId": "phr",
+        "providerMode": "bootstrap",
+        "startedAt": "2026-05-29T01:21:54.075Z",
+        "completedAt": "2026-05-29T01:21:54.075Z",
+        "durationMs": 0,
+        "evidenceRefs": [
+          ".kernel/out/products/phr/test/2026-05-29T01-21-53-40dc9d86/lifecycle-plan.json",
+          ".kernel/out/products/phr/test/2026-05-29T01-21-53-40dc9d86/phr/2026-05-29T01-21-53-40dc9d86/test/gate-result-manifest.json",
+          ".kernel/out/products/phr/test/2026-05-29T01-21-53-40dc9d86/phr/2026-05-29T01-21-53-40dc9d86/test/lifecycle-events.json",
+          ".kernel/out/products/phr/test/2026-05-29T01-21-53-40dc9d86/phr/2026-05-29T01-21-53-40dc9d86/test/lifecycle-health-snapshot.json",
+          ".kernel/out/products/phr/test/2026-05-29T01-21-53-40dc9d86/phr/2026-05-29T01-21-53-40dc9d86/test/lifecycle-result.json"
+        ],
+        "manifests": {
+          "lifecyclePlan": ".kernel/out/products/phr/test/2026-05-29T01-21-53-40dc9d86/lifecycle-plan.json",
+          "lifecycleResult": ".kernel/out/products/phr/test/2026-05-29T01-21-53-40dc9d86/phr/2026-05-29T01-21-53-40dc9d86/test/lifecycle-result.json",
+          "lifecycleHealthSnapshot": ".kernel/out/products/phr/test/2026-05-29T01-21-53-40dc9d86/phr/2026-05-29T01-21-53-40dc9d86/test/lifecycle-health-snapshot.json",
+          "gateResultManifest": ".kernel/out/products/phr/test/2026-05-29T01-21-53-40dc9d86/phr/2026-05-29T01-21-53-40dc9d86/test/gate-result-manifest.json",
+          "lifecycleEvents": ".kernel/out/products/phr/test/2026-05-29T01-21-53-40dc9d86/phr/2026-05-29T01-21-53-40dc9d86/test/lifecycle-events.json",
+          "runId": "2026-05-29T01-21-53-40dc9d86",
+          "correlationId": "corr-2026-05-29T01-21-53-40dc9d86",
+          "providerMode": "bootstrap"
+        }
+      },
+      {
+        "phase": "build",
+        "status": "ok",
+        "runId": "2026-05-29T01-21-55-78f0aa9f",
+        "correlationId": "corr-2026-05-29T01-21-55-78f0aa9f",
+        "productUnitId": "phr",
+        "providerMode": "bootstrap",
+        "startedAt": "2026-05-29T01:21:55.193Z",
+        "completedAt": "2026-05-29T01:21:55.193Z",
+        "durationMs": 0,
+        "evidenceRefs": [
+          ".kernel/out/products/phr/build/2026-05-29T01-21-55-78f0aa9f/lifecycle-plan.json",
+          ".kernel/out/products/phr/build/2026-05-29T01-21-55-78f0aa9f/phr/2026-05-29T01-21-55-78f0aa9f/build/artifact-manifest.json",
+          ".kernel/out/products/phr/build/2026-05-29T01-21-55-78f0aa9f/phr/2026-05-29T01-21-55-78f0aa9f/build/gate-result-manifest.json",
+          ".kernel/out/products/phr/build/2026-05-29T01-21-55-78f0aa9f/phr/2026-05-29T01-21-55-78f0aa9f/build/lifecycle-events.json",
+          ".kernel/out/products/phr/build/2026-05-29T01-21-55-78f0aa9f/phr/2026-05-29T01-21-55-78f0aa9f/build/lifecycle-health-snapshot.json",
+          ".kernel/out/products/phr/build/2026-05-29T01-21-55-78f0aa9f/phr/2026-05-29T01-21-55-78f0aa9f/build/lifecycle-result.json"
+        ],
+        "manifests": {
+          "lifecyclePlan": ".kernel/out/products/phr/build/2026-05-29T01-21-55-78f0aa9f/lifecycle-plan.json",
+          "lifecycleResult": ".kernel/out/products/phr/build/2026-05-29T01-21-55-78f0aa9f/phr/2026-05-29T01-21-55-78f0aa9f/build/lifecycle-result.json",
+          "artifactManifest": ".kernel/out/products/phr/build/2026-05-29T01-21-55-78f0aa9f/phr/2026-05-29T01-21-55-78f0aa9f/build/artifact-manifest.json",
+          "lifecycleHealthSnapshot": ".kernel/out/products/phr/build/2026-05-29T01-21-55-78f0aa9f/phr/2026-05-29T01-21-55-78f0aa9f/build/lifecycle-health-snapshot.json",
+          "gateResultManifest": ".kernel/out/products/phr/build/2026-05-29T01-21-55-78f0aa9f/phr/2026-05-29T01-21-55-78f0aa9f/build/gate-result-manifest.json",
+          "lifecycleEvents": ".kernel/out/products/phr/build/2026-05-29T01-21-55-78f0aa9f/phr/2026-05-29T01-21-55-78f0aa9f/build/lifecycle-events.json",
+          "runId": "2026-05-29T01-21-55-78f0aa9f",
+          "correlationId": "corr-2026-05-29T01-21-55-78f0aa9f",
+          "providerMode": "bootstrap"
+        }
+      },
+      {
+        "phase": "package",
+        "status": "ok",
+        "runId": "2026-05-29T01-21-56-abe8ec02",
+        "correlationId": "corr-2026-05-29T01-21-56-abe8ec02",
+        "productUnitId": "phr",
+        "providerMode": "bootstrap",
+        "startedAt": "2026-05-29T01:21:56.337Z",
+        "completedAt": "2026-05-29T01:21:56.337Z",
+        "durationMs": 0,
+        "evidenceRefs": [
+          ".kernel/out/products/phr/package/2026-05-29T01-21-56-abe8ec02/lifecycle-plan.json",
+          ".kernel/out/products/phr/package/2026-05-29T01-21-56-abe8ec02/phr/2026-05-29T01-21-56-abe8ec02/package/artifact-manifest.json",
+          ".kernel/out/products/phr/package/2026-05-29T01-21-56-abe8ec02/phr/2026-05-29T01-21-56-abe8ec02/package/gate-result-manifest.json",
+          ".kernel/out/products/phr/package/2026-05-29T01-21-56-abe8ec02/phr/2026-05-29T01-21-56-abe8ec02/package/lifecycle-events.json",
+          ".kernel/out/products/phr/package/2026-05-29T01-21-56-abe8ec02/phr/2026-05-29T01-21-56-abe8ec02/package/lifecycle-health-snapshot.json",
+          ".kernel/out/products/phr/package/2026-05-29T01-21-56-abe8ec02/phr/2026-05-29T01-21-56-abe8ec02/package/lifecycle-result.json"
+        ],
+        "manifests": {
+          "lifecyclePlan": ".kernel/out/products/phr/package/2026-05-29T01-21-56-abe8ec02/lifecycle-plan.json",
+          "lifecycleResult": ".kernel/out/products/phr/package/2026-05-29T01-21-56-abe8ec02/phr/2026-05-29T01-21-56-abe8ec02/package/lifecycle-result.json",
+          "artifactManifest": ".kernel/out/products/phr/package/2026-05-29T01-21-56-abe8ec02/phr/2026-05-29T01-21-56-abe8ec02/package/artifact-manifest.json",
+          "lifecycleHealthSnapshot": ".kernel/out/products/phr/package/2026-05-29T01-21-56-abe8ec02/phr/2026-05-29T01-21-56-abe8ec02/package/lifecycle-health-snapshot.json",
+          "gateResultManifest": ".kernel/out/products/phr/package/2026-05-29T01-21-56-abe8ec02/phr/2026-05-29T01-21-56-abe8ec02/package/gate-result-manifest.json",
+          "lifecycleEvents": ".kernel/out/products/phr/package/2026-05-29T01-21-56-abe8ec02/phr/2026-05-29T01-21-56-abe8ec02/package/lifecycle-events.json",
+          "runId": "2026-05-29T01-21-56-abe8ec02",
+          "correlationId": "corr-2026-05-29T01-21-56-abe8ec02",
+          "providerMode": "bootstrap"
+        }
+      },
+      {
+        "phase": "deploy",
+        "status": "ok",
+        "runId": "2026-05-29T01-21-57-0fddc57d",
+        "correlationId": "corr-2026-05-29T01-21-57-0fddc57d",
+        "productUnitId": "phr",
+        "providerMode": "bootstrap",
+        "startedAt": "2026-05-29T01:21:57.479Z",
+        "completedAt": "2026-05-29T01:21:57.479Z",
+        "durationMs": 0,
+        "evidenceRefs": [
+          ".kernel/out/products/phr/deploy/2026-05-29T01-21-57-0fddc57d/lifecycle-plan.json",
+          ".kernel/out/products/phr/deploy/2026-05-29T01-21-57-0fddc57d/phr/2026-05-29T01-21-57-0fddc57d/deploy/deployment-manifest.json",
+          ".kernel/out/products/phr/deploy/2026-05-29T01-21-57-0fddc57d/phr/2026-05-29T01-21-57-0fddc57d/deploy/gate-result-manifest.json",
+          ".kernel/out/products/phr/deploy/2026-05-29T01-21-57-0fddc57d/phr/2026-05-29T01-21-57-0fddc57d/deploy/lifecycle-events.json",
+          ".kernel/out/products/phr/deploy/2026-05-29T01-21-57-0fddc57d/phr/2026-05-29T01-21-57-0fddc57d/deploy/lifecycle-health-snapshot.json",
+          ".kernel/out/products/phr/deploy/2026-05-29T01-21-57-0fddc57d/phr/2026-05-29T01-21-57-0fddc57d/deploy/lifecycle-result.json"
+        ],
+        "manifests": {
+          "lifecyclePlan": ".kernel/out/products/phr/deploy/2026-05-29T01-21-57-0fddc57d/lifecycle-plan.json",
+          "lifecycleResult": ".kernel/out/products/phr/deploy/2026-05-29T01-21-57-0fddc57d/phr/2026-05-29T01-21-57-0fddc57d/deploy/lifecycle-result.json",
+          "deploymentManifest": ".kernel/out/products/phr/deploy/2026-05-29T01-21-57-0fddc57d/phr/2026-05-29T01-21-57-0fddc57d/deploy/deployment-manifest.json",
+          "lifecycleHealthSnapshot": ".kernel/out/products/phr/deploy/2026-05-29T01-21-57-0fddc57d/phr/2026-05-29T01-21-57-0fddc57d/deploy/lifecycle-health-snapshot.json",
+          "gateResultManifest": ".kernel/out/products/phr/deploy/2026-05-29T01-21-57-0fddc57d/phr/2026-05-29T01-21-57-0fddc57d/deploy/gate-result-manifest.json",
+          "lifecycleEvents": ".kernel/out/products/phr/deploy/2026-05-29T01-21-57-0fddc57d/phr/2026-05-29T01-21-57-0fddc57d/deploy/lifecycle-events.json",
+          "runId": "2026-05-29T01-21-57-0fddc57d",
+          "correlationId": "corr-2026-05-29T01-21-57-0fddc57d",
+          "providerMode": "bootstrap"
+        }
+      },
+      {
+        "phase": "verify",
+        "status": "ok",
+        "runId": "2026-05-29T01-21-58-9ee1c74b",
+        "correlationId": "corr-2026-05-29T01-21-58-9ee1c74b",
+        "productUnitId": "phr",
+        "providerMode": "bootstrap",
+        "startedAt": "2026-05-29T01:21:58.652Z",
+        "completedAt": "2026-05-29T01:21:58.652Z",
+        "durationMs": 0,
+        "evidenceRefs": [
+          ".kernel/out/products/phr/verify/2026-05-29T01-21-58-9ee1c74b/lifecycle-plan.json",
+          ".kernel/out/products/phr/verify/2026-05-29T01-21-58-9ee1c74b/phr/2026-05-29T01-21-58-9ee1c74b/verify/gate-result-manifest.json",
+          ".kernel/out/products/phr/verify/2026-05-29T01-21-58-9ee1c74b/phr/2026-05-29T01-21-58-9ee1c74b/verify/lifecycle-events.json",
+          ".kernel/out/products/phr/verify/2026-05-29T01-21-58-9ee1c74b/phr/2026-05-29T01-21-58-9ee1c74b/verify/lifecycle-health-snapshot.json",
+          ".kernel/out/products/phr/verify/2026-05-29T01-21-58-9ee1c74b/phr/2026-05-29T01-21-58-9ee1c74b/verify/lifecycle-result.json",
+          ".kernel/out/products/phr/verify/2026-05-29T01-21-58-9ee1c74b/phr/2026-05-29T01-21-58-9ee1c74b/verify/verify-health-report.json"
+        ],
+        "manifests": {
+          "lifecyclePlan": ".kernel/out/products/phr/verify/2026-05-29T01-21-58-9ee1c74b/lifecycle-plan.json",
+          "lifecycleResult": ".kernel/out/products/phr/verify/2026-05-29T01-21-58-9ee1c74b/phr/2026-05-29T01-21-58-9ee1c74b/verify/lifecycle-result.json",
+          "verifyHealthReport": ".kernel/out/products/phr/verify/2026-05-29T01-21-58-9ee1c74b/phr/2026-05-29T01-21-58-9ee1c74b/verify/verify-health-report.json",
+          "lifecycleHealthSnapshot": ".kernel/out/products/phr/verify/2026-05-29T01-21-58-9ee1c74b/phr/2026-05-29T01-21-58-9ee1c74b/verify/lifecycle-health-snapshot.json",
+          "gateResultManifest": ".kernel/out/products/phr/verify/2026-05-29T01-21-58-9ee1c74b/phr/2026-05-29T01-21-58-9ee1c74b/verify/gate-result-manifest.json",
+          "lifecycleEvents": ".kernel/out/products/phr/verify/2026-05-29T01-21-58-9ee1c74b/phr/2026-05-29T01-21-58-9ee1c74b/verify/lifecycle-events.json",
+          "runId": "2026-05-29T01-21-58-9ee1c74b",
+          "correlationId": "corr-2026-05-29T01-21-58-9ee1c74b",
+          "providerMode": "bootstrap"
+        }
+      }
+    ]
+  },
+  "summary": {
+    "status": "passed",
+    "errorCount": 0
+  },
+  "errors": []
 }

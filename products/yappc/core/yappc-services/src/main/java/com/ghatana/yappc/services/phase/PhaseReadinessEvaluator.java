@@ -26,7 +26,7 @@ import java.util.Objects;
  * @doc.layer product
  * @doc.pattern Service
  */
-final class PhaseReadinessEvaluator {
+public final class PhaseReadinessEvaluator {
 
     private static final Logger log = LoggerFactory.getLogger(PhaseReadinessEvaluator.class);
     private static final String CONFIG_DIR_PROP = "yappc.config.dir";
@@ -35,7 +35,7 @@ final class PhaseReadinessEvaluator {
     private final TransitionConfigLoader transitionConfigLoader;
     private final ReadinessConfig config;
 
-    PhaseReadinessEvaluator(@NotNull TransitionConfigLoader transitionConfigLoader) {
+    public PhaseReadinessEvaluator(@NotNull TransitionConfigLoader transitionConfigLoader) {
         this.transitionConfigLoader = Objects.requireNonNull(transitionConfigLoader, "transitionConfigLoader");
         this.config = loadConfig();
         log.info("PhaseReadinessEvaluator: loaded readiness config with threshold {}", config.threshold);
@@ -53,6 +53,10 @@ final class PhaseReadinessEvaluator {
             Map<String, Object> projectState
     ) {
         try {
+            String normalizedPhase = phase.trim().toUpperCase();
+            PhaseConfig phaseConfig = getPhaseConfig(normalizedPhase);
+            Weights weights = phaseConfig.weights();
+
             List<String> missingPrerequisites = new ArrayList<>();
 
             for (PhasePacket.PhaseBlocker blocker : blockers) {
@@ -85,11 +89,16 @@ final class PhaseReadinessEvaluator {
                 missingPrerequisites.add("Phase evidence unavailable");
             }
 
-            boolean healthReady = healthSignals.preview().isHealthy()
-                    && healthSignals.generation().isHealthy()
-                    && healthSignals.runtime().isHealthy();
+            boolean healthReady = isHealthRequired(normalizedPhase)
+                    ? healthSignals.preview().isHealthy()
+                        && healthSignals.generation().isHealthy()
+                        && healthSignals.runtime().isHealthy()
+                    : healthSignals.preview().isHealthy()
+                        && healthSignals.generation().isHealthy();
             if (!healthReady) {
-                missingPrerequisites.add("Healthy preview, generation, and runtime signals");
+                missingPrerequisites.add(isHealthRequired(normalizedPhase)
+                        ? "Healthy preview, generation, and runtime signals"
+                        : "Healthy preview and generation signals");
             }
 
             double artifactScore = requiredArtifacts.isEmpty()
@@ -102,26 +111,25 @@ final class PhaseReadinessEvaluator {
             double governanceScore = policyAllowed ? 1.0 : 0.0;
             double healthScore = healthReady ? 1.0 : 0.0;
             double completenessScore = roundScore(
-                    artifactScore * config.weights.artifact
-                            + blockerScore * config.weights.blocker
-                            + evidenceScore * config.weights.evidence
-                            + governanceScore * config.weights.governance
-                            + healthScore * config.weights.health);
-            
-            // Improved degraded semantics: check for any degraded dependency
+                    artifactScore * weights.artifact
+                            + blockerScore * weights.blocker
+                            + evidenceScore * weights.evidence
+                            + governanceScore * weights.governance
+                            + healthScore * weights.health);
+
             boolean isDegraded = completedArtifactsUnavailable
                     || !evidenceAvailable
                     || !healthReady
                     || !policyAllowed
                     || blockers.stream().anyMatch(b -> "CRITICAL".equals(b.severity()));
-            
+
             boolean canAdvance = missingPrerequisites.isEmpty()
                     && blockers.isEmpty()
                     && evidenceAvailable
-                    && completenessScore >= config.threshold
+                    && completenessScore >= phaseConfig.threshold()
                     && "active".equalsIgnoreCase(String.valueOf(projectState.getOrDefault("status", "active")));
             List<String> distinctMissingPrerequisites = missingPrerequisites.stream().distinct().toList();
-            int estimatedReadyInHours = estimateReadyInHours(canAdvance, distinctMissingPrerequisites, completenessScore);
+            int estimatedReadyInHours = estimateReadyInHours(canAdvance, distinctMissingPrerequisites, completenessScore, phaseConfig);
 
             return new PhasePacket.PhaseReadiness(
                     canAdvance,
@@ -146,12 +154,33 @@ final class PhaseReadinessEvaluator {
         }
     }
 
-    private int estimateReadyInHours(boolean canAdvance, List<String> missingPrerequisites, double completenessScore) {
+    /**
+     * Determines if a phase requires runtime health signals.
+     */
+    private boolean isHealthRequired(String normalizedPhase) {
+        return switch (normalizedPhase) {
+            case "INTENT", "SHAPE", "VALIDATE", "LEARN", "EVOLVE", "GENERATE" -> false;
+            case "RUN", "OBSERVE" -> true;
+            default -> true; // Fail closed: require health for unknown phases
+        };
+    }
+
+    /**
+     * Gets phase-specific config or falls back to defaults.
+     */
+    private PhaseConfig getPhaseConfig(String normalizedPhase) {
+        if (config.phaseConfigs != null && config.phaseConfigs.containsKey(normalizedPhase)) {
+            return config.phaseConfigs.get(normalizedPhase);
+        }
+        return new PhaseConfig(config.threshold, config.weights);
+    }
+
+    private int estimateReadyInHours(boolean canAdvance, List<String> missingPrerequisites, double completenessScore, PhaseConfig phaseConfig) {
         if (canAdvance) {
             return 0;
         }
         int blockerHours = Math.max(1, missingPrerequisites.size()) * 6;
-        int readinessPenaltyHours = (int) Math.ceil(Math.max(0.0, config.threshold - completenessScore) * 24.0);
+        int readinessPenaltyHours = (int) Math.ceil(Math.max(0.0, phaseConfig.threshold() - completenessScore) * 24.0);
         return Math.max(1, blockerHours + readinessPenaltyHours);
     }
 
@@ -256,6 +285,9 @@ final class PhaseReadinessEvaluator {
         @JsonProperty("weights")
         Weights weights;
 
+        @JsonProperty("phases")
+        Map<String, PhaseConfig> phaseConfigs;
+
         static ReadinessConfig defaults() {
             ReadinessConfig config = new ReadinessConfig();
             config.threshold = 0.90;
@@ -265,7 +297,30 @@ final class PhaseReadinessEvaluator {
             config.weights.evidence = 0.15;
             config.weights.governance = 0.10;
             config.weights.health = 0.10;
+            config.phaseConfigs = Map.of();
             return config;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static final class PhaseConfig {
+        @JsonProperty("threshold")
+        double threshold;
+
+        @JsonProperty("weights")
+        Weights weights;
+
+        PhaseConfig(double threshold, Weights weights) {
+            this.threshold = threshold;
+            this.weights = weights;
+        }
+
+        double threshold() {
+            return threshold;
+        }
+
+        Weights weights() {
+            return weights;
         }
     }
 

@@ -1,7 +1,7 @@
 /**
  * Generation Review Panel
  *
- * Displays side-by-side diffs, risk assessment, provenance, and action buttons
+ * Displays side-by-side diffs, risk assessment, provenance, assurance checks, and action buttons
  * for reviewing AI-generated artifacts.
  *
  * @doc.type component
@@ -12,6 +12,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '../ui/Button';
+import type { GenerationAssuranceReport } from '@/clients/generated/api/models/GenerationAssuranceReport';
 
 export interface DiffRegion {
   readonly artifactId: string;
@@ -67,6 +68,7 @@ export interface GenerationReviewData {
   readonly provenance: ReviewProvenance;
   readonly canRollback: boolean;
   readonly rollbackReason: string | null;
+  readonly assuranceReport: GenerationAssuranceReport | null;
 }
 
 interface GenerationReviewPanelProps {
@@ -176,6 +178,61 @@ export function GenerationReviewPanel({
           </div>
         )}
       </section>
+
+      {/* Assurance Checks Section */}
+      {data.assuranceReport && (
+        <section
+          className={`rounded-xl border ${data.assuranceReport.passed ? 'border-success-border bg-success-bg/10' : 'border-destructive bg-destructive/10'} p-4`}
+          data-testid="assurance-checks"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-2xl" aria-hidden="true">
+              {data.assuranceReport.passed ? '✓' : '⛔'}
+            </span>
+            <div>
+              <h3 className="font-semibold text-fg">
+                Generation Assurance: {data.assuranceReport.passed ? 'PASSED' : 'FAILED'}
+              </h3>
+              <p className="text-sm text-fg-muted">
+                {data.assuranceReport.checks.filter((c) => c.passed).length} of {data.assuranceReport.checks.length} checks passed
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 space-y-2">
+            {data.assuranceReport.checks.map((check) => (
+              <div
+                key={check.id}
+                className={`rounded-lg border p-3 ${
+                  check.passed
+                    ? 'border-success-border bg-success-bg/20'
+                    : 'border-destructive bg-destructive/20'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-fg capitalize">{check.id}</span>
+                  <span
+                    className={`text-xs font-semibold uppercase ${
+                      check.passed ? 'text-success-color' : 'text-destructive'
+                    }`}
+                  >
+                    {check.passed ? 'PASSED' : 'FAILED'}
+                  </span>
+                </div>
+                {check.failures.length > 0 && (
+                  <ul className="mt-2 space-y-1 text-sm text-fg-muted">
+                    {check.failures.map((failure, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <span className="mt-1 h-1.5 w-1.5 rounded-full bg-destructive" />
+                        <span>{failure}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Diff Summary */}
       <section

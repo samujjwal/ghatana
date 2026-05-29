@@ -195,13 +195,18 @@ class PhrProviderRoutesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns 403 for patient role")
-        void returns403ForPatient() throws Exception {
+        @DisplayName("returns 403 from policy for patient role")
+        void returns403FromPolicyForPatient() throws Exception {
+            lenient().when(policyEvaluator.canAccessPhiResourceAsync(
+                    any(), eq("p99"), anyString(), anyString(), anyString(), any()))
+                .thenReturn(Promise.of(PhrPolicyEvaluator.PolicyDecision.denied("PATIENT_SCOPE_DENIED", "denied")));
             HttpRequest request = contextRequest(HttpMethod.GET, "/patient/p99/summary", "t1", "p1", "patient");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(403);
+            verify(policyEvaluator).canAccessPhiResourceAsync(
+                any(), eq("p99"), eq("provider-patient-summary"), eq("READ"), eq("t1"), any());
         }
 
         @Test

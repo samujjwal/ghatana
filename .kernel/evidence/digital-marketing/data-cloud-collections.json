@@ -1,0 +1,38 @@
+{
+  "productId": "digital-marketing",
+  "evidenceType": "data-cloud-collections",
+  "generatedAt": "2026-05-29T02:38:28.815Z",
+  "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+  "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+  "collections": [
+    {
+      "name": "dmos_campaigns",
+      "rlsEnabled": true,
+      "rlsPolicy": "tenant_workspace_isolation",
+      "description": "Campaign records partitioned by tenant and workspace"
+    },
+    {
+      "name": "dmos_approval_snapshots",
+      "rlsEnabled": true,
+      "rlsPolicy": "tenant_workspace_isolation",
+      "description": "Approval workflow snapshots with tenant-scoped isolation"
+    },
+    {
+      "name": "dmos_ai_action_log",
+      "rlsEnabled": true,
+      "rlsPolicy": "tenant_isolation",
+      "description": "AI action transparency records with tenant-scoped access control"
+    },
+    {
+      "name": "dmos_event_log",
+      "rlsEnabled": true,
+      "rlsPolicy": "tenant_isolation",
+      "description": "Lifecycle and event-stream records constrained per tenant"
+    }
+  ],
+  "implementationRefs": [
+    "products/digital-marketing/dm-persistence/src/main/resources/db/migration/V33__tenant_isolation_for_campaigns_and_approvals.sql",
+    "products/digital-marketing/dm-persistence/src/test/java/com/ghatana/digitalmarketing/persistence/PostgresCampaignRepositoryIT.java",
+    "products/digital-marketing/lifecycle/foundation-usage-profile.yaml"
+  ]
+}

@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * Maps gate validator blockers into canonical phase packet blockers.
  */
-final class PhaseBlockerMapper {
+public final class PhaseBlockerMapper {
 
     List<PhasePacket.PhaseBlocker> map(List<String> blockers) {
         if (blockers == null || blockers.isEmpty()) {

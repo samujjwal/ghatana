@@ -17,13 +17,13 @@ import java.util.Objects;
 /**
  * Queries phase evidence records from platform integrations.
  */
-final class PhaseEvidenceService {
+public final class PhaseEvidenceService {
 
     private static final Logger log = LoggerFactory.getLogger(PhaseEvidenceService.class);
 
     private final PlatformIntegrationClient platformIntegrationClient;
 
-    PhaseEvidenceService(@NotNull PlatformIntegrationClient platformIntegrationClient) {
+    public PhaseEvidenceService(@NotNull PlatformIntegrationClient platformIntegrationClient) {
         this.platformIntegrationClient = Objects.requireNonNull(platformIntegrationClient, "platformIntegrationClient");
     }
 

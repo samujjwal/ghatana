@@ -1,6 +1,6 @@
 #!/bin/bash
 # update-routes-config.sh - Updates routes.ts to remove deleted routes
-# Run AFTER master-cleanup.sh and fix-imports-after-cleanup.sh
+# Run AFTER master-cleanup.sh and manual import validation
 
 set -e
 cd "$(dirname "$0")/.."

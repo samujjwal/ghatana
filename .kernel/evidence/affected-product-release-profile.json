@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-05-29T01:02:11.061Z",
+  "generatedAt": "2026-05-29T03:07:42.250Z",
   "affectedProducts": [
-    "phr"
+    "digital-marketing"
   ],
   "strictTargetCoverage": [
     {
@@ -49,14 +49,14 @@
   ],
   "perProductCoverage": [
     {
-      "productId": "phr",
+      "productId": "digital-marketing",
       "requiredScripts": [
-        "build:phr",
-        "test:phr"
+        "build:digital-marketing",
+        "test:digital-marketing"
       ],
       "optionalCore": [
-        "validate:phr",
-        "package:phr"
+        "validate:digital-marketing",
+        "package:digital-marketing"
       ],
       "hasAtLeastOneReleaseCore": true,
       "hasWebSurface": true,

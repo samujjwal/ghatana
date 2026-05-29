@@ -122,6 +122,22 @@ class PhrFchvRoutesTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("403 - patient role is denied by FCHV patient policy")
+    void patientRoleIsDeniedByFchvPatientPolicy() throws Exception {
+        lenient().when(policyEvaluator.canAccessPhiResourceAsync(
+                any(), eq("patient-1"), anyString(), anyString(), anyString(), any()))
+            .thenReturn(Promise.of(PhrPolicyEvaluator.PolicyDecision.denied("FCHV_ROLE_REQUIRED", "denied")));
+        HttpRequest request = contextRequest(
+            HttpMethod.GET, "/patients/patient-1", "t1", "patient-1", "patient");
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(403);
+        verify(policyEvaluator).canAccessPhiResourceAsync(
+            any(), eq("patient-1"), eq("fchv-patient-summary"), eq("READ"), eq("t1"), any());
+    }
+
+    @Test
     @DisplayName("201 - vitals write uses FCHV policy")
     void vitalsWriteUsesPolicy() throws Exception {
         HttpRequest request = contextRequest(

@@ -80,14 +80,22 @@ public final class DataCloudPlatformRunStatusService implements PlatformRunStatu
     }
 
     private PhasePacket.PlatformRunStatus degradedStatus(String projectId, String phase, Throwable error) {
+        String supportTrace = "yappc-degraded-" + phase.toLowerCase() + "-" + projectId + "-" + System.currentTimeMillis();
         return new PhasePacket.PlatformRunStatus(
                 "degraded-" + projectId + "-" + phase.toLowerCase(),
                 "DEGRADED_RUNTIME_TRUTH",
                 "data-cloud-aep",
                 Instant.now(),
                 null,
-                "data-cloud-run-status-query-failed",
-                List.of("runtime-truth-query-failed:" + error.getClass().getSimpleName()));
+                supportTrace,
+                List.of("runtime-truth-query-failed:" + error.getClass().getSimpleName()),
+                "",
+                "",
+                "",
+                "high",
+                "Platform run status query failed. Retry the operation or check Data Cloud connectivity. Support trace: " + supportTrace,
+                false
+        );
     }
 
     private Optional<PhasePacket.PlatformRunStatus> toPlatformRunStatus(Map<String, Object> data) {
@@ -103,6 +111,13 @@ public final class DataCloudPlatformRunStatusService implements PlatformRunStatu
         String traceId = stringValue(data.get("traceId"));
         List<String> evidenceIds = stringListValue(data.get("evidenceIds"));
 
+        String rollbackTarget = stringValue(data.get("rollbackTarget"));
+        String promoteTarget = stringValue(data.get("promoteTarget"));
+        String releaseCandidate = stringValue(data.get("releaseCandidate"));
+        String riskLevel = stringValue(data.get("riskLevel"));
+        String remediationHint = stringValue(data.get("remediationHint"));
+        boolean rollbackSupported = booleanValue(data.get("rollbackSupported"), false);
+
         return Optional.of(new PhasePacket.PlatformRunStatus(
                 runId,
                 status,
@@ -110,7 +125,13 @@ public final class DataCloudPlatformRunStatusService implements PlatformRunStatu
                 startedAt,
                 completedAt,
                 traceId,
-                evidenceIds
+                evidenceIds,
+                rollbackTarget != null ? rollbackTarget : "",
+                promoteTarget != null ? promoteTarget : "",
+                releaseCandidate != null ? releaseCandidate : "",
+                riskLevel != null ? riskLevel : "",
+                remediationHint != null ? remediationHint : "",
+                rollbackSupported
         ));
     }
 
@@ -148,5 +169,12 @@ public final class DataCloudPlatformRunStatusService implements PlatformRunStatu
             return List.of(text);
         }
         return List.of();
+    }
+
+    private static boolean booleanValue(Object value, boolean defaultValue) {
+        if (value instanceof Boolean bool) {
+            return bool;
+        }
+        return defaultValue;
     }
 }

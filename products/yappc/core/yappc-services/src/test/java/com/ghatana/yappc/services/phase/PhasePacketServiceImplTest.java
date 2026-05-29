@@ -78,6 +78,16 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
     private PhaseActionAuthorizationService phaseActionAuthorizationService;
     private PhaseRequiredArtifactProvider requiredArtifactProvider;
     private DegradedPhasePacketFactory degradedPhasePacketFactory;
+    private PhaseFeatureFlagProvider phaseFeatureFlagProvider;
+    private PhaseProjectStateService phaseProjectStateService;
+    private PhaseEvidenceService phaseEvidenceService;
+    private PhaseGovernanceService phaseGovernanceService;
+    private PhaseActivityFeedService phaseActivityFeedService;
+    private PhaseBlockerMapper phaseBlockerMapper;
+    private PhaseGateContextFactory phaseGateContextFactory;
+    private PhaseReadinessEvaluator phaseReadinessEvaluator;
+    private PhaseHealthSignalProvider phaseHealthSignalProvider;
+    private PhasePacketAssembler phasePacketAssembler;
 
     @BeforeEach
     void setUp() {
@@ -85,6 +95,16 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
         phaseActionAuthorizationService = new PhaseActionAuthorizationService();
         requiredArtifactProvider = new PhaseRequiredArtifactProvider(stageConfigLoader);
         degradedPhasePacketFactory = new DegradedPhasePacketFactory();
+        phaseFeatureFlagProvider = new PhaseFeatureFlagProvider(dataCloudClient);
+        phaseProjectStateService = new PhaseProjectStateService(dataCloudClient, phaseFeatureFlagProvider);
+        phaseEvidenceService = new PhaseEvidenceService(platformIntegrationClient);
+        phaseGovernanceService = new PhaseGovernanceService(platformIntegrationClient);
+        phaseActivityFeedService = new PhaseActivityFeedService(auditService);
+        phaseBlockerMapper = new PhaseBlockerMapper();
+        phaseGateContextFactory = new PhaseGateContextFactory();
+        phaseReadinessEvaluator = new PhaseReadinessEvaluator(transitionConfigLoader);
+        phaseHealthSignalProvider = new PhaseHealthSignalProvider(new DegradedPreviewRuntimeService("PREVIEW_RUNTIME_SERVICE_UNAVAILABLE"));
+        phasePacketAssembler = new PhasePacketAssembler();
 
         service = new PhasePacketServiceImpl(
                 dataCloudClient,
@@ -100,7 +120,17 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
                 platformRunStatusService,
                 phaseActionAuthorizationService,
                 requiredArtifactProvider,
-                degradedPhasePacketFactory
+                degradedPhasePacketFactory,
+                phaseFeatureFlagProvider,
+                phaseProjectStateService,
+                phaseEvidenceService,
+                phaseGovernanceService,
+                phaseActivityFeedService,
+                phaseBlockerMapper,
+                phaseGateContextFactory,
+                phaseReadinessEvaluator,
+                phaseHealthSignalProvider,
+                phasePacketAssembler
         );
 
         // Common happy-path stubs — lenient because not every test exercises the full path
@@ -186,8 +216,8 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
                 PROJECT_ID,
                 PHASE,
                 "build",
-                "SUCCESS",
-                false,
+                "DEGRADED",
+                true,
                 null,
                 CORRELATION_ID);
         verify(metrics).recordPlatformEvidenceSearch(
@@ -455,7 +485,17 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
                 platformRunStatusService,
                 phaseActionAuthorizationService,
                 requiredArtifactProvider,
-                degradedPhasePacketFactory
+                degradedPhasePacketFactory,
+                phaseFeatureFlagProvider,
+                phaseProjectStateService,
+                phaseEvidenceService,
+                phaseGovernanceService,
+                phaseActivityFeedService,
+                phaseBlockerMapper,
+                phaseGateContextFactory,
+                phaseReadinessEvaluator,
+                phaseHealthSignalProvider,
+                phasePacketAssembler
         );
 
         PhasePacket packet = runPromise(() ->
@@ -533,7 +573,17 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
                 platformRunStatusService,
                 phaseActionAuthorizationService,
                 requiredArtifactProvider,
-                degradedPhasePacketFactory
+                degradedPhasePacketFactory,
+                phaseFeatureFlagProvider,
+                phaseProjectStateService,
+                phaseEvidenceService,
+                phaseGovernanceService,
+                phaseActivityFeedService,
+                phaseBlockerMapper,
+                phaseGateContextFactory,
+                phaseReadinessEvaluator,
+                phaseHealthSignalProvider,
+                phasePacketAssembler
         );
 
         PhasePacket packet = runPromise(() ->
@@ -835,8 +885,13 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
 
         assertThat(packet.healthSignals().preview().isHealthy()).isFalse();
         assertThat(packet.readiness().canAdvance()).isFalse();
-        assertThat(packet.readiness().missingPrerequisites())
-                .contains("Healthy preview, generation, and runtime signals");
+        if (phase.equals("RUN") || phase.equals("OBSERVE")) {
+            assertThat(packet.readiness().missingPrerequisites())
+                    .contains("Healthy preview, generation, and runtime signals");
+        } else {
+            assertThat(packet.readiness().missingPrerequisites())
+                    .contains("Healthy preview and generation signals");
+        }
     }
 
         @Test
@@ -854,7 +909,7 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
                         assertThat(packet.healthSignals().preview().issues())
                                         .contains("Missing previewId in production project state");
                         assertThat(packet.readiness().missingPrerequisites())
-                                        .contains("Healthy preview, generation, and runtime signals");
+                                        .contains("Healthy preview and generation signals");
                         assertThat(packet.readiness().canAdvance()).isFalse();
                 } finally {
                         if (previousProfile == null) {

@@ -173,13 +173,18 @@ class PhrCaregiverRoutesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns 403 for patient accessing another patient record")
-        void returns403ForPatientAccessingOtherRecord() throws Exception {
+        @DisplayName("returns 403 from policy for patient accessing another patient record")
+        void returns403FromPolicyForPatientAccessingOtherRecord() throws Exception {
+            lenient().when(policyEvaluator.canAccessPhiResourceAsync(
+                    any(), eq("dep-42"), anyString(), anyString(), anyString(), any()))
+                .thenReturn(Promise.of(PhrPolicyEvaluator.PolicyDecision.denied("PATIENT_SCOPE_DENIED", "denied")));
             HttpRequest request = contextRequest(HttpMethod.GET, "/patient/dep-42", "t1", "p1", "patient");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(403);
+            verify(policyEvaluator).canAccessPhiResourceAsync(
+                any(), eq("dep-42"), eq("caregiver-patient-summary"), eq("READ"), eq("t1"), any());
         }
 
         @Test

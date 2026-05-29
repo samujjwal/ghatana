@@ -2,8 +2,8 @@
   "productId": "phr",
   "evidenceType": "foundation-usage-profile",
   "generatedAt": "2026-05-27T19:57:37.525Z",
-  "sourceCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
-  "targetCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
+  "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+  "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
   "targetEnvironment": "staging",
   "validationStatus": "validated",
   "pass": true,
@@ -11,9 +11,9 @@
     "generatedBy": "scripts/check-product-family-asset-registry.mjs",
     "command": "node scripts/check-product-family-asset-registry.mjs",
     "source": "scripts/check-product-family-asset-registry.mjs",
-    "commit": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
-    "sourceCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
-    "targetCommitSha": "2103f84ea84043fb22febf30b5e2fe0d4c4e4c05",
+    "commit": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+    "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+    "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
     "targetEnvironment": "staging"
   }
 }

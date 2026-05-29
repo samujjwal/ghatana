@@ -23,7 +23,6 @@ const dataCloudRuntimeProfileCheck = './scripts/check-data-cloud-release-runtime
 const dataCloudReadinessPath = path.join(repoRoot, 'products/data-cloud/lifecycle/readiness-evidence.yaml');
 const businessProductFoundationChecks = [
   dataCloudProviderReadinessCheck,
-  dataCloudRuntimeProfileCheck,
 ];
 
 function currentGitSha() {
@@ -692,47 +691,29 @@ export function buildScopedExecutionOrder(affectedProducts, options = {}) {
     return uniqueExistingChecks(executionOrder);
   }
 
-  if (options.explicitProductScope) {
-    const strictScopedPlan = [
-      './scripts/check-affected-product-strict-release-profile.mjs',
-    ];
-    const businessProducts = affectedProducts.filter((productId) => productId !== 'data-cloud');
-    if (businessProducts.length > 0) {
-      strictScopedPlan.push(...businessProductFoundationChecks);
-    }
-
-    for (const productId of affectedProducts) {
-      const groupName = productScopedGroupById[productId];
-      if (groupName) {
-        strictScopedPlan.push(...scopedCheckGroups[groupName]);
-      }
-    }
-
-    return uniqueExistingChecks(strictScopedPlan);
-  }
-
-  const plan = [
-    ...scopedCheckGroups.globalPrerequisiteChecks,
-    ...scopedCheckGroups.platformChecks,
-    ...scopedCheckGroups.productChecks,
+  const strictScopedPlan = [
+    './scripts/check-affected-product-strict-release-profile.mjs',
   ];
 
   if (affectedProducts.some((productId) => productId !== 'data-cloud')) {
-    plan.push(...businessProductFoundationChecks);
+    strictScopedPlan.push(...businessProductFoundationChecks);
+    if (options.full || options.releaseRisk || process.env.RELEASE_READINESS_INCLUDE_RUNTIME_PROFILE === 'true') {
+      strictScopedPlan.push(dataCloudRuntimeProfileCheck);
+    }
   }
 
   for (const productId of affectedProducts) {
     const groupName = productScopedGroupById[productId];
     if (groupName) {
-      plan.push(...scopedCheckGroups[groupName]);
+      strictScopedPlan.push(...scopedCheckGroups[groupName]);
     }
   }
 
   if (options.releaseRisk || artifactAuthoringRelevant(options.paths ?? [])) {
-    plan.push(...scopedCheckGroups.artifactAuthoringChecks);
+    strictScopedPlan.push(...scopedCheckGroups.artifactAuthoringChecks);
   }
 
-  return uniqueExistingChecks(plan);
+  return uniqueExistingChecks(strictScopedPlan);
 }
 
 function releaseEvidenceFreshnessGap(productId) {
@@ -820,10 +801,11 @@ function releaseReadinessOptions() {
   const baseRef = parseArg('--base');
   const headRef = parseArg('--head');
   const explicitProducts = parseArg('--products') || parseArg('--product') || process.env.AFFECTED_PRODUCTS || '';
+  const hasPathScopedSelection = explicitPaths.length > 0 || Boolean(baseRef || headRef);
   return {
     full: hasArg('--full'),
     releaseRisk: hasArg('--release-risk') || process.env.RELEASE_RISK === 'true',
-    explicitProductScope: explicitProducts.trim().length > 0,
+    explicitProductScope: explicitProducts.trim().length > 0 || hasPathScopedSelection,
     paths: explicitPaths.length > 0 ? explicitPaths : readChangedFilesFromGit(baseRef, headRef),
   };
 }
@@ -1251,18 +1233,29 @@ function runProductReleaseReadinessCli() {
     }
   }
 
-  const buildStartedAt = Date.now();
-  const buildResult = runCheck(platformLifecycleBuildScript);
-  const buildStatus = buildResult.status ?? 1;
-  const buildRunRecord = {
-    script: platformLifecycleBuildScript,
-    status: buildStatus,
-    durationMs: Date.now() - buildStartedAt,
-  };
-  runByScript.set(platformLifecycleBuildScript, buildRunRecord);
-  runs.push(buildRunRecord);
-  if (buildStatus !== 0) {
-    failWithEvidence(buildStatus, platformLifecycleBuildScript, 'platform-lifecycle-build-failure');
+  const includePlatformLifecycleBuild = options.full || process.env.RELEASE_READINESS_INCLUDE_PLATFORM_BUILD === 'true';
+  if (includePlatformLifecycleBuild) {
+    const buildStartedAt = Date.now();
+    const buildResult = runCheck(platformLifecycleBuildScript);
+    const buildStatus = buildResult.status ?? 1;
+    const buildRunRecord = {
+      script: platformLifecycleBuildScript,
+      status: buildStatus,
+      durationMs: Date.now() - buildStartedAt,
+    };
+    runByScript.set(platformLifecycleBuildScript, buildRunRecord);
+    runs.push(buildRunRecord);
+    if (buildStatus !== 0) {
+      failWithEvidence(buildStatus, platformLifecycleBuildScript, 'platform-lifecycle-build-failure');
+    }
+  } else {
+    runs.push({
+      script: platformLifecycleBuildScript,
+      status: 0,
+      skipped: true,
+      reason: 'scoped-iteration-default',
+      durationMs: 0,
+    });
   }
 
   for (const scriptPath of plannedExecutionOrder) {

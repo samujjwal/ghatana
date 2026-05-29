@@ -335,7 +335,7 @@ else
   echo "⚠️  Next steps:"
   echo "   1. Review changes: git status"
   echo "   2. Test build: pnpm build"
-  echo "   3. If build succeeds, run: ./scripts/fix-imports-after-cleanup.sh"
+  echo "   3. If build succeeds, manually validate and fix imports"
   echo "   4. Continue with remaining phases if needed"
   echo "   5. Commit when ready: git add -A && git commit -m 'refactor: gradual cleanup phase X'"
   echo ""

@@ -42,5 +42,5 @@
       "description": "Previously flagged in stale probe; confirmed clean in current codebase — noUncheckedIndexedAccess now satisfied by regex-match guard pattern in hexToRgb."
     }
   ],
-  "archivedProbe": "docs/archive/tsc_probe_2026-04-19_archived.txt"
+  "archivedProbe": null
 }

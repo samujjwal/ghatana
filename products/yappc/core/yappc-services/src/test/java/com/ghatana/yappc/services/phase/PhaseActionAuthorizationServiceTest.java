@@ -32,11 +32,7 @@ class PhaseActionAuthorizationServiceTest {
                 List.of(),
                 List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED")),
                 true,
-                List.of("evidence-1", "evidence-2"),
-                "support-trace-123",
-                "low-risk",
-                "v1.2.3",
-                "production"
+                RunActionContext.degraded(List.of("evidence-1", "evidence-2"), List.of())
         );
 
         PhasePacket.PhaseAction advance = action(actions, "advance-phase");
@@ -85,11 +81,7 @@ class PhaseActionAuthorizationServiceTest {
                         "decision-1"
                 )),
                 true,
-                List.of(),
-                "",
-                "",
-                "",
-                ""
+                RunActionContext.degraded(List.of(), List.of())
         );
 
         PhasePacket.PhaseAction advance = actions.stream()
@@ -120,11 +112,7 @@ class PhaseActionAuthorizationServiceTest {
                 List.of(),
                 List.of(governance("POLICY_DENIAL", "POLICY_DENIAL", "DENIED")),
                 true,
-                List.of(),
-                "",
-                "",
-                "",
-                ""
+                RunActionContext.degraded(List.of(), List.of())
         );
 
         PhasePacket.PhaseAction advance = action(actions, "advance-phase");
@@ -156,11 +144,7 @@ class PhaseActionAuthorizationServiceTest {
                         Map.of("reason", "TimeoutException"),
                         "governance-query-failed:project-1:GENERATE")),
                 true,
-                List.of(),
-                "",
-                "",
-                "",
-                ""
+                RunActionContext.degraded(List.of(), List.of())
         );
 
         PhasePacket.PhaseAction advance = action(actions, "advance-phase");
@@ -202,11 +186,7 @@ class PhaseActionAuthorizationServiceTest {
                         "decision-2"
                 )),
                 true,
-                List.of(),
-                "",
-                "",
-                "",
-                ""
+                RunActionContext.degraded(List.of(), List.of())
         );
 
         PhasePacket.PhaseAction advance = actions.stream()
@@ -239,11 +219,7 @@ class PhaseActionAuthorizationServiceTest {
                 List.of(),
                 List.of(),
                 true,
-                List.of(),
-                "",
-                "",
-                "",
-                ""
+                RunActionContext.degraded(List.of(), List.of())
         );
 
         List<PhasePacket.PhaseAction> enterpriseActions = service.determineAvailableActions(
@@ -255,11 +231,7 @@ class PhaseActionAuthorizationServiceTest {
                 List.of(),
                 List.of(),
                 true,
-                List.of(),
-                "",
-                "",
-                "",
-                ""
+                RunActionContext.degraded(List.of(), List.of())
         );
 
         PhasePacket.PhaseAction proReport = proActions.stream()
@@ -295,11 +267,7 @@ class PhaseActionAuthorizationServiceTest {
                 List.of(),
                 List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED")),
                 false,
-                List.of(),
-                "",
-                "",
-                "",
-                ""
+                RunActionContext.degraded(List.of(), List.of())
         );
 
         assertThat(action(actions, "advance-phase").enabled()).isFalse();
@@ -321,11 +289,14 @@ class PhaseActionAuthorizationServiceTest {
                 List.of(),
                 List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED")),
                 true,
-                List.of("evidence-1", "evidence-2", "evidence-3"),
-                "support-trace-abc",
-                "medium-risk",
-                "v1.0.0",
-                "staging"
+                runContext(
+                        List.of("evidence-1", "evidence-2", "evidence-3"),
+                        "support-trace-abc",
+                        "medium-risk",
+                        "",
+                        "",
+                        false
+                )
         );
 
         PhasePacket.PhaseAction advance = action(actions, "advance-phase");
@@ -346,11 +317,7 @@ class PhaseActionAuthorizationServiceTest {
                 List.of(),
                 List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED")),
                 true,
-                List.of(),
-                "",
-                "",
-                "", // Empty target version
-                "production"
+                RunActionContext.degraded(List.of(), List.of())
         );
 
         PhasePacket.PhaseAction rollback = action(actions, "run.rollback");
@@ -370,11 +337,7 @@ class PhaseActionAuthorizationServiceTest {
                 List.of(),
                 List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED")),
                 true,
-                List.of(),
-                "",
-                "",
-                "v1.2.3",
-                "" // Empty target environment
+                RunActionContext.degraded(List.of(), List.of())
         );
 
         PhasePacket.PhaseAction promote = action(actions, "run.promote");
@@ -394,11 +357,7 @@ class PhaseActionAuthorizationServiceTest {
                 List.of(),
                 List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED")),
                 true,
-                List.of(),
-                "",
-                "",
-                "v1.5.0",
-                "production"
+                runContext(List.of(), "", "low", "v1.5.0", "", true)
         );
 
         PhasePacket.PhaseAction rollback = action(actions, "run.rollback");
@@ -418,11 +377,7 @@ class PhaseActionAuthorizationServiceTest {
                 List.of(),
                 List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED")),
                 true,
-                List.of(),
-                "",
-                "",
-                "v1.5.0",
-                "staging"
+                runContext(List.of(), "", "low", "", "staging", false)
         );
 
         PhasePacket.PhaseAction promote = action(actions, "run.promote");
@@ -442,11 +397,7 @@ class PhaseActionAuthorizationServiceTest {
                 List.of(),
                 List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED")),
                 true,
-                List.of(),
-                "",
-                "",
-                "",
-                ""
+                RunActionContext.degraded(List.of(), List.of())
         );
 
         PhasePacket.PhaseAction apply = action(actions, "generate.apply");
@@ -474,11 +425,7 @@ class PhaseActionAuthorizationServiceTest {
                 List.of(),
                 List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED")),
                 true,
-                List.of(),
-                "",
-                "",
-                "v1.0.0",
-                "production"
+                RunActionContext.degraded(List.of(), List.of())
         );
 
         PhasePacket.PhaseAction retry = action(actions, "run.retry");
@@ -510,11 +457,7 @@ class PhaseActionAuthorizationServiceTest {
                 List.of(),
                 List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED")),
                 true,
-                List.of(),
-                "",
-                "",
-                "",
-                ""
+                RunActionContext.degraded(List.of(), List.of())
         );
 
         PhasePacket.PhaseAction generateApply = action(actions, "generate.apply");
@@ -531,6 +474,35 @@ class PhaseActionAuthorizationServiceTest {
                 .filter(action -> actionId.equals(action.actionId()))
                 .findFirst()
                 .orElseThrow();
+    }
+
+    private static RunActionContext runContext(
+            List<String> evidenceIds,
+            String supportTrace,
+            String riskLevel,
+            String rollbackTarget,
+            String promoteTarget,
+            boolean rollbackSupported
+    ) {
+        return RunActionContext.fromPlatformRunStatus(
+                new PhasePacket.PlatformRunStatus(
+                        "run-1",
+                        "SUCCEEDED",
+                        "data-cloud-aep",
+                        Instant.parse("2026-01-01T00:00:00Z"),
+                        Instant.parse("2026-01-01T00:05:00Z"),
+                        supportTrace,
+                        evidenceIds,
+                        rollbackTarget,
+                        promoteTarget,
+                        "",
+                        riskLevel,
+                        "",
+                        rollbackSupported
+                ),
+                evidenceIds,
+                List.of()
+        );
     }
 
     private static PhasePacket.GovernanceRecord governance(String id, String type, String outcome) {

@@ -39,11 +39,7 @@ public final class PhaseActionAuthorizationService {
             @NotNull List<PhasePacket.PhaseBlocker> blockers,
             @NotNull List<PhasePacket.GovernanceRecord> governance,
             boolean featureFlagDependencyAvailable,
-            @NotNull List<String> evidenceIds,
-            @NotNull String supportTrace,
-            @NotNull String riskReason,
-            @NotNull String targetVersion,
-            @NotNull String targetEnvironment
+            @NotNull RunActionContext runActionContext
     ) {
         List<PhasePacket.PhaseAction> actions = new ArrayList<>();
         String normalizedPhase = phase.trim().toUpperCase();
@@ -79,13 +75,13 @@ public final class PhaseActionAuthorizationService {
                 "refresh-packet",
                 suggestionParameters(
                         0.95,
-                        "low",
+                        runActionContext.riskReason(),
                         "one-click",
                         false,
-                        true,
-                        evidenceIds,
-                        supportTrace,
-                        riskReason,
+                        runActionContext.rollbackSupported(),
+                        runActionContext.evidenceIds(),
+                        runActionContext.supportTrace(),
+                        runActionContext.riskReason(),
                         Map.of("nextPhase", Optional.ofNullable(readiness.nextPhase()).orElse(""))
                 )
         ));
@@ -117,13 +113,13 @@ public final class PhaseActionAuthorizationService {
                 "refresh-packet",
                 suggestionParameters(
                         0.9,
-                        "medium",
+                        runActionContext.riskReason(),
                         "review-required",
                         true,
                         false,
-                        evidenceIds,
-                        supportTrace,
-                        riskReason,
+                        runActionContext.evidenceIds(),
+                        runActionContext.supportTrace(),
+                        runActionContext.riskReason(),
                         Map.of()
                 )
         ));
@@ -157,13 +153,13 @@ public final class PhaseActionAuthorizationService {
                 "download",
                 suggestionParameters(
                         0.92,
-                        "low",
+                        runActionContext.riskReason(),
                         "one-click",
                         false,
                         false,
-                        evidenceIds,
-                        supportTrace,
-                        riskReason,
+                        runActionContext.evidenceIds(),
+                        runActionContext.supportTrace(),
+                        runActionContext.riskReason(),
                         Map.of()
                 )
         ));
@@ -193,13 +189,13 @@ public final class PhaseActionAuthorizationService {
                 "refresh-packet",
                 suggestionParameters(
                         0.88,
-                        "medium",
+                        runActionContext.riskReason(),
                         "review-required",
                         true,
-                        true,
-                        evidenceIds,
-                        supportTrace,
-                        riskReason,
+                        runActionContext.rollbackSupported(),
+                        runActionContext.evidenceIds(),
+                        runActionContext.supportTrace(),
+                        runActionContext.riskReason(),
                         Map.of("requiresActor", true)
                 )
         ));
@@ -228,13 +224,13 @@ public final class PhaseActionAuthorizationService {
                 "refresh-packet",
                 suggestionParameters(
                         0.86,
-                        "low",
+                        runActionContext.riskReason(),
                         "review-required",
                         true,
                         false,
-                        evidenceIds,
-                        supportTrace,
-                        riskReason,
+                        runActionContext.evidenceIds(),
+                        runActionContext.supportTrace(),
+                        runActionContext.riskReason(),
                         Map.of("requiresActor", true)
                 )
         ));
@@ -263,13 +259,13 @@ public final class PhaseActionAuthorizationService {
                 "refresh-packet",
                 suggestionParameters(
                         0.84,
-                        "high",
+                        runActionContext.riskReason(),
                         "review-required",
                         true,
-                        true,
-                        evidenceIds,
-                        supportTrace,
-                        riskReason,
+                        runActionContext.rollbackSupported(),
+                        runActionContext.evidenceIds(),
+                        runActionContext.supportTrace(),
+                        runActionContext.riskReason(),
                         Map.of("requiresActor", true)
                 )
         ));
@@ -299,13 +295,13 @@ public final class PhaseActionAuthorizationService {
                 "refresh-packet",
                 suggestionParameters(
                         0.82,
-                        "medium",
+                        runActionContext.riskReason(),
                         "one-click",
                         false,
-                        true,
-                        evidenceIds,
-                        supportTrace,
-                        riskReason,
+                        runActionContext.rollbackSupported(),
+                        runActionContext.evidenceIds(),
+                        runActionContext.supportTrace(),
+                        runActionContext.riskReason(),
                         Map.of("requiresActor", false)
                 )
         ));
@@ -314,12 +310,12 @@ public final class PhaseActionAuthorizationService {
                 "run.rollback",
                 "phaseAction.runRollback.label",
                 "phaseAction.runRollback.description",
-                runPhase && capabilities.canRollback() && policyAllowed && !targetVersion.isBlank(),
+                runPhase && capabilities.canRollback() && policyAllowed && !runActionContext.targetVersion().isBlank(),
                 firstDisabledReason(
                         runPhase ? null : "phaseAction.disabled.notAvailableForCurrentPhase",
                         capabilities.canRollback() ? null : "phaseAction.disabled.updateCapabilityRequired",
                         policyAllowed ? null : "phaseAction.disabled.policyDeniedTransition",
-                        !targetVersion.isBlank() ? null : "phaseAction.disabled.missingRollbackTarget"
+                        !runActionContext.targetVersion().isBlank() ? null : "phaseAction.disabled.missingRollbackTarget"
                 ),
                 "run:rollback",
                 "danger",
@@ -335,14 +331,14 @@ public final class PhaseActionAuthorizationService {
                 "refresh-packet",
                 suggestionParameters(
                         0.8,
-                        "high",
+                        runActionContext.riskReason(),
                         "manual",
                         false,
-                        true,
-                        evidenceIds,
-                        supportTrace,
-                        riskReason,
-                        Map.of("requiresActor", false, "targetVersion", targetVersion)
+                        runActionContext.rollbackSupported(),
+                        runActionContext.evidenceIds(),
+                        runActionContext.supportTrace(),
+                        runActionContext.riskReason(),
+                        Map.of("requiresActor", false, "targetVersion", runActionContext.targetVersion())
                 )
         ));
 
@@ -350,12 +346,12 @@ public final class PhaseActionAuthorizationService {
                 "run.promote",
                 "phaseAction.runPromote.label",
                 "phaseAction.runPromote.description",
-                runPhase && capabilities.canApprove() && policyAllowed && !targetEnvironment.isBlank(),
+                runPhase && capabilities.canApprove() && policyAllowed && !runActionContext.targetEnvironment().isBlank(),
                 firstDisabledReason(
                         runPhase ? null : "phaseAction.disabled.notAvailableForCurrentPhase",
                         capabilities.canApprove() ? null : "phaseAction.disabled.approvalCapabilityRequired",
                         policyAllowed ? null : "phaseAction.disabled.policyDeniedTransition",
-                        !targetEnvironment.isBlank() ? null : "phaseAction.disabled.missingPromoteTarget"
+                        !runActionContext.targetEnvironment().isBlank() ? null : "phaseAction.disabled.missingPromoteTarget"
                 ),
                 "run:promote",
                 "post-run",
@@ -371,14 +367,14 @@ public final class PhaseActionAuthorizationService {
                 "refresh-packet",
                 suggestionParameters(
                         0.83,
-                        "medium",
+                        runActionContext.riskReason(),
                         "review-required",
                         true,
-                        true,
-                        evidenceIds,
-                        supportTrace,
-                        riskReason,
-                        Map.of("requiresActor", true, "targetEnvironment", targetEnvironment)
+                        runActionContext.rollbackSupported(),
+                        runActionContext.evidenceIds(),
+                        runActionContext.supportTrace(),
+                        runActionContext.riskReason(),
+                        Map.of("requiresActor", true, "targetEnvironment", runActionContext.targetEnvironment())
                 )
         ));
 
@@ -405,13 +401,13 @@ public final class PhaseActionAuthorizationService {
                 "navigate-observe",
                 suggestionParameters(
                         0.9,
-                        "low",
+                        runActionContext.riskReason(),
                         "one-click",
                         false,
                         false,
-                        evidenceIds,
-                        supportTrace,
-                        riskReason,
+                        runActionContext.evidenceIds(),
+                        runActionContext.supportTrace(),
+                        runActionContext.riskReason(),
                         Map.of("requiresActor", false)
                 )
         ));

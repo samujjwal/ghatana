@@ -152,8 +152,7 @@ export const getHeaders = async (config: OpenAPIConfig, options: ApiRequestOptio
         resolve(options, config.HEADERS),
     ]);
 
-    const nodeFormData = formData as unknown as { getHeaders?: () => Record<string, unknown> } | undefined;
-    const formHeaders = typeof nodeFormData?.getHeaders === 'function' ? nodeFormData.getHeaders() : {};
+    const formHeaders = typeof formData?.getHeaders === 'function' && formData?.getHeaders() || {}
 
     const headers = Object.entries({
         Accept: 'application/json',

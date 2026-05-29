@@ -21,6 +21,16 @@ import com.ghatana.yappc.services.phase.DegradedPhasePacketFactory;
 import com.ghatana.yappc.services.phase.PhaseActionAuthorizationService;
 import com.ghatana.yappc.services.phase.PhasePacketServiceImpl;
 import com.ghatana.yappc.services.phase.PhaseRequiredArtifactProvider;
+import com.ghatana.yappc.services.phase.PhaseFeatureFlagProvider;
+import com.ghatana.yappc.services.phase.PhaseProjectStateService;
+import com.ghatana.yappc.services.phase.PhaseEvidenceService;
+import com.ghatana.yappc.services.phase.PhaseGovernanceService;
+import com.ghatana.yappc.services.phase.PhaseActivityFeedService;
+import com.ghatana.yappc.services.phase.PhaseBlockerMapper;
+import com.ghatana.yappc.services.phase.PhaseGateContextFactory;
+import com.ghatana.yappc.services.phase.PhaseReadinessEvaluator;
+import com.ghatana.yappc.services.phase.PhaseHealthSignalProvider;
+import com.ghatana.yappc.services.phase.PhasePacketAssembler;
 import com.ghatana.yappc.services.platform.PlatformIntegrationClient;
 import com.ghatana.yappc.services.platform.PlatformPolicy;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
@@ -157,7 +167,17 @@ class DataCloudPhasePacketTruthIntegrationTest extends EventloopTestBase {
                 new DataCloudPlatformRunStatusService(dataCloudClient),
                 new PhaseActionAuthorizationService(),
                 new PhaseRequiredArtifactProvider(stageConfigLoader),
-                new DegradedPhasePacketFactory());
+                new DegradedPhasePacketFactory(),
+                new PhaseFeatureFlagProvider(dataCloudClient),
+                new PhaseProjectStateService(dataCloudClient, new PhaseFeatureFlagProvider(dataCloudClient)),
+                new PhaseEvidenceService(platformIntegrationClient),
+                new PhaseGovernanceService(platformIntegrationClient),
+                new PhaseActivityFeedService(auditService),
+                new PhaseBlockerMapper(),
+                new PhaseGateContextFactory(),
+                new PhaseReadinessEvaluator(transitionConfigLoader),
+                new PhaseHealthSignalProvider(previewRuntimeService),
+                new PhasePacketAssembler());
 
         PhasePacket packet = runPromise(() -> phasePacketService.buildPhasePacket(
                 "RUN",

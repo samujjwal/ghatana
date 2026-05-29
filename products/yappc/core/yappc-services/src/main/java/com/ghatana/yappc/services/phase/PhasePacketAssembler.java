@@ -8,16 +8,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-final class PhasePacketAssembler {
+public final class PhasePacketAssembler {
 
     private final LearningInsightService learningInsightService;
     private final EvolutionPlanService evolutionPlanService;
 
-    PhasePacketAssembler() {
+    public PhasePacketAssembler() {
         this(new LearningInsightService(), new EvolutionPlanService());
     }
 
-    PhasePacketAssembler(
+    public PhasePacketAssembler(
             LearningInsightService learningInsightService,
             EvolutionPlanService evolutionPlanService
     ) {

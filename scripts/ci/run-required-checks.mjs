@@ -3,10 +3,11 @@
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { loadCanonicalRegistry, resolveAffectedProducts } from '../resolve-affected-products.mjs';
 
-const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const argv = process.argv.slice(2);
 const releaseRisk = argv.includes('--release-risk') || process.env.RELEASE_RISK === 'true';
 const full = argv.includes('--full') || process.env.FULL_CHECK === 'true';
@@ -131,6 +132,24 @@ function hasExpensiveImpact(files) {
   return files.some((file) => /e2e|playwright|performance|load|durable|testcontainers|integration-tests/i.test(file));
 }
 
+function isRepoSurfaceOnly(files) {
+  if (files.length === 0) {
+    return false;
+  }
+
+  return files.every((file) => {
+    const normalized = file.replace(/\\/g, '/');
+    return normalized === 'README.md'
+      || normalized === 'docs/README.md'
+      || normalized.startsWith('docs/')
+      || normalized.startsWith('config/')
+      || normalized.startsWith('scripts/')
+      || normalized.startsWith('.github/workflows/')
+      || normalized === 'package.json'
+      || normalized === 'pnpm-workspace.yaml';
+  });
+}
+
 function runStage(stage, products, extraArgs = []) {
   const scopedFiles = files.length > 0 ? files : products.map((productId) => `products/${productId}/`);
   const args = [
@@ -173,9 +192,15 @@ if (affected.docsOnly) {
   const checkFiles = docsCheckFiles(files);
   if (checkFiles.length > 0) {
     runPnpm('docs format check', ['exec', 'prettier', '--check', ...checkFiles]);
+    runPnpm('docs surface checks', ['check:docs']);
   } else {
     console.log('Docs-only change set has no formatter-supported files; skipping docs check.');
   }
+  process.exit(0);
+}
+
+if (isRepoSurfaceOnly(files)) {
+  runPnpm('repo surface checks', ['check:repo-surfaces']);
   process.exit(0);
 }
 

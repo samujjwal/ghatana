@@ -173,12 +173,6 @@ public final class PhrFchvRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        if (!"fchv".equals(context.role()) && !"admin".equals(context.role())) {
-            return PhrRouteSupport.errorResponse(403, "FCHV_ROLE_REQUIRED",
-                "Only FCHV or admin principals may access FCHV patient records",
-                context.correlationId());
-        }
-
         String patientId = request.getPathParameter("patientId");
         return policyEvaluator.canAccessPhiResourceAsync(
             context,
@@ -210,12 +204,6 @@ public final class PhrFchvRoutes {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
-        }
-
-        if (!"fchv".equals(context.role()) && !"admin".equals(context.role())) {
-            return PhrRouteSupport.errorResponse(403, "FCHV_ROLE_REQUIRED",
-                "Only FCHV or admin principals may record vitals",
-                context.correlationId());
         }
 
         String patientId = request.getPathParameter("patientId");

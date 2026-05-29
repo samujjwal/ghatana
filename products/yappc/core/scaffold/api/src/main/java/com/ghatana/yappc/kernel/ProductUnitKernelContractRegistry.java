@@ -29,7 +29,7 @@ public final class ProductUnitKernelContractRegistry {
 
     /**
      * Creates the default registry from the imported Kernel ProductUnit contract resource.
-     * The contract DTO path is now managed only in ProductUnitIntentExporter.
+     * KRN-06: The contract DTO path is the single source of truth shared with ProductUnitIntentExporter.
      */
     public ProductUnitKernelContractRegistry() {
         this(loadDefaultContract());

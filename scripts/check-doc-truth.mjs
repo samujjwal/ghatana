@@ -14,6 +14,7 @@ import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
 import { join, relative, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+import { runDocumentationSurfaceCheck } from './quality/check-documentation-surfaces.mjs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..');
@@ -89,6 +90,11 @@ const markdownFiles = documentationScope
   ? [...documentationScope.includeFiles].map((file) => join(REPO_ROOT, file)).filter((file) => existsSync(file))
   : DOC_ROOTS.flatMap((root) => walkMarkdownFiles(root));
 const failures = [];
+
+const surfaceCheck = runDocumentationSurfaceCheck();
+if (!surfaceCheck.passed) {
+  failures.push(...surfaceCheck.failures.map((failure) => `surface-check: ${failure}`));
+}
 
 for (const file of markdownFiles) {
   const rel = relative(REPO_ROOT, file).replace(/\\/g, '/');

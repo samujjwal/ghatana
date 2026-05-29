@@ -11,6 +11,9 @@
   "scripts": {
     "check": "pnpm check:required",
     "check:required": "node ./scripts/ci/run-required-checks.mjs",
+    "check:docs": "node ./scripts/quality/check-documentation-surfaces.mjs",
+    "check:scripts": "node ./scripts/quality/check-script-surfaces.mjs",
+    "check:repo-surfaces": "pnpm check:docs && pnpm check:scripts",
     "check:staged": "lint-staged",
     "check:dev": "node ./scripts/ci/run-product-stage-checks.mjs --stage dev",
     "check:validate": "node ./scripts/ci/run-product-stage-checks.mjs --stage validate --include-dependencies",
@@ -222,7 +225,7 @@
     "scaffold:product": "node ./scripts/scaffold-product.mjs",
     "test:eslint-rules": "node ./eslint-rules/ghatana-architecture-rules.test.js",
     "prepare": "husky",
-    "check:phase0": "pnpm check:domain-registry && pnpm check:doc-claims-evidence && pnpm check:current-state-claims && pnpm check:product-registry && pnpm check:product-workspace-registration && pnpm check:product-registry-artifacts && pnpm check:product-kernel-audit-progress && node ./scripts/check-domain-boundaries.mjs --strict && node ./scripts/check-platform-product-boundaries.mjs --strict && pnpm check:orphan-modules && pnpm check:cleanup-gate",
+    "check:phase0": "pnpm check:domain-registry && pnpm check:doc-claims-evidence && pnpm check:current-state-claims && pnpm check:repo-surfaces && pnpm check:product-registry && pnpm check:product-workspace-registration && pnpm check:product-registry-artifacts && pnpm check:product-kernel-audit-progress && node ./scripts/check-domain-boundaries.mjs --strict && node ./scripts/check-platform-product-boundaries.mjs --strict && pnpm check:orphan-modules && pnpm check:cleanup-gate",
     "check:phase1": "pnpm check:studio-kernel-api && pnpm check:shared-product-shells && pnpm check:shared-ui-state-coverage && pnpm check:design-system-conformance",
     "check:phase2": "pnpm check:digital-marketing-lifecycle-pilot -- --smoke --evidence-pack-dir .kernel/evidence/digital-marketing && pnpm check:phr-lifecycle-pilot -- --smoke --evidence-pack-dir .kernel/evidence/phr && pnpm check:kernel-platform-lifecycle && pnpm check:toolchain-adapter-contracts && pnpm check:product-artifact-contracts && pnpm check:product-deployment-contracts && pnpm check:product-environment-contracts && pnpm check:secret-default-credentials",
     "check:phase3": "pnpm check:kernel-lifecycle-truth && pnpm check:studio-kernel-api && pnpm check:kernel-provider-mode && pnpm check:yappc-product-unit-intent-handoff && pnpm check:toolchain-adapter-contracts && pnpm check:product-artifact-contracts && pnpm check:product-deployment-contracts && pnpm check:observability-conformance",

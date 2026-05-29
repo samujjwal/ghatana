@@ -13,6 +13,7 @@ import type { HealthSignals } from './HealthSignals';
 import type { PhaseAction } from './PhaseAction';
 import type { PhaseBlocker } from './PhaseBlocker';
 import type { PhaseEvidence } from './PhaseEvidence';
+import type { PhasePanelView } from './PhasePanelView';
 import type { PhaseReadiness } from './PhaseReadiness';
 import type { PlatformRunStatus } from './PlatformRunStatus';
 import type { RequiredArtifact } from './RequiredArtifact';
@@ -38,6 +39,7 @@ export type PhaseCockpitPacket = {
     platformRunStatus?: PlatformRunStatus;
     availableActions: Array<PhaseAction>;
     dashboardActions: DashboardActionClassification;
+    phasePanels: Array<PhasePanelView>;
     healthSignals: HealthSignals;
     degradedDetails?: DegradedPacketDetails;
     timestamp: number;

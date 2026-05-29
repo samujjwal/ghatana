@@ -2,8 +2,8 @@
   "productId": "phr",
   "evidenceType": "ia-coverage",
   "generatedAt": "2026-05-28T17:09:12.597Z",
-  "sourceCommitSha": "2a37e8d0702271a10d47f5707a2720fd657c7f54",
-  "targetCommitSha": "2a37e8d0702271a10d47f5707a2720fd657c7f54",
+  "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+  "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
   "targetEnvironment": "local",
   "validationStatus": "validated",
   "pass": true,
@@ -16,9 +16,9 @@
     "generatedBy": "scripts/check-phr-ia-coverage.mjs",
     "command": "node scripts/check-phr-ia-coverage.mjs",
     "source": "scripts/check-phr-ia-coverage.mjs",
-    "commit": "2a37e8d0702271a10d47f5707a2720fd657c7f54",
-    "sourceCommitSha": "2a37e8d0702271a10d47f5707a2720fd657c7f54",
-    "targetCommitSha": "2a37e8d0702271a10d47f5707a2720fd657c7f54",
+    "commit": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+    "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+    "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
     "targetEnvironment": "local"
   }
 }

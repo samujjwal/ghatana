@@ -82,11 +82,17 @@
     "platform": "data-cloud-aep",
     "startedAt": 1.77979053E9,
     "completedAt": null,
-    "traceId": "trace-1",
-    "evidenceIds": [
-      "evidence-1"
-    ]
-  },
+      "traceId": "trace-1",
+      "evidenceIds": [
+        "evidence-1"
+      ],
+      "rollbackTarget": "",
+      "promoteTarget": "",
+      "releaseCandidate": "",
+      "riskLevel": "",
+      "remediationHint": "",
+      "rollbackSupported": false
+    },
   "availableActions": [
     {
       "actionId": "advance-phase",

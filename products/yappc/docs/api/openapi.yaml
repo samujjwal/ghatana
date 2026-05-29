@@ -6065,7 +6065,7 @@ components:
 
     PhaseCockpitPacket:
       type: object
-      required: [phase, projectId, tenantId, workspaceId, actor, tenantTier, enabledPhaseFlags, capabilities, blockers, readiness, requiredArtifacts, completedArtifacts, activityFeed, evidence, governance, availableActions, dashboardActions, healthSignals, timestamp]
+      required: [phase, projectId, tenantId, workspaceId, actor, tenantTier, enabledPhaseFlags, capabilities, blockers, readiness, requiredArtifacts, completedArtifacts, activityFeed, evidence, governance, availableActions, dashboardActions, phasePanels, healthSignals, timestamp]
       properties:
         phase:
           type: string
@@ -6127,6 +6127,10 @@ components:
             $ref: "#/components/schemas/PhaseAction"
         dashboardActions:
           $ref: "#/components/schemas/DashboardActionClassification"
+        phasePanels:
+          type: array
+          items:
+            $ref: "#/components/schemas/PhasePanelView"
         healthSignals:
           $ref: "#/components/schemas/HealthSignals"
         degradedDetails:
@@ -6417,6 +6421,89 @@ components:
           type: array
           items:
             type: string
+
+    PhasePanelView:
+      type: object
+      required: [phase, status, summary, recommendation, owner, confidence, supportTrace, cards]
+      properties:
+        phase:
+          type: string
+        status:
+          type: string
+        summary:
+          type: string
+        recommendation:
+          type: string
+        owner:
+          type: string
+        confidence:
+          type: number
+          format: double
+        supportTrace:
+          type: string
+        cards:
+          type: array
+          items:
+            $ref: "#/components/schemas/PhasePanelCard"
+        learningInsight:
+          $ref: "#/components/schemas/LearningInsightPanel"
+        evolutionPlan:
+          $ref: "#/components/schemas/EvolutionPlanPanel"
+
+    LearningInsightPanel:
+      type: object
+      required: [learnedSignal, sourceEvent, confidence, recommendation, approvalRequired, rollbackPath]
+      properties:
+        learnedSignal:
+          type: string
+        sourceEvent:
+          type: string
+        confidence:
+          type: number
+          format: double
+        recommendation:
+          type: string
+        approvalRequired:
+          type: boolean
+        rollbackPath:
+          type: string
+
+    EvolutionPlanPanel:
+      type: object
+      required: [proposal, impactSummary, diffSummary, validationRequirements, approvalState, rollbackPath, rerunTarget]
+      properties:
+        proposal:
+          type: string
+        impactSummary:
+          type: string
+        diffSummary:
+          type: string
+        validationRequirements:
+          type: string
+        approvalState:
+          type: string
+        rollbackPath:
+          type: string
+        rerunTarget:
+          type: string
+
+    PhasePanelCard:
+      type: object
+      required: [id, title, detail, status, trace]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+        status:
+          type: string
+        trace:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
 
     HealthSignals:
       type: object
@@ -7495,6 +7582,8 @@ components:
           type: boolean
         diff:
           $ref: "#/components/schemas/GenerateDiffReview"
+        assuranceReport:
+          $ref: "#/components/schemas/GenerationAssuranceReport"
 
     RegenerateDiffResponse:
       type: object
@@ -7544,6 +7633,35 @@ components:
           type: string
         message:
           type: string
+
+    GenerationAssuranceReport:
+      type: object
+      required: [passed, checks]
+      properties:
+        passed:
+          type: boolean
+          description: Overall pass/fail status of all assurance checks
+        checks:
+          type: array
+          items:
+            $ref: "#/components/schemas/GenerationAssuranceCheck"
+
+    GenerationAssuranceCheck:
+      type: object
+      required: [id, passed, failures]
+      properties:
+        id:
+          type: string
+          enum: [compile, test, static, security, i18n, a11y]
+          description: Identifier for the assurance check type
+        passed:
+          type: boolean
+          description: Whether this specific check passed
+        failures:
+          type: array
+          items:
+            type: string
+          description: List of failure messages if the check did not pass
 
     SourceImportRequest:
       type: object

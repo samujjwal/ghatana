@@ -70,8 +70,8 @@ public final class PhrPolicyEvaluator {
     /**
      * Evaluates whether a principal can access a patient's PHI record.
      *
-     * <p>This replaces the legacy role-based shortcut with policy-based evaluation.
-     * The evaluation checks consent for caregivers and treatment relationships for clinicians.</p>
+     * <p>The evaluation checks consent for caregivers and treatment relationships
+     * for clinicians.</p>
      *
      * <p>Policy is fail-closed: if required services are unavailable, access is denied.
      * This is a security-critical decision - we never allow access without proper validation.</p>

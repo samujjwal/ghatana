@@ -286,11 +286,7 @@ public class AdvancePhaseUseCase {
                             List.of(),
                             List.of(),
                             true,
-                            List.of(),
-                            "",
-                            "",
-                            "",
-                            "");
+                            com.ghatana.yappc.services.phase.RunActionContext.degraded(List.of(), List.of()));
                     PhasePacket.PhaseAction advanceAction = actions.stream()
                             .filter(action -> "advance-phase".equals(action.actionId()))
                             .findFirst()

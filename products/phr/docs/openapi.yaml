@@ -1148,15 +1148,6 @@ paths:
         "200": { description: Authenticated session }
         "400": { $ref: "#/components/responses/Error" }
         "401": { $ref: "#/components/responses/Error" }
-  /auth/sign-in:
-    post:
-      operationId: phrAuthSignIn
-      summary: Start a PHR web session through the IA alias
-      tags: [Auth]
-      responses:
-        "200": { description: Authenticated session }
-        "400": { $ref: "#/components/responses/Error" }
-        "401": { $ref: "#/components/responses/Error" }
   /auth/logout:
     post:
       operationId: phrAuthLogout

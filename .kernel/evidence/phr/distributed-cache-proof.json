@@ -1,9 +1,9 @@
 {
   "productId": "phr",
   "evidenceType": "distributed-cache-proof",
-  "generatedAt": "2026-05-28T23:16:05.600Z",
-  "targetCommitSha": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
-  "sourceCommitSha": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+  "generatedAt": "2026-05-29T01:06:55.810Z",
+  "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+  "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
   "cacheType": "redis",
   "multiNodeInvalidation": true,
   "description": "PHR consent cache backed by Redis with multi-node invalidation proof",
@@ -16,7 +16,7 @@
     "ttlSeconds": 300
   },
   "executableProof": {
-    "validatedAt": "2026-05-28T23:16:05.600Z",
+    "validatedAt": "2026-05-29T01:06:55.810Z",
     "command": "node ./scripts/run-gradle-wrapper.mjs :products:phr:test -DincludeIntegrationTests=true --rerun-tasks --tests *DistributedCacheConsentInvalidationTest --tests *PhrDistributedCacheProofTest",
     "tests": [
       "products/phr/src/test/java/com/ghatana/phr/cache/PhrDistributedCacheProofTest.java",
@@ -34,5 +34,5 @@
     "products/phr/src/main/java/com/ghatana/phr/cache/",
     "products/phr/src/main/java/com/ghatana/phr/kernel/"
   ],
-  "commitSha": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc"
+  "commitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8"
 }

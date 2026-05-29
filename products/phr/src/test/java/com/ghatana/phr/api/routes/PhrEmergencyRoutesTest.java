@@ -147,6 +147,25 @@ class PhrEmergencyRoutesTest extends EventloopTestBase {
 
             assertThat(response.getCode()).isEqualTo(400);
         }
+
+        @Test
+        @DisplayName("403 - patient role is denied by emergency policy")
+        void patientRoleDeniedByEmergencyPolicy() throws Exception {
+            HttpRequest request = contextRequestWithBody(
+                HttpMethod.POST, "/access", "tenant-1", "patient-1", "patient",
+                """
+                {
+                  "patientId": "patient-1",
+                  "accessorRole": "patient-1",
+                  "justification": "Emergency access request attempted by patient role",
+                  "resourcesAccessed": ["labs"]
+                }
+                """);
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(403);
+        }
     }
 
     @Nested

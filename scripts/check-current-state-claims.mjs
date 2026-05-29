@@ -275,13 +275,7 @@ function checkEvidenceFreshnessForClaim(source, lineIndex, lines, freshnessPolic
 }
 
 function loadTrackerFile() {
-  try {
-    const trackerPath = path.join(repoRoot, 'docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md');
-    return readFileSync(trackerPath, 'utf8');
-  } catch (error) {
-    console.warn('Warning: Failed to load tracker file:', error.message);
-    return null;
-  }
+  return null;
 }
 
 function checkTrackerAgainstRegistry(domainRegistry) {

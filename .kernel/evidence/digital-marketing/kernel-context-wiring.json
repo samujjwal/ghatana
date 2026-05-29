@@ -1,0 +1,17 @@
+{
+  "productId": "digital-marketing",
+  "evidenceType": "kernel-context-wiring",
+  "generatedAt": "2026-05-29T02:29:29.478Z",
+  "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+  "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+  "featureFlagResolution": {
+    "status": "ready",
+    "provider": "FeatureFlagPlugin",
+    "registeredInKernelContext": true,
+    "module": "products/digital-marketing/dm-kernel-bridge",
+    "implementationRefs": [
+      "products/digital-marketing/dm-kernel-bridge/src/main/java/com/ghatana/plugin/featureflag/FeatureFlagPlugin.java",
+      "products/digital-marketing/dm-integration-tests/src/test/java/com/ghatana/digitalmarketing/integration/KernelBridgeWiringIT.java"
+    ]
+  }
+}

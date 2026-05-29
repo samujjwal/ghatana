@@ -102,7 +102,7 @@ Documentation for the 15-route navigation system and route consolidation.
 ### In Global Docs (`/docs/`)
 - Architecture documentation: `docs/architecture-and-design/`
 - Feature documentation: `docs/current-features/`
-- Build & session notes: `docs/archive/sessions/`, `docs/build-archives/`
+- Build and session history is maintained outside the canonical active docs surface.
 - Legacy/planning: `docs/legacy/`, `docs/archived-root-docs-2025-11-20/`
 
 ### In Product Docs

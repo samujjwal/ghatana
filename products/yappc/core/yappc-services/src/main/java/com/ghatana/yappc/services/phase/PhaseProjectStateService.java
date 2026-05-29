@@ -14,14 +14,14 @@ import java.util.Objects;
 /**
  * Queries and enriches phase packet project state.
  */
-final class PhaseProjectStateService {
+public final class PhaseProjectStateService {
 
     private static final Logger log = LoggerFactory.getLogger(PhaseProjectStateService.class);
 
     private final DataCloudClient dataCloudClient;
     private final PhaseFeatureFlagProvider phaseFeatureFlagProvider;
 
-    PhaseProjectStateService(
+    public PhaseProjectStateService(
             @NotNull DataCloudClient dataCloudClient,
             @NotNull PhaseFeatureFlagProvider phaseFeatureFlagProvider
     ) {

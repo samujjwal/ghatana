@@ -1,0 +1,30 @@
+{
+  "productId": "digital-marketing",
+  "environment": "prod",
+  "generatedAt": "2026-05-29T03:02:24.313Z",
+  "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+  "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+  "bootstrap": {
+    "validated": true,
+    "validatedAt": "2026-05-29T03:02:24.313Z",
+    "googleAdsConnector": {
+      "status": "ready",
+      "oauthConfigured": true,
+      "tokenRefreshEnabled": true,
+      "idempotencyKeysEnabled": true
+    }
+  },
+  "executabilityProof": {
+    "validatedAt": "2026-05-29T03:02:24.313Z",
+    "components": {
+      "googleAdsConnector": {
+        "executable": true,
+        "oauthFlowValid": true,
+        "idempotencyKeysEnabled": true,
+        "sandboxModeConfirmed": false,
+        "productionModeConfirmed": true,
+        "sandboxModeBlocked": true
+      }
+    }
+  }
+}

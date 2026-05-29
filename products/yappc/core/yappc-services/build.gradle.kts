@@ -28,6 +28,7 @@ dependencies {
     implementation(project(":platform:java:domain"))
     implementation(project(":platform:java:database"))
     implementation(project(":platform:java:agent-core"))
+    implementation(project(":platform:java:audit"))
 
     // YAPPC domain (both core and libs versions)
     implementation(project(":products:yappc:core:yappc-domain-impl"))

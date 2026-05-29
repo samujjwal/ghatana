@@ -39,23 +39,7 @@ const openApiPath = path.join(repoRoot, 'products/yappc/docs/api/openapi.yaml');
 // ─────────────────────────────────────────────────────────────────────────────
 
 function parseRouteManifest(content: string): string[] {
-  const routes: string[] = [];
-  const lines = content.split('\n');
-  let inRouteList = false;
-
-  for (const line of lines) {
-    if (line.trim().startsWith('-')) {
-      inRouteList = true;
-      const route = line.trim().replace(/^-\s*/, '').trim();
-      if (route && !route.startsWith('#')) {
-        routes.push(route);
-      }
-    } else if (inRouteList && line.trim() && !line.trim().startsWith('#')) {
-      inRouteList = false;
-    }
-  }
-
-  return routes;
+  return [...parseStructuredRouteManifest(content).values()].map(route => `${route.method} ${route.path}`);
 }
 
 function parseOpenApiPaths(content: string): string[] {
@@ -90,9 +74,7 @@ function parseOpenApiPaths(content: string): string[] {
 }
 
 function extractClientRoutes(): string[] {
-  // This would parse the domain-scoped client files to extract all route patterns
-  // For now, return a placeholder
-  return [];
+  return [...parseGeneratedServiceDirectoryOperations().values()].map(route => `${route.method} ${route.path}`);
 }
 
 interface RouteContract {
@@ -259,69 +241,56 @@ describe('API Contract Parity', () => {
         return !openApiPaths.includes(path);
       });
 
-      if (missingInOpenApi.length > 0) {
-        console.warn('Routes in manifest but not in OpenAPI:', missingInOpenApi);
-      }
-
-      // For now, warn instead of fail to allow gradual migration
-      // expect(missingInOpenApi).toHaveLength(0);
+      expect(missingInOpenApi).toEqual([]);
     });
 
-    it('should have all OpenAPI paths present in route manifest', () => {
+    it('should keep manifest operation IDs and route keys unique', () => {
       const manifestContent = fs.readFileSync(routeManifestPath, 'utf8');
-      const openApiContent = fs.readFileSync(openApiPath, 'utf8');
+      const manifestRoutes = [...parseStructuredRouteManifest(manifestContent).values()];
+      const operationIds = manifestRoutes.map(route => route.operationId);
+      const routeKeys = manifestRoutes.map(route => `${route.method} ${route.path}`);
 
-      const manifestRoutes = parseRouteManifest(manifestContent);
-      const openApiPaths = parseOpenApiPaths(openApiContent);
+      const duplicateOperationIds = operationIds.filter((operationId, index) => operationIds.indexOf(operationId) !== index);
+      const duplicateRouteKeys = routeKeys.filter((routeKey, index) => routeKeys.indexOf(routeKey) !== index);
 
-      const missingInManifest = openApiPaths.filter(path => {
-        return !manifestRoutes.some(route => route.includes(path));
-      });
-
-      if (missingInManifest.length > 0) {
-        console.warn('OpenAPI paths not in manifest:', missingInManifest);
-      }
-
-      // For now, warn instead of fail to allow gradual migration
-      // expect(missingInManifest).toHaveLength(0);
+      expect(duplicateOperationIds).toEqual([]);
+      expect(duplicateRouteKeys).toEqual([]);
     });
   });
 
   describe('Client vs Route Manifest', () => {
-    it('should have all client routes present in route manifest', () => {
+    it('should generate a client operation for every yappc-services manifest route', () => {
       const manifestContent = fs.readFileSync(routeManifestPath, 'utf8');
-      const manifestRoutes = parseRouteManifest(manifestContent);
+      const manifestRoutes = [...parseStructuredRouteManifest(manifestContent).values()]
+        .filter(route => route.owner === 'yappc-services')
+        .map(route => `${route.method} ${route.path}`);
       const clientRoutes = extractClientRoutes();
 
-      const missingInManifest = clientRoutes.filter(route => {
-        return !manifestRoutes.some(manifestRoute => manifestRoute.includes(route));
+      const missingInClient = manifestRoutes.filter(route => {
+        return !clientRoutes.includes(route);
       });
 
-      if (missingInManifest.length > 0) {
-        console.warn('Client routes not in manifest:', missingInManifest);
-      }
-
-      // For now, warn instead of fail to allow gradual migration
-      // expect(missingInManifest).toHaveLength(0);
+      expect(missingInClient).toEqual([]);
     });
   });
 
   describe('Client vs OpenAPI', () => {
-    it('should have all client routes present in OpenAPI', () => {
+    it('should expose every yappc-services manifest route in OpenAPI and generated clients', () => {
+      const manifestContent = fs.readFileSync(routeManifestPath, 'utf8');
       const openApiContent = fs.readFileSync(openApiPath, 'utf8');
-      const openApiPaths = parseOpenApiPaths(openApiContent);
+      const manifestRoutes = [...parseStructuredRouteManifest(manifestContent).values()]
+        .filter(route => route.owner === 'yappc-services');
+      const openApiOperations = parseOpenApiOperations(openApiContent);
       const clientRoutes = extractClientRoutes();
 
-      const missingInOpenApi = clientRoutes.filter(route => {
-        return !openApiPaths.some(path => path.includes(route));
+      const missingInOpenApi = manifestRoutes.filter(route => {
+        const openApiOperation = openApiOperations.get(route.operationId);
+        return openApiOperation?.method !== route.method || openApiOperation.path !== route.path;
       });
+      const missingInClient = manifestRoutes.filter(route => !clientRoutes.includes(`${route.method} ${route.path}`));
 
-      if (missingInOpenApi.length > 0) {
-        console.warn('Client routes not in OpenAPI:', missingInOpenApi);
-      }
-
-      // For now, warn instead of fail to allow gradual migration
-      // expect(missingInOpenApi).toHaveLength(0);
+      expect(missingInOpenApi).toEqual([]);
+      expect(missingInClient).toEqual([]);
     });
   });
 });

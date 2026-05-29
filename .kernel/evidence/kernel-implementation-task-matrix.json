@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-29T00:46:04.431Z",
+  "generatedAt": "2026-05-29T02:07:04.536Z",
   "status": "passed",
   "summary": {
     "requiredTaskCount": 51,
@@ -9,11 +9,11 @@
       "Planned": 3
     },
     "averageMaturityDepth": 2.08,
-    "warningCount": 37,
+    "warningCount": 0,
     "violationCount": 0
   },
   "incrementalRoadmap": {
-    "generatedAt": "2026-05-29T00:46:04.433Z",
+    "generatedAt": "2026-05-29T02:07:04.537Z",
     "targetMaturityDepth": 5,
     "remainingTaskCount": 51,
     "deferredTaskIds": [],
@@ -857,11 +857,12 @@
       "id": 1,
       "title": "Runtime Truth, Route Truth, and Contract Convergence: Finish route manifest Phase 2–4: manifest → UI runtime truth, OpenAPI validator, SDK metadata.",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/.../RouteSecurityRegistry.java",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java",
         "products/data-cloud/config/route-manifest.json",
-        "products/data-cloud/contracts/openapi/*.yaml",
-        "products/data-cloud/delivery/ui/src/lib/routing/*",
-        "products/data-cloud/docs/ROUTE_MANIFEST_SYSTEM.md"
+        "products/data-cloud/planes/action/server/src/main/resources/openapi.yaml",
+        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts",
+        "products/data-cloud/docs/ROUTE_MANIFEST_SYSTEM.md",
+        "scripts/generate-production-readiness-task-map.mjs"
       ]
     },
     {
@@ -874,11 +875,12 @@
       "id": 2,
       "title": "Runtime Truth, Route Truth, and Contract Convergence: Rename UI `RouteCapabilityRegistry` terminology to `RouteSurfaceRegistry` / runtime truth aligned names.",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/.../RouteSecurityRegistry.java",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java",
         "products/data-cloud/config/route-manifest.json",
-        "products/data-cloud/contracts/openapi/*.yaml",
-        "products/data-cloud/delivery/ui/src/lib/routing/*",
-        "products/data-cloud/docs/ROUTE_MANIFEST_SYSTEM.md"
+        "products/data-cloud/planes/action/server/src/main/resources/openapi.yaml",
+        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts",
+        "products/data-cloud/docs/ROUTE_MANIFEST_SYSTEM.md",
+        "scripts/generate-production-readiness-task-map.mjs"
       ]
     },
     {
@@ -891,11 +893,12 @@
       "id": 3,
       "title": "Runtime Truth, Route Truth, and Contract Convergence: Fix documented `RouteSecurityRegistry.java` path mismatch.",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/.../RouteSecurityRegistry.java",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java",
         "products/data-cloud/config/route-manifest.json",
-        "products/data-cloud/contracts/openapi/*.yaml",
-        "products/data-cloud/delivery/ui/src/lib/routing/*",
-        "products/data-cloud/docs/ROUTE_MANIFEST_SYSTEM.md"
+        "products/data-cloud/planes/action/server/src/main/resources/openapi.yaml",
+        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts",
+        "products/data-cloud/docs/ROUTE_MANIFEST_SYSTEM.md",
+        "scripts/generate-production-readiness-task-map.mjs"
       ]
     },
     {
@@ -908,11 +911,12 @@
       "id": 4,
       "title": "Runtime Truth, Route Truth, and Contract Convergence: Make route aliases explicitly classified as canonical, compatibility, preview, or hidden.",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/.../RouteSecurityRegistry.java",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java",
         "products/data-cloud/config/route-manifest.json",
-        "products/data-cloud/contracts/openapi/*.yaml",
-        "products/data-cloud/delivery/ui/src/lib/routing/*",
-        "products/data-cloud/docs/ROUTE_MANIFEST_SYSTEM.md"
+        "products/data-cloud/planes/action/server/src/main/resources/openapi.yaml",
+        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts",
+        "products/data-cloud/docs/ROUTE_MANIFEST_SYSTEM.md",
+        "scripts/generate-production-readiness-task-map.mjs"
       ]
     },
     {
@@ -925,11 +929,12 @@
       "id": 5,
       "title": "Runtime Truth, Route Truth, and Contract Convergence: Promote API contract and integration test modules from advisory when they validate production routes.",
       "whereRefs": [
-        "products/data-cloud/delivery/launcher/.../RouteSecurityRegistry.java",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java",
         "products/data-cloud/config/route-manifest.json",
-        "products/data-cloud/contracts/openapi/*.yaml",
-        "products/data-cloud/delivery/ui/src/lib/routing/*",
-        "products/data-cloud/docs/ROUTE_MANIFEST_SYSTEM.md"
+        "products/data-cloud/planes/action/server/src/main/resources/openapi.yaml",
+        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts",
+        "products/data-cloud/docs/ROUTE_MANIFEST_SYSTEM.md",
+        "scripts/generate-production-readiness-task-map.mjs"
       ]
     },
     {
@@ -941,7 +946,14 @@
       "evidenceRefs": [],
       "id": 6,
       "title": "Canonical Data Cloud Domain/Journey Pass: Promote `dc_collections` from generic entity metadata to a typed collection registry contract.",
-      "whereRefs": []
+      "whereRefs": [
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/EntityCrudHandler.java",
+        "products/data-cloud/delivery/ui/src/lib/api/collections.ts",
+        "products/data-cloud/delivery/ui/src/pages/DataExplorer.tsx",
+        "products/data-cloud/delivery/ui/src/api/quality.service.ts",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/connectors/InMemoryConnectorSyncJobService.java",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataProductHandler.java"
+      ]
     },
     {
       "ownerTeam": "Product Family Platform",
@@ -952,7 +964,14 @@
       "evidenceRefs": [],
       "id": 7,
       "title": "Canonical Data Cloud Domain/Journey Pass: Replace `storageSize: 0` and client-derived collection stats with backend-owned stats.",
-      "whereRefs": []
+      "whereRefs": [
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/EntityCrudHandler.java",
+        "products/data-cloud/delivery/ui/src/lib/api/collections.ts",
+        "products/data-cloud/delivery/ui/src/pages/DataExplorer.tsx",
+        "products/data-cloud/delivery/ui/src/api/quality.service.ts",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/connectors/InMemoryConnectorSyncJobService.java",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataProductHandler.java"
+      ]
     },
     {
       "ownerTeam": "YAPPC Frontend",
@@ -963,7 +982,14 @@
       "evidenceRefs": [],
       "id": 8,
       "title": "Canonical Data Cloud Domain/Journey Pass: Move quality advisory out of client-side heuristic logic into Data Quality/Intelligence endpoint.",
-      "whereRefs": []
+      "whereRefs": [
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/EntityCrudHandler.java",
+        "products/data-cloud/delivery/ui/src/lib/api/collections.ts",
+        "products/data-cloud/delivery/ui/src/pages/DataExplorer.tsx",
+        "products/data-cloud/delivery/ui/src/api/quality.service.ts",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/connectors/InMemoryConnectorSyncJobService.java",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataProductHandler.java"
+      ]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -974,7 +1000,14 @@
       "evidenceRefs": [],
       "id": 9,
       "title": "Canonical Data Cloud Domain/Journey Pass: Connect connector sync results to collection creation/update.",
-      "whereRefs": []
+      "whereRefs": [
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/EntityCrudHandler.java",
+        "products/data-cloud/delivery/ui/src/lib/api/collections.ts",
+        "products/data-cloud/delivery/ui/src/pages/DataExplorer.tsx",
+        "products/data-cloud/delivery/ui/src/api/quality.service.ts",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/connectors/InMemoryConnectorSyncJobService.java",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataProductHandler.java"
+      ]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -985,7 +1018,14 @@
       "evidenceRefs": [],
       "id": 10,
       "title": "Canonical Data Cloud Domain/Journey Pass: Define one journey contract: connector → sync → collection → schema → quality → lineage → trust.",
-      "whereRefs": []
+      "whereRefs": [
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/EntityCrudHandler.java",
+        "products/data-cloud/delivery/ui/src/lib/api/collections.ts",
+        "products/data-cloud/delivery/ui/src/pages/DataExplorer.tsx",
+        "products/data-cloud/delivery/ui/src/api/quality.service.ts",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/connectors/InMemoryConnectorSyncJobService.java",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataProductHandler.java"
+      ]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -997,9 +1037,11 @@
       "id": 11,
       "title": "Outcome-First UI / 0 Cognitive Load Pass: Default nav: Home, Data, Query, Pipelines, Trust, Operations.",
       "whereRefs": [
-        "DefaultLayout.tsx",
-        "routes.tsx",
-        "RouteSurfaceRegistry"
+        "products/data-cloud/delivery/ui/src/layouts/DefaultLayout.tsx",
+        "products/data-cloud/delivery/ui/src/routes.tsx",
+        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts",
+        "products/data-cloud/delivery/ui/src/pages/DataExplorer.tsx",
+        "products/data-cloud/delivery/ui/src/i18n/config.ts"
       ]
     },
     {
@@ -1012,9 +1054,11 @@
       "id": 12,
       "title": "Outcome-First UI / 0 Cognitive Load Pass: Move Agents, Memory, Context, Fabric, Plugins, Runtime Truth, Release Truth, Alerts into role/contextual surfaces.",
       "whereRefs": [
-        "DefaultLayout.tsx",
-        "routes.tsx",
-        "RouteSurfaceRegistry"
+        "products/data-cloud/delivery/ui/src/layouts/DefaultLayout.tsx",
+        "products/data-cloud/delivery/ui/src/routes.tsx",
+        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts",
+        "products/data-cloud/delivery/ui/src/pages/DataExplorer.tsx",
+        "products/data-cloud/delivery/ui/src/i18n/config.ts"
       ]
     },
     {
@@ -1027,9 +1071,11 @@
       "id": 13,
       "title": "Outcome-First UI / 0 Cognitive Load Pass: Use route registry icons instead of mapping all generated nav icons to `Activity`.",
       "whereRefs": [
-        "DefaultLayout.tsx",
-        "routes.tsx",
-        "RouteSurfaceRegistry"
+        "products/data-cloud/delivery/ui/src/layouts/DefaultLayout.tsx",
+        "products/data-cloud/delivery/ui/src/routes.tsx",
+        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts",
+        "products/data-cloud/delivery/ui/src/pages/DataExplorer.tsx",
+        "products/data-cloud/delivery/ui/src/i18n/config.ts"
       ]
     },
     {
@@ -1042,9 +1088,11 @@
       "id": 14,
       "title": "Outcome-First UI / 0 Cognitive Load Pass: Rename “Product mode” / role switcher to avoid permission confusion.",
       "whereRefs": [
-        "DefaultLayout.tsx",
-        "routes.tsx",
-        "RouteSurfaceRegistry"
+        "products/data-cloud/delivery/ui/src/layouts/DefaultLayout.tsx",
+        "products/data-cloud/delivery/ui/src/routes.tsx",
+        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts",
+        "products/data-cloud/delivery/ui/src/pages/DataExplorer.tsx",
+        "products/data-cloud/delivery/ui/src/i18n/config.ts"
       ]
     },
     {
@@ -1057,9 +1105,11 @@
       "id": 15,
       "title": "Outcome-First UI / 0 Cognitive Load Pass: Replace hover-only row actions with keyboard-visible action menus.",
       "whereRefs": [
-        "DefaultLayout.tsx",
-        "routes.tsx",
-        "RouteSurfaceRegistry"
+        "products/data-cloud/delivery/ui/src/layouts/DefaultLayout.tsx",
+        "products/data-cloud/delivery/ui/src/routes.tsx",
+        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts",
+        "products/data-cloud/delivery/ui/src/pages/DataExplorer.tsx",
+        "products/data-cloud/delivery/ui/src/i18n/config.ts"
       ]
     },
     {
@@ -1072,9 +1122,11 @@
       "id": 16,
       "title": "Outcome-First UI / 0 Cognitive Load Pass: Replace hardcoded strings with i18n keys.",
       "whereRefs": [
-        "DefaultLayout.tsx",
-        "routes.tsx",
-        "RouteSurfaceRegistry"
+        "products/data-cloud/delivery/ui/src/layouts/DefaultLayout.tsx",
+        "products/data-cloud/delivery/ui/src/routes.tsx",
+        "products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts",
+        "products/data-cloud/delivery/ui/src/pages/DataExplorer.tsx",
+        "products/data-cloud/delivery/ui/src/i18n/config.ts"
       ]
     },
     {
@@ -1088,7 +1140,10 @@
       "title": "AEP / Action Plane Completion Pass: Complete unified operator model.",
       "whereRefs": [
         "products/data-cloud/planes/action/*",
-        "products/aep/*"
+        "products/aep/*",
+        "products/data-cloud/planes/action/server/src/main/resources/openapi.yaml",
+        "products/data-cloud/planes/action/server/src/main/java/com/ghatana/aep/server/http/controllers",
+        "products/data-cloud/docs/aep/README.md"
       ]
     },
     {
@@ -1102,7 +1157,10 @@
       "title": "AEP / Action Plane Completion Pass: Implement PatternSpec compiler and lifecycle.",
       "whereRefs": [
         "products/data-cloud/planes/action/*",
-        "products/aep/*"
+        "products/aep/*",
+        "products/data-cloud/planes/action/server/src/main/resources/openapi.yaml",
+        "products/data-cloud/planes/action/server/src/main/java/com/ghatana/aep/server/http/controllers",
+        "products/data-cloud/docs/aep/README.md"
       ]
     },
     {
@@ -1116,7 +1174,10 @@
       "title": "AEP / Action Plane Completion Pass: Complete EventCloud SPI boundary.",
       "whereRefs": [
         "products/data-cloud/planes/action/*",
-        "products/aep/*"
+        "products/aep/*",
+        "products/data-cloud/planes/action/server/src/main/resources/openapi.yaml",
+        "products/data-cloud/planes/action/server/src/main/java/com/ghatana/aep/server/http/controllers",
+        "products/data-cloud/docs/aep/README.md"
       ]
     },
     {
@@ -1130,7 +1191,10 @@
       "title": "AEP / Action Plane Completion Pass: Implement learning → recommendation → review → promotion → rollback loop.",
       "whereRefs": [
         "products/data-cloud/planes/action/*",
-        "products/aep/*"
+        "products/aep/*",
+        "products/data-cloud/planes/action/server/src/main/resources/openapi.yaml",
+        "products/data-cloud/planes/action/server/src/main/java/com/ghatana/aep/server/http/controllers",
+        "products/data-cloud/docs/aep/README.md"
       ]
     },
     {
@@ -1144,7 +1208,10 @@
       "title": "AEP / Action Plane Completion Pass: Make replay-safe agent execution mandatory for pattern-linked agents.",
       "whereRefs": [
         "products/data-cloud/planes/action/*",
-        "products/aep/*"
+        "products/aep/*",
+        "products/data-cloud/planes/action/server/src/main/resources/openapi.yaml",
+        "products/data-cloud/planes/action/server/src/main/java/com/ghatana/aep/server/http/controllers",
+        "products/data-cloud/docs/aep/README.md"
       ]
     },
     {
@@ -1158,7 +1225,10 @@
       "title": "AEP / Action Plane Completion Pass: Retire or hide legacy root action routes behind feature flags.",
       "whereRefs": [
         "products/data-cloud/planes/action/*",
-        "products/aep/*"
+        "products/aep/*",
+        "products/data-cloud/planes/action/server/src/main/resources/openapi.yaml",
+        "products/data-cloud/planes/action/server/src/main/java/com/ghatana/aep/server/http/controllers",
+        "products/data-cloud/docs/aep/README.md"
       ]
     },
     {
@@ -1171,7 +1241,12 @@
       "id": 23,
       "title": "Agent Governance, Mastery, and Safety Pass: Fix documented safety issues: approval/verification flag preservation, tenant source correctness, release tenant ID, mastery item state history validation.",
       "whereRefs": [
-        "platform/java/agent-core"
+        "platform/java/agent-core",
+        "products/data-cloud/planes/action/registry/src",
+        "products/data-cloud/planes/action/orchestrator/src",
+        "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/memory/retrieval/mastery",
+        "products/data-cloud/planes/context",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java"
       ]
     },
     {
@@ -1184,7 +1259,12 @@
       "id": 24,
       "title": "Agent Governance, Mastery, and Safety Pass: Separate execution strategy from supervision level.",
       "whereRefs": [
-        "platform/java/agent-core"
+        "platform/java/agent-core",
+        "products/data-cloud/planes/action/registry/src",
+        "products/data-cloud/planes/action/orchestrator/src",
+        "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/memory/retrieval/mastery",
+        "products/data-cloud/planes/context",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java"
       ]
     },
     {
@@ -1197,7 +1277,12 @@
       "id": 25,
       "title": "Agent Governance, Mastery, and Safety Pass: Enforce policy/tool/memory/replay/guardrail declarations for agent capabilities.",
       "whereRefs": [
-        "platform/java/agent-core"
+        "platform/java/agent-core",
+        "products/data-cloud/planes/action/registry/src",
+        "products/data-cloud/planes/action/orchestrator/src",
+        "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/memory/retrieval/mastery",
+        "products/data-cloud/planes/context",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java"
       ]
     },
     {
@@ -1210,7 +1295,12 @@
       "id": 26,
       "title": "Agent Governance, Mastery, and Safety Pass: Add tenant-scoped agent release and mastery queries.",
       "whereRefs": [
-        "platform/java/agent-core"
+        "platform/java/agent-core",
+        "products/data-cloud/planes/action/registry/src",
+        "products/data-cloud/planes/action/orchestrator/src",
+        "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/memory/retrieval/mastery",
+        "products/data-cloud/planes/context",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java"
       ]
     },
     {
@@ -1223,7 +1313,11 @@
       "id": 27,
       "title": "Audio-Video Productization and Data Cloud Integration: Add product manifest and lifecycle profile or explicitly keep it hidden as experimental.",
       "whereRefs": [
-        "products/audio-video/*"
+        "products/audio-video/*",
+        "products/data-cloud/planes/action/registry/src",
+        "products/audio-video/libs/java/common/src/main/java/com/ghatana/media",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataProductHandler.java",
+        "products/data-cloud/planes/operations"
       ]
     },
     {
@@ -1236,7 +1330,11 @@
       "id": 28,
       "title": "Audio-Video Productization and Data Cloud Integration: Enforce media privacy, content safety, artifact retention, biometric-risk, and consent policy.",
       "whereRefs": [
-        "products/audio-video/*"
+        "products/audio-video/*",
+        "products/data-cloud/planes/action/registry/src",
+        "products/audio-video/libs/java/common/src/main/java/com/ghatana/media",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataProductHandler.java",
+        "products/data-cloud/planes/operations"
       ]
     },
     {
@@ -1249,7 +1347,11 @@
       "id": 29,
       "title": "Audio-Video Productization and Data Cloud Integration: Connect STT/TTS/Vision/Multimodal outputs to Data Cloud datasets/events/catalog.",
       "whereRefs": [
-        "products/audio-video/*"
+        "products/audio-video/*",
+        "products/data-cloud/planes/action/registry/src",
+        "products/audio-video/libs/java/common/src/main/java/com/ghatana/media",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataProductHandler.java",
+        "products/data-cloud/planes/operations"
       ]
     },
     {
@@ -1262,7 +1364,11 @@
       "id": 30,
       "title": "Audio-Video Productization and Data Cloud Integration: Add runtime truth for each media processing dependency.",
       "whereRefs": [
-        "products/audio-video/*"
+        "products/audio-video/*",
+        "products/data-cloud/planes/action/registry/src",
+        "products/audio-video/libs/java/common/src/main/java/com/ghatana/media",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataProductHandler.java",
+        "products/data-cloud/planes/operations"
       ]
     },
     {
@@ -1275,7 +1381,11 @@
       "id": 31,
       "title": "Audio-Video Productization and Data Cloud Integration: Add minimal operator UI only after backend lifecycle is coherent.",
       "whereRefs": [
-        "products/audio-video/*"
+        "products/audio-video/*",
+        "products/data-cloud/planes/action/registry/src",
+        "products/audio-video/libs/java/common/src/main/java/com/ghatana/media",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataProductHandler.java",
+        "products/data-cloud/planes/operations"
       ]
     },
     {
@@ -1293,7 +1403,8 @@
         "platform/java/messaging",
         "platform/java/ai-integration",
         "platform/java/data-governance",
-        "platform/contracts"
+        "platform/contracts",
+        "products/data-cloud/planes"
       ]
     },
     {
@@ -1311,7 +1422,8 @@
         "platform/java/messaging",
         "platform/java/ai-integration",
         "platform/java/data-governance",
-        "platform/contracts"
+        "platform/contracts",
+        "products/data-cloud/planes"
       ]
     },
     {
@@ -1329,7 +1441,8 @@
         "platform/java/messaging",
         "platform/java/ai-integration",
         "platform/java/data-governance",
-        "platform/contracts"
+        "platform/contracts",
+        "products/data-cloud/planes"
       ]
     },
     {
@@ -1347,7 +1460,8 @@
         "platform/java/messaging",
         "platform/java/ai-integration",
         "platform/java/data-governance",
-        "platform/contracts"
+        "platform/contracts",
+        "products/data-cloud/planes"
       ]
     },
     {
@@ -1365,7 +1479,8 @@
         "platform/java/messaging",
         "platform/java/ai-integration",
         "platform/java/data-governance",
-        "platform/contracts"
+        "platform/contracts",
+        "products/data-cloud/planes"
       ]
     },
     {
@@ -1378,7 +1493,10 @@
       "id": 37,
       "title": "Security, Privacy, and Permission Matrix Pass: Register production validators centrally and prove they execute at startup.",
       "whereRefs": [
-        "DataCloudSecurityFilter"
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudSecurityFilter.java",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/",
+        "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/"
       ]
     },
     {
@@ -1391,7 +1509,10 @@
       "id": 38,
       "title": "Security, Privacy, and Permission Matrix Pass: Add permission matrix tests for viewer/operator/admin.",
       "whereRefs": [
-        "DataCloudSecurityFilter"
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudSecurityFilter.java",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/",
+        "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/"
       ]
     },
     {
@@ -1404,7 +1525,10 @@
       "id": 39,
       "title": "Security, Privacy, and Permission Matrix Pass: Add tenant mismatch, missing tenant, missing audit, missing policy, policy denial, audit failure tests.",
       "whereRefs": [
-        "DataCloudSecurityFilter"
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudSecurityFilter.java",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/",
+        "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/"
       ]
     },
     {
@@ -1417,7 +1541,10 @@
       "id": 40,
       "title": "Security, Privacy, and Permission Matrix Pass: Add audio-video PII/biometric policy enforcement.",
       "whereRefs": [
-        "DataCloudSecurityFilter"
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudSecurityFilter.java",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/",
+        "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/"
       ]
     },
     {
@@ -1430,7 +1557,10 @@
       "id": 41,
       "title": "Security, Privacy, and Permission Matrix Pass: Add break-glass tests.",
       "whereRefs": [
-        "DataCloudSecurityFilter"
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudSecurityFilter.java",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java",
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/",
+        "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/"
       ]
     },
     {
@@ -1442,7 +1572,12 @@
       "evidenceRefs": [],
       "id": 42,
       "title": "Observability, Reliability, and Idempotency Pass: Extend idempotency beyond entity writes to pipelines, events, governance, analytics, plugins, and agent actions.",
-      "whereRefs": []
+      "whereRefs": [
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/",
+        "products/data-cloud/delivery/ui/src/pages/OperationsConsolePage.tsx",
+        "products/data-cloud/delivery/ui/src/pages/RuntimeTruthPage.tsx",
+        "products/data-cloud/planes/action/agent-runtime"
+      ]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -1453,7 +1588,12 @@
       "evidenceRefs": [],
       "id": 43,
       "title": "Observability, Reliability, and Idempotency Pass: Add correlation IDs to every run/job/action/agent/media flow.",
-      "whereRefs": []
+      "whereRefs": [
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/",
+        "products/data-cloud/delivery/ui/src/pages/OperationsConsolePage.tsx",
+        "products/data-cloud/delivery/ui/src/pages/RuntimeTruthPage.tsx",
+        "products/data-cloud/planes/action/agent-runtime"
+      ]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -1464,7 +1604,12 @@
       "evidenceRefs": [],
       "id": 44,
       "title": "Observability, Reliability, and Idempotency Pass: Add durable job/run status, retry/cancel/rollback states.",
-      "whereRefs": []
+      "whereRefs": [
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/",
+        "products/data-cloud/delivery/ui/src/pages/OperationsConsolePage.tsx",
+        "products/data-cloud/delivery/ui/src/pages/RuntimeTruthPage.tsx",
+        "products/data-cloud/planes/action/agent-runtime"
+      ]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -1475,7 +1620,12 @@
       "evidenceRefs": [],
       "id": 45,
       "title": "Observability, Reliability, and Idempotency Pass: Add dead-letter/failure visibility for async workflows.",
-      "whereRefs": []
+      "whereRefs": [
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/",
+        "products/data-cloud/delivery/ui/src/pages/OperationsConsolePage.tsx",
+        "products/data-cloud/delivery/ui/src/pages/RuntimeTruthPage.tsx",
+        "products/data-cloud/planes/action/agent-runtime"
+      ]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -1486,7 +1636,12 @@
       "evidenceRefs": [],
       "id": 46,
       "title": "Observability, Reliability, and Idempotency Pass: Surface failed jobs in Operations without requiring logs.",
-      "whereRefs": []
+      "whereRefs": [
+        "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/",
+        "products/data-cloud/delivery/ui/src/pages/OperationsConsolePage.tsx",
+        "products/data-cloud/delivery/ui/src/pages/RuntimeTruthPage.tsx",
+        "products/data-cloud/planes/action/agent-runtime"
+      ]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -1497,7 +1652,12 @@
       "evidenceRefs": [],
       "id": 47,
       "title": "Test Consolidation Pass: Promote API contract and integration tests from advisory to release-blocking once stable.",
-      "whereRefs": []
+      "whereRefs": [
+        "products/data-cloud/integration-tests",
+        "products/data-cloud/delivery/ui/e2e",
+        "products/data-cloud/delivery/ui/src/__tests__/api",
+        "products/data-cloud/delivery/ui/src/__tests__/routes"
+      ]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -1508,7 +1668,12 @@
       "evidenceRefs": [],
       "id": 48,
       "title": "Test Consolidation Pass: Add one golden path E2E per main journey.",
-      "whereRefs": []
+      "whereRefs": [
+        "products/data-cloud/integration-tests",
+        "products/data-cloud/delivery/ui/e2e",
+        "products/data-cloud/delivery/ui/src/__tests__/api",
+        "products/data-cloud/delivery/ui/src/__tests__/routes"
+      ]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -1519,7 +1684,12 @@
       "evidenceRefs": [],
       "id": 49,
       "title": "Test Consolidation Pass: Add role/tenant matrix E2E.",
-      "whereRefs": []
+      "whereRefs": [
+        "products/data-cloud/integration-tests",
+        "products/data-cloud/delivery/ui/e2e",
+        "products/data-cloud/delivery/ui/src/__tests__/api",
+        "products/data-cloud/delivery/ui/src/__tests__/routes"
+      ]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -1530,7 +1700,12 @@
       "evidenceRefs": [],
       "id": 50,
       "title": "Test Consolidation Pass: Add pseudo-locale and raw-string enforcement.",
-      "whereRefs": []
+      "whereRefs": [
+        "products/data-cloud/integration-tests",
+        "products/data-cloud/delivery/ui/e2e",
+        "products/data-cloud/delivery/ui/src/__tests__/api",
+        "products/data-cloud/delivery/ui/src/__tests__/routes"
+      ]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -1541,47 +1716,14 @@
       "evidenceRefs": [],
       "id": 51,
       "title": "Test Consolidation Pass: Add keyboard/a11y tests for tables, nav, disabled surfaces, dialogs, and row actions.",
-      "whereRefs": []
+      "whereRefs": [
+        "products/data-cloud/integration-tests",
+        "products/data-cloud/delivery/ui/e2e",
+        "products/data-cloud/delivery/ui/src/__tests__/api",
+        "products/data-cloud/delivery/ui/src/__tests__/routes"
+      ]
     }
   ],
-  "warnings": [
-    "Task 1 references non-existing path \"products/data-cloud/delivery/launcher/.../RouteSecurityRegistry.java\"",
-    "Task 1 references non-existing path \"products/data-cloud/contracts/openapi/*.yaml\"",
-    "Task 2 references non-existing path \"products/data-cloud/delivery/launcher/.../RouteSecurityRegistry.java\"",
-    "Task 2 references non-existing path \"products/data-cloud/contracts/openapi/*.yaml\"",
-    "Task 3 references non-existing path \"products/data-cloud/delivery/launcher/.../RouteSecurityRegistry.java\"",
-    "Task 3 references non-existing path \"products/data-cloud/contracts/openapi/*.yaml\"",
-    "Task 4 references non-existing path \"products/data-cloud/delivery/launcher/.../RouteSecurityRegistry.java\"",
-    "Task 4 references non-existing path \"products/data-cloud/contracts/openapi/*.yaml\"",
-    "Task 5 references non-existing path \"products/data-cloud/delivery/launcher/.../RouteSecurityRegistry.java\"",
-    "Task 5 references non-existing path \"products/data-cloud/contracts/openapi/*.yaml\"",
-    "Task 6 has no parsed Where references in implementation plan",
-    "Task 7 has no parsed Where references in implementation plan",
-    "Task 8 has no parsed Where references in implementation plan",
-    "Task 9 has no parsed Where references in implementation plan",
-    "Task 10 has no parsed Where references in implementation plan",
-    "Task 11 references non-existing path \"DefaultLayout.tsx\"",
-    "Task 11 references non-existing path \"routes.tsx\"",
-    "Task 12 references non-existing path \"DefaultLayout.tsx\"",
-    "Task 12 references non-existing path \"routes.tsx\"",
-    "Task 13 references non-existing path \"DefaultLayout.tsx\"",
-    "Task 13 references non-existing path \"routes.tsx\"",
-    "Task 14 references non-existing path \"DefaultLayout.tsx\"",
-    "Task 14 references non-existing path \"routes.tsx\"",
-    "Task 15 references non-existing path \"DefaultLayout.tsx\"",
-    "Task 15 references non-existing path \"routes.tsx\"",
-    "Task 16 references non-existing path \"DefaultLayout.tsx\"",
-    "Task 16 references non-existing path \"routes.tsx\"",
-    "Task 42 has no parsed Where references in implementation plan",
-    "Task 43 has no parsed Where references in implementation plan",
-    "Task 44 has no parsed Where references in implementation plan",
-    "Task 45 has no parsed Where references in implementation plan",
-    "Task 46 has no parsed Where references in implementation plan",
-    "Task 47 has no parsed Where references in implementation plan",
-    "Task 48 has no parsed Where references in implementation plan",
-    "Task 49 has no parsed Where references in implementation plan",
-    "Task 50 has no parsed Where references in implementation plan",
-    "Task 51 has no parsed Where references in implementation plan"
-  ],
+  "warnings": [],
   "violations": []
 }

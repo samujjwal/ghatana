@@ -1,45 +1,29 @@
 import type React from 'react';
+import { Suspense } from 'react';
 import { useTranslation } from '@ghatana/i18n';
 
 import { ProductFamilyControlPlanePage } from '../../pages/product-family/ProductFamilyControlPlanePage';
-import { useCapabilityGate } from '../../hooks/useCapabilityGate';
 import { YappcPageShell } from '../../components/layout/YappcPageShell';
-
-function ProductFamilyGate({ children }: { children: React.ReactNode }) {
-  const { granted, reason } = useCapabilityGate('product-family:control-plane');
-  const { t } = useTranslation('common');
-
-  if (!granted) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center" data-testid="product-family-unavailable">
-        <div className="space-y-2 text-center">
-          <p className="text-sm text-fg-muted">
-            {reason === 'insufficient-role'
-              ? t('productFamily.denied.permission')
-              : reason === 'unauthenticated'
-                ? t('productFamily.denied.login')
-                : t('productFamily.denied.unavailable')}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
-}
+import { RouteLoadingSpinner } from '../../components/route/LoadingSpinner';
+import { RouteErrorBoundary } from '../../components/route/ErrorBoundary';
+import { AdminRouteGate } from './admin/AdminRouteGate';
 
 export function Component(): React.ReactElement {
   return (
-    <ProductFamilyGate>
+    <AdminRouteGate capability="product-family:control-plane" deniedTestId="product-family-unavailable">
       <YappcPageShell
         title="Product Family"
         description="Release readiness and reusable asset control plane across product surfaces."
         testId="product-family-shell"
       >
-        <ProductFamilyControlPlanePage />
+        <Suspense fallback={<RouteLoadingSpinner />}>
+          <ProductFamilyControlPlanePage />
+        </Suspense>
       </YappcPageShell>
-    </ProductFamilyGate>
+    </AdminRouteGate>
   );
 }
+
+export const ErrorBoundary = RouteErrorBoundary;
 
 export default Component;

@@ -74,7 +74,6 @@ public final class PhrAuthRoutes {
     public AsyncServlet getServlet() {
         return RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/login", this::handleLogin)
-            .with(HttpMethod.POST, "/sign-in", this::handleLogin) // Alias for /login for IA compatibility
             .with(HttpMethod.POST, "/logout", this::handleLogout)
             .with(HttpMethod.GET, "/me", this::handleMe)
             .build();

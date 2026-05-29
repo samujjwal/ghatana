@@ -9,7 +9,6 @@ on:
       - 'scripts/check-*.mjs'
       - 'scripts/generate-*.mjs'
       - 'docs/**'
-      - 'code-audits/**'
       - '.github/workflows/aep-data-cloud-architecture-gates.yml'
   workflow_dispatch:
 

@@ -384,6 +384,8 @@ public final class ProductUnitIntentExporter {
             ? intentId
             : request.correlationId();
         Map<String, Object> metadata = new LinkedHashMap<>(request.metadata());
+        // KRN-05: Redact sensitive metadata before export
+        metadata = redactSensitiveMetadata(metadata);
         metadata.put("producer", PRODUCER_TYPE);
         metadata.put("sourcePhase", request.sourcePhase());
         metadata.put("projectId", request.projectId());
@@ -408,7 +410,7 @@ public final class ProductUnitIntentExporter {
                         inferredKind,
                         request.surfaces().stream()
                     .map(surface -> new ProductUnitIntentDocument.ProductUnitSurfaceDocument(
-                                        request.projectId() + "-" + surface,
+                                        canonicalSurfaceId(request.projectId(), surface),
                                         surface,
                                         "planned"))
                                 .toList(),
@@ -423,6 +425,41 @@ public final class ProductUnitIntentExporter {
 
     private String generateIntentId() {
         return intentIdSupplier.get();
+    }
+
+    /**
+     * KRN-04: Generates a canonical, deterministic surface ID.
+     * Surface IDs are stable across repeated exports and follow the contract-approved pattern.
+     *
+     * @param projectId the project ID
+     * @param surface the surface name
+     * @return canonical surface ID in the format "projectId-surface"
+     */
+    private String canonicalSurfaceId(String projectId, String surface) {
+        return projectId + "-" + surface;
+    }
+
+    /**
+     * KRN-05: Redacts sensitive metadata before export.
+     * Removes keys that may contain sensitive information like passwords, tokens, or secrets.
+     */
+    private Map<String, Object> redactSensitiveMetadata(Map<String, Object> metadata) {
+        Map<String, Object> redacted = new LinkedHashMap<>(metadata);
+        // Remove known sensitive keys
+        redacted.remove("password");
+        redacted.remove("token");
+        redacted.remove("secret");
+        redacted.remove("apiKey");
+        redacted.remove("accessToken");
+        redacted.remove("refreshToken");
+        redacted.remove("privateKey");
+        redacted.remove("credentials");
+        // Remove keys containing sensitive patterns
+        redacted.keySet().removeIf(key -> key.toLowerCase().contains("password") 
+            || key.toLowerCase().contains("token") 
+            || key.toLowerCase().contains("secret") 
+            || key.toLowerCase().contains("key"));
+        return redacted;
     }
 
     private String inferKindFromTargetType(String targetType) {

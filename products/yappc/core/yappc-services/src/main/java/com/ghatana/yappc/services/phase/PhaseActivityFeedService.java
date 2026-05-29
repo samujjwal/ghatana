@@ -17,13 +17,13 @@ import java.util.Optional;
 /**
  * Queries and maps phase activity feed entries.
  */
-final class PhaseActivityFeedService {
+public final class PhaseActivityFeedService {
 
     private static final Logger log = LoggerFactory.getLogger(PhaseActivityFeedService.class);
 
     private final AuditService auditService;
 
-    PhaseActivityFeedService(@NotNull AuditService auditService) {
+    public PhaseActivityFeedService(@NotNull AuditService auditService) {
         this.auditService = Objects.requireNonNull(auditService, "auditService");
     }
 

@@ -1,8 +1,8 @@
 {
   "productId": "phr",
   "evidenceType": "fhir-compliance",
-  "generatedAt": "2026-05-28T23:16:05.530Z",
-  "targetCommitSha": "test-evidence-commit-001",
+  "generatedAt": "2026-05-29T01:23:54.086Z",
+  "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
   "fhirVersion": "R4",
   "validationEnabled": true,
   "description": "PHR FHIR R4 compliance — all supported resource types pass FHIR schema validation",
@@ -25,9 +25,9 @@
     "generatedBy": "scripts/check-phr-fhir-validation.mjs",
     "command": "node scripts/check-phr-fhir-validation.mjs",
     "source": "scripts/check-phr-fhir-validation.mjs",
-    "commit": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
-    "sourceCommitSha": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
-    "targetCommitSha": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+    "commit": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+    "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+    "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
     "targetEnvironment": "staging"
   }
 }

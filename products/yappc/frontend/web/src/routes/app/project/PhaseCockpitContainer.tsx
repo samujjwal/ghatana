@@ -298,18 +298,26 @@ export function PhaseCockpitContainer({ phase }: PhaseCockpitContainerProps): Re
   const governanceOutcome = packet.governance[0]?.outcome
     ?? t('phaseCockpit.contract.readyWithoutReview');
 
-  const isCtaDisabled = !primaryPacketAction?.enabled || isDependencyDegraded || actionMutation.isPending;
+  // FE-06: Reduce fallback/action ambiguity - single source of truth for action availability
+  const isActionAvailable = Boolean(primaryPacketAction?.enabled) && !isDependencyDegraded && !actionMutation.isPending;
+  const primaryActionDisabledReason = actionMutation.isPending
+    ? t('phaseCockpit.disabled.running')
+    : primaryPacketAction?.disabledReason
+      ? actionText(primaryPacketAction.disabledReason)
+      : isDependencyDegraded
+        ? packet.degradedDetails?.recoveryAction ?? t('phaseCockpit.disabled.degradedDependency')
+        : !primaryPacketAction
+          ? t('phaseCockpit.disabled.noBackendAction')
+          : undefined;
   const primaryActionId = primaryPacketAction?.actionId ?? null;
-  const runContextId = actionResult?.runId ?? null;
 
   const actionSectionsMap = new Map<string, PhaseActionSectionGroup>();
   packet.availableActions
     .filter((action) => action.actionId !== primaryActionId)
     .forEach((action) => {
       const operation = action.serverOperation ?? action.actionId;
-      if (RUN_CONTEXT_OPERATIONS.has(operation) && !runContextId) {
-        return;
-      }
+      // FE-05: Do not hide backend-provided run actions due to local run context
+      // Backend now provides run context in packet.platformRunStatus, so we dont need to filter based on local runContextId
 
       const sectionMeta = categorySectionMeta(action.category ?? 'general', t);
       const existingActions = actionSectionsMap.get(sectionMeta.testId)?.actions ?? [];
@@ -329,18 +337,6 @@ export function PhaseCockpitContainer({ phase }: PhaseCockpitContainerProps): Re
     ...actionSectionsMap.values(),
   ].filter((section) => section.actions.length > 0);
 
-  const disabledReason = actionMutation.isPending
-    ? t('phaseCockpit.disabled.running')
-    : primaryPacketAction?.disabledReason
-      ? actionText(primaryPacketAction.disabledReason)
-      : isDependencyDegraded
-        ? packet.degradedDetails?.recoveryAction ?? t('phaseCockpit.disabled.degradedDependency')
-        : !primaryPacketAction
-          ? t('phaseCockpit.disabled.noBackendAction')
-          : undefined;
-
-  const canExecutePrimaryAction = Boolean(primaryPacketAction?.enabled) && !isDependencyDegraded;
-
   return (
     <PhaseCockpitView
       phase={phase}
@@ -348,15 +344,15 @@ export function PhaseCockpitContainer({ phase }: PhaseCockpitContainerProps): Re
       phaseDescription={t('phaseCockpit.layout.description', { phase, projectName })}
       primaryTitle={actionText(primaryPacketAction?.label) ?? t('phaseCockpit.primary.title', { phase })}
       primaryDescription={actionText(primaryPacketAction?.description) ?? t('phaseCockpit.primary.description')}
-      primaryActionLabel={canExecutePrimaryAction
+      primaryActionLabel={isActionAvailable
         ? actionText(primaryPacketAction?.label) ?? primaryPacketAction?.actionId ?? t('phaseCockpit.primary.viewBlockers')
         : t('phaseCockpit.primary.viewBlockers')}
       primaryIcon={resolvePhaseIcon(PHASE_ICON_IDS[phase])}
       primaryActionTestId={PRIMARY_ACTION_TEST_IDS[phase] ?? `${phase}-advance-action`}
       secondaryActionLabel={t('phaseCockpit.primary.reviewDetails')}
-      isPrimaryDisabled={isCtaDisabled}
-      disabledReason={disabledReason}
-      canExecutePrimaryAction={canExecutePrimaryAction}
+      isPrimaryDisabled={!isActionAvailable}
+      disabledReason={primaryActionDisabledReason}
+      canExecutePrimaryAction={isActionAvailable}
       onPrimaryAction={handlePrimaryAction}
       onViewBlockers={scrollToBlockerPanel}
       onSecondaryAction={handleSecondaryAction}

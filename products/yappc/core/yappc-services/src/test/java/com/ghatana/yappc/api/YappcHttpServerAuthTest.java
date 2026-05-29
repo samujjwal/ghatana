@@ -10,6 +10,7 @@ import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.domain.pageartifact.InMemoryPageArtifactRepository;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactResourceScopeAuthorizer;
 import com.ghatana.yappc.domain.pageartifact.http.PageArtifactController;
+import com.ghatana.yappc.ai.abtesting.ABTestingEvaluationService;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
@@ -139,7 +140,7 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
             new AdminAbTestingController(
                 mock(com.ghatana.datacloud.DataCloudClient.class),
                 new ObjectMapper(),
-                new com.ghatana.yappc.ai.abtesting.ABTestingEvaluationService(),
+                new ABTestingEvaluationService(),
                 new com.ghatana.yappc.ai.PromptLifecycleService(
                     new com.ghatana.yappc.ai.PromptTemplateRegistry(),
                     event -> Promise.complete()

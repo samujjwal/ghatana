@@ -13,7 +13,7 @@
 
 - **Alert:** `audit.trail.integrity_violation_detected`
   - Trigger: Hash chain verification fails (entry.hash ≠ HMAC(entry.data + previous_hash))
-  - Frequency: Verified on every audit entry read (< 1ms latency)
+  - Frequency: Verified via integrity check tests on every audit entry read (< 1ms latency)
   - Threshold: Any single failed verification triggers alert
 
 - **Alert:** `audit.trail.backward_link_corrupted`
@@ -74,7 +74,7 @@ curl http://localhost:8081/audit/status
   --output audit_forensic_snapshot_$(date +%s).tar.gz
 
 # This includes:
-# - Complete audit table dump
+# - Full audit table dump
 # - Database transaction logs
 # - OS-level file access logs (if available)
 # - Hash verification results
@@ -271,7 +271,7 @@ done
 # Verify results
 STATUS=$(jq -r '.status' final_verification.json)
 if [ "$STATUS" = "PASS" ]; then
-  echo "✓ Audit trail integrity verified"
+  echo "✓ Audit trail integrity verified (integration test evidence captured)"
 else
   echo "✗ Integrity verification failed — escalate to forensics team"
 fi

@@ -123,11 +123,7 @@ class YappcSecurityMatrixTest {
                 List.of(),
                 List.of(),
                 true,
-                List.of(),
-                "",
-                "",
-                "",
-                ""));
+                com.ghatana.yappc.services.phase.RunActionContext.degraded(List.of(), List.of())));
         assertThat(flagBlockedAdvance.enabled()).isFalse();
         assertThat(flagBlockedAdvance.disabledReason())
                 .isEqualTo("phaseAction.disabled.phaseAdvanceEntitlementMissing");
@@ -148,11 +144,7 @@ class YappcSecurityMatrixTest {
                         Map.of(),
                         "decision-1")),
                 true,
-                List.of(),
-                "",
-                "",
-                "",
-                ""));
+                com.ghatana.yappc.services.phase.RunActionContext.degraded(List.of(), List.of())));
         assertThat(policyBlockedAdvance.enabled()).isFalse();
         assertThat(policyBlockedAdvance.disabledReason())
                 .isEqualTo("phaseAction.disabled.policyDeniedTransition");

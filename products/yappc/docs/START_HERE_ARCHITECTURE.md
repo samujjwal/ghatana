@@ -20,7 +20,7 @@ Do not describe these as primary architecture in docs, reviews, or CI:
 - `core:lifecycle`
 - old `services:lifecycle` naming where the canonical module is now `core/services-lifecycle`
 
-Historical migration narratives belong in `docs/archive/`, dated audit documents, or implementation-plan history.
+Historical migration narratives belong in dated audit history and ADR records outside the canonical active-doc surface.
 
 ## Contributor Routing
 

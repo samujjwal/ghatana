@@ -6,15 +6,15 @@ import { fileURLToPath } from 'node:url';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, '..');
-const pnpmCommand = 'pnpm';
-const pnpmShell = process.platform === 'win32';
+const pnpmCommand = process.platform === 'win32' ? 'cmd.exe' : 'pnpm';
+const pnpmArgsPrefix = process.platform === 'win32' ? ['/d', '/s', '/c', 'pnpm'] : [];
 
 const checks = [
   {
     name: 'Kernel route-entitlement conformance package',
     command: pnpmCommand,
-    shell: pnpmShell,
     args: [
+      ...pnpmArgsPrefix,
       '--dir',
       'platform/typescript/product-conformance',
       'exec',
@@ -60,8 +60,8 @@ const checks = [
   {
     name: 'FlashIt backend route-entitlement behavior',
     command: pnpmCommand,
-    shell: pnpmShell,
     args: [
+      ...pnpmArgsPrefix,
       '--dir',
       'products/flashit/backend/gateway',
       'exec',

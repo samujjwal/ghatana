@@ -111,8 +111,8 @@ function packetFixture(): PhaseCockpitPacket {
       auditType: 'shape.primary.requested',
       parameters: {
         confidence: 0.91,
-        evidence: ['shape-evidence-1'],
-        riskLevel: 'low',
+        evidenceIds: ['shape-evidence-1'],
+        riskReason: 'low',
         applyMode: 'one-click',
         approvalRequired: false,
         rollbackSupported: true,

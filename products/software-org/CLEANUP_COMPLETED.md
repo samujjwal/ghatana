@@ -19,7 +19,6 @@ Successfully cleaned up unused/build directories and outdated documentation from
 - `src/` - Old source folder (duplicates in apps/backend/src)
 - `performance/` - Performance testing folder
 - `docs/CURRENT_TODOS/` - Archived TODO items
-- `docs/archive/` - Archived documentation
 
 ### Outdated Documentation (48 markdown files)
 Removed all session summaries, cleanup logs, and progress documentation from earlier phases:

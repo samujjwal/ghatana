@@ -58,12 +58,8 @@ const EXCLUDED_DIRS = [
   'tests',
   'fixtures',
   'test-results',
-  'docs',
-  'code-audits',
   'docs/archive',
   'docs/legacy',
-  'scripts',
-  'templates',
 ];
 
 const EXCLUDED_FILES = [

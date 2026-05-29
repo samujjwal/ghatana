@@ -7,44 +7,81 @@ import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class ProductFamilyService {
     /**
-     * Get product-family release readiness
+     * Get product release readiness
      * @param productKey
-     * @returns any Product-family release readiness
+     * @returns any Data Cloud-backed release readiness read model
      * @throws ApiError
      */
     public static getProductFamilyReleaseReadiness(
         productKey: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<Record<string, any>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/yappc/product-family/releases/{productKey}',
             path: {
                 'productKey': productKey,
             },
+            errors: {
+                400: `Bad request — invalid or missing parameters`,
+                503: `Data Cloud read model unavailable`,
+            },
         });
     }
     /**
-     * List product-family assets
-     * @returns any Product-family assets
+     * List reusable product-family assets
+     * @param search
+     * @param product
+     * @param domain
+     * @param type
+     * @param maturity
+     * @param reuseMode
+     * @param compatibility
+     * @returns any Product-family asset registry read model
      * @throws ApiError
      */
-    public static listProductFamilyAssets(): CancelablePromise<any> {
+    public static listProductFamilyAssets(
+        search?: string,
+        product?: string,
+        domain?: string,
+        type?: string,
+        maturity?: string,
+        reuseMode?: string,
+        compatibility?: string,
+    ): CancelablePromise<Record<string, any>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/yappc/product-family/assets',
+            query: {
+                'search': search,
+                'product': product,
+                'domain': domain,
+                'type': type,
+                'maturity': maturity,
+                'reuseMode': reuseMode,
+                'compatibility': compatibility,
+            },
+            errors: {
+                400: `Bad request — invalid or missing parameters`,
+                503: `Data Cloud read model unavailable`,
+            },
         });
     }
     /**
-     * Promote product-family asset
+     * Promote a reusable product-family asset
      * @param assetId
      * @param requestBody
-     * @returns any Product-family asset promotion recorded
+     * @returns any Asset promotion result
      * @throws ApiError
      */
     public static promoteProductFamilyAsset(
         assetId: string,
-        requestBody: Record<string, any>,
-    ): CancelablePromise<any> {
+        requestBody: {
+            targetState: 'hardened' | 'production' | 'shared-package' | 'plugin' | 'template' | 'schema';
+            promotionTarget?: string;
+            evidenceRefs?: Array<any>;
+            reason?: string;
+        },
+    ): CancelablePromise<Record<string, any>> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/yappc/product-family/assets/{assetId}/promotions',
@@ -54,54 +91,68 @@ export class ProductFamilyService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `Bad request â€” invalid or missing parameters`,
+                400: `Bad request — invalid or missing parameters`,
+                404: `Resource not found`,
+                409: `Promotion transition is not allowed`,
+                503: `Data Cloud read model unavailable`,
             },
         });
     }
     /**
-     * List product-family documentation truth warnings
-     * @returns any Product-family documentation truth warnings
+     * List doc, registry, and code truth warnings
+     * @returns any Doc-truth warning read model
      * @throws ApiError
      */
-    public static listProductFamilyDocTruthWarnings(): CancelablePromise<any> {
+    public static listProductFamilyDocTruthWarnings(): CancelablePromise<Record<string, any>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/yappc/product-family/doc-truth',
+            errors: {
+                400: `Bad request — invalid or missing parameters`,
+                503: `Data Cloud read model unavailable`,
+            },
         });
     }
     /**
-     * List product-family reuse recommendations
+     * List guided reusable-asset recommendations
      * @param targetProduct
-     * @returns any Product-family reuse recommendations
+     * @returns any Guided reuse recommendations for a target product
      * @throws ApiError
      */
     public static listProductFamilyReuseRecommendations(
         targetProduct: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<Record<string, any>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/yappc/product-family/reuse-recommendations/{targetProduct}',
             path: {
                 'targetProduct': targetProduct,
             },
+            errors: {
+                400: `Bad request — invalid or missing parameters`,
+                503: `Data Cloud read model unavailable`,
+            },
         });
     }
     /**
-     * Get product-family Kernel timeline
+     * Get Kernel lifecycle timeline and rollback visibility
      * @param productUnitId
-     * @returns any Product-family Kernel timeline
+     * @returns any Kernel public-event lifecycle timeline read model
      * @throws ApiError
      */
     public static getProductFamilyKernelTimeline(
         productUnitId: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<Record<string, any>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/yappc/product-family/kernel-timeline/{productUnitId}',
             path: {
                 'productUnitId': productUnitId,
             },
+            errors: {
+                400: `Bad request — invalid or missing parameters`,
+                503: `Data Cloud read model unavailable`,
+            },
         });
     }
 }
-

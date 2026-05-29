@@ -18,6 +18,7 @@ import { useCapabilityGate } from '../../../hooks/useCapabilityGate';
 import { YappcPageShell } from '../../../components/layout/YappcPageShell';
 import { RouteLoadingSpinner } from '../../../components/route/LoadingSpinner';
 import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
+import { AdminRouteGate } from './AdminRouteGate';
 
 // ── Coming-soon placeholder ────────────────────────────────────────────────────
 
@@ -30,13 +31,11 @@ function BillingComingSoon({ reason }: { reason: 'backend-not-live' | 'insuffici
       : 'Billing is not yet available in this workspace.';
 
   return (
-    <YappcPageShell title="Billing" description="Monitor billing, plan limits, and payment readiness." testId="billing-shell">
-      <div className="flex min-h-[40vh] items-center justify-center" data-testid="billing-unavailable">
-        <div className="max-w-sm space-y-2 text-center">
-          <p className="text-sm text-fg-muted">{message}</p>
-        </div>
+    <div className="flex min-h-[40vh] items-center justify-center" data-testid="billing-unavailable">
+      <div className="max-w-sm space-y-2 text-center">
+        <p className="text-sm text-fg-muted">{message}</p>
       </div>
-    </YappcPageShell>
+    </div>
   );
 }
 
@@ -67,13 +66,15 @@ function BillingPage() {
 
 export function Component() {
   return (
-    <BillingGate>
-      <YappcPageShell title="Billing" description="Monitor billing, plan limits, and payment readiness." testId="billing-shell">
-        <Suspense fallback={<RouteLoadingSpinner />}>
-          <BillingPage />
-        </Suspense>
+    <AdminRouteGate capability="admin:billing" deniedTestId="admin-billing-unavailable">
+      <YappcPageShell title="Billing" description="Monitor billing, plan limits, and payment readiness." testId="admin-billing-shell">
+        <BillingGate>
+          <Suspense fallback={<RouteLoadingSpinner />}>
+            <BillingPage />
+          </Suspense>
+        </BillingGate>
       </YappcPageShell>
-    </BillingGate>
+    </AdminRouteGate>
   );
 }
 

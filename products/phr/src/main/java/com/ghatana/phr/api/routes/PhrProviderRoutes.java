@@ -121,12 +121,6 @@ public final class PhrProviderRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
-            return PhrRouteSupport.errorResponse(403, "CLINICAL_ROLE_REQUIRED",
-                "Only clinician or admin principals may view patient clinical summaries",
-                context.correlationId());
-        }
-
         String patientId = request.getPathParameter("patientId");
         return policyEvaluator.canAccessPhiResourceAsync(
             context,
@@ -167,12 +161,6 @@ public final class PhrProviderRoutes {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
-        }
-
-        if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
-            return PhrRouteSupport.errorResponse(403, "CLINICAL_ROLE_REQUIRED",
-                "Only clinician or admin principals may view patient details",
-                context.correlationId());
         }
 
         String patientId = request.getPathParameter("patientId");
@@ -233,12 +221,6 @@ public final class PhrProviderRoutes {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
-        }
-
-        if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
-            return PhrRouteSupport.errorResponse(403, "CLINICAL_ROLE_REQUIRED",
-                "Only clinician or admin principals may create encounters",
-                context.correlationId());
         }
 
         String patientId = request.getPathParameter("patientId");
@@ -304,12 +286,6 @@ public final class PhrProviderRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
-            return PhrRouteSupport.errorResponse(403, "CLINICAL_ROLE_REQUIRED",
-                "Only clinician or admin principals may view encounters",
-                context.correlationId());
-        }
-
         String patientId = request.getPathParameter("patientId");
         String encounterId = request.getPathParameter("encounterId");
         return policyEvaluator.canAccessPhiResourceAsync(
@@ -360,12 +336,6 @@ public final class PhrProviderRoutes {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
-        }
-
-        if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
-            return PhrRouteSupport.errorResponse(403, "CLINICAL_ROLE_REQUIRED",
-                "Only clinician or admin principals may update encounters",
-                context.correlationId());
         }
 
         String patientId = request.getPathParameter("patientId");
@@ -432,12 +402,6 @@ public final class PhrProviderRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
-            return PhrRouteSupport.errorResponse(403, "CLINICAL_ROLE_REQUIRED",
-                "Only clinician or admin principals may complete encounters",
-                context.correlationId());
-        }
-
         String patientId = request.getPathParameter("patientId");
         String encounterId = request.getPathParameter("encounterId");
         return policyEvaluator.canAccessPhiResourceAsync(
@@ -480,12 +444,6 @@ public final class PhrProviderRoutes {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
-        }
-
-        if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
-            return PhrRouteSupport.errorResponse(403, "CLINICAL_ROLE_REQUIRED",
-                "Only clinician or admin principals may prescribe medications",
-                context.correlationId());
         }
 
         String patientId = request.getPathParameter("patientId");

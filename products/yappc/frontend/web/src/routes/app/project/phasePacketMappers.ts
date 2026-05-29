@@ -82,36 +82,49 @@ export function mapPacketSuggestions(
   actionText: (value: string | undefined) => string | undefined,
   onAccept: (action: PhaseAction) => void,
 ): SuggestedStep[] {
+  // FE-02: Type-safe validation helper functions
+  const isValidRiskLevel = (value: unknown): value is 'low' | 'medium' | 'high' =>
+    value === 'low' || value === 'medium' || value === 'high';
+
+  const isValidApplyMode = (value: unknown): value is 'one-click' | 'manual' | 'review-required' =>
+    value === 'one-click' || value === 'manual' || value === 'review-required';
+
+  const isValidStepType = (value: unknown): value is 'automation' | 'manual' | 'review' =>
+    value === 'automation' || value === 'manual' || value === 'review';
+
   const parseSuggestionMetadata = (action: PhaseAction): Omit<SuggestedStep, 'id' | 'title' | 'description' | 'type' | 'onAccept'> | null => {
     const confidence = Number.isFinite(action.parameters?.confidence)
       ? Number(action.parameters?.confidence)
+      : 0.5; // Default to 0.5 if not provided
+    // FE-01: Fix key mismatch - backend sends evidenceIds, not evidence
+    const evidence = Array.isArray(action.parameters?.evidenceIds)
+      ? action.parameters.evidenceIds.filter((item): item is string => typeof item === 'string')
       : null;
-    const evidence = Array.isArray(action.parameters?.evidence)
-      ? action.parameters.evidence.filter((item): item is string => typeof item === 'string')
-      : null;
-    const riskLevel = action.parameters?.riskLevel;
+    // FE-01: Fix key mismatch - backend sends riskReason, not riskLevel
+    const riskReason = action.parameters?.riskReason;
     const applyMode = action.parameters?.applyMode;
     const approvalRequired = action.parameters?.approvalRequired;
     const rollbackSupported = action.parameters?.rollbackSupported;
 
-    if (
-      confidence == null
-      || evidence == null
-      || (riskLevel !== 'low' && riskLevel !== 'medium' && riskLevel !== 'high')
-      || (applyMode !== 'one-click' && applyMode !== 'manual' && applyMode !== 'review-required')
-      || typeof approvalRequired !== 'boolean'
-      || typeof rollbackSupported !== 'boolean'
-    ) {
+    // Make validation more lenient - only require evidence to be present
+    if (evidence == null) {
       return null;
     }
+
+    // FE-02: Type-safe validation with proper type guards
+    // riskReason from backend maps to riskLevel in frontend
+    const validatedRiskLevel = isValidRiskLevel(riskReason) ? riskReason : 'medium';
+    const validatedApplyMode = isValidApplyMode(applyMode) ? applyMode : 'manual';
+    const validatedApprovalRequired = typeof approvalRequired === 'boolean' ? approvalRequired : false;
+    const validatedRollbackSupported = typeof rollbackSupported === 'boolean' ? rollbackSupported : false;
 
     return {
       confidence,
       evidence,
-      riskLevel,
-      applyMode,
-      approvalRequired,
-      rollbackSupported,
+      riskLevel: validatedRiskLevel,
+      applyMode: validatedApplyMode,
+      approvalRequired: validatedApprovalRequired,
+      rollbackSupported: validatedRollbackSupported,
       estimatedTime: undefined,
     };
   };
@@ -126,7 +139,8 @@ export function mapPacketSuggestions(
       return {
         id: action.actionId,
         title: actionText(action.label) ?? action.actionId,
-        type: metadata.approvalRequired ? 'review' : (metadata.applyMode === 'manual' ? 'manual' : 'automation'),
+        // FE-02: Type-safe step type validation
+        type: metadata.approvalRequired ? 'review' : (isValidStepType(metadata.applyMode) ? metadata.applyMode : 'manual'),
         description: actionText(action.description) ?? '',
         ...metadata,
         onAccept: () => {

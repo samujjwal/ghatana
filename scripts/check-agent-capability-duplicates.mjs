@@ -65,9 +65,7 @@ const FORBIDDEN_PATTERNS = [
 ];
 
 // Files that are allowed to contain forbidden patterns for documentation purposes
-const ALLOWED_FORBIDDEN_PATTERN_FILES = new Set([
-  'docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md',
-]);
+const ALLOWED_FORBIDDEN_PATTERN_FILES = new Set([]);
 
 const TEXT_EXTENSIONS = new Set(['.java', '.md', '.kts', '.gradle', '.mjs', '.js', '.json', '.yaml', '.yml']);
 const UNIFIED_OPERATOR_COMPATIBILITY_DEADLINE = '2026-06-30';

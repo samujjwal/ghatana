@@ -1,7 +1,7 @@
 # Artifact Compiler/Decompiler Implementation Summary
 
 ## Overview
-This document summarizes the implementation of all tasks from the archived `docs/archive/comp-decomp-todo-legacy.md` in a production-grade manner following the guidelines from `.github/copilot-instructions.md`.
+This document summarizes completion of the legacy comp/decomp todo stream in a production-grade manner following the guidelines from `.github/copilot-instructions.md`.
 
 ## Implementation Status: COMPLETE
 

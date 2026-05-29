@@ -77,12 +77,6 @@ public final class PhrEmergencyRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        // Policy gate: emergency access requires clinical role or admin
-        if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
-            return PhrRouteSupport.errorResponse(403, "EMERGENCY_ACCESS_FORBIDDEN",
-                "Emergency break-glass access requires clinician or admin role");
-        }
-
         return request.loadBody()
             .then(body -> {
                 EmergencyAccessLogService.EmergencyAccessEvent event;

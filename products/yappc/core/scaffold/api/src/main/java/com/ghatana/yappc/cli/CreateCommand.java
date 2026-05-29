@@ -101,8 +101,8 @@ public class CreateCommand implements Callable<Integer> {
     @Option(names = {"--workspace-id"}, description = "Workspace ID for kernel-product-unit provenance")
     private String workspaceId;
 
-    @Option(names = {"--tenant-id"}, description = "Tenant ID for kernel-product-unit scope (default: default-tenant)")
-    private String tenantId = "default-tenant";
+    @Option(names = {"--tenant-id"}, description = "Tenant ID for kernel-product-unit scope (required)")
+    private String tenantId;
 
     @Option(names = {"--project-id"}, description = "Project/ProductUnit ID for kernel-product-unit provenance")
     private String projectId;
@@ -194,84 +194,37 @@ public class CreateCommand implements Callable<Integer> {
     }
 
     private Integer executeKernelProductUnitCreate() {
-        try {
-            // Validate required parameters for kernel-product-unit
-            if (projectName == null || projectName.isBlank()) {
-                log.error("❌ Error: Project name is required for kernel-product-unit target.");
-                return 1;
-            }
+        ProductUnitIntentCommandService service = new ProductUnitIntentCommandService();
 
-            if (workspaceId == null || workspaceId.isBlank()) {
-                log.error("❌ Error: --workspace-id is required for kernel-product-unit target.");
-                return 1;
-            }
-            if (projectId == null || projectId.isBlank()) {
-                log.error("❌ Error: --project-id is required for kernel-product-unit target.");
-                return 1;
-            }
-            if (lifecycleProfile == null || lifecycleProfile.isBlank()) {
-                log.error("❌ Error: --lifecycle-profile is required for kernel-product-unit target.");
-                return 1;
-            }
+        // Validate parameters
+        ProductUnitIntentCommandService.ValidationResult validation = service.validateParameters(
+                projectName, tenantId, workspaceId, projectId, lifecycleProfile
+        );
 
-            String productUnitId = toKebabCase(projectId);
-            List<String> requestedSurfaces = inferSurfaces();
-            if (requestedSurfaces.isEmpty()) {
-                log.error("❌ Error: at least one --surface is required for kernel-product-unit target.");
-                return 1;
-            }
-
-            // Determine intent output path
-            Path intentPath = resolveIntentOutputPath();
-
-            // Create exporter and validation service
-            ProductUnitIntentExporter exporter = new ProductUnitIntentExporter();
-            ProductUnitIntentValidationService validator = new ProductUnitIntentValidationService();
-
-            // Build the export request
-            ProductUnitIntentExporter.Request request = ProductUnitIntentExporter.Request.builder()
-                    .projectId(productUnitId)
-                    .projectName(projectName)
-                    .targetType("kernel-product-unit")
-                    .surfaces(requestedSurfaces)
-                    .runtimeProvider(runtimeProvider)
-                    .sourceProvider(runtimeProvider)
-                    .lifecycleProfile(lifecycleProfile)
-                    .tenantId(tenantId)
-                    .workspaceId(workspaceId)
-                    .sourcePhase("generate")
-                    .build();
-
-            // Generate and validate intent
-            ProductUnitIntentExporter.ExportResult exportResult = exporter.buildIntent(request);
-            ProductUnitIntentValidationService.ValidationResult validationResult = validator.validate(exportResult.intent());
-
-            if (!validationResult.isValid()) {
-                log.error("❌ ProductUnitIntent validation failed:");
-                for (String error : validationResult.errors()) {
-                    log.error("   - {}", error);
-                }
-                return 1;
-            }
-
-            // Write intent to file
-            exporter.export(request, intentPath);
-
-            log.info("\n✅ ProductUnitIntent generated successfully");
-            log.info("   Intent file: {}", intentPath.toAbsolutePath());
-            log.info("   ProductUnit ID: {}", productUnitId);
-            log.info("   Surfaces: {}", requestedSurfaces);
-
-            // Print Kernel next command
-            log.info("\n📋 Next steps:");
-            log.info("   pnpm kernel product create --from-intent {}", intentPath);
-
-            return 0;
-
-        } catch (Exception e) {
-            log.error("❌ Error creating ProductUnitIntent: {}", e.getMessage());
+        if (!validation.valid()) {
+            log.error("❌ Error: {}", validation.error());
             return 1;
         }
+
+        // Determine intent output path and surfaces
+        Path intentPath = resolveIntentOutputPath();
+        List<String> requestedSurfaces = inferSurfaces();
+
+        // Create intent
+        ProductUnitIntentCommandService.CreationResult result = service.createIntent(
+                projectName, tenantId, workspaceId, projectId, lifecycleProfile,
+                runtimeProvider, requestedSurfaces, intentPath
+        );
+
+        if (!result.success()) {
+            log.error("❌ ProductUnitIntent creation failed:");
+            for (String error : result.errors()) {
+                log.error("   - {}", error);
+            }
+            return 1;
+        }
+
+        return 0;
     }
 
     private String toKebabCase(String name) {
@@ -279,6 +232,17 @@ public class CreateCommand implements Callable<Integer> {
         return name.toLowerCase()
                 .replaceAll("[^a-z0-9]+", "-")
                 .replaceAll("^-+|-+$", "");
+    }
+
+    /**
+     * KRN-02: Validates that an identifier contains only valid characters.
+     * Valid characters: alphanumeric, hyphens, and underscores.
+     */
+    private boolean isValidIdentifier(String identifier) {
+        if (identifier == null || identifier.isBlank()) {
+            return false;
+        }
+        return identifier.matches("^[a-zA-Z0-9_-]+$");
     }
 
     private List<String> inferSurfaces() {

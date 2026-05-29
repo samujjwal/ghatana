@@ -1,0 +1,156 @@
+{
+  "$schema": "https://ghatana.io/schemas/script-surface-registry.json",
+  "schemaVersion": "1.0.0",
+  "description": "Registry for production-grade scripts used by CI, release, and developer workflows.",
+  "managedRoots": [
+    "scripts/quality"
+  ],
+  "allowUnregisteredPaths": [
+    "scripts/quality/__tests__/**",
+    "scripts/__tests__/**",
+    "scripts/lib/**",
+    "scripts/database/**",
+    "scripts/deployment/**",
+    "scripts/testing/**"
+  ],
+  "surfaces": [
+    {
+      "path": "scripts/check-doc-truth.mjs",
+      "kind": "ci-check",
+      "owner": "Platform Team",
+      "invokedBy": [
+        "package.json:check:doc-truth"
+      ],
+      "destructive": false,
+      "hasDryRun": false,
+      "status": "canonical"
+    },
+    {
+      "path": "scripts/check-cleanup-gate.mjs",
+      "kind": "ci-check",
+      "owner": "Platform Team",
+      "invokedBy": [
+        "package.json:check:cleanup-gate"
+      ],
+      "destructive": false,
+      "hasDryRun": false,
+      "status": "canonical"
+    },
+    {
+      "path": "scripts/check-product-doc-taxonomy.mjs",
+      "kind": "ci-check",
+      "owner": "Platform Team",
+      "invokedBy": [
+        "package.json:check:product-doc-taxonomy"
+      ],
+      "destructive": false,
+      "hasDryRun": false,
+      "status": "canonical"
+    },
+    {
+      "path": "scripts/quality/check-documentation-surfaces.mjs",
+      "kind": "ci-check",
+      "owner": "Platform Team",
+      "invokedBy": [
+        "package.json:check:docs"
+      ],
+      "destructive": false,
+      "hasDryRun": false,
+      "status": "canonical"
+    },
+    {
+      "path": "scripts/quality/check-script-surfaces.mjs",
+      "kind": "ci-check",
+      "owner": "Platform Team",
+      "invokedBy": [
+        "package.json:check:scripts"
+      ],
+      "destructive": false,
+      "hasDryRun": false,
+      "status": "canonical"
+    },
+    {
+      "path": "scripts/quality/list-repo-surfaces.mjs",
+      "kind": "developer-tool",
+      "owner": "Platform Team",
+      "invokedBy": [
+        "package.json:check:repo-surfaces"
+      ],
+      "destructive": false,
+      "hasDryRun": false,
+      "status": "developer-tool"
+    },
+    {
+      "path": "products/yappc/scripts/organize-docs.sh",
+      "kind": "developer-tool",
+      "owner": "YAPPC Team",
+      "invokedBy": [],
+      "destructive": true,
+      "hasDryRun": false,
+      "status": "delete"
+    },
+    {
+      "path": "products/yappc/scripts/cleanup-unnecessary-files.sh",
+      "kind": "developer-tool",
+      "owner": "YAPPC Team",
+      "invokedBy": [],
+      "destructive": true,
+      "hasDryRun": true,
+      "status": "delete"
+    },
+    {
+      "path": "products/yappc/scripts/cleanup-obsolete-todos.sh",
+      "kind": "developer-tool",
+      "owner": "YAPPC Team",
+      "invokedBy": [],
+      "destructive": true,
+      "hasDryRun": false,
+      "status": "delete"
+    },
+    {
+      "path": "products/yappc/scripts/consolidate-documentation.sh",
+      "kind": "developer-tool",
+      "owner": "YAPPC Team",
+      "invokedBy": [],
+      "destructive": true,
+      "hasDryRun": true,
+      "status": "delete"
+    },
+    {
+      "path": "products/yappc/frontend/scripts/fix-imports-after-cleanup.sh",
+      "kind": "developer-tool",
+      "owner": "YAPPC Team",
+      "invokedBy": [],
+      "destructive": true,
+      "hasDryRun": false,
+      "status": "delete"
+    },
+    {
+      "path": "products/dcmaar/ci/scripts/cleanup_scripts.sh",
+      "kind": "developer-tool",
+      "owner": "DCMAAR Team",
+      "invokedBy": [],
+      "destructive": true,
+      "hasDryRun": false,
+      "status": "delete"
+    },
+    {
+      "path": "products/dcmaar/scripts/cleanup-npm-files.sh",
+      "kind": "developer-tool",
+      "owner": "DCMAAR Team",
+      "invokedBy": [],
+      "destructive": true,
+      "hasDryRun": false,
+      "status": "delete"
+    },
+    {
+      "path": "products/tutorputor/scripts/cleanup-empty-dirs.sh",
+      "kind": "developer-tool",
+      "owner": "Tutorputor Team",
+      "invokedBy": [],
+      "destructive": true,
+      "hasDryRun": false,
+      "status": "delete"
+    }
+  ]
+}

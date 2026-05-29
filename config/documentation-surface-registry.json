@@ -1,0 +1,193 @@
+{
+  "$schema": "https://ghatana.io/schemas/documentation-surface-registry.json",
+  "schemaVersion": "1.0.0",
+  "description": "Canonical documentation surfaces and taxonomy enforcement rules.",
+  "taxonomy": {
+    "activeProducts": [
+      "phr",
+      "finance",
+      "digital-marketing",
+      "flashit"
+    ],
+    "requiredForActive": [
+      "00-VISION.md",
+      "01-ARCHITECTURE.md",
+      "03-API_CONTRACTS.md",
+      "04-TESTING.md",
+      "05-OPERATIONS.md"
+    ],
+    "designAlternates": [
+      "02-DESIGN.md",
+      "02-UX_WORKFLOWS.md"
+    ],
+    "legacyCompat": [
+      "02-API_CONTRACTS.md",
+      "03-UX_WORKFLOWS.md"
+    ],
+    "minimumForInactive": [
+      "README.md",
+      "00-VISION.md",
+      "01-ARCHITECTURE.md",
+      "05-OPERATIONS.md"
+    ]
+  },
+  "forbiddenPathPatterns": [
+    "**/archive/**",
+    "**/session-notes/**",
+    "**/*COMPLETION_REPORT*.md",
+    "**/*FINAL_STATUS*.md",
+    "**/*VERIFICATION_REPORT*.md",
+    "**/*IMPLEMENTATION_PROGRESS*.md",
+    "**/*IMPLEMENTATION_COMPLETE*.md",
+    "**/*ROADMAP*_TRACKER.md"
+  ],
+  "deletedPathTargets": [
+    "docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md",
+    "docs/archive/comp-decomp-todo-legacy.md",
+    "docs/archive/comp-decomp-todo-2026-04-18.md",
+    "docs/archive/comp-decomp-todo-2026-03-27-audit.md",
+    "products/audio-video/modules/intelligence/ai-voice/VOICE_CLONING_IMPLEMENTATION_COMPLETE.md",
+    "products/yappc/scripts/organize-docs.sh",
+    "products/yappc/scripts/cleanup-unnecessary-files.sh",
+    "products/yappc/scripts/cleanup-obsolete-todos.sh",
+    "products/yappc/scripts/consolidate-documentation.sh",
+    "products/yappc/frontend/scripts/fix-imports-after-cleanup.sh",
+    "products/dcmaar/ci/scripts/cleanup_scripts.sh",
+    "products/dcmaar/scripts/cleanup-npm-files.sh",
+    "products/tutorputor/scripts/cleanup-empty-dirs.sh"
+  ],
+  "surfaces": [
+    {
+      "path": "README.md",
+      "scope": "repo",
+      "kind": "entrypoint",
+      "status": "canonical",
+      "owner": "Platform Team",
+      "reviewCadence": "quarterly",
+      "supersedes": [],
+      "deleteAfter": null
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "scope": "repo",
+      "kind": "entrypoint",
+      "status": "canonical",
+      "owner": "Platform Team",
+      "reviewCadence": "quarterly",
+      "supersedes": [],
+      "deleteAfter": null
+    },
+    {
+      "path": "docs/README.md",
+      "scope": "repo",
+      "kind": "index",
+      "status": "canonical",
+      "owner": "Platform Team",
+      "reviewCadence": "quarterly",
+      "supersedes": [],
+      "deleteAfter": null
+    },
+    {
+      "path": "docs/MONOREPO_VISION.md",
+      "scope": "repo",
+      "kind": "vision",
+      "status": "canonical",
+      "owner": "Platform Team",
+      "reviewCadence": "quarterly",
+      "supersedes": [],
+      "deleteAfter": null
+    },
+    {
+      "path": "docs/kernel/MONOREPO_ARCHITECTURE.md",
+      "scope": "repo",
+      "kind": "architecture",
+      "status": "canonical",
+      "owner": "Platform Team",
+      "reviewCadence": "quarterly",
+      "supersedes": [],
+      "deleteAfter": null
+    },
+    {
+      "path": "docs/GOVERNANCE.md",
+      "scope": "repo",
+      "kind": "governance",
+      "status": "canonical",
+      "owner": "Platform Team",
+      "reviewCadence": "quarterly",
+      "supersedes": [],
+      "deleteAfter": null
+    },
+    {
+      "path": "docs/kernel/BUILD.md",
+      "scope": "repo",
+      "kind": "build",
+      "status": "canonical",
+      "owner": "Platform Team",
+      "reviewCadence": "quarterly",
+      "supersedes": [],
+      "deleteAfter": null
+    },
+    {
+      "path": "docs/TESTING.md",
+      "scope": "repo",
+      "kind": "testing",
+      "status": "canonical",
+      "owner": "Platform Team",
+      "reviewCadence": "quarterly",
+      "supersedes": [],
+      "deleteAfter": null
+    },
+    {
+      "path": "docs/ONBOARDING.md",
+      "scope": "repo",
+      "kind": "onboarding",
+      "status": "canonical",
+      "owner": "Platform Team",
+      "reviewCadence": "quarterly",
+      "supersedes": [],
+      "deleteAfter": null
+    },
+    {
+      "path": "products/data-cloud/docs/README.md",
+      "scope": "product:data-cloud",
+      "kind": "index",
+      "status": "canonical",
+      "owner": "Data Cloud Team",
+      "reviewCadence": "quarterly",
+      "supersedes": [
+        "products/data-cloud/docs/CANONICAL_DOCS_INDEX.md"
+      ],
+      "deleteAfter": null
+    },
+    {
+      "path": "products/data-cloud/docs/product/01_data_cloud_unified_vision_market_positioning.md",
+      "scope": "product:data-cloud",
+      "kind": "vision",
+      "status": "canonical",
+      "owner": "Data Cloud Team",
+      "reviewCadence": "quarterly",
+      "supersedes": [],
+      "deleteAfter": null
+    },
+    {
+      "path": "products/yappc/docs/README.md",
+      "scope": "product:yappc",
+      "kind": "index",
+      "status": "canonical",
+      "owner": "YAPPC Team",
+      "reviewCadence": "quarterly",
+      "supersedes": [],
+      "deleteAfter": null
+    },
+    {
+      "path": "products/yappc/docs/DOCUMENTATION_INDEX.md",
+      "scope": "product:yappc",
+      "kind": "index",
+      "status": "canonical",
+      "owner": "YAPPC Team",
+      "reviewCadence": "quarterly",
+      "supersedes": [],
+      "deleteAfter": null
+    }
+  ]
+}

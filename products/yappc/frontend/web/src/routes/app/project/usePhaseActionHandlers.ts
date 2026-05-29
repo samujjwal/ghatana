@@ -242,7 +242,9 @@ function resolveRunContext(
     setActionError(null);
 
     if (!action.enabled) {
-      setFeedback(t('phaseCockpit.feedback.reviewingAction', { label: actionText(action.label) ?? action.actionId }));
+      // FE-04: Use backend disabled reason as user guidance
+      const disabledReason = action.disabledReason || t('phaseCockpit.feedback.reviewingAction', { label: actionText(action.label) ?? action.actionId });
+      setFeedback(disabledReason);
       scrollToSupportingSurface();
       return;
     }
@@ -287,7 +289,7 @@ function resolveRunContext(
       projectId,
       tenantId: currentUser?.tenantId,
       actorId: currentUser?.id,
-      preview: packet ? phasePacketToPreview(packet) : null,
+      preview: null, // FE-03: Backend will build authoritative lifecycle preview
     });
   }, [actionMutation, actionText, currentUser?.id, currentUser?.tenantId, executeServerOperation, navigate, packet, phase, projectId, resolveNavigationPath, scrollToSupportingSurface, t]);
 
@@ -317,7 +319,9 @@ function resolveRunContext(
       return;
     }
 
-    setFeedback(t('phaseCockpit.feedback.reviewingAction', { label: actionText(action.label) ?? action.actionId }));
+    // FE-04: Use backend disabled reason as user guidance
+    const disabledReason = action.disabledReason || t('phaseCockpit.feedback.reviewingAction', { label: actionText(action.label) ?? action.actionId });
+    setFeedback(disabledReason);
     scrollToSupportingSurface();
   }, [actionText, executePacketAction, scrollToSupportingSurface, t]);
 

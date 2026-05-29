@@ -72,7 +72,7 @@ export class GenerateService {
         });
     }
     /**
-     * Generate Kernel ProductUnitIntent from saved project state
+     * Generate Kernel ProductUnitIntent from saved generate state
      * @param xTenantId
      * @param xWorkspaceId
      * @param xProjectId
@@ -97,7 +97,7 @@ export class GenerateService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `Bad request â€” invalid or missing parameters`,
+                400: `Bad request — invalid or missing parameters`,
             },
         });
     }

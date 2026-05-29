@@ -127,7 +127,7 @@ To maintain clarity with flat routing:
 - `products/phr/apps/web/src/phrRouteContracts.ts` - Generated route contract projection
 - `products/phr/config/phr-route-contract.json` - Canonical route contract and route-state configuration
 - `products/phr/config/phr-usecase-baseline.json` - Use case baseline
-- `docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md` - Implementation tracker (C1-06)
+- `config/documentation-surface-registry.json` - Canonical documentation surfaces
 
 ## Review Date
 

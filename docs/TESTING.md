@@ -36,7 +36,7 @@ Every test must be tagged with exactly one of the four standard categories.
 
 ### End-to-End (`@Tag("e2e")`)
 
-**Purpose:** Test complete user workflows across multiple services.
+**Purpose:** Test end-to-end user workflows across multiple services.
 
 - Spans multiple services; tests business workflows end-to-end
 - Execution time: minutes

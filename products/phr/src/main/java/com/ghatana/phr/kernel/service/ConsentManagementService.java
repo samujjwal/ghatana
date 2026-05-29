@@ -802,7 +802,7 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
         /**
          * Checks if a specific field within a resource type is allowed access.
          * If no field-level restrictions are defined for the resource type,
-         * all fields are assumed allowed (backward compatibility).
+         * the resource-level grant allows the requested field.
          *
          * @param resourceType the resource type
          * @param field the field name

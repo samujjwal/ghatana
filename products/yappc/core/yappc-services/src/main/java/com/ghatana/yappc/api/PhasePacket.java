@@ -344,8 +344,29 @@ public final class PhasePacket {
             Instant startedAt,
             Instant completedAt,
             String traceId,
-            List<String> evidenceIds
-    ) {}
+            List<String> evidenceIds,
+            String rollbackTarget,
+            String promoteTarget,
+            String releaseCandidate,
+            String riskLevel,
+            String remediationHint,
+            boolean rollbackSupported
+    ) {
+        /**
+         * Creates a base run status when action metadata is unavailable.
+         */
+        public PlatformRunStatus(
+                String runId,
+                String status,
+                String platform,
+                Instant startedAt,
+                Instant completedAt,
+                String traceId,
+                List<String> evidenceIds
+        ) {
+            this(runId, status, platform, startedAt, completedAt, traceId, evidenceIds, "", "", "", "", "", false);
+        }
+    }
 
     /**
      * Phase action contract with capability gating.

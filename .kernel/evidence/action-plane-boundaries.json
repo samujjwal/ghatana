@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-05-29T00:48:01.058Z",
+  "generatedAt": "2026-05-29T01:11:20.417Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/check-action-plane-boundaries.mjs",
     "source": "scripts/check-action-plane-boundaries.mjs",
     "command": "pnpm check:action-plane-boundaries",
-    "commit": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc"
+    "commit": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8"
   },
   "scope": {
     "scannedRoots": [

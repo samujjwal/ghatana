@@ -65,6 +65,7 @@ class CreateCommandKernelProductUnitTest {
                 "digital-marketing",
                 "--target", "kernel-product-unit",
                 "--intent-output", intentOutput.toString(),
+                "--tenant-id", "tenant-001",
                 "--workspace-id", "workspace-001",
                 "--project-id", "digital-marketing",
                 "--surface", "backend-api",
@@ -85,6 +86,7 @@ class CreateCommandKernelProductUnitTest {
                 "campaign-management",
                 "--target", "kernel-product-unit",
                 "--intent-output", intentOutput.toString(),
+                "--tenant-id", "tenant-001",
                 "--runtime-provider", "ghatana-file-registry",
                 "--workspace-id", "workspace-001",
                 "--project-id", "campaign-management",
@@ -109,6 +111,7 @@ class CreateCommandKernelProductUnitTest {
                 "test-product",
                 "--target", "kernel-product-unit",
                 "--intent-output", intentOutput.toString(),
+                "--tenant-id", "tenant-001",
                 "--workspace-id", "workspace-001",
                 "--project-id", "test-product",
                 "--surface", "backend-api",
@@ -164,6 +167,84 @@ class CreateCommandKernelProductUnitTest {
                 "--intent-output", intentOutput.toString(),
                 "--workspace-id", "workspace-001",
                 "--project-id", "digital-marketing",
+                "--lifecycle-profile", "standard-web-api-product"
+        );
+
+        assertThat(exitCode).isEqualTo(1);
+        assertThat(intentOutput).doesNotExist();
+    }
+
+    @Test
+    @DisplayName("fails when tenant ID is missing for kernel-product-unit")
+    void failsWhenTenantIdMissing() {
+        Path intentOutput = tempDir.resolve("missing-tenant.yaml");
+
+        int exitCode = new CommandLine(new CreateCommand()).execute(
+                "digital-marketing",
+                "--target", "kernel-product-unit",
+                "--intent-output", intentOutput.toString(),
+                "--workspace-id", "workspace-001",
+                "--project-id", "digital-marketing",
+                "--surface", "backend-api",
+                "--lifecycle-profile", "standard-web-api-product"
+        );
+
+        assertThat(exitCode).isEqualTo(1);
+        assertThat(intentOutput).doesNotExist();
+    }
+
+    @Test
+    @DisplayName("fails when tenant ID is 'default-tenant'")
+    void failsWhenTenantIdIsDefaultTenant() {
+        Path intentOutput = tempDir.resolve("default-tenant.yaml");
+
+        int exitCode = new CommandLine(new CreateCommand()).execute(
+                "digital-marketing",
+                "--target", "kernel-product-unit",
+                "--intent-output", intentOutput.toString(),
+                "--tenant-id", "default-tenant",
+                "--workspace-id", "workspace-001",
+                "--project-id", "digital-marketing",
+                "--surface", "backend-api",
+                "--lifecycle-profile", "standard-web-api-product"
+        );
+
+        assertThat(exitCode).isEqualTo(1);
+        assertThat(intentOutput).doesNotExist();
+    }
+
+    @Test
+    @DisplayName("fails when tenant ID contains invalid characters")
+    void failsWhenTenantIdHasInvalidCharacters() {
+        Path intentOutput = tempDir.resolve("invalid-tenant.yaml");
+
+        int exitCode = new CommandLine(new CreateCommand()).execute(
+                "digital-marketing",
+                "--target", "kernel-product-unit",
+                "--intent-output", intentOutput.toString(),
+                "--tenant-id", "tenant@invalid",
+                "--workspace-id", "workspace-001",
+                "--project-id", "digital-marketing",
+                "--surface", "backend-api",
+                "--lifecycle-profile", "standard-web-api-product"
+        );
+
+        assertThat(exitCode).isEqualTo(1);
+        assertThat(intentOutput).doesNotExist();
+    }
+
+    @Test
+    @DisplayName("fails when project ID is missing for kernel-product-unit")
+    void failsWhenProjectIdMissing() {
+        Path intentOutput = tempDir.resolve("missing-project.yaml");
+
+        int exitCode = new CommandLine(new CreateCommand()).execute(
+                "digital-marketing",
+                "--target", "kernel-product-unit",
+                "--intent-output", intentOutput.toString(),
+                "--tenant-id", "tenant-001",
+                "--workspace-id", "workspace-001",
+                "--surface", "backend-api",
                 "--lifecycle-profile", "standard-web-api-product"
         );
 

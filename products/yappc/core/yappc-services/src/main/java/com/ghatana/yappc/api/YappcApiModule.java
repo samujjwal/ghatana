@@ -62,6 +62,16 @@ import com.ghatana.yappc.services.phase.DegradedPhasePacketFactory;
 import com.ghatana.yappc.services.phase.PhaseActionAuthorizationService;
 import com.ghatana.yappc.services.phase.PlatformRunStatusService;
 import com.ghatana.yappc.services.phase.PhaseRequiredArtifactProvider;
+import com.ghatana.yappc.services.phase.PhaseFeatureFlagProvider;
+import com.ghatana.yappc.services.phase.PhaseProjectStateService;
+import com.ghatana.yappc.services.phase.PhaseEvidenceService;
+import com.ghatana.yappc.services.phase.PhaseGovernanceService;
+import com.ghatana.yappc.services.phase.PhaseActivityFeedService;
+import com.ghatana.yappc.services.phase.PhaseBlockerMapper;
+import com.ghatana.yappc.services.phase.PhaseGateContextFactory;
+import com.ghatana.yappc.services.phase.PhaseReadinessEvaluator;
+import com.ghatana.yappc.services.phase.PhaseHealthSignalProvider;
+import com.ghatana.yappc.services.phase.PhasePacketAssembler;
 import com.ghatana.yappc.services.run.CiCdPort;
 import com.ghatana.yappc.services.run.GitHubActionsCiCdAdapter;
 import com.ghatana.yappc.services.run.RunService;
@@ -508,6 +518,58 @@ public class YappcApiModule extends AbstractModule {
     }
 
     @Provides
+    PhaseFeatureFlagProvider phaseFeatureFlagProvider(DataCloudClient dataCloudClient) {
+        return new PhaseFeatureFlagProvider(dataCloudClient);
+    }
+
+    @Provides
+    PhaseProjectStateService phaseProjectStateService(
+            DataCloudClient dataCloudClient,
+            PhaseFeatureFlagProvider phaseFeatureFlagProvider) {
+        return new PhaseProjectStateService(dataCloudClient, phaseFeatureFlagProvider);
+    }
+
+    @Provides
+    PhaseEvidenceService phaseEvidenceService(PlatformIntegrationClient platformIntegrationClient) {
+        return new PhaseEvidenceService(platformIntegrationClient);
+    }
+
+    @Provides
+    PhaseGovernanceService phaseGovernanceService(PlatformIntegrationClient platformIntegrationClient) {
+        return new PhaseGovernanceService(platformIntegrationClient);
+    }
+
+    @Provides
+    PhaseActivityFeedService phaseActivityFeedService(AuditService auditService) {
+        return new PhaseActivityFeedService(auditService);
+    }
+
+    @Provides
+    PhaseBlockerMapper phaseBlockerMapper() {
+        return new PhaseBlockerMapper();
+    }
+
+    @Provides
+    PhaseGateContextFactory phaseGateContextFactory() {
+        return new PhaseGateContextFactory();
+    }
+
+    @Provides
+    PhaseReadinessEvaluator phaseReadinessEvaluator(TransitionConfigLoader transitionConfigLoader) {
+        return new PhaseReadinessEvaluator(transitionConfigLoader);
+    }
+
+    @Provides
+    PhaseHealthSignalProvider phaseHealthSignalProvider(com.ghatana.core.runtime.PreviewRuntimeService previewRuntimeService) {
+        return new PhaseHealthSignalProvider(previewRuntimeService);
+    }
+
+    @Provides
+    PhasePacketAssembler phasePacketAssembler() {
+        return new PhasePacketAssembler();
+    }
+
+    @Provides
     PhasePacketService phasePacketService(
             DataCloudClient dataCloudClient,
             YappcArtifactRepository artifactRepository,
@@ -522,7 +584,17 @@ public class YappcApiModule extends AbstractModule {
             PlatformRunStatusService platformRunStatusService,
             PhaseActionAuthorizationService phaseActionAuthorizationService,
             PhaseRequiredArtifactProvider phaseRequiredArtifactProvider,
-            DegradedPhasePacketFactory degradedPhasePacketFactory) {
+            DegradedPhasePacketFactory degradedPhasePacketFactory,
+            PhaseFeatureFlagProvider phaseFeatureFlagProvider,
+            PhaseProjectStateService phaseProjectStateService,
+            PhaseEvidenceService phaseEvidenceService,
+            PhaseGovernanceService phaseGovernanceService,
+            PhaseActivityFeedService phaseActivityFeedService,
+            PhaseBlockerMapper phaseBlockerMapper,
+            PhaseGateContextFactory phaseGateContextFactory,
+            PhaseReadinessEvaluator phaseReadinessEvaluator,
+            PhaseHealthSignalProvider phaseHealthSignalProvider,
+            PhasePacketAssembler phasePacketAssembler) {
         return new PhasePacketServiceImpl(
             dataCloudClient,
             artifactRepository,
@@ -537,7 +609,17 @@ public class YappcApiModule extends AbstractModule {
             platformRunStatusService,
             phaseActionAuthorizationService,
             phaseRequiredArtifactProvider,
-            degradedPhasePacketFactory
+            degradedPhasePacketFactory,
+            phaseFeatureFlagProvider,
+            phaseProjectStateService,
+            phaseEvidenceService,
+            phaseGovernanceService,
+            phaseActivityFeedService,
+            phaseBlockerMapper,
+            phaseGateContextFactory,
+            phaseReadinessEvaluator,
+            phaseHealthSignalProvider,
+            phasePacketAssembler
         );
     }
 

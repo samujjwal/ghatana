@@ -75,10 +75,27 @@ public final class PhrRetentionScheduler implements KernelLifecycleAware {
      */
     public interface RetentionEligibilityPort {
         /**
-         * Lists patient IDs registered before {@code cutoff} that are not on
-         * a legal hold and have no active treatment episodes.
+         * Tenant-scoped patient eligible for retention deletion.
+         *
+         * @param tenantId tenant that owns the patient record
+         * @param patientId patient identifier
          */
-        List<String> listRetentionEligiblePatients(String tenantId, Instant cutoff);
+        record RetentionEligiblePatient(String tenantId, String patientId) {
+            public RetentionEligiblePatient {
+                if (tenantId == null || tenantId.isBlank()) {
+                    throw new IllegalArgumentException("tenantId must not be blank");
+                }
+                if (patientId == null || patientId.isBlank()) {
+                    throw new IllegalArgumentException("patientId must not be blank");
+                }
+            }
+        }
+
+        /**
+         * Lists patients registered before {@code cutoff} that are not on a
+         * legal hold and have no active treatment episodes.
+         */
+        List<RetentionEligiblePatient> listRetentionEligiblePatients(Instant cutoff);
     }
 
     /**
@@ -256,8 +273,8 @@ public final class PhrRetentionScheduler implements KernelLifecycleAware {
             Instant cutoff = Instant.now().minusSeconds(25L * 365 * 24 * 3600);
             LOG.debug("PhrRetentionScheduler: running retention scan [cutoff={}]", cutoff);
 
-            // In production the tenantId would come from a tenant iterator; use sentinel here
-            List<String> eligible = eligibilityPort.listRetentionEligiblePatients("*", cutoff);
+            List<RetentionEligibilityPort.RetentionEligiblePatient> eligible =
+                    eligibilityPort.listRetentionEligiblePatients(cutoff);
 
             if (eligible.isEmpty()) {
                 LOG.debug("PhrRetentionScheduler: retention scan complete — no eligible patients");
@@ -266,11 +283,11 @@ public final class PhrRetentionScheduler implements KernelLifecycleAware {
 
             LOG.info("PhrRetentionScheduler: found {} retention-eligible patient(s)", eligible.size());
 
-            for (String patientId : eligible) {
+            for (RetentionEligibilityPort.RetentionEligiblePatient patient : eligible) {
                 PatientDeletionWorkflow.DeletionRequest request = new PatientDeletionWorkflow.DeletionRequest(
                         UUID.randomUUID(),
-                        "*",
-                        patientId,
+                        patient.tenantId(),
+                        patient.patientId(),
                         "phr-retention-scheduler",
                         Instant.now(),
                         "Nepal Health Records Act 2081 §22");
@@ -278,9 +295,9 @@ public final class PhrRetentionScheduler implements KernelLifecycleAware {
                 deletionWorkflow.execute(request, List.of())
                         .whenResult(report -> LOG.info(
                                 "PhrRetentionScheduler: deletion workflow complete [patient={} decisions={}]",
-                                patientId, report.decisions().size()))
+                                patient.patientId(), report.decisions().size()))
                         .whenException(ex -> LOG.error(
-                                "PhrRetentionScheduler: deletion workflow failed [patient={}]", patientId, ex));
+                                "PhrRetentionScheduler: deletion workflow failed [patient={}]", patient.patientId(), ex));
             }
         } catch (Exception e) {
             LOG.error("PhrRetentionScheduler: retention scan error", e);

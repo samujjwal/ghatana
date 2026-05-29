@@ -467,7 +467,7 @@
 
 ### Remaining (P2 - Low Priority)
 - P2-6: Document/consolidate V11/V14 duplicate snapshot columns (not applicable - V11/V14 migrations don't exist)
-- P2-8: Archive/consolidate platform/comp-decomp-todo.md (COMPLETED - moved to docs/archive/comp-decomp-todo-legacy.md)
+- P2-8: Archive/consolidate platform/comp-decomp-todo.md (COMPLETED - legacy todo retired)
 
 ### Remaining (P3 - Low Priority)
 - P3-1: Improve graph query response ergonomics

@@ -88,110 +88,17 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             @NotNull PlatformRunStatusService platformRunStatusService,
             @NotNull PhaseActionAuthorizationService phaseActionAuthorizationService,
             @NotNull PhaseRequiredArtifactProvider requiredArtifactProvider,
-            @NotNull DegradedPhasePacketFactory degradedPhasePacketFactory
-    ) {
-            this(
-                dataCloudClient,
-                artifactRepository,
-                phaseGateValidator,
-                policyEngine,
-                capabilityEvaluationService,
-                transitionConfigLoader,
-                platformIntegrationClient,
-                metrics,
-                auditService,
-                previewRuntimeService,
-                platformRunStatusService,
-                phaseActionAuthorizationService,
-                requiredArtifactProvider,
-                degradedPhasePacketFactory,
-                new PhaseFeatureFlagProvider(dataCloudClient),
-                new PhaseProjectStateService(dataCloudClient, new PhaseFeatureFlagProvider(dataCloudClient)),
-                new PhaseEvidenceService(platformIntegrationClient),
-                new PhaseGovernanceService(platformIntegrationClient),
-                new PhaseActivityFeedService(auditService),
-                new PhaseBlockerMapper(),
-                new PhaseGateContextFactory(),
-                new PhaseReadinessEvaluator(transitionConfigLoader),
-                new PhaseHealthSignalProvider(previewRuntimeService),
-                new PhasePacketAssembler()
-            );
-            }
-
-            PhasePacketServiceImpl(
-                @NotNull DataCloudClient dataCloudClient,
-                @NotNull YappcArtifactRepository artifactRepository,
-                @NotNull PhaseGateValidator phaseGateValidator,
-                @NotNull PolicyEngine policyEngine,
-                @NotNull CapabilityEvaluationService capabilityEvaluationService,
-                @NotNull TransitionConfigLoader transitionConfigLoader,
-                @NotNull PlatformIntegrationClient platformIntegrationClient,
-                @Nullable BusinessMetrics metrics,
-                @NotNull AuditService auditService,
-                @NotNull PreviewRuntimeService previewRuntimeService,
-                @NotNull PlatformRunStatusService platformRunStatusService,
-                @NotNull PhaseActionAuthorizationService phaseActionAuthorizationService,
-                @NotNull PhaseRequiredArtifactProvider requiredArtifactProvider,
-                @NotNull DegradedPhasePacketFactory degradedPhasePacketFactory,
-                @NotNull PhaseFeatureFlagProvider phaseFeatureFlagProvider,
-                @NotNull PhaseGateContextFactory phaseGateContextFactory,
-                @NotNull PhaseReadinessEvaluator phaseReadinessEvaluator,
-                @NotNull PhaseHealthSignalProvider phaseHealthSignalProvider,
-                @NotNull PhasePacketAssembler phasePacketAssembler
-            ) {
-        this(
-                dataCloudClient,
-                artifactRepository,
-                phaseGateValidator,
-                policyEngine,
-                capabilityEvaluationService,
-                transitionConfigLoader,
-                platformIntegrationClient,
-                metrics,
-                auditService,
-                previewRuntimeService,
-                platformRunStatusService,
-                phaseActionAuthorizationService,
-                requiredArtifactProvider,
-                degradedPhasePacketFactory,
-                phaseFeatureFlagProvider,
-                new PhaseProjectStateService(dataCloudClient, phaseFeatureFlagProvider),
-                new PhaseEvidenceService(platformIntegrationClient),
-                new PhaseGovernanceService(platformIntegrationClient),
-                new PhaseActivityFeedService(auditService),
-                new PhaseBlockerMapper(),
-                phaseGateContextFactory,
-                phaseReadinessEvaluator,
-                phaseHealthSignalProvider,
-                phasePacketAssembler
-        );
-    }
-
-            PhasePacketServiceImpl(
-                @NotNull DataCloudClient dataCloudClient,
-                @NotNull YappcArtifactRepository artifactRepository,
-                @NotNull PhaseGateValidator phaseGateValidator,
-                @NotNull PolicyEngine policyEngine,
-                @NotNull CapabilityEvaluationService capabilityEvaluationService,
-                @NotNull TransitionConfigLoader transitionConfigLoader,
-                @NotNull PlatformIntegrationClient platformIntegrationClient,
-                @Nullable BusinessMetrics metrics,
-                @NotNull AuditService auditService,
-                @NotNull PreviewRuntimeService previewRuntimeService,
-                @NotNull PlatformRunStatusService platformRunStatusService,
-                @NotNull PhaseActionAuthorizationService phaseActionAuthorizationService,
-                @NotNull PhaseRequiredArtifactProvider requiredArtifactProvider,
-                @NotNull DegradedPhasePacketFactory degradedPhasePacketFactory,
-                @NotNull PhaseFeatureFlagProvider phaseFeatureFlagProvider,
-                @NotNull PhaseProjectStateService phaseProjectStateService,
-                @NotNull PhaseEvidenceService phaseEvidenceService,
-                @NotNull PhaseGovernanceService phaseGovernanceService,
-                @NotNull PhaseActivityFeedService phaseActivityFeedService,
-                @NotNull PhaseBlockerMapper phaseBlockerMapper,
-                @NotNull PhaseGateContextFactory phaseGateContextFactory,
-                @NotNull PhaseReadinessEvaluator phaseReadinessEvaluator,
-                @NotNull PhaseHealthSignalProvider phaseHealthSignalProvider,
-                @NotNull PhasePacketAssembler phasePacketAssembler
+            @NotNull DegradedPhasePacketFactory degradedPhasePacketFactory,
+            @NotNull PhaseFeatureFlagProvider phaseFeatureFlagProvider,
+            @NotNull PhaseProjectStateService phaseProjectStateService,
+            @NotNull PhaseEvidenceService phaseEvidenceService,
+            @NotNull PhaseGovernanceService phaseGovernanceService,
+            @NotNull PhaseActivityFeedService phaseActivityFeedService,
+            @NotNull PhaseBlockerMapper phaseBlockerMapper,
+            @NotNull PhaseGateContextFactory phaseGateContextFactory,
+            @NotNull PhaseReadinessEvaluator phaseReadinessEvaluator,
+            @NotNull PhaseHealthSignalProvider phaseHealthSignalProvider,
+            @NotNull PhasePacketAssembler phasePacketAssembler
             ) {
         this.dataCloudClient = Objects.requireNonNull(dataCloudClient, "dataCloudClient");
         this.artifactRepository = Objects.requireNonNull(artifactRepository, "artifactRepository");
@@ -335,6 +242,11 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                                     projectId,
                                     phase
                             ).then(platformRunStatus -> {
+                RunActionContext runActionContext = RunActionContext.fromPlatformRunStatus(
+                        platformRunStatus.orElse(null),
+                        evidence.stream().map(PhasePacket.PhaseEvidence::id).toList(),
+                        blockers
+                );
                 List<PhasePacket.PhaseAction> actions = phaseActionAuthorizationService.determineAvailableActions(
                     phase,
                         capabilities,
@@ -344,11 +256,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                         blockers,
                     governance,
                     !Boolean.TRUE.equals(projectState.get("featureFlagsDegraded")),
-                    evidence.stream().map(PhasePacket.PhaseEvidence::id).toList(),
-                    platformRunStatus.isPresent() ? platformRunStatus.get().traceId() : "",
-                    blockers.isEmpty() ? "low" : "high",
-                    "",
-                    ""
+                    runActionContext
                 );
                 PhasePacket.DashboardActionClassification dashboardActions = buildDashboardActionClassification(actions, blockers);
                 String projectName = extractProjectName(projectState);
@@ -548,7 +456,15 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                     phase,
                     correlationId,
                     e);
-            return Promise.of(List.<PhasePacket.PhaseBlocker>of());
+            return Promise.of(List.of(new PhasePacket.PhaseBlocker(
+                    "BLOCKER_QUERY_FAILED",
+                    "CRITERION",
+                    "Phase blocker query failed",
+                    "Unable to validate phase gate due to query failure. Please retry or contact support.",
+                    "CRITICAL",
+                    "blocker-query-failed:" + phase + ":" + projectId + ":" + workspaceId + ":" + correlationId,
+                    false
+            )));
         }
     }
 
@@ -608,9 +524,6 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
     }
 
     /**
-     * Determines enabled feature flags from project state.
-     */
-    /**
      * Queries completed artifacts for the phase.
      */
     private Promise<List<PhasePacket.CompletedArtifact>> queryCompletedArtifacts(
@@ -619,7 +532,6 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             String tenantId
     ) {
         try {
-            // Query completed artifacts from artifact repository
             com.ghatana.yappc.domain.PhaseType phaseType;
             try {
                 phaseType = com.ghatana.yappc.domain.PhaseType.valueOf(phase.toUpperCase());

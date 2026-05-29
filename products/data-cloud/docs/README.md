@@ -1,18 +1,20 @@
 # Data Cloud Documentation
 
-This folder contains the required Data Cloud product and architecture documentation. The canonical structure is plane-based.
+This file is the canonical Data Cloud documentation index.
 
-## Required Canonical Docs
+## Canonical Documents
 
-| Document | Purpose |
+| Topic | Document |
 | --- | --- |
-| `architecture/PLANE_ARCHITECTURE.md` | Canonical plane model, target module layout, dependency rules, and migration sequence |
-| `product/01_data_cloud_unified_vision_market_positioning.md` | Product vision, market positioning, and plane-based narrative |
-| `product/02_data_cloud_unified_detailed_architecture.md` | Detailed plane architecture, contracts, runtime, and enforcement model |
-| `product/03_data_cloud_unified_high_level_design.md` | Outcome-first navigation, UX hierarchy, API design, and migration design |
-| `audits/end-to-end-product-correctness-audit.md` | Current Data Cloud product correctness audit |
-| `migration/AEP_FIRST_PASS_FILE_BY_FILE_MOVE_AND_REFERENCE_PLAN.md` | Historical first-pass migration plan; keep only until the plane migration plan replaces it |
-| `SCHEMA_ERD.md` | Database/schema reference |
+| Vision and market positioning | `product/01_data_cloud_unified_vision_market_positioning.md` |
+| Detailed architecture | `product/02_data_cloud_unified_detailed_architecture.md` |
+| High-level design | `product/03_data_cloud_unified_high_level_design.md` |
+| Plane architecture | `architecture/PLANE_ARCHITECTURE.md` |
+| Operations runbook | `operations/RUNBOOK.md` |
+| Schema reference | `SCHEMA_ERD.md` |
+| OpenAPI contract | `../contracts/openapi/data-cloud.yaml` |
+
+`CANONICAL_DOCS_INDEX.md` is deprecated and retained only as a compatibility pointer.
 
 ## Runtime Implementation Docs
 
@@ -20,7 +22,7 @@ This folder contains the required Data Cloud product and architecture documentat
 
 ## Deprecated Documentation
 
-Generated reverse-engineering reports, stale product narratives, and old capability-area documents should not be retained as authoritative docs. If a document repeats or contradicts the plane architecture, either update it to defer to `architecture/PLANE_ARCHITECTURE.md` or remove it.
+Generated reverse-engineering reports, stale product narratives, and old capability-area documents are not authoritative. If a document repeats or contradicts `architecture/PLANE_ARCHITECTURE.md`, either align it or remove it.
 
 ## Storage Profile Behavior
 

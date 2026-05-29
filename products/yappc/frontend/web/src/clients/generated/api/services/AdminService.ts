@@ -11,10 +11,27 @@ export class AdminService {
      * @returns any Release-gate evidence summary for SLO, cost, domain, and OpenAPI gates
      * @throws ApiError
      */
-    public static listAdminObservabilityReleaseGates(): CancelablePromise<any> {
+    public static listAdminObservabilityReleaseGates(): CancelablePromise<{
+        status: 'healthy' | 'degraded' | 'down';
+        items: Array<{
+            id: string;
+            label: string;
+            category: 'SLO' | 'Cost' | 'Domain' | 'API';
+            status: 'healthy' | 'degraded' | 'down';
+            evidenceHref: string;
+            refreshedAt: string;
+            summary: string;
+            source?: string;
+            evidence?: Record<string, any>;
+        }>;
+    }> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/admin/observability/release-gates',
+            errors: {
+                403: `Permission denied`,
+                503: `Release-gate evidence unavailable`,
+            },
         });
     }
     /**
@@ -25,12 +42,16 @@ export class AdminService {
      */
     public static listAdminFeatureFlags(
         tenantId?: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<Array<Record<string, any>>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/admin/feature-flags',
             query: {
                 'tenantId': tenantId,
+            },
+            errors: {
+                403: `Permission denied`,
+                503: `Feature flag service unavailable`,
             },
         });
     }
@@ -43,8 +64,14 @@ export class AdminService {
      */
     public static setAdminFeatureFlag(
         flagKey: string,
-        requestBody: Record<string, any>,
-    ): CancelablePromise<any> {
+        requestBody: {
+            enabled: boolean;
+            reason: string;
+            tenantId?: string;
+            description?: string;
+            rolloutPercentage?: number;
+        },
+    ): CancelablePromise<Record<string, any>> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/api/admin/feature-flags/{flagKey}',
@@ -53,6 +80,11 @@ export class AdminService {
             },
             body: requestBody,
             mediaType: 'application/json',
+            errors: {
+                400: `Bad request — invalid or missing parameters`,
+                403: `Permission denied`,
+                503: `Feature flag service unavailable`,
+            },
         });
     }
     /**
@@ -65,7 +97,7 @@ export class AdminService {
     public static listAdminFeatureFlagAudit(
         flagKey: string,
         tenantId?: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<Array<Record<string, any>>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/admin/feature-flags/{flagKey}/audit',
@@ -74,6 +106,10 @@ export class AdminService {
             },
             query: {
                 'tenantId': tenantId,
+            },
+            errors: {
+                403: `Permission denied`,
+                503: `Feature flag service unavailable`,
             },
         });
     }
@@ -85,12 +121,19 @@ export class AdminService {
      */
     public static listAdminAbExperiments(
         status?: 'running' | 'completed' | 'paused',
-    ): CancelablePromise<any> {
+    ): CancelablePromise<{
+        items?: Array<Record<string, any>>;
+        total?: number;
+    }> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/admin/ab-experiments',
             query: {
                 'status': status,
+            },
+            errors: {
+                403: `Permission denied`,
+                503: `A/B testing service unavailable`,
             },
         });
     }
@@ -101,13 +144,25 @@ export class AdminService {
      * @throws ApiError
      */
     public static createAdminAbExperiment(
-        requestBody: Record<string, any>,
-    ): CancelablePromise<any> {
+        requestBody: {
+            experimentName: string;
+            description?: string;
+            promptName: string;
+            promptVersion?: string;
+            variantA?: string;
+            variantB?: string;
+        },
+    ): CancelablePromise<Record<string, any>> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/admin/ab-experiments',
             body: requestBody,
             mediaType: 'application/json',
+            errors: {
+                400: `Bad request — invalid or missing parameters`,
+                403: `Permission denied`,
+                503: `A/B testing service unavailable`,
+            },
         });
     }
     /**
@@ -119,8 +174,11 @@ export class AdminService {
      */
     public static promoteAdminAbExperimentWinner(
         experimentId: string,
-        requestBody: Record<string, any>,
-    ): CancelablePromise<any> {
+        requestBody: {
+            variantId: string;
+            reason: string;
+        },
+    ): CancelablePromise<Record<string, any>> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/admin/ab-experiments/{experimentId}/promote',
@@ -129,6 +187,12 @@ export class AdminService {
             },
             body: requestBody,
             mediaType: 'application/json',
+            errors: {
+                400: `Bad request — invalid or missing parameters`,
+                403: `Permission denied`,
+                404: `Resource not found`,
+                503: `A/B testing service unavailable`,
+            },
         });
     }
     /**
@@ -139,12 +203,17 @@ export class AdminService {
      */
     public static pauseAdminAbExperiment(
         experimentId: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<Record<string, any>> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/admin/ab-experiments/{experimentId}/pause',
             path: {
                 'experimentId': experimentId,
+            },
+            errors: {
+                403: `Permission denied`,
+                404: `Resource not found`,
+                503: `A/B testing service unavailable`,
             },
         });
     }
@@ -156,12 +225,19 @@ export class AdminService {
      */
     public static listAdminPromptVersions(
         promptName?: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<{
+        items?: Array<Record<string, any>>;
+        total?: number;
+    }> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/admin/prompt-versions',
             query: {
                 'promptName': promptName,
+            },
+            errors: {
+                403: `Permission denied`,
+                503: `Prompt version service unavailable`,
             },
         });
     }
@@ -174,8 +250,10 @@ export class AdminService {
      */
     public static rollbackAdminPromptVersion(
         versionId: string,
-        requestBody: Record<string, any>,
-    ): CancelablePromise<any> {
+        requestBody: {
+            reason: string;
+        },
+    ): CancelablePromise<Record<string, any>> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/admin/prompt-versions/{versionId}/rollback',
@@ -184,6 +262,12 @@ export class AdminService {
             },
             body: requestBody,
             mediaType: 'application/json',
+            errors: {
+                400: `Bad request — invalid or missing parameters`,
+                403: `Permission denied`,
+                404: `Resource not found`,
+                503: `Prompt version service unavailable`,
+            },
         });
     }
     /**
@@ -193,13 +277,20 @@ export class AdminService {
      * @throws ApiError
      */
     public static updateAdminPromptVersionWeights(
-        requestBody: Record<string, any>,
-    ): CancelablePromise<any> {
+        requestBody: {
+            weights: Record<string, number>;
+        },
+    ): CancelablePromise<Record<string, any>> {
         return __request(OpenAPI, {
             method: 'PATCH',
             url: '/api/admin/prompt-versions/weights',
             body: requestBody,
             mediaType: 'application/json',
+            errors: {
+                400: `Bad request — invalid or missing parameters`,
+                403: `Permission denied`,
+                503: `Prompt version service unavailable`,
+            },
         });
     }
 }

@@ -4,7 +4,7 @@
 > 
 > All significant docs MUST be linked from this index.  
 > The canonical docs tree is `products/yappc/docs/`.  
-> Scattered docs in submodules should be either moved here or linked.
+> This index is the canonical entry point for active YAPPC documentation.
 
 ---
 
@@ -118,20 +118,6 @@
 | [deployment/](deployment/) | Deployment guides |
 | [RELEASE_READINESS_EXECUTION_MODE.md](RELEASE_READINESS_EXECUTION_MODE.md) | Release readiness execution mode |
 | [PRODUCT_BUILD_ISOLATION.md](PRODUCT_BUILD_ISOLATION.md) | Build isolation strategy |
-
----
-
-## Scattered Docs — To Be Consolidated
-
-The following documents are outside `docs/` and should be moved here in a follow-up PR:
-
-| Current Location | Target |
-|---|---|
-| `products/yappc/ARTIFACT_COMPILER_IMPLEMENTATION_PLAN.md` | `docs/implementation-plans/` |
-| `products/yappc/DOMAIN_MODEL_REGISTRY.md` | `docs/DOMAIN_MODEL_REGISTRY.md` |
-| `products/yappc/core/yappc-api/TEST_*.md` | `docs/audits/` |
-| `products/yappc/core/cli-tools/docs/` | `docs/guides/cli/` |
-| `products/yappc/tools/vscode-extension/*.md` | `docs/guides/vscode-extension/` |
 
 ---
 

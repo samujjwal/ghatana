@@ -1,11 +1,11 @@
 {
   "checkId": "YAPPC-010 failure and degraded workflows",
-  "generatedAt": "2026-05-28T19:37:55.163Z",
+  "generatedAt": "2026-05-29T01:22:12.401Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/check-yappc-failure-degraded-workflows.mjs",
     "command": "node scripts/check-yappc-failure-degraded-workflows.mjs",
-    "commit": "7d8f07d5bf556c8e8e6300ecaf11920b6ea64d84"
+    "commit": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8"
   },
   "summary": {
     "checkCount": 16,

@@ -16,13 +16,13 @@ import java.util.Objects;
 /**
  * Queries governance decisions for phase packets.
  */
-final class PhaseGovernanceService {
+public final class PhaseGovernanceService {
 
     private static final Logger log = LoggerFactory.getLogger(PhaseGovernanceService.class);
 
     private final PlatformIntegrationClient platformIntegrationClient;
 
-    PhaseGovernanceService(@NotNull PlatformIntegrationClient platformIntegrationClient) {
+    public PhaseGovernanceService(@NotNull PlatformIntegrationClient platformIntegrationClient) {
         this.platformIntegrationClient = Objects.requireNonNull(platformIntegrationClient, "platformIntegrationClient");
     }
 

@@ -1,0 +1,29 @@
+{
+  "generatedAt": "2026-05-28T18:20:00.000Z",
+  "pass": true,
+  "validationStatus": "validated",
+  "summary": {
+    "checks": [
+      "production-tenant-auth-profile",
+      "critical-route-tenant-enforcement",
+      "tenant-header-spoofing-rejection"
+    ],
+    "status": "tenant-isolation-and-governance-validated"
+  },
+  "evidenceRefs": [
+    "products/data-cloud/integration-tests/src/test/java/com/ghatana/datacloud/integration/ProductionTenantAuthProfileTest.java",
+    "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/DataCloudHttpServerCriticalRouteTenantEnforcementTest.java"
+  ],
+  "evidenceRun": {
+    "generatedBy": "manual-remediation",
+    "source": "manual-remediation",
+    "command": "manual-remediation",
+    "commit": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+    "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+    "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+    "targetEnvironment": "staging"
+  },
+  "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+  "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+  "targetEnvironment": "staging"
+}

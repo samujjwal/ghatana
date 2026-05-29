@@ -1,10 +1,9 @@
 {
-  "generatedAt": "2026-05-29T00:46:24.611Z",
+  "generatedAt": "2026-05-29T02:12:58.865Z",
   "status": "failed",
   "mode": "execute",
   "includeHeavy": false,
   "selectedWaves": [
-    "wave-3-quality-performance",
     "wave-4-release-ops"
   ],
   "scopedProducts": [
@@ -17,16 +16,8 @@
     "pnpm:check:cross-product-interaction-flows",
     "pnpm:check:interaction-performance"
   ],
-  "commandCount": 14,
+  "commandCount": 6,
   "plannedCommands": [
-    "pnpm:check:data-cloud-ui-a11y",
-    "pnpm:check:product-a11y-route-matrix",
-    "pnpm:check:i18n-conformance",
-    "pnpm:check:product-slo-budgets",
-    "pnpm:check:product-cost-budgets",
-    "pnpm:check:product-domain-invariants",
-    "pnpm:check:openapi-release-quality",
-    "pnpm:check:openapi-breaking-changes",
     "pnpm:check:data-cloud-runbook-smoke",
     "pnpm:check:release-rollback-drill",
     "pnpm:check:affected-product-strict-release-profile",
@@ -36,64 +27,24 @@
   ],
   "commandRuns": [
     {
-      "command": "pnpm:check:data-cloud-ui-a11y",
-      "status": 0,
-      "durationMs": 1233
-    },
-    {
-      "command": "pnpm:check:product-a11y-route-matrix",
-      "status": 0,
-      "durationMs": 1175
-    },
-    {
-      "command": "pnpm:check:i18n-conformance",
-      "status": 0,
-      "durationMs": 1398
-    },
-    {
-      "command": "pnpm:check:product-slo-budgets",
-      "status": 0,
-      "durationMs": 1629
-    },
-    {
-      "command": "pnpm:check:product-cost-budgets",
-      "status": 0,
-      "durationMs": 1653
-    },
-    {
-      "command": "pnpm:check:product-domain-invariants",
-      "status": 0,
-      "durationMs": 1933
-    },
-    {
-      "command": "pnpm:check:openapi-release-quality",
-      "status": 0,
-      "durationMs": 1135
-    },
-    {
-      "command": "pnpm:check:openapi-breaking-changes",
-      "status": 0,
-      "durationMs": 2019
-    },
-    {
       "command": "pnpm:check:data-cloud-runbook-smoke",
       "status": 0,
-      "durationMs": 3513
+      "durationMs": 4399
     },
     {
       "command": "pnpm:check:release-rollback-drill",
       "status": 0,
-      "durationMs": 1119
+      "durationMs": 2036
     },
     {
       "command": "pnpm:check:affected-product-strict-release-profile",
       "status": 0,
-      "durationMs": 934
+      "durationMs": 906
     },
     {
       "command": "pnpm:check:product-release-readiness",
       "status": 1,
-      "durationMs": 2435
+      "durationMs": 346983
     }
   ],
   "taskMatrixSummary": {
@@ -104,11 +55,11 @@
       "Planned": 3
     },
     "averageMaturityDepth": 2.08,
-    "warningCount": 37,
+    "warningCount": 0,
     "violationCount": 0
   },
   "incrementalRoadmap": {
-    "generatedAt": "2026-05-29T00:46:04.433Z",
+    "generatedAt": "2026-05-29T02:07:04.537Z",
     "targetMaturityDepth": 5,
     "remainingTaskCount": 51,
     "deferredTaskIds": [],

@@ -113,7 +113,7 @@ cd platform-plugins
 
 | Aspect | Root-mode | Included-build-mode |
 |--------|-----------|-------------------|
-| Working directory | `d:\samuj\Developments\ghatana` | `d:\samuj\Developments\ghatana\platform-kernel` or `platform-plugins` |
+| Working directory | repo root | `platform-kernel` or `platform-plugins` |
 | Task paths | `:platform-kernel:kernel-core:build` | `kernel-core:build` |
 | Project references | `:platform-kernel:kernel-core` | `:kernel-core` |
 | Use case | CI/CD, full builds, cross-composite deps | Local dev, isolated workspace builds |
@@ -169,7 +169,7 @@ Keep product-specific adapter code in `aep-event-cloud` and `platform:java:messa
 | Level | When to use |
 |-------|-------------|
 | `debug` | Per-event flow: pattern matching, idempotency suppression, sequence-order diagnostics |
-| `info` | Lifecycle transitions: startup, shutdown, pipeline submission, hot reload complete |
+| `info` | Lifecycle transitions: startup, shutdown, pipeline submission, hot reload done |
 | `warn` | Handled issues: subscriber failures, missing optional config, partial delivery failures |
 | `error` | Operations that fail with caller-visible behavior impact |
 

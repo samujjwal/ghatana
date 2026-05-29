@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-final class PhaseGateContextFactory {
+public final class PhaseGateContextFactory {
 
     PhaseGateValidator.PhaseGateContext build(
             String phase,

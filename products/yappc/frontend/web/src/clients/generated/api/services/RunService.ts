@@ -97,7 +97,7 @@ export class RunService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `Bad request â€” invalid or missing parameters`,
+                400: `Bad request — invalid or missing parameters`,
             },
         });
     }

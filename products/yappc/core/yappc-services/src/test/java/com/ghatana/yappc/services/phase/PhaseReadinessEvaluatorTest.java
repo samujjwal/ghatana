@@ -279,7 +279,7 @@ class PhaseReadinessEvaluatorTest {
 
         assertThat(readiness.isDegraded()).isTrue();
         assertThat(readiness.canAdvance()).isFalse();
-        assertThat(readiness.missingPrerequisites()).contains("Healthy preview, generation, and runtime signals");
+        assertThat(readiness.missingPrerequisites()).contains("Healthy preview and generation signals");
     }
 
     @Test

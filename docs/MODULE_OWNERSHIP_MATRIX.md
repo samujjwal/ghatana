@@ -4,7 +4,7 @@
 **Date:** 2026-05-10  
 **Authors:** Platform Team  
 **Phase:** BDY-5 (Boundary Enforcement)  
-**Related:** `code-audits/todo.md` P1-5
+**Related:** `docs/GOVERNANCE.md`, `docs/adr/ADR-013-shared-services-ownership.md`
 
 ---
 
@@ -298,4 +298,4 @@ This document provides a comprehensive module ownership matrix for the Ghatana r
 - `docs/adr/ADR-013-shared-services-ownership.md` - Shared services ownership decisions
 - `docs/adr/ADR-014-platform-module-consumer-audit.md` - Platform module audit
 - `docs/architecture/ARCHITECTURE_RULES.md` - Architecture rules
-- `code-audits/todo.md` - Implementation tasks
+- `config/documentation-surface-registry.json` - Canonical documentation surface registry

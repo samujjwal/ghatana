@@ -1052,7 +1052,17 @@ public class LifecycleServiceModule extends AbstractModule {
             com.ghatana.yappc.services.phase.PlatformRunStatusService platformRunStatusService,
             com.ghatana.yappc.services.phase.PhaseActionAuthorizationService phaseActionAuthorizationService,
             com.ghatana.yappc.services.phase.PhaseRequiredArtifactProvider phaseRequiredArtifactProvider,
-            com.ghatana.yappc.services.phase.DegradedPhasePacketFactory degradedPhasePacketFactory) {
+            com.ghatana.yappc.services.phase.DegradedPhasePacketFactory degradedPhasePacketFactory,
+            com.ghatana.yappc.services.phase.PhaseFeatureFlagProvider phaseFeatureFlagProvider,
+            com.ghatana.yappc.services.phase.PhaseProjectStateService phaseProjectStateService,
+            com.ghatana.yappc.services.phase.PhaseEvidenceService phaseEvidenceService,
+            com.ghatana.yappc.services.phase.PhaseGovernanceService phaseGovernanceService,
+            com.ghatana.yappc.services.phase.PhaseActivityFeedService phaseActivityFeedService,
+            com.ghatana.yappc.services.phase.PhaseBlockerMapper phaseBlockerMapper,
+            com.ghatana.yappc.services.phase.PhaseGateContextFactory phaseGateContextFactory,
+            com.ghatana.yappc.services.phase.PhaseReadinessEvaluator phaseReadinessEvaluator,
+            com.ghatana.yappc.services.phase.PhaseHealthSignalProvider phaseHealthSignalProvider,
+            com.ghatana.yappc.services.phase.PhasePacketAssembler phasePacketAssembler) {
         logger.info("Creating PhasePacketService (canonical cockpit read model)");
         return new com.ghatana.yappc.services.phase.PhasePacketServiceImpl(
                 dataCloudClient,
@@ -1068,7 +1078,17 @@ public class LifecycleServiceModule extends AbstractModule {
                 platformRunStatusService,
                 phaseActionAuthorizationService,
                 phaseRequiredArtifactProvider,
-                degradedPhasePacketFactory);
+                degradedPhasePacketFactory,
+                phaseFeatureFlagProvider,
+                phaseProjectStateService,
+                phaseEvidenceService,
+                phaseGovernanceService,
+                phaseActivityFeedService,
+                phaseBlockerMapper,
+                phaseGateContextFactory,
+                phaseReadinessEvaluator,
+                phaseHealthSignalProvider,
+                phasePacketAssembler);
     }
 
     // ========== Lifecycle Transitions ==========

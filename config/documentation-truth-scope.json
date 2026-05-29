@@ -1,17 +1,17 @@
 {
   "$schema": "https://ghatana.io/schemas/documentation-truth-scope.json",
   "schemaVersion": "1.0.0",
-  "description": "Canonical documentation surfaces enforced by doc truth and claim-evidence gates. Historical docs remain reference material but are not release truth sources.",
+  "description": "Compatibility scope for legacy checks. Canonical source is config/documentation-surface-registry.json.",
   "includeFiles": [
+    "README.md",
     "docs/README.md",
-    "docs/kernel/INDEX.md",
-    "docs/kernel/KERNEL_PRODUCT_BOUNDARY.md",
-    "docs/kernel/KERNEL_CONSUMPTION_GUIDE.md",
-    "docs/kernel/PRODUCT_MANIFEST_SPEC.md",
-    "docs/kernel/PRODUCT_CONFORMANCE_SPEC.md",
-    "docs/generated/CAPABILITY_MATRIX.md",
-    "docs/generated/KERNEL_TODO_IMPLEMENTATION_TRACKER.md",
-    "docs/implementation/README.md",
+    "docs/MONOREPO_VISION.md",
+    "docs/kernel/MONOREPO_ARCHITECTURE.md",
+    "docs/GOVERNANCE.md",
+    "docs/kernel/BUILD.md",
+    "docs/TESTING.md",
+    "docs/ONBOARDING.md",
+    "docs/runbooks/audit-trail-tampering-incident.md",
     "products/phr/docs/00-VISION.md",
     "products/phr/docs/01-ARCHITECTURE.md",
     "products/phr/docs/02-API_CONTRACTS.md",
@@ -32,21 +32,18 @@
     "products/digital-marketing/docs/03-UX_WORKFLOWS.md",
     "products/digital-marketing/docs/04-TESTING.md",
     "products/digital-marketing/docs/05-OPERATIONS.md",
-    "products/digital-marketing/docs/06-IMPLEMENTATION_PLAN.md",
     "products/flashit/docs/00-VISION.md",
     "products/flashit/docs/01-ARCHITECTURE.md",
     "products/flashit/docs/02-API_CONTRACTS.md",
     "products/flashit/docs/03-UX_WORKFLOWS.md",
     "products/flashit/docs/04-TESTING.md",
-    "products/flashit/docs/05-OPERATIONS.md",
-    "products/flashit/docs/06-IMPLEMENTATION_PLAN.md"
+    "products/flashit/docs/05-OPERATIONS.md"
   ],
   "archivedPathSegments": [
     "docs/archive/",
     "docs/architecture/",
     "docs/agent-system/",
     "docs/audit/",
-    "docs/runbooks/",
     "code-audits/"
   ]
 }

@@ -16,13 +16,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-final class PhaseFeatureFlagProvider {
+public final class PhaseFeatureFlagProvider {
 
     private static final Logger log = LoggerFactory.getLogger(PhaseFeatureFlagProvider.class);
 
     private final DataCloudClient dataCloudClient;
 
-    PhaseFeatureFlagProvider(@NotNull DataCloudClient dataCloudClient) {
+    public PhaseFeatureFlagProvider(@NotNull DataCloudClient dataCloudClient) {
         this.dataCloudClient = Objects.requireNonNull(dataCloudClient, "dataCloudClient");
     }
 

@@ -122,12 +122,6 @@ public final class PhrCaregiverRoutes {
 
         String patientId = request.getPathParameter("patientId");
 
-        if (!"caregiver".equals(context.role()) && !"admin".equals(context.role())) {
-            return PhrRouteSupport.errorResponse(403, "CAREGIVER_ROLE_REQUIRED",
-                "Only caregiver or admin principals may access delegated patient summaries",
-                context.correlationId());
-        }
-        
         return policyEvaluator.canAccessPhiResourceAsync(
             context,
             patientId,
@@ -171,12 +165,6 @@ public final class PhrCaregiverRoutes {
 
         String patientId = request.getPathParameter("patientId");
 
-        if (!"caregiver".equals(context.role()) && !"admin".equals(context.role())) {
-            return PhrRouteSupport.errorResponse(403, "CAREGIVER_ROLE_REQUIRED",
-                "Only caregiver or admin principals may access delegated patient details",
-                context.correlationId());
-        }
-        
         return policyEvaluator.canAccessPhiResourceAsync(
             context,
             patientId,

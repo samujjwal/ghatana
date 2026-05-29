@@ -6,6 +6,7 @@ import { translate } from '../../../i18n/messages';
 import CanvasRoute from './canvas';
 import PreviewRoute from './preview';
 import { PhaseStatusPanelsCanonical } from './PhaseStatusPanelsCanonical';
+import { GenerationReviewPanel } from '../../../components/phase/GenerationReviewPanel';
 
 interface PhaseEmbeddedSurfaceProps {
   readonly phase: MountedPhase;
@@ -32,6 +33,13 @@ export function PhaseEmbeddedSurface({ phase, phasePanels = [] }: PhaseEmbeddedS
         <div className="space-y-3" data-testid="generate-advanced-panel">
           <PhaseStatusPanelsCanonical phase={phase} phasePanels={phasePanels} />
           <CanvasRoute />
+          <GenerationReviewPanel
+            data={null}
+            isPending={false}
+            onApply={() => {}}
+            onReject={() => {}}
+            onRollback={() => {}}
+          />
         </div>
       );
     case 'run':

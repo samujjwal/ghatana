@@ -2,6 +2,8 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { EvolveDecisionRequest } from '../models/EvolveDecisionRequest';
+import type { EvolveDecisionResponse } from '../models/EvolveDecisionResponse';
 import type { EvolveRequest } from '../models/EvolveRequest';
 import type { EvolveWithConstraintsRequest } from '../models/EvolveWithConstraintsRequest';
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -69,50 +71,60 @@ export class EvolveService {
         });
     }
     /**
-     * Approve an evolution proposal
+     * Approve an evolution proposal and hand off to validate/generate/run
      * @param proposalId
+     * @param xTenantId
      * @param requestBody
-     * @returns any Evolution proposal approved
+     * @returns EvolveDecisionResponse Evolution proposal decision result
      * @throws ApiError
      */
     public static approveEvolutionProposal(
         proposalId: string,
-        requestBody: Record<string, any>,
-    ): CancelablePromise<any> {
+        xTenantId: string,
+        requestBody?: EvolveDecisionRequest,
+    ): CancelablePromise<EvolveDecisionResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/yappc/evolve/{proposalId}/approve',
             path: {
                 'proposalId': proposalId,
             },
+            headers: {
+                'X-Tenant-ID': xTenantId,
+            },
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `Bad request â€” invalid or missing parameters`,
+                400: `Bad request — invalid or missing parameters`,
             },
         });
     }
     /**
      * Reject an evolution proposal
      * @param proposalId
+     * @param xTenantId
      * @param requestBody
-     * @returns any Evolution proposal rejected
+     * @returns EvolveDecisionResponse Evolution proposal decision result
      * @throws ApiError
      */
     public static rejectEvolutionProposal(
         proposalId: string,
-        requestBody: Record<string, any>,
-    ): CancelablePromise<any> {
+        xTenantId: string,
+        requestBody?: EvolveDecisionRequest,
+    ): CancelablePromise<EvolveDecisionResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/yappc/evolve/{proposalId}/reject',
             path: {
                 'proposalId': proposalId,
             },
+            headers: {
+                'X-Tenant-ID': xTenantId,
+            },
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `Bad request â€” invalid or missing parameters`,
+                400: `Bad request — invalid or missing parameters`,
             },
         });
     }

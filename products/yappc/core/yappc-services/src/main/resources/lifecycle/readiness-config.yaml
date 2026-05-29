@@ -1,8 +1,8 @@
 # Phase Readiness Evaluation Configuration
-# 
+#
 # This file defines the weights and thresholds used to calculate phase readiness scores.
 # The completeness score is calculated as:
-#   score = artifact * artifactWeight + blocker * blockerWeight + evidence * evidenceWeight 
+#   score = artifact * artifactWeight + blocker * blockerWeight + evidence * evidenceWeight
 #           + governance * governanceWeight + health * healthWeight
 #
 # A phase can advance when:
@@ -10,18 +10,85 @@
 #   - All required artifacts are complete
 #   - Evidence is available
 #   - Governance allows the transition
-#   - Health signals are healthy
+#   - Health signals are healthy (for phases that require it)
 #   - Completeness score >= threshold
 #   - Project status is "active"
+#
+# Early phases do not require runtime health.
+# Late phases require all signals including runtime health.
 
-# Minimum completeness score required to advance to the next phase
+# Default threshold and weights (used if phase-specific config not found)
 threshold: 0.90
-
-# Weights for each signal in the completeness score calculation
-# Weights should sum to 1.0 for a normalized score
 weights:
   artifact: 0.40    # Required artifacts completion
   blocker: 0.25     # Blocker severity (critical = 0.0, non-critical = 0.5)
   evidence: 0.15    # Evidence availability
   governance: 0.10  # Policy approval status
   health: 0.10      # Preview, generation, and runtime health signals
+
+# Phase-specific overrides
+# Each phase can define its own threshold and weights
+# Phases that don't require runtime health can set health weight to 0
+phases:
+  INTENT:
+    threshold: 0.85
+    weights:
+      artifact: 0.50
+      blocker: 0.30
+      evidence: 0.10
+      governance: 0.10
+      health: 0.00      # Early phase: no runtime health required
+
+  SHAPE:
+    threshold: 0.85
+    weights:
+      artifact: 0.50
+      blocker: 0.30
+      evidence: 0.10
+      governance: 0.10
+      health: 0.00      # Early phase: no runtime health required
+
+  LEARN:
+    threshold: 0.88
+    weights:
+      artifact: 0.45
+      blocker: 0.25
+      evidence: 0.20
+      governance: 0.10
+      health: 0.00      # Late lifecycle but doesn't require runtime health
+
+  EVOLVE:
+    threshold: 0.88
+    weights:
+      artifact: 0.45
+      blocker: 0.25
+      evidence: 0.20
+      governance: 0.10
+      health: 0.00      # Late lifecycle but doesn't require runtime health
+
+  GENERATE:
+    threshold: 0.90
+    weights:
+      artifact: 0.40
+      blocker: 0.25
+      evidence: 0.15
+      governance: 0.10
+      health: 0.10      # Requires preview and generation health
+
+  RUN:
+    threshold: 0.92
+    weights:
+      artifact: 0.35
+      blocker: 0.25
+      evidence: 0.15
+      governance: 0.10
+      health: 0.15      # Requires all health signals including runtime
+
+  OBSERVE:
+    threshold: 0.92
+    weights:
+      artifact: 0.35
+      blocker: 0.25
+      evidence: 0.15
+      governance: 0.10
+      health: 0.15      # Requires all health signals including runtime

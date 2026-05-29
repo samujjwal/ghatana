@@ -51,13 +51,13 @@ This guide provides a **gradual, investigative approach** to cleaning up depreca
 | 7 | Legacy atom files | ~2K lines | 🟡 Medium |
 | 8 | Deprecated libraries (page-builder*) | ~5K lines | 🟡 Medium |
 
-### 2. fix-imports-after-cleanup.sh
+### 2. manual import remediation
 
 **Purpose**: Automatically fixes imports after files are deleted
 
 **Usage**:
 ```bash
-./scripts/fix-imports-after-cleanup.sh
+./scripts/manual import remediation
 ```
 
 **What it fixes**:
@@ -125,7 +125,7 @@ git commit -am "refactor: cleanup phase 2 - backup files"
 ./scripts/master-cleanup.sh --phase 3
 pnpm build 2>&1 | tee build-errors.log
 # Fix any import errors manually
-./scripts/fix-imports-after-cleanup.sh
+./scripts/manual import remediation
 pnpm build
 git commit -am "refactor: cleanup phase 3 - deprecated components"
 ```
@@ -140,7 +140,7 @@ grep -r "grapes-origin" apps/web/src | grep -v node_modules
 # If clean, proceed
 ./scripts/master-cleanup.sh --phase 4
 pnpm build
-./scripts/fix-imports-after-cleanup.sh
+./scripts/manual import remediation
 pnpm build
 git commit -am "refactor: cleanup phase 4 - grapes-origin"
 ```
@@ -161,7 +161,7 @@ done
 
 ```bash
 # Fix any remaining import issues
-./scripts/fix-imports-after-cleanup.sh
+./scripts/manual import remediation
 
 # Update routes config
 ./scripts/update-routes-config.sh
@@ -236,7 +236,7 @@ git checkout -b fix/restore-from-backup backup/pre-cleanup-YYYYMMDD-HHMMSS
 pnpm build 2>&1 | grep "Cannot find module"
 
 # Fix imports automatically
-./scripts/fix-imports-after-cleanup.sh
+./scripts/manual import remediation
 
 # Or manually fix specific imports
 grep -r "old-import-name" apps/web/src

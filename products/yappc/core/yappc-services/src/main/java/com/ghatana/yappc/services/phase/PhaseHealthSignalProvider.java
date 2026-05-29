@@ -14,13 +14,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-final class PhaseHealthSignalProvider {
+public final class PhaseHealthSignalProvider {
 
     private static final Logger log = LoggerFactory.getLogger(PhaseHealthSignalProvider.class);
 
     private final PreviewRuntimeService previewRuntimeService;
 
-    PhaseHealthSignalProvider(@NotNull PreviewRuntimeService previewRuntimeService) {
+    public PhaseHealthSignalProvider(@NotNull PreviewRuntimeService previewRuntimeService) {
         this.previewRuntimeService = Objects.requireNonNull(previewRuntimeService, "previewRuntimeService");
     }
 

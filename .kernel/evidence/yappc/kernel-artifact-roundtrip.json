@@ -1,0 +1,148 @@
+{
+  "checkId": "YAPPC-006 kernel artifact roundtrip",
+  "generatedAt": "2026-05-29T01:22:11.339Z",
+  "pass": true,
+  "evidenceRun": {
+    "generatedBy": "scripts/check-yappc-kernel-artifact-roundtrip.mjs",
+    "command": "node scripts/check-yappc-kernel-artifact-roundtrip.mjs",
+    "commit": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8"
+  },
+  "summary": {
+    "checkCount": 18,
+    "passedChecks": 18,
+    "violationCount": 0
+  },
+  "checks": [
+    {
+      "name": "products/yappc/core/scaffold/api/src/test/java/com/ghatana/yappc/cli/E2EMonorepoTest.java",
+      "pass": true,
+      "path": "products/yappc/core/scaffold/api/src/test/java/com/ghatana/yappc/cli/E2EMonorepoTest.java",
+      "message": "missing products/yappc/core/scaffold/api/src/test/java/com/ghatana/yappc/cli/E2EMonorepoTest.java"
+    },
+    {
+      "name": "products/yappc/core/scaffold/engine/src/main/java/com/ghatana/yappc/core/cache/CachedArtifact.java",
+      "pass": true,
+      "path": "products/yappc/core/scaffold/engine/src/main/java/com/ghatana/yappc/core/cache/CachedArtifact.java",
+      "message": "missing products/yappc/core/scaffold/engine/src/main/java/com/ghatana/yappc/core/cache/CachedArtifact.java"
+    },
+    {
+      "name": "products/yappc/core/scaffold/generators/src/main/java/com/ghatana/yappc/packs/PackTemplate.java",
+      "pass": true,
+      "path": "products/yappc/core/scaffold/generators/src/main/java/com/ghatana/yappc/packs/PackTemplate.java",
+      "message": "missing products/yappc/core/scaffold/generators/src/main/java/com/ghatana/yappc/packs/PackTemplate.java"
+    },
+    {
+      "name": "products/yappc/kernel-bridge/src/main/java/com/ghatana/yappc/kernel/YappcSemanticArtifactEvidenceProvider.java",
+      "pass": true,
+      "path": "products/yappc/kernel-bridge/src/main/java/com/ghatana/yappc/kernel/YappcSemanticArtifactEvidenceProvider.java",
+      "message": "missing products/yappc/kernel-bridge/src/main/java/com/ghatana/yappc/kernel/YappcSemanticArtifactEvidenceProvider.java"
+    },
+    {
+      "name": "platform/typescript/artifact-compiler-ts/src/__tests__/roundtrip.test.ts",
+      "pass": true,
+      "path": "platform/typescript/artifact-compiler-ts/src/__tests__/roundtrip.test.ts",
+      "message": "missing platform/typescript/artifact-compiler-ts/src/__tests__/roundtrip.test.ts"
+    },
+    {
+      "name": "platform/typescript/artifact-compiler-ts/src/__tests__/react-protected-regions.test.ts",
+      "pass": true,
+      "path": "platform/typescript/artifact-compiler-ts/src/__tests__/react-protected-regions.test.ts",
+      "message": "missing platform/typescript/artifact-compiler-ts/src/__tests__/react-protected-regions.test.ts"
+    },
+    {
+      "name": "platform/typescript/artifact-compiler-ts/src/__tests__/roundtrip-diff.test.ts",
+      "pass": true,
+      "path": "platform/typescript/artifact-compiler-ts/src/__tests__/roundtrip-diff.test.ts",
+      "message": "missing platform/typescript/artifact-compiler-ts/src/__tests__/roundtrip-diff.test.ts"
+    },
+    {
+      "name": "platform/typescript/artifact-compiler-ts/src/__tests__/generated-validation.test.ts",
+      "pass": true,
+      "path": "platform/typescript/artifact-compiler-ts/src/__tests__/generated-validation.test.ts",
+      "message": "missing platform/typescript/artifact-compiler-ts/src/__tests__/generated-validation.test.ts"
+    },
+    {
+      "name": "scripts/check-artifact-roundtrip.mjs",
+      "pass": true,
+      "path": "scripts/check-artifact-roundtrip.mjs",
+      "message": "missing scripts/check-artifact-roundtrip.mjs"
+    },
+    {
+      "name": "scripts/check-generated-artifact-validation-pipeline.mjs",
+      "pass": true,
+      "path": "scripts/check-generated-artifact-validation-pipeline.mjs",
+      "message": "missing scripts/check-generated-artifact-validation-pipeline.mjs"
+    },
+    {
+      "name": "generateArtifact",
+      "pass": true,
+      "tokens": [
+        "generate",
+        "artifact"
+      ]
+    },
+    {
+      "name": "compileValidate",
+      "pass": true,
+      "tokens": [
+        "compile",
+        "validate"
+      ]
+    },
+    {
+      "name": "decompileImport",
+      "pass": true,
+      "tokens": [
+        "decompile",
+        "import"
+      ]
+    },
+    {
+      "name": "modify",
+      "pass": true,
+      "tokens": [
+        "modify",
+        "modified"
+      ]
+    },
+    {
+      "name": "roundtripDiff",
+      "pass": true,
+      "tokens": [
+        "roundtrip",
+        "diff"
+      ]
+    },
+    {
+      "name": "protectedRegionsPreserved",
+      "pass": true,
+      "tokens": [
+        "protected",
+        "preserved"
+      ]
+    },
+    {
+      "name": "validationPasses",
+      "pass": true,
+      "tokens": [
+        "validation",
+        "passes"
+      ]
+    },
+    {
+      "name": "YAPPC kernel bridge persists semantic artifact evidence",
+      "pass": true,
+      "path": "products/yappc/kernel-bridge/src/main/java/com/ghatana/yappc/kernel/YappcSemanticArtifactEvidenceProvider.java"
+    }
+  ],
+  "violations": [],
+  "scenarios": [
+    "generateArtifact",
+    "compileValidate",
+    "decompileImport",
+    "modify",
+    "roundtripDiff",
+    "protectedRegionsPreserved",
+    "validationPasses"
+  ]
+}

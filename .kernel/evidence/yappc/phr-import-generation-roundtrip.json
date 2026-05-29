@@ -1,11 +1,11 @@
 {
   "checkId": "YAPPC-010 PHR import and generation roundtrip",
-  "generatedAt": "2026-05-28T23:27:32.297Z",
+  "generatedAt": "2026-05-29T01:23:44.163Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/check-yappc-phr-roundtrip.mjs",
     "command": "node scripts/check-yappc-phr-roundtrip.mjs",
-    "commit": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc"
+    "commit": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8"
   },
   "summary": {
     "checkCount": 17,
