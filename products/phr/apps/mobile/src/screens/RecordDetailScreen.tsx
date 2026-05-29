@@ -15,7 +15,7 @@ export function RecordDetailScreen({ record, onBack }: RecordDetailScreenProps):
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <TouchableOpacity onPress={onBack} style={styles.backButton} accessibilityLabel={t('common.back')}>
-        <Text style={styles.backText}>{'← '}{t('common.back')}</Text>
+        <Text style={styles.backText}>{'< '}{t('common.back')}</Text>
       </TouchableOpacity>
 
       <Text style={styles.title}>{t('records.detail')}</Text>

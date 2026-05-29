@@ -7,7 +7,9 @@
  * @doc.pattern Event
  */
 
+import { z } from "zod";
 import type { KernelEventMetadata } from "./KernelLifecycleEvent.js";
+import { KernelEventMetadataSchema } from "./KernelLifecycleEvent.js";
 
 /**
  * Artifact event payload.
@@ -54,6 +56,18 @@ export interface ArtifactEventPayload {
   readonly [key: string]: unknown;
 }
 
+export const ArtifactEventPayloadSchema = z
+  .object({
+    artifactId: z.string().trim().min(1),
+    artifactName: z.string().trim().min(1),
+    version: z.string().trim().min(1),
+    type: z.string().trim().min(1),
+    size: z.number().int().nonnegative(),
+    checksum: z.string().trim().min(1),
+    surfaceId: z.string().trim().min(1),
+  })
+  .catchall(z.unknown());
+
 /**
  * Artifact production event.
  */
@@ -67,4 +81,23 @@ export interface KernelArtifactEvent {
    * Artifact-specific payload.
    */
   readonly payload: ArtifactEventPayload;
+}
+
+export const KernelArtifactEventSchema = z
+  .object({
+    metadata: KernelEventMetadataSchema,
+    payload: ArtifactEventPayloadSchema,
+  })
+  .strict();
+
+export function validateArtifactEventPayload(
+  value: unknown
+): value is ArtifactEventPayload {
+  return ArtifactEventPayloadSchema.safeParse(value).success;
+}
+
+export function validateKernelArtifactEvent(
+  value: unknown
+): value is KernelArtifactEvent {
+  return KernelArtifactEventSchema.safeParse(value).success;
 }

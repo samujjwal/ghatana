@@ -3,24 +3,37 @@
  * Shared web/mobile/backend correlation ID shape and propagation helpers.
  */
 
+import { z } from "zod";
+
+export const CorrelationIdSchema = z.string().trim().min(1).max(127);
+export const CorrelationSourceSchema = z.enum(['web', 'mobile', 'backend', 'external']);
+
+export const CorrelationContextSchema = z
+  .object({
+    correlationId: CorrelationIdSchema,
+    tenantId: z.string().trim().min(1).optional(),
+    principalId: z.string().trim().min(1).optional(),
+    sessionId: z.string().trim().min(1).optional(),
+    timestamp: z.string().trim().datetime(),
+    source: CorrelationSourceSchema,
+  })
+  .strict();
+
+export const CorrelationHeadersSchema = z
+  .object({
+    'X-Correlation-ID': CorrelationIdSchema,
+    'X-Tenant-ID': z.string().trim().min(1).optional(),
+    'X-Principal-ID': z.string().trim().min(1).optional(),
+    'X-Session-ID': z.string().trim().min(1).optional(),
+    'X-Source': CorrelationSourceSchema.optional(),
+  })
+  .strict();
+
 export type CorrelationId = string;
 
-export type CorrelationContext = {
-  correlationId: CorrelationId;
-  tenantId?: string;
-  principalId?: string;
-  sessionId?: string;
-  timestamp: string;
-  source: 'web' | 'mobile' | 'backend' | 'external';
-};
+export type CorrelationContext = z.infer<typeof CorrelationContextSchema>;
 
-export type CorrelationHeaders = {
-  'X-Correlation-ID': CorrelationId;
-  'X-Tenant-ID'?: string;
-  'X-Principal-ID'?: string;
-  'X-Session-ID'?: string;
-  'X-Source'?: string;
-};
+export type CorrelationHeaders = z.infer<typeof CorrelationHeadersSchema>;
 
 export function generateCorrelationId(): CorrelationId {
   const timestamp = Date.now().toString(36);
@@ -95,5 +108,13 @@ export function headersToCorrelationContext(headers: Headers | Record<string, st
 }
 
 export function isValidCorrelationId(value: unknown): value is CorrelationId {
-  return typeof value === 'string' && value.length > 0 && value.length < 128;
+  return CorrelationIdSchema.safeParse(value).success;
+}
+
+export function validateCorrelationContext(value: unknown): value is CorrelationContext {
+  return CorrelationContextSchema.safeParse(value).success;
+}
+
+export function validateCorrelationHeaders(value: unknown): value is CorrelationHeaders {
+  return CorrelationHeadersSchema.safeParse(value).success;
 }

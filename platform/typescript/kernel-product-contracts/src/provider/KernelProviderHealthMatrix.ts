@@ -86,6 +86,8 @@ const PROVIDER_HEALTH_STATUSES = [
   "unknown",
 ] as const satisfies readonly ProviderHealthStatus[];
 
+export const ProviderHealthStatusSchema = z.enum(PROVIDER_HEALTH_STATUSES);
+
 /**
  * Health status of a single provider.
  */
@@ -215,7 +217,7 @@ export const ProviderCapabilityDeclarationSchema = z.object({
 export const ProviderHealthEntrySchema = z.object({
   providerId: z.string().min(1),
   providerKind: z.string().min(1),
-  status: z.enum(PROVIDER_HEALTH_STATUSES),
+  status: ProviderHealthStatusSchema,
   checkedAt: z.string().datetime(),
   message: z.string().min(1),
   capabilities: z.array(ProviderCapabilityDeclarationSchema),
@@ -226,7 +228,7 @@ export const ProviderHealthEntrySchema = z.object({
 export const KernelProviderHealthMatrixSchema = z.object({
   schemaVersion: z.literal("1.0.0"),
   generatedAt: z.string().datetime(),
-  overallStatus: z.enum(PROVIDER_HEALTH_STATUSES),
+  overallStatus: ProviderHealthStatusSchema,
   totalProviders: z.number().int().nonnegative(),
   healthyProviders: z.number().int().nonnegative(),
   degradedProviders: z.number().int().nonnegative(),
@@ -239,6 +241,9 @@ export const KernelProviderHealthMatrixSchema = z.object({
 }).strict();
 
 export type KernelProviderHealthMatrix = z.infer<typeof KernelProviderHealthMatrixSchema>;
+
+export const KernelProviderHealthMatrixContractSchema =
+  KernelProviderHealthMatrixSchema;
 
 /**
  * Parse a KernelProviderHealthMatrix from unknown input.
@@ -261,4 +266,16 @@ export function isKernelProviderHealthMatrix(
   } catch {
     return false;
   }
+}
+
+export function validateProviderHealthStatus(
+  value: unknown
+): value is ProviderHealthStatus {
+  return ProviderHealthStatusSchema.safeParse(value).success;
+}
+
+export function validateKernelProviderHealthMatrixContract(
+  value: unknown
+): value is KernelProviderHealthMatrixContract {
+  return KernelProviderHealthMatrixContractSchema.safeParse(value).success;
 }

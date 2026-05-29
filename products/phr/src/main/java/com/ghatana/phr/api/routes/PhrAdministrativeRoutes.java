@@ -83,7 +83,6 @@ public final class PhrAdministrativeRoutes {
                 context.correlationId());
         }
 
-        // Return admin dashboard with system-wide metrics
         return PhrRouteSupport.jsonResponse(200, Map.of(
             "adminId", context.principalId(),
             "tenantId", context.tenantId(),
@@ -210,7 +209,7 @@ public final class PhrAdministrativeRoutes {
 
     private Promise<HttpResponse> handleListAppointments(HttpRequest request) {
         String status = request.getQueryParameter("status");
-        return withPatientAccess(request, "appointments", patientId -> appointmentService.getPatientAppointments(patientId, status)
+        return withPatientAccess(request, "appointments", "READ", patientId -> appointmentService.getPatientAppointments(patientId, status)
             .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size()))));
     }
 
@@ -228,7 +227,7 @@ public final class PhrAdministrativeRoutes {
 
     private Promise<HttpResponse> handleCancelAppointment(HttpRequest request) {
         String reason = request.getQueryParameter("reason");
-        return withPatientAccess(request, "appointments", ignored -> appointmentService.cancelAppointment(
+        return withPatientAccess(request, "appointments", "WRITE", ignored -> appointmentService.cancelAppointment(
                 request.getPathParameter("appointmentId"),
                 reason == null || reason.isBlank() ? "cancelled by API request" : reason)
             .then($ -> PhrRouteSupport.jsonResponse(200, Map.of(
@@ -238,7 +237,7 @@ public final class PhrAdministrativeRoutes {
     }
 
     private Promise<HttpResponse> handleScheduleTelemedicine(HttpRequest request) {
-        return withBodyAndConsent(request, "telemedicine", TelemedicineService.TeleSession.class,
+        return withBodyAndConsent(request, "telemedicine", "WRITE", TelemedicineService.TeleSession.class,
             session -> telemedicineService.scheduleSession(session)
                 .then(stored -> PhrRouteSupport.jsonResponse(201, stored)));
     }
@@ -255,21 +254,21 @@ public final class PhrAdministrativeRoutes {
                 if (session.isEmpty()) {
                     return PhrRouteSupport.errorResponse(404, "TELEMEDICINE_SESSION_NOT_FOUND", "Telemedicine session not found");
                 }
-                return requireAccess(context, session.get().patientId(), "telemedicine")
+                return requireAccess(context, session.get().patientId(), "telemedicine", "READ")
                     .then(allowed -> allowed
                         ? PhrRouteSupport.jsonResponse(200, session.get())
-                        : PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required for telemedicine"));
+                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
             });
     }
 
     private Promise<HttpResponse> handleStartTelemedicine(HttpRequest request) {
-        return withPatientAccess(request, "telemedicine", ignored -> telemedicineService.startSession(request.getPathParameter("sessionId"))
+        return withPatientAccess(request, "telemedicine", "WRITE", ignored -> telemedicineService.startSession(request.getPathParameter("sessionId"))
             .then(updated -> PhrRouteSupport.jsonResponse(200, updated)));
     }
 
     private Promise<HttpResponse> handleCompleteTelemedicine(HttpRequest request) {
         String notes = request.getQueryParameter("notes");
-        return withPatientAccess(request, "telemedicine", ignored -> telemedicineService.completeSession(
+        return withPatientAccess(request, "telemedicine", "WRITE", ignored -> telemedicineService.completeSession(
                 request.getPathParameter("sessionId"),
                 notes)
             .then(updated -> PhrRouteSupport.jsonResponse(200, updated)));
@@ -277,19 +276,19 @@ public final class PhrAdministrativeRoutes {
 
     private Promise<HttpResponse> handleCancelTelemedicine(HttpRequest request) {
         String reason = request.getQueryParameter("reason");
-        return withPatientAccess(request, "telemedicine", ignored -> telemedicineService.cancelSession(
+        return withPatientAccess(request, "telemedicine", "WRITE", ignored -> telemedicineService.cancelSession(
                 request.getPathParameter("sessionId"),
                 reason == null || reason.isBlank() ? "cancelled by API request" : reason)
             .then(updated -> PhrRouteSupport.jsonResponse(200, updated)));
     }
 
     private Promise<HttpResponse> handleListTelemedicine(HttpRequest request) {
-        return withPatientAccess(request, "telemedicine", patientId -> telemedicineService.getPatientSessions(patientId)
+        return withPatientAccess(request, "telemedicine", "READ", patientId -> telemedicineService.getPatientSessions(patientId)
             .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size()))));
     }
 
     private Promise<HttpResponse> handleCreateReferral(HttpRequest request) {
-        return withBodyAndConsent(request, "referrals", ReferralService.Referral.class,
+        return withBodyAndConsent(request, "referrals", "WRITE", ReferralService.Referral.class,
             referral -> referralService.createReferral(referral)
                 .then(stored -> PhrRouteSupport.jsonResponse(201, stored)));
     }
@@ -306,15 +305,15 @@ public final class PhrAdministrativeRoutes {
                 if (referral.isEmpty()) {
                     return PhrRouteSupport.errorResponse(404, "REFERRAL_NOT_FOUND", "Referral not found");
                 }
-                return requireAccess(context, referral.get().patientId(), "referrals")
+                return requireAccess(context, referral.get().patientId(), "referrals", "READ")
                     .then(allowed -> allowed
                         ? PhrRouteSupport.jsonResponse(200, referral.get())
-                        : PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required for referrals"));
+                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
             });
     }
 
     private Promise<HttpResponse> handleAcceptReferral(HttpRequest request) {
-        return withPatientAccess(request, "referrals", ignored -> referralService.acceptReferral(
+        return withPatientAccess(request, "referrals", "WRITE", ignored -> referralService.acceptReferral(
                 request.getPathParameter("referralId"),
                 principalFrom(request))
             .then(updated -> PhrRouteSupport.jsonResponse(200, updated)));
@@ -322,19 +321,19 @@ public final class PhrAdministrativeRoutes {
 
     private Promise<HttpResponse> handleCloseReferral(HttpRequest request) {
         String notes = request.getQueryParameter("notes");
-        return withPatientAccess(request, "referrals", ignored -> referralService.closeReferral(
+        return withPatientAccess(request, "referrals", "WRITE", ignored -> referralService.closeReferral(
                 request.getPathParameter("referralId"),
                 notes)
             .then(updated -> PhrRouteSupport.jsonResponse(200, updated)));
     }
 
     private Promise<HttpResponse> handleListReferrals(HttpRequest request) {
-        return withPatientAccess(request, "referrals", patientId -> referralService.getPatientReferrals(patientId)
+        return withPatientAccess(request, "referrals", "READ", patientId -> referralService.getPatientReferrals(patientId)
             .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size()))));
     }
 
     private Promise<HttpResponse> handleCreateEncounter(HttpRequest request) {
-        return withBodyAndConsent(request, "billing", BillingService.BillingEncounter.class,
+        return withBodyAndConsent(request, "billing", "WRITE", BillingService.BillingEncounter.class,
             encounter -> billingService.createEncounter(encounter)
                 .then(stored -> PhrRouteSupport.jsonResponse(201, stored)));
     }
@@ -351,20 +350,20 @@ public final class PhrAdministrativeRoutes {
                 if (encounter.isEmpty()) {
                     return PhrRouteSupport.errorResponse(404, "BILLING_ENCOUNTER_NOT_FOUND", "Billing encounter not found");
                 }
-                return requireAccess(context, encounter.get().patientId(), "billing")
+                return requireAccess(context, encounter.get().patientId(), "billing", "READ")
                     .then(allowed -> allowed
                         ? PhrRouteSupport.jsonResponse(200, encounter.get())
-                        : PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required for billing"));
+                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
             });
     }
 
     private Promise<HttpResponse> handleCloseEncounter(HttpRequest request) {
-        return withPatientAccess(request, "billing", ignored -> billingService.closeEncounter(request.getPathParameter("encounterId"))
+        return withPatientAccess(request, "billing", "WRITE", ignored -> billingService.closeEncounter(request.getPathParameter("encounterId"))
             .then(updated -> PhrRouteSupport.jsonResponse(200, updated)));
     }
 
     private Promise<HttpResponse> handleSubmitClaim(HttpRequest request) {
-        return withBodyAndConsent(request, "billing", BillingService.InsuranceClaim.class,
+        return withBodyAndConsent(request, "billing", "WRITE", BillingService.InsuranceClaim.class,
             claim -> billingService.submitClaim(claim)
                 .then(stored -> PhrRouteSupport.jsonResponse(201, stored)));
     }
@@ -381,15 +380,15 @@ public final class PhrAdministrativeRoutes {
                 if (claim.isEmpty()) {
                     return PhrRouteSupport.errorResponse(404, "CLAIM_NOT_FOUND", "Claim not found");
                 }
-                return requireAccess(context, claim.get().patientId(), "billing")
+                return requireAccess(context, claim.get().patientId(), "billing", "READ")
                     .then(allowed -> allowed
                         ? PhrRouteSupport.jsonResponse(200, claim.get())
-                        : PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required for billing"));
+                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
             });
     }
 
     private Promise<HttpResponse> handleUpdateClaimStatus(HttpRequest request) {
-        return withPatientAccess(request, "billing", ignored -> request.loadBody()
+        return withPatientAccess(request, "billing", "WRITE", ignored -> request.loadBody()
             .then(body -> {
                 BillingService.ClaimStatus status;
                 String note;
@@ -410,13 +409,14 @@ public final class PhrAdministrativeRoutes {
     }
 
     private Promise<HttpResponse> handleBillingHistory(HttpRequest request) {
-        return withPatientAccess(request, "billing", patientId -> billingService.getPatientBillingHistory(patientId)
+        return withPatientAccess(request, "billing", "READ", patientId -> billingService.getPatientBillingHistory(patientId)
             .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size()))));
     }
 
     private <T> Promise<HttpResponse> withBodyAndConsent(
             HttpRequest request,
             String resourceType,
+            String action,
             Class<T> type,
             java.util.function.Function<T, Promise<HttpResponse>> handler) {
         PhrRouteSupport.PhrRequestContext context;
@@ -437,16 +437,17 @@ public final class PhrAdministrativeRoutes {
                 } catch (Exception ex) {
                     return PhrRouteSupport.errorResponse(400, "INVALID_" + resourceType.toUpperCase().replace('-', '_'), ex.getMessage());
                 }
-                return requireAccess(finalContext, patientId, resourceType)
+                return requireAccess(finalContext, patientId, resourceType, action)
                     .then(allowed -> allowed
                         ? handler.apply(value)
-                        : PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required for " + resourceType));
+                        : PhrRouteSupport.policyDenialResponse(403, finalContext.correlationId()));
             });
     }
 
     private Promise<HttpResponse> withPatientAccess(
             HttpRequest request,
             String resourceType,
+            String action,
             java.util.function.Function<String, Promise<HttpResponse>> handler) {
         PhrRouteSupport.PhrRequestContext context;
         String patientId;
@@ -456,21 +457,22 @@ public final class PhrAdministrativeRoutes {
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT_SCOPE", ex.getMessage());
         }
-        return requireAccess(context, patientId, resourceType)
+        return requireAccess(context, patientId, resourceType, action)
             .then(allowed -> allowed
                 ? handler.apply(patientId)
-                : PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required for " + resourceType));
+                : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
     }
 
-    private Promise<Boolean> requireAccess(PhrRouteSupport.PhrRequestContext context, String patientId, String resourceType) {
-        if ("admin".equals(context.role())) {
-            return Promise.of(true);
-        }
+    private Promise<Boolean> requireAccess(
+            PhrRouteSupport.PhrRequestContext context,
+            String patientId,
+            String resourceType,
+            String action) {
         return policyEvaluator.canAccessPhiResourceAsync(
                 context,
                 patientId,
                 resourceType,
-                "READ",
+                action,
                 context.tenantId(),
                 context.facilityId())
             .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);

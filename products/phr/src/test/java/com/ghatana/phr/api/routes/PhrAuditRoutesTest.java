@@ -3,6 +3,10 @@ package com.ghatana.phr.api.routes;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.kernel.observability.AuditTrailService;
+import com.ghatana.phr.kernel.service.ConsentManagementService;
+import com.ghatana.phr.kernel.service.FchvCommunityAssignmentService;
+import com.ghatana.phr.kernel.service.TreatmentRelationshipService;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
@@ -43,11 +47,24 @@ class PhrAuditRoutesTest extends EventloopTestBase {
     @Mock
     private AuditTrailService auditTrailService;
 
+    @Mock
+    private ConsentManagementService consentService;
+
+    @Mock
+    private TreatmentRelationshipService treatmentRelationshipService;
+
+    @Mock
+    private FchvCommunityAssignmentService fchvCommunityAssignmentService;
+
     private AsyncServlet servlet;
 
     @BeforeEach
     void setUp() {
-        PhrAuditRoutes routes = new PhrAuditRoutes(eventloop(), auditTrailService);
+        PhrAuditRoutes routes = new PhrAuditRoutes(
+            eventloop(),
+            auditTrailService,
+            new PhrPolicyEvaluator(consentService, treatmentRelationshipService, fchvCommunityAssignmentService)
+        );
         servlet = routes.getServlet();
     }
 
@@ -108,21 +125,32 @@ class PhrAuditRoutesTest extends EventloopTestBase {
     class PatientScopedEnforcement {
 
         @Test
-        @DisplayName("patient role always receives events scoped to their own principalId")
-        void patientRoleReceivesOwnEventsOnly() throws Exception {
+        @DisplayName("patient role receives events scoped to their own principalId")
+        void patientRoleReceivesOwnEvents() throws Exception {
             AuditTrailService.AuditTrailEvent ownEvent = buildEvent("evt-1", "patient-1", "access");
             when(auditTrailService.queryAuditEvents(any())).thenReturn(List.of(ownEvent));
 
-            HttpResponse response = dispatch("/events?patientId=other-patient", Map.of(
+            HttpResponse response = dispatch("/events?patientId=patient-1", Map.of(
                 "X-Tenant-ID", "tenant-health-1",
                 "X-Principal-ID", "patient-1",
                 "X-Role", "patient"
             ));
 
             assertThat(response.getCode()).isEqualTo(200);
-
-            // Verify the query was scoped to "patient-1" (own principalId), not "other-patient"
             verify(auditTrailService).queryAuditEvents(argWithEntityId("patient-1"));
+        }
+
+        @Test
+        @DisplayName("patient role cannot query another patient's audit events")
+        void patientRoleCannotQueryAnotherPatient() throws Exception {
+            HttpResponse response = dispatch("/events?patientId=other-patient", Map.of(
+                "X-Tenant-ID", "tenant-health-1",
+                "X-Principal-ID", "patient-1",
+                "X-Role", "patient"
+            ));
+
+            assertThat(response.getCode()).isEqualTo(403);
+            assertThat(parseBody(response).path("error").asText()).isEqualTo("POLICY_DENIED");
         }
 
         @Test
@@ -154,6 +182,19 @@ class PhrAuditRoutesTest extends EventloopTestBase {
 
             assertThat(response.getCode()).isEqualTo(200);
             verify(auditTrailService).queryAuditEvents(argWithEntityId("patient-77"));
+        }
+
+        @Test
+        @DisplayName("clinician role must include a patient scope")
+        void clinicianRoleRequiresPatientScope() throws Exception {
+            HttpResponse response = dispatch("/events", Map.of(
+                "X-Tenant-ID", "tenant-health-1",
+                "X-Principal-ID", "clinician-1",
+                "X-Role", "clinician"
+            ));
+
+            assertThat(response.getCode()).isEqualTo(403);
+            assertThat(parseBody(response).path("error").asText()).isEqualTo("POLICY_DENIED");
         }
     }
 
@@ -210,6 +251,20 @@ class PhrAuditRoutesTest extends EventloopTestBase {
             JsonNode body = parseBody(response);
             assertThat(body.path("total").asInt()).isEqualTo(0);
             assertThat(body.path("events").size()).isEqualTo(0);
+        }
+
+        @Test
+        @DisplayName("event detail finds the requested event within tenant-scoped results")
+        void eventDetailFindsRequestedEventBeyondFirstResult() throws Exception {
+            AuditTrailService.AuditTrailEvent firstEvent = buildEvent("evt-first", "patient-2", "access");
+            AuditTrailService.AuditTrailEvent requestedEvent = buildEvent("evt-requested", "patient-2", "access");
+            when(auditTrailService.queryAuditEvents(any())).thenReturn(List.of(firstEvent, requestedEvent));
+
+            HttpResponse response = dispatch("/events/evt-requested", adminHeaders("admin-1"));
+
+            assertThat(response.getCode()).isEqualTo(200);
+            assertThat(parseBody(response).path("id").asText()).isEqualTo("evt-requested");
+            verify(auditTrailService).queryAuditEvents(argWithLimit(1000));
         }
     }
 
@@ -329,6 +384,57 @@ class PhrAuditRoutesTest extends EventloopTestBase {
         }
     }
 
+    @Nested
+    @DisplayName("Export")
+    class Export {
+
+        @Test
+        @DisplayName("admin can export audit events as CSV")
+        void adminCanExportCsv() {
+            when(auditTrailService.queryAuditEvents(any()))
+                .thenReturn(List.of(buildEvent("evt-export", "patient-2", "access")));
+
+            HttpResponse response = dispatch("/events/export?format=csv", adminHeaders("admin-1"));
+
+            assertThat(response.getCode()).isEqualTo(200);
+        }
+
+        @Test
+        @DisplayName("CSV export escapes fields with commas and quotes")
+        void csvExportEscapesFields() throws Exception {
+            AuditTrailService.AuditTrailEvent event = AuditTrailService.AuditTrailEvent.builder()
+                .eventId("evt-export")
+                .eventType("access,review")
+                .entityId("patient-2")
+                .userId("admin,\"one\"")
+                .tenantId("tenant-health-1")
+                .action("access")
+                .timestamp(System.currentTimeMillis())
+                .build();
+            when(auditTrailService.queryAuditEvents(any())).thenReturn(List.of(event));
+
+            HttpResponse response = dispatch("/events/export?format=csv", adminHeaders("admin-1"));
+
+            assertThat(response.getCode()).isEqualTo(200);
+            String csv = new String(runPromise(response::loadBody).asArray(), StandardCharsets.UTF_8);
+            assertThat(csv).contains("\"access,review\"");
+            assertThat(csv).contains("\"admin,\"\"one\"\"\"");
+        }
+
+        @Test
+        @DisplayName("non-admin export is denied by policy")
+        void nonAdminExportDenied() throws Exception {
+            HttpResponse response = dispatch("/events/export?format=json", Map.of(
+                "X-Tenant-ID", "tenant-health-1",
+                "X-Principal-ID", "clinician-1",
+                "X-Role", "clinician"
+            ));
+
+            assertThat(response.getCode()).isEqualTo(403);
+            assertThat(parseBody(response).path("error").asText()).isEqualTo("POLICY_DENIED");
+        }
+    }
+
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
@@ -374,5 +480,9 @@ class PhrAuditRoutesTest extends EventloopTestBase {
 
     private static AuditTrailService.AuditQuery argWithEventType(String expectedEventType) {
         return org.mockito.ArgumentMatchers.argThat(q -> expectedEventType.equals(q.getEventType()));
+    }
+
+    private static AuditTrailService.AuditQuery argWithLimit(int expectedLimit) {
+        return org.mockito.ArgumentMatchers.argThat(q -> q.getLimit() == expectedLimit);
     }
 }

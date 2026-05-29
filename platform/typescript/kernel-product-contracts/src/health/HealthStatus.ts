@@ -7,6 +7,8 @@
  * @doc.pattern ValueObject
  */
 
+import { z } from "zod";
+
 /**
  * Health status for health snapshots.
  */
@@ -21,3 +23,20 @@ export type HealthStatus =
   | "requires-verification"
   | "obsolete"
   | "quarantined";
+
+export const HealthStatusSchema = z.enum([
+  "healthy",
+  "degraded",
+  "blocked",
+  "failed",
+  "skipped",
+  "unknown",
+  "requires-approval",
+  "requires-verification",
+  "obsolete",
+  "quarantined",
+]);
+
+export function validateHealthStatus(value: unknown): value is HealthStatus {
+  return HealthStatusSchema.safeParse(value).success;
+}

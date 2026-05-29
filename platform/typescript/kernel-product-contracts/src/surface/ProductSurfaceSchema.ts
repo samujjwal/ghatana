@@ -145,6 +145,11 @@ export const ProductSurfaceSchema = z
   )
 
 export type ProductSurfaceInput = z.infer<typeof ProductSurfaceSchema>;
+export const ProductSurfaceInputSchema = ProductSurfaceSchema;
+
+export function validateProductSurfaceInput(input: unknown): input is ProductSurfaceInput {
+  return ProductSurfaceInputSchema.safeParse(input).success;
+}
 
 /**
  * Get valid combinations for a given language

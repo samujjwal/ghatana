@@ -41,21 +41,21 @@ public final class RouteSurfaceMapping {
         Map.entry("GET /api/v1/connectors", "connectors.read"),
         Map.entry("GET /api/v1/connectors/{id}", "connectors.read"),
         
-        // Pipeline operations
-        Map.entry("POST /api/v1/pipelines", "pipelines.create"),
-        Map.entry("PUT /api/v1/pipelines/{id}", "pipelines.update"),
-        Map.entry("DELETE /api/v1/pipelines/{id}", "pipelines.delete"),
-        Map.entry("POST /api/v1/pipelines/{id}/execute", "action.pipelines.execute"),
-        Map.entry("GET /api/v1/pipelines", "pipelines.read"),
-        Map.entry("GET /api/v1/pipelines/{id}", "pipelines.read"),
+        // Pipeline operations (canonical Action Plane namespace)
+        Map.entry("POST /api/v1/action/pipelines", "pipelines.create"),
+        Map.entry("PUT /api/v1/action/pipelines/{id}", "pipelines.update"),
+        Map.entry("DELETE /api/v1/action/pipelines/{id}", "pipelines.delete"),
+        Map.entry("POST /api/v1/action/pipelines/{id}/execute", "action.pipelines.execute"),
+        Map.entry("GET /api/v1/action/pipelines", "pipelines.read"),
+        Map.entry("GET /api/v1/action/pipelines/{id}", "pipelines.read"),
         
-        // Execution operations
-        Map.entry("POST /api/v1/executions/{id}/cancel", "executions.cancel"),
-        Map.entry("POST /api/v1/executions/{id}/retry", "executions.retry"),
-        Map.entry("POST /api/v1/executions/{id}/rollback", "executions.rollback"),
-        Map.entry("POST /api/v1/executions/{id}/restore", "executions.restore"),
-        Map.entry("GET /api/v1/executions", "executions.read"),
-        Map.entry("GET /api/v1/executions/{id}", "executions.read"),
+        // Execution operations (canonical Action Plane namespace)
+        Map.entry("POST /api/v1/action/executions/{id}/cancel", "executions.cancel"),
+        Map.entry("POST /api/v1/action/executions/{id}/retry", "executions.retry"),
+        Map.entry("POST /api/v1/action/executions/{id}/rollback", "executions.rollback"),
+        Map.entry("POST /api/v1/action/executions/{id}/restore", "executions.restore"),
+        Map.entry("GET /api/v1/action/executions/{id}", "executions.read"),
+        Map.entry("GET /api/v1/action/executions/{id}/logs", "executions.read"),
         
         // Alert operations
         Map.entry("POST /api/v1/alerts/{id}/remediate", "alerts.remediate"),
@@ -121,8 +121,7 @@ public final class RouteSurfaceMapping {
         
         // Runtime truth / surfaces
         Map.entry("GET /api/v1/surfaces", "runtime.truth.read"),
-        Map.entry("GET /api/v1/surfaces/typed", "runtime.truth.read"),
-        Map.entry("GET /api/v1/surfaces/{id}", "runtime.truth.read")
+        Map.entry("GET /api/v1/surfaces/schema", "runtime.truth.read")
     );
     
     private RouteSurfaceMapping() {}
@@ -166,7 +165,8 @@ public final class RouteSurfaceMapping {
     private static String normalizePath(String path) {
         String normalized = path.replaceAll("/[0-9a-fA-F-]{8,}", "/{id}");
         normalized = normalized.replaceAll("/connectors/[^/]+", "/connectors/{id}");
-        normalized = normalized.replaceAll("/pipelines/[^/]+", "/pipelines/{id}");
+        normalized = normalized.replaceAll("/action/pipelines/[^/]+", "/action/pipelines/{id}");
+        normalized = normalized.replaceAll("/action/executions/[^/]+", "/action/executions/{id}");
         normalized = normalized.replaceAll("/executions/[^/]+", "/executions/{id}");
         normalized = normalized.replaceAll("/alerts/[^/]+", "/alerts/{id}");
         normalized = normalized.replaceAll("/alerts/groups/[^/]+", "/alerts/groups/{id}");
@@ -180,7 +180,6 @@ public final class RouteSurfaceMapping {
         normalized = normalized.replaceAll("/plugins/[^/]+", "/plugins/{id}");
         normalized = normalized.replaceAll("/context/keys/[^/]+", "/context/keys/{id}");
         normalized = normalized.replaceAll("/entities/[^/]+", "/entities/{collection}");
-        normalized = normalized.replaceAll("/surfaces/[^/]+", "/surfaces/{id}");
         return normalized;
     }
 }

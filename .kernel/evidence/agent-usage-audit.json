@@ -1,17 +1,17 @@
 {
-  "generatedAt": "2026-05-28T21:17:34.284Z",
+  "generatedAt": "2026-05-29T00:48:06.853Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/audit-agent-usage.mjs",
     "source": "scripts/audit-agent-usage.mjs",
     "command": "pnpm check:agent-usage-audit",
-    "commit": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
-    "sourceCommitSha": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
-    "targetCommitSha": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
+    "commit": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+    "sourceCommitSha": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+    "targetCommitSha": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
     "targetEnvironment": "staging"
   },
-  "sourceCommitSha": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
-  "targetCommitSha": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
+  "sourceCommitSha": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+  "targetCommitSha": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
   "targetEnvironment": "staging",
   "summary": {
     "scannedDirectories": 7,

@@ -7,7 +7,8 @@
  * @doc.pattern Snapshot
  */
 
-import type { HealthStatus } from "./HealthStatus.js";
+import { z } from "zod";
+import { HealthStatusSchema, type HealthStatus } from "./HealthStatus.js";
 
 /**
  * Surface health status.
@@ -18,6 +19,15 @@ export interface SurfaceHealthStatus {
   readonly message: string;
   readonly lastUpdated: string;
 }
+
+export const SurfaceHealthStatusSchema = z
+  .object({
+    surfaceId: z.string().trim().min(1),
+    status: HealthStatusSchema,
+    message: z.string().trim().min(1),
+    lastUpdated: z.string().datetime({ offset: true }),
+  })
+  .strict();
 
 /**
  * ProductUnit health snapshot.
@@ -57,4 +67,28 @@ export interface ProductUnitHealthSnapshot {
    * Additional metadata.
    */
   readonly metadata?: Record<string, unknown>;
+}
+
+export const ProductUnitHealthSnapshotSchema = z
+  .object({
+    productUnitId: z.string().trim().min(1),
+    status: HealthStatusSchema,
+    surfaces: z.array(SurfaceHealthStatusSchema),
+    lifecycleStatus: z.string().trim().min(1),
+    lastLifecycleRun: z.string().datetime({ offset: true }).optional(),
+    snapshotAt: z.string().datetime({ offset: true }),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+  })
+  .strict();
+
+export function validateSurfaceHealthStatus(
+  value: unknown
+): value is SurfaceHealthStatus {
+  return SurfaceHealthStatusSchema.safeParse(value).success;
+}
+
+export function validateProductUnitHealthSnapshot(
+  value: unknown
+): value is ProductUnitHealthSnapshot {
+  return ProductUnitHealthSnapshotSchema.safeParse(value).success;
 }

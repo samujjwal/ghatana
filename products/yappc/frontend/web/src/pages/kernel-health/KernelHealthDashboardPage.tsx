@@ -469,7 +469,7 @@ export const KernelHealthDashboardPage: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Current Phase</p>
                   <p className="font-semibold">{healthView.currentPhase}</p>
@@ -487,6 +487,10 @@ export const KernelHealthDashboardPage: React.FC = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Deployment</p>
                   <p className="font-semibold">{healthView.deploymentStatus}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Truth Source</p>
+                  <p className="font-semibold">{healthView.truthSource ?? 'unknown'}</p>
                 </div>
               </div>
             </CardContent>

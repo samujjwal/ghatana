@@ -21,10 +21,12 @@ function makeMockResponse(opts: {
   status: number;
   body: unknown;
   correlationId?: string;
+  requestId?: string;
   contentType?: string;
 }): Response {
   const headers = new Headers({
     'content-type': opts.contentType ?? 'application/json',
+    ...(opts.requestId ? { 'X-Request-Id': opts.requestId } : {}),
     ...(opts.correlationId ? { 'X-Correlation-ID': opts.correlationId } : {}),
   });
   return {
@@ -177,6 +179,27 @@ describe('ApiClient runtime truth evidence (DC-P1-438)', () => {
 
       expect(caught?.status).toBe(500);
       expect(caught?.correlationId).toBe('server-500-corr-999');
+    });
+
+    it('prefers X-Request-Id when server returns canonical request id header', async () => {
+      vi.stubGlobal('fetch', async () =>
+        makeMockResponse({
+          status: 500,
+          body: { message: 'Internal Server Error' },
+          requestId: 'request-id-500-corr',
+          correlationId: 'legacy-correlation-id',
+        })
+      );
+
+      const client = createApiClient();
+      let caught: ApiError | null = null;
+      try {
+        await client.get('/fail-request-id');
+      } catch (e) {
+        caught = e as ApiError;
+      }
+
+      expect(caught?.correlationId).toBe('request-id-500-corr');
     });
 
     it('correlationId is undefined when server does not echo the header', async () => {

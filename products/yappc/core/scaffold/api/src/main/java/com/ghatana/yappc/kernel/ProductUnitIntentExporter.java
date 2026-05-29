@@ -24,6 +24,8 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
@@ -70,6 +72,7 @@ public final class ProductUnitIntentExporter {
 
     private static final Logger log = LoggerFactory.getLogger(ProductUnitIntentExporter.class);
 
+    private static final String CONTRACT_RESOURCE = "/kernel-product-unit-contract.json";
     private static final String SCHEMA_VERSION = "1.0.0";
     private static final String PRODUCER_TYPE = "yappc";
 
@@ -81,9 +84,28 @@ public final class ProductUnitIntentExporter {
 
     /**
      * Constructs a new ProductUnitIntentExporter with default YAML and JSON mappers.
+     * Loads the Kernel ProductUnit contract from the classpath resource.
      */
     public ProductUnitIntentExporter() {
-        this(new ProductUnitKernelContractRegistry());
+        this(loadContractRegistry());
+    }
+
+    /**
+     * Loads the Kernel ProductUnit contract from the classpath resource.
+     * This is the single source of truth for the contract DTO path.
+     */
+    private static ProductUnitKernelContractRegistry loadContractRegistry() {
+        try (InputStream input = ProductUnitIntentExporter.class.getResourceAsStream(CONTRACT_RESOURCE)) {
+            if (input == null) {
+                throw new IllegalStateException("Missing Kernel ProductUnit contract resource: " + CONTRACT_RESOURCE);
+            }
+            ObjectMapper mapper = new ObjectMapper();
+            ProductUnitKernelContractRegistry.KernelProductUnitContract contract =
+                mapper.readValue(input, ProductUnitKernelContractRegistry.KernelProductUnitContract.class);
+            return new ProductUnitKernelContractRegistry(contract);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load Kernel ProductUnit contract resource", e);
+        }
     }
 
     /**

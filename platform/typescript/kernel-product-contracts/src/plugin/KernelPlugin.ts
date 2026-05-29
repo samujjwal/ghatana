@@ -7,7 +7,9 @@
  * @doc.pattern Plugin
  */
 
+import { z } from "zod";
 import type { PluginKind } from "./PluginKind.js";
+import { PluginKindSchema } from "./PluginKind.js";
 
 /**
  * Plugin execution context.
@@ -44,6 +46,17 @@ export interface PluginExecutionContext {
   readonly metadata?: Record<string, unknown>;
 }
 
+export const PluginExecutionContextSchema = z
+  .object({
+    productUnitId: z.string().trim().min(1),
+    runId: z.string().trim().min(1),
+    phase: z.string().trim().min(1),
+    surface: z.string().trim().min(1).optional(),
+    environment: z.string().trim().min(1).optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+  })
+  .strict();
+
 /**
  * Plugin execution result.
  */
@@ -68,6 +81,15 @@ export interface PluginExecutionResult {
    */
   readonly durationMs: number;
 }
+
+export const PluginExecutionResultSchema = z
+  .object({
+    success: z.boolean(),
+    message: z.string().trim().min(1),
+    data: z.record(z.string(), z.unknown()).optional(),
+    durationMs: z.number().nonnegative(),
+  })
+  .strict();
 
 /**
  * Kernel plugin contract.
@@ -104,4 +126,37 @@ export interface KernelPlugin {
   execute(
     context: PluginExecutionContext
   ): Promise<PluginExecutionResult>;
+}
+
+export const KernelPluginSchema = z.custom<KernelPlugin>(
+  (value) => {
+    if (typeof value !== "object" || value === null) {
+      return false;
+    }
+    const plugin = value as Record<string, unknown>;
+    return (
+      typeof plugin.pluginId === "string" &&
+      PluginKindSchema.safeParse(plugin.kind).success &&
+      Array.isArray(plugin.capabilities) &&
+      Array.isArray(plugin.lifecycleHooks) &&
+      typeof plugin.execute === "function"
+    );
+  },
+  "KernelPlugin requires plugin metadata and an execute function"
+);
+
+export function validatePluginExecutionContext(
+  value: unknown
+): value is PluginExecutionContext {
+  return PluginExecutionContextSchema.safeParse(value).success;
+}
+
+export function validatePluginExecutionResult(
+  value: unknown
+): value is PluginExecutionResult {
+  return PluginExecutionResultSchema.safeParse(value).success;
+}
+
+export function validateKernelPlugin(value: unknown): value is KernelPlugin {
+  return KernelPluginSchema.safeParse(value).success;
 }

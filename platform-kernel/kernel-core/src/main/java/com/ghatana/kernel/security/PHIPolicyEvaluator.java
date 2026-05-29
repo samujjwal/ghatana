@@ -15,7 +15,7 @@ import java.util.Set;
  * <p>Provides generic PHI access policy evaluation for healthcare products.
  * This service evaluates PHI access requests against consent, treatment
  * relationships, emergency access rules, and data classification policies.
- * Products like PHR can use this as the foundation for their product-specific
+ * Healthcare products can use this as the foundation for their product-specific
  * policy evaluation.</p>
  *
  * <p>PHI access decisions are based on:</p>
@@ -65,7 +65,7 @@ public interface PHIPolicyEvaluator {
     /**
      * Evaluates emergency break-glass access request.
      *
-     * <p>Emergency access requires justification, clinical necessity, and
+     * <p>Emergency access requires justification, operational necessity, and
      * triggers mandatory review and patient notification.</p>
      *
      * @param request the emergency access request

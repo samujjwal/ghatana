@@ -1,0 +1,27 @@
+# Phase Readiness Evaluation Configuration
+# 
+# This file defines the weights and thresholds used to calculate phase readiness scores.
+# The completeness score is calculated as:
+#   score = artifact * artifactWeight + blocker * blockerWeight + evidence * evidenceWeight 
+#           + governance * governanceWeight + health * healthWeight
+#
+# A phase can advance when:
+#   - No critical blockers
+#   - All required artifacts are complete
+#   - Evidence is available
+#   - Governance allows the transition
+#   - Health signals are healthy
+#   - Completeness score >= threshold
+#   - Project status is "active"
+
+# Minimum completeness score required to advance to the next phase
+threshold: 0.90
+
+# Weights for each signal in the completeness score calculation
+# Weights should sum to 1.0 for a normalized score
+weights:
+  artifact: 0.40    # Required artifacts completion
+  blocker: 0.25     # Blocker severity (critical = 0.0, non-critical = 0.5)
+  evidence: 0.15    # Evidence availability
+  governance: 0.10  # Policy approval status
+  health: 0.10      # Preview, generation, and runtime health signals

@@ -23,12 +23,13 @@ import java.util.Set;
  */
 public final class ProductUnitKernelContractRegistry {
 
-    private static final String CONTRACT_RESOURCE = "/kernel-product-unit-contract.json";
+    private static final String MINIMUM_SCHEMA_VERSION = "1.0.0";
 
     private final KernelProductUnitContract contract;
 
     /**
      * Creates the default registry from the imported Kernel ProductUnit contract resource.
+     * The contract DTO path is now managed only in ProductUnitIntentExporter.
      */
     public ProductUnitKernelContractRegistry() {
         this(loadDefaultContract());
@@ -40,6 +41,7 @@ public final class ProductUnitKernelContractRegistry {
      * @param contract imported Kernel ProductUnit contract
      */
     public ProductUnitKernelContractRegistry(@NotNull KernelProductUnitContract contract) {
+        validateSchemaVersion(contract.schemaVersion());
         this.contract = contract;
     }
 
@@ -58,21 +60,21 @@ public final class ProductUnitKernelContractRegistry {
         this(new KernelProductUnitContract(
                 "1.0.0",
                 providers,
-            providers,
+                providers,
                 lifecycleProfiles,
                 surfaces,
                 Set.of(),
                 Set.of()));
     }
 
-        public ProductUnitKernelContractRegistry(
+    public ProductUnitKernelContractRegistry(
             @NotNull Set<String> providers,
             @NotNull Set<String> sourceProviders,
             @NotNull Set<String> lifecycleProfiles,
             @NotNull Set<String> surfaces,
             @NotNull Set<String> productUnitKinds,
             @NotNull Set<String> implementationStatuses
-        ) {
+    ) {
         this(new KernelProductUnitContract(
             "1.0.0",
             providers,
@@ -81,7 +83,7 @@ public final class ProductUnitKernelContractRegistry {
             surfaces,
             productUnitKinds,
             implementationStatuses));
-        }
+    }
 
     public boolean isProviderKnown(String provider) {
         return provider != null && contract.providers().contains(provider);
@@ -132,14 +134,47 @@ public final class ProductUnitKernelContractRegistry {
     }
 
     private static KernelProductUnitContract loadDefaultContract() {
-        try (InputStream input = ProductUnitKernelContractRegistry.class.getResourceAsStream(CONTRACT_RESOURCE)) {
+        try (InputStream input = ProductUnitKernelContractRegistry.class.getResourceAsStream("/kernel-product-unit-contract.json")) {
             if (input == null) {
-                throw new IllegalStateException("Missing Kernel ProductUnit contract resource: " + CONTRACT_RESOURCE);
+                throw new IllegalStateException("Missing Kernel ProductUnit contract resource: /kernel-product-unit-contract.json");
             }
-            return new ObjectMapper().readValue(input, KernelProductUnitContract.class);
+            KernelProductUnitContract contract = new ObjectMapper().readValue(input, KernelProductUnitContract.class);
+            validateSchemaVersion(contract.schemaVersion());
+            return contract;
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to load Kernel ProductUnit contract resource", e);
         }
+    }
+
+    private static void validateSchemaVersion(String schemaVersion) {
+        if (schemaVersion == null || schemaVersion.trim().isEmpty()) {
+            throw new IllegalStateException("Kernel ProductUnit contract schema version is null or empty");
+        }
+        if (!isSchemaVersionCompatible(schemaVersion)) {
+            throw new IllegalStateException(
+                "Kernel ProductUnit contract schema version '" + schemaVersion +
+                "' is not compatible with minimum required version '" + MINIMUM_SCHEMA_VERSION + "'"
+            );
+        }
+    }
+
+    private static boolean isSchemaVersionCompatible(String schemaVersion) {
+        String[] requiredParts = MINIMUM_SCHEMA_VERSION.split("\\.");
+        String[] actualParts = schemaVersion.split("\\.");
+
+        for (int i = 0; i < Math.min(requiredParts.length, actualParts.length); i++) {
+            int required = Integer.parseInt(requiredParts[i]);
+            int actual = Integer.parseInt(actualParts[i]);
+
+            if (actual > required) {
+                return true;
+            }
+            if (actual < required) {
+                return false;
+            }
+        }
+
+        return actualParts.length >= requiredParts.length;
     }
 
     /**

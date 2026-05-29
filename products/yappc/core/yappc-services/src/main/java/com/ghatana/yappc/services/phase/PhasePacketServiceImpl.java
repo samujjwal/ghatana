@@ -343,7 +343,12 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                         readiness,
                         blockers,
                     governance,
-                    !Boolean.TRUE.equals(projectState.get("featureFlagsDegraded"))
+                    !Boolean.TRUE.equals(projectState.get("featureFlagsDegraded")),
+                    evidence.stream().map(PhasePacket.PhaseEvidence::id).toList(),
+                    platformRunStatus.isPresent() ? platformRunStatus.get().traceId() : "",
+                    blockers.isEmpty() ? "low" : "high",
+                    "",
+                    ""
                 );
                 PhasePacket.DashboardActionClassification dashboardActions = buildDashboardActionClassification(actions, blockers);
                 String projectName = extractProjectName(projectState);

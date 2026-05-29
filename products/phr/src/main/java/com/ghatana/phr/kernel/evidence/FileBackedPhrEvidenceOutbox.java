@@ -23,6 +23,11 @@ import java.util.stream.Stream;
  * <p>The outbox intentionally persists every regulated event before attempting
  * delivery to Data Cloud so a transient adapter outage cannot silently discard
  * lifecycle, audit, or consent proof.</p>
+ *
+ * @doc.type class
+ * @doc.purpose Durable persistence for PHR regulated event evidence
+ * @doc.layer product
+ * @doc.pattern Outbox
  */
 public final class FileBackedPhrEvidenceOutbox implements PhrEvidenceOutbox {
 

@@ -21,6 +21,10 @@ export const PRODUCT_UNIT_SOURCE_REF_KINDS = [
 export type ProductUnitSourceRefKind =
   (typeof PRODUCT_UNIT_SOURCE_REF_KINDS)[number];
 
+export const ProductUnitSourceRefKindSchema = z.enum(
+  PRODUCT_UNIT_SOURCE_REF_KINDS
+);
+
 export interface ProductUnitSourceRef {
   readonly kind: ProductUnitSourceRefKind;
   readonly ref: string;
@@ -61,4 +65,10 @@ export function isProductUnitSourceRef(
   value: unknown,
 ): value is ProductUnitSourceRef {
   return ProductUnitSourceRefSchema.safeParse(value).success;
+}
+
+export function validateProductUnitSourceRefKind(
+  value: unknown,
+): value is ProductUnitSourceRefKind {
+  return ProductUnitSourceRefKindSchema.safeParse(value).success;
 }

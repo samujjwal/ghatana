@@ -1,6 +1,6 @@
 /**
- * PHR session context — holds the authenticated actor identity resolved
- * from the backend auth/login response and gates dashboard access on a real session.
+ * PHR session context for the authenticated actor identity resolved from the
+ * backend auth/login response.
  *
  * @doc.type context
  * @doc.purpose Authenticated session management for PHR web app
@@ -30,7 +30,6 @@ function loadStoredSession(): PhrSession | null {
     const raw = window.sessionStorage.getItem(SESSION_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as PhrSession;
-    // Reject sessions that are already expired
     if (new Date(parsed.expiresAt) <= new Date()) {
       window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
       return null;
@@ -50,7 +49,7 @@ export function PhrSessionProvider({ children }: { children: React.ReactNode }):
     try {
       window.sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(nextSession));
     } catch {
-      // Silently ignore storage errors; session will still work in memory.
+      // Session remains available in memory when browser storage is unavailable.
     }
   }, []);
 
@@ -59,36 +58,33 @@ export function PhrSessionProvider({ children }: { children: React.ReactNode }):
     try {
       window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
     } catch {
-      // Silently ignore storage errors.
+      // Clearing in-memory state above is sufficient when storage is unavailable.
     }
   }, []);
 
-  // Validate stored session with backend on mount
   useEffect(() => {
     const validateSession = async (): Promise<void> => {
       const stored = loadStoredSession();
       if (!stored) return;
 
-	    setSessionValidating(true);
-	    try {
-	        const response = await phrFetch('/auth/me', {
-	          context: {
-	            principalId: stored.principalId,
-	            tenantId: stored.tenantId,
-	            role: stored.role,
-	          },
-	        }) as { principalId: string; tenantId: string; role: string; name: string; permissions: string[] };
+      setSessionValidating(true);
+      try {
+        const response = await phrFetch('/auth/me', {
+          context: {
+            principalId: stored.principalId,
+            tenantId: stored.tenantId,
+            role: stored.role,
+          },
+        }) as { principalId: string; tenantId: string; role: string; name: string; permissions: string[] };
 
-        // If backend validation succeeds, update session with fresh data
         setSessionState({
           principalId: response.principalId,
           tenantId: response.tenantId,
-	          role: response.role as 'patient' | 'caregiver' | 'fchv' | 'clinician' | 'admin',
+          role: response.role as 'patient' | 'caregiver' | 'fchv' | 'clinician' | 'admin',
           name: response.name,
-          expiresAt: stored.expiresAt, // Keep existing expiry
+          expiresAt: stored.expiresAt,
         });
       } catch {
-        // Backend validation failed - clear session
         logWarn('Session validation failed');
         clearSession();
       } finally {
@@ -99,7 +95,6 @@ export function PhrSessionProvider({ children }: { children: React.ReactNode }):
     validateSession();
   }, [clearSession]);
 
-  // Auto-expire the session if the expiry timestamp is reached during active use.
   useEffect(() => {
     if (!session) return;
     const msUntilExpiry = new Date(session.expiresAt).getTime() - Date.now();

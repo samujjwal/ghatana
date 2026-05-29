@@ -172,11 +172,11 @@ export interface PhaseAction {
   readonly enabled: boolean;
   readonly disabledReason?: string;
   readonly requiredPermission: string;
-  readonly category?: string;
-  readonly severity?: string;
-  readonly confirmationRequired?: boolean;
-  readonly idempotencyKey?: string;
-  readonly auditType?: string;
+  readonly category: string;
+  readonly severity: string;
+  readonly confirmationRequired: boolean;
+  readonly idempotencyKey: string;
+  readonly auditType: string;
   readonly targetType?: string;
   readonly targetRoute?: string | null;
   readonly targetDrawer?: string | null;

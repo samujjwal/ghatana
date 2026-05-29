@@ -27,26 +27,22 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
 
 /**
  * Enforcement matrix tests for {@link PhrPatientRecordRoutes}.
  *
- * <p>Verifies that patient record endpoints enforce role and consent-based access:
- * <ul>
- *   <li>Admin may create new patient records.</li>
- *   <li>Patient may read their own record.</li>
- *   <li>Patient may NOT read another patient's record without consent.</li>
- *   <li>400 is returned when required context headers are absent.</li>
- * </ul>
+ * <p>Verifies that patient record endpoints enforce resource/action-specific policy.
  *
  * @doc.type class
- * @doc.purpose Patient record routes enforcement matrix: verifies RBAC and consent access for patient records
+ * @doc.purpose Patient record routes enforcement matrix: verifies resource/action policy access for patient records
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("PhrPatientRecordRoutes — enforcement matrix")
+@DisplayName("PhrPatientRecordRoutes - enforcement matrix")
 @ExtendWith(MockitoExtension.class)
 class PhrPatientRecordRoutesTest extends EventloopTestBase {
 
@@ -64,6 +60,19 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
           "birthDate": "1990-01-01",
           "bloodType": "O+",
           "location": "Lalitpur",
+          "nationalId": "NP-123456"
+        }
+        """;
+
+    private static final String PATIENT_BODY_WITH_ID = """
+        {
+          "id": "patient-1",
+          "demographics": {
+            "givenName": "Test",
+            "familyName": "Patient",
+            "dateOfBirth": "1990-01-01",
+            "gender": "male"
+          },
           "nationalId": "NP-123456"
         }
         """;
@@ -112,11 +121,11 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("POST / — create patient record")
+    @DisplayName("POST / - create patient record")
     class CreatePatient {
 
         @Test
-        @DisplayName("201 — admin may create a new patient record")
+        @DisplayName("201 - admin may create a new patient record")
         void adminMayCreatePatient() throws Exception {
             HttpRequest request = contextRequestWithBody(
                 HttpMethod.POST, "/", "t1", "admin-1", "admin", PATIENT_BODY);
@@ -127,7 +136,20 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("400 — missing context headers")
+        @DisplayName("201 - identified create uses write policy")
+        void identifiedCreateUsesWritePolicy() throws Exception {
+            HttpRequest request = contextRequestWithBody(
+                HttpMethod.POST, "/", "t1", "patient-1", "patient", PATIENT_BODY_WITH_ID);
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(201);
+            verify(policyEvaluator).canAccessPhiResourceAsync(
+                any(), eq("patient-1"), eq("patient-records"), eq("WRITE"), eq("t1"), nullable(String.class));
+        }
+
+        @Test
+        @DisplayName("400 - missing context headers")
         void returns400WhenContextMissing() throws Exception {
             HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/")
                 .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
@@ -141,11 +163,11 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("GET /:patientId — retrieve patient record")
+    @DisplayName("GET /:patientId - retrieve patient record")
     class GetPatient {
 
         @Test
-        @DisplayName("200 — patient may read their own record")
+        @DisplayName("200 - patient may read their own record")
         void patientMayReadOwnRecord() throws Exception {
             HttpRequest request = contextRequest(
                 HttpMethod.GET, "/patient-1", "t1", "patient-1", "patient");
@@ -153,10 +175,12 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(200);
+            verify(policyEvaluator).canAccessPhiResourceAsync(
+                any(), eq("patient-1"), eq("patient-records"), eq("READ"), eq("t1"), nullable(String.class));
         }
 
         @Test
-        @DisplayName("200 — admin may read any patient record")
+        @DisplayName("200 - admin may read any patient record when policy allows")
         void adminMayReadAnyRecord() throws Exception {
             HttpRequest request = contextRequest(
                 HttpMethod.GET, "/patient-1", "t1", "admin-1", "admin");
@@ -167,7 +191,7 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("400 — missing context headers")
+        @DisplayName("400 - missing context headers")
         void returns400WhenContextMissing() throws Exception {
             HttpRequest request = HttpRequest.get("http://localhost/patient-1").build();
 
@@ -178,22 +202,42 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("GET / — search patient records")
-    class SearchPatients {
+    @DisplayName("PUT /:patientId - update patient record")
+    class UpdatePatient {
 
         @Test
-        @DisplayName("200 — admin may search patient records")
-        void adminMaySearchPatients() throws Exception {
-            HttpRequest request = contextRequest(
-                HttpMethod.GET, "/?name=Test", "t1", "admin-1", "admin");
+        @DisplayName("200 - update uses write policy")
+        void updateUsesWritePolicy() throws Exception {
+            HttpRequest request = contextRequestWithBody(
+                HttpMethod.PUT, "/patient-1", "t1", "patient-1", "patient", PATIENT_BODY_WITH_ID);
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(200);
+            verify(policyEvaluator).canAccessPhiResourceAsync(
+                any(), eq("patient-1"), eq("patient-records"), eq("WRITE"), eq("t1"), nullable(String.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("GET / - search patient records")
+    class SearchPatients {
+
+        @Test
+        @DisplayName("200 - admin may search a patient-scoped record set when policy allows")
+        void adminMaySearchPatients() throws Exception {
+            HttpRequest request = contextRequest(
+                HttpMethod.GET, "/?patientId=patient-1", "t1", "admin-1", "admin");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(200);
+            verify(policyEvaluator).canAccessPhiResourceAsync(
+                any(), eq("patient-1"), eq("patient-records"), eq("SEARCH"), eq("t1"), nullable(String.class));
         }
 
         @Test
-        @DisplayName("400 — missing context headers")
+        @DisplayName("400 - missing context headers")
         void returns400WhenContextMissing() throws Exception {
             HttpRequest request = HttpRequest.get("http://localhost/?name=Test").build();
 
@@ -201,9 +245,18 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
 
             assertThat(response.getCode()).isEqualTo(400);
         }
-    }
 
-    // ── Helpers ────────────────────────────────────────────────────────────────
+        @Test
+        @DisplayName("400 - search requires patient id for every role")
+        void searchRequiresPatientIdForEveryRole() throws Exception {
+            HttpRequest request = contextRequest(
+                HttpMethod.GET, "/?name=Test", "t1", "admin-1", "admin");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(400);
+        }
+    }
 
     private static HttpRequest contextRequest(
             HttpMethod method, String path, String tenantId, String principalId, String role) {

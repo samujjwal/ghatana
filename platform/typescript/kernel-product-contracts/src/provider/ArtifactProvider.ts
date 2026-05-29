@@ -7,6 +7,7 @@
  * @doc.pattern Interface
  */
 
+import { z } from "zod";
 import type { KernelProvider } from "./KernelProvider.js";
 
 /**
@@ -22,6 +23,19 @@ export interface ArtifactMetadata {
   readonly createdAt: string;
   readonly tags: readonly string[];
 }
+
+export const ArtifactMetadataSchema = z
+  .object({
+    artifactId: z.string().trim().min(1),
+    name: z.string().trim().min(1),
+    version: z.string().trim().min(1),
+    type: z.string().trim().min(1),
+    size: z.number().int().nonnegative(),
+    checksum: z.string().trim().min(1),
+    createdAt: z.string().datetime({ offset: true }),
+    tags: z.array(z.string().trim().min(1)),
+  })
+  .strict();
 
 /**
  * Artifact provider for storing and retrieving build artifacts.
@@ -50,4 +64,32 @@ export interface ArtifactProvider extends KernelProvider {
    * Lists artifacts by tags.
    */
   listArtifactsByTags(tags: readonly string[]): Promise<readonly ArtifactMetadata[]>;
+}
+
+export const ArtifactProviderSchema = z.custom<ArtifactProvider>(
+  (value) => {
+    if (typeof value !== "object" || value === null) {
+      return false;
+    }
+    const provider = value as Record<string, unknown>;
+    return (
+      typeof provider.storeArtifact === "function" &&
+      typeof provider.retrieveArtifact === "function" &&
+      typeof provider.getArtifactMetadata === "function" &&
+      typeof provider.listArtifactsByTags === "function"
+    );
+  },
+  "ArtifactProvider requires artifact storage functions"
+);
+
+export function validateArtifactMetadata(
+  value: unknown
+): value is ArtifactMetadata {
+  return ArtifactMetadataSchema.safeParse(value).success;
+}
+
+export function validateArtifactProvider(
+  value: unknown
+): value is ArtifactProvider {
+  return ArtifactProviderSchema.safeParse(value).success;
 }

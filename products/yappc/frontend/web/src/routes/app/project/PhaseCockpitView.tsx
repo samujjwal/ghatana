@@ -6,6 +6,7 @@ import { PhaseEvidencePanel } from '../../../components/phase/PhaseEvidencePanel
 import { PhaseGovernanceTrace } from '../../../components/phase/PhaseGovernanceTrace';
 import { PhasePrimaryActionCard } from '../../../components/phase/PhasePrimaryActionCard';
 import { PhaseSuggestedNextStep } from '../../../components/phase/PhaseSuggestedNextStep';
+import { translate } from '../../../i18n/messages';
 import type { Blocker as BlockerCard } from '../../../components/phase/PhaseBlockerPanel';
 import type { EvidenceItem as EvidenceCard } from '../../../components/phase/PhaseEvidencePanel';
 import type { GovernanceRecord as GovernanceTraceRecord } from '../../../components/phase/PhaseGovernanceTrace';
@@ -54,6 +55,7 @@ interface PhaseCockpitViewProps {
   readonly currentStateCard: React.ReactNode;
   readonly degradedDetails: React.ReactNode;
   readonly isDependencyDegraded: boolean;
+  readonly phasePanels?: readonly import('../../../types/phasePacket').PhasePanelView[];
 }
 
 export function PhaseCockpitView({
@@ -94,6 +96,7 @@ export function PhaseCockpitView({
   currentStateCard,
   degradedDetails,
   isDependencyDegraded,
+  phasePanels,
 }: PhaseCockpitViewProps): React.ReactNode {
   const advancedDetails = (
     <div
@@ -111,7 +114,7 @@ export function PhaseCockpitView({
         {phaseDetailLastActivityLabel}{' '}
         {lastActivityTimestampLabel || phaseDetailNoRecentActivityLabel}
       </div>
-      <PhaseEmbeddedSurface phase={phase} />
+      <PhaseEmbeddedSurface phase={phase} phasePanels={phasePanels} />
     </div>
   );
 
@@ -186,11 +189,11 @@ export function PhaseCockpitView({
               data-testid="phase-technical-details"
             >
               <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">
-                Technical details
+                {translate('phase.cockpit.dependencyDetails')}
               </summary>
               <div className="mt-3">{statusPanels}</div>
             </details>
-          ) : statusPanels}
+          ) : null}
         </div>
       </PhaseCockpitLayout>
     </div>

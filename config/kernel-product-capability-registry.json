@@ -18,6 +18,21 @@
     "observability": {
       "description": "Kernel observability, trace, metric, and log propagation."
     },
+    "product-unit-intent": {
+      "description": "Kernel product-unit intent contract exchange."
+    },
+    "artifact-intelligence": {
+      "description": "Kernel artifact intelligence evidence and shape analysis."
+    },
+    "lifecycle-planning": {
+      "description": "Kernel product lifecycle planning contracts."
+    },
+    "lifecycle-execution": {
+      "description": "Kernel product lifecycle execution contracts."
+    },
+    "artifact-validation": {
+      "description": "Kernel artifact validation contracts."
+    },
     "tenant-context": {
       "description": "Kernel tenant context propagation and validation."
     }
@@ -73,6 +88,14 @@
       "owner": "digital-marketing",
       "description": "Digital Marketing compliance rule pack."
     },
+    "yappc-scaffolding-domain": {
+      "owner": "yappc",
+      "description": "YAPPC scaffolding product-unit generation domain."
+    },
+    "yappc-refactoring-domain": {
+      "owner": "yappc",
+      "description": "YAPPC code analysis and refactoring domain."
+    },
     "flashit-boundary-policy": {
       "owner": "flashit",
       "description": "FlashIt boundary policies."
@@ -95,7 +118,11 @@
       "phr",
       "finance",
       "digital-marketing",
-      "flashit"
+      "yappc",
+      "flashit",
+      "rust-fixture",
+      "python-fixture",
+      "typescript-fixture"
     ]
   },
   "policyResources": {
@@ -105,7 +132,11 @@
       "phr",
       "finance",
       "digital-marketing",
-      "flashit"
+      "yappc",
+      "flashit",
+      "rust-fixture",
+      "python-fixture",
+      "typescript-fixture"
     ]
   }
 }

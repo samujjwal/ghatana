@@ -5,6 +5,24 @@
 
 import { test, expect } from '@playwright/test';
 
+const PRODUCTION_PROFILES = new Set(['production', 'staging', 'sovereign']);
+
+function isProductionLikeProfile(): boolean {
+  const profile = (process.env.DATACLOUD_PROFILE || 'local').toLowerCase();
+  return PRODUCTION_PROFILES.has(profile);
+}
+
+function buildAuthHeaders(tenantId: string, apiKey: string, extra: Record<string, string> = {}): Record<string, string> {
+  const headers: Record<string, string> = { ...extra };
+  if (apiKey) {
+    headers.Authorization = `Bearer ${apiKey}`;
+  }
+  if (!isProductionLikeProfile()) {
+    headers['X-Tenant-Id'] = tenantId;
+  }
+  return headers;
+}
+
 /**
  * P2-E2E-1: Browser E2E tests for Data Cloud with REAL backend
  * 
@@ -56,7 +74,7 @@ test.describe('Critical Path - Real Backend Integration', () => {
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
     expect(data).toBeDefined();
-    expect(data.data?.capabilities).toBeDefined();
+    expect(Array.isArray(data.data?.surfaces)).toBeTruthy();
   });
 
   test('should navigate to data explorer with real data', async ({ page }) => {
@@ -71,7 +89,7 @@ test.describe('Critical Path - Real Backend Integration', () => {
     
     // Verify real API was called (not mocked)
     const collectionsResponse = await page.request.get(`${BASE_URL}/api/v1/entities/dc_collections`, {
-      headers: { 'X-Tenant-Id': TEST_TENANT }
+      headers: buildAuthHeaders(TEST_TENANT, TEST_API_KEY)
     });
     expect(collectionsResponse.ok()).toBeTruthy();
   });
@@ -95,10 +113,7 @@ test.describe('Critical Path - Real Backend Integration', () => {
     
     // Verify real analytics endpoint was called
     const queryResponse = await page.request.post(`${BASE_URL}/api/v1/analytics/query`, {
-      headers: { 
-        'X-Tenant-Id': TEST_TENANT,
-        'Content-Type': 'application/json'
-      },
+      headers: buildAuthHeaders(TEST_TENANT, TEST_API_KEY, { 'Content-Type': 'application/json' }),
       data: {
         query: 'SELECT 1 AS test_column',
         parameters: {}
@@ -117,8 +132,8 @@ test.describe('Critical Path - Real Backend Integration', () => {
     await expect(page.locator('h1, h2')).toBeVisible({ timeout: 15000 });
     
     // Verify real pipelines API was called
-    const pipelinesResponse = await page.request.get(`${BASE_URL}/api/v1/pipelines`, {
-      headers: { 'X-Tenant-Id': TEST_TENANT }
+    const pipelinesResponse = await page.request.get(`${BASE_URL}/api/v1/action/pipelines`, {
+      headers: buildAuthHeaders(TEST_TENANT, TEST_API_KEY)
     });
     expect(pipelinesResponse.ok()).toBeTruthy();
   });
@@ -138,8 +153,8 @@ test.describe('Critical Path - Real Backend Integration', () => {
     await expect(page).toHaveURL(/\/trust/, { timeout: 15000 });
     
     // Verify real governance API was called
-    const governanceResponse = await page.request.get(`${BASE_URL}/governance/compliance/summary`, {
-      headers: { 'X-Tenant-Id': TEST_TENANT }
+    const governanceResponse = await page.request.get(`${BASE_URL}/api/v1/governance/compliance/summary`, {
+      headers: buildAuthHeaders(TEST_TENANT, TEST_API_KEY)
     });
     expect(governanceResponse.ok()).toBeTruthy();
     const governanceData = await governanceResponse.json();
@@ -152,7 +167,7 @@ test.describe('Critical Path - Real Backend Integration', () => {
     
     // Try to access non-existent collection
     const response = await page.request.get(`${BASE_URL}/api/v1/entities/dc_collections/non-existent`, {
-      headers: { 'X-Tenant-Id': TEST_TENANT }
+      headers: buildAuthHeaders(TEST_TENANT, TEST_API_KEY)
     });
     
     expect(response.status()).toBe(404);
@@ -184,7 +199,7 @@ test.describe('Critical Path - Real Backend Integration', () => {
     
     // Verify backend receives correct tenant header
     const response = await page.request.get(`${BASE_URL}/api/v1/entities/dc_collections`, {
-      headers: { 'X-Tenant-Id': TEST_TENANT }
+      headers: buildAuthHeaders(TEST_TENANT, TEST_API_KEY)
     });
     expect(response.ok()).toBeTruthy();
   });
@@ -210,7 +225,7 @@ test.describe('Critical Path - Real Backend Integration', () => {
       
       // Verify collection was created via real backend
       const collectionsResponse = await page.request.get(`${BASE_URL}/api/v1/entities/dc_collections`, {
-        headers: { 'X-Tenant-Id': TEST_TENANT }
+        headers: buildAuthHeaders(TEST_TENANT, TEST_API_KEY)
       });
       expect(collectionsResponse.ok()).toBeTruthy();
       const collections = await collectionsResponse.json();
@@ -256,11 +271,8 @@ test.describe('Critical Path - Real Backend Integration', () => {
     await page.waitForTimeout(5000);
     
     // Verify SSE endpoint is accessible
-    const sseResponse = await page.request.get(`${BASE_URL}/api/v1/sse`, {
-      headers: { 
-        'X-Tenant-Id': TEST_TENANT,
-        'Accept': 'text/event-stream'
-      }
+    const sseResponse = await page.request.get(`${BASE_URL}/api/v1/alerts/stream`, {
+      headers: buildAuthHeaders(TEST_TENANT, TEST_API_KEY, { 'Accept': 'text/event-stream' })
     });
     
     // SSE endpoint should be accessible (may return 200 or redirect)
@@ -278,7 +290,7 @@ test.describe('Critical Path - Real Backend Integration', () => {
     
     // Verify real collections loaded
     const collectionsResponse = await page.request.get(`${BASE_URL}/api/v1/entities/dc_collections`, {
-      headers: { 'X-Tenant-Id': TEST_TENANT }
+      headers: buildAuthHeaders(TEST_TENANT, TEST_API_KEY)
     });
     expect(collectionsResponse.ok()).toBeTruthy();
     
@@ -287,8 +299,8 @@ test.describe('Critical Path - Real Backend Integration', () => {
     await expect(page).toHaveURL(/\/pipelines/, { timeout: 15000 });
     
     // Verify real pipelines loaded
-    const pipelinesResponse = await page.request.get(`${BASE_URL}/api/v1/pipelines`, {
-      headers: { 'X-Tenant-Id': TEST_TENANT }
+    const pipelinesResponse = await page.request.get(`${BASE_URL}/api/v1/action/pipelines`, {
+      headers: buildAuthHeaders(TEST_TENANT, TEST_API_KEY)
     });
     expect(pipelinesResponse.ok()).toBeTruthy();
     
@@ -314,8 +326,8 @@ test.describe('Critical Path - Real Backend Integration', () => {
     await expect(page).toHaveURL(/\/trust/, { timeout: 15000 });
     
     // Verify real governance data loaded
-    const governanceResponse = await page.request.get(`${BASE_URL}/governance/compliance/summary`, {
-      headers: { 'X-Tenant-Id': TEST_TENANT }
+    const governanceResponse = await page.request.get(`${BASE_URL}/api/v1/governance/compliance/summary`, {
+      headers: buildAuthHeaders(TEST_TENANT, TEST_API_KEY)
     });
     expect(governanceResponse.ok()).toBeTruthy();
     
@@ -361,13 +373,13 @@ test.describe('Real Backend - Performance Tests', () => {
     // Make multiple concurrent requests
     const promises = [
       page.request.get(`${BASE_URL}/api/v1/entities/dc_collections`, {
-        headers: { 'X-Tenant-Id': TEST_TENANT }
+        headers: buildAuthHeaders(TEST_TENANT, TEST_API_KEY)
       }),
-      page.request.get(`${BASE_URL}/api/v1/pipelines`, {
-        headers: { 'X-Tenant-Id': TEST_TENANT }
+      page.request.get(`${BASE_URL}/api/v1/action/pipelines`, {
+        headers: buildAuthHeaders(TEST_TENANT, TEST_API_KEY)
       }),
       page.request.get(`${BASE_URL}/api/v1/surfaces`, {
-        headers: { 'X-Tenant-Id': TEST_TENANT }
+        headers: buildAuthHeaders(TEST_TENANT, TEST_API_KEY)
       }),
     ];
     

@@ -20,6 +20,8 @@ export const KERNEL_PROVIDER_MODES = ["bootstrap", "platform"] as const;
 
 export type KernelProviderMode = (typeof KERNEL_PROVIDER_MODES)[number];
 
+export const KernelProviderModeSchema = z.enum(KERNEL_PROVIDER_MODES);
+
 export interface LifecycleProviderWriteOptions {
   readonly required: boolean;
   readonly correlationId: string;
@@ -35,7 +37,15 @@ export interface LifecycleProviderResult {
 
 export type KernelBridgeProviderMode = KernelProviderMode;
 
+export const KernelBridgeProviderModeSchema = KernelProviderModeSchema;
+
 export type KernelBridgeProviderStatus = "healthy" | "degraded" | "unavailable";
+
+export const KernelBridgeProviderStatusSchema = z.enum([
+  "healthy",
+  "degraded",
+  "unavailable",
+]);
 
 export type KernelBridgeProviderErrorCode =
   | "transport"
@@ -45,6 +55,16 @@ export type KernelBridgeProviderErrorCode =
   | "retry-exhausted"
   | "duplicate-event"
   | "stale-event";
+
+export const KernelBridgeProviderErrorCodeSchema = z.enum([
+  "transport",
+  "schema",
+  "tenant-isolation",
+  "unavailable-provider",
+  "retry-exhausted",
+  "duplicate-event",
+  "stale-event",
+]);
 
 export interface KernelBridgeProviderHealthResult {
   readonly providerId: string;
@@ -101,12 +121,28 @@ export type LifecycleEvidencePrivacyClassification =
   | "confidential"
   | "restricted";
 
+export const LifecycleEvidencePrivacyClassificationSchema = z.enum([
+  "public",
+  "internal",
+  "confidential",
+  "restricted",
+]);
+
 export interface LifecycleRetentionMetadata {
   readonly policyId: string;
   readonly retentionDays: number;
   readonly expiresAt?: string;
   readonly legalHold?: boolean;
 }
+
+export const LifecycleRetentionMetadataSchema = z
+  .object({
+    policyId: z.string().trim().min(1),
+    retentionDays: z.number().int().nonnegative(),
+    expiresAt: z.string().datetime({ offset: true }).optional(),
+    legalHold: z.boolean().optional(),
+  })
+  .strict();
 
 export interface LifecycleProvenanceRecord {
   readonly provenanceId: string;
@@ -161,6 +197,33 @@ const LIFECYCLE_PROVIDER_PHASES = [
   "retire",
 ] as const satisfies readonly ProductLifecyclePhase[];
 
+export const LifecycleProviderWriteOptionsSchema = z
+  .object({
+    required: z.boolean(),
+    correlationId: z.string().trim().min(1),
+    privacyClassification: LifecycleEvidencePrivacyClassificationSchema.optional(),
+    retention: LifecycleRetentionMetadataSchema.optional(),
+  })
+  .strict();
+
+export const LifecycleProviderResultSchema = z
+  .object({
+    success: z.boolean(),
+    ref: z.string().trim().min(1).optional(),
+    error: z.string().trim().min(1).optional(),
+  })
+  .strict();
+
+export const LifecycleProviderQuerySchema = z
+  .object({
+    productUnitId: z.string().trim().min(1),
+    runId: z.string().trim().min(1).optional(),
+    correlationId: z.string().trim().min(1).optional(),
+    limit: z.number().int().positive().optional(),
+    cursor: z.string().trim().min(1).optional(),
+  })
+  .strict();
+
 export const LifecycleArtifactManifestRefSchema = z
   .object({
     productUnitId: z.string().trim().min(1),
@@ -181,18 +244,8 @@ export const LifecycleHealthSnapshotRefSchema = z
     snapshotAt: z.string().datetime({ offset: true }).optional(),
     correlationId: z.string().trim().min(1).optional(),
     reasonCode: z.string().trim().min(1).optional(),
-    privacyClassification: z
-      .enum(["public", "internal", "confidential", "restricted"])
-      .optional(),
-    retention: z
-      .object({
-        policyId: z.string().trim().min(1),
-        retentionDays: z.number().int().nonnegative(),
-        expiresAt: z.string().datetime({ offset: true }).optional(),
-        legalHold: z.boolean().optional(),
-      })
-      .strict()
-      .optional(),
+    privacyClassification: LifecycleEvidencePrivacyClassificationSchema.optional(),
+    retention: LifecycleRetentionMetadataSchema.optional(),
   })
   .strict();
 
@@ -204,18 +257,8 @@ export const LifecycleProvenanceRecordSchema = z
     source: z.string().trim().min(1),
     evidenceRefs: z.array(z.string().trim().min(1)),
     correlationId: z.string().trim().min(1).optional(),
-    privacyClassification: z
-      .enum(["public", "internal", "confidential", "restricted"])
-      .optional(),
-    retention: z
-      .object({
-        policyId: z.string().trim().min(1),
-        retentionDays: z.number().int().nonnegative(),
-        expiresAt: z.string().datetime({ offset: true }).optional(),
-        legalHold: z.boolean().optional(),
-      })
-      .strict()
-      .optional(),
+    privacyClassification: LifecycleEvidencePrivacyClassificationSchema.optional(),
+    retention: LifecycleRetentionMetadataSchema.optional(),
     recordedAt: z.string().datetime({ offset: true }),
   })
   .strict();
@@ -227,18 +270,8 @@ export const LifecycleMemoryRecordSchema = z
     runId: z.string().trim().min(1),
     kind: z.string().trim().min(1),
     contentRef: z.string().trim().min(1),
-    privacyClassification: z
-      .enum(["public", "internal", "confidential", "restricted"])
-      .optional(),
-    retention: z
-      .object({
-        policyId: z.string().trim().min(1),
-        retentionDays: z.number().int().nonnegative(),
-        expiresAt: z.string().datetime({ offset: true }).optional(),
-        legalHold: z.boolean().optional(),
-      })
-      .strict()
-      .optional(),
+    privacyClassification: LifecycleEvidencePrivacyClassificationSchema.optional(),
+    retention: LifecycleRetentionMetadataSchema.optional(),
     recordedAt: z.string().datetime({ offset: true }),
   })
   .strict();
@@ -252,27 +285,17 @@ export const LifecycleRuntimeTruthSnapshotSchema = z
     observedAt: z.string().datetime({ offset: true }),
     evidenceRefs: z.array(z.string().trim().min(1)),
     correlationId: z.string().trim().min(1).optional(),
-    providerMode: z.enum(["bootstrap", "platform"]).optional(),
-    privacyClassification: z
-      .enum(["public", "internal", "confidential", "restricted"])
-      .optional(),
-    retention: z
-      .object({
-        policyId: z.string().trim().min(1),
-        retentionDays: z.number().int().nonnegative(),
-        expiresAt: z.string().datetime({ offset: true }).optional(),
-        legalHold: z.boolean().optional(),
-      })
-      .strict()
-      .optional(),
+    providerMode: KernelProviderModeSchema.optional(),
+    privacyClassification: LifecycleEvidencePrivacyClassificationSchema.optional(),
+    retention: LifecycleRetentionMetadataSchema.optional(),
   })
   .strict();
 
 export const KernelBridgeProviderHealthResultSchema = z
   .object({
     providerId: z.string().trim().min(1),
-    mode: z.enum(["bootstrap", "platform"]),
-    status: z.enum(["healthy", "degraded", "unavailable"]),
+    mode: KernelBridgeProviderModeSchema,
+    status: KernelBridgeProviderStatusSchema,
     reason: z.string().trim().min(1).optional(),
     latencyMs: z.number().nonnegative().optional(),
     lastSuccessAt: z.string().datetime({ offset: true }).optional(),
@@ -283,15 +306,7 @@ export const KernelBridgeProviderHealthResultSchema = z
 
 export const KernelBridgeProviderErrorSchema = z
   .object({
-    code: z.enum([
-      "transport",
-      "schema",
-      "tenant-isolation",
-      "unavailable-provider",
-      "retry-exhausted",
-      "duplicate-event",
-      "stale-event",
-    ]),
+    code: KernelBridgeProviderErrorCodeSchema,
     providerId: z.string().trim().min(1),
     message: z.string().trim().min(1),
     retryable: z.boolean(),
@@ -456,11 +471,28 @@ export const KernelProviderModeRequirements = {
 export type KernelLifecycleProviderName =
   (typeof KernelProviderModeRequirements)[KernelProviderMode][number];
 
+export const KernelLifecycleProviderNameSchema = z.enum([
+  "events",
+  "artifacts",
+  "health",
+  "approvals",
+  "provenance",
+  "memory",
+  "runtimeTruth",
+]);
+
 export type KernelLifecycleProviderContextReasonCode =
   | "missing-provider"
   | "invalid-provider-mode"
   | "invalid-backing-store"
   | "file-backing-allowed";
+
+export const KernelLifecycleProviderContextReasonCodeSchema = z.enum([
+  "missing-provider",
+  "invalid-provider-mode",
+  "invalid-backing-store",
+  "file-backing-allowed",
+]);
 
 export interface KernelLifecycleProviderContextValidationResult {
   readonly valid: boolean;
@@ -476,13 +508,259 @@ export interface InvalidBackingStoreError {
   readonly reason: string;
 }
 
+export const InvalidBackingStoreErrorSchema = z
+  .object({
+    providerName: z.string().trim().min(1),
+    backingStore: z.string().trim().min(1),
+    reason: z.string().trim().min(1),
+  })
+  .strict();
+
+export const KernelLifecycleProviderContextValidationResultSchema = z
+  .object({
+    valid: z.boolean(),
+    missingProviders: z.array(KernelLifecycleProviderNameSchema),
+    invalidBackingStores: z.array(InvalidBackingStoreErrorSchema),
+    mode: KernelProviderModeSchema.optional(),
+    reasonCodes: z.array(KernelLifecycleProviderContextReasonCodeSchema),
+  })
+  .strict();
+
+function hasFunctions(
+  value: unknown,
+  functionNames: readonly string[],
+): boolean {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const provider = value as Record<string, unknown>;
+  return functionNames.every((name) => typeof provider[name] === "function");
+}
+
+export const LifecycleEventProviderSchema = z.custom<LifecycleEventProvider>(
+  (value) => hasFunctions(value, ["appendEvent", "listEvents"]),
+  "LifecycleEventProvider requires event persistence functions",
+);
+
+export const LifecycleArtifactProviderSchema =
+  z.custom<LifecycleArtifactProvider>(
+    (value) =>
+      hasFunctions(value, ["recordArtifactManifest", "listArtifactManifests"]),
+    "LifecycleArtifactProvider requires artifact manifest functions",
+  );
+
+export const LifecycleHealthProviderSchema = z.custom<LifecycleHealthProvider>(
+  (value) =>
+    hasFunctions(value, ["recordHealthSnapshot", "getLatestHealthSnapshot"]),
+  "LifecycleHealthProvider requires health snapshot functions",
+);
+
+export const LifecycleApprovalProviderSchema =
+  z.custom<LifecycleApprovalProvider>(
+    (value) =>
+      hasFunctions(value, [
+        "requestLifecycleApproval",
+        "decideLifecycleApproval",
+      ]),
+    "LifecycleApprovalProvider requires approval functions",
+  );
+
+export const LifecycleProvenanceProviderSchema =
+  z.custom<LifecycleProvenanceProvider>(
+    (value) => hasFunctions(value, ["recordProvenance", "listProvenance"]),
+    "LifecycleProvenanceProvider requires provenance functions",
+  );
+
+export const LifecycleMemoryProviderSchema = z.custom<LifecycleMemoryProvider>(
+  (value) => hasFunctions(value, ["recordMemory", "listMemory"]),
+  "LifecycleMemoryProvider requires memory functions",
+);
+
+export const LifecycleRuntimeTruthProviderSchema =
+  z.custom<LifecycleRuntimeTruthProvider>(
+    (value) => hasFunctions(value, ["recordRuntimeTruth", "getRuntimeTruth"]),
+    "LifecycleRuntimeTruthProvider requires runtime truth functions",
+  );
+
+export const KernelEventProviderSchema = LifecycleEventProviderSchema;
+export const KernelArtifactProviderSchema = LifecycleArtifactProviderSchema;
+export const KernelHealthProviderSchema = LifecycleHealthProviderSchema;
+export const KernelProvenanceProviderSchema = LifecycleProvenanceProviderSchema;
+export const KernelRuntimeTruthProviderSchema =
+  LifecycleRuntimeTruthProviderSchema;
+
+export const KernelTelemetryProviderSchema = z.custom<KernelTelemetryProvider>(
+  (value) => hasFunctions(value, ["recordTelemetry"]),
+  "KernelTelemetryProvider requires telemetry recording function",
+);
+
+export const KernelPolicyEvidenceProviderSchema =
+  z.custom<KernelPolicyEvidenceProvider>(
+    (value) => hasFunctions(value, ["recordPolicyEvidence"]),
+    "KernelPolicyEvidenceProvider requires policy evidence function",
+  );
+
 export function isKernelProviderMode(
   value: unknown,
 ): value is KernelProviderMode {
-  return (
-    typeof value === "string" &&
-    KERNEL_PROVIDER_MODES.includes(value as KernelProviderMode)
-  );
+  return KernelProviderModeSchema.safeParse(value).success;
+}
+
+export function validateLifecycleProviderWriteOptions(
+  value: unknown,
+): value is LifecycleProviderWriteOptions {
+  return LifecycleProviderWriteOptionsSchema.safeParse(value).success;
+}
+
+export function validateLifecycleProviderResult(
+  value: unknown,
+): value is LifecycleProviderResult {
+  return LifecycleProviderResultSchema.safeParse(value).success;
+}
+
+export function validateKernelBridgeProviderMode(
+  value: unknown,
+): value is KernelBridgeProviderMode {
+  return KernelBridgeProviderModeSchema.safeParse(value).success;
+}
+
+export function validateKernelBridgeProviderStatus(
+  value: unknown,
+): value is KernelBridgeProviderStatus {
+  return KernelBridgeProviderStatusSchema.safeParse(value).success;
+}
+
+export function validateKernelBridgeProviderErrorCode(
+  value: unknown,
+): value is KernelBridgeProviderErrorCode {
+  return KernelBridgeProviderErrorCodeSchema.safeParse(value).success;
+}
+
+export function validateLifecycleProviderQuery(
+  value: unknown,
+): value is LifecycleProviderQuery {
+  return LifecycleProviderQuerySchema.safeParse(value).success;
+}
+
+export function validateLifecycleEvidencePrivacyClassification(
+  value: unknown,
+): value is LifecycleEvidencePrivacyClassification {
+  return LifecycleEvidencePrivacyClassificationSchema.safeParse(value).success;
+}
+
+export function validateLifecycleRetentionMetadata(
+  value: unknown,
+): value is LifecycleRetentionMetadata {
+  return LifecycleRetentionMetadataSchema.safeParse(value).success;
+}
+
+export function validateLifecycleEventProvider(
+  value: unknown,
+): value is LifecycleEventProvider {
+  return LifecycleEventProviderSchema.safeParse(value).success;
+}
+
+export function validateLifecycleArtifactProvider(
+  value: unknown,
+): value is LifecycleArtifactProvider {
+  return LifecycleArtifactProviderSchema.safeParse(value).success;
+}
+
+export function validateLifecycleHealthProvider(
+  value: unknown,
+): value is LifecycleHealthProvider {
+  return LifecycleHealthProviderSchema.safeParse(value).success;
+}
+
+export function validateLifecycleApprovalProvider(
+  value: unknown,
+): value is LifecycleApprovalProvider {
+  return LifecycleApprovalProviderSchema.safeParse(value).success;
+}
+
+export function validateLifecycleProvenanceProvider(
+  value: unknown,
+): value is LifecycleProvenanceProvider {
+  return LifecycleProvenanceProviderSchema.safeParse(value).success;
+}
+
+export function validateLifecycleMemoryProvider(
+  value: unknown,
+): value is LifecycleMemoryProvider {
+  return LifecycleMemoryProviderSchema.safeParse(value).success;
+}
+
+export function validateLifecycleRuntimeTruthProvider(
+  value: unknown,
+): value is LifecycleRuntimeTruthProvider {
+  return LifecycleRuntimeTruthProviderSchema.safeParse(value).success;
+}
+
+export function validateKernelEventProvider(
+  value: unknown,
+): value is KernelEventProvider {
+  return KernelEventProviderSchema.safeParse(value).success;
+}
+
+export function validateKernelArtifactProvider(
+  value: unknown,
+): value is KernelArtifactProvider {
+  return KernelArtifactProviderSchema.safeParse(value).success;
+}
+
+export function validateKernelHealthProvider(
+  value: unknown,
+): value is KernelHealthProvider {
+  return KernelHealthProviderSchema.safeParse(value).success;
+}
+
+export function validateKernelProvenanceProvider(
+  value: unknown,
+): value is KernelProvenanceProvider {
+  return KernelProvenanceProviderSchema.safeParse(value).success;
+}
+
+export function validateKernelRuntimeTruthProvider(
+  value: unknown,
+): value is KernelRuntimeTruthProvider {
+  return KernelRuntimeTruthProviderSchema.safeParse(value).success;
+}
+
+export function validateKernelTelemetryProvider(
+  value: unknown,
+): value is KernelTelemetryProvider {
+  return KernelTelemetryProviderSchema.safeParse(value).success;
+}
+
+export function validateKernelPolicyEvidenceProvider(
+  value: unknown,
+): value is KernelPolicyEvidenceProvider {
+  return KernelPolicyEvidenceProviderSchema.safeParse(value).success;
+}
+
+export function validateKernelLifecycleProviderName(
+  value: unknown,
+): value is KernelLifecycleProviderName {
+  return KernelLifecycleProviderNameSchema.safeParse(value).success;
+}
+
+export function validateKernelLifecycleProviderContextReasonCode(
+  value: unknown,
+): value is KernelLifecycleProviderContextReasonCode {
+  return KernelLifecycleProviderContextReasonCodeSchema.safeParse(value).success;
+}
+
+export function validateKernelLifecycleProviderContextValidationResult(
+  value: unknown,
+): value is KernelLifecycleProviderContextValidationResult {
+  return KernelLifecycleProviderContextValidationResultSchema.safeParse(value)
+    .success;
+}
+
+export function validateInvalidBackingStoreError(
+  value: unknown,
+): value is InvalidBackingStoreError {
+  return InvalidBackingStoreErrorSchema.safeParse(value).success;
 }
 
 export function validateKernelLifecycleProviderContext(

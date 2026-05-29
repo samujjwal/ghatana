@@ -2046,6 +2046,35 @@ public class DataLifecycleHandler {
         }
         String requestId = resolveRequestId(request);
         TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
+        String operationScope = "governance.policy.create";
+        String idempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
+
+        if (requiresStrictIdempotency() && (idempotencyKey == null || idempotencyKey.isBlank())) {
+            return Promise.of(http.errorEnvelopeResponse(
+                ApiResponse.error("MISSING_IDEMPOTENCY_KEY",
+                    "X-Idempotency-Key header is required for policy create in this profile",
+                    tenantId,
+                    requestId),
+                objectMapper,
+                400));
+        }
+        if (requiresStrictIdempotency() && idempotencyStore == null) {
+            return Promise.of(http.errorEnvelopeResponse(
+                ApiResponse.error("IDEMPOTENCY_STORE_REQUIRED",
+                    "WriteIdempotencyStore is required for strict profile policy create",
+                    tenantId,
+                    requestId),
+                objectMapper,
+                500));
+        }
+
+        if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
+            var cached = idempotencyStore.get(tenantId, operationScope, idempotencyKey);
+            if (cached.isPresent()) {
+                log.info("[DC-BE-002] Returning cached policy create response for key={}", idempotencyKey);
+                return Promise.of(http.jsonBodyResponse(cached.get()));
+            }
+        }
 
         return request.loadBody().then(buf -> {
             try {
@@ -2068,8 +2097,15 @@ public class DataLifecycleHandler {
                 return saveGovernancePolicy(tenantContext, policyId, policy)
                     .map(savedPolicy -> {
                         log.info("[P1-1] Policy created tenant={} policyId={} name={}", tenantId, policyId, savedPolicy.get("name"));
-                        return http.errorEnvelopeResponse(
-                            ApiResponse.success(savedPolicy, tenantId, requestId), objectMapper, 201);
+                        ApiResponse responseEnvelope = ApiResponse.success(savedPolicy, tenantId, requestId);
+                        if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
+                            Map<String, Object> cachedResponseBody = objectMapper.convertValue(
+                                responseEnvelope,
+                                new TypeReference<Map<String, Object>>() { }
+                            );
+                            idempotencyStore.put(tenantId, operationScope, idempotencyKey, cachedResponseBody);
+                        }
+                        return http.errorEnvelopeResponse(responseEnvelope, objectMapper, 201);
                     });
             } catch (Exception e) {
                 log.error("[P1-1] Failed to create policy tenant={}", tenantId, e);
@@ -2228,6 +2264,35 @@ public class DataLifecycleHandler {
         String requestId = resolveRequestId(request);
         String policyId = request.getPathParameter("id");
         TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
+        String operationScope = "governance.policy.update:" + policyId;
+        String idempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
+
+        if (requiresStrictIdempotency() && (idempotencyKey == null || idempotencyKey.isBlank())) {
+            return Promise.of(http.errorEnvelopeResponse(
+                ApiResponse.error("MISSING_IDEMPOTENCY_KEY",
+                    "X-Idempotency-Key header is required for policy update in this profile",
+                    tenantId,
+                    requestId),
+                objectMapper,
+                400));
+        }
+        if (requiresStrictIdempotency() && idempotencyStore == null) {
+            return Promise.of(http.errorEnvelopeResponse(
+                ApiResponse.error("IDEMPOTENCY_STORE_REQUIRED",
+                    "WriteIdempotencyStore is required for strict profile policy update",
+                    tenantId,
+                    requestId),
+                objectMapper,
+                500));
+        }
+
+        if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
+            var cached = idempotencyStore.get(tenantId, operationScope, idempotencyKey);
+            if (cached.isPresent()) {
+                log.info("[DC-BE-002] Returning cached policy update response for key={}", idempotencyKey);
+                return Promise.of(http.jsonBodyResponse(cached.get()));
+            }
+        }
 
         return request.loadBody().then(buf -> {
             try {
@@ -2252,8 +2317,15 @@ public class DataLifecycleHandler {
                         return saveGovernancePolicy(tenantContext, policyId, policy)
                             .map(savedPolicy -> {
                                 log.info("[P1-1] Policy updated tenant={} policyId={}", tenantId, policyId);
-                                return http.envelopeResponse(
-                                    ApiResponse.success(savedPolicy, tenantId, requestId), objectMapper);
+                                ApiResponse responseEnvelope = ApiResponse.success(savedPolicy, tenantId, requestId);
+                                if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
+                                    Map<String, Object> cachedResponseBody = objectMapper.convertValue(
+                                        responseEnvelope,
+                                        new TypeReference<Map<String, Object>>() { }
+                                    );
+                                    idempotencyStore.put(tenantId, operationScope, idempotencyKey, cachedResponseBody);
+                                }
+                                return http.envelopeResponse(responseEnvelope, objectMapper);
                             });
                     });
             } catch (Exception e) {
@@ -2279,6 +2351,35 @@ public class DataLifecycleHandler {
         String requestId = resolveRequestId(request);
         String policyId = request.getPathParameter("id");
         TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
+        String operationScope = "governance.policy.delete:" + policyId;
+        String idempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
+
+        if (requiresStrictIdempotency() && (idempotencyKey == null || idempotencyKey.isBlank())) {
+            return Promise.of(http.errorEnvelopeResponse(
+                ApiResponse.error("MISSING_IDEMPOTENCY_KEY",
+                    "X-Idempotency-Key header is required for policy delete in this profile",
+                    tenantId,
+                    requestId),
+                objectMapper,
+                400));
+        }
+        if (requiresStrictIdempotency() && idempotencyStore == null) {
+            return Promise.of(http.errorEnvelopeResponse(
+                ApiResponse.error("IDEMPOTENCY_STORE_REQUIRED",
+                    "WriteIdempotencyStore is required for strict profile policy delete",
+                    tenantId,
+                    requestId),
+                objectMapper,
+                500));
+        }
+
+        if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
+            var cached = idempotencyStore.get(tenantId, operationScope, idempotencyKey);
+            if (cached.isPresent()) {
+                log.info("[DC-BE-002] Returning cached policy delete response for key={}", idempotencyKey);
+                return Promise.of(http.jsonBodyResponse(cached.get()));
+            }
+        }
 
         return loadGovernancePolicyById(tenantContext, policyId)
             .then(existingOpt -> {
@@ -2293,12 +2394,19 @@ public class DataLifecycleHandler {
                     log.info("[P1-1] Policy deleted tenant={} policyId={}", tenantId, policyId);
                     emitAudit(tenantId, requestId, "POLICY_DELETED", GOVERNANCE_POLICIES_COLLECTION,
                         Map.of("policyId", policyId));
-                    return http.envelopeResponse(
-                        ApiResponse.success(Map.of(
-                            "id", policyId,
-                            "status", "deleted",
-                            "deletedAt", Instant.now().toString()
-                        ), tenantId, requestId), objectMapper);
+                    ApiResponse responseEnvelope = ApiResponse.success(Map.of(
+                        "id", policyId,
+                        "status", "deleted",
+                        "deletedAt", Instant.now().toString()
+                    ), tenantId, requestId);
+                    if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
+                        Map<String, Object> cachedResponseBody = objectMapper.convertValue(
+                            responseEnvelope,
+                            new TypeReference<Map<String, Object>>() { }
+                        );
+                        idempotencyStore.put(tenantId, operationScope, idempotencyKey, cachedResponseBody);
+                    }
+                    return http.envelopeResponse(responseEnvelope, objectMapper);
                 });
             });
     }
@@ -2317,7 +2425,37 @@ public class DataLifecycleHandler {
         }
 
         String policyId = request.getPathParameter("id");
-        TenantContext tenantContext = buildTenantContext(request, tenantId, resolveRequestId(request));
+        String requestId = resolveRequestId(request);
+        TenantContext tenantContext = buildTenantContext(request, tenantId, requestId);
+        String operationScope = "governance.policy.toggle:" + policyId;
+        String idempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
+
+        if (requiresStrictIdempotency() && (idempotencyKey == null || idempotencyKey.isBlank())) {
+            return Promise.of(http.errorEnvelopeResponse(
+                ApiResponse.error("MISSING_IDEMPOTENCY_KEY",
+                    "X-Idempotency-Key header is required for policy toggle in this profile",
+                    tenantId,
+                    requestId),
+                objectMapper,
+                400));
+        }
+        if (requiresStrictIdempotency() && idempotencyStore == null) {
+            return Promise.of(http.errorEnvelopeResponse(
+                ApiResponse.error("IDEMPOTENCY_STORE_REQUIRED",
+                    "WriteIdempotencyStore is required for strict profile policy toggle",
+                    tenantId,
+                    requestId),
+                objectMapper,
+                500));
+        }
+
+        if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
+            var cached = idempotencyStore.get(tenantId, operationScope, idempotencyKey);
+            if (cached.isPresent()) {
+                log.info("[DC-BE-002] Returning cached policy toggle response for key={}", idempotencyKey);
+                return Promise.of(http.jsonBodyResponse(cached.get()));
+            }
+        }
 
         return request.loadBody().then(buf -> {
             try {
@@ -2346,10 +2484,16 @@ public class DataLifecycleHandler {
 
                         return saveGovernancePolicy(tenantContext, policyId, policy)
                             .map(savedPolicy -> {
-                                String reqId = resolveRequestId(request);
                                 log.info("[P1-1] Policy toggled tenant={} policyId={} enabled={}", tenantId, policyId, enabled);
-                                return http.envelopeResponse(
-                                    ApiResponse.success(savedPolicy, tenantId, reqId), objectMapper);
+                                ApiResponse responseEnvelope = ApiResponse.success(savedPolicy, tenantId, requestId);
+                                if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
+                                    Map<String, Object> cachedResponseBody = objectMapper.convertValue(
+                                        responseEnvelope,
+                                        new TypeReference<Map<String, Object>>() { }
+                                    );
+                                    idempotencyStore.put(tenantId, operationScope, idempotencyKey, cachedResponseBody);
+                                }
+                                return http.envelopeResponse(responseEnvelope, objectMapper);
                             });
                     });
             } catch (Exception e) {

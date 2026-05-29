@@ -79,10 +79,10 @@ public final class PhrPatientRecordRoutes {
                 if (patientId == null) {
                     return createPatient(patient);
                 }
-                return mayAccessPatient(context, patientId)
+                return mayAccessPatient(context, patientId, RESOURCE_TYPE, "WRITE")
                     .then(allowed -> allowed
                         ? createPatient(patient)
-                        : PhrRouteSupport.errorResponse(403, "POLICY_DENIED", "Access denied by policy"));
+                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
             });
     }
 
@@ -96,10 +96,10 @@ public final class PhrPatientRecordRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        return requireSelfOrConsent(context, patientId)
+        return requireSelfOrConsent(context, patientId, RESOURCE_TYPE, "READ")
             .then(allowed -> {
                 if (!allowed) {
-                    return PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required to read this patient record");
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
                 }
                 return patientRecordService.getPatient(patientId)
                     .then(patient -> patient
@@ -118,10 +118,10 @@ public final class PhrPatientRecordRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        return requireSelfOrConsent(context, patientId)
+        return requireSelfOrConsent(context, patientId, RESOURCE_TYPE, "WRITE")
             .then(allowed -> {
                 if (!allowed) {
-                    return PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required to update this patient record");
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
                 }
                 return request.loadBody()
                     .then(body -> {
@@ -145,7 +145,7 @@ public final class PhrPatientRecordRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
             patientId = request.getQueryParameter("patientId");
-            if ((patientId == null || patientId.isBlank()) && !"admin".equals(context.role())) {
+            if (patientId == null || patientId.isBlank()) {
                 throw new IllegalArgumentException("Missing required query parameter: patientId");
             }
             limit = PhrRouteSupport.intQuery(request, "limit", 50, 1000);
@@ -154,24 +154,10 @@ public final class PhrPatientRecordRoutes {
             return PhrRouteSupport.errorResponse(400, "INVALID_SEARCH", ex.getMessage());
         }
 
-        if ((patientId == null || patientId.isBlank()) && "admin".equals(context.role())) {
-            return patientRecordService.searchPatients(
-                    "deleted = false",
-                    Map.of(),
-                    limit,
-                    offset)
-                .then(records -> PhrRouteSupport.jsonResponse(200, Map.of(
-                    "items", records,
-                    "count", records.size(),
-                    "limit", limit,
-                    "offset", offset
-                )));
-        }
-
-        return requireSelfOrConsent(context, patientId)
+        return requireSelfOrConsent(context, patientId, RESOURCE_TYPE, "SEARCH")
             .then(allowed -> {
                 if (!allowed) {
-                    return PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required to search this patient record");
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
                 }
                 return patientRecordService.searchPatients(
                         "patientId = :patientId",
@@ -197,10 +183,10 @@ public final class PhrPatientRecordRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        return requireSelfOrConsent(context, patientId)
+        return requireSelfOrConsent(context, patientId, "patient-record-history", "READ")
             .then(allowed -> {
                 if (!allowed) {
-                    return PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required to read this patient record history");
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
                 }
                 return patientRecordService.getPatient(patientId)
                     .then(patient -> patient
@@ -238,10 +224,10 @@ public final class PhrPatientRecordRoutes {
         String dateFrom = request.getQueryParameter("dateFrom");
         String dateTo = request.getQueryParameter("dateTo");
 
-        return requireSelfOrConsent(context, patientId)
+        return requireSelfOrConsent(context, patientId, "patient-record-list", "READ")
             .then(allowed -> {
                 if (!allowed) {
-                    return PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required to list patient records");
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
                 }
                 return patientRecordService.getPatient(patientId)
                     .then(patient -> patient
@@ -295,10 +281,10 @@ public final class PhrPatientRecordRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        return requireSelfOrConsent(context, patientId)
+        return requireSelfOrConsent(context, patientId, "patient-record-detail", "READ")
             .then(allowed -> {
                 if (!allowed) {
-                    return PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required to read this record detail");
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
                 }
                 
                 Map<String, Object> response = new java.util.LinkedHashMap<>();
@@ -319,17 +305,25 @@ public final class PhrPatientRecordRoutes {
             .then(created -> PhrRouteSupport.jsonResponse(201, created));
     }
 
-    private Promise<Boolean> requireSelfOrConsent(PhrRouteSupport.PhrRequestContext context, String patientId) {
-        return mayAccessPatient(context, patientId)
+    private Promise<Boolean> requireSelfOrConsent(
+            PhrRouteSupport.PhrRequestContext context,
+            String patientId,
+            String resourceType,
+            String action) {
+        return mayAccessPatient(context, patientId, resourceType, action)
             .map(Boolean::booleanValue);
     }
 
-    private Promise<Boolean> mayAccessPatient(PhrRouteSupport.PhrRequestContext context, String patientId) {
+    private Promise<Boolean> mayAccessPatient(
+            PhrRouteSupport.PhrRequestContext context,
+            String patientId,
+            String resourceType,
+            String action) {
         return policyEvaluator.canAccessPhiResourceAsync(
                 context,
                 patientId,
-                RESOURCE_TYPE,
-                "READ",
+                resourceType,
+                action,
                 context.tenantId(),
                 context.facilityId())
             .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);

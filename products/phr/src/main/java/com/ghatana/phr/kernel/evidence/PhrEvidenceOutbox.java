@@ -5,6 +5,11 @@ import java.util.Map;
 
 /**
  * Persistence port for PHR regulated event evidence.
+ *
+ * @doc.type interface
+ * @doc.purpose Persistence port for PHR regulated event evidence
+ * @doc.layer product
+ * @doc.pattern Repository
  */
 public interface PhrEvidenceOutbox {
 

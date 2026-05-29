@@ -118,7 +118,7 @@
         "web": "implemented"
       },
       "clientPackages": [
-        "products/yappc/frontend/package.json"
+        "products/yappc/frontend/web/package.json"
       ]
     },
     "audio-video": {

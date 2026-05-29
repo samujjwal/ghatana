@@ -2,6 +2,7 @@ package com.ghatana.phr.api.routes;
 
 import com.ghatana.kernel.observability.AuditTrailService;
 import com.ghatana.phr.kernel.policy.PhrLogRedactor;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -22,7 +23,8 @@ import java.util.Set;
  *
  * <p>Exposes the immutable audit trail to authorised principals. Patients can
  * only query events whose {@code entityId} matches their own principal ID.
- * Clinicians and admins may query across the full tenant.
+ * Clinicians may query explicitly patient-scoped events, and admins may query
+ * across the full tenant.
  *
  * @doc.type class
  * @doc.purpose ActiveJ route adapter for querying the PHR audit event trail
@@ -33,10 +35,13 @@ public final class PhrAuditRoutes {
 
     private static final int DEFAULT_PAGE_SIZE = 50;
     private static final int MAX_PAGE_SIZE = 200;
+    private static final int DETAIL_LOOKUP_LIMIT = 1000;
+    private static final int EXPORT_LIMIT = 1000;
     private static final Set<String> ALLOWED_FILTERS = Set.of("all", "access", "consent", "emergency");
 
     private final Eventloop eventloop;
     private final AuditTrailService auditTrailService;
+    private final PhrPolicyEvaluator policyEvaluator;
 
     /**
      * Creates audit routes.
@@ -44,9 +49,10 @@ public final class PhrAuditRoutes {
      * @param eventloop         the ActiveJ event loop; must not be null
      * @param auditTrailService the audit trail service; must not be null
      */
-    public PhrAuditRoutes(Eventloop eventloop, AuditTrailService auditTrailService) {
+    public PhrAuditRoutes(Eventloop eventloop, AuditTrailService auditTrailService, PhrPolicyEvaluator policyEvaluator) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.auditTrailService = Objects.requireNonNull(auditTrailService, "auditTrailService must not be null");
+        this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 
     /**
@@ -57,8 +63,8 @@ public final class PhrAuditRoutes {
     public AsyncServlet getServlet() {
         return RoutingServlet.builder(eventloop)
             .with(HttpMethod.GET, "/events", this::handleQueryEvents)
-            .with(HttpMethod.GET, "/events/:eventId", this::handleGetEventDetail)
             .with(HttpMethod.GET, "/events/export", this::handleExportEvents)
+            .with(HttpMethod.GET, "/events/:eventId", this::handleGetEventDetail)
             .build();
     }
 
@@ -75,14 +81,17 @@ public final class PhrAuditRoutes {
         String pageParam = request.getQueryParameter("page");
         String pageSizeParam = request.getQueryParameter("pageSize");
 
-        // Patient-scoped enforcement: non-privileged principals may only query their own data.
-        String effectiveEntityId;
-        if ("clinician".equals(context.role()) || "admin".equals(context.role())) {
-            effectiveEntityId = patientIdParam; // may be null → full-tenant query
-        } else {
-            effectiveEntityId = context.principalId(); // always scoped to self
+        PhrPolicyEvaluator.PolicyDecision auditDecision = policyEvaluator.canQueryAuditEvents(context, patientIdParam);
+        if (!auditDecision.isAllowed()) {
+            return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
         }
 
+        String effectiveEntityId;
+        if ("admin".equals(context.role()) || "clinician".equals(context.role())) {
+            effectiveEntityId = patientIdParam;
+        } else {
+            effectiveEntityId = context.principalId();
+        }
         String eventTypeFilter = resolveEventTypeFilter(filterParam);
         int page = parsePage(pageParam);
         int pageSize = parsePageSize(pageSizeParam);
@@ -138,7 +147,7 @@ public final class PhrAuditRoutes {
         try {
             AuditTrailService.AuditQuery query = AuditTrailService.AuditQuery.builder()
                 .tenantId(context.tenantId())
-                .limit(1)
+                .limit(DETAIL_LOOKUP_LIMIT)
                 .build();
 
             List<AuditTrailService.AuditTrailEvent> events = auditTrailService.queryAuditEvents(query);
@@ -151,11 +160,10 @@ public final class PhrAuditRoutes {
                 return PhrRouteSupport.errorResponse(404, "EVENT_NOT_FOUND", "Audit event not found");
             }
 
-            // Patient-scoped enforcement: non-privileged principals may only view their own events
-            if (!("clinician".equals(context.role()) || "admin".equals(context.role())) && 
-                !context.principalId().equals(event.getUserId()) && 
-                !context.principalId().equals(event.getEntityId())) {
-                return PhrRouteSupport.errorResponse(403, "ACCESS_DENIED", "Not authorized to view this event");
+            PhrPolicyEvaluator.PolicyDecision detailDecision =
+                policyEvaluator.canViewAuditEvent(context, event.getUserId(), event.getEntityId());
+            if (!detailDecision.isAllowed()) {
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
             }
 
             return PhrRouteSupport.jsonResponse(200, toEventDto(event));
@@ -172,9 +180,9 @@ public final class PhrAuditRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        // Export requires admin role
-        if (!"admin".equals(context.role())) {
-            return PhrRouteSupport.errorResponse(403, "ADMIN_REQUIRED", "Export requires admin role");
+        PhrPolicyEvaluator.PolicyDecision exportDecision = policyEvaluator.canViewAuditTrail(context);
+        if (!exportDecision.isAllowed()) {
+            return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
         }
 
         String patientIdParam = request.getQueryParameter("patientId");
@@ -191,7 +199,7 @@ public final class PhrAuditRoutes {
 
         AuditTrailService.AuditQuery.Builder queryBuilder = AuditTrailService.AuditQuery.builder()
             .tenantId(context.tenantId())
-            .limit(1000); // Export limit
+            .limit(EXPORT_LIMIT);
 
         if (effectiveEntityId != null && !effectiveEntityId.isBlank()) {
             queryBuilder.entityId(effectiveEntityId);
@@ -228,18 +236,29 @@ public final class PhrAuditRoutes {
         for (AuditTrailService.AuditTrailEvent event : events) {
             csv.append(event.getEventId()).append(",");
             csv.append(event.getTenantId()).append(",");
-            csv.append(event.getEventType() != null ? event.getEventType() : event.getAction()).append(",");
-            csv.append(event.getUserId()).append(",");
+            csv.append(csvField(event.getEventType() != null ? event.getEventType() : event.getAction())).append(",");
+            csv.append(csvField(event.getUserId())).append(",");
             csv.append(Instant.ofEpochMilli(event.getTimestamp()).toString()).append(",");
             csv.append(isSuccessEvent(event)).append(",");
             
             Map<String, Object> data = event.getData();
-            csv.append(data != null && data.containsKey("resourceType") ? data.get("resourceType") : "").append(",");
-            csv.append(data != null && data.containsKey("resourceId") ? data.get("resourceId") : 
-                  (event.getEntityId() != null ? event.getEntityId() : "")).append("\n");
+            csv.append(csvField(data != null && data.containsKey("resourceType") ? data.get("resourceType") : "")).append(",");
+            csv.append(csvField(data != null && data.containsKey("resourceId") ? data.get("resourceId") :
+                  (event.getEntityId() != null ? event.getEntityId() : ""))).append("\n");
         }
         
         return csv.toString();
+    }
+
+    private String csvField(Object value) {
+        if (value == null) {
+            return "";
+        }
+        String text = String.valueOf(value);
+        if (!text.contains(",") && !text.contains("\"") && !text.contains("\n") && !text.contains("\r")) {
+            return text;
+        }
+        return "\"" + text.replace("\"", "\"\"") + "\"";
     }
 
     private Map<String, Object> toEventDto(AuditTrailService.AuditTrailEvent event) {
@@ -298,7 +317,7 @@ public final class PhrAuditRoutes {
 
     private String resolveEventTypeFilter(String filter) {
         if (filter == null || filter.isBlank() || "all".equalsIgnoreCase(filter)) {
-            return null; // no event type filter → all types
+            return null;
         }
         String normalised = filter.strip().toLowerCase();
         if (!ALLOWED_FILTERS.contains(normalised)) {

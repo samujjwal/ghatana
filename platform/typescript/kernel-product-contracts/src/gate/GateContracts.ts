@@ -29,11 +29,12 @@ export const GATE_KINDS = [
 ] as const;
 
 export type GateKind = (typeof GATE_KINDS)[number];
+export const GateKindSchema = z.enum(GATE_KINDS);
 
 export const GateDefinitionSchema = z.object({
   gateId: z.string().min(1),
   displayName: z.string().min(1),
-  kind: z.enum(GATE_KINDS),
+  kind: GateKindSchema,
   phase: z.string().min(1),
   required: z.boolean(),
   description: z.string().optional(),
@@ -62,6 +63,23 @@ export type GateFailureReason =
   | { readonly kind: "provider-unavailable"; readonly providerId: string }
   | { readonly kind: "timeout"; readonly durationMs: number }
   | { readonly kind: "unknown"; readonly message: string };
+
+export const GateFailureReasonSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("policy-denied"), policyRef: z.string().min(1) }).strict(),
+  z.object({ kind: z.literal("artifact-missing"), artifactRef: z.string().min(1) }).strict(),
+  z.object({ kind: z.literal("health-check-failed"), healthRef: z.string().min(1) }).strict(),
+  z
+    .object({
+      kind: z.literal("approval-not-granted"),
+      approvalId: z.string().min(1),
+      requiredApprovers: z.array(z.string().min(1)),
+    })
+    .strict(),
+  z.object({ kind: z.literal("test-failed"), testRef: z.string().min(1) }).strict(),
+  z.object({ kind: z.literal("provider-unavailable"), providerId: z.string().min(1) }).strict(),
+  z.object({ kind: z.literal("timeout"), durationMs: z.number().int().nonnegative() }).strict(),
+  z.object({ kind: z.literal("unknown"), message: z.string().min(1) }).strict(),
+]);
 
 // ---------------------------------------------------------------------------
 // RequiredGateReference
@@ -124,7 +142,7 @@ export function parseGateResultManifest(input: unknown): GateResultManifest {
 }
 
 // ---------------------------------------------------------------------------
-// ApprovalRequirement — standalone approval contract
+// ApprovalRequirement - standalone approval contract
 // ---------------------------------------------------------------------------
 
 /**
@@ -142,3 +160,11 @@ export const ApprovalRequirementSchema = z.object({
 });
 
 export type ApprovalRequirement = z.infer<typeof ApprovalRequirementSchema>;
+
+export function validateGateKind(input: unknown): input is GateKind {
+  return GateKindSchema.safeParse(input).success;
+}
+
+export function validateGateFailureReason(input: unknown): input is GateFailureReason {
+  return GateFailureReasonSchema.safeParse(input).success;
+}

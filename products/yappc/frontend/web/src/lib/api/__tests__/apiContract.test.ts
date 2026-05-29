@@ -104,10 +104,19 @@ interface RouteContract {
   readonly operationId: string;
 }
 
+interface MutableRouteContract {
+  method?: string;
+  path?: string;
+  auth?: string;
+  scopes?: string[];
+  owner?: string;
+  operationId?: string;
+}
+
 function parseStructuredRouteManifest(content: string): Map<string, RouteContract> {
   const routes = new Map<string, RouteContract>();
   let currentServer = '';
-  let current: Partial<RouteContract> | null = null;
+  let current: MutableRouteContract | null = null;
 
   const finalize = (): void => {
     if (!current?.method || !current.path || !current.operationId) return;
@@ -154,7 +163,7 @@ function parseManifestField(line: string): readonly [string, string] | null {
   return [line.slice(0, separator).trim(), line.slice(separator + 1).trim()];
 }
 
-function applyManifestField(target: Partial<RouteContract>, key: string, value: string): void {
+function applyManifestField(target: MutableRouteContract, key: string, value: string): void {
   if (key === 'scopes') {
     target.scopes = value
       .replace(/^\[/, '')
@@ -215,6 +224,25 @@ function parseGeneratedServiceOperations(content: string): Map<string, Pick<Rout
 // ─────────────────────────────────────────────────────────────────────────────
 // Contract Tests
 // ─────────────────────────────────────────────────────────────────────────────
+
+function parseGeneratedServiceDirectoryOperations(): Map<string, Pick<RouteContract, 'method' | 'path' | 'operationId'>> {
+  const operations = new Map<string, Pick<RouteContract, 'method' | 'path' | 'operationId'>>();
+  const servicesDir = path.join(
+    repoRoot,
+    'products/yappc/frontend/web/src/clients/generated/api/services'
+  );
+
+  for (const fileName of fs.readdirSync(servicesDir).filter(file => file.endsWith('Service.ts'))) {
+    const serviceOperations = parseGeneratedServiceOperations(
+      fs.readFileSync(path.join(servicesDir, fileName), 'utf8')
+    );
+    for (const [operationId, operation] of serviceOperations) {
+      operations.set(operationId, operation);
+    }
+  }
+
+  return operations;
+}
 
 describe('API Contract Parity', () => {
   describe('Route Manifest vs OpenAPI', () => {
@@ -343,6 +371,45 @@ describe('Phase cockpit generated client parity', () => {
     { operationId: 'requestDashboardActions', auth: 'required', scopes: ['workspace:read'] },
   ] as const;
 
+  const runControlOperations = [
+    { operationId: 'retryRun', auth: 'required', scopes: ['project:write'] },
+    { operationId: 'rollbackRun', auth: 'required', scopes: ['project:write'] },
+    { operationId: 'promoteRun', auth: 'required', scopes: ['project:write'] },
+  ] as const;
+
+  const evolveControlOperations = [
+    { operationId: 'approveEvolutionProposal', auth: 'required', scopes: ['project:write'] },
+    { operationId: 'rejectEvolutionProposal', auth: 'required', scopes: ['project:write'] },
+  ] as const;
+
+  const lifecyclePhaseOperations = [
+    { operationId: 'captureIntent', auth: 'required', scopes: ['project:write'] },
+    { operationId: 'analyzeIntent', auth: 'required', scopes: ['project:read'] },
+    { operationId: 'getIntent', auth: 'required', scopes: ['project:read'] },
+    { operationId: 'deriveShape', auth: 'required', scopes: ['project:write'] },
+    { operationId: 'modelShape', auth: 'required', scopes: ['project:write'] },
+    { operationId: 'getShape', auth: 'required', scopes: ['project:read'] },
+    { operationId: 'validateArtifacts', auth: 'required', scopes: ['project:write'] },
+    { operationId: 'validateWithConfig', auth: 'required', scopes: ['project:write'] },
+    { operationId: 'validateWithPolicy', auth: 'required', scopes: ['project:write'] },
+    { operationId: 'generateArtifacts', auth: 'required', scopes: ['project:write'] },
+    { operationId: 'generateDiff', auth: 'required', scopes: ['project:read'] },
+    { operationId: 'getArtifacts', auth: 'required', scopes: ['project:read'] },
+    { operationId: 'runArtifacts', auth: 'required', scopes: ['project:write'] },
+    { operationId: 'runWithObservation', auth: 'required', scopes: ['project:write'] },
+    { operationId: 'retryRun', auth: 'required', scopes: ['project:write'] },
+    { operationId: 'rollbackRun', auth: 'required', scopes: ['project:write'] },
+    { operationId: 'promoteRun', auth: 'required', scopes: ['project:write'] },
+    { operationId: 'observeRun', auth: 'required', scopes: ['project:read'] },
+    { operationId: 'learnFromRun', auth: 'required', scopes: ['project:write'] },
+    { operationId: 'learnWithContext', auth: 'required', scopes: ['project:write'] },
+    { operationId: 'evolveSystem', auth: 'required', scopes: ['project:write'] },
+    { operationId: 'evolveWithConstraints', auth: 'required', scopes: ['project:write'] },
+    { operationId: 'approveEvolutionProposal', auth: 'required', scopes: ['project:write'] },
+    { operationId: 'rejectEvolutionProposal', auth: 'required', scopes: ['project:write'] },
+    { operationId: 'executeLifecycle', auth: 'required', scopes: ['project:write'] },
+  ] as const;
+
   it('matches manifest, OpenAPI, and generated LifecycleService methods', () => {
     const manifest = parseStructuredRouteManifest(fs.readFileSync(routeManifestPath, 'utf8'));
     const openApi = parseOpenApiOperations(fs.readFileSync(openApiPath, 'utf8'));
@@ -353,6 +420,87 @@ describe('Phase cockpit generated client parity', () => {
     const generated = parseGeneratedServiceOperations(fs.readFileSync(lifecycleServicePath, 'utf8'));
 
     for (const expected of criticalOperations) {
+      const manifestRoute = manifest.get(expected.operationId);
+      const openApiOperation = openApi.get(expected.operationId);
+      const generatedOperation = generated.get(expected.operationId);
+
+      expect(manifestRoute, `${expected.operationId} manifest route`).toBeDefined();
+      expect(openApiOperation, `${expected.operationId} OpenAPI operation`).toBeDefined();
+      expect(generatedOperation, `${expected.operationId} generated client method`).toBeDefined();
+      expect(openApiOperation).toMatchObject({
+        method: manifestRoute?.method,
+        path: manifestRoute?.path,
+      });
+      expect(generatedOperation).toMatchObject({
+        method: manifestRoute?.method,
+        path: manifestRoute?.path,
+      });
+      expect(manifestRoute?.auth).toBe(expected.auth);
+      expect(manifestRoute?.scopes).toEqual(expected.scopes);
+      expect(manifestRoute?.owner).toBe('yappc-services');
+    }
+  });
+
+  it('matches manifest, OpenAPI, and generated YappcService methods for lifecycle phase operations', () => {
+    const manifest = parseStructuredRouteManifest(fs.readFileSync(routeManifestPath, 'utf8'));
+    const openApi = parseOpenApiOperations(fs.readFileSync(openApiPath, 'utf8'));
+    const generated = parseGeneratedServiceDirectoryOperations();
+
+    for (const expected of lifecyclePhaseOperations) {
+      const manifestRoute = manifest.get(expected.operationId);
+      const openApiOperation = openApi.get(expected.operationId);
+      const generatedOperation = generated.get(expected.operationId);
+
+      expect(manifestRoute, `${expected.operationId} manifest route`).toBeDefined();
+      expect(openApiOperation, `${expected.operationId} OpenAPI operation`).toBeDefined();
+      expect(generatedOperation, `${expected.operationId} generated client method`).toBeDefined();
+      expect(openApiOperation).toMatchObject({
+        method: manifestRoute?.method,
+        path: manifestRoute?.path,
+      });
+      expect(generatedOperation).toMatchObject({
+        method: manifestRoute?.method,
+        path: manifestRoute?.path,
+      });
+      expect(manifestRoute?.auth).toBe(expected.auth);
+      expect(manifestRoute?.scopes).toEqual(expected.scopes);
+      expect(manifestRoute?.owner).toBe('yappc-services');
+    }
+  });
+
+  it('matches manifest, OpenAPI, and generated YappcService methods for run control operations', () => {
+    const manifest = parseStructuredRouteManifest(fs.readFileSync(routeManifestPath, 'utf8'));
+    const openApi = parseOpenApiOperations(fs.readFileSync(openApiPath, 'utf8'));
+    const generated = parseGeneratedServiceDirectoryOperations();
+
+    for (const expected of runControlOperations) {
+      const manifestRoute = manifest.get(expected.operationId);
+      const openApiOperation = openApi.get(expected.operationId);
+      const generatedOperation = generated.get(expected.operationId);
+
+      expect(manifestRoute, `${expected.operationId} manifest route`).toBeDefined();
+      expect(openApiOperation, `${expected.operationId} OpenAPI operation`).toBeDefined();
+      expect(generatedOperation, `${expected.operationId} generated client method`).toBeDefined();
+      expect(openApiOperation).toMatchObject({
+        method: manifestRoute?.method,
+        path: manifestRoute?.path,
+      });
+      expect(generatedOperation).toMatchObject({
+        method: manifestRoute?.method,
+        path: manifestRoute?.path,
+      });
+      expect(manifestRoute?.auth).toBe(expected.auth);
+      expect(manifestRoute?.scopes).toEqual(expected.scopes);
+      expect(manifestRoute?.owner).toBe('yappc-services');
+    }
+  });
+
+  it('matches manifest, OpenAPI, and generated YappcService methods for evolve control operations', () => {
+    const manifest = parseStructuredRouteManifest(fs.readFileSync(routeManifestPath, 'utf8'));
+    const openApi = parseOpenApiOperations(fs.readFileSync(openApiPath, 'utf8'));
+    const generated = parseGeneratedServiceDirectoryOperations();
+
+    for (const expected of evolveControlOperations) {
       const manifestRoute = manifest.get(expected.operationId);
       const openApiOperation = openApi.get(expected.operationId);
       const generatedOperation = generated.get(expected.operationId);

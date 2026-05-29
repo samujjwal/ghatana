@@ -99,32 +99,15 @@ public final class KernelLifecycleEventIngestService implements AutoCloseable {
         return new KernelLifecycleEventIngestService(kernelOutputRoot, blockingExecutor);
     }
 
-    /**
-     * Constructs a new KernelLifecycleEventIngestService with default kernel output root.
-     */
-    @Deprecated(since = "2026-05", forRemoval = false)
-    public KernelLifecycleEventIngestService() {
+    private KernelLifecycleEventIngestService() {
         this(localFilesystemProvider(Path.of(".kernel"), createOwnedBlockingExecutor(), true));
     }
 
-    /**
-     * Constructs a new KernelLifecycleEventIngestService with custom kernel output root.
-     *
-     * @param kernelOutputRoot the root directory for Kernel output files
-     */
-    @Deprecated(since = "2026-05", forRemoval = false)
-    public KernelLifecycleEventIngestService(@NotNull Path kernelOutputRoot) {
+    private KernelLifecycleEventIngestService(@NotNull Path kernelOutputRoot) {
         this(localFilesystemProvider(kernelOutputRoot, createOwnedBlockingExecutor(), true));
     }
 
-    /**
-     * Constructs a new KernelLifecycleEventIngestService with an externally managed executor.
-     *
-     * @param kernelOutputRoot the root directory for Kernel output files
-     * @param blockingExecutor executor used for blocking filesystem reads
-     */
-    @Deprecated(since = "2026-05", forRemoval = false)
-    public KernelLifecycleEventIngestService(@NotNull Path kernelOutputRoot, @NotNull Executor blockingExecutor) {
+    private KernelLifecycleEventIngestService(@NotNull Path kernelOutputRoot, @NotNull Executor blockingExecutor) {
         this(localFilesystemProvider(kernelOutputRoot, blockingExecutor, false));
     }
 
@@ -178,31 +161,10 @@ public final class KernelLifecycleEventIngestService implements AutoCloseable {
     }
 
     private static void assertLocalProviderAllowed() {
-        if (isProductionRuntime()) {
+        if (KernelRuntimeProfiles.isProductionRuntime()) {
             throw new IllegalStateException(
                     "Local filesystem Kernel lifecycle provider is dev/test-only; production must inject DataCloudKernelLifecycleTruthSource");
         }
-    }
-
-    private static boolean isProductionRuntime() {
-        return isProductionValue(System.getProperty("ghatana.runtime.profile"))
-                || isProductionValue(System.getProperty("yappc.runtime.profile"))
-                || isProductionValue(System.getenv("GHATANA_RUNTIME_PROFILE"))
-                || isProductionValue(System.getenv("GHATANA_ENV"))
-                || isProductionValue(System.getenv("SPRING_PROFILES_ACTIVE"));
-    }
-
-    private static boolean isProductionValue(@Nullable String value) {
-        if (value == null || value.isBlank()) {
-            return false;
-        }
-        for (String part : value.split("[,;\\s]+")) {
-            String normalized = part.trim().toLowerCase(java.util.Locale.ROOT);
-            if ("production".equals(normalized) || "prod".equals(normalized)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**

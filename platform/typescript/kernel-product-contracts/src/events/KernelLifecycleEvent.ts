@@ -34,6 +34,10 @@ export const KERNEL_LIFECYCLE_EVENT_TYPES = [
 export type KernelLifecycleEventType =
   (typeof KERNEL_LIFECYCLE_EVENT_TYPES)[number];
 
+export const KernelLifecycleEventTypeSchema = z.enum(
+  KERNEL_LIFECYCLE_EVENT_TYPES
+);
+
 const PRODUCT_LIFECYCLE_PHASES = [
   "create",
   "bootstrap",
@@ -66,6 +70,8 @@ export const LIFECYCLE_EVENT_STATUSES = [
 ] as const;
 
 export type LifecycleEventStatus = (typeof LIFECYCLE_EVENT_STATUSES)[number];
+
+export const LifecycleEventStatusSchema = z.enum(LIFECYCLE_EVENT_STATUSES);
 
 /**
  * Base event metadata for all Kernel lifecycle events.
@@ -316,7 +322,7 @@ export const KernelEventMetadataSchema = z
   .object({
     eventId: z.string().trim().min(1),
     schemaVersion: z.literal(KERNEL_EVENT_SCHEMA_VERSION),
-    eventType: z.enum(KERNEL_LIFECYCLE_EVENT_TYPES),
+    eventType: KernelLifecycleEventTypeSchema,
     productUnitId: z.string().trim().min(1),
     runId: z.string().trim().min(1),
     phase: z.enum(PRODUCT_LIFECYCLE_PHASES),
@@ -329,7 +335,7 @@ export const KernelEventMetadataSchema = z
   })
   .strict();
 
-const ProductUnitIntentCreatedPayloadSchema = z
+export const ProductUnitIntentCreatedPayloadSchema = z
   .object({
     intentId: z.string().trim().min(1),
     intentType: z.enum(["create", "update", "promote-candidate"]),
@@ -339,7 +345,7 @@ const ProductUnitIntentCreatedPayloadSchema = z
   })
   .strict();
 
-const ProductUnitIntentValidatedPayloadSchema = z
+export const ProductUnitIntentValidatedPayloadSchema = z
   .object({
     intentId: z.string().trim().min(1),
     valid: z.boolean(),
@@ -347,7 +353,7 @@ const ProductUnitIntentValidatedPayloadSchema = z
   })
   .strict();
 
-const ProductUnitIntentAppliedPayloadSchema = z
+export const ProductUnitIntentAppliedPayloadSchema = z
   .object({
     intentId: z.string().trim().min(1),
     productUnitId: z.string().trim().min(1),
@@ -356,7 +362,7 @@ const ProductUnitIntentAppliedPayloadSchema = z
   })
   .strict();
 
-const LifecyclePlanCreatedPayloadSchema = z
+export const LifecyclePlanCreatedPayloadSchema = z
   .object({
     planRunId: z.string().trim().min(1),
     phase: z.enum(PRODUCT_LIFECYCLE_PHASES),
@@ -367,7 +373,7 @@ const LifecyclePlanCreatedPayloadSchema = z
   })
   .strict();
 
-const LifecyclePhaseStartedPayloadSchema = z
+export const LifecyclePhaseStartedPayloadSchema = z
   .object({
     phase: z.enum(PRODUCT_LIFECYCLE_PHASES),
     status: z.literal("running"),
@@ -375,7 +381,7 @@ const LifecyclePhaseStartedPayloadSchema = z
   })
   .strict();
 
-const LifecyclePhaseCompletedPayloadSchema = z
+export const LifecyclePhaseCompletedPayloadSchema = z
   .object({
     phase: z.enum(PRODUCT_LIFECYCLE_PHASES),
     status: z.enum(["succeeded", "failed", "skipped"]),
@@ -384,7 +390,7 @@ const LifecyclePhaseCompletedPayloadSchema = z
   })
   .strict();
 
-const LifecycleStepStartedPayloadSchema = z
+export const LifecycleStepStartedPayloadSchema = z
   .object({
     stepId: z.string().trim().min(1),
     stepKind: z.string().trim().min(1),
@@ -395,7 +401,7 @@ const LifecycleStepStartedPayloadSchema = z
   })
   .strict();
 
-const LifecycleStepCompletedPayloadSchema = z
+export const LifecycleStepCompletedPayloadSchema = z
   .object({
     stepId: z.string().trim().min(1),
     stepKind: z.string().trim().min(1),
@@ -409,7 +415,7 @@ const LifecycleStepCompletedPayloadSchema = z
   })
   .strict();
 
-const LifecycleGateEvaluatedPayloadSchema = z
+export const LifecycleGateEvaluatedPayloadSchema = z
   .object({
     gateId: z.string().trim().min(1),
     status: z.enum(["passed", "failed", "skipped"]),
@@ -420,7 +426,7 @@ const LifecycleGateEvaluatedPayloadSchema = z
   })
   .strict();
 
-const LifecycleArtifactRecordedPayloadSchema = z
+export const LifecycleArtifactRecordedPayloadSchema = z
   .object({
     artifactId: z.string().trim().min(1),
     artifactType: z.string().trim().min(1),
@@ -431,7 +437,7 @@ const LifecycleArtifactRecordedPayloadSchema = z
   })
   .strict();
 
-const LifecycleManifestWrittenPayloadSchema = z
+export const LifecycleManifestWrittenPayloadSchema = z
   .object({
     manifestType: z.enum([
       "lifecycle-plan",
@@ -450,7 +456,7 @@ const LifecycleManifestWrittenPayloadSchema = z
   })
   .strict();
 
-const LifecycleDeploymentCompletedPayloadSchema = z
+export const LifecycleDeploymentCompletedPayloadSchema = z
   .object({
     deploymentId: z.string().trim().min(1),
     environment: z.string().trim().min(1),
@@ -461,7 +467,7 @@ const LifecycleDeploymentCompletedPayloadSchema = z
   })
   .strict();
 
-const LifecycleHealthCheckedPayloadSchema = z
+export const LifecycleHealthCheckedPayloadSchema = z
   .object({
     checkId: z.string().trim().min(1),
     checkName: z.string().trim().min(1),
@@ -473,7 +479,7 @@ const LifecycleHealthCheckedPayloadSchema = z
   })
   .strict();
 
-const LifecycleAgentGovernanceEvaluatedPayloadSchema = z
+export const LifecycleAgentGovernanceEvaluatedPayloadSchema = z
   .object({
     agentId: z.string().trim().min(1),
     actionType: z.string().trim().min(1),
@@ -485,7 +491,7 @@ const LifecycleAgentGovernanceEvaluatedPayloadSchema = z
   })
   .strict();
 
-const LifecycleApprovalRequestedPayloadSchema = z
+export const LifecycleApprovalRequestedPayloadSchema = z
   .object({
     approvalId: z.string().trim().min(1),
     action: z.string().trim().min(1),
@@ -495,7 +501,7 @@ const LifecycleApprovalRequestedPayloadSchema = z
   })
   .strict();
 
-const LifecycleApprovalDecidedPayloadSchema = z
+export const LifecycleApprovalDecidedPayloadSchema = z
   .object({
     approvalId: z.string().trim().min(1),
     decision: z.enum(["approved", "rejected"]),
@@ -522,6 +528,32 @@ const payloadSchemasByEventType = {
   "lifecycle.approval.requested": LifecycleApprovalRequestedPayloadSchema,
   "lifecycle.approval.decided": LifecycleApprovalDecidedPayloadSchema,
 } as const;
+
+export const KernelLifecycleEventPayloadSchema = z.union([
+  ProductUnitIntentCreatedPayloadSchema,
+  ProductUnitIntentValidatedPayloadSchema,
+  ProductUnitIntentAppliedPayloadSchema,
+  LifecyclePlanCreatedPayloadSchema,
+  LifecyclePhaseStartedPayloadSchema,
+  LifecyclePhaseCompletedPayloadSchema,
+  LifecycleStepStartedPayloadSchema,
+  LifecycleStepCompletedPayloadSchema,
+  LifecycleGateEvaluatedPayloadSchema,
+  LifecycleArtifactRecordedPayloadSchema,
+  LifecycleManifestWrittenPayloadSchema,
+  LifecycleDeploymentCompletedPayloadSchema,
+  LifecycleHealthCheckedPayloadSchema,
+  LifecycleAgentGovernanceEvaluatedPayloadSchema,
+  LifecycleApprovalRequestedPayloadSchema,
+  LifecycleApprovalDecidedPayloadSchema,
+]);
+
+export const KernelLifecycleEventValidationResultSchema = z
+  .object({
+    valid: z.boolean(),
+    errors: z.array(z.string()),
+  })
+  .strict();
 
 export const KernelLifecycleEventSchema = z
   .object({
@@ -562,4 +594,124 @@ export function isKernelLifecycleEvent(
   value: unknown
 ): value is KernelLifecycleEvent {
   return validateKernelLifecycleEvent(value).valid;
+}
+
+export function validateProductUnitIntentCreatedPayload(
+  value: unknown
+): value is ProductUnitIntentCreatedPayload {
+  return ProductUnitIntentCreatedPayloadSchema.safeParse(value).success;
+}
+
+export function validateProductUnitIntentValidatedPayload(
+  value: unknown
+): value is ProductUnitIntentValidatedPayload {
+  return ProductUnitIntentValidatedPayloadSchema.safeParse(value).success;
+}
+
+export function validateProductUnitIntentAppliedPayload(
+  value: unknown
+): value is ProductUnitIntentAppliedPayload {
+  return ProductUnitIntentAppliedPayloadSchema.safeParse(value).success;
+}
+
+export function validateKernelLifecycleEventType(
+  value: unknown
+): value is KernelLifecycleEventType {
+  return KernelLifecycleEventTypeSchema.safeParse(value).success;
+}
+
+export function validateLifecycleEventStatus(
+  value: unknown
+): value is LifecycleEventStatus {
+  return LifecycleEventStatusSchema.safeParse(value).success;
+}
+
+export function validateKernelLifecycleEventPayload(
+  value: unknown
+): value is KernelLifecycleEventPayload {
+  return KernelLifecycleEventPayloadSchema.safeParse(value).success;
+}
+
+export function validateKernelLifecycleEventValidationResult(
+  value: unknown
+): value is KernelLifecycleEventValidationResult {
+  return KernelLifecycleEventValidationResultSchema.safeParse(value).success;
+}
+
+export function validateLifecyclePlanCreatedPayload(
+  value: unknown
+): value is LifecyclePlanCreatedPayload {
+  return LifecyclePlanCreatedPayloadSchema.safeParse(value).success;
+}
+
+export function validateLifecyclePhaseStartedPayload(
+  value: unknown
+): value is LifecyclePhaseStartedPayload {
+  return LifecyclePhaseStartedPayloadSchema.safeParse(value).success;
+}
+
+export function validateLifecyclePhaseCompletedPayload(
+  value: unknown
+): value is LifecyclePhaseCompletedPayload {
+  return LifecyclePhaseCompletedPayloadSchema.safeParse(value).success;
+}
+
+export function validateLifecycleStepStartedPayload(
+  value: unknown
+): value is LifecycleStepStartedPayload {
+  return LifecycleStepStartedPayloadSchema.safeParse(value).success;
+}
+
+export function validateLifecycleStepCompletedPayload(
+  value: unknown
+): value is LifecycleStepCompletedPayload {
+  return LifecycleStepCompletedPayloadSchema.safeParse(value).success;
+}
+
+export function validateLifecycleGateEvaluatedPayload(
+  value: unknown
+): value is LifecycleGateEvaluatedPayload {
+  return LifecycleGateEvaluatedPayloadSchema.safeParse(value).success;
+}
+
+export function validateLifecycleArtifactRecordedPayload(
+  value: unknown
+): value is LifecycleArtifactRecordedPayload {
+  return LifecycleArtifactRecordedPayloadSchema.safeParse(value).success;
+}
+
+export function validateLifecycleManifestWrittenPayload(
+  value: unknown
+): value is LifecycleManifestWrittenPayload {
+  return LifecycleManifestWrittenPayloadSchema.safeParse(value).success;
+}
+
+export function validateLifecycleDeploymentCompletedPayload(
+  value: unknown
+): value is LifecycleDeploymentCompletedPayload {
+  return LifecycleDeploymentCompletedPayloadSchema.safeParse(value).success;
+}
+
+export function validateLifecycleHealthCheckedPayload(
+  value: unknown
+): value is LifecycleHealthCheckedPayload {
+  return LifecycleHealthCheckedPayloadSchema.safeParse(value).success;
+}
+
+export function validateLifecycleAgentGovernanceEvaluatedPayload(
+  value: unknown
+): value is LifecycleAgentGovernanceEvaluatedPayload {
+  return LifecycleAgentGovernanceEvaluatedPayloadSchema.safeParse(value).success;
+}
+
+export function validateLifecycleApprovalRequestedPayload(
+  value: unknown
+): value is LifecycleApprovalRequestedPayload {
+  return LifecycleApprovalRequestedPayloadSchema.safeParse(value).success;
+}
+
+export function validateLifecycleApprovalDecidedPayload(
+  value: unknown
+): value is LifecycleApprovalDecidedPayload {
+  return LifecycleApprovalDecidedPayloadSchema.safeParse(value).success;
 }

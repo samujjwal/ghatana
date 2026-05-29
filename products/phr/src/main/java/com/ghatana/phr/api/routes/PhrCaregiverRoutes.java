@@ -2,6 +2,7 @@ package com.ghatana.phr.api.routes;
 
 import com.ghatana.phr.kernel.service.CaregiverService;
 import com.ghatana.phr.kernel.service.PatientRecordService;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -32,14 +33,17 @@ public final class PhrCaregiverRoutes {
     private final Eventloop eventloop;
     private final CaregiverService caregiverService;
     private final PatientRecordService patientRecordService;
+    private final PhrPolicyEvaluator policyEvaluator;
 
     public PhrCaregiverRoutes(
             Eventloop eventloop,
             CaregiverService caregiverService,
-            PatientRecordService patientRecordService) {
+            PatientRecordService patientRecordService,
+            PhrPolicyEvaluator policyEvaluator) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.caregiverService = Objects.requireNonNull(caregiverService, "caregiverService must not be null");
         this.patientRecordService = Objects.requireNonNull(patientRecordService, "patientRecordService must not be null");
+        this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 
     /**
@@ -124,17 +128,18 @@ public final class PhrCaregiverRoutes {
                 context.correlationId());
         }
         
-        return caregiverService.getPatientsForCaregiver(context.principalId())
-            .then(relationships -> {
-                boolean hasRelationship = relationships.stream()
-                    .anyMatch(rel -> rel.patientId().equals(patientId) && rel.status() == com.ghatana.phr.kernel.service.CaregiverService.RelationshipStatus.ACTIVE);
-                
-                if (!hasRelationship) {
-                    return PhrRouteSupport.errorResponse(403, "CAREGIVER_PATIENT_ACCESS_DENIED",
-                        "Caregiver does not have an active relationship with this patient",
-                        context.correlationId());
-                }
-                
+        return policyEvaluator.canAccessPhiResourceAsync(
+            context,
+            patientId,
+            "caregiver-patient-summary",
+            "READ",
+            context.tenantId(),
+            context.facilityId()
+        ).then(decision -> {
+            if (!decision.isAllowed()) {
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+            }
+
                 return patientRecordService.getPatient(patientId)
                     .then(opt -> {
                         if (opt.isEmpty()) {
@@ -149,10 +154,11 @@ public final class PhrCaregiverRoutes {
                             "caregiverId", context.principalId(),
                             "name", patient.getDemographics().getFullName(),
                             "age", patient.getDemographics().getAge(),
-                            "summary", "Caregiver-scoped patient summary"
+                            "summary", "Caregiver-scoped patient summary",
+                            "policyStatus", decision.getReasonCode()
                         ), context.correlationId());
                     });
-            });
+        });
     }
 
     private Promise<HttpResponse> handleGetPatientDetail(HttpRequest request) {
@@ -171,17 +177,18 @@ public final class PhrCaregiverRoutes {
                 context.correlationId());
         }
         
-        return caregiverService.getPatientsForCaregiver(context.principalId())
-            .then(relationships -> {
-                boolean hasRelationship = relationships.stream()
-                    .anyMatch(rel -> rel.patientId().equals(patientId) && rel.status() == com.ghatana.phr.kernel.service.CaregiverService.RelationshipStatus.ACTIVE);
-                
-                if (!hasRelationship) {
-                    return PhrRouteSupport.errorResponse(403, "CAREGIVER_PATIENT_ACCESS_DENIED",
-                        "Caregiver does not have an active relationship with this patient",
-                        context.correlationId());
-                }
-                
+        return policyEvaluator.canAccessPhiResourceAsync(
+            context,
+            patientId,
+            "caregiver-patient-detail",
+            "READ",
+            context.tenantId(),
+            context.facilityId()
+        ).then(decision -> {
+            if (!decision.isAllowed()) {
+                return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+            }
+
                 return patientRecordService.getPatient(patientId)
                     .then(opt -> {
                         if (opt.isEmpty()) {
@@ -214,9 +221,10 @@ public final class PhrCaregiverRoutes {
                                 "chronicConditions", medicalHistory.getChronicConditions(),
                                 "bloodType", medicalHistory.getBloodType()
                             ) : Map.of(),
+                            "policyStatus", decision.getReasonCode(),
                             "lastUpdated", patient.getUpdatedAt() != null ? patient.getUpdatedAt().toString() : ""
                         ), context.correlationId());
                     });
-            });
+        });
     }
 }

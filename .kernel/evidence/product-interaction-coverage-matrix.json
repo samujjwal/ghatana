@@ -1,0 +1,566 @@
+{
+  "generatedAt": "generated-on-demand",
+  "coverageSummary": {
+    "interactionRows": 5,
+    "handlerRequired": 2,
+    "handlerCovered": 2,
+    "testsRequired": 5,
+    "testsCovered": 5,
+    "passed": true
+  },
+  "coverageMatrix": [
+    {
+      "contractId": "kernel://interactions/digital-marketing.notification-preference.v1",
+      "schemaVersion": "1.0.0",
+      "declaringProductId": "digital-marketing",
+      "declarationKind": "provides",
+      "declarationIndex": 0,
+      "providerProductId": "digital-marketing",
+      "consumerProductId": "phr",
+      "mode": "request-response",
+      "schemaRefs": [
+        {
+          "kind": "request",
+          "ref": "products/digital-marketing/dm-core-contracts/src/main/resources/contracts/notification-preference-request.v1.json",
+          "sha256": "94311aadb386caf848c107a5aaa1449157d205b1afc1e7877b7ccf60f59dca42"
+        },
+        {
+          "kind": "response",
+          "ref": "products/digital-marketing/dm-core-contracts/src/main/resources/contracts/notification-preference-response.v1.json",
+          "sha256": "354b3c21cf517955971fb3869d4b28a67842d2e216c46c79779324e32ccc9266"
+        }
+      ],
+      "policy": {
+        "requiresAuth": true,
+        "requiresTenant": true,
+        "requiresConsent": true,
+        "piiClassification": "customer-contact",
+        "tenantScope": "same-tenant"
+      },
+      "evidence": {
+        "required": true,
+        "manifestType": "interaction-evidence",
+        "evidenceRefs": [
+          "products/digital-marketing/lifecycle/evidence/notification-preference.yaml"
+        ],
+        "retentionPolicyId": "marketing-consent-evidence"
+      },
+      "handler": {
+        "required": true,
+        "status": "covered",
+        "files": [
+          "products/digital-marketing/dm-kernel-bridge/src/main/java/com/ghatana/digitalmarketing/bridge/NotificationPreferenceInteractionHandler.java"
+        ]
+      },
+      "tests": {
+        "required": true,
+        "status": "covered",
+        "files": [
+          "integration-tests/cross-service-workflow/src/productInteractionTest/java/com/ghatana/integration/crossservice/PhrDmosProductInteractionContractTest.java",
+          "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/interaction/PreferenceServiceAdapterTest.java",
+          "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/NotificationPreferenceInteractionHandlerTest.java"
+        ]
+      }
+    },
+    {
+      "contractId": "kernel://interactions/digital-marketing.notification-preference.v1",
+      "schemaVersion": "1.0.0",
+      "declaringProductId": "phr",
+      "declarationKind": "consumes",
+      "declarationIndex": 0,
+      "providerProductId": "digital-marketing",
+      "consumerProductId": "phr",
+      "mode": "request-response",
+      "schemaRefs": [
+        {
+          "kind": "request",
+          "ref": "products/phr/schema-packs/contracts/notification-preference-request.v1.json",
+          "sha256": "94311aadb386caf848c107a5aaa1449157d205b1afc1e7877b7ccf60f59dca42"
+        },
+        {
+          "kind": "response",
+          "ref": "products/phr/schema-packs/contracts/notification-preference-response.v1.json",
+          "sha256": "354b3c21cf517955971fb3869d4b28a67842d2e216c46c79779324e32ccc9266"
+        }
+      ],
+      "policy": {
+        "requiresAuth": true,
+        "requiresTenant": true,
+        "requiresConsent": true,
+        "piiClassification": "patient-contact",
+        "tenantScope": "same-tenant"
+      },
+      "evidence": {
+        "required": true,
+        "manifestType": "interaction-evidence",
+        "evidenceRefs": [
+          "products/phr/lifecycle/gate-packs/consent.yaml"
+        ],
+        "retentionPolicyId": "regulated-healthcare-consent"
+      },
+      "handler": {
+        "required": false,
+        "status": "not-required",
+        "files": [
+          "products/digital-marketing/dm-kernel-bridge/src/main/java/com/ghatana/digitalmarketing/bridge/NotificationPreferenceInteractionHandler.java"
+        ]
+      },
+      "tests": {
+        "required": true,
+        "status": "covered",
+        "files": [
+          "integration-tests/cross-service-workflow/src/productInteractionTest/java/com/ghatana/integration/crossservice/PhrDmosProductInteractionContractTest.java",
+          "integration-tests/cross-service-workflow/src/runtimeInteractionTest/java/com/ghatana/integration/crossservice/CrossProductInteractionRuntimeTest.java",
+          "integration-tests/e2e-api-framework/src/phr-api.e2e.test.ts",
+          "integration-tests/phr-finance-integration/src/test/java/com/ghatana/integration/phrfinance/DurablePluginIntegrationIT.java",
+          "integration-tests/phr-finance-integration/src/test/java/com/ghatana/integration/phrfinance/FlagshipThinSliceDemoIT.java",
+          "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/interaction/ConsentServiceAdapterTest.java",
+          "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/interaction/PreferenceServiceAdapterTest.java",
+          "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/interaction/ProductInteractionBrokerTest.java",
+          "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/interaction/ProductInteractionPolicyEnforcerTest.java",
+          "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/security/PrivacyManagerTest.java",
+          "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/telemetry/KernelLifecycleTelemetryTest.java",
+          "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/test/integration/KernelDeploymentModeValidationTest.java",
+          "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/test/integration/PhrFinanceCrossProductIntegrationTest.java",
+          "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/test/integration/SecurityFrameworkIntegrationTest.java",
+          "products/audio-video/modules/audio-processing/src/test/java/com/ghatana/audio/processing/AudioProcessingTest.java",
+          "products/audio-video/modules/vision/vision-service/src/test/java/com/ghatana/audio/video/vision/recognition/FacialRecognitionServiceTest.java",
+          "products/audio-video/modules/vision/vision-service/src/test/java/com/ghatana/audio/video/vision/recognition/StructuredFacialRecognitionAuditSinkTest.java",
+          "products/data-cloud/delivery/api/src/test/java/com/ghatana/datacloud/application/ProductFamilyAssetServiceTest.java",
+          "products/data-cloud/delivery/api/src/test/java/com/ghatana/datacloud/security/DataPrivacyTest.java",
+          "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/arch/DataCloudPlaneBoundaryTest.java",
+          "products/data-cloud/delivery/ui/src/components/privacy/__tests__/ConsentManager.test.tsx",
+          "products/data-cloud/extensions/kernel-bridge/src/test/java/com/ghatana/datacloud/kernel/DataCloudProviderTest.java",
+          "products/data-cloud/planes/action/compliance/src/test/java/com/ghatana/aep/compliance/ComplianceTest.java",
+          "products/data-cloud/planes/action/engine/src/test/java/com/ghatana/aep/AepIntegrationTest.java",
+          "products/data-cloud/planes/action/engine/src/test/java/com/ghatana/aep/AepRemediationTest.java",
+          "products/data-cloud/planes/action/engine/src/test/java/com/ghatana/aep/consent/DefaultConsentServiceTest.java",
+          "products/data-cloud/planes/action/engine/src/test/java/com/ghatana/aep/consent/TenantAwareConsentServiceTest.java",
+          "products/data-cloud/planes/action/engine/src/test/java/com/ghatana/aep/consent/TestDenyAllConsentProvider.java",
+          "products/data-cloud/planes/action/engine/src/test/java/com/ghatana/aep/testing/AepEngineTestFixtures.java",
+          "products/data-cloud/planes/action/server/src/test/java/com/ghatana/aep/server/EndToEndEventProcessingTest.java",
+          "products/data-cloud/planes/action/server/src/test/java/com/ghatana/aep/server/database/AepMigrationTest.java",
+          "products/data-cloud/planes/action/ui/src/__tests__/GovernancePage.test.tsx",
+          "products/data-cloud/planes/action/ui/src/__tests__/PrivacyRequestPage.test.tsx",
+          "products/data-cloud/planes/action/ui/src/components/nlp/__tests__/NLQInput.test.tsx",
+          "products/data-cloud/planes/action/ui/src/components/privacy/__tests__/ConsentManager.test.tsx",
+          "products/data-cloud/planes/action/ui/src/components/voice/__tests__/VoiceInput.test.tsx",
+          "products/data-cloud/planes/governance/core/src/test/java/com/ghatana/datacloud/governance/ConsentHandlingTest.java",
+          "products/data-cloud/planes/governance/core/src/test/java/com/ghatana/datacloud/governance/PolicyEvaluatorTest.java",
+          "products/dcmaar/apps/device-health/src/services/__tests__/TelemetryManager.test.ts",
+          "products/dcmaar/apps/device-health/tests/e2e/settings.spec.ts",
+          "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/RepositoryParityTest.java",
+          "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/campaign/DefaultCampaignPreflightDataProviderTest.java",
+          "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/consent/ConsentProofServiceImplTest.java",
+          "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/contact/ContactServiceImplTest.java",
+          "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/customer/CustomerServiceImplTest.java",
+          "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/email/EmailFollowUpDraftServiceImplTest.java",
+          "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/privacy/DataSubjectRequestServiceImplTest.java",
+          "products/digital-marketing/dm-domain-packs/src/test/java/com/ghatana/digitalmarketing/pack/DigitalMarketingBoundaryPolicyStoreTest.java",
+          "products/digital-marketing/dm-domain-packs/src/test/java/com/ghatana/digitalmarketing/pack/DigitalMarketingBoundaryWorkflowCoverageTest.java",
+          "products/digital-marketing/dm-domain-packs/src/test/java/com/ghatana/digitalmarketing/pack/DigitalMarketingComplianceRulePackTest.java",
+          "products/digital-marketing/dm-domain-packs/src/test/java/com/ghatana/digitalmarketing/pack/DigitalMarketingPackContractTest.java",
+          "products/digital-marketing/dm-domain/src/test/java/com/ghatana/digitalmarketing/domain/consent/ConsentProofSnapshotTest.java",
+          "products/digital-marketing/dm-domain/src/test/java/com/ghatana/digitalmarketing/domain/contact/ContactTest.java",
+          "products/digital-marketing/dm-domain/src/test/java/com/ghatana/digitalmarketing/domain/event/DmEventRegistryTest.java",
+          "products/digital-marketing/dm-domain/src/test/java/com/ghatana/digitalmarketing/domain/lead/DmLeadCaptureTest.java",
+          "products/digital-marketing/dm-integration-tests/src/test/java/com/ghatana/digitalmarketing/integration/DigitalMarketingDomainInvariantTest.java",
+          "products/digital-marketing/dm-integration-tests/src/test/java/com/ghatana/digitalmarketing/integration/KernelBridgeWiringIT.java",
+          "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImplTest.java",
+          "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingLifecycleGateTest.java",
+          "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/NotificationPreferenceInteractionHandlerTest.java",
+          "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/NotificationRetryAndDlqTest.java",
+          "products/finance/domains/integration/src/test/java/com/ghatana/products/finance/domains/integration/PHRComplianceTest.java",
+          "products/flashit/backend/gateway/src/__tests__/privacy.test.ts",
+          "products/flashit/backend/gateway/src/routes/__tests__/privacy.test.ts",
+          "products/phr/apps/mobile/src/__tests__/App.test.tsx",
+          "products/phr/apps/mobile/src/__tests__/accessibility-mobile.test.tsx",
+          "products/phr/apps/mobile/src/__tests__/accessibility.test.tsx",
+          "products/phr/apps/mobile/src/__tests__/fixtures/mobileDashboardFixture.ts",
+          "products/phr/apps/mobile/src/__tests__/localeCoverage.test.ts",
+          "products/phr/apps/mobile/src/__tests__/pseudo-locale.test.tsx",
+          "products/phr/apps/mobile/src/locales/__tests__/localeCoverage.test.ts",
+          "products/phr/apps/mobile/src/screens/__tests__/ConsentScreen.test.tsx",
+          "products/phr/apps/mobile/src/screens/__tests__/DashboardScreen.test.tsx",
+          "products/phr/apps/mobile/src/screens/__tests__/SettingsScreen.test.tsx",
+          "products/phr/apps/mobile/src/services/__tests__/offlineStore.test.ts",
+          "products/phr/apps/mobile/src/services/__tests__/phrMobileApi.test.ts",
+          "products/phr/apps/web/src/__tests__/e2e/accessibility-route-traversal.spec.ts",
+          "products/phr/apps/web/src/__tests__/phrApi.integration.test.ts",
+          "products/phr/apps/web/src/__tests__/phrApp.test.tsx",
+          "products/phr/apps/web/src/api/__tests__/fhirMappers.test.ts",
+          "products/phr/apps/web/src/pages/__tests__/ConsentPage.test.tsx",
+          "products/phr/apps/web/src/pages/__tests__/DashboardPage.test.tsx",
+          "products/phr/apps/web/src/pages/__tests__/TimelinePage.test.tsx",
+          "products/phr/apps/web/tests/e2e/phr-journey.spec.ts",
+          "products/phr/apps/web/tests/e2e/phr-visual-regression.spec.ts",
+          "products/phr/domains/healthcare/src/test/java/com/ghatana/phr/healthcare/service/ConsentEnforcementServiceTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/PhrApiContractConformanceTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/PhrHttpServerTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/PhrWebExposedRoutesContractTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/routes/PhrAdministrativeRoutesTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/routes/PhrAuditRoutesTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/routes/PhrClinicalRoutesTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/routes/PhrConsentRoutesTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/routes/PhrDocumentImagingRoutesTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/routes/PhrEmergencyRoutesTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/routes/PhrMobileRoutesTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/routes/PhrOcrAuthorizationTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/routes/PhrProviderRoutesTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/cache/PhrDistributedCacheProofTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/extension/HealthcareConsentKernelExtensionTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/DistributedCacheConsentInvalidationTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/PhrKernelModuleEventEvidenceTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/PhrKernelModuleTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/PhrPackContractTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/consent/PatientDataAccessMatrixTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/interaction/ConsentStatusInteractionHandlerTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/policy/PhrConsentBoundaryAccessGateTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/policy/PhrPolicyCompatibilityTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/service/CaregiverServiceTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/service/ConsentExpiryScannerTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/service/ConsentManagementServiceTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/service/DurablePhrNotificationSenderTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/service/EmergencyAccessBreakGlassE2EIT.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/service/PhrNotificationOutboxDispatcherTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/service/PhrNotificationSendersTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/service/PhrNotificationTestSupport.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/service/ResilientPhrNotificationSenderTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/repository/ConsentRepositoryPersistenceTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/security/PHRPrivacyManagerImplTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/security/PHRSecurityConfigPersistenceTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/security/PHRSecurityIntegrationTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/security/PhrPolicyEvaluatorTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/service/PatientServiceConsentBeforeAccessTest.java",
+          "products/tutorputor/apps/tutorputor-web/src/offline/offlineSync.test.ts",
+          "products/tutorputor/contracts/tests/backward-forward-compatibility.test.ts",
+          "products/tutorputor/contracts/tests/platform-events.test.ts",
+          "products/tutorputor/contracts/tests/telemetry-events.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/__tests__/consent-enforcement.integration.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/__tests__/p0-3-fail-closed-auth.integration.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/__tests__/p0-3-rbac-matrix.integration.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/__tests__/release-gates.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/__tests__/setupPlatform.integration.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/core/http/__tests__/jwtAuthPreHandler.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/core/middleware/__tests__/consent-enforcement.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/modules/ai/__tests__/governance.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/modules/ai/ai-routes-consent.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/modules/compliance/__tests__/consentPolicy.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/modules/compliance/__tests__/ferpa-compliance.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/modules/compliance/__tests__/routes.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/modules/policy/__tests__/abac-policy-engine.test.ts",
+          "products/tutorputor/tests/e2e/PrivacyWorkflow.spec.ts",
+          "products/yappc/core/yappc-domain-impl/src/test/java/com/ghatana/yappc/domain/pageartifact/PageArtifactValidatorTest.java",
+          "products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/api/ProductFamilyControlPlaneControllerTest.java",
+          "products/yappc/core/yappc-services/src/test/resources/builder-document-v1.schema.json",
+          "products/yappc/core/yappc-services/src/test/resources/builder-document/valid-minimal.builder-document.json",
+          "products/yappc/frontend/web/src/components/canvas/page/__tests__/PropertyForm.test.tsx",
+          "products/yappc/frontend/web/src/components/canvas/page/__tests__/pageBuilderE2E.test.tsx",
+          "products/yappc/frontend/web/src/lib/api/__tests__/client.telemetry.test.ts",
+          "products/yappc/frontend/web/src/pages/kernel-health/__tests__/GateHealthPanel.test.tsx",
+          "products/yappc/frontend/web/src/pages/product-family/__tests__/ProductFamilyControlPlanePage.accessibility.test.tsx"
+        ]
+      }
+    },
+    {
+      "contractId": "kernel://interactions/marketing.lead-captured.v1",
+      "schemaVersion": "1.0.0",
+      "declaringProductId": "digital-marketing",
+      "declarationKind": "publishes",
+      "declarationIndex": 0,
+      "providerProductId": "digital-marketing",
+      "consumerProductId": "phr",
+      "mode": "event-publish",
+      "topic": "product.digital-marketing.lead.captured",
+      "schemaRefs": [
+        {
+          "kind": "event",
+          "ref": "products/digital-marketing/dm-core-contracts/src/main/resources/contracts/lead-captured.v1.json",
+          "sha256": "d224dad433d03ed8a66acbd9b19d9e6daabeae08ad7a9bf86046770cc00c4d04"
+        }
+      ],
+      "policy": {
+        "requiresAuth": true,
+        "requiresTenant": true,
+        "requiresConsent": true,
+        "piiClassification": "customer-contact",
+        "tenantScope": "same-tenant"
+      },
+      "evidence": {
+        "required": true,
+        "manifestType": "interaction-evidence",
+        "evidenceRefs": [
+          "products/digital-marketing/lifecycle/evidence/marketing-consent-boundary.yaml"
+        ],
+        "retentionPolicyId": "marketing-consent-evidence"
+      },
+      "handler": {
+        "required": false,
+        "status": "not-required",
+        "files": []
+      },
+      "tests": {
+        "required": true,
+        "status": "covered",
+        "files": [
+          "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/lead/LeadServiceImplTest.java",
+          "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingLifecycleGateTest.java"
+        ]
+      }
+    },
+    {
+      "contractId": "kernel://interactions/phr.consent-status.v1",
+      "schemaVersion": "1.0.0",
+      "declaringProductId": "digital-marketing",
+      "declarationKind": "consumes",
+      "declarationIndex": 0,
+      "providerProductId": "phr",
+      "consumerProductId": "digital-marketing",
+      "mode": "request-response",
+      "schemaRefs": [
+        {
+          "kind": "request",
+          "ref": "products/digital-marketing/dm-core-contracts/src/main/resources/contracts/phr-consent-status-request.v1.json",
+          "sha256": "5dd305739c9e608e9efcefb4fc3fe5a3a8b39ef6525e6ebed7aec2eb802544fd"
+        },
+        {
+          "kind": "response",
+          "ref": "products/digital-marketing/dm-core-contracts/src/main/resources/contracts/phr-consent-status-response.v1.json",
+          "sha256": "7081157e1cc6a35498b4d1dd80f7e921a786f1a3f4ecdea56622729f16a05213"
+        }
+      ],
+      "policy": {
+        "requiresAuth": true,
+        "requiresTenant": true,
+        "requiresConsent": true,
+        "piiClassification": "healthcare-contact",
+        "tenantScope": "same-tenant"
+      },
+      "evidence": {
+        "required": true,
+        "manifestType": "interaction-evidence",
+        "evidenceRefs": [
+          "products/digital-marketing/lifecycle/evidence/phr-consent-status.yaml"
+        ],
+        "retentionPolicyId": "healthcare-consent-evidence"
+      },
+      "handler": {
+        "required": false,
+        "status": "not-required",
+        "files": [
+          "products/phr/src/main/java/com/ghatana/phr/kernel/interaction/ConsentStatusInteractionHandler.java"
+        ]
+      },
+      "tests": {
+        "required": true,
+        "status": "covered",
+        "files": [
+          "integration-tests/cross-service-workflow/src/productInteractionTest/java/com/ghatana/integration/crossservice/PhrDmosProductInteractionContractTest.java",
+          "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/interaction/ConsentServiceAdapterTest.java",
+          "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/telemetry/KernelLifecycleTelemetryTest.java",
+          "products/data-cloud/extensions/kernel-bridge/src/test/java/com/ghatana/datacloud/kernel/DataCloudProviderTest.java",
+          "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingLifecycleGateTest.java"
+        ]
+      }
+    },
+    {
+      "contractId": "kernel://interactions/phr.consent-status.v1",
+      "schemaVersion": "1.0.0",
+      "declaringProductId": "phr",
+      "declarationKind": "provides",
+      "declarationIndex": 0,
+      "providerProductId": "phr",
+      "consumerProductId": "digital-marketing",
+      "mode": "request-response",
+      "schemaRefs": [
+        {
+          "kind": "request",
+          "ref": "products/phr/schema-packs/contracts/consent-status-request.v1.json",
+          "sha256": "5dd305739c9e608e9efcefb4fc3fe5a3a8b39ef6525e6ebed7aec2eb802544fd"
+        },
+        {
+          "kind": "response",
+          "ref": "products/phr/schema-packs/contracts/consent-status-response.v1.json",
+          "sha256": "7081157e1cc6a35498b4d1dd80f7e921a786f1a3f4ecdea56622729f16a05213"
+        }
+      ],
+      "policy": {
+        "requiresAuth": true,
+        "requiresTenant": true,
+        "requiresConsent": true,
+        "piiClassification": "healthcare-contact",
+        "tenantScope": "same-tenant"
+      },
+      "evidence": {
+        "required": true,
+        "manifestType": "interaction-evidence",
+        "evidenceRefs": [
+          "products/phr/lifecycle/gate-packs/audit-evidence.yaml",
+          "products/phr/lifecycle/gate-packs/consent.yaml"
+        ],
+        "retentionPolicyId": "regulated-healthcare-consent"
+      },
+      "handler": {
+        "required": true,
+        "status": "covered",
+        "files": [
+          "products/phr/src/main/java/com/ghatana/phr/kernel/interaction/ConsentStatusInteractionHandler.java"
+        ]
+      },
+      "tests": {
+        "required": true,
+        "status": "covered",
+        "files": [
+          "integration-tests/cross-service-workflow/src/productInteractionTest/java/com/ghatana/integration/crossservice/PhrDmosProductInteractionContractTest.java",
+          "integration-tests/cross-service-workflow/src/runtimeInteractionTest/java/com/ghatana/integration/crossservice/CrossProductInteractionRuntimeTest.java",
+          "integration-tests/e2e-api-framework/src/phr-api.e2e.test.ts",
+          "integration-tests/phr-finance-integration/src/test/java/com/ghatana/integration/phrfinance/DurablePluginIntegrationIT.java",
+          "integration-tests/phr-finance-integration/src/test/java/com/ghatana/integration/phrfinance/FlagshipThinSliceDemoIT.java",
+          "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/interaction/ConsentServiceAdapterTest.java",
+          "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/interaction/ProductInteractionBrokerTest.java",
+          "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/interaction/ProductInteractionPolicyEnforcerTest.java",
+          "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/security/PrivacyManagerTest.java",
+          "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/telemetry/KernelLifecycleTelemetryTest.java",
+          "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/test/integration/KernelDeploymentModeValidationTest.java",
+          "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/test/integration/PhrFinanceCrossProductIntegrationTest.java",
+          "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/test/integration/SecurityFrameworkIntegrationTest.java",
+          "products/audio-video/modules/audio-processing/src/test/java/com/ghatana/audio/processing/AudioProcessingTest.java",
+          "products/audio-video/modules/vision/vision-service/src/test/java/com/ghatana/audio/video/vision/recognition/FacialRecognitionServiceTest.java",
+          "products/audio-video/modules/vision/vision-service/src/test/java/com/ghatana/audio/video/vision/recognition/StructuredFacialRecognitionAuditSinkTest.java",
+          "products/data-cloud/delivery/api/src/test/java/com/ghatana/datacloud/application/ProductFamilyAssetServiceTest.java",
+          "products/data-cloud/delivery/api/src/test/java/com/ghatana/datacloud/security/DataPrivacyTest.java",
+          "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/arch/DataCloudPlaneBoundaryTest.java",
+          "products/data-cloud/delivery/ui/src/components/privacy/__tests__/ConsentManager.test.tsx",
+          "products/data-cloud/extensions/kernel-bridge/src/test/java/com/ghatana/datacloud/kernel/DataCloudProviderTest.java",
+          "products/data-cloud/planes/action/compliance/src/test/java/com/ghatana/aep/compliance/ComplianceTest.java",
+          "products/data-cloud/planes/action/engine/src/test/java/com/ghatana/aep/AepIntegrationTest.java",
+          "products/data-cloud/planes/action/engine/src/test/java/com/ghatana/aep/AepRemediationTest.java",
+          "products/data-cloud/planes/action/engine/src/test/java/com/ghatana/aep/consent/DefaultConsentServiceTest.java",
+          "products/data-cloud/planes/action/engine/src/test/java/com/ghatana/aep/consent/TenantAwareConsentServiceTest.java",
+          "products/data-cloud/planes/action/engine/src/test/java/com/ghatana/aep/consent/TestDenyAllConsentProvider.java",
+          "products/data-cloud/planes/action/engine/src/test/java/com/ghatana/aep/testing/AepEngineTestFixtures.java",
+          "products/data-cloud/planes/action/server/src/test/java/com/ghatana/aep/server/EndToEndEventProcessingTest.java",
+          "products/data-cloud/planes/action/server/src/test/java/com/ghatana/aep/server/database/AepMigrationTest.java",
+          "products/data-cloud/planes/action/ui/src/__tests__/GovernancePage.test.tsx",
+          "products/data-cloud/planes/action/ui/src/__tests__/PrivacyRequestPage.test.tsx",
+          "products/data-cloud/planes/action/ui/src/components/nlp/__tests__/NLQInput.test.tsx",
+          "products/data-cloud/planes/action/ui/src/components/privacy/__tests__/ConsentManager.test.tsx",
+          "products/data-cloud/planes/action/ui/src/components/voice/__tests__/VoiceInput.test.tsx",
+          "products/data-cloud/planes/governance/core/src/test/java/com/ghatana/datacloud/governance/ConsentHandlingTest.java",
+          "products/data-cloud/planes/governance/core/src/test/java/com/ghatana/datacloud/governance/PolicyEvaluatorTest.java",
+          "products/dcmaar/apps/device-health/src/services/__tests__/TelemetryManager.test.ts",
+          "products/dcmaar/apps/device-health/tests/e2e/settings.spec.ts",
+          "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/RepositoryParityTest.java",
+          "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/campaign/DefaultCampaignPreflightDataProviderTest.java",
+          "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/consent/ConsentProofServiceImplTest.java",
+          "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/contact/ContactServiceImplTest.java",
+          "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/customer/CustomerServiceImplTest.java",
+          "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/email/EmailFollowUpDraftServiceImplTest.java",
+          "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/privacy/DataSubjectRequestServiceImplTest.java",
+          "products/digital-marketing/dm-domain-packs/src/test/java/com/ghatana/digitalmarketing/pack/DigitalMarketingBoundaryPolicyStoreTest.java",
+          "products/digital-marketing/dm-domain-packs/src/test/java/com/ghatana/digitalmarketing/pack/DigitalMarketingBoundaryWorkflowCoverageTest.java",
+          "products/digital-marketing/dm-domain-packs/src/test/java/com/ghatana/digitalmarketing/pack/DigitalMarketingComplianceRulePackTest.java",
+          "products/digital-marketing/dm-domain-packs/src/test/java/com/ghatana/digitalmarketing/pack/DigitalMarketingPackContractTest.java",
+          "products/digital-marketing/dm-domain/src/test/java/com/ghatana/digitalmarketing/domain/consent/ConsentProofSnapshotTest.java",
+          "products/digital-marketing/dm-domain/src/test/java/com/ghatana/digitalmarketing/domain/contact/ContactTest.java",
+          "products/digital-marketing/dm-domain/src/test/java/com/ghatana/digitalmarketing/domain/event/DmEventRegistryTest.java",
+          "products/digital-marketing/dm-domain/src/test/java/com/ghatana/digitalmarketing/domain/lead/DmLeadCaptureTest.java",
+          "products/digital-marketing/dm-integration-tests/src/test/java/com/ghatana/digitalmarketing/integration/DigitalMarketingDomainInvariantTest.java",
+          "products/digital-marketing/dm-integration-tests/src/test/java/com/ghatana/digitalmarketing/integration/KernelBridgeWiringIT.java",
+          "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImplTest.java",
+          "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingLifecycleGateTest.java",
+          "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/NotificationRetryAndDlqTest.java",
+          "products/finance/domains/integration/src/test/java/com/ghatana/products/finance/domains/integration/PHRComplianceTest.java",
+          "products/flashit/backend/gateway/src/__tests__/privacy.test.ts",
+          "products/flashit/backend/gateway/src/routes/__tests__/privacy.test.ts",
+          "products/phr/apps/mobile/src/__tests__/App.test.tsx",
+          "products/phr/apps/mobile/src/__tests__/accessibility-mobile.test.tsx",
+          "products/phr/apps/mobile/src/__tests__/accessibility.test.tsx",
+          "products/phr/apps/mobile/src/__tests__/fixtures/mobileDashboardFixture.ts",
+          "products/phr/apps/mobile/src/__tests__/localeCoverage.test.ts",
+          "products/phr/apps/mobile/src/__tests__/pseudo-locale.test.tsx",
+          "products/phr/apps/mobile/src/locales/__tests__/localeCoverage.test.ts",
+          "products/phr/apps/mobile/src/screens/__tests__/ConsentScreen.test.tsx",
+          "products/phr/apps/mobile/src/screens/__tests__/DashboardScreen.test.tsx",
+          "products/phr/apps/mobile/src/screens/__tests__/SettingsScreen.test.tsx",
+          "products/phr/apps/mobile/src/services/__tests__/offlineStore.test.ts",
+          "products/phr/apps/mobile/src/services/__tests__/phrMobileApi.test.ts",
+          "products/phr/apps/web/src/__tests__/e2e/accessibility-route-traversal.spec.ts",
+          "products/phr/apps/web/src/__tests__/phrApi.integration.test.ts",
+          "products/phr/apps/web/src/__tests__/phrApp.test.tsx",
+          "products/phr/apps/web/src/api/__tests__/fhirMappers.test.ts",
+          "products/phr/apps/web/src/pages/__tests__/ConsentPage.test.tsx",
+          "products/phr/apps/web/src/pages/__tests__/DashboardPage.test.tsx",
+          "products/phr/apps/web/src/pages/__tests__/TimelinePage.test.tsx",
+          "products/phr/apps/web/tests/e2e/phr-journey.spec.ts",
+          "products/phr/apps/web/tests/e2e/phr-visual-regression.spec.ts",
+          "products/phr/domains/healthcare/src/test/java/com/ghatana/phr/healthcare/service/ConsentEnforcementServiceTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/PhrApiContractConformanceTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/PhrHttpServerTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/PhrWebExposedRoutesContractTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/routes/PhrAdministrativeRoutesTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/routes/PhrAuditRoutesTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/routes/PhrClinicalRoutesTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/routes/PhrConsentRoutesTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/routes/PhrDocumentImagingRoutesTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/routes/PhrEmergencyRoutesTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/routes/PhrMobileRoutesTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/routes/PhrOcrAuthorizationTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/routes/PhrProviderRoutesTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/cache/PhrDistributedCacheProofTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/extension/HealthcareConsentKernelExtensionTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/DistributedCacheConsentInvalidationTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/PhrKernelModuleEventEvidenceTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/PhrKernelModuleTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/PhrPackContractTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/consent/PatientDataAccessMatrixTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/interaction/ConsentStatusInteractionHandlerTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/policy/PhrConsentBoundaryAccessGateTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/policy/PhrPolicyCompatibilityTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/service/CaregiverServiceTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/service/ConsentExpiryScannerTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/service/ConsentManagementServiceTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/service/DurablePhrNotificationSenderTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/service/EmergencyAccessBreakGlassE2EIT.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/service/PhrNotificationOutboxDispatcherTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/service/PhrNotificationSendersTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/service/PhrNotificationTestSupport.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/service/ResilientPhrNotificationSenderTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/repository/ConsentRepositoryPersistenceTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/security/PHRPrivacyManagerImplTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/security/PHRSecurityConfigPersistenceTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/security/PHRSecurityIntegrationTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/security/PhrPolicyEvaluatorTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/service/PatientServiceConsentBeforeAccessTest.java",
+          "products/tutorputor/apps/tutorputor-web/src/offline/offlineSync.test.ts",
+          "products/tutorputor/contracts/tests/backward-forward-compatibility.test.ts",
+          "products/tutorputor/contracts/tests/platform-events.test.ts",
+          "products/tutorputor/contracts/tests/telemetry-events.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/__tests__/consent-enforcement.integration.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/__tests__/p0-3-fail-closed-auth.integration.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/__tests__/p0-3-rbac-matrix.integration.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/__tests__/release-gates.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/__tests__/setupPlatform.integration.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/core/http/__tests__/jwtAuthPreHandler.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/core/middleware/__tests__/consent-enforcement.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/modules/ai/__tests__/governance.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/modules/ai/ai-routes-consent.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/modules/compliance/__tests__/consentPolicy.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/modules/compliance/__tests__/ferpa-compliance.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/modules/compliance/__tests__/routes.test.ts",
+          "products/tutorputor/services/tutorputor-platform/src/modules/policy/__tests__/abac-policy-engine.test.ts",
+          "products/tutorputor/tests/e2e/PrivacyWorkflow.spec.ts",
+          "products/yappc/core/yappc-domain-impl/src/test/java/com/ghatana/yappc/domain/pageartifact/PageArtifactValidatorTest.java",
+          "products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/api/ProductFamilyControlPlaneControllerTest.java",
+          "products/yappc/core/yappc-services/src/test/resources/builder-document-v1.schema.json",
+          "products/yappc/core/yappc-services/src/test/resources/builder-document/valid-minimal.builder-document.json",
+          "products/yappc/frontend/web/src/components/canvas/page/__tests__/PropertyForm.test.tsx",
+          "products/yappc/frontend/web/src/components/canvas/page/__tests__/pageBuilderE2E.test.tsx",
+          "products/yappc/frontend/web/src/lib/api/__tests__/client.telemetry.test.ts",
+          "products/yappc/frontend/web/src/pages/kernel-health/__tests__/GateHealthPanel.test.tsx",
+          "products/yappc/frontend/web/src/pages/product-family/__tests__/ProductFamilyControlPlanePage.accessibility.test.tsx"
+        ]
+      }
+    }
+  ]
+}

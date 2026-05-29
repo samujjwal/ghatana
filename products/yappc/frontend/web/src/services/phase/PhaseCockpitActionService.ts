@@ -27,8 +27,8 @@ export interface ExecuteRunPostActionParams {
   readonly projectId: string;
   readonly runId: string;
   readonly action: RunPostAction;
-  readonly targetVersion;
-  readonly targetEnvironment;
+  readonly targetVersion?: string;
+  readonly targetEnvironment?: string;
 }
 
 export interface PhaseActionResult {
@@ -42,10 +42,18 @@ export interface PhaseActionResult {
   readonly auditEventId?: string;
 }
 
+interface PhaseActionError {
+  readonly code: string;
+  readonly i18nKey: string;
+  readonly message: string;
+  readonly context?: Record<string, unknown>;
+}
 
 function createPhaseActionError(code: string, i18nKey: string, message: string, context?: Record<string, unknown>): PhaseActionError {
   return { code, i18nKey, message, context };
-}const RUN_WORKFLOW_TEMPLATE_ID = 'yappc-run';
+}
+
+const RUN_WORKFLOW_TEMPLATE_ID = 'yappc-run';
 
 interface SurfaceReviewActionConfig {
   readonly auditType: string;

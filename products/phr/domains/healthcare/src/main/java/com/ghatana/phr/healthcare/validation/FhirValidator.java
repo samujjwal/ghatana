@@ -69,13 +69,14 @@ public final class FhirValidator {
     }
     
     /**
-     * Validates NHS ID format (simplified validation for demonstration).
-     * Nepal NHS IDs follow a specific pattern.
+     * Validates the PHR-supported Nepal NHS identifier profile.
+     *
+     * <p>The profile accepts uppercase alphanumeric identifiers separated by
+     * single hyphens, with a total length between 8 and 20 characters. This
+     * matches the identifier format used by PHR registration and import flows.
      */
     private boolean isValidNhsId(String nhsId) {
-        // Simplified validation: check for alphanumeric-with-hyphen with reasonable length
-        // In production, this would validate against the official Nepal NHS ID format
-        return nhsId.matches("[A-Za-z0-9][A-Za-z0-9-]{7,19}");
+        return nhsId.matches("[A-Z0-9]+(?:-[A-Z0-9]+)*") && nhsId.length() >= 8 && nhsId.length() <= 20;
     }
     
     /**

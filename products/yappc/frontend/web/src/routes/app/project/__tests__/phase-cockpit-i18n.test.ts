@@ -8,6 +8,8 @@ const webRoot = path.resolve(projectRouteDir, '../../../..');
 
 const guardedFiles = [
   '_phaseCockpit.tsx',
+  'PhaseEmbeddedSurface.tsx',
+  'PhaseCockpitView.tsx',
   'lifecycle.tsx',
   'intent.tsx',
   'shape.tsx',

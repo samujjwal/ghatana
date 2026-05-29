@@ -3,35 +3,48 @@
  * Route actions declare endpoint, method, policy, idempotency, confirmation, visibility.
  */
 
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+import { z } from "zod";
 
-export type ActionVisibility = 'public' | 'authenticated' | 'role-restricted' | 'admin-only';
+export const HttpMethodSchema = z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']);
+export const ActionVisibilitySchema = z.enum(['public', 'authenticated', 'role-restricted', 'admin-only']);
 
-export type ActionConfirmation = {
-  required: boolean;
-  message?: string;
-  dangerous?: boolean;
-};
+export const ActionConfirmationSchema = z
+  .object({
+    required: z.boolean(),
+    message: z.string().trim().min(1).optional(),
+    dangerous: z.boolean().optional(),
+  })
+  .strict();
 
-export type ProductAction = {
-  id: string;
-  label: string;
-  description?: string;
-  endpoint: string;
-  method: HttpMethod;
-  policyId?: string;
-  idempotent: boolean;
-  confirmation: ActionConfirmation;
-  visibility: ActionVisibility;
-  requiresPhi?: boolean;
-  auditRequired?: boolean;
-  notificationRequired?: boolean;
-};
+export const ProductActionSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    label: z.string().trim().min(1),
+    description: z.string().trim().min(1).optional(),
+    endpoint: z.string().trim().min(1).startsWith('/'),
+    method: HttpMethodSchema,
+    policyId: z.string().trim().min(1).optional(),
+    idempotent: z.boolean(),
+    confirmation: ActionConfirmationSchema,
+    visibility: ActionVisibilitySchema,
+    requiresPhi: z.boolean().optional(),
+    auditRequired: z.boolean().optional(),
+    notificationRequired: z.boolean().optional(),
+  })
+  .strict();
 
-export type ProductActionContract = {
-  version: string;
-  actions: ProductAction[];
-};
+export const ProductActionContractSchema = z
+  .object({
+    version: z.string().trim().min(1),
+    actions: z.array(ProductActionSchema),
+  })
+  .strict();
+
+export type HttpMethod = z.infer<typeof HttpMethodSchema>;
+export type ActionVisibility = z.infer<typeof ActionVisibilitySchema>;
+export type ActionConfirmation = z.infer<typeof ActionConfirmationSchema>;
+export type ProductAction = z.infer<typeof ProductActionSchema>;
+export type ProductActionContract = z.infer<typeof ProductActionContractSchema>;
 
 export function createAction(
   id: string,
@@ -60,10 +73,23 @@ export function createAction(
 }
 
 export function validateProductAction(action: ProductAction): boolean {
-  if (!action.id || !action.label || !action.endpoint) return false;
-  if (!['GET', 'POST', 'PUT', 'DELETE', 'PATCH'].includes(action.method)) return false;
-  if (!['public', 'authenticated', 'role-restricted', 'admin-only'].includes(action.visibility)) return false;
-  return true;
+  return ProductActionSchema.safeParse(action).success;
+}
+
+export function validateHttpMethod(value: unknown): value is HttpMethod {
+  return HttpMethodSchema.safeParse(value).success;
+}
+
+export function validateActionVisibility(value: unknown): value is ActionVisibility {
+  return ActionVisibilitySchema.safeParse(value).success;
+}
+
+export function validateActionConfirmation(value: unknown): value is ActionConfirmation {
+  return ActionConfirmationSchema.safeParse(value).success;
+}
+
+export function validateProductActionContract(value: unknown): value is ProductActionContract {
+  return ProductActionContractSchema.safeParse(value).success;
 }
 
 export function isActionIdempotent(action: ProductAction): boolean {

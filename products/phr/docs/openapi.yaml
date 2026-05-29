@@ -1504,6 +1504,19 @@ paths:
       responses:
         "200": { description: Patient record detail }
         "403": { $ref: "#/components/responses/Error" }
+  /patients/{patientId}/records:
+    get:
+      operationId: listPatientRecords
+      summary: List patient records
+      tags: [Patients]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - $ref: "#/components/parameters/PatientIdPath"
+      responses:
+        "200": { description: Patient record list }
+        "403": { $ref: "#/components/responses/Error" }
   /audit/events:
     get:
       operationId: listPhrAuditEvents

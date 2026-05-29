@@ -100,6 +100,16 @@ interface CacheConfig {
   maxSize: number;
 }
 
+const PRODUCTION_PROFILES = new Set(["production", "staging", "sovereign"]);
+
+function isProductionLikeProfile(): boolean {
+  const explicitProfile = import.meta.env.VITE_DATACLOUD_PROFILE;
+  if (typeof explicitProfile === "string" && explicitProfile.trim().length > 0) {
+    return PRODUCTION_PROFILES.has(explicitProfile.trim().toLowerCase());
+  }
+  return Boolean(import.meta.env.PROD);
+}
+
 /**
  * In-memory cache for API responses
  */
@@ -302,7 +312,12 @@ export class ApiClient {
   }
 
   private static parseApiError(payload: unknown, response: Response): ApiError {
-    const correlationId = response.headers.get("X-Correlation-ID") ?? undefined;
+    const headerCorrelationId =
+      response.headers.get("X-Request-Id") ??
+      response.headers.get("X-Correlation-ID") ??
+      response.headers.get("x-request-id") ??
+      response.headers.get("x-correlation-id") ??
+      undefined;
     const fallbackCode =
       response.status === 401
         ? "AUTH_REQUIRED"
@@ -329,13 +344,19 @@ export class ApiClient {
       const details = ApiClient.isRecord(nestedError?.details)
         ? nestedError.details
         : payload;
+      const payloadTraceId =
+        typeof payload.traceId === "string"
+          ? payload.traceId
+          : typeof nestedError?.traceId === "string"
+            ? nestedError.traceId
+            : undefined;
 
       return {
         code,
         message,
         details,
         status: response.status,
-        correlationId,
+        correlationId: headerCorrelationId ?? payloadTraceId,
       };
     }
 
@@ -343,7 +364,7 @@ export class ApiClient {
       code: "UNKNOWN_ERROR",
       message: response.statusText,
       status: response.status,
-      correlationId,
+      correlationId: headerCorrelationId,
     };
   }
 
@@ -359,7 +380,7 @@ export class ApiClient {
           : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     });
     const tenantId = SessionBootstrap.getTenantId();
-    if (tenantId) {
+    if (tenantId && !isProductionLikeProfile()) {
       headers.set("X-Tenant-ID", tenantId);
     }
     // Cookie-backed sessions are preferred for browser deployments.

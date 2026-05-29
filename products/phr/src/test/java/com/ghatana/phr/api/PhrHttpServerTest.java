@@ -228,7 +228,7 @@ class PhrHttpServerTest extends EventloopTestBase {
         RouteEntitlementEvaluator routeEntitlementEvaluator = new RouteEntitlementEvaluator(new RoleEvaluator.FailClosed());
         IdentityAwareBoundedCache<String, Map<String, Object>> entitlementCache = new IdentityAwareBoundedCache<>(1000, 300);
         PhrEntitlementRoutes entitlementRoutes = new PhrEntitlementRoutes(eventloop(), routeEntitlementEvaluator, entitlementCache);
-        PhrAuditRoutes auditRoutes = new PhrAuditRoutes(eventloop(), auditTrailService);
+        PhrAuditRoutes auditRoutes = new PhrAuditRoutes(eventloop(), auditTrailService, policyEvaluator);
         PhrAuthRoutes authRoutes = new PhrAuthRoutes(eventloop(), securityManager, userRepository, auditTrailService);
         PhrProviderRoutes providerRoutes = new PhrProviderRoutes(
             eventloop(),
@@ -237,7 +237,12 @@ class PhrHttpServerTest extends EventloopTestBase {
             clinicalService,
             policyEvaluator
         );
-        PhrCaregiverRoutes caregiverRoutes = new PhrCaregiverRoutes(eventloop(), caregiverService, patientRecordService);
+        PhrCaregiverRoutes caregiverRoutes = new PhrCaregiverRoutes(
+            eventloop(),
+            caregiverService,
+            patientRecordService,
+            policyEvaluator
+        );
         PhrFchvRoutes fchvRoutes = new PhrFchvRoutes(eventloop(), policyEvaluator);
         PhrMobileRoutes mobileRoutes = new PhrMobileRoutes(
             eventloop(),
@@ -723,7 +728,7 @@ class PhrHttpServerTest extends EventloopTestBase {
                 phrHeaders("provider-1", "patient"));
 
             assertThat(response.getCode()).isEqualTo(403);
-            assertThat(JSON.readTree(bodyString(response)).path("error").asText()).isEqualTo("CONSENT_REQUIRED");
+            assertThat(JSON.readTree(bodyString(response)).path("error").asText()).isEqualTo("POLICY_DENIED");
         }
     }
 
@@ -827,7 +832,7 @@ class PhrHttpServerTest extends EventloopTestBase {
                 phrHeaders("provider-7", "clinician"));
 
             assertThat(response.getCode()).isEqualTo(403);
-            assertThat(JSON.readTree(bodyString(response)).path("error").asText()).isEqualTo("CONSENT_REQUIRED");
+            assertThat(JSON.readTree(bodyString(response)).path("error").asText()).isEqualTo("POLICY_DENIED");
         }
 
         @Test
@@ -949,7 +954,7 @@ class PhrHttpServerTest extends EventloopTestBase {
             HttpResponse accepted = dispatch(HttpMethod.POST,
                 "/admin/referrals/" + referralId + "/accept?patientId=patient-13",
                 null,
-                phrHeaders("provider-13", "admin"));
+                headers);
             assertThat(accepted.getCode()).isEqualTo(200);
             assertThat(JSON.readTree(bodyString(accepted)).path("status").asText()).isEqualTo("ACCEPTED");
 
@@ -1005,7 +1010,7 @@ class PhrHttpServerTest extends EventloopTestBase {
                 phrHeaders("provider-15", "clinician"));
 
             assertThat(response.getCode()).isEqualTo(403);
-            assertThat(JSON.readTree(bodyString(response)).path("error").asText()).isEqualTo("CONSENT_REQUIRED");
+            assertThat(JSON.readTree(bodyString(response)).path("error").asText()).isEqualTo("POLICY_DENIED");
         }
     }
 
@@ -1081,7 +1086,7 @@ class PhrHttpServerTest extends EventloopTestBase {
                 phrHeaders("provider-18", "clinician"));
 
             assertThat(response.getCode()).isEqualTo(403);
-            assertThat(JSON.readTree(bodyString(response)).path("error").asText()).isEqualTo("CONSENT_REQUIRED");
+            assertThat(JSON.readTree(bodyString(response)).path("error").asText()).isEqualTo("POLICY_DENIED");
         }
     }
 

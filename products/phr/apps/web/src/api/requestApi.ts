@@ -14,15 +14,19 @@ export class PhrApiError extends Error {
   }
 }
 
+export type PhrRole = 'patient' | 'caregiver' | 'clinician' | 'admin' | 'fchv';
+
 export type SessionContext = {
-  tenantId?: string;
-  principalId?: string;
-  role?: string;
+  tenantId: string;
+  principalId: string;
+  role: PhrRole;
   persona?: string;
   tier?: string;
   correlationId?: string;
   idempotencyKey?: string;
 };
+
+type RequestContext = Partial<SessionContext>;
 
 function newCorrelationId(): string {
   return crypto.randomUUID();
@@ -35,7 +39,7 @@ export function withIdempotency<T extends SessionContext>(context: T): T & { ide
   };
 }
 
-export function buildPhrHeaders(context: SessionContext = {}): Record<string, string> {
+export function buildPhrHeaders(context: RequestContext = {}): Record<string, string> {
   const headers: Record<string, string> = {
     Accept: 'application/json',
     'X-Correlation-ID': context.correlationId ?? newCorrelationId(),
@@ -68,7 +72,7 @@ export async function phrFetch<T>(
   options: {
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
     body?: BodyInit | null;
-    context?: SessionContext;
+    context?: RequestContext;
     accept?: string;
     contentType?: string;
     expectedSchema?: z.ZodType<T>;

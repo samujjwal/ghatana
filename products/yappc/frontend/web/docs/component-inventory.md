@@ -50,14 +50,14 @@ None. The component inventory check fails if a new local primitive appears witho
 | `artifact` | 2 |
 | `artifactCompiler` | 4 |
 | `audit` | 7 |
-| `canvas` | 421 |
+| `canvas` | 422 |
 | `collab` | 2 |
 | `collaboration` | 5 |
 | `command` | 5 |
 | `common` | 16 |
 | `compiler` | 3 |
 | `config-editor` | 8 |
-| `dashboard` | 16 |
+| `dashboard` | 21 |
 | `deploy` | 17 |
 | `design-system` | 5 |
 | `dialogs` | 6 |

@@ -86,10 +86,27 @@ function parseRouteCapability(value: unknown, index: number): ProductRouteCapabi
     value.lifecycle !== undefined &&
     value.lifecycle !== 'stable' &&
     value.lifecycle !== 'preview' &&
+    value.lifecycle !== 'hidden' &&
+    value.lifecycle !== 'blocked' &&
     value.lifecycle !== 'boundary' &&
     value.lifecycle !== 'deprecated'
   ) {
     throw new Error(`Product entitlement route ${value.path} has an invalid lifecycle`);
+  }
+  if (
+    value.stability !== undefined &&
+    value.stability !== 'stable' &&
+    value.stability !== 'preview' &&
+    value.stability !== 'hidden' &&
+    value.stability !== 'blocked'
+  ) {
+    throw new Error(`Product entitlement route ${value.path} has an invalid stability`);
+  }
+  if (value.hidden !== undefined && typeof value.hidden !== 'boolean') {
+    throw new Error(`Product entitlement route ${value.path} has an invalid hidden flag`);
+  }
+  if (value.blocked !== undefined && typeof value.blocked !== 'boolean') {
+    throw new Error(`Product entitlement route ${value.path} has an invalid blocked flag`);
   }
   if (value.discoverable !== undefined && typeof value.discoverable !== 'boolean') {
     throw new Error(`Product entitlement route ${value.path} has an invalid discoverable flag`);
@@ -115,6 +132,9 @@ function parseRouteCapability(value: unknown, index: number): ProductRouteCapabi
     ...(value.group !== undefined ? { group: value.group } : {}),
     ...(value.minimumRole !== undefined ? { minimumRole: value.minimumRole } : {}),
     ...(value.lifecycle !== undefined ? { lifecycle: value.lifecycle } : {}),
+    ...(value.stability !== undefined ? { stability: value.stability } : {}),
+    ...(value.hidden !== undefined ? { hidden: value.hidden } : {}),
+    ...(value.blocked !== undefined ? { blocked: value.blocked } : {}),
     ...(value.discoverable !== undefined ? { discoverable: value.discoverable } : {}),
     ...(value.personas !== undefined ? { personas: value.personas } : {}),
     ...(value.tiers !== undefined ? { tiers: value.tiers } : {}),

@@ -1,436 +1,764 @@
 {
   "product": "phr",
   "version": "2.0.0",
-  "generatedAt": "2026-05-27T19:22:12.869Z",
-  "baselinePath": "D:\\samuj\\Developments\\ghatana\\products\\phr\\config\\phr-usecase-baseline.json",
-  "summary": {
-    "totalUsecases": 27,
-    "usecasesWithMismatches": 23,
-    "undocumentedWebRoutes": 1
-  },
+  "generatedAt": "2026-05-28T23:27:56.030Z",
+  "totalUseCases": 27,
+  "useCasesWithMismatches": 27,
   "mismatches": [
     {
-      "usecaseId": "uc-patient-dashboard",
+      "useCaseId": "uc-patient-dashboard",
+      "useCase": "DashboardPage",
       "persona": "patient",
-      "screen": "DashboardPage",
-      "iaRoute": "/dashboard",
-      "webRoute": "/dashboard",
-      "mobileScreen": "dashboard",
-      "status": "implemented",
-      "phase": "mvp-current",
-      "issues": [
+      "mismatches": [
         {
-          "type": "missing_mobile_screen",
-          "documented": "dashboard",
-          "severity": "high",
-          "inconsistency": "marked_implemented_but_missing_code"
-        }
-      ]
-    },
-    {
-      "usecaseId": "uc-patient-records",
-      "persona": "patient",
-      "screen": "RecordsPage",
-      "iaRoute": "/records",
-      "webRoute": "/records",
-      "mobileScreen": "records",
-      "status": "implemented",
-      "phase": "mvp-current",
-      "issues": [
-        {
-          "type": "missing_mobile_screen",
-          "documented": "records",
-          "severity": "high",
-          "inconsistency": "marked_implemented_but_missing_code"
-        }
-      ]
-    },
-    {
-      "usecaseId": "uc-patient-record-detail",
-      "persona": "patient",
-      "screen": "RecordDetailPage",
-      "iaRoute": "/records/:recordId",
-      "webRoute": "/records/:recordId",
-      "mobileScreen": "record-detail",
-      "status": "partial",
-      "phase": "mvp-next",
-      "issues": [
-        {
-          "type": "missing_mobile_screen",
-          "documented": "record-detail",
-          "severity": "medium"
-        }
-      ]
-    },
-    {
-      "usecaseId": "uc-patient-profile",
-      "persona": "patient",
-      "screen": "ProfilePage",
-      "iaRoute": "/profile",
-      "webRoute": "/profile",
-      "mobileScreen": "profile",
-      "status": "implemented",
-      "phase": "mvp-current",
-      "issues": [
-        {
-          "type": "missing_mobile_screen",
-          "documented": "profile",
-          "severity": "high",
-          "inconsistency": "marked_implemented_but_missing_code"
-        }
-      ]
-    },
-    {
-      "usecaseId": "uc-patient-timeline",
-      "persona": "patient",
-      "screen": "TimelinePage",
-      "iaRoute": "/timeline",
-      "webRoute": "/timeline",
-      "mobileScreen": "timeline",
-      "status": "implemented",
-      "phase": "mvp-current",
-      "issues": [
-        {
-          "type": "missing_mobile_screen",
-          "documented": "timeline",
-          "severity": "high",
-          "inconsistency": "marked_implemented_but_missing_code"
-        }
-      ]
-    },
-    {
-      "usecaseId": "uc-patient-conditions",
-      "persona": "patient",
-      "screen": "ConditionsPage",
-      "iaRoute": "/conditions",
-      "webRoute": "/conditions",
-      "mobileScreen": "conditions",
-      "status": "implemented",
-      "phase": "mvp-current",
-      "issues": [
-        {
-          "type": "missing_mobile_screen",
-          "documented": "conditions",
-          "severity": "high",
-          "inconsistency": "marked_implemented_but_missing_code"
-        }
-      ]
-    },
-    {
-      "usecaseId": "uc-patient-observations",
-      "persona": "patient",
-      "screen": "ObservationsPage",
-      "iaRoute": "/observations",
-      "webRoute": "/observations",
-      "mobileScreen": "observations",
-      "status": "implemented",
-      "phase": "mvp-current",
-      "issues": [
-        {
-          "type": "missing_mobile_screen",
-          "documented": "observations",
-          "severity": "high",
-          "inconsistency": "marked_implemented_but_missing_code"
-        }
-      ]
-    },
-    {
-      "usecaseId": "uc-patient-immunizations",
-      "persona": "patient",
-      "screen": "ImmunizationsPage",
-      "iaRoute": "/immunizations",
-      "webRoute": "/immunizations",
-      "mobileScreen": "immunizations",
-      "status": "implemented",
-      "phase": "mvp-current",
-      "issues": [
-        {
-          "type": "missing_mobile_screen",
-          "documented": "immunizations",
-          "severity": "high",
-          "inconsistency": "marked_implemented_but_missing_code"
-        }
-      ]
-    },
-    {
-      "usecaseId": "uc-patient-consent-management",
-      "persona": "patient",
-      "screen": "ConsentPage",
-      "iaRoute": "/consents",
-      "webRoute": "/consents",
-      "mobileScreen": "consents",
-      "status": "implemented",
-      "phase": "mvp-current",
-      "issues": [
-        {
-          "type": "missing_mobile_screen",
-          "documented": "consents",
-          "severity": "high",
-          "inconsistency": "marked_implemented_but_missing_code"
-        }
-      ]
-    },
-    {
-      "usecaseId": "uc-patient-appointments",
-      "persona": "patient",
-      "screen": "AppointmentsPage",
-      "iaRoute": "/appointments",
-      "webRoute": "/appointments",
-      "mobileScreen": "appointments",
-      "status": "partial",
-      "phase": "mvp-next",
-      "issues": [
-        {
-          "type": "missing_mobile_screen",
-          "documented": "appointments",
-          "severity": "medium"
-        }
-      ]
-    },
-    {
-      "usecaseId": "uc-patient-labs",
-      "persona": "patient",
-      "screen": "LabsPage",
-      "iaRoute": "/labs",
-      "webRoute": "/labs",
-      "mobileScreen": "labs",
-      "status": "implemented",
-      "phase": "mvp-current",
-      "issues": [
-        {
-          "type": "missing_mobile_screen",
-          "documented": "labs",
-          "severity": "high",
-          "inconsistency": "marked_implemented_but_missing_code"
-        }
-      ]
-    },
-    {
-      "usecaseId": "uc-patient-medications",
-      "persona": "patient",
-      "screen": "MedicationsPage",
-      "iaRoute": "/medications",
-      "webRoute": "/medications",
-      "mobileScreen": "medications",
-      "status": "implemented",
-      "phase": "mvp-current",
-      "issues": [
-        {
-          "type": "missing_mobile_screen",
-          "documented": "medications",
-          "severity": "high",
-          "inconsistency": "marked_implemented_but_missing_code"
-        }
-      ]
-    },
-    {
-      "usecaseId": "uc-patient-documents",
-      "persona": "patient",
-      "screen": "DocumentsPage",
-      "iaRoute": "/documents",
-      "webRoute": "/documents",
-      "mobileScreen": "documents",
-      "status": "implemented",
-      "phase": "mvp-current",
-      "issues": [
-        {
-          "type": "missing_mobile_screen",
-          "documented": "documents",
-          "severity": "high",
-          "inconsistency": "marked_implemented_but_missing_code"
-        }
-      ]
-    },
-    {
-      "usecaseId": "uc-patient-document-upload",
-      "persona": "patient",
-      "screen": "DocumentUploadPage",
-      "iaRoute": "/documents/upload",
-      "webRoute": "/documents/upload",
-      "mobileScreen": "document-upload",
-      "status": "implemented",
-      "phase": "mvp-current",
-      "issues": [
-        {
-          "type": "missing_mobile_screen",
-          "documented": "document-upload",
-          "severity": "high",
-          "inconsistency": "marked_implemented_but_missing_code"
-        }
-      ]
-    },
-    {
-      "usecaseId": "uc-patient-ocr-review",
-      "persona": "patient",
-      "screen": "OcrReviewPage",
-      "iaRoute": "/documents/:docId/ocr",
-      "webRoute": "/documents/:docId/ocr",
-      "mobileScreen": "ocr-review",
-      "status": "implemented",
-      "phase": "mvp-current",
-      "issues": [
-        {
-          "type": "missing_mobile_screen",
-          "documented": "ocr-review",
-          "severity": "high",
-          "inconsistency": "marked_implemented_but_missing_code"
-        }
-      ]
-    },
-    {
-      "usecaseId": "uc-patient-notifications",
-      "persona": "patient",
-      "screen": "NotificationsPage",
-      "iaRoute": "/notifications",
-      "webRoute": "/notifications",
-      "mobileScreen": "notifications",
-      "status": "implemented",
-      "phase": "mvp-current",
-      "issues": [
-        {
-          "type": "missing_mobile_screen",
-          "documented": "notifications",
-          "severity": "high",
-          "inconsistency": "marked_implemented_but_missing_code"
-        }
-      ]
-    },
-    {
-      "usecaseId": "uc-patient-settings",
-      "persona": "patient",
-      "screen": "SettingsPage / SettingsScreen",
-      "iaRoute": "/settings",
-      "webRoute": "/settings",
-      "mobileScreen": "settings",
-      "status": "implemented",
-      "phase": "mvp-current",
-      "issues": [
-        {
-          "type": "missing_mobile_screen",
-          "documented": "settings",
-          "severity": "high",
-          "inconsistency": "marked_implemented_but_missing_code"
-        }
-      ]
-    },
-    {
-      "usecaseId": "uc-patient-emergency-access",
-      "persona": "patient",
-      "screen": "EmergencyAccessPage / EmergencyAccessScreen",
-      "iaRoute": "/emergency",
-      "webRoute": "/emergency",
-      "mobileScreen": "emergency",
-      "status": "implemented",
-      "phase": "mvp-current",
-      "issues": [
-        {
-          "type": "missing_mobile_screen",
-          "documented": "emergency",
-          "severity": "high",
-          "inconsistency": "marked_implemented_but_missing_code"
-        }
-      ]
-    },
-    {
-      "usecaseId": "uc-caregiver-dependents",
-      "persona": "caregiver",
-      "screen": "CaregiverDependentsPage",
-      "iaRoute": "/caregiver/dependents",
-      "webRoute": "/caregiver/dependents",
-      "mobileScreen": "caregiver-dependents",
-      "status": "feature_flagged",
-      "phase": "phase-2",
-      "issues": [
-        {
-          "type": "missing_mobile_screen",
-          "documented": "caregiver-dependents",
-          "severity": "medium"
-        }
-      ]
-    },
-    {
-      "usecaseId": "uc-fchv-dashboard",
-      "persona": "caregiver",
-      "screen": "FchvDashboardPage",
-      "iaRoute": "/fchv/dashboard",
-      "webRoute": "/fchv/dashboard",
-      "mobileScreen": "fchv-dashboard",
-      "status": "feature_flagged",
-      "phase": "deferred",
-      "issues": [
-        {
-          "type": "missing_mobile_screen",
-          "documented": "fchv-dashboard",
-          "severity": "medium"
-        }
-      ]
-    },
-    {
-      "usecaseId": "uc-admin-emergency-review",
-      "persona": "admin",
-      "screen": "EmergencyReviewPage",
-      "iaRoute": "/emergency/reviews",
-      "webRoute": "/emergency",
-      "mobileScreen": null,
-      "status": "implemented",
-      "phase": "mvp-current",
-      "issues": [
-        {
-          "type": "missing_web_page",
-          "documented": "EmergencyReviewPage",
-          "severity": "high",
-          "inconsistency": "marked_implemented_but_missing_code"
-        }
-      ]
-    },
-    {
-      "usecaseId": "uc-mobile-dashboard",
-      "persona": "patient",
-      "screen": "MobileDashboard",
-      "iaRoute": "/mobile/dashboard",
-      "webRoute": null,
-      "mobileScreen": "dashboard",
-      "status": "implemented",
-      "phase": "mvp-current",
-      "issues": [
-        {
-          "type": "missing_web_page",
-          "documented": "MobileDashboard",
-          "severity": "high",
-          "inconsistency": "marked_implemented_but_missing_code"
+          "type": "web-route-missing",
+          "expected": "/dashboard",
+          "reason": "not found in phrRouteContracts.ts"
         },
         {
-          "type": "missing_mobile_screen",
-          "documented": "dashboard",
-          "severity": "high",
-          "inconsistency": "marked_implemented_but_missing_code"
+          "type": "backend-api-missing",
+          "expected": "GET /mobile/dashboard",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /clinical/observations?patientId=:id",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /clinical/medications?patientId=:id",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /consents?patientId=:id",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "status-inconsistency",
+          "expected": "implemented",
+          "actual": "partial (missing implementations)",
+          "reason": "status says implemented but code is missing"
         }
       ]
     },
     {
-      "usecaseId": "uc-error-pages",
+      "useCaseId": "uc-patient-records",
+      "useCase": "RecordsPage",
       "persona": "patient",
-      "screen": "ForbiddenPage / NotFoundPage",
-      "iaRoute": "/forbidden, /not-found",
-      "webRoute": "/forbidden, /not-found",
-      "mobileScreen": "forbidden, not-found",
-      "status": "implemented",
-      "phase": "mvp-current",
-      "issues": [
+      "mismatches": [
         {
-          "type": "missing_mobile_screen",
-          "documented": "forbidden, not-found",
-          "severity": "high",
-          "inconsistency": "marked_implemented_but_missing_code"
+          "type": "web-route-missing",
+          "expected": "/records",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /patients/:patientId/history",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /patients?patientId=:id",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "status-inconsistency",
+          "expected": "implemented",
+          "actual": "partial (missing implementations)",
+          "reason": "status says implemented but code is missing"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-patient-record-detail",
+      "useCase": "RecordDetailPage",
+      "persona": "patient",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/records/:recordId",
+          "reason": "not found in phrRouteContracts.ts"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-patient-profile",
+      "useCase": "ProfilePage",
+      "persona": "patient",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/profile",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "mobile-screen-missing",
+          "expected": "profile",
+          "reason": "screen file not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "PUT /patients/:patientId",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "status-inconsistency",
+          "expected": "implemented",
+          "actual": "partial (missing implementations)",
+          "reason": "status says implemented but code is missing"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-patient-timeline",
+      "useCase": "TimelinePage",
+      "persona": "patient",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/timeline",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "mobile-screen-missing",
+          "expected": "timeline",
+          "reason": "screen file not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /clinical/timeline?patientId=:id",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "status-inconsistency",
+          "expected": "implemented",
+          "actual": "partial (missing implementations)",
+          "reason": "status says implemented but code is missing"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-patient-conditions",
+      "useCase": "ConditionsPage",
+      "persona": "patient",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/conditions",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "mobile-screen-missing",
+          "expected": "conditions",
+          "reason": "screen file not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /clinical/conditions?patientId=:id",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "status-inconsistency",
+          "expected": "implemented",
+          "actual": "partial (missing implementations)",
+          "reason": "status says implemented but code is missing"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-patient-observations",
+      "useCase": "ObservationsPage",
+      "persona": "patient",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/observations",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "mobile-screen-missing",
+          "expected": "observations",
+          "reason": "screen file not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /clinical/observations?patientId=:id",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "status-inconsistency",
+          "expected": "implemented",
+          "actual": "partial (missing implementations)",
+          "reason": "status says implemented but code is missing"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-patient-immunizations",
+      "useCase": "ImmunizationsPage",
+      "persona": "patient",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/immunizations",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "mobile-screen-missing",
+          "expected": "immunizations",
+          "reason": "screen file not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /clinical/immunizations?patientId=:id",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "status-inconsistency",
+          "expected": "implemented",
+          "actual": "partial (missing implementations)",
+          "reason": "status says implemented but code is missing"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-patient-consent-management",
+      "useCase": "ConsentPage",
+      "persona": "patient",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/consents",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /consents?patientId=:id",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "POST /consents/grants",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "POST /consents/grants/:grantId/revoke",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /consents/check",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "status-inconsistency",
+          "expected": "implemented",
+          "actual": "partial (missing implementations)",
+          "reason": "status says implemented but code is missing"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-patient-appointments",
+      "useCase": "AppointmentsPage",
+      "persona": "patient",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/appointments",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "mobile-screen-missing",
+          "expected": "appointments",
+          "reason": "screen file not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /appointments?patientId=:id",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "POST /appointments/:appointmentId/cancel",
+          "reason": "backend route handler not found"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-patient-labs",
+      "useCase": "LabsPage",
+      "persona": "patient",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/labs",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "mobile-screen-missing",
+          "expected": "labs",
+          "reason": "screen file not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /clinical/labs?patientId=:id",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "status-inconsistency",
+          "expected": "implemented",
+          "actual": "partial (missing implementations)",
+          "reason": "status says implemented but code is missing"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-patient-medications",
+      "useCase": "MedicationsPage",
+      "persona": "patient",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/medications",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "mobile-screen-missing",
+          "expected": "medications",
+          "reason": "screen file not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /clinical/medications?patientId=:id",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "status-inconsistency",
+          "expected": "implemented",
+          "actual": "partial (missing implementations)",
+          "reason": "status says implemented but code is missing"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-patient-documents",
+      "useCase": "DocumentsPage",
+      "persona": "patient",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/documents",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "mobile-screen-missing",
+          "expected": "documents",
+          "reason": "screen file not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /documents?patientId=:id",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "POST /documents/upload",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "status-inconsistency",
+          "expected": "implemented",
+          "actual": "partial (missing implementations)",
+          "reason": "status says implemented but code is missing"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-patient-document-upload",
+      "useCase": "DocumentUploadPage",
+      "persona": "patient",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/documents/upload",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "mobile-screen-missing",
+          "expected": "document-upload",
+          "reason": "screen file not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "POST /documents/upload",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "status-inconsistency",
+          "expected": "implemented",
+          "actual": "partial (missing implementations)",
+          "reason": "status says implemented but code is missing"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-patient-ocr-review",
+      "useCase": "OcrReviewPage",
+      "persona": "patient",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/documents/:docId/ocr",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "mobile-screen-missing",
+          "expected": "ocr-review",
+          "reason": "screen file not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "POST /documents/:docId/ocr",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "POST /documents/:docId/ocr/accept",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "POST /documents/:docId/ocr/reject",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "status-inconsistency",
+          "expected": "implemented",
+          "actual": "partial (missing implementations)",
+          "reason": "status says implemented but code is missing"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-patient-notifications",
+      "useCase": "NotificationsPage",
+      "persona": "patient",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/notifications",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /notifications?principalId=:id",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "status-inconsistency",
+          "expected": "implemented",
+          "actual": "partial (missing implementations)",
+          "reason": "status says implemented but code is missing"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-patient-settings",
+      "useCase": "SettingsPage / SettingsScreen",
+      "persona": "patient",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/settings",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "POST /auth/logout",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "PUT /patients/:patientId",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "POST /fhir/Patient/current/$export",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "status-inconsistency",
+          "expected": "implemented",
+          "actual": "partial (missing implementations)",
+          "reason": "status says implemented but code is missing"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-patient-emergency-access",
+      "useCase": "EmergencyAccessPage / EmergencyAccessScreen",
+      "persona": "patient",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/emergency",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "POST /emergency/access",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /emergency/events/:eventId",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /emergency/patients/:patientId",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "status-inconsistency",
+          "expected": "implemented",
+          "actual": "partial (missing implementations)",
+          "reason": "status says implemented but code is missing"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-provider-dashboard",
+      "useCase": "ProviderDashboardPage",
+      "persona": "clinician",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/provider/dashboard",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /provider/patients",
+          "reason": "backend route handler not found"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-provider-patients",
+      "useCase": "ProviderPatientsPage",
+      "persona": "clinician",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/provider/patients",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /provider/patients",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /provider/patients/:patientId",
+          "reason": "backend route handler not found"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-caregiver-dependents",
+      "useCase": "CaregiverDependentsPage",
+      "persona": "caregiver",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/caregiver/dependents",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "mobile-screen-missing",
+          "expected": "caregiver-dependents",
+          "reason": "screen file not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /caregiver/dependents",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /caregiver/dependents/:dependentId",
+          "reason": "backend route handler not found"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-fchv-dashboard",
+      "useCase": "FchvDashboardPage",
+      "persona": "caregiver",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/fchv/dashboard",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "mobile-screen-missing",
+          "expected": "fchv-dashboard",
+          "reason": "screen file not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /fchv/dashboard",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "POST /fchv/patients/register",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /fchv/patients",
+          "reason": "backend route handler not found"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-admin-audit",
+      "useCase": "AuditPage",
+      "persona": "admin",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/audit",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /audit",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /audit/:eventId",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /audit/export",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "status-inconsistency",
+          "expected": "implemented",
+          "actual": "partial (missing implementations)",
+          "reason": "status says implemented but code is missing"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-admin-release-readiness",
+      "useCase": "ReleaseCockpitPage",
+      "persona": "admin",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/release-readiness",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /release-readiness",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "status-inconsistency",
+          "expected": "implemented",
+          "actual": "partial (missing implementations)",
+          "reason": "status says implemented but code is missing"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-admin-emergency-review",
+      "useCase": "EmergencyReviewPage",
+      "persona": "admin",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/emergency",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /emergency/reviews/pending",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /emergency/reviews/overdue",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "backend-api-missing",
+          "expected": "POST /emergency/reviews/:eventId",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "status-inconsistency",
+          "expected": "implemented",
+          "actual": "partial (missing implementations)",
+          "reason": "status says implemented but code is missing"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-mobile-dashboard",
+      "useCase": "MobileDashboard",
+      "persona": "patient",
+      "mismatches": [
+        {
+          "type": "backend-api-missing",
+          "expected": "GET /mobile/dashboard",
+          "reason": "backend route handler not found"
+        },
+        {
+          "type": "status-inconsistency",
+          "expected": "implemented",
+          "actual": "partial (missing implementations)",
+          "reason": "status says implemented but code is missing"
+        }
+      ]
+    },
+    {
+      "useCaseId": "uc-error-pages",
+      "useCase": "ForbiddenPage / NotFoundPage",
+      "persona": "patient",
+      "mismatches": [
+        {
+          "type": "web-route-missing",
+          "expected": "/forbidden, /not-found",
+          "reason": "not found in phrRouteContracts.ts"
+        },
+        {
+          "type": "mobile-screen-missing",
+          "expected": "forbidden, not-found",
+          "reason": "screen file not found"
+        },
+        {
+          "type": "status-inconsistency",
+          "expected": "implemented",
+          "actual": "partial (missing implementations)",
+          "reason": "status says implemented but code is missing"
         }
       ]
     }
-  ],
-  "undocumentedRoutes": [
-    "/emergency/reviews"
-  ],
-  "severityBreakdown": {
-    "high": 19,
-    "medium": 4
-  }
+  ]
 }

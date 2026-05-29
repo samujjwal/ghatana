@@ -23,7 +23,10 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
 
 /**
  * Enforcement matrix tests for {@link PhrEntitlementRoutes}.
@@ -97,6 +100,21 @@ class PhrEntitlementRoutesTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         assertThat(response.getCode()).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("hidden routes are not included in backend entitlement evaluation")
+    void hiddenRoutesAreNotEntitled() throws Exception {
+        HttpRequest request = contextRequest("t1", "admin-1", "admin");
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        verify(routeEntitlementEvaluator).filterByRole(
+            argThat(routes -> routes.stream().noneMatch(route -> route.path().equals("/provider/dashboard"))),
+            eq("admin"),
+            any()
+        );
     }
 
     @Test

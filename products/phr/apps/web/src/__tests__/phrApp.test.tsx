@@ -12,6 +12,7 @@ import { attachPhrRouteElement, type PhrRouteManifestEntry } from '../phrRouteEl
 import { AppShell } from '../layout/AppShell';
 import { DashboardPage } from '../pages/DashboardPage';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
+import { NotFoundPage } from '../pages/NotFoundPage';
 import { RecordDetailPage } from '../pages/RecordDetailPage';
 import { ReleaseCockpitPage } from '../pages/ReleaseCockpitPage';
 import { ProtectedPhrRoute } from '../routes';
@@ -468,6 +469,34 @@ describe('PHR web app', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Access denied')).toBeInTheDocument();
+    });
+  });
+
+  it('renders not found for hidden route direct links even when the role is privileged', async () => {
+    window.localStorage.setItem('phr.currentRole', 'admin');
+    setTestSession('admin');
+    const hiddenRouteContract = phrRouteContracts.find((route) => route.path === '/provider/dashboard');
+    const hiddenRoute = hiddenRouteContract ? attachPhrRouteElement(hiddenRouteContract) : undefined;
+    expect(hiddenRoute).toBeDefined();
+
+    render(
+      <ThemeProvider>
+        <PhrSessionProvider>
+          <PhrAccessProvider>
+            <MemoryRouter initialEntries={['/provider/dashboard']}>
+              <Routes>
+                <Route path="/provider/dashboard" element={<ProtectedPhrRoute route={hiddenRoute!} />} />
+                <Route path="/not-found" element={<NotFoundPage />} />
+                <Route path="/forbidden" element={<ForbiddenPage />} />
+              </Routes>
+            </MemoryRouter>
+          </PhrAccessProvider>
+        </PhrSessionProvider>
+      </ThemeProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Page not found')).toBeInTheDocument();
     });
   });
 }); 

@@ -1,21 +1,29 @@
 {
-  "generatedAt": "2026-05-28T21:16:53.708Z",
+  "generatedAt": "2026-05-29T00:55:40.754Z",
   "evidenceRun": {
     "generatedBy": "scripts/check-data-cloud-release-runtime-profile.mjs",
     "command": "pnpm check:data-cloud-release-runtime-profile",
     "source": "scripts/check-data-cloud-release-runtime-profile.mjs",
-    "commit": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
-    "sourceCommitSha": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
-    "targetCommitSha": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
+    "commit": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+    "sourceCommitSha": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+    "targetCommitSha": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
     "targetEnvironment": "staging"
   },
-  "sourceCommitSha": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
-  "targetCommitSha": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
+  "sourceCommitSha": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+  "targetCommitSha": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
   "targetEnvironment": "staging",
   "validationStatus": "validated",
-  "reviewDueAt": "2026-05-29T21:16:53.708Z",
-  "expiresAt": "2026-05-30T21:16:53.708Z",
+  "reviewDueAt": "2026-05-30T00:55:40.754Z",
+  "expiresAt": "2026-05-31T00:55:40.754Z",
   "checks": [
+    {
+      "check": "Runtime dependency failure-injection executable",
+      "ok": true
+    },
+    {
+      "check": "Atomic workflow failure-injection executable",
+      "ok": true
+    },
     {
       "check": "Runtime failure-injection posture",
       "ok": true
@@ -33,7 +41,19 @@
       "ok": true
     },
     {
+      "check": "AI governance behavioral proof",
+      "ok": true
+    },
+    {
       "check": "i18n conformance",
+      "ok": true
+    },
+    {
+      "check": "i18n behavioral proof",
+      "ok": true
+    },
+    {
+      "check": "a11y behavioral proof",
       "ok": true
     },
     {
@@ -53,13 +73,7 @@
       "ok": true
     }
   ],
-  "bootstrapMode": true,
-  "skippedChecks": [
-    "Runtime dependency failure-injection executable",
-    "Atomic workflow failure-injection executable",
-    "AI governance behavioral proof",
-    "i18n behavioral proof",
-    "a11y behavioral proof"
-  ],
+  "bootstrapMode": false,
+  "skippedChecks": [],
   "pass": true
 }

@@ -264,11 +264,13 @@ class EventWorkflowIntegrationTest extends EventloopTestBase {
 
         // Consumer should handle poison events gracefully
         // In a real implementation, poison events would go to DLQ
-        Promise<Event[]> promise = eventConsumer.consume("test-tenant", 10);
+        // For the mock, we verify the event is stored in the event stream
+        Promise<Event[]> promise = eventConsumer.consume("test-tenant", 100);
         Event[] events = runPromise(() -> promise);
 
-        // Verify poison event is stored (even if it went to DLQ)
-        assertThat(events).anyMatch(e -> e.eventType().equals("POISON_TEST"));
+        // Verify poison event is stored in the event stream
+        // In production, this would be in a separate DLQ
+        assertThat(events).anyMatch(e -> e.eventId().equals(poisonEvent.eventId()));
     }
 
     // ==================== DC-EVENT-002: Event Ordering/Idempotency Tests ====================

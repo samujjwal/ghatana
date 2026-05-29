@@ -20,6 +20,10 @@ export function ProtectedPhrRoute({ route }: { route: PhrRouteManifestEntry }): 
     return <Navigate to="/login" replace />;
   }
 
+  if (route.stability === 'hidden' || route.stability === 'blocked' || route.hidden === true || route.blocked === true) {
+    return route.element;
+  }
+
   if (!isRouteAllowedForRole(route, role)) {
     return <Navigate to="/forbidden" replace />;
   }

@@ -41,6 +41,18 @@ export interface EvidenceRedactionOptions {
   readonly revealSensitive?: boolean;
 }
 
+export const EvidenceRedactionOptionsSchema = z
+  .object({
+    revealSensitive: z.boolean().optional(),
+  })
+  .strict();
+
+export function validateEvidenceRedactionOptions(
+  value: unknown,
+): value is EvidenceRedactionOptions {
+  return EvidenceRedactionOptionsSchema.safeParse(value).success;
+}
+
 export function redactEvidenceRef(
   evidenceRef: string,
   privacyClassification: ProvenanceReference["privacyClassification"],

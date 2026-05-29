@@ -1,5 +1,6 @@
 package com.ghatana.phr.healthcare.service;
 
+import com.ghatana.phr.healthcare.domain.DataClassification;
 import com.ghatana.phr.healthcare.domain.Patient;
 import com.ghatana.phr.healthcare.port.PatientStore;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -15,7 +16,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -85,6 +88,23 @@ class RollbackSafetyCheckServiceTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("Should allow rollback when target artifact matches recorded digest")
+    void shouldAllowRollbackWhenTargetArtifactMatchesRecordedDigest() {
+        RollbackSafetyCheckService.RollbackSafetyCheck check = new RollbackSafetyCheckService.RollbackSafetyCheck(
+            "tenant-123",
+            "current-artifact-001",
+            "sha256:abc123",
+            Instant.now(),
+            "staging"
+        );
+
+        RollbackSafetyCheckService.RollbackSafetyResult result = runPromise(() -> service.checkRollbackSafety(check));
+
+        assertThat(result.safeToRollback()).isTrue();
+        assertThat(result.blockers()).isEmpty();
+    }
+
+    @Test
     @DisplayName("Should block rollback when target artifact is unknown")
     void shouldBlockRollbackWhenTargetArtifactUnknown() {
         RollbackSafetyCheckService.RollbackSafetyCheck check = new RollbackSafetyCheckService.RollbackSafetyCheck(
@@ -138,6 +158,71 @@ class RollbackSafetyCheckServiceTest extends EventloopTestBase {
 
         assertThat(result.safeToRollback()).isFalse();
         assertThat(result.blockers()).contains("Target artifact is not in deployment history: phr-deploy-2026-05-23-001");
+    }
+
+    @Test
+    @DisplayName("Should block rollback when patient data is inconsistent")
+    void shouldBlockRollbackWhenPatientDataIsInconsistent() {
+        when(patientStore.findByTenant(anyString(), anyInt(), anyInt())).thenReturn(List.of(
+            patient("other-tenant", "NHS-12345", Instant.now().minusSeconds(3_600))
+        ));
+        RollbackSafetyCheckService.RollbackSafetyCheck check = validCheck();
+
+        RollbackSafetyCheckService.RollbackSafetyResult result = runPromise(() -> service.checkRollbackSafety(check));
+
+        assertThat(result.safeToRollback()).isFalse();
+        assertThat(result.blockers()).contains("Patient data consistency check failed - data integrity issues detected");
+    }
+
+    @Test
+    @DisplayName("Should block rollback when clinical activity is active")
+    void shouldBlockRollbackWhenClinicalActivityIsActive() {
+        when(patientStore.findByTenant(anyString(), anyInt(), anyInt())).thenReturn(List.of(
+            patient("tenant-123", "NHS-12345", Instant.now())
+        ));
+        RollbackSafetyCheckService.RollbackSafetyCheck check = validCheck();
+
+        RollbackSafetyCheckService.RollbackSafetyResult result = runPromise(() -> service.checkRollbackSafety(check));
+
+        assertThat(result.safeToRollback()).isFalse();
+        assertThat(result.blockers()).contains("Active treatments in progress - rollback would disrupt patient care");
+    }
+
+    @Test
+    @DisplayName("Should warn when audit history is malformed")
+    void shouldWarnWhenAuditHistoryIsMalformed() throws Exception {
+        Files.writeString(deploymentHistoryPath, """
+            {
+              "schemaVersion": "1.0.0",
+              "history": [
+                {
+                  "artifactDigest": "sha256:abc123",
+                  "status": "success"
+                }
+              ]
+            }
+            """);
+        RollbackSafetyCheckService.RollbackSafetyCheck check = validCheck("sha256:abc123");
+
+        RollbackSafetyCheckService.RollbackSafetyResult result = runPromise(() -> service.checkRollbackSafety(check));
+
+        assertThat(result.safeToRollback()).isTrue();
+        assertThat(result.warnings()).contains("Audit trail integrity check shows potential issues - review recommended");
+    }
+
+    @Test
+    @DisplayName("Should block rollback when tenant has duplicate NHS IDs")
+    void shouldBlockRollbackWhenTenantHasDuplicateNhsIds() {
+        when(patientStore.findByTenant(anyString(), anyInt(), anyInt())).thenReturn(List.of(
+            patient("tenant-123", "NHS-12345", Instant.now().minusSeconds(3_600)),
+            patient("tenant-123", "NHS-12345", Instant.now().minusSeconds(7_200))
+        ));
+        RollbackSafetyCheckService.RollbackSafetyCheck check = validCheck();
+
+        RollbackSafetyCheckService.RollbackSafetyResult result = runPromise(() -> service.checkRollbackSafety(check));
+
+        assertThat(result.safeToRollback()).isFalse();
+        assertThat(result.blockers()).contains("Consent record consistency check failed - consent state may be invalid after rollback");
     }
 
     @Test
@@ -280,5 +365,41 @@ class RollbackSafetyCheckServiceTest extends EventloopTestBase {
         assertThat(result.safeToRollback()).isFalse();
         assertThat(result.blockers()).containsExactly("Blocker 1", "Blocker 2");
         assertThat(result.warnings()).isEmpty();
+    }
+
+    private static RollbackSafetyCheckService.RollbackSafetyCheck validCheck() {
+        return validCheck("phr-deploy-2026-05-23-001");
+    }
+
+    private static RollbackSafetyCheckService.RollbackSafetyCheck validCheck(String targetArtifactId) {
+        return new RollbackSafetyCheckService.RollbackSafetyCheck(
+            "tenant-123",
+            "current-artifact-001",
+            targetArtifactId,
+            Instant.now(),
+            "staging"
+        );
+    }
+
+    private static Patient patient(String tenantId, String nhsId, Instant lastClinicalActivityAt) {
+        return new Patient(
+            UUID.randomUUID(),
+            tenantId,
+            nhsId,
+            "Maya",
+            "Shrestha",
+            LocalDate.of(1990, 2, 3),
+            "female",
+            null,
+            null,
+            null,
+            null,
+            "3",
+            DataClassification.C2,
+            "clinician-1",
+            Instant.now().minusSeconds(86_400),
+            lastClinicalActivityAt,
+            true
+        );
     }
 }

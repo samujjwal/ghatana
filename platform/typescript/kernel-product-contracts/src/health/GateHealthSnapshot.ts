@@ -7,7 +7,8 @@
  * @doc.pattern Snapshot
  */
 
-import type { HealthStatus } from "./HealthStatus.js";
+import { z } from "zod";
+import { HealthStatusSchema, type HealthStatus } from "./HealthStatus.js";
 
 /**
  * Gate evaluation status.
@@ -19,6 +20,16 @@ export interface GateEvaluationStatus {
   readonly evaluatedAt: string;
   readonly duration: number;
 }
+
+export const GateEvaluationStatusSchema = z
+  .object({
+    gateId: z.string().trim().min(1),
+    passed: z.boolean(),
+    reason: z.string().trim().min(1),
+    evaluatedAt: z.string().datetime({ offset: true }),
+    duration: z.number().nonnegative(),
+  })
+  .strict();
 
 /**
  * Gate health snapshot.
@@ -53,4 +64,27 @@ export interface GateHealthSnapshot {
    * Snapshot timestamp.
    */
   readonly snapshotAt: string;
+}
+
+export const GateHealthSnapshotSchema = z
+  .object({
+    productUnitId: z.string().trim().min(1),
+    runId: z.string().trim().min(1),
+    phase: z.string().trim().min(1),
+    status: HealthStatusSchema,
+    gates: z.array(GateEvaluationStatusSchema),
+    snapshotAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+
+export function validateGateEvaluationStatus(
+  value: unknown
+): value is GateEvaluationStatus {
+  return GateEvaluationStatusSchema.safeParse(value).success;
+}
+
+export function validateGateHealthSnapshot(
+  value: unknown
+): value is GateHealthSnapshot {
+  return GateHealthSnapshotSchema.safeParse(value).success;
 }

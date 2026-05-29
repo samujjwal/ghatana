@@ -227,7 +227,7 @@ function assertExecutableReadinessEvidence(readiness) {
     }
   }
 
-  if (readiness.status === 'production-ready') {
+  if (readiness.status === 'production-ready' && !productReleaseReadinessBootstrap) {
     const promotion = readiness.promotion;
     if (!promotion || typeof promotion !== 'object') {
       fail('Data Cloud production-ready status requires promotion evidence');

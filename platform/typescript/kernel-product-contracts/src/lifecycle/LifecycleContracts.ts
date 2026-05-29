@@ -30,6 +30,18 @@ export type LifecycleCorrelationId = string & {
   readonly __brand: "LifecycleCorrelationId";
 };
 
+export const LifecycleRunIdSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .transform((value) => value as LifecycleRunId);
+
+export const LifecycleCorrelationIdSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .transform((value) => value as LifecycleCorrelationId);
+
 /** Creates a LifecycleRunId from a plain string. Only use at system entry points. */
 export function createLifecycleRunId(id: string): LifecycleRunId {
   if (!id || id.trim().length === 0) {
@@ -95,6 +107,8 @@ export const FAILURE_CATEGORIES = [
 
 export type FailureCategory = (typeof FAILURE_CATEGORIES)[number];
 
+export const FailureCategorySchema = z.enum(FAILURE_CATEGORIES);
+
 /**
  * Failure severity for prioritization and alerting.
  */
@@ -108,6 +122,8 @@ export const FAILURE_SEVERITIES = [
 
 export type FailureSeverity = (typeof FAILURE_SEVERITIES)[number];
 
+export const FailureSeveritySchema = z.enum(FAILURE_SEVERITIES);
+
 /**
  * LifecycleFailureClassifier provides detailed failure classification.
  */
@@ -115,12 +131,12 @@ export const LifecycleFailureClassifierSchema = z.object({
   /**
    * High-level failure category.
    */
-  category: z.enum(FAILURE_CATEGORIES),
+  category: FailureCategorySchema,
 
   /**
    * Failure severity for prioritization.
    */
-  severity: z.enum(FAILURE_SEVERITIES),
+  severity: FailureSeveritySchema,
 
   /**
    * Whether the failure is retryable with the same input.
@@ -650,8 +666,12 @@ export const LIFECYCLE_FAILURE_REASON_CODES = [
   "unknown",
 ] as const;
 
+export const LifecycleFailureReasonCodeSchema = z.enum(
+  LIFECYCLE_FAILURE_REASON_CODES
+);
+
 export const LifecycleFailureSchema = z.object({
-  reasonCode: z.enum(LIFECYCLE_FAILURE_REASON_CODES).optional(),
+  reasonCode: LifecycleFailureReasonCodeSchema.optional(),
   stepId: z.string().optional(),
   message: z.string(),
   actionableMessage: z.string().optional(),
@@ -752,4 +772,34 @@ export function parseLifecycleExecutionResult(
   input: unknown,
 ): LifecycleExecutionResult {
   return LifecycleExecutionResultSchema.parse(input);
+}
+
+export function validateLifecycleRunId(
+  value: unknown
+): value is LifecycleRunId {
+  return LifecycleRunIdSchema.safeParse(value).success;
+}
+
+export function validateLifecycleCorrelationId(
+  value: unknown
+): value is LifecycleCorrelationId {
+  return LifecycleCorrelationIdSchema.safeParse(value).success;
+}
+
+export function validateFailureCategory(
+  value: unknown
+): value is FailureCategory {
+  return FailureCategorySchema.safeParse(value).success;
+}
+
+export function validateFailureSeverity(
+  value: unknown
+): value is FailureSeverity {
+  return FailureSeveritySchema.safeParse(value).success;
+}
+
+export function validateLifecycleFailureReasonCode(
+  value: unknown
+): value is LifecycleFailureReasonCode {
+  return LifecycleFailureReasonCodeSchema.safeParse(value).success;
 }

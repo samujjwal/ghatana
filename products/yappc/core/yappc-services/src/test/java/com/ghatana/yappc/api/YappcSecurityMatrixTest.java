@@ -122,7 +122,12 @@ class YappcSecurityMatrixTest {
                 readiness,
                 List.of(),
                 List.of(),
-                true));
+                true,
+                List.of(),
+                "",
+                "",
+                "",
+                ""));
         assertThat(flagBlockedAdvance.enabled()).isFalse();
         assertThat(flagBlockedAdvance.disabledReason())
                 .isEqualTo("phaseAction.disabled.phaseAdvanceEntitlementMissing");
@@ -142,7 +147,12 @@ class YappcSecurityMatrixTest {
                         Instant.parse("2026-05-26T10:15:30Z"),
                         Map.of(),
                         "decision-1")),
-                true));
+                true,
+                List.of(),
+                "",
+                "",
+                "",
+                ""));
         assertThat(policyBlockedAdvance.enabled()).isFalse();
         assertThat(policyBlockedAdvance.disabledReason())
                 .isEqualTo("phaseAction.disabled.policyDeniedTransition");

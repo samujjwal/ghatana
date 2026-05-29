@@ -70,7 +70,7 @@ describe('SettingsPage', () => {
     render(<SettingsPage />);
     fireEvent.click(screen.getByRole('button', { name: 'settings.logout.button' }));
     await waitFor(() => {
-      expect(mockLogout).toHaveBeenCalledWith({ tenantId: 't1', principalId: 'patient-42' });
+      expect(mockLogout).toHaveBeenCalledWith({ tenantId: 't1', principalId: 'patient-42', role: 'patient' });
       expect(mockClearSession).toHaveBeenCalled();
       expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true });
     });

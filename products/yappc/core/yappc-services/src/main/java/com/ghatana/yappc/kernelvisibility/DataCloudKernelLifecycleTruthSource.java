@@ -106,15 +106,17 @@ public final class DataCloudKernelLifecycleTruthSource implements KernelLifecycl
             return KernelLifecycleTruthRecord.from(productUnitId, data).toMap();
         } catch (IllegalArgumentException e) {
             log.warn(
-                    "Malformed Kernel lifecycle truth record: tenantId={}, productUnitId={}",
+                    "Malformed Kernel lifecycle truth record: tenantId={}, productUnitId={}, error={}, dataKeys={}",
                     tenantId,
                     productUnitId,
+                    e.getMessage(),
+                    data.keySet(),
                     e);
-            return errorRecord(productUnitId, "MALFORMED_KERNEL_LIFECYCLE_TRUTH", e);
+            return errorRecord(productUnitId, "MALFORMED_KERNEL_LIFECYCLE_TRUTH", e, data);
         }
     }
 
-    private Map<String, Object> errorRecord(String productUnitId, String reason, Throwable error) {
+    private Map<String, Object> errorRecord(String productUnitId, String reason, Throwable error, Map<String, Object> originalData) {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("productUnitId", productUnitId);
         result.put("status", "error");
@@ -122,7 +124,26 @@ public final class DataCloudKernelLifecycleTruthSource implements KernelLifecycl
         result.put("degraded", true);
         result.put("degradedReason", reason);
         result.put("errorType", error.getClass().getSimpleName());
+        result.put("errorMessage", error.getMessage());
+        result.put("correlationId", tenantId + ":" + productUnitId + ":" + System.currentTimeMillis());
+        result.put("dataKeys", originalData.keySet());
+        result.put("missingRequiredFields", identifyMissingFields(originalData));
         return Map.copyOf(result);
+    }
+
+    private Map<String, Object> errorRecord(String productUnitId, String reason, Throwable error) {
+        return errorRecord(productUnitId, reason, error, Map.of());
+    }
+
+    private List<String> identifyMissingFields(Map<String, Object> data) {
+        List<String> missing = new java.util.ArrayList<>();
+        if (!data.containsKey("productUnitId") || data.get("productUnitId") == null) {
+            missing.add("productUnitId");
+        }
+        if (!data.containsKey("status") || data.get("status") == null) {
+            missing.add("status");
+        }
+        return missing;
     }
 
     /**

@@ -144,7 +144,23 @@ public class DurableDataCloudClient implements DataCloudClient, AutoCloseable {
 
     @Override
     public Promise<Entity> save(String tenantId, String collection, Map<String, Object> data) {
-        throw new UnsupportedOperationException("save not implemented in DurableDataCloudClient");
+        return createEntity(tenantId, collection, data)
+            .then(dataRecord -> {
+                // Convert DataRecordInterface back to Entity for interface compatibility
+                if (dataRecord == null) {
+                    return Promise.of((Entity) null);
+                }
+                // Create a DataCloudClient.Entity with the correct constructor signature
+                Instant now = Instant.now();
+                return Promise.of(new Entity(
+                    dataRecord.getId() != null ? dataRecord.getId().toString() : UUID.randomUUID().toString(),
+                    collection,
+                    dataRecord.getData() != null ? dataRecord.getData() : new HashMap<>(data),
+                    now,
+                    now,
+                    1L
+                ));
+            });
     }
 
     public Promise<DataRecordInterface> createEntity(String tenantId, String collectionName, Map<String, Object> data) {
@@ -351,48 +367,51 @@ public class DurableDataCloudClient implements DataCloudClient, AutoCloseable {
      */
     private static class SimpleEntityAdapter implements DataRecordInterface {
         private final com.ghatana.datacloud.spi.EntityStore.Entity entity;
+        private final java.util.UUID id;
+        private final Instant createdAt;
 
         SimpleEntityAdapter(com.ghatana.datacloud.spi.EntityStore.Entity entity) {
             this.entity = entity;
+            this.id = java.util.UUID.fromString(entity.id().value());
+            this.createdAt = entity.metadata().createdAt();
         }
 
         @Override
         public java.util.UUID getId() {
-            // Entity class doesn't have getId - return null
-            return null;
+            return id;
         }
 
         @Override
         public String getTenantId() { return ""; }
 
         @Override
-        public String getCollectionName() { return ""; }
+        public String getCollectionName() { return entity.collection(); }
 
         @Override
         public RecordType getRecordType() { return RecordType.ENTITY; }
 
         @Override
         public Map<String, Object> getData() {
-            // Entity class doesn't have getData - return empty map
-            return Map.of();
+            return entity.data();
         }
 
         @Override
         public Map<String, Object> getMetadata() {
-            // Entity class doesn't have getMetadata - return empty map
-            return Map.of();
+            return Map.of(
+                "createdAt", entity.metadata().createdAt(),
+                "updatedAt", entity.metadata().updatedAt(),
+                "version", entity.metadata().version()
+            );
         }
 
         @Override
         public Instant getCreatedAt() {
-            // Entity class might not have getCreatedAt - return default
-            return Instant.now();
+            return createdAt;
         }
 
         @Override
         public String getCreatedBy() {
-            // Entity class doesn't have getCreatedBy - return null
-            return null;
+            return entity.metadata().createdBy().orElse(null);
         }
 
         @Override

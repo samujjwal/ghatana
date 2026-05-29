@@ -47,7 +47,6 @@ public final class PhrDocumentImagingRoutes {
     private final Eventloop eventloop;
     private final DocumentService documentService;
     private final ImagingService imagingService;
-    private final ConsentManagementService consentService;
     private final PhrPolicyEvaluator policyEvaluator;
 
     public PhrDocumentImagingRoutes(
@@ -59,7 +58,7 @@ public final class PhrDocumentImagingRoutes {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.documentService = Objects.requireNonNull(documentService, "documentService must not be null");
         this.imagingService = Objects.requireNonNull(imagingService, "imagingService must not be null");
-        this.consentService = Objects.requireNonNull(consentService, "consentService must not be null");
+        Objects.requireNonNull(consentService, "consentService must not be null");
         this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 
@@ -238,7 +237,7 @@ public final class PhrDocumentImagingRoutes {
     }
 
     private Promise<HttpResponse> handleUpdateDocumentConsent(HttpRequest request) {
-        return withPatientAccess(request, "documents", patientId -> request.loadBody()
+        return withPatientAccess(request, "documents", "WRITE", patientId -> request.loadBody()
             .then(body -> {
                 String visibility;
                 try {
@@ -259,7 +258,7 @@ public final class PhrDocumentImagingRoutes {
     }
 
     private Promise<HttpResponse> handleDeleteDocument(HttpRequest request) {
-        return withPatientAccess(request, "documents", patientId -> documentService.deleteDocument(
+        return withPatientAccess(request, "documents", "WRITE", patientId -> documentService.deleteDocument(
                 request.getPathParameter("documentId"),
                 patientId)
             .then($ -> PhrRouteSupport.jsonResponse(200, Map.of(
@@ -278,15 +277,15 @@ public final class PhrDocumentImagingRoutes {
             return PhrRouteSupport.errorResponse(400, "INVALID_DOCUMENT_QUERY", ex.getMessage());
         }
         PhrRouteSupport.PhrRequestContext finalContext = context;
-        return requireAccess(context, patientId, "documents")
+        return requireAccess(context, patientId, "documents", "READ")
             .then(allowed -> allowed
                 ? documentService.getPatientDocuments(patientId, finalContext.principalId())
                     .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size())))
-                : PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required for documents"));
+                : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
     }
 
     private Promise<HttpResponse> handleCreateImagingOrder(HttpRequest request) {
-        return withBodyAndConsent(request, "imaging", ImagingService.ImagingOrder.class,
+        return withBodyAndConsent(request, "imaging", "WRITE", ImagingService.ImagingOrder.class,
             order -> imagingService.createOrder(order)
                 .then(stored -> PhrRouteSupport.jsonResponse(201, stored)));
     }
@@ -303,39 +302,39 @@ public final class PhrDocumentImagingRoutes {
                 if (order.isEmpty()) {
                     return PhrRouteSupport.errorResponse(404, "IMAGING_ORDER_NOT_FOUND", "Imaging order not found");
                 }
-                return requireAccess(context, order.get().patientId(), "imaging")
+                return requireAccess(context, order.get().patientId(), "imaging", "READ")
                     .then(allowed -> allowed
                         ? PhrRouteSupport.jsonResponse(200, order.get())
-                        : PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required for imaging"));
+                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
             });
     }
 
     private Promise<HttpResponse> handleRegisterImagingStudy(HttpRequest request) {
-        return withBodyAndConsent(request, "imaging", ImagingService.ImagingStudy.class,
+        return withBodyAndConsent(request, "imaging", "WRITE", ImagingService.ImagingStudy.class,
             study -> imagingService.registerStudy(study)
                 .then(stored -> PhrRouteSupport.jsonResponse(201, stored)));
     }
 
     private Promise<HttpResponse> handleStoreRadiologyReport(HttpRequest request) {
-        return withBodyAndConsent(request, "imaging", ImagingService.RadiologyReport.class,
+        return withBodyAndConsent(request, "imaging", "WRITE", ImagingService.RadiologyReport.class,
             report -> imagingService.storeReport(report)
                 .then(stored -> PhrRouteSupport.jsonResponse(201, stored)));
     }
 
     private Promise<HttpResponse> handleListImagingOrders(HttpRequest request) {
-        return withPatientAccess(request, "imaging", patientId -> imagingService.getPatientOrders(patientId)
+        return withPatientAccess(request, "imaging", "READ", patientId -> imagingService.getPatientOrders(patientId)
             .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size()))));
     }
 
     private Promise<HttpResponse> handleListImagingStudies(HttpRequest request) {
-        return withPatientAccess(request, "imaging", patientId -> imagingService.getPatientStudies(patientId)
+        return withPatientAccess(request, "imaging", "READ", patientId -> imagingService.getPatientStudies(patientId)
             .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size()))));
     }
 
     /**
      * Handles secure download of imaging study with audit trail.
      *
-     * <p>This endpoint requires patient consent and creates a comprehensive audit trail
+     * <p>This endpoint requires PHI policy approval and creates a comprehensive audit trail
      * for PHI access. The download is logged with the requester's identity, timestamp,
      * and purpose. This ensures compliance with healthcare data access regulations.</p>
      */
@@ -353,7 +352,6 @@ public final class PhrDocumentImagingRoutes {
                 "Study ID is required", context.correlationId());
         }
 
-        // Query the study to get patient ID for consent check
         return imagingService.getStudy(studyId)
             .then(studyOpt -> {
                 if (studyOpt.isEmpty()) {
@@ -363,17 +361,13 @@ public final class PhrDocumentImagingRoutes {
 
                 ImagingService.ImagingStudy study = studyOpt.get();
                 
-                // Check consent for imaging access
-                return requireAccess(context, study.patientId(), "imaging")
+                return requireAccess(context, study.patientId(), "imaging", "DOWNLOAD")
                     .then(allowed -> {
                         if (!allowed) {
-                            // Audit the denied access attempt
                             auditImagingAccessDenied(context, study.patientId(), studyId, "imaging-study");
-                            return PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", 
-                                "Consent is required for imaging access", context.correlationId());
+                            return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
                         }
 
-                        // Audit the successful access
                         String correlationId = PhrTraceContext.newCorrelationId("phr_imaging_download");
                         auditImagingAccessGranted(context, study.patientId(), studyId, "imaging-study", correlationId);
 
@@ -393,7 +387,7 @@ public final class PhrDocumentImagingRoutes {
     /**
      * Handles secure download of imaging series with audit trail.
      *
-     * <p>This endpoint requires patient consent and creates a comprehensive audit trail
+     * <p>This endpoint requires PHI policy approval and creates a comprehensive audit trail
      * for PHI access at the series level. The download is logged with the requester's identity,
      * timestamp, and purpose. This ensures compliance with healthcare data access regulations.</p>
      */
@@ -417,7 +411,6 @@ public final class PhrDocumentImagingRoutes {
                 "Series ID is required", context.correlationId());
         }
 
-        // Query the study to get patient ID for consent check
         return imagingService.getStudy(studyId)
             .then(studyOpt -> {
                 if (studyOpt.isEmpty()) {
@@ -427,17 +420,13 @@ public final class PhrDocumentImagingRoutes {
 
                 ImagingService.ImagingStudy study = studyOpt.get();
                 
-                // Check consent for imaging access
-                return requireAccess(context, study.patientId(), "imaging")
+                return requireAccess(context, study.patientId(), "imaging", "DOWNLOAD")
                     .then(allowed -> {
                         if (!allowed) {
-                            // Audit the denied access attempt
                             auditImagingAccessDenied(context, study.patientId(), seriesId, "imaging-series");
-                            return PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", 
-                                "Consent is required for imaging access", context.correlationId());
+                            return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
                         }
 
-                        // Audit the successful access
                         String correlationId = PhrTraceContext.newCorrelationId("phr_imaging_series_download");
                         auditImagingAccessGranted(context, study.patientId(), seriesId, "imaging-series", correlationId);
 
@@ -471,16 +460,14 @@ public final class PhrDocumentImagingRoutes {
                 } catch (Exception ex) {
                     return PhrRouteSupport.errorResponse(400, "INVALID_DOCUMENT_UPLOAD", ex.getMessage());
                 }
-                return requireAccess(finalContext, value.getPatientId(), "documents")
+                return requireAccess(finalContext, value.getPatientId(), "documents", "WRITE")
                     .then(allowed -> {
                         if (!allowed) {
-                            return PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required for documents");
+                            return PhrRouteSupport.policyDenialResponse(403, finalContext.correlationId());
                         }
-                        // Add audit event for document upload
                         String correlationId = PhrTraceContext.newCorrelationId("phr_document_upload");
                         return handler.apply(value)
                             .then(stored -> {
-                                // Audit the successful upload
                                 auditDocumentUpload(finalContext, value.getPatientId(), stored.getDocumentId(), 
                                     value.getDocumentType(), value.getContentType(), correlationId);
                                 return PhrRouteSupport.jsonResponse(201, stored);
@@ -492,6 +479,7 @@ public final class PhrDocumentImagingRoutes {
     private <T> Promise<HttpResponse> withBodyAndConsent(
             HttpRequest request,
             String resourceType,
+            String action,
             Class<T> type,
             java.util.function.Function<T, Promise<HttpResponse>> handler) {
         PhrRouteSupport.PhrRequestContext context;
@@ -512,16 +500,17 @@ public final class PhrDocumentImagingRoutes {
                 } catch (Exception ex) {
                     return PhrRouteSupport.errorResponse(400, "INVALID_" + resourceType.toUpperCase(), ex.getMessage());
                 }
-                return requireAccess(finalContext, patientId, resourceType)
+                return requireAccess(finalContext, patientId, resourceType, action)
                     .then(allowed -> allowed
                         ? handler.apply(value)
-                        : PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required for " + resourceType));
+                        : PhrRouteSupport.policyDenialResponse(403, finalContext.correlationId()));
             });
     }
 
     private Promise<HttpResponse> withPatientAccess(
             HttpRequest request,
             String resourceType,
+            String action,
             java.util.function.Function<String, Promise<HttpResponse>> handler) {
         PhrRouteSupport.PhrRequestContext context;
         String patientId;
@@ -531,18 +520,22 @@ public final class PhrDocumentImagingRoutes {
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT_SCOPE", ex.getMessage());
         }
-        return requireAccess(context, patientId, resourceType)
+        return requireAccess(context, patientId, resourceType, action)
             .then(allowed -> allowed
                 ? handler.apply(patientId)
-                : PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required for " + resourceType));
+                : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
     }
 
-    private Promise<Boolean> requireAccess(PhrRouteSupport.PhrRequestContext context, String patientId, String resourceType) {
+    private Promise<Boolean> requireAccess(
+            PhrRouteSupport.PhrRequestContext context,
+            String patientId,
+            String resourceType,
+            String action) {
         return policyEvaluator.canAccessPhiResourceAsync(
                 context,
                 patientId,
                 resourceType,
-                "READ",
+                action,
                 context.tenantId(),
                 context.facilityId())
             .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);

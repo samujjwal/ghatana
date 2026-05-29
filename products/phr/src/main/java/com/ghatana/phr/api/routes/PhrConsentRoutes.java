@@ -143,6 +143,10 @@ public final class PhrConsentRoutes {
             return PhrRouteSupport.errorResponse(400, "INVALID_CONSENT_CHECK", ex.getMessage());
         }
         String requestedAction = action.toUpperCase();
+        PhrPolicyEvaluator.PolicyDecision decision = policyEvaluator.canCheckConsent(context, patientId, accessorId);
+        if (!decision.isAllowed()) {
+            return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+        }
         return consentService.validateAccess(patientId, accessorId, resourceType, requestedAction)
             .then(result -> {
                 Map<String, Object> response = new java.util.LinkedHashMap<>();

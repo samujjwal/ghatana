@@ -2,6 +2,8 @@
 
 A minimal Rust service and library used to validate the Kernel's CargoRustAdapter can handle Rust projects through the full lifecycle.
 
+This fixture is backend-only: it exposes SDK and service surfaces without a web or mobile client package.
+
 ## Purpose
 
 This fixture product validates:

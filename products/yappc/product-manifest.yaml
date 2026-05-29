@@ -5,7 +5,7 @@ schemaVersion: "1.0.0"
 id: yappc
 version: "1.0.0"
 product: yappc
-kind: platform-provider
+kind: business-product
 domain: platform-tooling
 kernelCapabilitiesConsumed:
   - product-unit-intent
@@ -14,27 +14,25 @@ kernelCapabilitiesConsumed:
   - lifecycle-execution
   - artifact-validation
 policyActions:
-  - scaffold
-  - refactor
-  - analyze
-  - generate
+  - yappc:scaffold
+  - yappc:refactor
+  - yappc:analyze
+  - yappc:generate
 policyResources:
   - yappc:codebase
   - yappc:architecture
   - yappc:dependencies
 policies:
   actions:
-    - scaffold
-    - refactor
-    - analyze
-    - generate
+    - yappc:scaffold
+    - yappc:refactor
+    - yappc:analyze
+    - yappc:generate
   resources:
     - yappc:codebase
     - yappc:architecture
     - yappc:dependencies
-pluginsConsumed:
-  - plugin-audit-trail
-  - plugin-compliance
+pluginsConsumed: []
 bridgesConsumed:
   - data-cloud-kernel-bridge
 domainPacksProvided:
@@ -42,20 +40,20 @@ domainPacksProvided:
   - yappc-refactoring-domain
 uiSurfaces:
   - web
-  - cli
 runtimeServices:
   - api-server
+  - cli
   - agent-runtime
   - knowledge-graph
 surfaces:
   ui:
     - web
-    - cli
   runtime:
     - api-server
+    - cli
     - agent-runtime
     - knowledge-graph
-dataSensitivity: internal-platform
+dataSensitivity: LOW
 capabilities:
   - id: yappc.code-scaffolding
     name: "Code Scaffolding"
@@ -180,5 +178,5 @@ metadata:
   author: "Ghatana YAPPC Team"
   documentation: "products/yappc/README.md"
   productName: "YAPPC Product"
-  description: "Yet Another Platform for Platform Composition — AI-powered code analysis and refactoring platform"
+  description: "Yet Another Platform for Platform Composition - AI-powered code analysis and refactoring platform"
   type: platform-provider

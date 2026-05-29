@@ -92,6 +92,14 @@ export type ArtifactManifestReference = z.infer<
   typeof ArtifactManifestReferenceSchema
 >;
 
+export function validateDigestAlgorithm(input: unknown): input is DigestAlgorithm {
+  return z.enum(DIGEST_ALGORITHMS).safeParse(input).success;
+}
+
+export function validateArtifactType(input: unknown): input is ArtifactType {
+  return z.enum(ARTIFACT_TYPES).safeParse(input).success;
+}
+
 export function parseArtifactManifestReference(
   input: unknown,
 ): ArtifactManifestReference {

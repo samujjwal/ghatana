@@ -12,6 +12,11 @@ import java.util.Optional;
 
 /**
  * Drains regulated PHR event evidence from the durable outbox into Data Cloud.
+ *
+ * @doc.type class
+ * @doc.purpose Dispatches PHR evidence from outbox to Data Cloud
+ * @doc.layer product
+ * @doc.pattern Dispatcher
  */
 public final class PhrEvidenceOutboxDispatcher implements KernelLifecycleAware {
 

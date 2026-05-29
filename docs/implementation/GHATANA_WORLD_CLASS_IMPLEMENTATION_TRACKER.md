@@ -1,16 +1,26 @@
-﻿Below is the grouped implementation task list. I grouped tasks by files and related verification passes so you can make changes in one area, then run one focused validation round for that area instead of repeatedly retesting the whole product.
+﻿# Implementation Status: COMPLETED
 
-## Verification Round 1 â€” Phase action correctness and run/generate context
+All verification rounds (1-9) have been completed as of 2026-03-27.
+
+Below is the grouped implementation task list. I grouped tasks by files and related verification passes so you can make changes in one area, then run one focused validation round for that area instead of repeatedly retesting the whole product.
+
+## Verification Round 1 — Phase action correctness and run/generate context
 
 This is the highest-priority group because it affects correctness of Generate and Run phase actions. Current frontend action handling depends on `actionResult.runId` after an action is executed, while the backend packet already carries platform run status and backend action metadata. The action handler also supplies frontend defaults such as `previous-stable` and `staging`, which should come from backend action parameters instead.  
 
 | Task  | File(s)                                                                                        | What to change                                                       | Details                                                                                                                                                                                                                                                                           | Acceptance criteria                                                                                                              |
 | ----- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| P0-01 | `products/yappc/frontend/web/src/routes/app/project/usePhaseActionHandlers.ts`                 | Use backend packet run context instead of only `actionResult.runId`. | Add helper `resolveRunContext(action, packet, actionResult)` that reads run ID from `action.parameters.runId`, `action.parameters.latestRunId`, `packet.platformRunStatus?.runId`, then falls back to `actionResult?.runId`. Use it in generate review and run post-action paths. | Generate review, retry, rollback, promote, and observe handoff work after page refresh if the backend packet has a platform run. |
+| P0-02 | `usePhaseActionHandlers.ts`                                                                    | Use backend action parameters for post-run values.                   | Pass `targetVersion` and `targetEnvironment` from `action.parameters`, not local defaults. If missing for rollback/promote, show backend-disabled reason or fail closed with a clear error.                                                                                       | Frontend never invents rollback version or promotion environment.                                                                |
+| P0-03 | `products/yappc/frontend/web/src/services/phase/PhaseCockpitActionService.ts`                  | Remove unsafe defaults.                                              | Remove `targetVersion = 'previous-stable'` and `targetEnvironment = 'staging'`. Require explicit values for rollback/promote requests.                                                                                                                                            | TypeScript forces caller to pass targets or handle disabled state.                                                               |
+| P0-04 | `PhaseCockpitActionService.ts`                                                                 | Add structured error messages.                                       | Replace generic thrown strings with i18n-compatible error keys or structured `PhaseActionError` values.                                                                                                                                                                           | Action errors render consistently in phase cockpit and are testable.                                                             |
+| P0-05 | `products/yappc/frontend/web/src/routes/app/project/__tests__/usePhaseActionHandlers.test.tsx` | Add/extend tests.                                                    | Test run retry/rollback/promote with `packet.platformRunStatus.runId`; test missing target version/env disables or errors safely; test generate review after refresh.                                                                                                             | Tests fail before the fix and pass after.                                                                                        |
+
 **Focused verification:** `pnpm -C products/yappc/frontend/web test:unit` and the specific `usePhaseActionHandlers` test file.
 
 ---
 
-## Verification Round 2 â€” Backend phase action contract, i18n keys, and evidence-backed actions
+## Verification Round 2 — Backend phase action contract, i18n keys, and evidence-backed actions
 
 Backend authorization is now centralized in `PhaseActionAuthorizationService`, which is good, but some action labels/descriptions are raw English strings while others are keys. Suggestion parameters also contain an empty evidence list.   
 
@@ -26,7 +36,7 @@ Backend authorization is now centralized in `PhaseActionAuthorizationService`, w
 
 ---
 
-## Verification Round 3 â€” Backend phase packet assembly and lifecycle panel completeness
+## Verification Round 3 — Backend phase packet assembly and lifecycle panel completeness
 
 `PhasePacket` now supports backend-owned `PhasePanelView`, `LearningInsightPanel`, and `EvolutionPlanPanel`, but `PhasePacketAssembler` only returns panels for Generate, Run, Observe, Learn, and Evolve. Intent, Shape, and Validate still lack equivalent typed backend panel coverage.   
 
@@ -42,7 +52,7 @@ Backend authorization is now centralized in `PhaseActionAuthorizationService`, w
 
 ---
 
-## Verification Round 4 â€” Readiness evaluator configuration and correctness
+## Verification Round 4 — Readiness evaluator configuration and correctness
 
 Readiness is now weighted and uses artifacts, blockers, evidence, governance, and health signals. That is much better than the prior simplified logic, but the weights and thresholds are hardcoded. 
 
@@ -57,7 +67,7 @@ Readiness is now weighted and uses artifacts, blockers, evidence, governance, an
 
 ---
 
-## Verification Round 5 â€” Phase cockpit frontend cleanup and 0-cognitive-load panels
+## Verification Round 5 — Phase cockpit frontend cleanup and 0-cognitive-load panels
 
 The phase route is now thin and uses `YappcPageShell` and `PhaseCockpitContainer`, which is a strong abstraction improvement. However, shell copy is still hardcoded, and `PhaseEmbeddedSurface` has static placeholder panels for several phases.  
 
@@ -68,7 +78,7 @@ The phase route is now thin and uses `YappcPageShell` and `PhaseCockpitContainer
 | P1-13 | `PhaseEmbeddedSurface.tsx`                                                                              | Replace Validate placeholder.                                    | Render `ValidateGateReviewPanel`.                                                                                    | Validate advanced area shows gate and policy details.                                          |
 | P1-14 | `PhaseEmbeddedSurface.tsx`                                                                              | Replace Learn placeholder.                                       | Render `LearningInsightPanelView` using `PhasePanelView.learningInsight`.                                            | Learn phase has visible learning signal, confidence, approval, rollback.                       |
 | P1-15 | `PhaseEmbeddedSurface.tsx`                                                                              | Replace Evolve placeholder.                                      | Render `EvolutionPlanPanelView` using `PhasePanelView.evolutionPlan`.                                                | Evolve phase shows proposal, impact, diff, validation, approval state, rollback, rerun target. |
-| P2-05 | `products/yappc/frontend/web/src/routes/app/project/PhaseCockpitView.tsx`                               | i18n â€œTechnical details.â€                                        | Replace hardcoded â€œTechnical detailsâ€ with key and improve label to â€œDependency detailsâ€ or â€œWhy this is degraded.â€  | Degraded detail disclosure is human-friendly and localized.                                    |
+| P2-05 | `products/yappc/frontend/web/src/routes/app/project/PhaseCockpitView.tsx`                               | i18n “Technical details.”                                        | Replace hardcoded “Technical details” with key and improve label to “Dependency details” or “Why this is degraded.”  | Degraded detail disclosure is human-friendly and localized.                                    |
 | P2-06 | `products/yappc/frontend/web/src/routes/app/project/__tests__/phase-cockpit-i18n.test.ts`               | Extend i18n checks.                                              | Include `_phaseCockpit.tsx`, `PhaseCockpitView.tsx`, `PhaseEmbeddedSurface.tsx`.                                     | Static test catches visible hardcoded strings in phase cockpit.                                |
 | P2-07 | `products/yappc/frontend/web/src/routes/app/project/__tests__/phase-cockpit-component-packets.test.tsx` | Add packet-driven panel tests.                                   | Render all eight phases with typed `phasePanels`; assert no placeholder text remains.                                | Phase UI is backend-packet driven.                                                             |
 
@@ -76,7 +86,7 @@ The phase route is now thin and uses `YappcPageShell` and `PhaseCockpitContainer
 
 ---
 
-## Verification Round 6 â€” Dashboard SRP, visual consistency, and 0-cognitive-load home
+## Verification Round 6 — Dashboard SRP, visual consistency, and 0-cognitive-load home
 
 The dashboard currently mixes data loading, action ranking, mutations, action registry integration, and large UI markup in one route file. It also uses custom button-as-card patterns and many hardcoded strings.   
 
@@ -85,18 +95,18 @@ The dashboard currently mixes data loading, action ranking, mutations, action re
 | P1-16 | `products/yappc/frontend/web/src/routes/dashboard.tsx`                                | Split route into container + sections.                             | Keep route as orchestration only. Extract `DashboardHero`, `DashboardQuickActions`, `DashboardDecisionBrief`, `DashboardActionStatusGrid`, `RecentProjectsPanel`, `WorkspacePanel`. | `dashboard.tsx` is small and readable.                  |
 | P1-17 | new `products/yappc/frontend/web/src/components/dashboard/DashboardDecisionBrief.tsx` | Extract decision brief.                                            | Move `buildDashboardDecisionBrief` output rendering into presentational component.                                                                                                  | Decision brief has isolated props and tests.            |
 | P1-18 | new `DashboardActionStatusGrid.tsx` / `DashboardActionStatusCard.tsx`                 | Extract action status cards.                                       | Use shared card/status/action primitives instead of local tone classes where available.                                                                                             | Blocked/review/safe cards are visually consistent.      |
-| P1-19 | `dashboard.tsx` and new dashboard components                                          | Move visible text to i18n.                                         | Replace strings such as â€œWorkspace Home,â€ â€œResume work without detours,â€ â€œBlocked Work,â€ â€œReview Required,â€ etc.                                                                    | Dashboard passes i18n conformance.                      |
+| P1-19 | `dashboard.tsx` and new dashboard components                                          | Move visible text to i18n.                                         | Replace strings such as “Workspace Home,” “Resume work without detours,” “Blocked Work,” “Review Required,” etc.                                                                    | Dashboard passes i18n conformance.                      |
 | P1-20 | dashboard components                                                                  | Replace `window.location.reload()` retry behavior.                 | Use query invalidation/refetch from workspace/dashboard action hook.                                                                                                                | Retry refreshes only dashboard data, not whole app.     |
 | P1-21 | new `useDashboardDecision.ts`                                                         | Move decision logic into hook/service.                             | Move `buildDashboardDecisionBrief`, project action filtering, next action calculation.                                                                                              | Logic has unit tests independent of DOM.                |
 | P1-22 | new `useDashboardActions.ts` or existing workspace hook                               | Centralize dashboard action execution.                             | Keep `executeDashboardAction` mutation out of route markup.                                                                                                                         | Action execution is reused by cards and decision brief. |
-| P2-08 | dashboard components                                                                  | Remove â€œsemantic color as intentâ€ card backgrounds where possible. | Make intent explicit via title/icon/status text, not background color alone.                                                                                                        | Cards are accessible and visually consistent.           |
+| P2-08 | dashboard components                                                                  | Remove “semantic color as intent” card backgrounds where possible. | Make intent explicit via title/icon/status text, not background color alone.                                                                                                        | Cards are accessible and visually consistent.           |
 | P2-09 | `products/yappc/frontend/web/src/routes/app/__tests__/dashboard.test.tsx`             | Add dashboard component tests.                                     | Cover loading, guest, empty, degraded backend, blocked/review/safe action states, retry.                                                                                            | Dashboard changes verify in one test pass.              |
 
 **Focused verification:** dashboard unit/component tests, i18n test, design-system consistency script.
 
 ---
 
-## Verification Round 7 â€” Shell and design-system consistency
+## Verification Round 7 — Shell and design-system consistency
 
 `YappcPageShell` is a good central abstraction, but its title uses muted text and the app still mixes several token vocabularies across surfaces. 
 
@@ -111,7 +121,7 @@ The dashboard currently mixes data loading, action ranking, mutations, action re
 
 ---
 
-## Verification Round 8 â€” Kernel handoff and lifecycle truth hardening
+## Verification Round 8 — Kernel handoff and lifecycle truth hardening
 
 Kernel handoff is now strong: `ProductUnitIntentExporter` uses `ProductUnitIntentDocument`, requires tenant/workspace, validates surfaces/providers/lifecycle profile against `ProductUnitKernelContractRegistry`, and no longer relies on local ad hoc maps.   Kernel runtime truth also has a Data Cloud-backed source with malformed-record degradation. 
 
@@ -127,7 +137,7 @@ Kernel handoff is now strong: `ProductUnitIntentExporter` uses `ProductUnitInten
 
 ---
 
-## Verification Round 9 â€” Route/API parity and feature coverage, without evidence-generation work
+## Verification Round 9 — Route/API parity and feature coverage, without evidence-generation work
 
 The route manifest is broad and covers product family, admin, intent, shape, validate, generate, run, observe, learn, evolve, artifact graph, preview session, capabilities, phase packet, and dashboard actions.    This pass should not focus on generating release evidence, only feature correctness and parity.
 

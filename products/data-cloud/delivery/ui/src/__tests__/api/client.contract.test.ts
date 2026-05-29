@@ -130,6 +130,25 @@ describe("canonical apiClient tenant propagation", () => {
     expect(headers.get("X-Tenant-ID")).toBe("tenant-cookie");
   });
 
+  it("does not forward X-Tenant-ID in production-like profiles", async () => {
+    vi.stubEnv("VITE_DATACLOUD_PROFILE", "production");
+    SessionBootstrap.setTenantId("tenant-prod");
+    fetchMock.mockResolvedValueOnce(
+      createJsonResponse({
+        body: {
+          entities: [],
+          count: 0,
+        },
+      }),
+    );
+
+    await apiClient.get("/entities/dc_collections");
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const headers = new Headers(init.headers as HeadersInit);
+    expect(headers.get("X-Tenant-ID")).toBeNull();
+  });
+
   it("falls back to canonical auth error codes for 401 responses without explicit error codes", async () => {
     fetchMock.mockResolvedValueOnce(
       createJsonResponse({

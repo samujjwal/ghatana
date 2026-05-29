@@ -38,7 +38,12 @@ public final class PhaseActionAuthorizationService {
             @NotNull PhasePacket.PhaseReadiness readiness,
             @NotNull List<PhasePacket.PhaseBlocker> blockers,
             @NotNull List<PhasePacket.GovernanceRecord> governance,
-            boolean featureFlagDependencyAvailable
+            boolean featureFlagDependencyAvailable,
+            @NotNull List<String> evidenceIds,
+            @NotNull String supportTrace,
+            @NotNull String riskReason,
+            @NotNull String targetVersion,
+            @NotNull String targetEnvironment
     ) {
         List<PhasePacket.PhaseAction> actions = new ArrayList<>();
         String normalizedPhase = phase.trim().toUpperCase();
@@ -78,6 +83,9 @@ public final class PhaseActionAuthorizationService {
                         "one-click",
                         false,
                         true,
+                        evidenceIds,
+                        supportTrace,
+                        riskReason,
                         Map.of("nextPhase", Optional.ofNullable(readiness.nextPhase()).orElse(""))
                 )
         ));
@@ -113,6 +121,9 @@ public final class PhaseActionAuthorizationService {
                         "review-required",
                         true,
                         false,
+                        evidenceIds,
+                        supportTrace,
+                        riskReason,
                         Map.of()
                 )
         ));
@@ -150,6 +161,9 @@ public final class PhaseActionAuthorizationService {
                         "one-click",
                         false,
                         false,
+                        evidenceIds,
+                        supportTrace,
+                        riskReason,
                         Map.of()
                 )
         ));
@@ -157,11 +171,11 @@ public final class PhaseActionAuthorizationService {
         boolean generatePhase = "GENERATE".equals(normalizedPhase);
         actions.add(action(
                 "generate.apply",
-                "Apply recommendation",
-                "Apply reviewed generation output to project artifacts.",
+                "phaseAction.generateApply.label",
+                "phaseAction.generateApply.description",
                 generatePhase && capabilities.canApprove() && policyAllowed,
                 firstDisabledReason(
-                        generatePhase ? null : "phaseAction.disabled.unauthorized",
+                        generatePhase ? null : "phaseAction.disabled.notAvailableForCurrentPhase",
                         capabilities.canApprove() ? null : "phaseAction.disabled.approvalCapabilityRequired",
                         policyAllowed ? null : "phaseAction.disabled.policyDeniedTransition"
                 ),
@@ -183,17 +197,20 @@ public final class PhaseActionAuthorizationService {
                         "review-required",
                         true,
                         true,
+                        evidenceIds,
+                        supportTrace,
+                        riskReason,
                         Map.of("requiresActor", true)
                 )
         ));
 
         actions.add(action(
                 "generate.reject",
-                "Reject recommendation",
-                "Reject reviewed generation output and keep existing artifacts.",
+                "phaseAction.generateReject.label",
+                "phaseAction.generateReject.description",
                 generatePhase && capabilities.canReject() && policyAllowed,
                 firstDisabledReason(
-                        generatePhase ? null : "phaseAction.disabled.unauthorized",
+                        generatePhase ? null : "phaseAction.disabled.notAvailableForCurrentPhase",
                         capabilities.canReject() ? null : "phaseAction.disabled.approvalCapabilityRequired",
                         policyAllowed ? null : "phaseAction.disabled.policyDeniedTransition"
                 ),
@@ -215,17 +232,20 @@ public final class PhaseActionAuthorizationService {
                         "review-required",
                         true,
                         false,
+                        evidenceIds,
+                        supportTrace,
+                        riskReason,
                         Map.of("requiresActor", true)
                 )
         ));
 
         actions.add(action(
                 "generate.rollback",
-                "Rollback generation",
-                "Rollback to the previous generated revision.",
+                "phaseAction.generateRollback.label",
+                "phaseAction.generateRollback.description",
                 generatePhase && capabilities.canRollback() && policyAllowed,
                 firstDisabledReason(
-                        generatePhase ? null : "phaseAction.disabled.unauthorized",
+                        generatePhase ? null : "phaseAction.disabled.notAvailableForCurrentPhase",
                         capabilities.canRollback() ? null : "phaseAction.disabled.updateCapabilityRequired",
                         policyAllowed ? null : "phaseAction.disabled.policyDeniedTransition"
                 ),
@@ -247,6 +267,9 @@ public final class PhaseActionAuthorizationService {
                         "review-required",
                         true,
                         true,
+                        evidenceIds,
+                        supportTrace,
+                        riskReason,
                         Map.of("requiresActor", true)
                 )
         ));
@@ -254,11 +277,11 @@ public final class PhaseActionAuthorizationService {
         boolean runPhase = "RUN".equals(normalizedPhase);
         actions.add(action(
                 "run.retry",
-                "Retry run",
-                "Retry the latest run with the same validated configuration.",
+                "phaseAction.runRetry.label",
+                "phaseAction.runRetry.description",
                 runPhase && capabilities.canUpdate() && policyAllowed,
                 firstDisabledReason(
-                        runPhase ? null : "phaseAction.disabled.unauthorized",
+                        runPhase ? null : "phaseAction.disabled.notAvailableForCurrentPhase",
                         capabilities.canUpdate() ? null : "phaseAction.disabled.updateCapabilityRequired",
                         policyAllowed ? null : "phaseAction.disabled.policyDeniedTransition"
                 ),
@@ -280,19 +303,23 @@ public final class PhaseActionAuthorizationService {
                         "one-click",
                         false,
                         true,
+                        evidenceIds,
+                        supportTrace,
+                        riskReason,
                         Map.of("requiresActor", false)
                 )
         ));
 
         actions.add(action(
                 "run.rollback",
-                "Rollback run",
-                "Rollback the latest run deployment.",
-                runPhase && capabilities.canRollback() && policyAllowed,
+                "phaseAction.runRollback.label",
+                "phaseAction.runRollback.description",
+                runPhase && capabilities.canRollback() && policyAllowed && !targetVersion.isBlank(),
                 firstDisabledReason(
-                        runPhase ? null : "phaseAction.disabled.unauthorized",
+                        runPhase ? null : "phaseAction.disabled.notAvailableForCurrentPhase",
                         capabilities.canRollback() ? null : "phaseAction.disabled.updateCapabilityRequired",
-                        policyAllowed ? null : "phaseAction.disabled.policyDeniedTransition"
+                        policyAllowed ? null : "phaseAction.disabled.policyDeniedTransition",
+                        !targetVersion.isBlank() ? null : "phaseAction.disabled.missingRollbackTarget"
                 ),
                 "run:rollback",
                 "danger",
@@ -312,19 +339,23 @@ public final class PhaseActionAuthorizationService {
                         "manual",
                         false,
                         true,
-                        Map.of("requiresActor", false)
+                        evidenceIds,
+                        supportTrace,
+                        riskReason,
+                        Map.of("requiresActor", false, "targetVersion", targetVersion)
                 )
         ));
 
         actions.add(action(
                 "run.promote",
-                "Promote run",
-                "Promote the latest successful run to the next environment.",
-                runPhase && capabilities.canApprove() && policyAllowed,
+                "phaseAction.runPromote.label",
+                "phaseAction.runPromote.description",
+                runPhase && capabilities.canApprove() && policyAllowed && !targetEnvironment.isBlank(),
                 firstDisabledReason(
-                        runPhase ? null : "phaseAction.disabled.unauthorized",
+                        runPhase ? null : "phaseAction.disabled.notAvailableForCurrentPhase",
                         capabilities.canApprove() ? null : "phaseAction.disabled.approvalCapabilityRequired",
-                        policyAllowed ? null : "phaseAction.disabled.policyDeniedTransition"
+                        policyAllowed ? null : "phaseAction.disabled.policyDeniedTransition",
+                        !targetEnvironment.isBlank() ? null : "phaseAction.disabled.missingPromoteTarget"
                 ),
                 "run:promote",
                 "post-run",
@@ -344,17 +375,20 @@ public final class PhaseActionAuthorizationService {
                         "review-required",
                         true,
                         true,
-                        Map.of("requiresActor", true)
+                        evidenceIds,
+                        supportTrace,
+                        riskReason,
+                        Map.of("requiresActor", true, "targetEnvironment", targetEnvironment)
                 )
         ));
 
         actions.add(action(
                 "run.observe",
-                "Open observe phase",
-                "Navigate to observe phase to inspect runtime signals and outcomes.",
+                "phaseAction.runObserve.label",
+                "phaseAction.runObserve.description",
                 runPhase && capabilities.canRead(),
                 firstDisabledReason(
-                        runPhase ? null : "phaseAction.disabled.unauthorized",
+                        runPhase ? null : "phaseAction.disabled.notAvailableForCurrentPhase",
                         capabilities.canRead() ? null : "phaseAction.disabled.readCapabilityRequired"
                 ),
                 "run:observe",
@@ -375,6 +409,9 @@ public final class PhaseActionAuthorizationService {
                         "one-click",
                         false,
                         false,
+                        evidenceIds,
+                        supportTrace,
+                        riskReason,
                         Map.of("requiresActor", false)
                 )
         ));
@@ -444,11 +481,16 @@ public final class PhaseActionAuthorizationService {
                         String applyMode,
                         boolean approvalRequired,
                         boolean rollbackSupported,
+                        List<String> evidenceIds,
+                        String supportTrace,
+                        String riskReason,
                         Map<String, Object> additional
         ) {
                 Map<String, Object> parameters = new java.util.LinkedHashMap<>();
                 parameters.put("confidence", confidence);
-                parameters.put("evidence", List.of());
+                parameters.put("evidenceIds", List.copyOf(evidenceIds));
+                parameters.put("supportTrace", supportTrace);
+                parameters.put("riskReason", riskReason);
                 parameters.put("riskLevel", riskLevel);
                 parameters.put("applyMode", applyMode);
                 parameters.put("approvalRequired", approvalRequired);

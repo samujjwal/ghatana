@@ -1,5 +1,5 @@
 /**
- * Tests for AuditPage — verifies real API integration (no mock data).
+ * Tests for AuditPage - verifies real API integration (no mock data).
  */
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
@@ -14,6 +14,22 @@ vi.mock('../../i18n/phrI18n', () => ({
   t: (key: string) => key,
   formatPhrDate: (d: string) => d,
   formatPhrDateTime: (d: string) => d,
+}));
+
+vi.mock('../../auth/PhrSessionContext', () => ({
+  usePhrSession: () => ({
+    session: {
+      tenantId: 'tenant-1',
+      principalId: 'user-1',
+      role: 'admin',
+      name: 'Admin User',
+      expiresAt: '2026-12-31T23:59:59Z',
+    },
+    setSession: vi.fn(),
+    clearSession: vi.fn(),
+    isAuthenticated: true,
+    sessionValidating: false,
+  }),
 }));
 
 import { fetchAuditEvents } from '../../api/auditApi';
@@ -43,7 +59,12 @@ describe('AuditPage', () => {
     render(<AuditPage />);
 
     await waitFor(() => expect(screen.queryByText(/audit.loading/)).toBeNull());
-    expect(mockFetch).toHaveBeenCalledWith({ filter: 'all' });
+    expect(mockFetch).toHaveBeenCalledWith({
+      filter: 'all',
+      tenantId: 'tenant-1',
+      principalId: 'user-1',
+      role: 'admin',
+    });
     expect(screen.getByText('user-1')).toBeTruthy();
   });
 
@@ -65,7 +86,11 @@ describe('AuditPage', () => {
     const accessButton = screen.getByRole('button', { name: /audit.filter.access/i });
     fireEvent.click(accessButton);
 
-    await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(2));
-    expect(mockFetch).toHaveBeenLastCalledWith({ filter: 'access' });
+    await waitFor(() => expect(mockFetch).toHaveBeenCalledWith({
+      filter: 'access',
+      tenantId: 'tenant-1',
+      principalId: 'user-1',
+      role: 'admin',
+    }));
   });
 });

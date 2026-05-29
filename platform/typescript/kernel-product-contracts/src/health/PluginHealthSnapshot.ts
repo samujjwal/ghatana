@@ -7,7 +7,8 @@
  * @doc.pattern Snapshot
  */
 
-import type { HealthStatus } from "./HealthStatus.js";
+import { z } from "zod";
+import { HealthStatusSchema, type HealthStatus } from "./HealthStatus.js";
 
 /**
  * Plugin health status.
@@ -19,6 +20,16 @@ export interface PluginHealthStatus {
   readonly message: string;
   readonly lastExecuted: string;
 }
+
+export const PluginHealthStatusSchema = z
+  .object({
+    pluginId: z.string().trim().min(1),
+    pluginKind: z.string().trim().min(1),
+    status: HealthStatusSchema,
+    message: z.string().trim().min(1),
+    lastExecuted: z.string().datetime({ offset: true }),
+  })
+  .strict();
 
 /**
  * Plugin health snapshot.
@@ -43,4 +54,25 @@ export interface PluginHealthSnapshot {
    * Snapshot timestamp.
    */
   readonly snapshotAt: string;
+}
+
+export const PluginHealthSnapshotSchema = z
+  .object({
+    productUnitId: z.string().trim().min(1).optional(),
+    status: HealthStatusSchema,
+    plugins: z.array(PluginHealthStatusSchema),
+    snapshotAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+
+export function validatePluginHealthStatus(
+  value: unknown
+): value is PluginHealthStatus {
+  return PluginHealthStatusSchema.safeParse(value).success;
+}
+
+export function validatePluginHealthSnapshot(
+  value: unknown
+): value is PluginHealthSnapshot {
+  return PluginHealthSnapshotSchema.safeParse(value).success;
 }

@@ -10,6 +10,8 @@
  * @doc.pattern ValueObject
  */
 
+import { z } from "zod";
+
 /**
  * The type of a ProductUnit surface, determining its build and deployment characteristics.
  */
@@ -46,6 +48,8 @@ export const PRODUCT_UNIT_SURFACE_TYPES = [
   "data-pipeline",
 ] as const satisfies readonly ProductUnitSurfaceType[];
 
+export const ProductUnitSurfaceTypeSchema = z.enum(PRODUCT_UNIT_SURFACE_TYPES);
+
 /**
  * The implementation status of a ProductUnit surface.
  */
@@ -61,6 +65,8 @@ export const IMPLEMENTATION_STATUSES = [
   "backend-only",
   "experimental",
 ] as const satisfies readonly ImplementationStatus[];
+
+export const ImplementationStatusSchema = z.enum(IMPLEMENTATION_STATUSES);
 
 /**
  * Canonical implementation language identifiers for Kernel-managed surfaces.
@@ -82,17 +88,23 @@ export type ProductSurfaceLanguage =
  */
 export type LanguageVersion = string;
 
+export const LanguageVersionSchema = z.string().trim().min(1);
+
 /**
  * Runtime version constraints for precise environment specification.
  * Examples: "21" for Java JRE 21, "20.10.0" for Node.js 20.10.0, "3.11" for Python 3.11.
  */
 export type RuntimeVersion = string;
 
+export const RuntimeVersionSchema = z.string().trim().min(1);
+
 /**
  * Build system version constraints for precise toolchain specification.
  * Examples: "8.5" for Gradle 8.5, "1.75" for Cargo 1.75, "9.0" for pnpm 9.0.
  */
 export type BuildSystemVersion = string;
+
+export const BuildSystemVersionSchema = z.string().trim().min(1);
 
 export const PRODUCT_SURFACE_LANGUAGES = [
   "java",
@@ -105,6 +117,8 @@ export const PRODUCT_SURFACE_LANGUAGES = [
   "go",
   "other",
 ] as const satisfies readonly ProductSurfaceLanguage[];
+
+export const ProductSurfaceLanguageSchema = z.enum(PRODUCT_SURFACE_LANGUAGES);
 
 /**
  * Canonical build system identifiers used for lifecycle adapter selection.
@@ -133,6 +147,10 @@ export const PRODUCT_SURFACE_BUILD_SYSTEMS = [
   "none",
   "other",
 ] as const satisfies readonly ProductSurfaceBuildSystem[];
+
+export const ProductSurfaceBuildSystemSchema = z.enum(
+  PRODUCT_SURFACE_BUILD_SYSTEMS
+);
 
 /**
  * Canonical runtime environment identifiers for Kernel-managed surfaces.
@@ -182,6 +200,8 @@ export const PRODUCT_SURFACE_RUNTIMES = [
   "none",
   "other",
 ] as const satisfies readonly ProductSurfaceRuntime[];
+
+export const ProductSurfaceRuntimeSchema = z.enum(PRODUCT_SURFACE_RUNTIMES);
 
 /**
  * Represents a deployable component within a ProductUnit.
@@ -320,6 +340,29 @@ export interface LanguageRuntimeBuildSystemTriplet {
   readonly buildSystem: ProductSurfaceBuildSystem;
 }
 
+export const LanguageRuntimeBuildSystemTripletSchema = z
+  .object({
+    language: ProductSurfaceLanguageSchema,
+    runtime: ProductSurfaceRuntimeSchema,
+    buildSystem: ProductSurfaceBuildSystemSchema,
+  })
+  .strict()
+  .superRefine((triplet, context) => {
+    if (
+      !isValidLanguageRuntimeBuildSystemCombination(
+        triplet.language,
+        triplet.runtime,
+        triplet.buildSystem
+      )
+    ) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "language/runtime/buildSystem combination is not supported by Kernel lifecycle adapters",
+      });
+    }
+  });
+
 /**
  * Validates that a language/runtime/buildSystem combination is valid.
  * Returns true if the combination is supported by the Kernel.
@@ -412,6 +455,13 @@ export interface SurfaceTripletValidationResult {
   readonly error?: string;
 }
 
+export const SurfaceTripletValidationResultSchema = z
+  .object({
+    valid: z.boolean(),
+    error: z.string().trim().min(1).optional(),
+  })
+  .strict();
+
 /**
  * Validates a surface's language/runtime/buildSystem triplet.
  */
@@ -428,4 +478,30 @@ export function validateSurfaceTriplet(
     };
   }
   return { valid: true };
+}
+
+export function validateLanguageVersion(value: unknown): value is LanguageVersion {
+  return LanguageVersionSchema.safeParse(value).success;
+}
+
+export function validateRuntimeVersion(value: unknown): value is RuntimeVersion {
+  return RuntimeVersionSchema.safeParse(value).success;
+}
+
+export function validateBuildSystemVersion(
+  value: unknown
+): value is BuildSystemVersion {
+  return BuildSystemVersionSchema.safeParse(value).success;
+}
+
+export function validateLanguageRuntimeBuildSystemTriplet(
+  value: unknown
+): value is LanguageRuntimeBuildSystemTriplet {
+  return LanguageRuntimeBuildSystemTripletSchema.safeParse(value).success;
+}
+
+export function validateSurfaceTripletValidationResult(
+  value: unknown
+): value is SurfaceTripletValidationResult {
+  return SurfaceTripletValidationResultSchema.safeParse(value).success;
 }

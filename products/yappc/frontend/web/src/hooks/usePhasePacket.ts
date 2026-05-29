@@ -117,8 +117,7 @@ export function usePhasePacket(request: PhasePacketRequest): UsePhasePacketResul
 
     try {
       const correlationId = createPhasePacketCorrelationId(request);
-      // Use generated client with GET method (query parameters)
-      // Task 5.A.2: Ensure GET/POST parity between manifest, OpenAPI, backend, frontend
+      // Contract: GET /api/v1/phase/packet with query parameters (phase, projectId, workspaceId, correlationId)
       const data = await LifecycleService.getPhasePacket(
         request.phase as 'intent' | 'shape' | 'validate' | 'generate' | 'run' | 'observe' | 'learn' | 'evolve',
         request.projectId,

@@ -2,77 +2,109 @@ openapi: 3.0.3
 info:
   title: Ghatana Finance API
   version: 1.0.0
-  description: Contract-first API surface for finance ledger posting and reconciliation checks.
+  description: Contract-first API surface for finance transaction processing and status queries.
 servers:
   - url: /api/v1
 paths:
-  /finance/ledger/postings:
+  /transactions:
     post:
-      operationId: postLedgerTransaction
-      summary: Post a billing transaction into finance ledger
-      tags: [Ledger]
+      operationId: postTransaction
+      summary: Submit and process a financial transaction
+      tags: [Transactions]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LedgerPostingRequest"
+              $ref: "#/components/schemas/TransactionRequest"
       responses:
-        "201":
-          description: Ledger entry created
+        "200":
+          description: Transaction processed successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LedgerPostingResponse"
-  /finance/ledger/postings/{entryId}:
+                $ref: "#/components/schemas/TransactionResponse"
+        "422":
+          description: Transaction rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionResponse"
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /transactions/{id}:
     get:
-      operationId: getLedgerPosting
-      summary: Fetch posting status for a ledger entry
-      tags: [Ledger]
+      operationId: getTransaction
+      summary: Retrieve transaction status by ID (idempotency query)
+      tags: [Transactions]
       parameters:
         - in: path
-          name: entryId
+          name: id
           required: true
           schema:
             type: string
       responses:
         "200":
-          description: Posting status
+          description: Transaction status
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LedgerPostingResponse"
+                $ref: "#/components/schemas/TransactionStatusResponse"
 components:
   schemas:
-    LedgerPostingRequest:
+    TransactionRequest:
       type: object
       required:
-        [transactionId, debitAccount, creditAccount, amount, currency, tenantId]
+        [amount, currency]
       properties:
-        transactionId:
+        id:
           type: string
-        debitAccount:
-          type: string
-        creditAccount:
-          type: string
+          description: Optional transaction ID for idempotency
         amount:
           type: number
           format: double
+          description: Transaction amount (must be > 0)
         currency:
           type: string
-        tenantId:
+          description: Currency code (e.g., USD)
+        location:
           type: string
-        description:
+        merchantCategory:
           type: string
-    LedgerPostingResponse:
+        counterpartyCountry:
+          type: string
+        paymentMethod:
+          type: string
+    TransactionResponse:
       type: object
-      required: [entryId, status]
+      required: [transactionId, status, message]
       properties:
-        entryId:
+        transactionId:
           type: string
         status:
           type: string
-          enum: [POSTED, REVERSED, PENDING, FAILED, NOT_FOUND]
-        postedAt:
+          enum: [PROCESSED, REJECTED]
+        message:
           type: string
-          format: date-time
+    TransactionStatusResponse:
+      type: object
+      required: [transactionId, tenantId, message]
+      properties:
+        transactionId:
+          type: string
+        tenantId:
+          type: string
+        message:
+          type: string
+    ErrorResponse:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+        message:
+          type: string

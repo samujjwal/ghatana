@@ -3,12 +3,13 @@ package com.ghatana.phr.api.routes;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.phr.kernel.service.CaregiverService;
 import com.ghatana.phr.kernel.service.PatientRecordService;
-import io.activej.promise.Promise;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
+import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -23,14 +24,18 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 /**
  * Unit tests for {@link PhrCaregiverRoutes}.
  *
  * @doc.type class
- * @doc.purpose Verifies caregiver-scoped access enforcement for dependent listing and patient record access
+ * @doc.purpose Verifies caregiver-scoped access enforcement for dependent listing and policy-gated patient access
  * @doc.layer product
  * @doc.pattern Test
  */
@@ -44,11 +49,19 @@ class PhrCaregiverRoutesTest extends EventloopTestBase {
     @Mock
     private PatientRecordService patientRecordService;
 
+    @Mock
+    private PhrPolicyEvaluator policyEvaluator;
+
     private AsyncServlet servlet;
 
     @BeforeEach
     void setUp() {
-        PhrCaregiverRoutes routes = new PhrCaregiverRoutes(eventloop(), caregiverService, patientRecordService);
+        PhrCaregiverRoutes routes = new PhrCaregiverRoutes(
+            eventloop(),
+            caregiverService,
+            patientRecordService,
+            policyEvaluator
+        );
         servlet = routes.getServlet();
 
         lenient().when(caregiverService.getPatientsForCaregiver(anyString()))
@@ -83,6 +96,9 @@ class PhrCaregiverRoutesTest extends EventloopTestBase {
             .build();
         lenient().when(patientRecordService.getPatient("dep-42"))
             .thenReturn(Promise.of(Optional.of(patient)));
+        lenient().when(policyEvaluator.canAccessPhiResourceAsync(
+                any(), anyString(), anyString(), anyString(), anyString(), any()))
+            .thenReturn(Promise.of(PhrPolicyEvaluator.PolicyDecision.allowed("TEST_ALLOWED", "allowed")));
     }
 
     @Nested
@@ -145,13 +161,15 @@ class PhrCaregiverRoutesTest extends EventloopTestBase {
     class GetPatientSummary {
 
         @Test
-        @DisplayName("returns 200 for caregiver role — consent verified by service layer")
+        @DisplayName("returns 200 for caregiver when policy allows")
         void returns200ForCaregiver() throws Exception {
             HttpRequest request = contextRequest(HttpMethod.GET, "/patient/dep-42", "t1", "cg1", "caregiver");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(200);
+            verify(policyEvaluator).canAccessPhiResourceAsync(
+                any(), eq("dep-42"), eq("caregiver-patient-summary"), eq("READ"), eq("t1"), any());
         }
 
         @Test
@@ -163,9 +181,38 @@ class PhrCaregiverRoutesTest extends EventloopTestBase {
 
             assertThat(response.getCode()).isEqualTo(403);
         }
+
+        @Test
+        @DisplayName("returns 403 when caregiver policy denies")
+        void returns403WhenPolicyDenies() throws Exception {
+            lenient().when(policyEvaluator.canAccessPhiResourceAsync(
+                    any(), eq("dep-42"), anyString(), anyString(), anyString(), any()))
+                .thenReturn(Promise.of(PhrPolicyEvaluator.PolicyDecision.denied("CAREGIVER_CONSENT_DENIED", "denied")));
+            HttpRequest request = contextRequest(HttpMethod.GET, "/patient/dep-42", "t1", "cg1", "caregiver");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(403);
+            verify(patientRecordService, never()).getPatient("dep-42");
+        }
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
+    @Nested
+    @DisplayName("GET /patient/:patientId/detail")
+    class GetPatientDetail {
+
+        @Test
+        @DisplayName("returns 200 for caregiver when policy allows")
+        void returns200ForCaregiver() throws Exception {
+            HttpRequest request = contextRequest(HttpMethod.GET, "/patient/dep-42/detail", "t1", "cg1", "caregiver");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(200);
+            verify(policyEvaluator).canAccessPhiResourceAsync(
+                any(), eq("dep-42"), eq("caregiver-patient-detail"), eq("READ"), eq("t1"), any());
+        }
+    }
 
     private static HttpRequest contextRequest(
             HttpMethod method, String path, String tenantId, String principalId, String role) {

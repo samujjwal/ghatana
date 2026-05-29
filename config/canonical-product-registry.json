@@ -1001,6 +1001,7 @@
       "kind": "platform-provider",
       "manifestPath": "products/yappc/product-manifest.yaml",
       "manifestFormat": "yaml",
+      "buildFile": "products/yappc/build.gradle.kts",
       "gradleModules": [
         ":products:yappc",
         ":products:yappc:platform",
@@ -1044,7 +1045,7 @@
         {
           "type": "web",
           "path": "products/yappc/frontend",
-          "packagePath": "products/yappc/frontend/package.json",
+          "packagePath": "products/yappc/frontend/web/package.json",
           "implementationStatus": "implemented"
         }
       ],

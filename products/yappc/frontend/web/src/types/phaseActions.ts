@@ -12,6 +12,38 @@
 
 import type { PhaseAction } from './phasePacket';
 
+type PhaseActionSafetyMetadata = Pick<
+  PhaseAction,
+  'category' | 'severity' | 'confirmationRequired' | 'idempotencyKey' | 'auditType'
+>;
+type PhaseActionDraft = Omit<PhaseAction, keyof PhaseActionSafetyMetadata> & Partial<PhaseActionSafetyMetadata>;
+
+function definePhaseActions(actions: readonly PhaseActionDraft[]): readonly PhaseAction[] {
+  return actions.map((action): PhaseAction => ({
+    ...action,
+    category: action.category ?? action.actionId.split('.')[0] ?? 'phase',
+    severity: action.severity ?? inferActionSeverity(action.actionId),
+    confirmationRequired: action.confirmationRequired ?? requiresConfirmation(action),
+    idempotencyKey: action.idempotencyKey ?? `phase-action:${action.actionId}`,
+    auditType: action.auditType ?? `phase_action.${action.actionId.replaceAll('.', '_')}`,
+  }));
+}
+
+function inferActionSeverity(actionId: string): string {
+  if (/\b(delete|reject|rollback|deploy|apply)\b/.test(actionId)) {
+    return 'high';
+  }
+  if (/\b(approve|generate|run|update|create|capture|propose)\b/.test(actionId)) {
+    return 'medium';
+  }
+  return 'low';
+}
+
+function requiresConfirmation(action: PhaseActionDraft): boolean {
+  return action.requiredPermission === 'PROJECT_DELETE'
+    || /\b(delete|reject|rollback|deploy|apply|approve)\b/.test(action.actionId);
+}
+
 // ============================================================================
 // Lifecycle Phase Types
 // ============================================================================
@@ -47,7 +79,7 @@ export type IntentActionId =
 /**
  * Intent phase actions.
  */
-export const INTENT_PHASE_ACTIONS: readonly PhaseAction[] = [
+export const INTENT_PHASE_ACTIONS = definePhaseActions([
   {
     actionId: 'intent.capture',
     label: 'Capture Intent',
@@ -102,7 +134,7 @@ export const INTENT_PHASE_ACTIONS: readonly PhaseAction[] = [
     requiredPermission: 'PROJECT_UPDATE',
     parameters: {},
   },
-] as const;
+]);
 
 // ============================================================================
 // Shape Phase Actions
@@ -123,7 +155,7 @@ export type ShapeActionId =
 /**
  * Shape phase actions.
  */
-export const SHAPE_PHASE_ACTIONS: readonly PhaseAction[] = [
+export const SHAPE_PHASE_ACTIONS = definePhaseActions([
   {
     actionId: 'shape.create',
     label: 'Create Shape Model',
@@ -187,7 +219,7 @@ export const SHAPE_PHASE_ACTIONS: readonly PhaseAction[] = [
     requiredPermission: 'PROJECT_READ',
     parameters: {},
   },
-] as const;
+]);
 
 // ============================================================================
 // Validate Phase Actions
@@ -205,7 +237,7 @@ export type ValidateActionId =
 /**
  * Validate phase actions.
  */
-export const VALIDATE_PHASE_ACTIONS: readonly PhaseAction[] = [
+export const VALIDATE_PHASE_ACTIONS = definePhaseActions([
   {
     actionId: 'validate.run',
     label: 'Run Validation',
@@ -242,7 +274,7 @@ export const VALIDATE_PHASE_ACTIONS: readonly PhaseAction[] = [
     requiredPermission: 'PROJECT_READ',
     parameters: {},
   },
-] as const;
+]);
 
 // ============================================================================
 // Generate Phase Actions
@@ -262,7 +294,7 @@ export type GenerateActionId =
 /**
  * Generate phase actions.
  */
-export const GENERATE_PHASE_ACTIONS: readonly PhaseAction[] = [
+export const GENERATE_PHASE_ACTIONS = definePhaseActions([
   {
     actionId: 'generate.run',
     label: 'Generate Artifacts',
@@ -317,7 +349,7 @@ export const GENERATE_PHASE_ACTIONS: readonly PhaseAction[] = [
     requiredPermission: 'PROJECT_READ',
     parameters: {},
   },
-] as const;
+]);
 
 // ============================================================================
 // Run Phase Actions
@@ -337,7 +369,7 @@ export type RunActionId =
 /**
  * Run phase actions.
  */
-export const RUN_PHASE_ACTIONS: readonly PhaseAction[] = [
+export const RUN_PHASE_ACTIONS = definePhaseActions([
   {
     actionId: 'run.build',
     label: 'Build Project',
@@ -392,7 +424,7 @@ export const RUN_PHASE_ACTIONS: readonly PhaseAction[] = [
     requiredPermission: 'PROJECT_READ',
     parameters: {},
   },
-] as const;
+]);
 
 // ============================================================================
 // Observe Phase Actions
@@ -411,7 +443,7 @@ export type ObserveActionId =
 /**
  * Observe phase actions.
  */
-export const OBSERVE_PHASE_ACTIONS: readonly PhaseAction[] = [
+export const OBSERVE_PHASE_ACTIONS = definePhaseActions([
   {
     actionId: 'observe.collect',
     label: 'Collect Observability Data',
@@ -457,7 +489,7 @@ export const OBSERVE_PHASE_ACTIONS: readonly PhaseAction[] = [
     requiredPermission: 'PROJECT_UPDATE',
     parameters: {},
   },
-] as const;
+]);
 
 // ============================================================================
 // Learn Phase Actions
@@ -476,7 +508,7 @@ export type LearnActionId =
 /**
  * Learn phase actions.
  */
-export const LEARN_PHASE_ACTIONS: readonly PhaseAction[] = [
+export const LEARN_PHASE_ACTIONS = definePhaseActions([
   {
     actionId: 'learn.collect-feedback',
     label: 'Collect Feedback',
@@ -522,7 +554,7 @@ export const LEARN_PHASE_ACTIONS: readonly PhaseAction[] = [
     requiredPermission: 'PROJECT_READ',
     parameters: {},
   },
-] as const;
+]);
 
 // ============================================================================
 // Evolve Phase Actions
@@ -541,7 +573,7 @@ export type EvolveActionId =
 /**
  * Evolve phase actions.
  */
-export const EVOLVE_PHASE_ACTIONS: readonly PhaseAction[] = [
+export const EVOLVE_PHASE_ACTIONS = definePhaseActions([
   {
     actionId: 'evolve.propose',
     label: 'Propose Evolution',
@@ -587,7 +619,7 @@ export const EVOLVE_PHASE_ACTIONS: readonly PhaseAction[] = [
     requiredPermission: 'PROJECT_READ',
     parameters: {},
   },
-] as const;
+]);
 
 // ============================================================================
 // Phase Action Registry

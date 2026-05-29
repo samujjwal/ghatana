@@ -10,7 +10,9 @@
  * @doc.pattern ValueObject
  */
 
+import { z } from "zod";
 import type { PluginRef } from './PluginRef.js';
+import { PluginRefSchema } from './PluginRef.js';
 
 /**
  * Represents a binding between a plugin and a ProductUnit.
@@ -77,21 +79,39 @@ export interface PluginBindingCondition {
   readonly value: string | string[];
 }
 
+export const PluginBindingConditionSchema = z
+  .object({
+    type: z.string().trim().min(1),
+    operator: z.string().trim().min(1),
+    value: z.union([
+      z.string().trim().min(1),
+      z.array(z.string().trim().min(1)),
+    ]),
+  })
+  .strict();
+
+export const KernelPluginBindingSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    pluginRef: PluginRefSchema,
+    productUnitId: z.string().trim().min(1),
+    enabled: z.boolean(),
+    config: z.record(z.string(), z.unknown()).optional(),
+    lifecycleHooks: z.array(z.string().trim().min(1)),
+    priority: z.number(),
+    conditions: z.array(PluginBindingConditionSchema).optional(),
+  })
+  .strict();
+
 /**
  * Type guard to check if a value is a KernelPluginBinding.
  */
 export function isKernelPluginBinding(value: unknown): value is KernelPluginBinding {
-  if (typeof value !== 'object' || value === null) {
-    return false;
-  }
+  return KernelPluginBindingSchema.safeParse(value).success;
+}
 
-  const binding = value as Record<string, unknown>;
-  return (
-    typeof binding.id === 'string' &&
-    typeof binding.pluginRef === 'object' &&
-    typeof binding.productUnitId === 'string' &&
-    typeof binding.enabled === 'boolean' &&
-    Array.isArray(binding.lifecycleHooks) &&
-    typeof binding.priority === 'number'
-  );
+export function validatePluginBindingCondition(
+  value: unknown
+): value is PluginBindingCondition {
+  return PluginBindingConditionSchema.safeParse(value).success;
 }

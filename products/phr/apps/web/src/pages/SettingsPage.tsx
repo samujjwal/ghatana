@@ -29,7 +29,7 @@ export function SettingsPage(): React.ReactElement {
     setLogoutPending(true);
     try {
       if (session) {
-        await logoutSession({ tenantId: session.tenantId, principalId: session.principalId });
+        await logoutSession({ tenantId: session.tenantId, principalId: session.principalId, role: session.role });
       }
     } catch {
       // Server-side logout failure must not block local session cleanup.

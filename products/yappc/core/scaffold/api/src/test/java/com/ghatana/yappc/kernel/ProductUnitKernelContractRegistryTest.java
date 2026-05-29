@@ -50,6 +50,126 @@ class ProductUnitKernelContractRegistryTest {
                 .containsExactlyInAnyOrderElementsOf(exportedArray(surfaceSource, "IMPLEMENTATION_STATUSES"));
     }
 
+    @Test
+    void rejectsContractWithNullSchemaVersion() {
+        var contract = new ProductUnitKernelContractRegistry.KernelProductUnitContract(
+                null,
+                Set.of("provider1"),
+                Set.of("source1"),
+                Set.of("profile1"),
+                Set.of("surface1"),
+                Set.of("kind1"),
+                Set.of("status1")
+        );
+        
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalStateException.class,
+                () -> new ProductUnitKernelContractRegistry(contract)
+        );
+    }
+
+    @Test
+    void rejectsContractWithEmptySchemaVersion() {
+        var contract = new ProductUnitKernelContractRegistry.KernelProductUnitContract(
+                "",
+                Set.of("provider1"),
+                Set.of("source1"),
+                Set.of("profile1"),
+                Set.of("surface1"),
+                Set.of("kind1"),
+                Set.of("status1")
+        );
+        
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalStateException.class,
+                () -> new ProductUnitKernelContractRegistry(contract)
+        );
+    }
+
+    @Test
+    void acceptsContractWithCompatibleSchemaVersion() {
+        var contract = new ProductUnitKernelContractRegistry.KernelProductUnitContract(
+                "1.0.0",
+                Set.of("provider1"),
+                Set.of("source1"),
+                Set.of("profile1"),
+                Set.of("surface1"),
+                Set.of("kind1"),
+                Set.of("status1")
+        );
+        
+        var registry = new ProductUnitKernelContractRegistry(contract);
+        assertThat(registry.providers()).containsExactly("provider1");
+    }
+
+    @Test
+    void acceptsContractWithHigherMinorSchemaVersion() {
+        var contract = new ProductUnitKernelContractRegistry.KernelProductUnitContract(
+                "1.1.0",
+                Set.of("provider1"),
+                Set.of("source1"),
+                Set.of("profile1"),
+                Set.of("surface1"),
+                Set.of("kind1"),
+                Set.of("status1")
+        );
+        
+        var registry = new ProductUnitKernelContractRegistry(contract);
+        assertThat(registry.providers()).containsExactly("provider1");
+    }
+
+    @Test
+    void acceptsContractWithHigherMajorSchemaVersion() {
+        var contract = new ProductUnitKernelContractRegistry.KernelProductUnitContract(
+                "2.0.0",
+                Set.of("provider1"),
+                Set.of("source1"),
+                Set.of("profile1"),
+                Set.of("surface1"),
+                Set.of("kind1"),
+                Set.of("status1")
+        );
+        
+        var registry = new ProductUnitKernelContractRegistry(contract);
+        assertThat(registry.providers()).containsExactly("provider1");
+    }
+
+    @Test
+    void rejectsContractWithLowerMajorSchemaVersion() {
+        var contract = new ProductUnitKernelContractRegistry.KernelProductUnitContract(
+                "0.9.0",
+                Set.of("provider1"),
+                Set.of("source1"),
+                Set.of("profile1"),
+                Set.of("surface1"),
+                Set.of("kind1"),
+                Set.of("status1")
+        );
+        
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalStateException.class,
+                () -> new ProductUnitKernelContractRegistry(contract)
+        );
+    }
+
+    @Test
+    void rejectsContractWithInvalidSchemaVersionFormat() {
+        var contract = new ProductUnitKernelContractRegistry.KernelProductUnitContract(
+                "invalid",
+                Set.of("provider1"),
+                Set.of("source1"),
+                Set.of("profile1"),
+                Set.of("surface1"),
+                Set.of("kind1"),
+                Set.of("status1")
+        );
+        
+        org.junit.jupiter.api.Assertions.assertThrows(
+                NumberFormatException.class,
+                () -> new ProductUnitKernelContractRegistry(contract)
+        );
+    }
+
     private static Path findRepoRoot(Path start) {
         Path current = start;
         while (current != null) {

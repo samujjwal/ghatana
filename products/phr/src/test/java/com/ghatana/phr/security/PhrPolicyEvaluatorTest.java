@@ -227,4 +227,96 @@ class PhrPolicyEvaluatorTest extends EventloopTestBase {
         assertThat(missingPatientDecision.getReasonCode()).isEqualTo("MISSING_PATIENT_ID");
         assertThat(missingJustificationDecision.getReasonCode()).isEqualTo("MISSING_JUSTIFICATION");
     }
+
+    @Test
+    @DisplayName("Consent checks are limited to owner, admin, or same accessor")
+    void consentChecksAreScopedToOwnerAdminOrSameAccessor() {
+        PolicyHarness harness = createHarness();
+        PhrRouteSupport.PhrRequestContext patientContext = context("tenant-1", "patient-1", "patient", null);
+        PhrRouteSupport.PhrRequestContext adminContext = context("tenant-1", "admin-1", "admin", "facility-1");
+        PhrRouteSupport.PhrRequestContext clinicianContext = context("tenant-1", "clinician-1", "clinician", "facility-1");
+        PhrRouteSupport.PhrRequestContext caregiverContext = context("tenant-1", "caregiver-1", "caregiver", null);
+
+        PhrPolicyEvaluator.PolicyDecision patientDecision =
+            harness.evaluator().canCheckConsent(patientContext, "patient-1", "clinician-1");
+        PhrPolicyEvaluator.PolicyDecision adminDecision =
+            harness.evaluator().canCheckConsent(adminContext, "patient-1", "clinician-1");
+        PhrPolicyEvaluator.PolicyDecision sameAccessorDecision =
+            harness.evaluator().canCheckConsent(clinicianContext, "patient-1", "clinician-1");
+        PhrPolicyEvaluator.PolicyDecision differentAccessorDecision =
+            harness.evaluator().canCheckConsent(caregiverContext, "patient-1", "clinician-1");
+
+        assertThat(patientDecision.isAllowed()).isTrue();
+        assertThat(adminDecision.isAllowed()).isTrue();
+        assertThat(adminDecision.requiresAudit()).isTrue();
+        assertThat(sameAccessorDecision.isAllowed()).isTrue();
+        assertThat(differentAccessorDecision.isAllowed()).isFalse();
+        assertThat(differentAccessorDecision.getReasonCode()).isEqualTo("CONSENT_CHECK_DENIED");
+    }
+
+    @Test
+    @DisplayName("Audit event queries require role-appropriate scope")
+    void auditEventQueriesRequireRoleAppropriateScope() {
+        PolicyHarness harness = createHarness();
+        PhrRouteSupport.PhrRequestContext adminContext = context("tenant-1", "admin-1", "admin", "facility-1");
+        PhrRouteSupport.PhrRequestContext clinicianContext = context("tenant-1", "clinician-1", "clinician", "facility-1");
+        PhrRouteSupport.PhrRequestContext patientContext = context("tenant-1", "patient-1", "patient", null);
+        PhrRouteSupport.PhrRequestContext caregiverContext = context("tenant-1", "caregiver-1", "caregiver", null);
+
+        PhrPolicyEvaluator.PolicyDecision adminDecision =
+            harness.evaluator().canQueryAuditEvents(adminContext, null);
+        PhrPolicyEvaluator.PolicyDecision scopedClinicianDecision =
+            harness.evaluator().canQueryAuditEvents(clinicianContext, "patient-1");
+        PhrPolicyEvaluator.PolicyDecision unscopedClinicianDecision =
+            harness.evaluator().canQueryAuditEvents(clinicianContext, null);
+        PhrPolicyEvaluator.PolicyDecision selfPatientDecision =
+            harness.evaluator().canQueryAuditEvents(patientContext, "patient-1");
+        PhrPolicyEvaluator.PolicyDecision otherPatientDecision =
+            harness.evaluator().canQueryAuditEvents(patientContext, "patient-2");
+        PhrPolicyEvaluator.PolicyDecision caregiverDecision =
+            harness.evaluator().canQueryAuditEvents(caregiverContext, "patient-1");
+
+        assertThat(adminDecision.isAllowed()).isTrue();
+        assertThat(adminDecision.requiresAudit()).isTrue();
+        assertThat(scopedClinicianDecision.isAllowed()).isTrue();
+        assertThat(scopedClinicianDecision.requiresAudit()).isTrue();
+        assertThat(unscopedClinicianDecision.isAllowed()).isFalse();
+        assertThat(unscopedClinicianDecision.getReasonCode()).isEqualTo("AUDIT_PATIENT_SCOPE_REQUIRED");
+        assertThat(selfPatientDecision.isAllowed()).isTrue();
+        assertThat(otherPatientDecision.isAllowed()).isFalse();
+        assertThat(caregiverDecision.isAllowed()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Audit event detail access is scoped by role")
+    void auditEventDetailAccessIsScopedByRole() {
+        PolicyHarness harness = createHarness();
+        PhrRouteSupport.PhrRequestContext adminContext = context("tenant-1", "admin-1", "admin", "facility-1");
+        PhrRouteSupport.PhrRequestContext clinicianContext = context("tenant-1", "clinician-1", "clinician", "facility-1");
+        PhrRouteSupport.PhrRequestContext patientContext = context("tenant-1", "patient-1", "patient", null);
+        PhrRouteSupport.PhrRequestContext fchvContext = context("tenant-1", "fchv-1", "fchv", "facility-1");
+
+        PhrPolicyEvaluator.PolicyDecision adminDecision =
+            harness.evaluator().canViewAuditEvent(adminContext, "user-1", "patient-2");
+        PhrPolicyEvaluator.PolicyDecision clinicianPatientScopedDecision =
+            harness.evaluator().canViewAuditEvent(clinicianContext, "user-1", "patient-2");
+        PhrPolicyEvaluator.PolicyDecision clinicianUnscopedDecision =
+            harness.evaluator().canViewAuditEvent(clinicianContext, "user-1", null);
+        PhrPolicyEvaluator.PolicyDecision patientOwnEntityDecision =
+            harness.evaluator().canViewAuditEvent(patientContext, "user-1", "patient-1");
+        PhrPolicyEvaluator.PolicyDecision patientOtherEntityDecision =
+            harness.evaluator().canViewAuditEvent(patientContext, "user-1", "patient-2");
+        PhrPolicyEvaluator.PolicyDecision fchvDecision =
+            harness.evaluator().canViewAuditEvent(fchvContext, "user-1", "patient-1");
+
+        assertThat(adminDecision.isAllowed()).isTrue();
+        assertThat(adminDecision.requiresAudit()).isTrue();
+        assertThat(clinicianPatientScopedDecision.isAllowed()).isTrue();
+        assertThat(clinicianPatientScopedDecision.requiresAudit()).isTrue();
+        assertThat(clinicianUnscopedDecision.isAllowed()).isFalse();
+        assertThat(clinicianUnscopedDecision.getReasonCode()).isEqualTo("AUDIT_PATIENT_SCOPE_REQUIRED");
+        assertThat(patientOwnEntityDecision.isAllowed()).isTrue();
+        assertThat(patientOtherEntityDecision.isAllowed()).isFalse();
+        assertThat(fchvDecision.isAllowed()).isFalse();
+    }
 }

@@ -1,19 +1,21 @@
 package com.ghatana.phr.api.routes;
 
-import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.ghatana.kernel.observability.AuditTrailService;
 import com.ghatana.kernel.security.KernelSecurityManager;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.phr.model.PHRUser;
 import com.ghatana.phr.repository.UserRepository;
 import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -25,24 +27,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
 
 /**
  * Enforcement matrix tests for {@link PhrAuthRoutes}.
  *
- * <p>Verifies the login and logout endpoint invariants:
- * <ul>
- *   <li>Valid credentials produce a 200 session envelope.</li>
- *   <li>Invalid credentials produce a 401.</li>
- *   <li>Malformed request bodies produce a 400.</li>
- *   <li>Logout always returns 204 regardless of authentication state.</li>
- * </ul>
- *
  * @doc.type class
- * @doc.purpose Auth enforcement matrix: verifies login/logout invariants for PHR auth routes
+ * @doc.purpose Auth enforcement matrix for PHR auth routes
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("PhrAuthRoutes — enforcement matrix")
+@DisplayName("PhrAuthRoutes - enforcement matrix")
 @ExtendWith(MockitoExtension.class)
 class PhrAuthRoutesTest extends EventloopTestBase {
 
@@ -52,6 +47,9 @@ class PhrAuthRoutesTest extends EventloopTestBase {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private AuditTrailService auditTrailService;
+
     private AsyncServlet servlet;
 
     private static final String VALID_BODY = """
@@ -60,7 +58,7 @@ class PhrAuthRoutesTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        servlet = new PhrAuthRoutes(eventloop(), securityManager, userRepository, null).getServlet();
+        servlet = new PhrAuthRoutes(eventloop(), securityManager, userRepository, auditTrailService).getServlet();
 
         PHRUser user = new PHRUser();
         user.setUserId("patient-001");
@@ -72,6 +70,8 @@ class PhrAuthRoutesTest extends EventloopTestBase {
             .thenReturn(new KernelSecurityManager.ValidationResult(true, null));
         lenient().when(userRepository.findByUsername(anyString()))
             .thenReturn(Optional.of(user));
+        lenient().when(userRepository.findByUserId("patient-001"))
+            .thenReturn(Optional.of(user));
     }
 
     @Nested
@@ -79,17 +79,21 @@ class PhrAuthRoutesTest extends EventloopTestBase {
     class Login {
 
         @Test
-        @DisplayName("200 — valid credentials return session envelope")
+        @DisplayName("200 - valid credentials return session envelope and audit event")
         void validCredentialsReturn200() throws Exception {
             HttpRequest request = postRequest("/login", VALID_BODY);
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(200);
+            ArgumentCaptor<AuditTrailService.AuditTrailEvent> eventCaptor =
+                ArgumentCaptor.forClass(AuditTrailService.AuditTrailEvent.class);
+            verify(auditTrailService).recordAuditEvent(eventCaptor.capture());
+            assertThat(eventCaptor.getValue().getEventType()).isEqualTo("AUTH_LOGIN_SUCCESS");
         }
 
         @Test
-        @DisplayName("401 — invalid credentials return 401")
+        @DisplayName("401 - invalid credentials return 401 and audit event")
         void invalidCredentialsReturn401() throws Exception {
             lenient().when(securityManager.validateCredentials(any()))
                 .thenReturn(new KernelSecurityManager.ValidationResult(false, "INVALID"));
@@ -99,10 +103,14 @@ class PhrAuthRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(401);
+            ArgumentCaptor<AuditTrailService.AuditTrailEvent> eventCaptor =
+                ArgumentCaptor.forClass(AuditTrailService.AuditTrailEvent.class);
+            verify(auditTrailService).recordAuditEvent(eventCaptor.capture());
+            assertThat(eventCaptor.getValue().getEventType()).isEqualTo("AUTH_LOGIN_FAILED");
         }
 
         @Test
-        @DisplayName("400 — missing nationalId field returns 400")
+        @DisplayName("400 - missing nationalId field returns 400")
         void missingNationalIdReturns400() throws Exception {
             HttpRequest request = postRequest("/login", """
                 {"password":"Secure!P@ss1"}
@@ -114,7 +122,7 @@ class PhrAuthRoutesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("400 — malformed JSON returns 400")
+        @DisplayName("400 - malformed JSON returns 400")
         void malformedJsonReturns400() throws Exception {
             HttpRequest request = postRequest("/login", "not-json");
 
@@ -129,34 +137,56 @@ class PhrAuthRoutesTest extends EventloopTestBase {
     class Logout {
 
         @Test
-        @DisplayName("204 — logout always returns 204 regardless of session state")
-        void logoutReturns204WithPrincipal() throws Exception {
-            HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/logout")
-                .withHeader(io.activej.http.HttpHeaders.of("X-Principal-ID"), "patient-001")
-                .build();
+        @DisplayName("204 - logout validates session context and writes audit event")
+        void logoutReturns204WithValidSession() throws Exception {
+            HttpRequest request = contextRequest("/logout", "t1", "patient-001", "patient");
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(204);
+            ArgumentCaptor<AuditTrailService.AuditTrailEvent> eventCaptor =
+                ArgumentCaptor.forClass(AuditTrailService.AuditTrailEvent.class);
+            verify(auditTrailService).recordAuditEvent(eventCaptor.capture());
+            assertThat(eventCaptor.getValue().getEventType()).isEqualTo("AUTH_LOGOUT");
+            assertThat(eventCaptor.getValue().getUserId()).isEqualTo("patient-001");
         }
 
         @Test
-        @DisplayName("204 — logout without principal header still returns 204")
-        void logoutReturns204WithoutPrincipal() throws Exception {
+        @DisplayName("401 - logout without session context is denied")
+        void logoutWithoutContextIsDenied() throws Exception {
             HttpRequest request = HttpRequest.post("http://localhost/logout").build();
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
-            assertThat(response.getCode()).isEqualTo(204);
+            assertThat(response.getCode()).isEqualTo(401);
+        }
+
+        @Test
+        @DisplayName("401 - logout with unknown principal is denied")
+        void logoutWithUnknownPrincipalIsDenied() throws Exception {
+            lenient().when(userRepository.findByUserId("unknown-user"))
+                .thenReturn(Optional.empty());
+            HttpRequest request = contextRequest("/logout", "t1", "unknown-user", "patient");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(401);
         }
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────────
-
     private static HttpRequest postRequest(String path, String body) {
         return HttpRequest.builder(HttpMethod.POST, "http://localhost" + path)
-            .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
+            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
             .withBody(body.getBytes(StandardCharsets.UTF_8))
+            .build();
+    }
+
+    private static HttpRequest contextRequest(String path, String tenantId, String principalId, String role) {
+        return HttpRequest.builder(HttpMethod.POST, "http://localhost" + path)
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), tenantId)
+            .withHeader(HttpHeaders.of("X-Principal-ID"), principalId)
+            .withHeader(HttpHeaders.of("X-Role"), role)
+            .withHeader(HttpHeaders.of("X-Correlation-ID"), "auth-test-corr-1")
             .build();
     }
 }

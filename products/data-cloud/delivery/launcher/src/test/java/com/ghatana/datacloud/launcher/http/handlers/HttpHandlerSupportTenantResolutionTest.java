@@ -156,6 +156,30 @@ class HttpHandlerSupportTenantResolutionTest {
     }
 
     @Test
+    @DisplayName("extracts W3C trace-id from traceparent header")
+    void extractsTraceIdFromTraceparent() {
+        HttpRequest request = HttpRequest.get(BASE_URL + "/api/v1/entities/orders")
+            .withHeader(HttpHeaders.of("traceparent"), "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01")
+            .build();
+
+        String traceId = support.resolveTraceContext(request);
+
+        assertThat(traceId).isEqualTo("4bf92f3577b34da6a3ce929d0e0e4736");
+    }
+
+    @Test
+    @DisplayName("falls back to X-Trace-Id when traceparent is absent")
+    void fallsBackToXTraceIdWhenTraceparentAbsent() {
+        HttpRequest request = HttpRequest.get(BASE_URL + "/api/v1/entities/orders")
+            .withHeader(HttpHeaders.of("X-Trace-Id"), "trace-from-header")
+            .build();
+
+        String traceId = support.resolveTraceContext(request);
+
+        assertThat(traceId).isEqualTo("trace-from-header");
+    }
+
+    @Test
     @DisplayName("adds request and trace headers to canonical envelope responses when tracing context is present")
     void addsTraceHeadersToEnvelopeResponses() { 
         RequestTraceSupport.setCurrent(new RequestTraceSupport.TraceHeaders( 

@@ -1,25 +1,98 @@
 {
-  "generatedAt": "2026-05-28T20:41:26.364Z",
+  "generatedAt": "2026-05-29T01:01:42.025Z",
   "evidenceRun": {
     "generatedBy": "scripts/check-product-release-readiness.mjs",
     "command": "pnpm check:product-release-readiness",
     "source": "scripts/check-product-release-readiness.mjs",
-    "commit": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
-    "sourceCommitSha": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
-    "targetCommitSha": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
+    "commit": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+    "sourceCommitSha": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+    "targetCommitSha": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
     "targetEnvironment": "staging"
   },
-  "sourceCommitSha": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
-  "targetCommitSha": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
+  "sourceCommitSha": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+  "targetCommitSha": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
   "targetEnvironment": "staging",
-  "validationStatus": "validated",
-  "reviewDueAt": "2026-05-29T20:41:26.404Z",
-  "expiresAt": "2026-05-30T20:41:26.404Z",
-  "pass": true,
-  "journeyResults": [
+  "validationStatus": "failed",
+  "reviewDueAt": "2026-05-30T01:01:42.067Z",
+  "expiresAt": "2026-05-31T01:01:42.067Z",
+  "pass": false,
+  "reason": "script-failure",
+  "failedScript": "./scripts/check-product-release-evidence-packs.mjs",
+  "runs": [
+    {
+      "script": "pnpm:build:kernel-lifecycle-platform",
+      "status": 0,
+      "durationMs": 22736
+    },
+    {
+      "script": "pnpm:check:aggregate-gate-integrity",
+      "status": 0,
+      "durationMs": 961
+    },
+    {
+      "script": "./scripts/check-release-profile-local-targets.mjs",
+      "status": 0,
+      "durationMs": 57
+    },
+    {
+      "script": "./scripts/check-product-family-asset-registry.mjs",
+      "status": 0,
+      "durationMs": 131
+    },
+    {
+      "script": "./scripts/check-affected-product-strict-release-profile.mjs",
+      "status": 0,
+      "durationMs": 80
+    },
+    {
+      "script": "./scripts/check-kernel-platform-lifecycle.mjs",
+      "status": 0,
+      "durationMs": 84194
+    },
+    {
+      "script": "./scripts/check-kernel-lifecycle-truth.mjs",
+      "status": 0,
+      "durationMs": 95
+    },
+    {
+      "script": "./scripts/check-toolchain-adapter-contracts.mjs",
+      "status": 0,
+      "durationMs": 76
+    },
+    {
+      "script": "./scripts/check-product-artifact-contracts.mjs",
+      "status": 0,
+      "durationMs": 210
+    },
+    {
+      "script": "./scripts/check-product-deployment-contracts.mjs",
+      "status": 0,
+      "durationMs": 360
+    },
+    {
+      "script": "./scripts/check-product-environment-contracts.mjs",
+      "status": 0,
+      "durationMs": 78
+    },
+    {
+      "script": "./scripts/check-product-shape-capability-matrix.mjs",
+      "status": 0,
+      "durationMs": 121
+    },
+    {
+      "script": "./scripts/check-product-registry-drift.mjs",
+      "status": 0,
+      "durationMs": 247
+    },
+    {
+      "script": "./scripts/check-product-release-evidence-packs.mjs",
+      "status": 1,
+      "durationMs": 82
+    }
+  ],
+  "journeyMatrix": [
     {
       "journey": "vision-and-coherence",
-      "pass": true,
       "areas": [
         {
           "area": "product-truth-and-ownership",
@@ -29,14 +102,12 @@
             "pnpm:check:product-registry",
             "./scripts/check-platform-product-boundaries.mjs",
             "./scripts/check-cross-product-interaction-boundaries.mjs"
-          ],
-          "pass": true
+          ]
         }
       ]
     },
     {
       "journey": "workflow-and-runtime-proof",
-      "pass": true,
       "areas": [
         {
           "area": "e2e-runtime-and-failure-proof",
@@ -50,14 +121,12 @@
             "./scripts/check-atomic-workflow-failure-injection.mjs",
             "./scripts/check-runtime-failure-injection.mjs",
             "./scripts/check-atomic-workflow-proof.mjs"
-          ],
-          "pass": true
+          ]
         }
       ]
     },
     {
       "journey": "security-privacy-governance",
-      "pass": true,
       "areas": [
         {
           "area": "secure-routes-observability-and-doc-truth",
@@ -69,14 +138,12 @@
             "./scripts/check-doc-claims-evidence.mjs",
             "./scripts/check-current-state-claims.mjs",
             "./scripts/check-doc-truth.mjs"
-          ],
-          "pass": true
+          ]
         }
       ]
     },
     {
       "journey": "quality-experience-and-release",
-      "pass": true,
       "areas": [
         {
           "area": "a11y-i18n-ai-performance",
@@ -89,8 +156,7 @@
             "./scripts/check-product-slo-budgets.mjs",
             "./scripts/check-product-cost-budgets.mjs",
             "./scripts/check-product-domain-invariants.mjs"
-          ],
-          "pass": true
+          ]
         },
         {
           "area": "strict-release-and-coverage",
@@ -106,8 +172,7 @@
             "./scripts/check-yappc-product-family-control-plane.mjs",
             "./scripts/check-kernel-implementation-task-matrix.mjs",
             "./scripts/check-kernel-implementation-plan-coverage.mjs"
-          ],
-          "pass": true
+          ]
         },
         {
           "area": "artifact-authoring-platform-readiness",
@@ -118,16 +183,14 @@
             "pnpm:check:studio-production-profile:strict",
             "pnpm:check:studio-source-acquisition-worker",
             "pnpm:check:studio-workflow-persistence-contracts"
-          ],
-          "pass": true
+          ]
         }
       ]
     }
   ],
-  "releaseAreaResults": [
+  "releaseAreas": [
     {
       "area": "strict-release-gate-evidence",
-      "pass": true,
       "scripts": [
         "./scripts/check-product-family-asset-registry.mjs",
         "./scripts/check-product-family-asset-promotion-policy.mjs",
@@ -140,7 +203,6 @@
     },
     {
       "area": "quality-and-experience-gates",
-      "pass": true,
       "scripts": [
         "./scripts/check-data-cloud-ui-a11y.mjs",
         "./scripts/check-product-a11y-route-matrix.mjs",
@@ -156,7 +218,6 @@
     },
     {
       "area": "security-and-doc-truth-gates",
-      "pass": true,
       "scripts": [
         "./scripts/check-secret-default-credentials.mjs",
         "./scripts/check-production-stubs.mjs",
@@ -168,7 +229,6 @@
     },
     {
       "area": "artifact-authoring-release-gates",
-      "pass": true,
       "scripts": [
         "pnpm:check:kernel-authoring-pipeline",
         "pnpm:check:artifact-roundtrip",
@@ -177,53 +237,6 @@
         "pnpm:check:studio-source-acquisition-worker",
         "pnpm:check:studio-workflow-persistence-contracts"
       ]
-    }
-  ],
-  "runs": [
-    {
-      "script": "pnpm:build:kernel-lifecycle-platform",
-      "status": 0,
-      "durationMs": 39601
-    },
-    {
-      "script": "./scripts/check-affected-product-strict-release-profile.mjs",
-      "status": 0,
-      "durationMs": 93
-    },
-    {
-      "script": "pnpm:check:data-cloud-release-gate",
-      "status": 0,
-      "durationMs": 291669
-    },
-    {
-      "script": "./scripts/check-data-cloud-release-runtime-profile.mjs",
-      "status": 0,
-      "durationMs": 282580
-    },
-    {
-      "script": "./scripts/check-data-cloud-ui-a11y.mjs",
-      "status": 0,
-      "durationMs": 68
-    },
-    {
-      "script": "./scripts/check-data-cloud-platform-providers.mjs",
-      "status": 0,
-      "durationMs": 826
-    },
-    {
-      "script": "./scripts/check-data-cloud-platform-provider-readiness.mjs",
-      "status": 0,
-      "durationMs": 454
-    },
-    {
-      "script": "./scripts/check-action-plane-route-lifecycle.mjs",
-      "status": 0,
-      "durationMs": 359
-    },
-    {
-      "script": "./scripts/check-data-cloud-maturity-proof.mjs",
-      "status": 0,
-      "durationMs": 1052
     }
   ],
   "scopedCheckGroups": {
@@ -322,18 +335,39 @@
     "polyglot-service-release"
   ],
   "affectedProducts": [
-    "data-cloud"
+    "phr"
   ],
-  "perProductBlockingGaps": [],
   "scopedExecution": true,
   "plannedExecutionOrder": [
+    "pnpm:check:aggregate-gate-integrity",
+    "./scripts/check-release-profile-local-targets.mjs",
+    "./scripts/check-product-family-asset-registry.mjs",
     "./scripts/check-affected-product-strict-release-profile.mjs",
-    "pnpm:check:data-cloud-release-gate",
-    "./scripts/check-data-cloud-release-runtime-profile.mjs",
-    "./scripts/check-data-cloud-ui-a11y.mjs",
-    "./scripts/check-data-cloud-platform-providers.mjs",
+    "./scripts/check-kernel-platform-lifecycle.mjs",
+    "./scripts/check-kernel-lifecycle-truth.mjs",
+    "./scripts/check-toolchain-adapter-contracts.mjs",
+    "./scripts/check-product-artifact-contracts.mjs",
+    "./scripts/check-product-deployment-contracts.mjs",
+    "./scripts/check-product-environment-contracts.mjs",
+    "./scripts/check-product-shape-capability-matrix.mjs",
+    "./scripts/check-product-registry-drift.mjs",
+    "./scripts/check-product-release-evidence-packs.mjs",
+    "./scripts/check-product-ci-matrices.mjs",
+    "./scripts/check-product-slo-budgets.mjs",
+    "./scripts/check-product-cost-budgets.mjs",
+    "./scripts/check-product-domain-invariants.mjs",
+    "./scripts/check-product-a11y-route-matrix.mjs",
+    "./scripts/check-openapi-release-quality.mjs",
+    "./scripts/check-openapi-breaking-changes.mjs",
     "./scripts/check-data-cloud-platform-provider-readiness.mjs",
-    "./scripts/check-action-plane-route-lifecycle.mjs",
-    "./scripts/check-data-cloud-maturity-proof.mjs"
+    "./scripts/check-data-cloud-release-runtime-profile.mjs",
+    "./scripts/check-phr-lifecycle-readiness.mjs",
+    "./scripts/check-phr-lifecycle-pilot.mjs",
+    "./scripts/check-phr-kernel-context.mjs",
+    "./scripts/check-phr-data-cloud-rls.mjs",
+    "./scripts/check-phr-emergency-access-audit.mjs",
+    "./scripts/check-phr-fhir-validation.mjs",
+    "./scripts/check-phr-hipaa-compliance.mjs",
+    "./scripts/check-phr-consent-cache.mjs"
   ]
 }

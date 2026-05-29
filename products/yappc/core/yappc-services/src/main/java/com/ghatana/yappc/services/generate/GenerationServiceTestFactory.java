@@ -8,6 +8,11 @@ import com.ghatana.yappc.api.GenerationRunRepository;
 
 /**
  * Dev/test-only factory for GenerationService instances with explicit test collaborators.
+ *
+ * @doc.type class
+ * @doc.purpose Test factory for GenerationService
+ * @doc.layer product
+ * @doc.pattern Factory
  */
 public final class GenerationServiceTestFactory {
 

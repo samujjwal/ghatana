@@ -44,7 +44,7 @@ function getTabItems(): TabItem[] {
     key,
     label: getTabLabel(key),
     hint: getTabHint(key),
-    icon: getTabIcon(key),
+    icon: getTabLetter(key),
   }));
 }
 
@@ -80,16 +80,16 @@ function getTabHint(key: ScreenKey): string {
   return keyMap[key];
 }
 
-function getTabIcon(key: ScreenKey): string {
-  const iconMap: Record<ScreenKey, string> = {
-    dashboard: '🏠',
-    records: '📋',
-    consents: '✓',
-    notifications: '🔔',
-    emergency: '🚨',
-    settings: '⚙️',
+function getTabLetter(key: ScreenKey): string {
+  const letterMap: Record<ScreenKey, string> = {
+    dashboard: 'H',
+    records: 'R',
+    consents: 'C',
+    notifications: 'N',
+    emergency: 'E',
+    settings: 'S',
   };
-  return iconMap[key];
+  return letterMap[key];
 }
 
 class AppErrorBoundary extends React.Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -153,7 +153,6 @@ export default function App(): React.ReactElement {
   React.useEffect(() => {
     const restoreSession = async (): Promise<void> => {
       try {
-        // M-008: Initialize locale from AsyncStorage on app startup
         await initializeLocale();
         
         const restoredSession = await loadMobileSession();

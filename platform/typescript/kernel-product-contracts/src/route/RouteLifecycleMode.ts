@@ -1,80 +1,87 @@
 /**
- * K-005: Kernel no-legacy/no-deprecation route mode.
- * Product can opt into fix-forward route model that rejects deprecated/removed states.
+ * K-005: Kernel fix-forward route lifecycle mode.
+ * Products reject retired and removed route states unless explicitly configured by migration tooling.
  */
 
-export type RouteLifecycleMode = 'fix-forward' | 'legacy-compatible';
+import { z } from "zod";
 
-export type DeprecatedRouteState = {
-  path: string;
-  deprecatedAt?: string;
-  removedAt?: string;
-  migrationNotes?: string;
-  redirectTo?: string;
-};
+export const RouteLifecycleModeSchema = z.literal('fix-forward');
 
-export type RouteLifecycleConfig = {
-  mode: RouteLifecycleMode;
-  allowDeprecated: boolean;
-  allowRemoved: boolean;
-  deprecatedRoutes?: DeprecatedRouteState[];
-  migrationStrategy?: 'redirect' | 'error' | 'silent';
-};
+export const RetiredRouteStateSchema = z
+  .object({
+    path: z.string().trim().min(1).startsWith('/'),
+    retiredAt: z.string().trim().min(1).optional(),
+    removedAt: z.string().trim().min(1).optional(),
+    migrationNotes: z.string().trim().min(1).optional(),
+    redirectTo: z.string().trim().min(1).startsWith('/').optional(),
+  })
+  .strict();
+
+export const RouteLifecycleConfigSchema = z
+  .object({
+    mode: RouteLifecycleModeSchema,
+    allowRetired: z.literal(false),
+    allowRemoved: z.literal(false),
+    retiredRoutes: z.array(RetiredRouteStateSchema).optional(),
+    migrationStrategy: z.enum(['redirect', 'error']).optional(),
+  })
+  .strict();
+
+export type RouteLifecycleMode = 'fix-forward';
+
+export type RetiredRouteState = z.infer<typeof RetiredRouteStateSchema>;
+
+export type RouteLifecycleConfig = z.infer<typeof RouteLifecycleConfigSchema>;
+
+export function validateRouteLifecycleMode(value: unknown): value is RouteLifecycleMode {
+  return RouteLifecycleModeSchema.safeParse(value).success;
+}
+
+export function validateRetiredRouteState(value: unknown): value is RetiredRouteState {
+  return RetiredRouteStateSchema.safeParse(value).success;
+}
 
 export function createFixForwardLifecycleConfig(): RouteLifecycleConfig {
   return {
     mode: 'fix-forward',
-    allowDeprecated: false,
+    allowRetired: false,
     allowRemoved: false,
     migrationStrategy: 'error',
   };
 }
 
-export function createLegacyCompatibleLifecycleConfig(): RouteLifecycleConfig {
-  return {
-    mode: 'legacy-compatible',
-    allowDeprecated: true,
-    allowRemoved: false,
-    migrationStrategy: 'redirect',
-  };
-}
-
 export function validateRouteLifecycleConfig(config: RouteLifecycleConfig): boolean {
-  if (config.mode === 'fix-forward') {
-    if (config.allowDeprecated) return false;
-    if (config.allowRemoved) return false;
-  }
-  return true;
+  if (config.allowRetired) return false;
+  if (config.allowRemoved) return false;
+  return config.mode === 'fix-forward';
 }
 
 export function isRouteAllowedInLifecycle(
   path: string,
   config: RouteLifecycleConfig
 ): { allowed: boolean; reason?: string; redirectTo?: string } {
-  const deprecatedRoute = config.deprecatedRoutes?.find(r => r.path === path);
-  
-  if (deprecatedRoute) {
-    if (deprecatedRoute.removedAt && !config.allowRemoved) {
-      return {
-        allowed: false,
-        reason: `Route removed at ${deprecatedRoute.removedAt}`,
-      };
-    }
-    
-    if (deprecatedRoute.deprecatedAt && !config.allowDeprecated) {
-      if (config.migrationStrategy === 'redirect' && deprecatedRoute.redirectTo) {
-        return {
-          allowed: false,
-          reason: `Route deprecated at ${deprecatedRoute.deprecatedAt}`,
-          redirectTo: deprecatedRoute.redirectTo,
-        };
-      }
-      return {
-        allowed: false,
-        reason: `Route deprecated at ${deprecatedRoute.deprecatedAt}`,
-      };
-    }
+  const retiredRoute = config.retiredRoutes?.find(route => route.path === path);
+
+  if (retiredRoute?.removedAt && !config.allowRemoved) {
+    return {
+      allowed: false,
+      reason: `Route removed at ${retiredRoute.removedAt}`,
+    };
   }
-  
+
+  if (retiredRoute?.retiredAt && !config.allowRetired) {
+    if (config.migrationStrategy === 'redirect' && retiredRoute.redirectTo) {
+      return {
+        allowed: false,
+        reason: `Route retired at ${retiredRoute.retiredAt}`,
+        redirectTo: retiredRoute.redirectTo,
+      };
+    }
+    return {
+      allowed: false,
+      reason: `Route retired at ${retiredRoute.retiredAt}`,
+    };
+  }
+
   return { allowed: true };
 }

@@ -460,10 +460,24 @@ export interface PreviewSessionValidateResponse {
   readonly error?: string;
 }
 
-function buildAuthHeaders(): Record<string, string> {
+function readStoredAuthToken(): string | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  return window.localStorage.getItem('auth_token');
+}
+
+function buildPreviewHeaders(scope?: Pick<PreviewSessionContext, 'tenantId' | 'workspaceId' | 'projectId'>): Record<string, string> {
   const headers: Record<string, string> = {};
-  // In a real implementation, this would extract auth headers from the auth service
-  // For now, this is a placeholder that would be implemented with proper auth integration
+  const token = readStoredAuthToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  if (scope) {
+    headers['X-Tenant-ID'] = scope.tenantId;
+    headers['X-Workspace-ID'] = scope.workspaceId;
+    headers['X-Project-ID'] = scope.projectId;
+  }
   return headers;
 }
 
@@ -473,14 +487,14 @@ export const previewSessions = {
       '/api/v1/preview/session/create',
       body,
       'previewSessions.issue',
-      buildAuthHeaders(),
+      buildPreviewHeaders(body),
     ),
   validate: (sessionToken: string) =>
     postWithHeaders<{ sessionToken: string }, PreviewSessionValidateResponse>(
       '/api/v1/preview/session/validate',
       { sessionToken },
       'previewSessions.validate',
-      buildAuthHeaders(),
+      buildPreviewHeaders(),
     ),
 } as const;
 

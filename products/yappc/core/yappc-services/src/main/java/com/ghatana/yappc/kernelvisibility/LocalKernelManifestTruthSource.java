@@ -78,22 +78,14 @@ public final class LocalKernelManifestTruthSource implements KernelLifecycleTrut
         return new LocalKernelManifestTruthSource(ingestService);
     }
 
-    /**
-     * Constructs with the default {@link KernelLifecycleEventIngestService}.
-     * Uses {@code .kernel} as the output root.
-     */
-    @Deprecated(since = "2026-05", forRemoval = false)
-    public LocalKernelManifestTruthSource() {
+    private LocalKernelManifestTruthSource() {
         this(KernelLifecycleEventIngestService.forLocalDevelopment());
     }
 
     /**
-     * Constructs with a custom ingest service.
-     *
      * @param ingestService the ingest service that reads Kernel manifest files
      */
-    @Deprecated(since = "2026-05", forRemoval = false)
-    public LocalKernelManifestTruthSource(@NotNull KernelLifecycleEventIngestService ingestService) {
+    private LocalKernelManifestTruthSource(@NotNull KernelLifecycleEventIngestService ingestService) {
         this.ingestService = ingestService;
     }
 

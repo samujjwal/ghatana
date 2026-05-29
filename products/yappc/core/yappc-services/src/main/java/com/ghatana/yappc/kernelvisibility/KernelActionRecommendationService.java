@@ -65,11 +65,7 @@ public final class KernelActionRecommendationService {
         return new KernelActionRecommendationService();
     }
 
-    /**
-     * Constructs a new KernelActionRecommendationService with default health service.
-     */
-    @Deprecated(since = "2026-05", forRemoval = false)
-    public KernelActionRecommendationService() {
+    private KernelActionRecommendationService() {
         this(KernelHealthSnapshotService.forLocalDevelopment());
     }
 

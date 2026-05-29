@@ -59,7 +59,10 @@ test.describe('Live Launcher Journeys', () => {
 
   test('Workflows journey fetches live pipeline list from launcher', async ({ page }) => {
     const pipelinesResponsePromise = waitForApiResponse(page, (response) => {
-      return response.request().method() === 'GET' && response.url().includes('/api/v1/pipelines');
+      return response.request().method() === 'GET' && (
+        response.url().includes('/api/v1/action/pipelines') ||
+        response.url().includes('/api/v1/pipelines')
+      );
     });
 
     await page.goto('/pipelines');

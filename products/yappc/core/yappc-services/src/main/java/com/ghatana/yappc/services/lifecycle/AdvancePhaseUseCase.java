@@ -285,7 +285,12 @@ public class AdvancePhaseUseCase {
                             readiness,
                             List.of(),
                             List.of(),
-                            true);
+                            true,
+                            List.of(),
+                            "",
+                            "",
+                            "",
+                            "");
                     PhasePacket.PhaseAction advanceAction = actions.stream()
                             .filter(action -> "advance-phase".equals(action.actionId()))
                             .findFirst()

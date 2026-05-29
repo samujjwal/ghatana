@@ -58,9 +58,13 @@ export interface AgentLifecycleActionResult {
 }
 
 const DECISIONS = ["allowed", "denied", "requires-approval"] as const;
+export const AgentLifecycleDecisionSchema = z.enum(DECISIONS);
 const APPROVAL_DECISIONS = ["approved", "rejected", "pending", "not-required"] as const;
+export const AgentLifecycleApprovalDecisionSchema = z.enum(APPROVAL_DECISIONS);
 const HEALTH_STATUSES = ["healthy", "degraded", "unhealthy", "unknown"] as const;
+export const AgentLifecycleHealthStatusSchema = z.enum(HEALTH_STATUSES);
 const ROLLBACK_READINESS = ["ready", "not-ready", "not-required"] as const;
+export const AgentLifecycleRollbackReadinessSchema = z.enum(ROLLBACK_READINESS);
 const REQUIRED_NEXT_ACTIONS = [
   "request-approval",
   "run-verification",
@@ -68,6 +72,8 @@ const REQUIRED_NEXT_ACTIONS = [
   "inspect-failure",
   "none",
 ] as const;
+export const AgentLifecycleRequiredNextActionSchema =
+  z.enum(REQUIRED_NEXT_ACTIONS);
 const PRIVACY_CLASSIFICATIONS = ["public", "internal", "confidential", "restricted"] as const;
 
 export const AgentLifecycleActionFailureSchema = z
@@ -85,16 +91,16 @@ export const AgentLifecycleActionResultSchema = z
     requestId: z.string().trim().min(1),
     correlationId: z.string().trim().min(1),
     productUnitId: z.string().trim().min(1),
-    policyDecision: z.enum(DECISIONS),
-    masteryDecision: z.enum(DECISIONS),
-    approvalDecision: z.enum(APPROVAL_DECISIONS),
+    policyDecision: AgentLifecycleDecisionSchema,
+    masteryDecision: AgentLifecycleDecisionSchema,
+    approvalDecision: AgentLifecycleApprovalDecisionSchema,
     lifecycleRunRef: z.string().trim().min(1),
     evidenceRefs: z.array(z.string().trim().min(1)).min(1),
-    healthStatus: z.enum(HEALTH_STATUSES),
-    rollbackReadiness: z.enum(ROLLBACK_READINESS),
+    healthStatus: AgentLifecycleHealthStatusSchema,
+    rollbackReadiness: AgentLifecycleRollbackReadinessSchema,
     evaluatedAt: z.string().datetime({ offset: true }),
     failure: AgentLifecycleActionFailureSchema.optional(),
-    requiredNextAction: z.enum(REQUIRED_NEXT_ACTIONS).optional(),
+    requiredNextAction: AgentLifecycleRequiredNextActionSchema.optional(),
     request: AgentLifecycleActionRequestSchema.optional(),
     policyEvidenceRefs: z.array(z.string().trim().min(1)).optional(),
     masteryStateRef: z.string().trim().min(1).optional(),
@@ -114,4 +120,34 @@ export function isAgentLifecycleActionResult(
   value: unknown
 ): value is AgentLifecycleActionResult {
   return AgentLifecycleActionResultSchema.safeParse(value).success;
+}
+
+export function validateAgentLifecycleDecision(
+  value: unknown
+): value is AgentLifecycleDecision {
+  return AgentLifecycleDecisionSchema.safeParse(value).success;
+}
+
+export function validateAgentLifecycleApprovalDecision(
+  value: unknown
+): value is AgentLifecycleApprovalDecision {
+  return AgentLifecycleApprovalDecisionSchema.safeParse(value).success;
+}
+
+export function validateAgentLifecycleHealthStatus(
+  value: unknown
+): value is AgentLifecycleHealthStatus {
+  return AgentLifecycleHealthStatusSchema.safeParse(value).success;
+}
+
+export function validateAgentLifecycleRollbackReadiness(
+  value: unknown
+): value is AgentLifecycleRollbackReadiness {
+  return AgentLifecycleRollbackReadinessSchema.safeParse(value).success;
+}
+
+export function validateAgentLifecycleRequiredNextAction(
+  value: unknown
+): value is AgentLifecycleRequiredNextAction {
+  return AgentLifecycleRequiredNextActionSchema.safeParse(value).success;
 }

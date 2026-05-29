@@ -30,13 +30,15 @@ export const AGENT_EVIDENCE_KINDS = [
 
 export type AgentEvidenceKind = (typeof AGENT_EVIDENCE_KINDS)[number];
 
+export const AgentEvidenceKindSchema = z.enum(AGENT_EVIDENCE_KINDS);
+
 // ---------------------------------------------------------------------------
 // AgentLifecycleActionEvidence
 // ---------------------------------------------------------------------------
 
 export const AgentLifecycleActionEvidenceSchema = z.object({
   evidenceId: z.string().min(1),
-  kind: z.enum(AGENT_EVIDENCE_KINDS),
+  kind: AgentEvidenceKindSchema,
   /** Reference to the evidence artifact (path, URI, or manifest ref). */
   ref: z.string().min(1),
   capturedAt: z.string().datetime(),
@@ -57,4 +59,10 @@ export function parseAgentLifecycleActionEvidence(
   input: unknown,
 ): AgentLifecycleActionEvidence {
   return AgentLifecycleActionEvidenceSchema.parse(input);
+}
+
+export function validateAgentEvidenceKind(
+  value: unknown,
+): value is AgentEvidenceKind {
+  return AgentEvidenceKindSchema.safeParse(value).success;
 }

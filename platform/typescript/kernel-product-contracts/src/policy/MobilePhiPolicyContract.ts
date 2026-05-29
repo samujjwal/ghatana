@@ -100,27 +100,42 @@ export type MobilePhiPolicy = z.infer<typeof MobilePhiPolicySchema>;
 export type MobilePhiPolicyCheckRequest = z.infer<typeof MobilePhiPolicyCheckRequestSchema>;
 export type MobilePhiReleaseValidationInput = z.infer<typeof MobilePhiReleaseValidationInputSchema>;
 
-export type MobilePhiPolicyCheckResult = {
-  allowed: boolean;
-  reasonCode: string;
-  requirements: {
-    biometricRequired: boolean;
-    explicitConsentRequired: boolean;
-    auditRequired: boolean;
-    serverAuthorizationRequired: boolean;
-  };
-  fieldResults?: Array<{
-    fieldName: string;
-    allowed: boolean;
-    reason: string;
-  }>;
-};
+export const MobilePhiPolicyCheckResultSchema = z
+  .object({
+    allowed: z.boolean(),
+    reasonCode: z.string().trim().min(1),
+    requirements: z
+      .object({
+        biometricRequired: z.boolean(),
+        explicitConsentRequired: z.boolean(),
+        auditRequired: z.boolean(),
+        serverAuthorizationRequired: z.boolean(),
+      })
+      .strict(),
+    fieldResults: z
+      .array(
+        z
+          .object({
+            fieldName: z.string().trim().min(1),
+            allowed: z.boolean(),
+            reason: z.string().trim().min(1),
+          })
+          .strict(),
+      )
+      .optional(),
+  })
+  .strict();
 
-export type MobilePhiReleaseValidationResult = {
-  status: (typeof MobilePhiReleaseGateStatuses)[number];
-  productUnitId: string;
-  failedChecks: string[];
-};
+export const MobilePhiReleaseValidationResultSchema = z
+  .object({
+    status: z.enum(MobilePhiReleaseGateStatuses),
+    productUnitId: z.string().trim().min(1),
+    failedChecks: z.array(z.string().trim().min(1)),
+  })
+  .strict();
+
+export type MobilePhiPolicyCheckResult = z.infer<typeof MobilePhiPolicyCheckResultSchema>;
+export type MobilePhiReleaseValidationResult = z.infer<typeof MobilePhiReleaseValidationResultSchema>;
 
 export function createDefaultPhiStoragePolicy(): PhiStoragePolicy {
   return {
@@ -281,4 +296,12 @@ function isFieldActionAllowed(fieldPolicy: PhiFieldPolicy, action: MobilePhiPoli
   if (action === "export") return fieldPolicy.exportAllowed;
   if (action === "display") return fieldPolicy.displayAllowed;
   return true;
+}
+
+export function validateMobilePhiPolicyCheckResult(value: unknown): value is MobilePhiPolicyCheckResult {
+  return MobilePhiPolicyCheckResultSchema.safeParse(value).success;
+}
+
+export function validateMobilePhiReleaseValidationResult(value: unknown): value is MobilePhiReleaseValidationResult {
+  return MobilePhiReleaseValidationResultSchema.safeParse(value).success;
 }

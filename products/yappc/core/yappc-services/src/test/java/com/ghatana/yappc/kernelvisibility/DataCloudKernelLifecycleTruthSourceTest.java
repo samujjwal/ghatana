@@ -100,6 +100,30 @@ class DataCloudKernelLifecycleTruthSourceTest extends EventloopTestBase {
                 .hasMessageContaining("failedCount must be numeric");
     }
 
+    @Test
+    @DisplayName("production guard rejects default-tenant")
+    void productionGuardRejectsDefaultTenant() {
+        assertThatThrownBy(() -> new DataCloudKernelLifecycleTruthSource(dataCloudClient, "default-tenant"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("tenantId must be a real tenant");
+    }
+
+    @Test
+    @DisplayName("production guard rejects blank tenant")
+    void productionGuardRejectsBlankTenant() {
+        assertThatThrownBy(() -> new DataCloudKernelLifecycleTruthSource(dataCloudClient, ""))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("tenantId must be a real tenant");
+    }
+
+    @Test
+    @DisplayName("production guard accepts real tenant")
+    void productionGuardAcceptsRealTenant() {
+        DataCloudKernelLifecycleTruthSource truthSource =
+                new DataCloudKernelLifecycleTruthSource(dataCloudClient, "tenant-1");
+        assertThat(truthSource).isNotNull();
+    }
+
         @SuppressWarnings("unchecked")
         private static Map<String, Object> asStringObjectMap(Object value) {
                 assertThat(value).isInstanceOf(Map.class);

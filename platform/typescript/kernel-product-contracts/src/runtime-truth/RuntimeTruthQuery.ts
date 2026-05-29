@@ -1,9 +1,17 @@
 import type { KernelHealthSnapshot } from "../health/KernelHealthSnapshot.js";
+import { z } from "zod";
 
 export interface RuntimeTruthScope {
   readonly tenantId: string;
   readonly workspaceId: string;
 }
+
+export const RuntimeTruthScopeSchema = z
+  .object({
+    tenantId: z.string().trim().min(1),
+    workspaceId: z.string().trim().min(1),
+  })
+  .strict();
 
 export interface RuntimeTruthQueryIndex {
   getRunTruth(
@@ -23,6 +31,22 @@ export interface RuntimeTruthQueryIndex {
     providerId: string,
   ): readonly KernelHealthSnapshot[];
 }
+
+export const RuntimeTruthQueryIndexSchema = z.custom<RuntimeTruthQueryIndex>(
+  (value) => {
+    if (typeof value !== "object" || value === null) {
+      return false;
+    }
+    const index = value as Record<string, unknown>;
+    return (
+      typeof index.getRunTruth === "function" &&
+      typeof index.getProductTruth === "function" &&
+      typeof index.getDeploymentTruth === "function" &&
+      typeof index.getProviderTruth === "function"
+    );
+  },
+  "RuntimeTruthQueryIndex requires all runtime truth query functions"
+);
 
 export class ScopedRuntimeTruthIndex implements RuntimeTruthQueryIndex {
   private readonly snapshots: readonly KernelHealthSnapshot[];
@@ -81,4 +105,16 @@ export class ScopedRuntimeTruthIndex implements RuntimeTruthQueryIndex {
         snapshot.workspaceId === scope.workspaceId,
     );
   }
+}
+
+export function validateRuntimeTruthScope(
+  value: unknown
+): value is RuntimeTruthScope {
+  return RuntimeTruthScopeSchema.safeParse(value).success;
+}
+
+export function validateRuntimeTruthQueryIndex(
+  value: unknown
+): value is RuntimeTruthQueryIndex {
+  return RuntimeTruthQueryIndexSchema.safeParse(value).success;
 }

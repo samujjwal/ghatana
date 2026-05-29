@@ -26,13 +26,7 @@ vi.mock('@/hooks/usePhasePacket', () => ({
   usePhasePacket: mockUsePhasePacket,
 }));
 
-vi.mock('../PhaseEmbeddedSurface', () => ({
-  PhaseEmbeddedSurface: ({ phase }: { readonly phase: string }) => (
-    <div data-testid={`${phase}-embedded-surface`} />
-  ),
-}));
-
-import { RunCockpitRoute, ShapeCockpitRoute, ValidateCockpitRoute } from '../_phaseCockpit';
+import { EvolveCockpitRoute, GenerateCockpitRoute, LearnCockpitRoute, ObserveCockpitRoute, RunCockpitRoute, ShapeCockpitRoute, ValidateCockpitRoute, IntentCockpitRoute } from '../_phaseCockpit';
 
 function basePacket(overrides: Partial<PhaseCockpitPacket> = {}): PhaseCockpitPacket {
   const phase = overrides.phase ?? 'shape';
@@ -169,6 +163,7 @@ function basePacket(overrides: Partial<PhaseCockpitPacket> = {}): PhaseCockpitPa
     },
     timestamp: Date.parse('2026-05-26T18:31:00.000Z'),
     correlationId: 'corr-component-1',
+    phasePanels: [],
     ...overrides,
   };
 }
@@ -263,5 +258,62 @@ describe('phase cockpit component packet rendering', () => {
     expect(screen.getByText('Phase access denied')).toBeInTheDocument();
     expect(screen.getByText(/You do not have permission to access the validate phase/)).toBeInTheDocument();
     expect(screen.queryByTestId('validate-cockpit')).not.toBeInTheDocument();
+  });
+
+  it('renders all eight phases with backend packet panels and no placeholder text', () => {
+    const phases = [
+      { route: <IntentCockpitRoute />, phase: 'intent', lifecycle: 'INTENT' },
+      { route: <ShapeCockpitRoute />, phase: 'shape', lifecycle: 'SHAPE' },
+      { route: <ValidateCockpitRoute />, phase: 'validate', lifecycle: 'VALIDATE' },
+      { route: <GenerateCockpitRoute />, phase: 'generate', lifecycle: 'GENERATE' },
+      { route: <RunCockpitRoute />, phase: 'run', lifecycle: 'RUN' },
+      { route: <ObserveCockpitRoute />, phase: 'observe', lifecycle: 'OBSERVE' },
+      { route: <LearnCockpitRoute />, phase: 'learn', lifecycle: 'LEARN' },
+      { route: <EvolveCockpitRoute />, phase: 'evolve', lifecycle: 'EVOLVE' },
+    ];
+
+    for (const { route, phase, lifecycle } of phases) {
+      renderCockpit(route, basePacket({
+        phase,
+        lifecyclePhase: lifecycle,
+        phasePanels: [{
+          phase,
+          status: 'ready',
+          summary: `phasePanel.${phase}.summary.ready`,
+          recommendation: `phasePanel.${phase}.recommendation`,
+          owner: 'backend',
+          confidence: 0.9,
+          supportTrace: `backend:${phase}-evidence`,
+          cards: [{
+            id: `${phase}-test-card`,
+            title: `phasePanel.${phase}.card.test.label`,
+            detail: `phasePanel.${phase}.card.test.populated`,
+            status: 'healthy',
+            trace: `backend:${phase}-test`,
+          }],
+          learningInsight: phase === 'learn' ? {
+            learnedSignal: 'Test learning signal',
+            sourceEvent: 'phase.learn.capture',
+            recommendation: 'Proceed with next cycle',
+            approvalRequired: false,
+            rollbackPath: 'Revert to previous stable state',
+          } : undefined,
+          evolutionPlan: phase === 'evolve' ? {
+            proposal: 'Test evolution proposal',
+            impactSummary: 'Low impact',
+            diffSummary: 'Minor changes',
+            validationRequirements: 'Standard validation',
+            approvalState: 'pending',
+            rollbackPath: 'Rollback to v1.0',
+            rerunTarget: 'run-1',
+          } : undefined,
+        }],
+      }));
+
+      expect(screen.getByTestId(`${phase}-cockpit`)).toBeInTheDocument();
+      expect(screen.getByTestId(`${phase}-backend-panel`)).toBeInTheDocument();
+      expect(screen.queryByText(/placeholder/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/generic/i)).not.toBeInTheDocument();
+    }
   });
 });

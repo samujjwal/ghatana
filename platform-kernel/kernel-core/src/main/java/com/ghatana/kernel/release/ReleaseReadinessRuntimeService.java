@@ -22,7 +22,7 @@ public interface ReleaseReadinessRuntimeService {
     /**
      * Get release readiness evidence for a product.
      *
-     * @param productId The product ID (e.g., "phr")
+     * @param productId The product ID (e.g., "product-id")
      * @param environment The environment (e.g., "staging", "prod")
      * @return Promise containing the release readiness evidence as a Map
      */

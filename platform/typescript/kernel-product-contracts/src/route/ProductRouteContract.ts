@@ -143,6 +143,20 @@ export type ProductRouteCapability = {
   testId?: string;
 };
 
+export const ProductRouteCapabilitySchema = z
+  .object({
+    path: z.string().trim().min(1).startsWith("/"),
+    stability: RouteStabilitySchema,
+    directLinkAllowed: z.boolean(),
+    discoverable: z.boolean(),
+    minimumRole: z.string().trim().min(1),
+    featureFlag: z.boolean().optional(),
+    apiEndpoint: z.string().trim().min(1).optional(),
+    policyId: z.string().trim().min(1).optional(),
+    testId: z.string().trim().min(1).optional(),
+  })
+  .strict();
+
 export function isRouteStability(value: unknown): value is RouteStability {
   return RouteStabilitySchema.safeParse(value).success;
 }
@@ -157,4 +171,8 @@ export function parseProductRouteContract(contract: unknown): ProductRouteContra
 
 export function validateProductRouteContract(contract: unknown): contract is ProductRouteContract {
   return ProductRouteContractSchema.safeParse(contract).success;
+}
+
+export function validateProductRouteCapability(value: unknown): value is ProductRouteCapability {
+  return ProductRouteCapabilitySchema.safeParse(value).success;
 }

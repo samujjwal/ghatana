@@ -255,4 +255,65 @@ class KernelHealthSnapshotServiceTest extends EventloopTestBase {
         // Verify
         assertThat(healthView.gateFailureCount()).isEqualTo(3);
     }
+
+    @Test
+    void productionModeRequiresDataCloudTruthSource() {
+        String previousProfile = System.getProperty("yappc.runtime.profile");
+        try {
+            KernelLifecycleTruthSource localSource = LocalKernelManifestTruthSource.forLocalDevelopment(ingestService);
+            System.setProperty("yappc.runtime.profile", "production");
+
+            assertThatThrownBy(() -> new KernelHealthSnapshotService(localSource))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("production must use DataCloudKernelLifecycleTruthSource");
+        } finally {
+            if (previousProfile == null) {
+                System.clearProperty("yappc.runtime.profile");
+            } else {
+                System.setProperty("yappc.runtime.profile", previousProfile);
+            }
+        }
+    }
+
+    @Test
+    void productionModeRejectsDefaultTenantId() {
+        String previousProfile = System.getProperty("yappc.runtime.profile");
+        try {
+            System.setProperty("yappc.runtime.profile", "production");
+
+            assertThatThrownBy(() -> new DataCloudKernelLifecycleTruthSource(null, "default-tenant"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("tenantId must be a real tenant");
+
+            assertThatThrownBy(() -> new DataCloudKernelLifecycleTruthSource(null, ""))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("tenantId must be a real tenant");
+        } finally {
+            if (previousProfile == null) {
+                System.clearProperty("yappc.runtime.profile");
+            } else {
+                System.setProperty("yappc.runtime.profile", previousProfile);
+            }
+        }
+    }
+
+    @Test
+    void localDevelopmentModeAllowsLocalTruthSource() {
+        String previousProfile = System.getProperty("yappc.runtime.profile");
+        try {
+            System.setProperty("yappc.runtime.profile", "development");
+
+            // Local truth source should be allowed in development mode
+            KernelLifecycleTruthSource localSource = LocalKernelManifestTruthSource.forLocalDevelopment();
+            KernelHealthSnapshotService service = new KernelHealthSnapshotService(localSource);
+
+            assertThat(service).isNotNull();
+        } finally {
+            if (previousProfile == null) {
+                System.clearProperty("yappc.runtime.profile");
+            } else {
+                System.setProperty("yappc.runtime.profile", previousProfile);
+            }
+        }
+    }
 }

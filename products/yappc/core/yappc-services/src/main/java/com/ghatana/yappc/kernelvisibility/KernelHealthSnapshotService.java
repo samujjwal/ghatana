@@ -71,11 +71,7 @@ public final class KernelHealthSnapshotService {
         return new KernelHealthSnapshotService(ingestService);
     }
 
-    /**
-     * Constructs a new KernelHealthSnapshotService with default local manifest truth source.
-     */
-    @Deprecated(since = "2026-05", forRemoval = false)
-    public KernelHealthSnapshotService() {
+    private KernelHealthSnapshotService() {
         this(LocalKernelManifestTruthSource.forLocalDevelopment());
     }
 
@@ -85,6 +81,10 @@ public final class KernelHealthSnapshotService {
      * @param truthSource the truth source to use for reading Kernel lifecycle data
      */
     public KernelHealthSnapshotService(@NotNull KernelLifecycleTruthSource truthSource) {
+        if (truthSource instanceof LocalKernelManifestTruthSource && KernelRuntimeProfiles.isProductionRuntime()) {
+            throw new IllegalStateException(
+                    "Local manifest Kernel lifecycle truth is dev/test-only; production must use DataCloudKernelLifecycleTruthSource");
+        }
         this.truthSource = truthSource;
     }
 
@@ -98,16 +98,7 @@ public final class KernelHealthSnapshotService {
         this(new DataCloudKernelLifecycleTruthSource(dataCloudClient, tenantId));
     }
 
-    /**
-     * Constructs a new KernelHealthSnapshotService from a local manifest ingest service.
-     *
-     * <p>This constructor is retained for compatibility with existing tests and
-     * local-dev wiring. Production code should prefer the truth-source constructor.
-     *
-     * @param ingestService local filesystem ingest service
-     */
-    @Deprecated(since = "2026-05", forRemoval = false)
-    public KernelHealthSnapshotService(@NotNull KernelLifecycleEventIngestService ingestService) {
+    private KernelHealthSnapshotService(@NotNull KernelLifecycleEventIngestService ingestService) {
         this(LocalKernelManifestTruthSource.forLocalDevelopment(ingestService));
     }
 
@@ -146,6 +137,7 @@ public final class KernelHealthSnapshotService {
     private ProductUnitHealthView buildHealthView(Map<String, Object> lifecycleData) {
         String productUnitId = (String) lifecycleData.get("productUnitId");
         String status = (String) lifecycleData.get("status");
+        String truthSource = (String) lifecycleData.get("truthSource");
 
         @SuppressWarnings("unchecked")
         Map<String, Object> healthSnapshot = (Map<String, Object>) lifecycleData.get("healthSnapshot");
@@ -163,6 +155,7 @@ public final class KernelHealthSnapshotService {
                 extractLastRunTimestamp(lifecycleResult),
                 extractGateFailureCount(lifecycleData, lifecycleResult),
                 extractDeploymentStatus(deployment),
+                truthSource != null ? truthSource : "unknown",
                 healthSnapshot,
                 lifecycleResult,
                 deployment
@@ -293,6 +286,7 @@ public final class KernelHealthSnapshotService {
         private final String lastRunTimestamp;
         private final int gateFailureCount;
         private final String deploymentStatus;
+        private final String truthSource;
         private final Map<String, Object> healthSnapshot;
         private final Map<String, Object> lifecycleResult;
         private final Map<String, Object> deployment;
@@ -304,6 +298,7 @@ public final class KernelHealthSnapshotService {
                 String lastRunTimestamp,
                 int gateFailureCount,
                 String deploymentStatus,
+                String truthSource,
                 Map<String, Object> healthSnapshot,
                 Map<String, Object> lifecycleResult,
                 Map<String, Object> deployment) {
@@ -313,6 +308,7 @@ public final class KernelHealthSnapshotService {
             this.lastRunTimestamp = lastRunTimestamp;
             this.gateFailureCount = gateFailureCount;
             this.deploymentStatus = deploymentStatus;
+            this.truthSource = truthSource;
             this.healthSnapshot = healthSnapshot;
             this.lifecycleResult = lifecycleResult;
             this.deployment = deployment;
@@ -324,6 +320,7 @@ public final class KernelHealthSnapshotService {
         public String lastRunTimestamp() { return lastRunTimestamp; }
         public int gateFailureCount() { return gateFailureCount; }
         public String deploymentStatus() { return deploymentStatus; }
+        public String truthSource() { return truthSource; }
         public Map<String, Object> healthSnapshot() { return healthSnapshot; }
         public Map<String, Object> lifecycleResult() { return lifecycleResult; }
         public Map<String, Object> deployment() { return deployment; }

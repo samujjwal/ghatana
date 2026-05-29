@@ -18,7 +18,7 @@ const sectionOrder = [
 ] as const;
 
 export function ReleaseCockpitPage(): React.ReactElement {
-  const { role } = usePhrAccess();
+  const { role, tenantId, principalId } = usePhrAccess();
   const [environment, setEnvironment] = React.useState<ReleaseEnvironment>('staging');
   const [readiness, setReadiness] = React.useState<PhrReleaseReadiness | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
@@ -28,7 +28,7 @@ export function ReleaseCockpitPage(): React.ReactElement {
     let active = true;
     setLoading(true);
     setError(null);
-    fetchReleaseReadiness({ environment, role })
+    fetchReleaseReadiness({ environment, role, tenantId, principalId })
       .then((payload) => {
         if (active) {
           setReadiness(payload);
@@ -48,7 +48,7 @@ export function ReleaseCockpitPage(): React.ReactElement {
     return () => {
       active = false;
     };
-  }, [environment, role]);
+  }, [environment, role, tenantId, principalId]);
 
   return (
     <div className="stack gap-lg">

@@ -50,6 +50,14 @@ export type LifecycleReadinessState = (typeof LIFECYCLE_READINESS_STATES)[number
 export type RiskLevel = (typeof RISK_LEVELS)[number];
 export type PrivacyClassification = (typeof PRIVACY_CLASSIFICATIONS)[number];
 
+export const ArtifactKindSchema = z.enum(ARTIFACT_KINDS);
+export const ProductShapeKindSchema = z.enum(PRODUCT_SHAPE_KINDS);
+export const LifecycleReadinessStateSchema = z.enum(
+  LIFECYCLE_READINESS_STATES
+);
+export const RiskLevelSchema = z.enum(RISK_LEVELS);
+export const PrivacyClassificationSchema = z.enum(PRIVACY_CLASSIFICATIONS);
+
 export const EVIDENCE_TYPES = [
   "semantic-artifact-reference",
   "artifact-evidence-envelope",
@@ -64,6 +72,8 @@ export const EVIDENCE_TYPES = [
 ] as const;
 
 export type EvidenceType = (typeof EVIDENCE_TYPES)[number];
+
+export const EvidenceTypeSchema = z.enum(EVIDENCE_TYPES);
 
 const NonEmptyStringSchema = z.string().trim().min(1);
 
@@ -80,7 +90,7 @@ export const ArtifactIntelligenceEvidenceBaseSchema = z
     correlationId: NonEmptyStringSchema,
     confidence: z.number().min(0).max(1),
     provenanceRefs: z.array(NonEmptyStringSchema).min(1),
-    privacyClassification: z.enum(PRIVACY_CLASSIFICATIONS),
+    privacyClassification: PrivacyClassificationSchema,
     retention: z.object({
       expiresAt: z.string().datetime({ offset: true }),
     }),
@@ -90,19 +100,19 @@ export const ArtifactIntelligenceEvidenceBaseSchema = z
 export const SemanticArtifactReferenceSchema = ArtifactIntelligenceEvidenceBaseSchema.extend({
   evidenceType: z.literal("semantic-artifact-reference"),
   artifactId: NonEmptyStringSchema,
-  artifactKind: z.enum(ARTIFACT_KINDS),
+  artifactKind: ArtifactKindSchema,
   displayName: NonEmptyStringSchema,
   artifactRef: NonEmptyStringSchema.optional(),
   path: NonEmptyStringSchema.optional(),
   language: NonEmptyStringSchema.optional(),
   semanticTags: z.array(NonEmptyStringSchema),
-  riskLevel: z.enum(RISK_LEVELS).optional(),
+  riskLevel: RiskLevelSchema.optional(),
 }).strict();
 
 export const ArtifactGraphNodeSchema = z
   .object({
     artifactId: NonEmptyStringSchema,
-    artifactKind: z.enum(ARTIFACT_KINDS),
+    artifactKind: ArtifactKindSchema,
     label: NonEmptyStringSchema,
   })
   .strict();
@@ -185,8 +195,8 @@ export const ArtifactGraphSummarySchema = ArtifactIntelligenceEvidenceBaseSchema
 
 export const ProductShapeEvidenceSchema = ArtifactIntelligenceEvidenceBaseSchema.extend({
   evidenceType: z.literal("product-shape-evidence"),
-  shapeKind: z.enum(PRODUCT_SHAPE_KINDS),
-  lifecycleReadiness: z.enum(LIFECYCLE_READINESS_STATES),
+  shapeKind: ProductShapeKindSchema,
+  lifecycleReadiness: LifecycleReadinessStateSchema,
   detectedSurfaces: z.array(NonEmptyStringSchema),
   requiredAdapters: z.array(NonEmptyStringSchema),
   missingEvidenceRefs: z.array(NonEmptyStringSchema),
@@ -231,12 +241,12 @@ export const ResidualIslandReportSchema = ArtifactIntelligenceEvidenceBaseSchema
 export const RiskHotspotReportSchema = ArtifactIntelligenceEvidenceBaseSchema.extend({
   evidenceType: z.literal("risk-hotspot-report"),
   hotspotCount: z.number().int().nonnegative(),
-  highestRiskLevel: z.enum(RISK_LEVELS),
+  highestRiskLevel: RiskLevelSchema,
   hotspots: z.array(
     z
       .object({
         artifactId: NonEmptyStringSchema,
-        riskLevel: z.enum(RISK_LEVELS),
+        riskLevel: RiskLevelSchema,
         reason: NonEmptyStringSchema,
         evidenceRefs: z.array(NonEmptyStringSchema),
       })
@@ -303,7 +313,7 @@ export const ArtifactIntelligenceEvidenceEnvelopeSchema = z
     workspaceId: NonEmptyStringSchema,
     projectId: NonEmptyStringSchema,
     productUnitId: NonEmptyStringSchema,
-    evidenceType: z.enum(EVIDENCE_TYPES),
+    evidenceType: EvidenceTypeSchema,
     evidenceId: NonEmptyStringSchema,
     evidenceRef: NonEmptyStringSchema,
     envelopeCreatedAt: z.string().datetime({ offset: true }),
@@ -410,6 +420,36 @@ export function isArtifactEvidenceEnvelope(
   value: unknown
 ): value is ArtifactEvidenceEnvelope {
   return ArtifactEvidenceEnvelopeSchema.safeParse(value).success;
+}
+
+export function validateArtifactKind(value: unknown): value is ArtifactKind {
+  return ArtifactKindSchema.safeParse(value).success;
+}
+
+export function validateProductShapeKind(
+  value: unknown
+): value is ProductShapeKind {
+  return ProductShapeKindSchema.safeParse(value).success;
+}
+
+export function validateLifecycleReadinessState(
+  value: unknown
+): value is LifecycleReadinessState {
+  return LifecycleReadinessStateSchema.safeParse(value).success;
+}
+
+export function validateRiskLevel(value: unknown): value is RiskLevel {
+  return RiskLevelSchema.safeParse(value).success;
+}
+
+export function validatePrivacyClassification(
+  value: unknown
+): value is PrivacyClassification {
+  return PrivacyClassificationSchema.safeParse(value).success;
+}
+
+export function validateEvidenceType(value: unknown): value is EvidenceType {
+  return EvidenceTypeSchema.safeParse(value).success;
 }
 
 const RISK_LEVEL_ORDER: Readonly<Record<RiskLevel, number>> = {

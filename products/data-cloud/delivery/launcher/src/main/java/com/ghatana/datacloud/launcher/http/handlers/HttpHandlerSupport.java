@@ -128,8 +128,8 @@ public class HttpHandlerSupport {
         String traceParent = request.getHeader(HttpHeaders.of("traceparent"));
         if (traceParent != null && !traceParent.isBlank()) {
             String[] parts = traceParent.split("-");
-            if (parts.length >= 1) {
-                return parts[0]; // Return trace-id portion
+            if (parts.length >= 2) {
+                return parts[1]; // Return trace-id portion
             }
         }
         // Fallback to X-Trace-Id header

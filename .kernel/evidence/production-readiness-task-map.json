@@ -1,21 +1,21 @@
 {
-  "generatedAt": "2026-05-28T21:17:38.972Z",
-  "pass": true,
+  "generatedAt": "2026-05-29T00:48:10.368Z",
+  "pass": false,
   "evidenceRun": {
     "generatedBy": "scripts/check-production-readiness-task-map.mjs",
     "source": "scripts/check-production-readiness-task-map.mjs",
     "command": "pnpm check:production-readiness-task-map",
-    "commit": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
-    "sourceCommitSha": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
-    "targetCommitSha": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
+    "commit": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+    "sourceCommitSha": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+    "targetCommitSha": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
     "targetEnvironment": "staging"
   },
-  "sourceCommitSha": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
-  "targetCommitSha": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
+  "sourceCommitSha": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+  "targetCommitSha": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
   "targetEnvironment": "staging",
-  "validationStatus": "validated",
-  "reviewDueAt": "2026-05-29T21:17:38.972Z",
-  "expiresAt": "2026-05-30T21:17:38.972Z",
+  "validationStatus": "failed",
+  "reviewDueAt": "2026-05-30T00:48:10.368Z",
+  "expiresAt": "2026-05-31T00:48:10.368Z",
   "source": {
     "taskMap": "products/data-cloud/docs/audits/PRODUCTION_READINESS_TASK_MAP.md",
     "readiness": "products/data-cloud/lifecycle/readiness-evidence.yaml",
@@ -26,7 +26,7 @@
     "releaseBlockingRows": 12,
     "requiredTestClaims": 10,
     "verifiedTestClaims": 10,
-    "violationCount": 0
+    "violationCount": 10
   },
   "tasks": [
     {
@@ -35,7 +35,7 @@
       "Evidence Status": "verified",
       "Evidence Commit": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
       "Release Blocking": "yes",
-      "Verified At": "2026-05-28T20:27:37Z",
+      "Verified At": "2026-05-29T00:47:53Z",
       "Evidence File": "`.kernel/evidence/product-release-readiness.json`",
       "Evidence Command": "`pnpm check:evidence-current-commit`"
     },
@@ -43,9 +43,9 @@
       "Task": "DC-P0-002 regenerate current-head evidence",
       "Implementation Status": "completed",
       "Evidence Status": "verified",
-      "Evidence Commit": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
+      "Evidence Commit": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
       "Release Blocking": "yes",
-      "Verified At": "2026-05-28T20:27:37Z",
+      "Verified At": "2026-05-29T00:47:53Z",
       "Evidence File": "`.kernel/evidence/data-cloud-active-modules.json`",
       "Evidence Command": "`pnpm check:data-cloud-active-module-evidence`"
     },
@@ -53,9 +53,9 @@
       "Task": "DC-P0-002 Action Plane boundary evidence",
       "Implementation Status": "completed",
       "Evidence Status": "verified",
-      "Evidence Commit": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
+      "Evidence Commit": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
       "Release Blocking": "yes",
-      "Verified At": "2026-05-28T20:27:37Z",
+      "Verified At": "2026-05-29T00:47:53Z",
       "Evidence File": "`.kernel/evidence/action-plane-boundaries.json`",
       "Evidence Command": "`pnpm check:action-plane-boundaries`"
     },
@@ -65,7 +65,7 @@
       "Evidence Status": "verified",
       "Evidence Commit": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
       "Release Blocking": "yes",
-      "Verified At": "2026-05-28T20:27:37Z",
+      "Verified At": "2026-05-29T00:47:53Z",
       "Evidence File": "`.kernel/evidence/product-release-readiness.json`",
       "Evidence Command": "`pnpm check:product-release-readiness`"
     },
@@ -75,7 +75,7 @@
       "Evidence Status": "verified",
       "Evidence Commit": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
       "Release Blocking": "yes",
-      "Verified At": "2026-05-28T20:27:37Z",
+      "Verified At": "2026-05-29T00:47:53Z",
       "Evidence File": "`.kernel/evidence/ai-governance-behavioral-proof/ai-governance-behavioral-proof-latest.json`",
       "Evidence Command": "`pnpm check:data-cloud-ai-governance-behavioral-proof`"
     },
@@ -83,9 +83,9 @@
       "Task": "DC-P1-004 Action Plane inventory drift",
       "Implementation Status": "completed",
       "Evidence Status": "verified",
-      "Evidence Commit": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
+      "Evidence Commit": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
       "Release Blocking": "yes",
-      "Verified At": "2026-05-28T20:27:37Z",
+      "Verified At": "2026-05-29T00:47:53Z",
       "Evidence File": "`.kernel/evidence/action-plane-module-inventory.json`",
       "Evidence Command": "`pnpm check:action-plane-module-inventory`"
     },
@@ -93,9 +93,9 @@
       "Task": "DC-P3-003 agent capability duplicate evidence",
       "Implementation Status": "completed",
       "Evidence Status": "verified",
-      "Evidence Commit": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
+      "Evidence Commit": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
       "Release Blocking": "yes",
-      "Verified At": "2026-05-28T20:27:37Z",
+      "Verified At": "2026-05-29T00:47:53Z",
       "Evidence File": "`.kernel/evidence/agent-capability-duplicates.json`",
       "Evidence Command": "`pnpm check:agent-capability-duplicates`"
     },
@@ -103,9 +103,9 @@
       "Task": "DC-P3-003 agent runtime test exclude evidence",
       "Implementation Status": "completed",
       "Evidence Status": "verified",
-      "Evidence Commit": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
+      "Evidence Commit": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
       "Release Blocking": "yes",
-      "Verified At": "2026-05-28T20:27:37Z",
+      "Verified At": "2026-05-29T00:47:53Z",
       "Evidence File": "`.kernel/evidence/agent-runtime-test-excludes.json`",
       "Evidence Command": "`pnpm check:agent-runtime-test-excludes`"
     },
@@ -113,9 +113,9 @@
       "Task": "DC-P5-003 agent usage audit evidence",
       "Implementation Status": "completed",
       "Evidence Status": "verified",
-      "Evidence Commit": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
+      "Evidence Commit": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
       "Release Blocking": "yes",
-      "Verified At": "2026-05-28T20:27:37Z",
+      "Verified At": "2026-05-29T00:47:53Z",
       "Evidence File": "`.kernel/evidence/agent-usage-audit.json`",
       "Evidence Command": "`pnpm check:agent-usage-audit`"
     },
@@ -125,7 +125,7 @@
       "Evidence Status": "verified",
       "Evidence Commit": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
       "Release Blocking": "yes",
-      "Verified At": "2026-05-28T20:27:37Z",
+      "Verified At": "2026-05-29T00:47:53Z",
       "Evidence File": "`.kernel/evidence/audit-completeness.json`",
       "Evidence Command": "`pnpm check:audit-completeness`"
     },
@@ -135,7 +135,7 @@
       "Evidence Status": "verified",
       "Evidence Commit": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
       "Release Blocking": "yes",
-      "Verified At": "2026-05-28T20:27:37Z",
+      "Verified At": "2026-05-29T00:47:53Z",
       "Evidence File": "`.kernel/evidence/data-cloud-operations-readiness.json`",
       "Evidence Command": "`pnpm check:data-cloud-operations-readiness`"
     },
@@ -143,9 +143,9 @@
       "Task": "DC-P14-002 task-map verification evidence",
       "Implementation Status": "completed",
       "Evidence Status": "verified",
-      "Evidence Commit": "dc49a6c87014675df81f869b06b3f1d4fb058b54",
+      "Evidence Commit": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
       "Release Blocking": "yes",
-      "Verified At": "2026-05-28T20:27:37Z",
+      "Verified At": "2026-05-29T00:47:53Z",
       "Evidence File": "`.kernel/evidence/production-readiness-task-map.json`",
       "Evidence Command": "`pnpm check:production-readiness-task-map`"
     }
@@ -224,5 +224,16 @@
       ]
     }
   ],
-  "violations": []
+  "violations": [
+    "DC-P0-001 readiness blocked until proof passes: Evidence Commit dc49a6c87014675df81f869b06b3f1d4fb058b54 must match HEAD 1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+    "DC-P0-001 readiness blocked until proof passes: cannot be verified because evidence commit dc49a6c87014675df81f869b06b3f1d4fb058b54 does not match HEAD 1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+    "DC-P0-002 product release readiness evidence: Evidence Commit dc49a6c87014675df81f869b06b3f1d4fb058b54 must match HEAD 1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+    "DC-P0-002 product release readiness evidence: cannot be verified because evidence commit dc49a6c87014675df81f869b06b3f1d4fb058b54 does not match HEAD 1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+    "DC-P0-002 AI governance behavioral proof: Evidence Commit dc49a6c87014675df81f869b06b3f1d4fb058b54 must match HEAD 1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+    "DC-P0-002 AI governance behavioral proof: cannot be verified because evidence commit dc49a6c87014675df81f869b06b3f1d4fb058b54 does not match HEAD 1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+    "DC-P10-002 audit completeness proof: Evidence Commit dc49a6c87014675df81f869b06b3f1d4fb058b54 must match HEAD 1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+    "DC-P10-002 audit completeness proof: cannot be verified because evidence commit dc49a6c87014675df81f869b06b3f1d4fb058b54 does not match HEAD 1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+    "DC-P11-002 operations readiness bundle: Evidence Commit dc49a6c87014675df81f869b06b3f1d4fb058b54 must match HEAD 1836f3fb9ea24a295177ffb3cb52cc826f9148fc",
+    "DC-P11-002 operations readiness bundle: cannot be verified because evidence commit dc49a6c87014675df81f869b06b3f1d4fb058b54 does not match HEAD 1836f3fb9ea24a295177ffb3cb52cc826f9148fc"
+  ]
 }

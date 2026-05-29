@@ -155,6 +155,8 @@ const REQUESTED_ACTIONS = [
   "prepare-rollback",
 ] as const satisfies readonly AgentLifecycleRequestedAction[];
 
+export const AgentLifecycleRequestedActionSchema = z.enum(REQUESTED_ACTIONS);
+
 const LIFECYCLE_PHASES = [
   "create",
   "bootstrap",
@@ -173,6 +175,7 @@ const LIFECYCLE_PHASES = [
 ] as const satisfies readonly ProductLifecyclePhase[];
 
 const RISK_LEVELS = ["low", "medium", "high", "critical"] as const;
+export const AgentLifecycleRiskLevelSchema = z.enum(RISK_LEVELS);
 const MASTERY_STATES = [
   "novice",
   "learning",
@@ -180,13 +183,16 @@ const MASTERY_STATES = [
   "mastered",
   "maintenance-only",
 ] as const;
+export const AgentLifecycleMasteryStateSchema = z.enum(MASTERY_STATES);
 const POLICY_DECISIONS = ["allowed", "denied", "requires-approval"] as const;
+export const AgentLifecyclePolicyDecisionSchema = z.enum(POLICY_DECISIONS);
 const FALLBACK_MODES = [
   "rollback",
   "dry-run",
   "manual-handoff",
   "degraded-safe-mode",
 ] as const;
+export const AgentLifecycleFallbackModeSchema = z.enum(FALLBACK_MODES);
 const VERIFICATION_KINDS = [
   "test",
   "policy",
@@ -200,6 +206,18 @@ const PRIVACY_CLASSIFICATIONS = [
   "confidential",
   "restricted",
 ] as const;
+export const AgentLifecycleActionRequestReasonCodeSchema = z.enum([
+  "raw-command-not-allowed",
+  "missing-evidence",
+  "missing-tool-permission",
+  "tool-permission-denied",
+  "policy-denied",
+  "approval-required",
+  "missing-rollback-plan",
+  "invalid-scope",
+  "unsupported-action",
+  "schema-invalid",
+]);
 const RAW_COMMAND_VALUE_PATTERN =
   /\b(gradle|gradlew|pnpm|npm|yarn|docker|docker\s+buildx|kubectl)\b/i;
 
@@ -236,7 +254,7 @@ export const AgentLifecycleVerificationRequirementSchema = z
 
 export const AgentLifecycleMasteryEvidenceSchema = z
   .object({
-    state: z.enum(MASTERY_STATES),
+    state: AgentLifecycleMasteryStateSchema,
     stateRef: z.string().trim().min(1),
     evaluatedAt: z.string().datetime({ offset: true }),
   })
@@ -245,7 +263,7 @@ export const AgentLifecycleMasteryEvidenceSchema = z
 export const AgentLifecyclePolicyDecisionEvidenceSchema = z
   .object({
     decisionId: z.string().trim().min(1),
-    decision: z.enum(POLICY_DECISIONS),
+    decision: AgentLifecyclePolicyDecisionSchema,
     evaluatedAt: z.string().datetime({ offset: true }),
     reasonCodes: z.array(z.string().trim().min(1)).min(1),
     evidenceRefs: z.array(z.string().trim().min(1)).min(1),
@@ -257,7 +275,7 @@ export const AgentLifecycleToolPermissionSchema = z
     toolId: z.string().trim().min(1),
     permissionRef: z.string().trim().min(1),
     granted: z.boolean(),
-    allowedActions: z.array(z.enum(REQUESTED_ACTIONS)).min(1),
+    allowedActions: z.array(AgentLifecycleRequestedActionSchema).min(1),
   })
   .strict();
 
@@ -273,10 +291,10 @@ export const AgentLifecycleActionRequestSchema = z
     masteryState: AgentLifecycleMasteryEvidenceSchema,
     policyDecision: AgentLifecyclePolicyDecisionEvidenceSchema,
     toolPermissions: z.array(AgentLifecycleToolPermissionSchema).min(1),
-    requestedAction: z.enum(REQUESTED_ACTIONS),
+    requestedAction: AgentLifecycleRequestedActionSchema,
     lifecyclePhase: z.enum(LIFECYCLE_PHASES),
     proposedPlanRef: z.string().trim().min(1),
-    riskLevel: z.enum(RISK_LEVELS),
+    riskLevel: AgentLifecycleRiskLevelSchema,
     approvalRequired: z.boolean(),
     requiredApprovals: z.array(AgentLifecycleApprovalRequirementSchema),
     requiredVerification: z.array(AgentLifecycleVerificationRequirementSchema),
@@ -285,7 +303,7 @@ export const AgentLifecycleActionRequestSchema = z
     verificationProofRefs: z.array(z.string().trim().min(1)),
     evidenceRefs: z.array(z.string().trim().min(1)).min(1),
     rollbackPlanRef: z.string().trim().min(1),
-    fallbackMode: z.enum(FALLBACK_MODES),
+    fallbackMode: AgentLifecycleFallbackModeSchema,
     policyEvidenceRefs: z.array(z.string().trim().min(1)).optional(),
     masteryStateRef: z.string().trim().min(1).optional(),
     toolPermissionRefs: z.array(z.string().trim().min(1)).optional(),
@@ -410,6 +428,14 @@ export const AgentLifecycleActionRequestSchema = z
     },
   );
 
+export const AgentLifecycleActionRequestValidationIssueSchema = z
+  .object({
+    path: z.string(),
+    reasonCode: AgentLifecycleActionRequestReasonCodeSchema,
+    message: z.string().trim().min(1),
+  })
+  .strict();
+
 function reasonCodeForAgentLifecycleActionRequestIssue(
   issue: z.ZodIssue,
 ): AgentLifecycleActionRequestReasonCode {
@@ -462,4 +488,40 @@ export function isAgentLifecycleActionRequest(
   value: unknown,
 ): value is AgentLifecycleActionRequest {
   return AgentLifecycleActionRequestSchema.safeParse(value).success;
+}
+
+export function validateAgentLifecycleRequestedAction(
+  value: unknown,
+): value is AgentLifecycleRequestedAction {
+  return AgentLifecycleRequestedActionSchema.safeParse(value).success;
+}
+
+export function validateAgentLifecycleRiskLevel(
+  value: unknown,
+): value is AgentLifecycleRiskLevel {
+  return AgentLifecycleRiskLevelSchema.safeParse(value).success;
+}
+
+export function validateAgentLifecycleMasteryState(
+  value: unknown,
+): value is AgentLifecycleMasteryState {
+  return AgentLifecycleMasteryStateSchema.safeParse(value).success;
+}
+
+export function validateAgentLifecycleFallbackMode(
+  value: unknown,
+): value is AgentLifecycleFallbackMode {
+  return AgentLifecycleFallbackModeSchema.safeParse(value).success;
+}
+
+export function validateAgentLifecycleActionRequestReasonCode(
+  value: unknown,
+): value is AgentLifecycleActionRequestReasonCode {
+  return AgentLifecycleActionRequestReasonCodeSchema.safeParse(value).success;
+}
+
+export function validateAgentLifecycleActionRequestValidationIssue(
+  value: unknown,
+): value is AgentLifecycleActionRequestValidationIssue {
+  return AgentLifecycleActionRequestValidationIssueSchema.safeParse(value).success;
 }

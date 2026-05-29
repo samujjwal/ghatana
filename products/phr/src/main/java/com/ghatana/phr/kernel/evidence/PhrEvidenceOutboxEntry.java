@@ -9,6 +9,11 @@ import java.util.Objects;
 
 /**
  * Durable outbox entry for regulated PHR lifecycle, audit, and consent evidence.
+ *
+ * @doc.type class
+ * @doc.purpose Domain model for PHR evidence outbox entries
+ * @doc.layer product
+ * @doc.pattern Value Object
  */
 public final class PhrEvidenceOutboxEntry {
 

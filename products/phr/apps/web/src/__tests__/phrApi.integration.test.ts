@@ -223,6 +223,7 @@ describe('PHR API integration mapping', () => {
     await expect(logoutSession({
       tenantId: 'tenant-health-1',
       principalId: 'patient-001',
+      role: 'patient',
     })).resolves.toBeUndefined();
   });
 

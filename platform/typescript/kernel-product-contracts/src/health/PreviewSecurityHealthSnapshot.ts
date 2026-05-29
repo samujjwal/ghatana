@@ -7,7 +7,8 @@
  * @doc.pattern Snapshot
  */
 
-import type { HealthStatus } from "./HealthStatus.js";
+import { z } from "zod";
+import { HealthStatusSchema, type HealthStatus } from "./HealthStatus.js";
 
 /**
  * Security check status.
@@ -21,6 +22,18 @@ export interface SecurityCheckStatus {
   readonly message: string;
   readonly lastChecked: string;
 }
+
+export const SecurityCheckStatusSchema = z
+  .object({
+    checkId: z.string().trim().min(1),
+    checkType: z.string().trim().min(1),
+    status: HealthStatusSchema,
+    severity: z.string().trim().min(1),
+    vulnerabilityCount: z.number().int().nonnegative(),
+    message: z.string().trim().min(1),
+    lastChecked: z.string().datetime({ offset: true }),
+  })
+  .strict();
 
 /**
  * Preview security health snapshot.
@@ -45,4 +58,25 @@ export interface PreviewSecurityHealthSnapshot {
    * Snapshot timestamp.
    */
   readonly snapshotAt: string;
+}
+
+export const PreviewSecurityHealthSnapshotSchema = z
+  .object({
+    productUnitId: z.string().trim().min(1),
+    status: HealthStatusSchema,
+    securityChecks: z.array(SecurityCheckStatusSchema),
+    snapshotAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+
+export function validateSecurityCheckStatus(
+  value: unknown
+): value is SecurityCheckStatus {
+  return SecurityCheckStatusSchema.safeParse(value).success;
+}
+
+export function validatePreviewSecurityHealthSnapshot(
+  value: unknown
+): value is PreviewSecurityHealthSnapshot {
+  return PreviewSecurityHealthSnapshotSchema.safeParse(value).success;
 }

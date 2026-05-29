@@ -108,21 +108,27 @@ function assertFixtureShape() {
     }
 
     const manifest = readYaml(spec.manifestPath);
-    if (manifest.lifecycleProfile !== 'standard-polyglot-product') {
+    if (manifest.productExtensions?.lifecycleProfile !== 'standard-polyglot-product') {
       fail(`${spec.manifestPath} must declare standard-polyglot-product`);
     }
-    const surfaces = manifest.surfaces ?? [];
+    const runtimeSurfaces = new Set(manifest.surfaces?.runtime ?? []);
     for (const surfaceType of ['sdk', 'backend-api']) {
-      const surface = surfaces.find((entry) => entry.type === surfaceType);
-      if (!surface) {
+      if (!runtimeSurfaces.has(surfaceType)) {
         fail(`${spec.productId} must define ${surfaceType} surface`);
       }
-      if (surface.language !== spec.expectedLanguage || surface.buildSystem !== spec.expectedBuildSystem) {
-        fail(`${spec.productId}/${surfaceType} must declare ${spec.expectedLanguage}/${spec.expectedBuildSystem}`);
-      }
-      if (surface.adapterHint !== spec.adapterId) {
-        fail(`${spec.productId}/${surfaceType} must use ${spec.adapterId}`);
-      }
+    }
+    const adapterProof = manifest.capabilities?.find((capability) => capability.id === `${spec.productId}.adapter-proof`);
+    if (!adapterProof) {
+      fail(`${spec.productId} must declare adapter proof capability`);
+    }
+    if (
+      adapterProof.metadata?.adapter !== spec.adapterId ||
+      adapterProof.metadata?.buildSystem !== spec.expectedBuildSystem
+    ) {
+      fail(`${spec.productId} adapter proof must declare ${spec.adapterId}/${spec.expectedBuildSystem}`);
+    }
+    if (!manifest.productExtensions?.adapters?.includes(spec.adapterId)) {
+      fail(`${spec.productId} must expose ${spec.adapterId} in productExtensions.adapters`);
     }
 
     for (const file of spec.sourceFiles) {

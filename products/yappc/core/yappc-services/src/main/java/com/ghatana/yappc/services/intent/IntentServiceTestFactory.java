@@ -15,6 +15,11 @@ import java.util.Optional;
 
 /**
  * Dev/test-only factory for IntentService instances with explicit no-op collaborators.
+ *
+ * @doc.type class
+ * @doc.purpose Test factory for IntentService
+ * @doc.layer product
+ * @doc.pattern Factory
  */
 public final class IntentServiceTestFactory {
 

@@ -306,11 +306,24 @@ const PRODUCER_TYPES: readonly ProducerType[] = [
   "external",
 ];
 
+export const ProducerTypeSchema = z.enum(PRODUCER_TYPES);
+
 const INTENT_TYPES = [
   "create",
   "update",
   "promote-candidate",
 ] as const satisfies readonly ProductUnitIntentType[];
+
+export const ProductUnitIntentTypeSchema = z.enum(INTENT_TYPES);
+
+export const ProductUnitIntentApplyModeSchema = z.enum(["preview", "apply"]);
+
+export const ProductUnitIntentStatusSchema = z.enum([
+  "accepted",
+  "queued",
+  "blocked",
+  "failed",
+]);
 
 const APPLICATION_STATUSES = [
   "previewed",
@@ -319,6 +332,29 @@ const APPLICATION_STATUSES = [
   "blocked",
   "failed",
 ] as const satisfies readonly ProductUnitIntentApplicationStatus[];
+
+export const ProductUnitIntentApplicationStatusSchema =
+  z.enum(APPLICATION_STATUSES);
+
+export const ProductUnitIntentApplicationReasonCodeSchema = z.union([
+  z.enum([
+    "target-provider-mismatch",
+    "missing-apply-permission",
+    "provider-mode-not-available",
+    "registry-apply-failed",
+    "runtime-truth-write-failed",
+    "provenance-write-failed",
+    "event-write-failed",
+    "schema-invalid",
+    "kernel-lifecycle-service-unavailable",
+    "kernel-service-unreachable",
+    "kernel-service-response-invalid",
+  ]),
+  z.custom<`kernel-service-http-${number}`>(
+    (value) =>
+      typeof value === "string" && /^kernel-service-http-\d+$/.test(value)
+  ),
+]);
 
 const PRODUCT_LIFECYCLE_PHASES = [
   "create",
@@ -344,6 +380,8 @@ const PRIVACY_LEVELS = [
   "restricted",
 ] as const satisfies readonly ProductUnitPrivacyLevel[];
 
+export const ProductUnitPrivacyLevelSchema = z.enum(PRIVACY_LEVELS);
+
 const DATA_SENSITIVITY_LEVELS = [
   "none",
   "low",
@@ -352,12 +390,21 @@ const DATA_SENSITIVITY_LEVELS = [
   "regulated",
 ] as const satisfies readonly ProductUnitDataSensitivity[];
 
+export const ProductUnitDataSensitivitySchema = z.enum(DATA_SENSITIVITY_LEVELS);
+
 const SECRET_KEY_PATTERN = /(secret|password|token|api[-_]?key|credential)/i;
 
 export interface ProductUnitIntentValidationResult {
   readonly valid: boolean;
   readonly errors: readonly string[];
 }
+
+export const ProductUnitIntentValidationResultSchema = z
+  .object({
+    valid: z.boolean(),
+    errors: z.array(z.string()),
+  })
+  .strict();
 
 export type ProductUnitIntentValidationReasonCode =
   | "missing-evidence"
@@ -374,10 +421,33 @@ export interface ProductUnitIntentValidationIssue {
   readonly severity: "error" | "warning";
 }
 
+export const ProductUnitIntentValidationReasonCodeSchema = z.enum([
+  "missing-evidence",
+  "missing-source-artifact-refs",
+  "secret-like-field",
+  "invalid-scope",
+  "unsupported-lifecycle-phase",
+  "schema-invalid",
+]);
+
+export const ProductUnitIntentValidationIssueSchema = z
+  .object({
+    path: z.string(),
+    reasonCode: ProductUnitIntentValidationReasonCodeSchema,
+    message: z.string(),
+    severity: z.enum(["error", "warning"]),
+  })
+  .strict();
+
 export interface ProductUnitIntentDetailedValidationResult
   extends ProductUnitIntentValidationResult {
   readonly issues: readonly ProductUnitIntentValidationIssue[];
 }
+
+export const ProductUnitIntentDetailedValidationResultSchema =
+  ProductUnitIntentValidationResultSchema.extend({
+    issues: z.array(ProductUnitIntentValidationIssueSchema),
+  });
 
 function hasSecretLikeField(value: unknown): boolean {
   if (Array.isArray(value)) {
@@ -398,7 +468,7 @@ function hasSecretLikeField(value: unknown): boolean {
 export const ProducerSchema = z
   .object({
     id: z.string().trim().min(1),
-    type: z.enum(PRODUCER_TYPES),
+    type: ProducerTypeSchema,
     correlationId: z.string().trim().min(1),
   })
   .strict();
@@ -420,12 +490,12 @@ export const RequestedLifecycleSchema = z
 
 export const ProductUnitGovernanceHintsSchema = z
   .object({
-    privacyLevel: z.enum(PRIVACY_LEVELS).optional(),
-    evidencePrivacyClassification: z.enum(PRIVACY_LEVELS).optional(),
+    privacyLevel: ProductUnitPrivacyLevelSchema.optional(),
+    evidencePrivacyClassification: ProductUnitPrivacyLevelSchema.optional(),
     regulatedDomain: z.string().trim().min(1).optional(),
     requiresHumanApproval: z.boolean().optional(),
     requiredPolicyPacks: z.array(z.string().trim().min(1)).optional(),
-    dataSensitivity: z.enum(DATA_SENSITIVITY_LEVELS).optional(),
+    dataSensitivity: ProductUnitDataSensitivitySchema.optional(),
     retentionPolicyId: z.string().trim().min(1).optional(),
     retentionDays: z.number().int().nonnegative().optional(),
     evidenceRequired: z.boolean().optional(),
@@ -434,7 +504,7 @@ export const ProductUnitGovernanceHintsSchema = z
 
 export const IntentProvenanceSchema = z
   .object({
-    sourceSystem: z.enum(PRODUCER_TYPES),
+    sourceSystem: ProducerTypeSchema,
     sourceArtifactRefs: z.array(z.string().trim().min(1)),
     sourceRefs: z.array(ProductUnitSourceRefSchema).optional(),
     createdBy: z.string().trim().min(1),
@@ -447,7 +517,7 @@ export const ProductUnitIntentSchema = z
   .object({
     schemaVersion: z.literal("1.0.0"),
     intentId: z.string().trim().min(1),
-    intentType: z.enum(INTENT_TYPES),
+    intentType: ProductUnitIntentTypeSchema,
     scope: ProductUnitScopeSchema,
     producer: ProducerSchema,
     target: TargetProvidersSchema,
@@ -497,7 +567,7 @@ export const ProductUnitIntentApplicationResultSchema = z
   .object({
     schemaVersion: z.literal("1.0.0"),
     intentId: z.string().trim().min(1),
-    status: z.enum(APPLICATION_STATUSES),
+    status: ProductUnitIntentApplicationStatusSchema,
     productUnitId: z.string().trim().min(1),
     correlationId: z.string().trim().min(1),
     providerMode: z.enum(["bootstrap", "platform"]),
@@ -655,6 +725,76 @@ export function validateProductUnitIntent(
 ): ProductUnitIntentValidationResult {
   const result = validateProductUnitIntentDetailed(value);
   return { valid: result.valid, errors: result.errors };
+}
+
+export function validateProducerType(value: unknown): value is ProducerType {
+  return ProducerTypeSchema.safeParse(value).success;
+}
+
+export function validateProductUnitIntentType(
+  value: unknown
+): value is ProductUnitIntentType {
+  return ProductUnitIntentTypeSchema.safeParse(value).success;
+}
+
+export function validateProductUnitIntentApplyMode(
+  value: unknown
+): value is ProductUnitIntentApplyMode {
+  return ProductUnitIntentApplyModeSchema.safeParse(value).success;
+}
+
+export function validateProductUnitIntentStatus(
+  value: unknown
+): value is ProductUnitIntentStatus {
+  return ProductUnitIntentStatusSchema.safeParse(value).success;
+}
+
+export function validateProductUnitIntentApplicationStatus(
+  value: unknown
+): value is ProductUnitIntentApplicationStatus {
+  return ProductUnitIntentApplicationStatusSchema.safeParse(value).success;
+}
+
+export function validateProductUnitIntentApplicationReasonCode(
+  value: unknown
+): value is ProductUnitIntentApplicationReasonCode {
+  return ProductUnitIntentApplicationReasonCodeSchema.safeParse(value).success;
+}
+
+export function validateProductUnitPrivacyLevel(
+  value: unknown
+): value is ProductUnitPrivacyLevel {
+  return ProductUnitPrivacyLevelSchema.safeParse(value).success;
+}
+
+export function validateProductUnitDataSensitivity(
+  value: unknown
+): value is ProductUnitDataSensitivity {
+  return ProductUnitDataSensitivitySchema.safeParse(value).success;
+}
+
+export function validateProductUnitIntentValidationResult(
+  value: unknown
+): value is ProductUnitIntentValidationResult {
+  return ProductUnitIntentValidationResultSchema.safeParse(value).success;
+}
+
+export function validateProductUnitIntentValidationReasonCode(
+  value: unknown
+): value is ProductUnitIntentValidationReasonCode {
+  return ProductUnitIntentValidationReasonCodeSchema.safeParse(value).success;
+}
+
+export function validateProductUnitIntentValidationIssue(
+  value: unknown
+): value is ProductUnitIntentValidationIssue {
+  return ProductUnitIntentValidationIssueSchema.safeParse(value).success;
+}
+
+export function validateProductUnitIntentDetailedValidationResult(
+  value: unknown
+): value is ProductUnitIntentDetailedValidationResult {
+  return ProductUnitIntentDetailedValidationResultSchema.safeParse(value).success;
 }
 
 /**

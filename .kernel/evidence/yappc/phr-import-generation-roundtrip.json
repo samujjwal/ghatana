@@ -1,11 +1,11 @@
 {
   "checkId": "YAPPC-010 PHR import and generation roundtrip",
-  "generatedAt": "2026-05-28T19:38:35.528Z",
+  "generatedAt": "2026-05-28T23:27:32.297Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/check-yappc-phr-roundtrip.mjs",
     "command": "node scripts/check-yappc-phr-roundtrip.mjs",
-    "commit": "7d8f07d5bf556c8e8e6300ecaf11920b6ea64d84"
+    "commit": "1836f3fb9ea24a295177ffb3cb52cc826f9148fc"
   },
   "summary": {
     "checkCount": 17,
@@ -58,7 +58,7 @@
     {
       "name": "PHR contract exposes stable routes for import",
       "pass": true,
-      "stableRoutes": 23
+      "stableRoutes": 24
     },
     {
       "name": "PHR contract exposes guarded routes for canvas state overlay",
@@ -107,8 +107,8 @@
   ],
   "violations": [],
   "routeSummary": {
-    "routes": 27,
-    "stableRoutes": 23,
+    "routes": 28,
+    "stableRoutes": 24,
     "guardedRoutes": 4,
     "useCases": 27
   }

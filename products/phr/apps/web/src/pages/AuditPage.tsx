@@ -11,12 +11,14 @@
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import { fetchAuditEvents } from '../api/auditApi';
+import { usePhrSession } from '../auth/PhrSessionContext';
 import { formatPhrDateTime, t } from '../i18n/phrI18n';
 import type { AuditEvent } from '../types';
 
 type AuditFilter = 'all' | 'access' | 'consent' | 'emergency';
 
 export function AuditPage(): React.ReactElement {
+  const { session } = usePhrSession();
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,9 +30,15 @@ export function AuditPage(): React.ReactElement {
   const [exporting, setExporting] = useState<boolean>(false);
 
   const loadAuditEvents = useCallback((activeFilter: AuditFilter): void => {
+    if (!session) return;
     setLoading(true);
     setError(null);
-    fetchAuditEvents({ filter: activeFilter })
+    fetchAuditEvents({
+      filter: activeFilter,
+      tenantId: session.tenantId,
+      principalId: session.principalId,
+      role: session.role,
+    })
       .then((page) => {
         setAuditEvents(page.events);
       })
@@ -40,7 +48,7 @@ export function AuditPage(): React.ReactElement {
       .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [session]);
 
   useEffect(() => {
     loadAuditEvents(filter);

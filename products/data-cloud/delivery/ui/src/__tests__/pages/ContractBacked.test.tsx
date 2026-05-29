@@ -30,7 +30,7 @@ import {
   AiModelSchema,
   AgentCatalogEntrySchema,
   AgentCatalogListSchema,
-  CapabilityRegistryEnvelopeSchema,
+  SurfaceRegistryEnvelopeSchema,
   ComplianceSummaryEnvelopeSchema,
   CollectionEntityListResponseSchema,
   CollectionSchema,
@@ -487,13 +487,25 @@ describe('Contract-Backed Route Tests', () => {
 
   describe('Runtime truth and voice contracts', () => {
     it('runtime surface registry envelope passes contract validation', () => {
-      const envelope = CapabilityRegistryEnvelopeSchema.parse({
+      const envelope = SurfaceRegistryEnvelopeSchema.parse({
         data: {
-          capabilities: {
-            analytics: 'ACTIVE',
-            trino: 'NOT_CONFIGURED',
-            voice: 'DEGRADED',
-          },
+          surfaces: [
+            {
+              surfaceId: 'analytics',
+              state: 'ACTIVE',
+              status: 'ACTIVE',
+              ownerPlane: 'intelligence',
+              requiredDependencies: ['analytics'],
+              dependencyProbes: [],
+              tenantScope: 'tenant',
+              runtimeProfile: 'local',
+              lastCheckedAt: '2026-04-15T10:15:00Z',
+              evidence: {},
+              limitations: 'none',
+              actionsAllowed: ['read'],
+            },
+          ],
+          count: 1,
           generatedAt: '2026-04-15T10:15:00Z',
         },
         meta: {
@@ -504,7 +516,7 @@ describe('Contract-Backed Route Tests', () => {
         },
       });
 
-      expect(envelope.data.capabilities.analytics).toBe('ACTIVE');
+      expect(envelope.data.surfaces[0]?.surfaceId).toBe('analytics');
     });
 
     it('governance envelopes pass contract validation', () => {

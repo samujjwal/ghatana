@@ -7,7 +7,8 @@
  * @doc.pattern Snapshot
  */
 
-import type { HealthStatus } from "./HealthStatus.js";
+import { z } from "zod";
+import { HealthStatusSchema, type HealthStatus } from "./HealthStatus.js";
 
 /**
  * Artifact health status.
@@ -20,6 +21,17 @@ export interface ArtifactHealthStatus {
   readonly message: string;
   readonly createdAt: string;
 }
+
+export const ArtifactHealthStatusSchema = z
+  .object({
+    artifactId: z.string().trim().min(1),
+    artifactName: z.string().trim().min(1),
+    version: z.string().trim().min(1),
+    status: HealthStatusSchema,
+    message: z.string().trim().min(1),
+    createdAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
 
 /**
  * Artifact health snapshot.
@@ -49,4 +61,26 @@ export interface ArtifactHealthSnapshot {
    * Snapshot timestamp.
    */
   readonly snapshotAt: string;
+}
+
+export const ArtifactHealthSnapshotSchema = z
+  .object({
+    productUnitId: z.string().trim().min(1),
+    runId: z.string().trim().min(1),
+    status: HealthStatusSchema,
+    artifacts: z.array(ArtifactHealthStatusSchema),
+    snapshotAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+
+export function validateArtifactHealthStatus(
+  value: unknown
+): value is ArtifactHealthStatus {
+  return ArtifactHealthStatusSchema.safeParse(value).success;
+}
+
+export function validateArtifactHealthSnapshot(
+  value: unknown
+): value is ArtifactHealthSnapshot {
+  return ArtifactHealthSnapshotSchema.safeParse(value).success;
 }

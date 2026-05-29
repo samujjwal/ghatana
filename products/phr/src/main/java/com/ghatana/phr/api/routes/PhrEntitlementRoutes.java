@@ -129,9 +129,9 @@ public final class PhrEntitlementRoutes {
 
             List<ProductRouteEntitlement.RouteEntitlement> loadedRoutes = new ArrayList<>();
             for (JsonNode routeNode : routesNode) {
-                // Validate required route fields
-                if (!routeNode.has("path") || !routeNode.has("label") || !routeNode.has("minimumRole")) {
-                    LOG.error("Route missing required fields (path, label, minimumRole) - failing closed");
+                if (!routeNode.has("path") || !routeNode.has("label") || !routeNode.has("minimumRole")
+                        || !routeNode.has("stability")) {
+                    LOG.error("Route missing required fields (path, label, minimumRole, stability) - failing closed");
                     this.contractLoaded = false;
                     return;
                 }
@@ -139,15 +139,19 @@ public final class PhrEntitlementRoutes {
                 String path = routeNode.path("path").asText();
                 String label = routeNode.path("label").asText();
                 String minimumRole = routeNode.path("minimumRole").asText();
+                String stability = routeNode.path("stability").asText();
 
-                // Validate minimum role
                 if (!PhrRouteSupport.ALLOWED_ROLES.contains(minimumRole)) {
                     LOG.error("Route has unknown minimum role: {} - failing closed", minimumRole);
                     this.contractLoaded = false;
                     return;
                 }
+                if (!List.of("stable", "preview", "blocked", "hidden").contains(stability)) {
+                    LOG.error("Route {} has invalid stability {} - failing closed", path, stability);
+                    this.contractLoaded = false;
+                    return;
+                }
 
-                // Parse actions (required array)
                 List<String> actions = new ArrayList<>();
                 JsonNode actionsNode = routeNode.path("actions");
                 if (!actionsNode.isArray()) {
@@ -158,8 +162,7 @@ public final class PhrEntitlementRoutes {
                 for (JsonNode action : actionsNode) {
                     actions.add(action.asText());
                 }
-                
-                // Parse cards (required array)
+
                 List<String> cards = new ArrayList<>();
                 JsonNode cardsNode = routeNode.path("cards");
                 if (!cardsNode.isArray()) {
@@ -170,31 +173,48 @@ public final class PhrEntitlementRoutes {
                 for (JsonNode card : cardsNode) {
                     cards.add(card.asText());
                 }
-                
-                // Parse personas (default to all roles if not specified)
+
                 List<String> personas = new ArrayList<>();
                 JsonNode personasNode = routeNode.path("personas");
-                if (personasNode.isArray()) {
-                    for (JsonNode persona : personasNode) {
-                        personas.add(persona.asText());
-                    }
-                } else {
-                    personas = List.of("patient", "caregiver", "clinician", "admin", "fchv");
+                if (!personasNode.isArray()) {
+                    LOG.error("Route {} personas is not an array - failing closed", path);
+                    this.contractLoaded = false;
+                    return;
                 }
-                
-                // Parse tiers (default to core if not specified)
-                List<String> tiers = new ArrayList<>();
-                JsonNode tiersNode = routeNode.path("tiers");
-                if (tiersNode.isArray()) {
-                    for (JsonNode tier : tiersNode) {
-                        tiers.add(tier.asText());
+                for (JsonNode persona : personasNode) {
+                    String personaValue = persona.asText();
+                    if (!PhrRouteSupport.ALLOWED_ROLES.contains(personaValue)) {
+                        LOG.error("Route {} has unknown persona {} - failing closed", path, personaValue);
+                        this.contractLoaded = false;
+                        return;
                     }
-                } else {
-                    tiers = List.of("core");
+                    personas.add(personaValue);
                 }
 
-                // E-004: Parse stability/visibility
-                String stability = routeNode.has("stability") ? routeNode.path("stability").asText() : "stable";
+                List<String> tiers = new ArrayList<>();
+                JsonNode tiersNode = routeNode.path("tiers");
+                if (!tiersNode.isArray()) {
+                    LOG.error("Route {} tiers is not an array - failing closed", path);
+                    this.contractLoaded = false;
+                    return;
+                }
+                for (JsonNode tier : tiersNode) {
+                    tiers.add(tier.asText());
+                }
+
+                if ("stable".equals(stability)) {
+                    for (String field : List.of("apiEndpoint", "policyId", "testId")) {
+                        if (!routeNode.has(field) || routeNode.path(field).asText().isBlank()) {
+                            LOG.error("Stable route {} missing {} - failing closed", path, field);
+                            this.contractLoaded = false;
+                            return;
+                        }
+                    }
+                }
+
+                if ("hidden".equals(stability) || "blocked".equals(stability)) {
+                    continue;
+                }
 
                 loadedRoutes.add(new ProductRouteEntitlement.RouteEntitlement(
                     path,

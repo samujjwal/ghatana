@@ -3,12 +3,20 @@
  * Generates TS manifest, backend entitlement data, and route docs from one contract.
  */
 
+import { z } from 'zod';
 import type {
   ProductRouteCapability,
   ProductRouteContract,
   RouteStability,
 } from './ProductRouteContract.js';
-import { parseProductRouteContract } from './ProductRouteContract.js';
+import {
+  ProductRouteCapabilitySchema,
+  RouteActionSchema,
+  RouteCardSchema,
+  RouteMetadataSchema,
+  RouteStabilityValues,
+  parseProductRouteContract,
+} from './ProductRouteContract.js';
 
 export interface GeneratedTSManifest {
   routes: {
@@ -81,6 +89,82 @@ export interface GeneratedRouteCapabilityContract {
   roleOrder: Record<string, number>;
   capabilities: ProductRouteCapability[];
 }
+
+const GeneratedTSManifestRouteSchema = z
+  .object({
+    path: z.string().trim().min(1),
+    label: z.string().trim().min(1),
+    description: z.string().trim().min(1),
+    minimumRole: z.string().trim().min(1),
+    personas: z.array(z.string().trim().min(1)).optional(),
+    tiers: z.array(z.string().trim().min(1)).optional(),
+    actions: z.array(RouteActionSchema).optional(),
+    cards: z.array(RouteCardSchema).optional(),
+    stability: z.enum(RouteStabilityValues),
+    featureFlag: z.boolean().optional(),
+    metadata: RouteMetadataSchema.optional(),
+  })
+  .strict();
+
+export const GeneratedTSManifestSchema = z
+  .object({
+    routes: z.array(GeneratedTSManifestRouteSchema),
+  })
+  .strict();
+
+const GeneratedBackendEntitlementRouteSchema = z
+  .object({
+    path: z.string().trim().min(1),
+    minimumRole: z.string().trim().min(1),
+    personas: z.array(z.string().trim().min(1)).optional(),
+    tiers: z.array(z.string().trim().min(1)).optional(),
+    actions: z.array(z.string().trim().min(1)).optional(),
+    cards: z.array(z.string().trim().min(1)).optional(),
+    stability: z.enum(RouteStabilityValues),
+    featureFlag: z.boolean().optional(),
+    apiEndpoint: z.string().trim().min(1).optional(),
+    policyId: z.string().trim().min(1).optional(),
+    testId: z.string().trim().min(1).optional(),
+  })
+  .strict();
+
+export const GeneratedBackendEntitlementSchema = z
+  .object({
+    version: z.string().trim().min(1),
+    roleOrder: z.record(z.string(), z.number().int().nonnegative()),
+    routes: z.array(GeneratedBackendEntitlementRouteSchema),
+  })
+  .strict();
+
+const GeneratedRouteDocsRouteSchema = z
+  .object({
+    path: z.string().trim().min(1),
+    label: z.string().trim().min(1),
+    description: z.string().trim().min(1),
+    group: z.string().trim().min(1),
+    stability: z.enum(RouteStabilityValues),
+    metadata: RouteMetadataSchema.pick({
+      apiEndpoint: true,
+      policyId: true,
+      testId: true,
+    }).optional(),
+  })
+  .strict();
+
+export const GeneratedRouteDocsSchema = z
+  .object({
+    version: z.string().trim().min(1),
+    routes: z.array(GeneratedRouteDocsRouteSchema),
+  })
+  .strict();
+
+export const GeneratedRouteCapabilityContractSchema = z
+  .object({
+    version: z.string().trim().min(1),
+    roleOrder: z.record(z.string(), z.number().int().nonnegative()),
+    capabilities: z.array(ProductRouteCapabilitySchema),
+  })
+  .strict();
 
 export class RouteContractGenerator {
   private readonly contract: ProductRouteContract;
@@ -223,4 +307,28 @@ export class RouteContractGenerator {
 
 export function createRouteContractGenerator(contract: ProductRouteContract): RouteContractGenerator {
   return new RouteContractGenerator(contract);
+}
+
+export function validateGeneratedTSManifest(
+  value: unknown
+): value is GeneratedTSManifest {
+  return GeneratedTSManifestSchema.safeParse(value).success;
+}
+
+export function validateGeneratedBackendEntitlement(
+  value: unknown
+): value is GeneratedBackendEntitlement {
+  return GeneratedBackendEntitlementSchema.safeParse(value).success;
+}
+
+export function validateGeneratedRouteDocs(
+  value: unknown
+): value is GeneratedRouteDocs {
+  return GeneratedRouteDocsSchema.safeParse(value).success;
+}
+
+export function validateGeneratedRouteCapabilityContract(
+  value: unknown
+): value is GeneratedRouteCapabilityContract {
+  return GeneratedRouteCapabilityContractSchema.safeParse(value).success;
 }

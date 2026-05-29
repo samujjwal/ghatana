@@ -7,7 +7,8 @@
  * @doc.pattern Snapshot
  */
 
-import type { HealthStatus } from "./HealthStatus.js";
+import { z } from "zod";
+import { HealthStatusSchema, type HealthStatus } from "./HealthStatus.js";
 
 /**
  * Learning delta status.
@@ -19,6 +20,16 @@ export interface LearningDeltaStatus {
   readonly message: string;
   readonly createdAt: string;
 }
+
+export const LearningDeltaStatusSchema = z
+  .object({
+    deltaId: z.string().trim().min(1),
+    status: HealthStatusSchema,
+    promotionStatus: z.string().trim().min(1),
+    message: z.string().trim().min(1),
+    createdAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
 
 /**
  * Learning health snapshot.
@@ -43,4 +54,25 @@ export interface LearningHealthSnapshot {
    * Snapshot timestamp.
    */
   readonly snapshotAt: string;
+}
+
+export const LearningHealthSnapshotSchema = z
+  .object({
+    productUnitId: z.string().trim().min(1),
+    status: HealthStatusSchema,
+    learningDeltas: z.array(LearningDeltaStatusSchema),
+    snapshotAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+
+export function validateLearningDeltaStatus(
+  value: unknown
+): value is LearningDeltaStatus {
+  return LearningDeltaStatusSchema.safeParse(value).success;
+}
+
+export function validateLearningHealthSnapshot(
+  value: unknown
+): value is LearningHealthSnapshot {
+  return LearningHealthSnapshotSchema.safeParse(value).success;
 }

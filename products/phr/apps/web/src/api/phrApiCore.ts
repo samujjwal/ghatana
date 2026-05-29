@@ -79,7 +79,9 @@ import {
   ProviderAvailabilitySchema,
   TimelinePageSchema,
 } from './phrApiSchemas';
-import { API_BASE_URL, buildPhrHeaders, phrFetch, PhrApiError, type SessionContext, withIdempotency } from './requestApi';
+import { API_BASE_URL, buildPhrHeaders, phrFetch, PhrApiError, type PhrRole, type SessionContext, withIdempotency } from './requestApi';
+
+type MutationSessionContext = SessionContext & { idempotencyKey?: string };
 
 async function fhirGet(resourceType: string, id: string | undefined, context: SessionContext): Promise<unknown> {
   const path = id !== undefined ? `/fhir/${resourceType}/${id}` : `/fhir/${resourceType}`;
@@ -126,18 +128,16 @@ export async function exportPatientBundle(context: SessionContext): Promise<stri
 
 export async function fetchReleaseReadiness(options: {
   environment: 'local' | 'dev' | 'staging' | 'prod';
-  role: string;
-  tenantId?: string;
-  principalId?: string;
+  role: PhrRole;
+  tenantId: string;
+  principalId: string;
 }): Promise<PhrReleaseReadiness> {
-  const tenantId = options.tenantId ?? 'tenant-health-1';
-  const principalId = options.principalId ?? `${options.role}-release-cockpit`;
   const url = new URL(`${API_BASE_URL}/release-readiness`);
   url.searchParams.set('environment', options.environment);
   const response = await fetch(url.toString(), {
     headers: buildPhrHeaders({
-      tenantId,
-      principalId,
+      tenantId: options.tenantId,
+      principalId: options.principalId,
       role: options.role,
       persona: options.role,
       tier: 'clinical',
@@ -155,9 +155,9 @@ export async function fetchAuditEvents(options: {
   filter?: 'all' | 'access' | 'consent' | 'emergency';
   page?: number;
   pageSize?: number;
-  tenantId?: string;
-  principalId?: string;
-  role?: string;
+  tenantId: string;
+  principalId: string;
+  role: PhrRole;
 }): Promise<AuditEventsPage> {
   const context: SessionContext = {
     tenantId: options.tenantId,
@@ -178,7 +178,7 @@ export async function fetchAuditEvents(options: {
 
 export async function createConsentGrant(
   request: ConsentGrantRequest,
-  context: { tenantId: string; principalId: string; role: string; idempotencyKey?: string },
+  context: MutationSessionContext,
 ): Promise<ConsentGrant> {
   const backendRequest = {
     patientId: request.patientId,
@@ -207,7 +207,7 @@ export async function createConsentGrant(
 export async function revokeConsentGrant(
   grantId: string,
   patientId: string,
-  context: { tenantId: string; principalId: string; role: string; idempotencyKey?: string },
+  context: MutationSessionContext,
 ): Promise<ConsentRevokeResult> {
   if (!grantId || !patientId) {
     throw new PhrApiError('grantId and patientId are required to revoke consent', 400, 'Consent');
@@ -223,7 +223,7 @@ export async function revokeConsentGrant(
 
 export async function createAppointmentRequest(
   request: AppointmentRequest,
-  context: { tenantId: string; principalId: string; role: string; idempotencyKey?: string },
+  context: MutationSessionContext,
 ): Promise<AppointmentCreateResult> {
   const validated = AppointmentRequestSchema.parse(request);
   const data = await phrFetch('/appointments', {
@@ -236,7 +236,7 @@ export async function createAppointmentRequest(
 
 export async function requestEmergencyAccess(
   request: EmergencyAccessRequest,
-  context: { tenantId: string; principalId: string; role: string; idempotencyKey?: string },
+  context: MutationSessionContext,
 ): Promise<EmergencyAccessEvent> {
   const validated = EmergencyAccessRequestSchema.parse(request);
   const data = await phrFetch('/emergency/access', {
@@ -249,7 +249,7 @@ export async function requestEmergencyAccess(
 
 export async function reviewEmergencyAccess(
   review: EmergencyReviewRequest,
-  context: { tenantId: string; principalId: string; role: string; idempotencyKey?: string },
+  context: MutationSessionContext,
 ): Promise<EmergencyAccessEvent> {
   const data = await phrFetch(`/emergency/reviews/${encodeURIComponent(review.eventId)}`, {
     method: 'POST',
@@ -271,10 +271,7 @@ export async function loginWithCredentials(request: PhrLoginRequest): Promise<Ph
   return data;
 }
 
-export async function logoutSession(context: {
-  tenantId: string;
-  principalId: string;
-}): Promise<void> {
+export async function logoutSession(context: SessionContext): Promise<void> {
   await phrFetch('/auth/logout', {
     method: 'POST',
     context,
@@ -290,7 +287,7 @@ export async function fetchPatientProfile(context: SessionContext): Promise<Pati
 
 export async function updatePatientProfile(
   update: PatientProfileUpdateRequest,
-  context: { tenantId: string; principalId: string; role?: string; correlationId?: string; idempotencyKey?: string },
+  context: MutationSessionContext,
 ): Promise<PatientProfileExtended> {
   const data = await phrFetch('/profile', {
     method: 'PUT',
@@ -408,7 +405,7 @@ export async function uploadDocument(
   patientId: string,
   file: File,
   metadata: { title: string; category?: string; description?: string },
-  context: SessionContext & { idempotencyKey?: string },
+  context: MutationSessionContext,
   options: { signal?: AbortSignal; onProgress?: (progress: number) => void } = {},
 ): Promise<{ id: string; status: string; ocrStatus: string }> {
   const formData = new FormData();
@@ -549,7 +546,7 @@ export async function bookAppointment(
   providerId: string,
   slot: string,
   notes: string | undefined,
-  context: SessionContext & { idempotencyKey?: string },
+  context: MutationSessionContext,
 ): Promise<{ id: string; status: string }> {
   const data = await phrFetch('/appointments', {
     method: 'POST',
@@ -562,7 +559,7 @@ export async function bookAppointment(
 export async function cancelAppointment(
   appointmentId: string,
   patientId: string,
-  context: SessionContext & { idempotencyKey?: string },
+  context: MutationSessionContext,
 ): Promise<{ success: boolean }> {
   const data = await phrFetch(`/appointments/${encodeURIComponent(appointmentId)}/cancel`, {
     method: 'POST',
@@ -576,7 +573,7 @@ export async function rescheduleAppointment(
   appointmentId: string,
   patientId: string,
   newSlot: string,
-  context: SessionContext & { idempotencyKey?: string },
+  context: MutationSessionContext,
 ): Promise<{ id: string; status: string }> {
   const data = await phrFetch(`/appointments/${encodeURIComponent(appointmentId)}/reschedule`, {
     method: 'POST',
@@ -644,7 +641,7 @@ export async function fetchRecordDetail(
 
 export async function fetchOcrDocument(
   docId: string,
-  context: { tenantId: string; principalId: string; role: string },
+  context: SessionContext,
 ): Promise<OcrReviewDocument> {
   const data = await phrFetch(`/documents/${encodeURIComponent(docId)}/ocr`, { context });
   return OcrReviewDocumentSchema.parse(data);
@@ -652,7 +649,7 @@ export async function fetchOcrDocument(
 
 export async function confirmOcrDocument(
   docId: string,
-  context: { tenantId: string; principalId: string; role: string; correlationId?: string; idempotencyKey?: string },
+  context: MutationSessionContext,
   correctedText?: string,
 ): Promise<OcrReviewDocument> {
   const data = await phrFetch(`/documents/${encodeURIComponent(docId)}/ocr/confirm`, {
@@ -665,7 +662,7 @@ export async function confirmOcrDocument(
 
 export async function rejectOcrDocument(
   docId: string,
-  context: { tenantId: string; principalId: string; role: string; correlationId?: string; idempotencyKey?: string },
+  context: MutationSessionContext,
 ): Promise<{ documentId: string; rejected: boolean }> {
   const data = await phrFetch(`/documents/${encodeURIComponent(docId)}/ocr/reject`, {
     method: 'POST',
@@ -684,7 +681,7 @@ export async function fetchNotifications(principalId: string, context: SessionCo
 
 export async function markNotificationRead(
   notificationId: string,
-  context: SessionContext & { idempotencyKey?: string },
+  context: MutationSessionContext,
 ): Promise<{ notificationId: string; read: boolean }> {
   if (!notificationId.trim()) {
     throw new PhrApiError('notificationId is required to mark a notification as read', 400, 'Notification');
@@ -702,7 +699,7 @@ export async function markNotificationRead(
 // --- Provider ---
 
 export async function fetchProviderPatients(
-  context: { tenantId: string; principalId: string; role: string },
+  context: SessionContext,
 ): Promise<PatientRosterEntry[]> {
   const body = z.object({ items: z.array(PatientRosterEntrySchema) })
     .parse(await phrFetch('/provider/patients', { context }));

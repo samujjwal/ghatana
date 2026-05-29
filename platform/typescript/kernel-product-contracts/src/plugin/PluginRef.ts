@@ -7,6 +7,8 @@
  * @doc.pattern ValueObject
  */
 
+import { z } from "zod";
+
 /**
  * Plugin reference.
  */
@@ -30,4 +32,17 @@ export interface PluginRef {
    * Path to the plugin contract implementation.
    */
   readonly contractPath: string;
+}
+
+export const PluginRefSchema = z
+  .object({
+    pluginId: z.string().trim().min(1),
+    kind: z.string().trim().min(1),
+    enabled: z.boolean(),
+    contractPath: z.string().trim().min(1),
+  })
+  .strict();
+
+export function validatePluginRef(value: unknown): value is PluginRef {
+  return PluginRefSchema.safeParse(value).success;
 }

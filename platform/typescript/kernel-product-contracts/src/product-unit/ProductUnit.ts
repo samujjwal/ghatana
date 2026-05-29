@@ -60,6 +60,8 @@ const LIFECYCLE_STATUSES = [
   "enabled",
 ] as const satisfies readonly LifecycleStatus[];
 
+export const LifecycleStatusSchema = z.enum(LIFECYCLE_STATUSES);
+
 /**
  * Provider mode for lifecycle execution.
  */
@@ -69,6 +71,8 @@ const PROVIDER_MODES = [
   "bootstrap",
   "platform",
 ] as const satisfies readonly ProviderMode[];
+
+export const ProviderModeSchema = z.enum(PROVIDER_MODES);
 
 const SECRET_KEY_PATTERN = /(secret|password|token|api[-_]?key|credential)/i;
 
@@ -448,6 +452,56 @@ export const ProviderRefSchema = z
   })
   .strict();
 
+export const ProductUnitConformanceSchema = z
+  .object({
+    requiredChecks: z.array(z.string().trim().min(1)),
+    level: z.string().trim().min(1),
+    exemptions: z.array(z.string().trim().min(1)).optional(),
+  })
+  .strict();
+
+export const ProductUnitGovernanceSchema = z
+  .object({
+    approvalGates: z.array(z.string().trim().min(1)).optional(),
+    verificationGates: z.array(z.string().trim().min(1)).optional(),
+    securityRequirements: z.array(z.string().trim().min(1)).optional(),
+    privacyRequirements: z.array(z.string().trim().min(1)).optional(),
+  })
+  .strict();
+
+export const ProductUnitValidationResultSchema = z
+  .object({
+    valid: z.boolean(),
+    errors: z.array(z.string()),
+  })
+  .strict();
+
+export const ProductUnitValidationReasonCodeSchema = z.enum([
+  "missing-scope",
+  "missing-lifecycle-config-path",
+  "missing-lifecycle-profile",
+  "missing-executable-surfaces",
+  "invalid-provider-ref",
+  "secret-like-config-or-metadata",
+  "schema-invalid",
+]);
+
+export const ProductUnitValidationSeveritySchema = z.enum(["error", "warning"]);
+
+export const ProductUnitValidationIssueSchema = z
+  .object({
+    path: z.string(),
+    reasonCode: ProductUnitValidationReasonCodeSchema,
+    message: z.string(),
+    severity: ProductUnitValidationSeveritySchema,
+  })
+  .strict();
+
+export const ProductUnitDetailedValidationResultSchema =
+  ProductUnitValidationResultSchema.extend({
+    issues: z.array(ProductUnitValidationIssueSchema),
+  });
+
 export const ProductUnitDraftSchema = z
   .object({
     schemaVersion: z.literal("1.0.0").optional(),
@@ -480,9 +534,9 @@ export const ProductUnitSchema = z
     productShape: z.enum(PRODUCT_SHAPES).optional(),
     sourceRefs: z.array(ProductUnitSourceRefSchema).optional(),
     lifecycleProfile: z.string().trim().min(1).optional(),
-    lifecycleStatus: z.enum(LIFECYCLE_STATUSES).optional(),
+    lifecycleStatus: LifecycleStatusSchema.optional(),
     semanticArtifactRefs: z.array(z.string().trim().min(1)).optional(),
-    providerMode: z.enum(PROVIDER_MODES).optional(),
+    providerMode: ProviderModeSchema.optional(),
     environments: z.array(z.object({ name: z.string(), target: z.string().optional(), variables: z.record(z.string(), z.string()).optional() })).optional(),
     pluginBindings: z.array(z.object({ id: z.string(), pluginRef: z.object({ pluginId: z.string() }), productUnitId: z.string(), enabled: z.boolean(), lifecycleHooks: z.array(z.string()), priority: z.number() })).optional(),
     gateBindings: z.array(z.object({ gateId: z.string(), phase: z.string(), required: z.boolean(), providerId: z.string().optional() })).optional(),
@@ -493,23 +547,8 @@ export const ProductUnitSchema = z
     healthConfig: RecordSchema.optional(),
     agenticActionEvidence: z.array(z.object({ evidenceId: z.string(), kind: z.string(), ref: z.string(), capturedAt: z.string(), redacted: z.boolean(), providedByAgentId: z.string().optional(), description: z.string().optional() })).optional(),
     interactions: ProductInteractionDeclarationSchema.optional(),
-    conformance: z
-      .object({
-        requiredChecks: z.array(z.string().trim().min(1)),
-        level: z.string().trim().min(1),
-        exemptions: z.array(z.string().trim().min(1)).optional(),
-      })
-      .strict()
-      .optional(),
-    governance: z
-      .object({
-        approvalGates: z.array(z.string().trim().min(1)).optional(),
-        verificationGates: z.array(z.string().trim().min(1)).optional(),
-        securityRequirements: z.array(z.string().trim().min(1)).optional(),
-        privacyRequirements: z.array(z.string().trim().min(1)).optional(),
-      })
-      .strict()
-      .optional(),
+    conformance: ProductUnitConformanceSchema.optional(),
+    governance: ProductUnitGovernanceSchema.optional(),
     metadata: RecordSchema.optional(),
   })
   .strict()
@@ -554,6 +593,47 @@ export const ProductUnitSchema = z
       });
     }
   });
+
+export const ExecutableProductUnitSchema = ProductUnitSchema.superRefine(
+  (productUnit, context) => {
+    if (productUnit.lifecycleStatus !== "enabled") {
+      context.addIssue({
+        code: "custom",
+        path: ["lifecycleStatus"],
+        message: 'executable ProductUnit requires lifecycleStatus "enabled"',
+      });
+    }
+    if (productUnit.scope === undefined) {
+      context.addIssue({
+        code: "custom",
+        path: ["scope"],
+        message: "executable ProductUnit requires scope",
+      });
+    }
+    if (productUnit.lifecycleProfile === undefined) {
+      context.addIssue({
+        code: "custom",
+        path: ["lifecycleProfile"],
+        message: "executable ProductUnit requires lifecycleProfile",
+      });
+    }
+    if (productUnit.surfaces.length === 0) {
+      context.addIssue({
+        code: "custom",
+        path: ["surfaces"],
+        message: "executable ProductUnit requires at least one surface",
+      });
+    }
+    if (!hasStringConfigValue(productUnit.sourceProviderRef, "lifecycleConfigPath")) {
+      context.addIssue({
+        code: "custom",
+        path: ["sourceProviderRef", "config", "lifecycleConfigPath"],
+        message:
+          "executable ProductUnit requires sourceProviderRef.config.lifecycleConfigPath",
+      });
+    }
+  }
+);
 
 function formatProductUnitIssue(issue: z.ZodIssue): string {
   const path = issue.path.join(".");
@@ -758,6 +838,62 @@ export function validateProductUnit(value: unknown): ProductUnitValidationResult
   return { valid: result.valid, errors: result.errors };
 }
 
+export function validateLifecycleStatus(value: unknown): value is LifecycleStatus {
+  return LifecycleStatusSchema.safeParse(value).success;
+}
+
+export function validateProviderMode(value: unknown): value is ProviderMode {
+  return ProviderModeSchema.safeParse(value).success;
+}
+
+export function validateProductUnitConformance(
+  value: unknown
+): value is ProductUnitConformance {
+  return ProductUnitConformanceSchema.safeParse(value).success;
+}
+
+export function validateProductUnitGovernance(
+  value: unknown
+): value is ProductUnitGovernance {
+  return ProductUnitGovernanceSchema.safeParse(value).success;
+}
+
+export function validateProductUnitValidationResult(
+  value: unknown
+): value is ProductUnitValidationResult {
+  return ProductUnitValidationResultSchema.safeParse(value).success;
+}
+
+export function validateProductUnitValidationReasonCode(
+  value: unknown
+): value is ProductUnitValidationReasonCode {
+  return ProductUnitValidationReasonCodeSchema.safeParse(value).success;
+}
+
+export function validateProductUnitValidationSeverity(
+  value: unknown
+): value is ProductUnitValidationSeverity {
+  return ProductUnitValidationSeveritySchema.safeParse(value).success;
+}
+
+export function validateProductUnitValidationIssue(
+  value: unknown
+): value is ProductUnitValidationIssue {
+  return ProductUnitValidationIssueSchema.safeParse(value).success;
+}
+
+export function validateProductUnitDetailedValidationResult(
+  value: unknown
+): value is ProductUnitDetailedValidationResult {
+  return ProductUnitDetailedValidationResultSchema.safeParse(value).success;
+}
+
+export function validateExecutableProductUnit(
+  value: unknown
+): value is ExecutableProductUnit {
+  return ExecutableProductUnitSchema.safeParse(value).success;
+}
+
 /**
  * Type guard to check if an object is a valid ProductUnit.
  */
@@ -804,6 +940,30 @@ export interface CreateExecutableProductUnitInput {
   readonly conformance?: ProductUnitConformance;
   readonly governance?: ProductUnitGovernance;
   readonly metadata?: Record<string, unknown>;
+}
+
+export const CreateExecutableProductUnitInputSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    name: z.string().trim().min(1),
+    kind: z.enum(PRODUCT_UNIT_KINDS),
+    surfaces: z.array(ProductUnitSurfaceSchema).min(1),
+    scope: ProductUnitScopeSchema.optional(),
+    owner: z.string().trim().min(1).optional(),
+    registryProviderRef: ProviderRefSchema.optional(),
+    sourceProviderRef: ProviderRefSchema.optional(),
+    lifecycleProfile: z.string().trim().min(1).optional(),
+    lifecycleStatus: LifecycleStatusSchema.optional(),
+    conformance: ProductUnitConformanceSchema.optional(),
+    governance: ProductUnitGovernanceSchema.optional(),
+    metadata: RecordSchema.optional(),
+  })
+  .strict();
+
+export function validateCreateExecutableProductUnitInput(
+  value: unknown
+): value is CreateExecutableProductUnitInput {
+  return CreateExecutableProductUnitInputSchema.safeParse(value).success;
 }
 
 export function createExecutableProductUnit(
@@ -871,6 +1031,43 @@ export interface ProductUnitProjectionInput {
   readonly governance?: ProductUnitGovernance;
   readonly semanticArtifactRefs?: readonly string[];
   readonly metadata?: Record<string, unknown>;
+}
+
+export const ProductUnitProjectionInputSchema = z
+  .object({
+    productId: z.string().trim().min(1),
+    productName: z.string().trim().min(1),
+    productKind: z.enum(PRODUCT_UNIT_KINDS),
+    lifecycleStatus: LifecycleStatusSchema,
+    lifecycleExecutionAllowed: z.boolean(),
+    lifecycleConfigPath: z.string().trim().min(1),
+    surfaces: z.array(ProductUnitSurfaceSchema).min(1),
+    productShape: z.enum(PRODUCT_SHAPES).optional(),
+    sourceRefs: z.array(ProductUnitSourceRefSchema).optional(),
+    lifecycleProfile: z.string().trim().min(1).optional(),
+    owner: z.string().trim().min(1).optional(),
+    scope: ProductUnitScopeSchema.optional(),
+    providerMode: ProviderModeSchema.optional(),
+    environments: z.array(z.unknown()).optional(),
+    pluginBindings: z.array(z.unknown()).optional(),
+    gateBindings: z.array(z.unknown()).optional(),
+    policyPacks: z.array(z.string().trim().min(1)).optional(),
+    artifacts: z.array(z.unknown()).optional(),
+    deployments: z.array(z.unknown()).optional(),
+    releaseConfig: RecordSchema.optional(),
+    healthConfig: RecordSchema.optional(),
+    agenticActionEvidence: z.array(z.unknown()).optional(),
+    conformance: ProductUnitConformanceSchema.optional(),
+    governance: ProductUnitGovernanceSchema.optional(),
+    semanticArtifactRefs: z.array(z.string().trim().min(1)).optional(),
+    metadata: RecordSchema.optional(),
+  })
+  .strict();
+
+export function validateProductUnitProjectionInput(
+  value: unknown
+): value is ProductUnitProjectionInput {
+  return ProductUnitProjectionInputSchema.safeParse(value).success;
 }
 
 /**

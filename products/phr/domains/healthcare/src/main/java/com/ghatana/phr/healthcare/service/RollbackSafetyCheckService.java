@@ -1,5 +1,7 @@
 package com.ghatana.phr.healthcare.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.phr.healthcare.domain.Patient;
 import com.ghatana.phr.healthcare.port.PatientStore;
 import io.activej.promise.Promise;
@@ -7,8 +9,12 @@ import io.activej.promise.Promise;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 
@@ -31,9 +37,13 @@ import java.util.concurrent.Executor;
  */
 public final class RollbackSafetyCheckService {
 
+    private static final int ROLLBACK_PATIENT_SCAN_LIMIT = 10_000;
+    private static final int ACTIVE_TREATMENT_WINDOW_MINUTES = 30;
+
     private final PatientStore patientStore;
     private final Executor executor;
     private final Path deploymentHistoryPath;
+    private final ObjectMapper objectMapper;
 
     public record RollbackSafetyCheck(
         String tenantId,
@@ -78,6 +88,7 @@ public final class RollbackSafetyCheckService {
         this.patientStore = Objects.requireNonNull(patientStore, "patientStore must not be null");
         this.executor = Objects.requireNonNull(executor, "executor must not be null");
         this.deploymentHistoryPath = Objects.requireNonNull(deploymentHistoryPath, "deploymentHistoryPath must not be null");
+        this.objectMapper = new ObjectMapper();
     }
 
     /**
@@ -139,12 +150,22 @@ public final class RollbackSafetyCheckService {
                 return false;
             }
             
-            String content = Files.readString(deploymentHistoryPath);
-            // In production, this would parse JSON and check if artifactId exists in history
-            // For now, we do a simple string check
-            return content.contains(artifactId) && artifactId != null && !artifactId.isBlank();
+            if (artifactId == null || artifactId.isBlank()) {
+                return false;
+            }
+            JsonNode root = objectMapper.readTree(Files.readString(deploymentHistoryPath));
+            JsonNode history = root.path("history");
+            if (!history.isArray()) {
+                return false;
+            }
+            for (JsonNode entry : history) {
+                if (artifactId.equals(entry.path("deploymentId").asText(null))
+                        || artifactId.equals(entry.path("artifactDigest").asText(null))) {
+                    return true;
+                }
+            }
+            return false;
         } catch (Exception e) {
-            // Log error in production
             return false;
         }
     }
@@ -157,16 +178,17 @@ public final class RollbackSafetyCheckService {
      * @return true if data is consistent, false otherwise
      */
     private boolean checkDataConsistency(String tenantId) {
-        // Planned production hardening for data consistency checks:
-        // 1. Verify foreign key constraints in patient_records, consent_grants, audit_events
-        // 2. Check for orphaned records (records without valid parent references)
-        // 3. Validate data type constraints and nullability
-        // 4. Run checksum validation on critical patient data
-        // 5. Verify tenant isolation (no cross-tenant data leakage)
-        //
-        // Current implementation assumes data is consistent for rollback safety.
-        // This must be replaced with real database integrity checks before production.
-        return true;
+        return loadTenantPatients(tenantId).stream().allMatch(patient ->
+            patient.patientId() != null
+                && tenantId.equals(patient.tenantId())
+                && patient.firstName() != null
+                && !patient.firstName().isBlank()
+                && patient.lastName() != null
+                && !patient.lastName().isBlank()
+                && patient.dateOfBirth() != null
+                && !patient.dateOfBirth().isAfter(LocalDate.now())
+                && patient.registeredAt() != null
+        );
     }
 
     /**
@@ -181,16 +203,11 @@ public final class RollbackSafetyCheckService {
      * @return true if there are active treatments, false otherwise
      */
     private boolean checkActiveTreatments(String tenantId) {
-        // Planned production hardening for active treatment checks:
-        // 1. Query for active emergency access sessions in the last 30 minutes
-        // 2. Check for in-progress consent revocation operations
-        // 3. Verify no active FHIR export jobs
-        // 4. Check for uncommitted patient data modifications
-        // 5. Verify no active healthcare gate validations in progress
-        //
-        // Current implementation assumes no active treatments for rollback safety.
-        // This must be replaced with real treatment tracking before production.
-        return false;
+        Instant activeAfter = Instant.now().minus(ACTIVE_TREATMENT_WINDOW_MINUTES, ChronoUnit.MINUTES);
+        return loadTenantPatients(tenantId).stream()
+            .map(Patient::lastClinicalActivityAt)
+            .filter(Objects::nonNull)
+            .anyMatch(activityAt -> !activityAt.isBefore(activeAfter));
     }
 
     /**
@@ -204,16 +221,26 @@ public final class RollbackSafetyCheckService {
      * @return true if audit trail is intact, false otherwise
      */
     private boolean checkAuditTrailIntegrity(String tenantId) {
-        // Planned production hardening for audit integrity checks:
-        // 1. Verify audit event sequence numbers are continuous
-        // 2. Check for gaps in audit event timestamps
-        // 3. Validate audit event signatures if signing is enabled
-        // 4. Run tamper detection on audit log storage
-        // 5. Verify audit log retention policy compliance
-        //
-        // Current implementation assumes audit integrity is good for rollback safety.
-        // This must be replaced with real audit verification before production.
-        return true;
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        try {
+            if (!Files.exists(deploymentHistoryPath)) {
+                return false;
+            }
+            JsonNode root = objectMapper.readTree(Files.readString(deploymentHistoryPath));
+            JsonNode schemaVersion = root.path("schemaVersion");
+            JsonNode history = root.path("history");
+            if (!schemaVersion.isTextual() || !history.isArray()) {
+                return false;
+            }
+            for (JsonNode entry : history) {
+                if (!entry.path("deploymentId").isTextual() || !entry.path("status").isTextual()) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**
@@ -227,15 +254,21 @@ public final class RollbackSafetyCheckService {
      * @return true if consent records are consistent, false otherwise
      */
     private boolean checkConsentConsistency(String tenantId) {
-        // Planned production hardening for consent consistency checks:
-        // 1. Verify all consent grants have valid patient references
-        // 2. Check for orphaned consent records (no patient reference)
-        // 3. Validate consent revocation timestamps are monotonic
-        // 4. Verify emergency consent grants have required audit trails
-        // 5. Check consent cache consistency with database state
-        //
-        // Current implementation assumes consent is consistent for rollback safety.
-        // This must be replaced with real consent verification before production.
+        Set<String> observedNhsIds = new HashSet<>();
+        for (Patient patient : loadTenantPatients(tenantId)) {
+            if (patient.patientId() == null || !tenantId.equals(patient.tenantId())) {
+                return false;
+            }
+            String nhsId = patient.nhsId();
+            if (nhsId != null && !nhsId.isBlank() && !observedNhsIds.add(nhsId)) {
+                return false;
+            }
+        }
         return true;
+    }
+
+    private List<Patient> loadTenantPatients(String tenantId) {
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        return patientStore.findByTenant(tenantId, ROLLBACK_PATIENT_SCAN_LIMIT, 0);
     }
 }

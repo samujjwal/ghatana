@@ -13,7 +13,7 @@
  *   operations; it is available in React Native 0.71 and newer.
  *
  * Security properties:
- * - AES-256-GCM provides authenticated encryption: any tampering with the
+ * - AES-256-GCM provides authenticated encryption: any modification of the
  *   ciphertext or IV will cause decryption to throw, returning null.
  * - A fresh 12-byte IV is generated for every write.
  * - Raw AES key material is stored in SecureStore as base64, then imported as
@@ -39,9 +39,6 @@ const KEY_LENGTH_BITS = 256;
 const IV_LENGTH_BYTES = 12;
 const ALGORITHM = 'AES-GCM';
 const KEY_ROTATION_THRESHOLD_DAYS = 90;
-const TAMPER_DETECTION_KEY = 'phr-phi-tamper-check';
-const TAMPER_DETECTION_VERSION = 'phr-phi-tamper-version';
-const INTEGRITY_CHECK_KEY = 'phr-phi-integrity-check';
 const MAX_KEY_AGE_DAYS = 365; // Force key rotation after 1 year regardless of threshold
 const BIOMETRIC_POLICY_KEY = 'phr-phi-biometric-policy-enabled';
 const DEVICE_INSTALL_ID_KEY = 'phr-phi-device-install-id';
@@ -107,12 +104,11 @@ async function getOrCreateKey(): Promise<CryptoKey> {
     return cachedKey;
   }
 
-  // Verify device install integrity before key access
-  if (!(await verifyDeviceInstallIntegrity())) {
-    await logSecurityEvent('DEVICE_INTEGRITY_CHECK_FAILED');
+  // Verify that the per-install marker is available before key access.
+  if (!(await verifyDeviceInstallMarker())) {
+    await logSecurityEvent('DEVICE_INSTALL_MARKER_MISSING');
     await phiClearAll();
     await clearKey();
-    // M-003: Bounded retry - attempt fresh initialization once without recursion
     return initializeFreshKey();
   }
 
@@ -122,31 +118,6 @@ async function getOrCreateKey(): Promise<CryptoKey> {
   const currentVersion = versionStr ? parseInt(versionStr, 10) : 0;
   
   if (stored) {
-    // Verify tamper detection before using cached key
-    if (!(await verifyTamperDetection())) {
-      await logSecurityEvent('TAMPER_DETECTION_FAILED');
-      await phiClearAll();
-      await clearKey();
-      return initializeFreshKey();
-    }
-
-    // Verify integrity check
-    if (!(await verifyIntegrityCheck())) {
-      await logSecurityEvent('INTEGRITY_CHECK_FAILED');
-      await phiClearAll();
-      await clearKey();
-      return initializeFreshKey();
-    }
-
-    // Verify tamper detection version matches expected
-    const tamperVersion = await SecureStore.getItemAsync(TAMPER_DETECTION_VERSION);
-    if (tamperVersion !== '1') {
-      await logSecurityEvent('TAMPER_VERSION_MISMATCH');
-      await phiClearAll();
-      await clearKey();
-      return initializeFreshKey();
-    }
-
     await requireBiometricIfEnabled();
 
     cachedKey = await importKey(stored);
@@ -185,11 +156,6 @@ async function initializeFreshKey(): Promise<CryptoKey> {
   await SecureStore.setItemAsync(KEY_VERSION_STORE_NAME, '1');
   await SecureStore.setItemAsync(KEY_CREATED_AT_STORE_NAME, createdAt);
   await SecureStore.setItemAsync(KEY_LAST_ACCESS_STORE_NAME, createdAt);
-  
-  // Initialize tamper detection and integrity checks
-  await initializeTamperDetection();
-  await initializeIntegrityCheck();
-  await SecureStore.setItemAsync(TAMPER_DETECTION_VERSION, '1');
   
   // Initialize device install ID
   await getOrCreateDeviceInstallId();
@@ -242,9 +208,6 @@ async function rotateKey(): Promise<void> {
   await SecureStore.setItemAsync(KEY_VERSION_STORE_NAME, newVersion.toString());
   await SecureStore.setItemAsync(KEY_CREATED_AT_STORE_NAME, newCreatedAt);
   
-  // Update tamper detection with new key
-  await initializeTamperDetection();
-  
   cachedKey = newCryptoKey;
   cachedKeyVersion = newVersion;
 }
@@ -254,73 +217,15 @@ async function clearKey(): Promise<void> {
   await SecureStore.deleteItemAsync(KEY_VERSION_STORE_NAME);
   await SecureStore.deleteItemAsync(KEY_CREATED_AT_STORE_NAME);
   await SecureStore.deleteItemAsync(KEY_LAST_ACCESS_STORE_NAME);
-  await SecureStore.deleteItemAsync(TAMPER_DETECTION_KEY);
-  await SecureStore.deleteItemAsync(TAMPER_DETECTION_VERSION);
-  await SecureStore.deleteItemAsync(INTEGRITY_CHECK_KEY);
   await SecureStore.deleteItemAsync(BIOMETRIC_POLICY_KEY);
   await SecureStore.deleteItemAsync(DEVICE_INSTALL_ID_KEY);
   cachedKey = null;
   cachedKeyVersion = 0;
 }
 
-async function initializeTamperDetection(): Promise<void> {
-  const checkValue = await generateTamperCheck();
-  await SecureStore.setItemAsync(TAMPER_DETECTION_KEY, checkValue, {
-    keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
-  });
-}
-
-async function generateTamperCheck(): Promise<string> {
-  const timestamp = Date.now().toString();
-  const random = crypto.getRandomValues(new Uint8Array(16));
-  const combined = timestamp + ':' + uint8ArrayToBase64(random);
-  return combined;
-}
-
-async function verifyTamperDetection(): Promise<boolean> {
-  try {
-    const stored = await SecureStore.getItemAsync(TAMPER_DETECTION_KEY);
-    if (!stored) return false; // Missing tamper check is suspicious
-    
-    // This local sentinel only detects missing or malformed key metadata.
-    const parts = stored.split(':');
-    const firstPart = parts[0];
-    return parts.length === 2 && firstPart !== undefined && firstPart.length > 0;
-  } catch {
-    return false;
-  }
-}
-
 async function updateKeyAccessTime(): Promise<void> {
   const now = Date.now().toString();
   await SecureStore.setItemAsync(KEY_LAST_ACCESS_STORE_NAME, now);
-}
-
-async function initializeIntegrityCheck(): Promise<void> {
-  const checkValue = await generateIntegrityCheck();
-  await SecureStore.setItemAsync(INTEGRITY_CHECK_KEY, checkValue, {
-    keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
-  });
-}
-
-async function generateIntegrityCheck(): Promise<string> {
-  const timestamp = Date.now().toString();
-  const random = crypto.getRandomValues(new Uint8Array(32));
-  const combined = timestamp + ':' + uint8ArrayToBase64(random);
-  return combined;
-}
-
-async function verifyIntegrityCheck(): Promise<boolean> {
-  try {
-    const stored = await SecureStore.getItemAsync(INTEGRITY_CHECK_KEY);
-    if (!stored) return false;
-    
-    const parts = stored.split(':');
-    const firstPart = parts[0];
-    return parts.length === 2 && firstPart !== undefined && firstPart.length > 0;
-  } catch {
-    return false;
-  }
 }
 
 // Biometric access policy
@@ -375,7 +280,7 @@ async function authenticateWithBiometrics(): Promise<boolean> {
 }
 
 async function logSecurityEvent(event: string): Promise<void> {
-  // M-004: Store safe reason codes only; no PHI or key material is logged.
+  // Store safe reason codes only; no PHI or key material is logged.
   const timestamp = Date.now();
   const logEntry = `${timestamp}:${event}`;
   await SecureStore.setItemAsync('phr-security-log', logEntry, {
@@ -424,7 +329,7 @@ async function unregisterPhiKey(key: string): Promise<void> {
   });
 }
 
-async function verifyDeviceInstallIntegrity(): Promise<boolean> {
+async function verifyDeviceInstallMarker(): Promise<boolean> {
   try {
     const storedInstallId = await SecureStore.getItemAsync(DEVICE_INSTALL_ID_KEY);
     if (!storedInstallId) {
@@ -433,7 +338,6 @@ async function verifyDeviceInstallIntegrity(): Promise<boolean> {
       return true;
     }
     
-    // Verify the install ID still exists (not tampered)
     return storedInstallId.length > 0;
   } catch {
     return false;
@@ -500,7 +404,7 @@ const productionAdapter: PhiStorageAdapter = {
       if (error instanceof BiometricAuthenticationRequiredError) {
         throw error;
       }
-      // Decryption failure (tampered data, wrong key after reinstall, etc.) is treated as absent.
+      // Decryption failure from modified ciphertext or a missing key is treated as absent.
       await AsyncStorage.removeItem(key);
       await unregisterPhiKey(key);
       return null;
@@ -542,7 +446,7 @@ export async function phiSet(key: string, value: string): Promise<void> {
 
 /**
  * Retrieves and decrypts a PHI-bearing value. Returns `null` when absent,
- * corrupted, or when decryption fails (key rotation, tampered ciphertext).
+ * corrupted, or when decryption fails after key rotation or reinstall.
  *
  * @param key    storage key; must not contain PHI itself
  * @returns    plaintext string or null
@@ -631,7 +535,7 @@ export async function phiIsBiometricPolicyEnabled(): Promise<boolean> {
 }
 
 /**
- * Returns the device install ID used for integrity verification.
+ * Returns the device install ID used to bind local key metadata to this install.
  * This ID is generated once per installation and stored in the secure keychain.
  */
 export async function phiGetDeviceInstallId(): Promise<string> {

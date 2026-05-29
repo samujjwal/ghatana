@@ -57,13 +57,13 @@ public final class PhrAuthRoutes {
      * @param eventloop        the ActiveJ event loop; must not be null
      * @param securityManager  the kernel security manager for credential validation; must not be null
      * @param userRepository   the user repository for session population; must not be null
-     * @param auditTrailService the audit trail service for recording auth events; may be null
+     * @param auditTrailService the audit trail service for recording auth events; must not be null
      */
     public PhrAuthRoutes(Eventloop eventloop, KernelSecurityManager securityManager, UserRepository userRepository, AuditTrailService auditTrailService) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.securityManager = Objects.requireNonNull(securityManager, "securityManager must not be null");
         this.userRepository = Objects.requireNonNull(userRepository, "userRepository must not be null");
-        this.auditTrailService = auditTrailService;
+        this.auditTrailService = Objects.requireNonNull(auditTrailService, "auditTrailService must not be null");
     }
 
     /**
@@ -106,20 +106,17 @@ public final class PhrAuthRoutes {
                 }
 
                 if (!result.isValid()) {
-                    // Record failed login attempt for audit
-                    if (auditTrailService != null) {
-                        AuditTrailService.AuditTrailEvent failedEvent = AuditTrailService.AuditTrailEvent.builder()
-                            .eventId(UUID.randomUUID().toString())
-                            .eventType("AUTH_LOGIN_FAILED")
-                            .entityId(nationalId)
-                            .userId(nationalId)
-                            .tenantId("default-tenant")
-                            .action("LOGIN_ATTEMPT")
-                            .data(Map.of("reason", "INVALID_CREDENTIALS"))
-                            .timestamp(Instant.now().toEpochMilli())
-                            .build();
-                        auditTrailService.recordAuditEvent(failedEvent);
-                    }
+                    AuditTrailService.AuditTrailEvent failedEvent = AuditTrailService.AuditTrailEvent.builder()
+                        .eventId(UUID.randomUUID().toString())
+                        .eventType("AUTH_LOGIN_FAILED")
+                        .entityId(nationalId)
+                        .userId(nationalId)
+                        .tenantId("default-tenant")
+                        .action("LOGIN_ATTEMPT")
+                        .data(Map.of("reason", "INVALID_CREDENTIALS"))
+                        .timestamp(Instant.now().toEpochMilli())
+                        .build();
+                    auditTrailService.recordAuditEvent(failedEvent);
                     return PhrRouteSupport.errorResponse(401, "INVALID_CREDENTIALS", "Invalid national ID or password");
                 }
 
@@ -143,57 +140,50 @@ public final class PhrAuthRoutes {
                 session.put("name", name);
                 session.put("expiresAt", expiresAt);
 
-                // Record successful login for audit
-                if (auditTrailService != null) {
-                    AuditTrailService.AuditTrailEvent successEvent = AuditTrailService.AuditTrailEvent.builder()
-                        .eventId(UUID.randomUUID().toString())
-                        .eventType("AUTH_LOGIN_SUCCESS")
-                        .entityId(user.getUserId())
-                        .userId(user.getUserId())
-                        .tenantId(tenantId)
-                        .action("LOGIN")
-                        .data(Map.of("role", role, "sessionExpiresAt", expiresAt))
-                        .timestamp(Instant.now().toEpochMilli())
-                        .build();
-                    auditTrailService.recordAuditEvent(successEvent);
-                }
+                AuditTrailService.AuditTrailEvent successEvent = AuditTrailService.AuditTrailEvent.builder()
+                    .eventId(UUID.randomUUID().toString())
+                    .eventType("AUTH_LOGIN_SUCCESS")
+                    .entityId(user.getUserId())
+                    .userId(user.getUserId())
+                    .tenantId(tenantId)
+                    .action("LOGIN")
+                    .data(Map.of("role", role, "sessionExpiresAt", expiresAt))
+                    .timestamp(Instant.now().toEpochMilli())
+                    .build();
+                auditTrailService.recordAuditEvent(successEvent);
 
                 return PhrRouteSupport.jsonResponse(200, session);
             });
     }
 
     private Promise<HttpResponse> handleLogout(HttpRequest request) {
-        // Logout is stateless at the server side: the frontend clears sessionStorage.
-        // We log the event and return 204. The X-Principal-ID header is used for
-        // audit purposes; its absence is not a hard error on logout.
-        String principalId = request.getHeader(io.activej.http.HttpHeaders.of("X-Principal-ID"));
-        String tenantId = request.getHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"));
-        
-        if (principalId != null && !principalId.isBlank()) {
-            // Record logout event for audit
-            if (auditTrailService != null) {
-                AuditTrailService.AuditTrailEvent logoutEvent = AuditTrailService.AuditTrailEvent.builder()
-                    .eventId(UUID.randomUUID().toString())
-                    .eventType("AUTH_LOGOUT")
-                    .entityId(principalId)
-                    .userId(principalId)
-                    .tenantId(tenantId != null ? tenantId : "default-tenant")
-                    .action("LOGOUT")
-                    .data(Map.of())
-                    .timestamp(Instant.now().toEpochMilli())
-                    .build();
-                auditTrailService.recordAuditEvent(logoutEvent);
-            }
-            
-            // Structured log for observability — audit trail records are written
-            // via AuditTrailService in a dedicated audit middleware; the route
-            // simply acknowledges the logout.
-            org.slf4j.LoggerFactory.getLogger(PhrAuthRoutes.class)
-                .info("PHR session logout acknowledged");
+        PhrRouteSupport.PhrRequestContext context;
+        try {
+            context = PhrRouteSupport.requireContext(request);
+        } catch (IllegalArgumentException ex) {
+            return PhrRouteSupport.errorResponse(401, "INVALID_SESSION_CONTEXT", ex.getMessage());
         }
+
+        if (userRepository.findByUserId(context.principalId()).isEmpty()) {
+            return PhrRouteSupport.errorResponse(401, "INVALID_SESSION", "Session principal not found");
+        }
+
+        AuditTrailService.AuditTrailEvent logoutEvent = AuditTrailService.AuditTrailEvent.builder()
+            .eventId(UUID.randomUUID().toString())
+            .eventType("AUTH_LOGOUT")
+            .entityId(context.principalId())
+            .userId(context.principalId())
+            .tenantId(context.tenantId())
+            .action("LOGOUT")
+            .data(Map.of("role", context.role()))
+            .timestamp(Instant.now().toEpochMilli())
+            .build();
+        auditTrailService.recordAuditEvent(logoutEvent);
+
+        org.slf4j.LoggerFactory.getLogger(PhrAuthRoutes.class)
+            .info("PHR session logout acknowledged");
         return Promise.of(HttpResponse.ofCode(204).build());
     }
-
     private Promise<HttpResponse> handleMe(HttpRequest request) {
         PhrRouteSupport.PhrRequestContext context;
         try {

@@ -21,34 +21,28 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
 
 /**
  * Enforcement matrix tests for {@link PhrAdministrativeRoutes}.
  *
- * <p>Verifies that administrative endpoints enforce role and consent-based access:
- * <ul>
- *   <li>Patient may access their own appointments and referrals.</li>
- *   <li>Clinician may create appointments and referrals with consent.</li>
- *   <li>Admin may access all administrative endpoints.</li>
- *   <li>400 is returned when required context headers are absent.</li>
- * </ul>
+ * <p>Verifies that administrative endpoints enforce role and resource/action-specific policy access.
  *
  * @doc.type class
- * @doc.purpose Administrative routes enforcement matrix: verifies RBAC for appointments, telemedicine, referrals, billing
+ * @doc.purpose Administrative routes enforcement matrix: verifies RBAC and resource/action policy for administrative APIs
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("PhrAdministrativeRoutes — enforcement matrix")
+@DisplayName("PhrAdministrativeRoutes - enforcement matrix")
 @ExtendWith(MockitoExtension.class)
 class PhrAdministrativeRoutesTest extends EventloopTestBase {
 
@@ -93,11 +87,11 @@ class PhrAdministrativeRoutesTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("GET /appointments — list patient appointments")
+    @DisplayName("GET /appointments - list patient appointments")
     class ListAppointments {
 
         @Test
-        @DisplayName("200 — patient may list their own appointments")
+        @DisplayName("200 - patient may list their own appointments")
         void patientMayListOwnAppointments() throws Exception {
             HttpRequest request = contextRequest(
                 HttpMethod.GET, "/appointments/?patientId=patient-1", "t1", "patient-1", "patient");
@@ -105,11 +99,13 @@ class PhrAdministrativeRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(200);
+            verify(policyEvaluator).canAccessPhiResourceAsync(
+                any(), eq("patient-1"), eq("appointments"), eq("READ"), eq("t1"), nullable(String.class));
         }
 
         @Test
-        @DisplayName("200 — clinician with consent may list patient appointments")
-        void clinicianWithConsentMayListAppointments() throws Exception {
+        @DisplayName("200 - clinician with policy access may list patient appointments")
+        void clinicianWithPolicyMayListAppointments() throws Exception {
             HttpRequest request = contextRequest(
                 HttpMethod.GET, "/appointments/?patientId=patient-1", "t1", "dr-1", "clinician");
 
@@ -119,7 +115,7 @@ class PhrAdministrativeRoutesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("400 — missing patientId query parameter")
+        @DisplayName("400 - missing patientId query parameter")
         void returns400WhenPatientIdMissing() throws Exception {
             HttpRequest request = contextRequest(
                 HttpMethod.GET, "/appointments/", "t1", "patient-1", "patient");
@@ -130,7 +126,7 @@ class PhrAdministrativeRoutesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("400 — missing context headers")
+        @DisplayName("400 - missing context headers")
         void returns400WhenContextMissing() throws Exception {
             HttpRequest request = HttpRequest.get("http://localhost/appointments/?patientId=patient-1").build();
 
@@ -141,11 +137,11 @@ class PhrAdministrativeRoutesTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("GET /referrals — list patient referrals")
+    @DisplayName("GET /referrals - list patient referrals")
     class ListReferrals {
 
         @Test
-        @DisplayName("200 — patient may list their own referrals")
+        @DisplayName("200 - patient may list their own referrals")
         void patientMayListOwnReferrals() throws Exception {
             HttpRequest request = contextRequest(
                 HttpMethod.GET, "/referrals/?patientId=patient-1", "t1", "patient-1", "patient");
@@ -153,10 +149,12 @@ class PhrAdministrativeRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(200);
+            verify(policyEvaluator).canAccessPhiResourceAsync(
+                any(), eq("patient-1"), eq("referrals"), eq("READ"), eq("t1"), nullable(String.class));
         }
 
         @Test
-        @DisplayName("400 — missing patientId query parameter")
+        @DisplayName("400 - missing patientId query parameter")
         void returns400WhenPatientIdMissing() throws Exception {
             HttpRequest request = contextRequest(
                 HttpMethod.GET, "/referrals/", "t1", "patient-1", "patient");
@@ -166,8 +164,6 @@ class PhrAdministrativeRoutesTest extends EventloopTestBase {
             assertThat(response.getCode()).isEqualTo(400);
         }
     }
-
-    // ── Helpers ────────────────────────────────────────────────────────────────
 
     private static HttpRequest contextRequest(
             HttpMethod method, String path, String tenantId, String principalId, String role) {

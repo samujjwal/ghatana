@@ -7,7 +7,8 @@
  * @doc.pattern Snapshot
  */
 
-import type { HealthStatus } from "./HealthStatus.js";
+import { z } from "zod";
+import { HealthStatusSchema, type HealthStatus } from "./HealthStatus.js";
 
 /**
  * Deployment health status.
@@ -20,6 +21,17 @@ export interface DeploymentHealthStatus {
   readonly deployedAt: string;
   readonly endpoints: readonly string[];
 }
+
+export const DeploymentHealthStatusSchema = z
+  .object({
+    deploymentId: z.string().trim().min(1),
+    environment: z.string().trim().min(1),
+    status: HealthStatusSchema,
+    message: z.string().trim().min(1),
+    deployedAt: z.string().datetime({ offset: true }),
+    endpoints: z.array(z.string().trim().min(1)),
+  })
+  .strict();
 
 /**
  * Deployment health snapshot.
@@ -49,4 +61,26 @@ export interface DeploymentHealthSnapshot {
    * Snapshot timestamp.
    */
   readonly snapshotAt: string;
+}
+
+export const DeploymentHealthSnapshotSchema = z
+  .object({
+    productUnitId: z.string().trim().min(1),
+    runId: z.string().trim().min(1),
+    status: HealthStatusSchema,
+    deployments: z.array(DeploymentHealthStatusSchema),
+    snapshotAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+
+export function validateDeploymentHealthStatus(
+  value: unknown
+): value is DeploymentHealthStatus {
+  return DeploymentHealthStatusSchema.safeParse(value).success;
+}
+
+export function validateDeploymentHealthSnapshot(
+  value: unknown
+): value is DeploymentHealthSnapshot {
+  return DeploymentHealthSnapshotSchema.safeParse(value).success;
 }

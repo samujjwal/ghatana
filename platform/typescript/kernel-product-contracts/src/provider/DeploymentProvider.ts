@@ -7,6 +7,7 @@
  * @doc.pattern Interface
  */
 
+import { z } from "zod";
 import type { KernelProvider } from "./KernelProvider.js";
 
 /**
@@ -18,6 +19,14 @@ export interface DeploymentConfig {
   readonly artifactIds: readonly string[];
 }
 
+export const DeploymentConfigSchema = z
+  .object({
+    environment: z.string().trim().min(1),
+    config: z.record(z.string(), z.unknown()),
+    artifactIds: z.array(z.string().trim().min(1)),
+  })
+  .strict();
+
 /**
  * Deployment result.
  */
@@ -27,6 +36,15 @@ export interface DeploymentResult {
   readonly deployedAt: string;
   readonly endpoints: readonly string[];
 }
+
+export const DeploymentResultSchema = z
+  .object({
+    deploymentId: z.string().trim().min(1),
+    status: z.string().trim().min(1),
+    deployedAt: z.string().datetime({ offset: true }),
+    endpoints: z.array(z.string().trim().min(1)),
+  })
+  .strict();
 
 /**
  * Deployment provider for deploying to environments.
@@ -55,4 +73,38 @@ export interface DeploymentProvider extends KernelProvider {
    * Lists deployments for an environment.
    */
   listDeployments(environment: string): Promise<readonly DeploymentResult[]>;
+}
+
+export const DeploymentProviderSchema = z.custom<DeploymentProvider>(
+  (value) => {
+    if (typeof value !== "object" || value === null) {
+      return false;
+    }
+    const provider = value as Record<string, unknown>;
+    return (
+      typeof provider.deploy === "function" &&
+      typeof provider.getDeploymentStatus === "function" &&
+      typeof provider.rollback === "function" &&
+      typeof provider.listDeployments === "function"
+    );
+  },
+  "DeploymentProvider requires deployment functions"
+);
+
+export function validateDeploymentConfig(
+  value: unknown
+): value is DeploymentConfig {
+  return DeploymentConfigSchema.safeParse(value).success;
+}
+
+export function validateDeploymentResult(
+  value: unknown
+): value is DeploymentResult {
+  return DeploymentResultSchema.safeParse(value).success;
+}
+
+export function validateDeploymentProvider(
+  value: unknown
+): value is DeploymentProvider {
+  return DeploymentProviderSchema.safeParse(value).success;
 }

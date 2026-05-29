@@ -7,6 +7,7 @@
  * @doc.pattern Interface
  */
 
+import { z } from "zod";
 import type { KernelProvider } from "./KernelProvider.js";
 
 /**
@@ -35,4 +36,25 @@ export interface ToolchainProvider extends KernelProvider {
    * Gets tool version.
    */
   getToolVersion(tool: string): Promise<string | null>;
+}
+
+export const ToolchainProviderSchema = z.custom<ToolchainProvider>(
+  (value) => {
+    if (typeof value !== "object" || value === null) {
+      return false;
+    }
+    const provider = value as Record<string, unknown>;
+    return (
+      typeof provider.executeCommand === "function" &&
+      typeof provider.isToolAvailable === "function" &&
+      typeof provider.getToolVersion === "function"
+    );
+  },
+  "ToolchainProvider requires tool execution functions"
+);
+
+export function validateToolchainProvider(
+  value: unknown
+): value is ToolchainProvider {
+  return ToolchainProviderSchema.safeParse(value).success;
 }

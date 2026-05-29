@@ -5,6 +5,15 @@
 # Runs Playwright E2E tests for the frontend and Java E2E tests.
 # Handles environment setup, dev server startup, and canvas seeding.
 #
+# E2E Test Coverage Philosophy:
+# This suite tests complete feature journeys through the YAPPC platform,
+# not evidence generation. Tests focus on:
+# - Complete project lifecycle workflows (Intent → Planning → Design → Implementation → Testing → Deploy → Evolve)
+# - Agent execution flows (registration, code generation, code review, event routing)
+# - Multi-tenant isolation and security boundaries
+# - Authentication and authorization flows
+# - Real user journeys across the platform
+#
 # Usage:
 #   ./scripts/run-e2e-tests.sh                    # run all E2E tests (basic)
 #   ./scripts/run-e2e-tests.sh --canvas            # enable canvas seeding

@@ -7,9 +7,11 @@
  * @doc.pattern Interface
  */
 
+import { z } from "zod";
 import type { KernelProvider } from "./KernelProvider.js";
 import type { ProductUnit } from "../product-unit/ProductUnit.js";
 import type { ProductUnitIntent } from "../product-unit/ProductUnitIntent.js";
+import { ProductUnitIntentTypeSchema } from "../product-unit/ProductUnitIntent.js";
 
 /**
  * Registry provider for reading product metadata and lifecycle configuration.
@@ -48,6 +50,12 @@ export interface ProductUnitIntentApplyOptions {
    */
   readonly allowWrite: boolean;
 }
+
+export const ProductUnitIntentApplyOptionsSchema = z
+  .object({
+    allowWrite: z.boolean(),
+  })
+  .strict();
 
 /**
  * Result of previewing a ProductUnitIntent application.
@@ -104,6 +112,21 @@ export interface ProductUnitIntentPreviewResult {
   readonly diff: readonly string[];
 }
 
+export const ProductUnitIntentPreviewResultSchema = z
+  .object({
+    valid: z.boolean(),
+    correlationId: z.string().trim().min(1),
+    errors: z.array(z.string()),
+    warnings: z.array(z.string()),
+    operation: ProductUnitIntentTypeSchema,
+    productUnitId: z.string().trim().min(1),
+    registryPath: z.string().trim().min(1),
+    before: z.unknown(),
+    after: z.unknown(),
+    diff: z.array(z.string()),
+  })
+  .strict();
+
 /**
  * Result of applying a ProductUnitIntent.
  */
@@ -113,6 +136,11 @@ export interface ProductUnitIntentApplyResult extends ProductUnitIntentPreviewRe
    */
   readonly applied: boolean;
 }
+
+export const ProductUnitIntentApplyResultSchema =
+  ProductUnitIntentPreviewResultSchema.extend({
+    applied: z.boolean(),
+  });
 
 /**
  * Optional interface for registry providers that support ProductUnitIntent application.
@@ -149,4 +177,22 @@ export function isProductUnitIntentCapableRegistryProvider(
     typeof provider.previewApplyProductUnitIntent === "function" &&
     typeof provider.applyProductUnitIntent === "function"
   );
+}
+
+export function validateProductUnitIntentApplyOptions(
+  value: unknown
+): value is ProductUnitIntentApplyOptions {
+  return ProductUnitIntentApplyOptionsSchema.safeParse(value).success;
+}
+
+export function validateProductUnitIntentPreviewResult(
+  value: unknown
+): value is ProductUnitIntentPreviewResult {
+  return ProductUnitIntentPreviewResultSchema.safeParse(value).success;
+}
+
+export function validateProductUnitIntentApplyResult(
+  value: unknown
+): value is ProductUnitIntentApplyResult {
+  return ProductUnitIntentApplyResultSchema.safeParse(value).success;
 }

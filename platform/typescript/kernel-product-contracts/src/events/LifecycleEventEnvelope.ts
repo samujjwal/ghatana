@@ -15,6 +15,8 @@ import { z } from "zod";
 
 export type LifecycleEventType = string;
 
+export const LifecycleEventTypeSchema = z.string().trim().min(1);
+
 // ---------------------------------------------------------------------------
 // LifecycleEventEnvelope
 // ---------------------------------------------------------------------------
@@ -22,7 +24,7 @@ export type LifecycleEventType = string;
 export const LifecycleEventEnvelopeSchema = z.object({
   schemaVersion: z.literal("1.0.0"),
   envelopeId: z.string().min(1),
-  eventType: z.string().min(1),
+  eventType: LifecycleEventTypeSchema,
   correlationId: z.string().min(1),
   runId: z.string().min(1),
   productId: z.string().min(1),
@@ -40,4 +42,10 @@ export function parseLifecycleEventEnvelope(
   input: unknown,
 ): LifecycleEventEnvelope {
   return LifecycleEventEnvelopeSchema.parse(input);
+}
+
+export function validateLifecycleEventType(
+  value: unknown,
+): value is LifecycleEventType {
+  return LifecycleEventTypeSchema.safeParse(value).success;
 }

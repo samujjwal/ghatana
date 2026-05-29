@@ -270,8 +270,67 @@ public final class PhrPolicyEvaluator {
         if ("admin".equals(context.role())) {
             return PolicyDecision.allowed("ADMIN_AUDIT_ACCESS", "Admin can view audit trails");
         }
-        
+
         return PolicyDecision.denied("AUDIT_ACCESS_DENIED", "Only admins can view audit trails");
+    }
+
+    /**
+     * Evaluates whether a principal can query audit events for the requested patient scope.
+     *
+     * @param context the PHR request context
+     * @param patientId optional patient scope requested by the caller
+     * @return policy decision with detailed reason
+     */
+    public PolicyDecision canQueryAuditEvents(PhrRequestContext context, String patientId) {
+        if (context == null) {
+            return PolicyDecision.denied("INVALID_CONTEXT", "Request context is null");
+        }
+        if ("admin".equals(context.role())) {
+            return PolicyDecision.allowedWithAudit("ADMIN_AUDIT_QUERY", "Admin can query audit events");
+        }
+        if ("clinician".equals(context.role())) {
+            if (patientId == null || patientId.isBlank()) {
+                return PolicyDecision.denied("AUDIT_PATIENT_SCOPE_REQUIRED",
+                    "Clinician audit queries require an explicit patient scope");
+            }
+            return PolicyDecision.allowedWithAudit("CLINICIAN_AUDIT_QUERY", "Clinician can query patient-scoped audit events");
+        }
+        if ("patient".equals(context.role())) {
+            if (patientId == null || patientId.isBlank() || context.principalId().equals(patientId)) {
+                return PolicyDecision.allowed("SELF_AUDIT_QUERY", "Patient can query their own audit events");
+            }
+            return PolicyDecision.denied("AUDIT_SELF_SCOPE_REQUIRED", "Patient can only query their own audit events");
+        }
+        return PolicyDecision.denied("AUDIT_ACCESS_DENIED", "Role not authorized to query audit events");
+    }
+
+    /**
+     * Evaluates whether a principal can view one audit event after it has been fetched.
+     *
+     * @param context the PHR request context
+     * @param eventUserId the user ID recorded on the event
+     * @param eventEntityId the entity ID recorded on the event
+     * @return policy decision with detailed reason
+     */
+    public PolicyDecision canViewAuditEvent(PhrRequestContext context, String eventUserId, String eventEntityId) {
+        if (context == null) {
+            return PolicyDecision.denied("INVALID_CONTEXT", "Request context is null");
+        }
+        if ("admin".equals(context.role())) {
+            return PolicyDecision.allowedWithAudit("ADMIN_AUDIT_DETAIL", "Admin can view audit event detail");
+        }
+        if ("clinician".equals(context.role())) {
+            if (eventEntityId == null || eventEntityId.isBlank()) {
+                return PolicyDecision.denied("AUDIT_PATIENT_SCOPE_REQUIRED",
+                    "Clinician audit detail access requires a patient-scoped event");
+            }
+            return PolicyDecision.allowedWithAudit("CLINICIAN_AUDIT_DETAIL", "Clinician can view patient-scoped audit detail");
+        }
+        if ("patient".equals(context.role())
+                && (context.principalId().equals(eventUserId) || context.principalId().equals(eventEntityId))) {
+            return PolicyDecision.allowed("SELF_AUDIT_DETAIL", "Patient can view their own audit detail");
+        }
+        return PolicyDecision.denied("AUDIT_EVENT_ACCESS_DENIED", "Role not authorized to view this audit event");
     }
 
     /**
@@ -315,6 +374,47 @@ public final class PhrPolicyEvaluator {
         }
 
         return PolicyDecision.denied("CONSENT_MANAGEMENT_DENIED", "Role not authorized to manage consent");
+    }
+
+    /**
+     * Evaluates whether a principal can check a consent grant for a patient/accessor pair.
+     *
+     * @param context the PHR request context
+     * @param patientId the patient whose consent grant is being checked
+     * @param accessorId the principal whose access is being checked
+     * @return policy decision with detailed reason
+     */
+    public PolicyDecision canCheckConsent(PhrRequestContext context, String patientId, String accessorId) {
+        if (context == null) {
+            return PolicyDecision.denied("INVALID_CONTEXT", "Request context is null");
+        }
+        if (patientId == null || patientId.isBlank()) {
+            return PolicyDecision.denied("MISSING_PATIENT_ID", "Patient ID is null or blank");
+        }
+        if (accessorId == null || accessorId.isBlank()) {
+            return PolicyDecision.denied("MISSING_ACCESSOR_ID", "Accessor ID is null or blank");
+        }
+
+        String principalId = context.principalId();
+        if (principalId == null || principalId.isBlank()) {
+            return PolicyDecision.denied("MISSING_PRINCIPAL", "Principal ID is null or blank");
+        }
+
+        String role = context.role();
+        if ("patient".equals(role)) {
+            return principalId.equals(patientId)
+                ? PolicyDecision.allowed("SELF_CONSENT_CHECK", "Patient checking consent for own record")
+                : PolicyDecision.denied("CONSENT_OWNER_REQUIRED", "Patient can only check consent for their own record");
+        }
+        if ("admin".equals(role)) {
+            return PolicyDecision.allowedWithAudit("ADMIN_CONSENT_CHECK", "Admin checking consent grant");
+        }
+        if (principalId.equals(accessorId)
+                && ("clinician".equals(role) || "caregiver".equals(role) || "fchv".equals(role))) {
+            return PolicyDecision.allowed("ACCESSOR_CONSENT_CHECK", "Accessor checking their own consent grant");
+        }
+
+        return PolicyDecision.denied("CONSENT_CHECK_DENIED", "Role not authorized to check this consent grant");
     }
 
     /**

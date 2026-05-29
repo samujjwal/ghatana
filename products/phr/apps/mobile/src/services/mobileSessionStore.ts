@@ -54,7 +54,7 @@ export async function loadMobileSession(currentSession?: MobileSession | null): 
   }
 
   if (new Date(session.expiresAt) <= new Date()) {
-    // Session has expired — remove it so the next launch starts fresh.
+    // Session has expired; remove it so the next launch starts fresh.
     await clearMobileSession();
     return null;
   }

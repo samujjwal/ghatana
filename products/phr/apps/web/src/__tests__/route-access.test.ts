@@ -1,5 +1,5 @@
 /**
- * Route access tests — verifies the PHR route contract access policy for all personas.
+ * Route access tests verify the PHR route contract access policy for all personas.
  *
  * Each route's `minimumRole` is enforced by `isRouteAllowedForRole` using the
  * PHR_ROLE_ORDER hierarchy: patient < caregiver < fchv < clinician < admin.
@@ -38,7 +38,7 @@ function isSuppressedRoute(route: { stability?: string; hidden?: boolean; blocke
 // Core invariant: isRouteAllowedForRole must be coherent with PHR_ROLE_ORDER
 // ---------------------------------------------------------------------------
 
-describe('isRouteAllowedForRole — role hierarchy invariant', () => {
+describe('isRouteAllowedForRole role hierarchy invariant', () => {
   it('every active route is accessible to admin', () => {
     for (const route of activeRoutes()) {
       expect(isRouteAllowedForRole(route, 'admin')).toBe(true);
@@ -110,7 +110,7 @@ describe('isRouteAllowedForRole — role hierarchy invariant', () => {
 // Named route spot-checks
 // ---------------------------------------------------------------------------
 
-describe('isRouteAllowedForRole — named route spot-checks', () => {
+describe('isRouteAllowedForRole named route spot-checks', () => {
   function route(path: string): { minimumRole: PhrRole } {
     const found = phrRouteContracts.find((r) => r.path === path) as
       | { minimumRole: PhrRole }
@@ -161,7 +161,7 @@ describe('isRouteAllowedForRole — named route spot-checks', () => {
 // Contract completeness: every route has required fields
 // ---------------------------------------------------------------------------
 
-describe('phrRouteContracts — structural completeness', () => {
+describe('phrRouteContracts structural completeness', () => {
   it('every route has a non-empty path', () => {
     for (const route of phrRouteContracts) {
       expect(typeof route.path).toBe('string');

@@ -173,11 +173,119 @@ function assertInventoryDocument(expectedMarkdown) {
     : [`Component inventory doc is stale. Run node scripts/check-design-system-consistency.mjs --write.`];
 }
 
+function findHardcodedColorViolations() {
+  const violations = [];
+  const srcDir = path.join(rootDir, 'src/routes');
+  const targetDirs = ['app', 'dashboard.tsx', 'login.tsx', 'not-found.tsx', 'profile.tsx', 'settings.tsx'];
+  const excludePathPatterns = ['canvas', 'preview-builder'];
+  const excludeFiles = ['preview-builder.tsx'];
+  
+  function scanDirectory(dir) {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory() && !entry.name.startsWith('.')) {
+        scanDirectory(fullPath);
+      } else if (entry.isFile() && /\.(tsx|ts|jsx|js)$/.test(entry.name) && !excludeFiles.includes(entry.name)) {
+        const relativePath = path.relative(rootDir, fullPath);
+        
+        // Skip if path contains excluded patterns
+        if (excludePathPatterns.some(pattern => relativePath.includes(pattern))) {
+          return;
+        }
+        
+        // Only check files in target directories (dashboard, phase, admin, kernel-health routes)
+        const isInTarget = targetDirs.some(target => relativePath.includes(target));
+        if (!isInTarget) return;
+        
+        const content = fs.readFileSync(fullPath, 'utf8');
+        
+        // Check for hardcoded hex colors in route files (not in canvas, preview-builder, or test files)
+        const hexColorPattern = /#[0-9a-fA-F]{6}/g;
+        const hexMatches = content.match(hexColorPattern);
+        if (hexMatches) {
+          violations.push(`${path.relative(rootDir, fullPath)}: Found hardcoded hex colors: ${hexMatches.join(', ')}`);
+        }
+        
+        const rgbPattern = /rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*(?:,\s*[\d.]+\s*)?\)/g;
+        const rgbMatches = content.match(rgbPattern);
+        if (rgbMatches) {
+          violations.push(`${path.relative(rootDir, fullPath)}: Found hardcoded rgb/rgba colors: ${rgbMatches.join(', ')}`);
+        }
+      }
+    }
+  }
+  
+  scanDirectory(srcDir);
+  return violations;
+}
+
+function findMixedTokenNamespaceViolations() {
+  const violations = [];
+  const srcDir = path.join(rootDir, 'src/routes');
+  const targetDirs = ['app', 'dashboard.tsx', 'login.tsx', 'not-found.tsx', 'profile.tsx', 'settings.tsx'];
+  const excludePathPatterns = ['canvas', 'preview-builder'];
+  
+  function scanDirectory(dir) {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory() && !entry.name.startsWith('.')) {
+        scanDirectory(fullPath);
+      } else if (entry.isFile() && /\.(tsx|ts|jsx|js)$/.test(entry.name)) {
+        const relativePath = path.relative(rootDir, fullPath);
+        
+        // Skip if path contains excluded patterns
+        if (excludePathPatterns.some(pattern => relativePath.includes(pattern))) {
+          return;
+        }
+        
+        // Only check files in target directories (dashboard, phase, admin, kernel-health routes)
+        const isInTarget = targetDirs.some(target => relativePath.includes(target));
+        if (!isInTarget) return;
+        
+        const content = fs.readFileSync(fullPath, 'utf8');
+        
+        // Check for semantic color card backgrounds (e.g., bg-red-500, bg-green-500)
+        // These should use design system tokens instead
+        const semanticColorPattern = /bg-(red|green|blue|yellow|orange|purple|pink|gray)-\d+/g;
+        const semanticMatches = content.match(semanticColorPattern);
+        if (semanticMatches) {
+          violations.push(`${path.relative(rootDir, fullPath)}: Found semantic color card backgrounds: ${semanticMatches.join(', ')}`);
+        }
+        
+        // Check for mixed token namespaces in the same file
+        // text-fg vs text-text, bg-bg vs bg-surface
+        const hasTextFg = /text-fg/.test(content);
+        const hasTextText = /text-text/.test(content);
+        const hasBgBg = /bg-bg/.test(content);
+        const hasBgSurface = /bg-surface/.test(content);
+        
+        // If multiple namespaces are used in the same route file, flag it
+        const namespaceCount = [hasTextFg, hasTextText, hasBgBg, hasBgSurface].filter(Boolean).length;
+        if (namespaceCount > 1) {
+          const usedNamespaces = [];
+          if (hasTextFg) usedNamespaces.push('text-fg');
+          if (hasTextText) usedNamespaces.push('text-text');
+          if (hasBgBg) usedNamespaces.push('bg-bg');
+          if (hasBgSurface) usedNamespaces.push('bg-surface');
+          violations.push(`${path.relative(rootDir, fullPath)}: Mixed token namespaces detected (${usedNamespaces.join(', ')})`);
+        }
+      }
+    }
+  }
+  
+  scanDirectory(srcDir);
+  return violations;
+}
+
 const primitiveFiles = listUiPrimitiveFiles();
 const unapprovedPrimitives = findUnapprovedPrimitives(primitiveFiles);
 const indexViolations = assertDesignSystemIndex();
 const expectedInventoryMarkdown = renderInventoryMarkdown(primitiveFiles, unapprovedPrimitives);
 const inventoryViolations = process.argv.includes('--write') ? [] : assertInventoryDocument(expectedInventoryMarkdown);
+const colorViolations = findHardcodedColorViolations();
+const tokenNamespaceViolations = findMixedTokenNamespaceViolations();
 const report = {
   checkedAt: new Date().toISOString(),
   canonicalSource: '@ghatana/design-system',
@@ -186,6 +294,8 @@ const report = {
   unapprovedPrimitives,
   indexViolations,
   inventoryViolations,
+  colorViolations,
+  tokenNamespaceViolations,
 };
 
 if (process.argv.includes('--write')) {
@@ -197,7 +307,7 @@ if (process.argv.includes('--report')) {
   console.log(JSON.stringify(report, null, 2));
 }
 
-if (unapprovedPrimitives.length > 0 || indexViolations.length > 0 || inventoryViolations.length > 0) {
+if (unapprovedPrimitives.length > 0 || indexViolations.length > 0 || inventoryViolations.length > 0 || colorViolations.length > 0 || tokenNamespaceViolations.length > 0) {
   console.error('YAPPC design-system consistency check failed.');
   if (unapprovedPrimitives.length > 0) {
     console.error(`Unapproved local primitives: ${unapprovedPrimitives.join(', ')}`);
@@ -206,6 +316,12 @@ if (unapprovedPrimitives.length > 0 || indexViolations.length > 0 || inventoryVi
     console.error(violation);
   }
   for (const violation of inventoryViolations) {
+    console.error(violation);
+  }
+  for (const violation of colorViolations) {
+    console.error(violation);
+  }
+  for (const violation of tokenNamespaceViolations) {
     console.error(violation);
   }
   process.exit(1);

@@ -27,7 +27,7 @@ export function ProfilePage(): React.ReactElement {
 
   useEffect(() => {
     if (!session) return;
-    fetchPatientProfile({ tenantId: session.tenantId, principalId: session.principalId })
+    fetchPatientProfile({ tenantId: session.tenantId, principalId: session.principalId, role: session.role })
       .then((profile) => {
         setData(profile);
         setDraft({

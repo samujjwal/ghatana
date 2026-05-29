@@ -7,7 +7,8 @@
  * @doc.pattern Snapshot
  */
 
-import type { HealthStatus } from "./HealthStatus.js";
+import { z } from "zod";
+import { HealthStatusSchema, type HealthStatus } from "./HealthStatus.js";
 
 /**
  * Mastery states (aligned with Java MasteryState enum).
@@ -23,6 +24,18 @@ export type MasteryState =
   | 'RETIRED'
   | 'QUARANTINED';
 
+export const MasteryStateSchema = z.enum([
+  "UNKNOWN",
+  "OBSERVED",
+  "PRACTICED",
+  "COMPETENT",
+  "MASTERED",
+  "MAINTENANCE_ONLY",
+  "OBSOLETE",
+  "RETIRED",
+  "QUARANTINED",
+]);
+
 /**
  * Governance states for mastery items.
  */
@@ -31,6 +44,13 @@ export type GovernanceState =
   | 'quarantined'
   | 'requires-approval'
   | 'requires-verification';
+
+export const GovernanceStateSchema = z.enum([
+  "obsolete",
+  "quarantined",
+  "requires-approval",
+  "requires-verification",
+]);
 
 /**
  * Agent governance status.
@@ -43,6 +63,17 @@ export interface AgentGovernanceStatus {
   readonly message: string;
   readonly lastEvaluated: string;
 }
+
+export const AgentGovernanceStatusSchema = z
+  .object({
+    agentId: z.string().trim().min(1),
+    status: HealthStatusSchema,
+    governanceState: GovernanceStateSchema.optional(),
+    masteryState: MasteryStateSchema.optional(),
+    message: z.string().trim().min(1),
+    lastEvaluated: z.string().datetime({ offset: true }),
+  })
+  .strict();
 
 /**
  * Agent governance health snapshot.
@@ -67,4 +98,35 @@ export interface AgentGovernanceHealthSnapshot {
    * Snapshot timestamp.
    */
   readonly snapshotAt: string;
+}
+
+export const AgentGovernanceHealthSnapshotSchema = z
+  .object({
+    productUnitId: z.string().trim().min(1),
+    status: HealthStatusSchema,
+    agents: z.array(AgentGovernanceStatusSchema),
+    snapshotAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+
+export function validateMasteryState(value: unknown): value is MasteryState {
+  return MasteryStateSchema.safeParse(value).success;
+}
+
+export function validateGovernanceState(
+  value: unknown
+): value is GovernanceState {
+  return GovernanceStateSchema.safeParse(value).success;
+}
+
+export function validateAgentGovernanceStatus(
+  value: unknown
+): value is AgentGovernanceStatus {
+  return AgentGovernanceStatusSchema.safeParse(value).success;
+}
+
+export function validateAgentGovernanceHealthSnapshot(
+  value: unknown
+): value is AgentGovernanceHealthSnapshot {
+  return AgentGovernanceHealthSnapshotSchema.safeParse(value).success;
 }

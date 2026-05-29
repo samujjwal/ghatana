@@ -2,6 +2,8 @@
 
 A minimal Python FastAPI service and library used to validate the PythonPyprojectAdapter can handle Python projects through the full lifecycle.
 
+This fixture is backend-only: it exposes SDK and service surfaces without a web or mobile client package.
+
 ## Purpose
 
 This fixture product validates:

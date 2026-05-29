@@ -7,6 +7,7 @@
  * @doc.pattern Interface
  */
 
+import { z } from "zod";
 import type { KernelProvider } from "./KernelProvider.js";
 
 /**
@@ -32,4 +33,26 @@ export interface SecretsProvider extends KernelProvider {
    * Lists secret names.
    */
   listSecrets(): Promise<readonly string[]>;
+}
+
+export const SecretsProviderSchema = z.custom<SecretsProvider>(
+  (value) => {
+    if (typeof value !== "object" || value === null) {
+      return false;
+    }
+    const provider = value as Record<string, unknown>;
+    return (
+      typeof provider.getSecret === "function" &&
+      typeof provider.setSecret === "function" &&
+      typeof provider.deleteSecret === "function" &&
+      typeof provider.listSecrets === "function"
+    );
+  },
+  "SecretsProvider requires secret management functions"
+);
+
+export function validateSecretsProvider(
+  value: unknown
+): value is SecretsProvider {
+  return SecretsProviderSchema.safeParse(value).success;
 }

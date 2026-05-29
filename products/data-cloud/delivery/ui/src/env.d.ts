@@ -6,6 +6,7 @@ interface ImportMetaEnv {
   readonly VITE_WS_URL: string;
   readonly VITE_GRAFANA_URL: string;
   readonly VITE_USE_MSW: string;
+  readonly VITE_DATACLOUD_PROFILE?: string;
   // Add other environment variables here as needed
 }
 

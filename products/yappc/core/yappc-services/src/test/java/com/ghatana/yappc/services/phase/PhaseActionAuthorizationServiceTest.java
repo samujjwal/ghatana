@@ -31,7 +31,12 @@ class PhaseActionAuthorizationServiceTest {
                 new PhasePacket.PhaseReadiness(true, "GENERATE", List.of(), 1.0, false),
                 List.of(),
                 List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED")),
-                true
+                true,
+                List.of("evidence-1", "evidence-2"),
+                "support-trace-123",
+                "low-risk",
+                "v1.2.3",
+                "production"
         );
 
         PhasePacket.PhaseAction advance = action(actions, "advance-phase");
@@ -79,7 +84,12 @@ class PhaseActionAuthorizationServiceTest {
                         Map.of(),
                         "decision-1"
                 )),
-                true
+                true,
+                List.of(),
+                "",
+                "",
+                "",
+                ""
         );
 
         PhasePacket.PhaseAction advance = actions.stream()
@@ -109,7 +119,12 @@ class PhaseActionAuthorizationServiceTest {
                 new PhasePacket.PhaseReadiness(true, "GENERATE", List.of(), 1.0, false),
                 List.of(),
                 List.of(governance("POLICY_DENIAL", "POLICY_DENIAL", "DENIED")),
-                true
+                true,
+                List.of(),
+                "",
+                "",
+                "",
+                ""
         );
 
         PhasePacket.PhaseAction advance = action(actions, "advance-phase");
@@ -140,7 +155,12 @@ class PhaseActionAuthorizationServiceTest {
                         Instant.parse("2026-05-26T10:15:30Z"),
                         Map.of("reason", "TimeoutException"),
                         "governance-query-failed:project-1:GENERATE")),
-                true
+                true,
+                List.of(),
+                "",
+                "",
+                "",
+                ""
         );
 
         PhasePacket.PhaseAction advance = action(actions, "advance-phase");
@@ -181,7 +201,12 @@ class PhaseActionAuthorizationServiceTest {
                         Map.of(),
                         "decision-2"
                 )),
-                true
+                true,
+                List.of(),
+                "",
+                "",
+                "",
+                ""
         );
 
         PhasePacket.PhaseAction advance = actions.stream()
@@ -213,7 +238,12 @@ class PhaseActionAuthorizationServiceTest {
                 readiness,
                 List.of(),
                 List.of(),
-                true
+                true,
+                List.of(),
+                "",
+                "",
+                "",
+                ""
         );
 
         List<PhasePacket.PhaseAction> enterpriseActions = service.determineAvailableActions(
@@ -224,7 +254,12 @@ class PhaseActionAuthorizationServiceTest {
                 readiness,
                 List.of(),
                 List.of(),
-                true
+                true,
+                List.of(),
+                "",
+                "",
+                "",
+                ""
         );
 
         PhasePacket.PhaseAction proReport = proActions.stream()
@@ -259,7 +294,12 @@ class PhaseActionAuthorizationServiceTest {
                 new PhasePacket.PhaseReadiness(true, "SHAPE", List.of(), 1.0, false),
                 List.of(),
                 List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED")),
-                false
+                false,
+                List.of(),
+                "",
+                "",
+                "",
+                ""
         );
 
         assertThat(action(actions, "advance-phase").enabled()).isFalse();
@@ -267,6 +307,223 @@ class PhaseActionAuthorizationServiceTest {
                 .isEqualTo("phaseAction.disabled.featureFlagDependencyUnavailable");
         assertThat(action(actions, "configure-phase").enabled()).isFalse();
         assertThat(action(actions, "export-report").enabled()).isFalse();
+    }
+
+    @Test
+    @DisplayName("evidence parameters are propagated to action suggestion parameters")
+    void evidenceParametersPropagatedToSuggestionParameters() {
+        List<PhasePacket.PhaseAction> actions = service.determineAvailableActions(
+                "GENERATE",
+                CapabilityEvaluationService.CapabilityModel.allGranted(),
+                PhasePacket.TenantTier.PRO,
+                Set.of("phase.advance", "phase.governance.configure"),
+                new PhasePacket.PhaseReadiness(true, "GENERATE", List.of(), 1.0, false),
+                List.of(),
+                List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED")),
+                true,
+                List.of("evidence-1", "evidence-2", "evidence-3"),
+                "support-trace-abc",
+                "medium-risk",
+                "v1.0.0",
+                "staging"
+        );
+
+        PhasePacket.PhaseAction advance = action(actions, "advance-phase");
+        assertThat(advance.parameters()).containsEntry("evidenceIds", List.of("evidence-1", "evidence-2", "evidence-3"));
+        assertThat(advance.parameters()).containsEntry("supportTrace", "support-trace-abc");
+        assertThat(advance.parameters()).containsEntry("riskReason", "medium-risk");
+    }
+
+    @Test
+    @DisplayName("missing target version disables rollback action")
+    void missingTargetVersionDisablesRollbackAction() {
+        List<PhasePacket.PhaseAction> actions = service.determineAvailableActions(
+                "RUN",
+                CapabilityEvaluationService.CapabilityModel.allGranted(),
+                PhasePacket.TenantTier.PRO,
+                Set.of("phase.advance"),
+                new PhasePacket.PhaseReadiness(true, "RUN", List.of(), 1.0, false),
+                List.of(),
+                List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED")),
+                true,
+                List.of(),
+                "",
+                "",
+                "", // Empty target version
+                "production"
+        );
+
+        PhasePacket.PhaseAction rollback = action(actions, "run.rollback");
+        assertThat(rollback.enabled()).isFalse();
+        assertThat(rollback.disabledReason()).isEqualTo("phaseAction.disabled.missingRollbackTarget");
+    }
+
+    @Test
+    @DisplayName("missing target environment disables promote action")
+    void missingTargetEnvironmentDisablesPromoteAction() {
+        List<PhasePacket.PhaseAction> actions = service.determineAvailableActions(
+                "RUN",
+                CapabilityEvaluationService.CapabilityModel.allGranted(),
+                PhasePacket.TenantTier.PRO,
+                Set.of("phase.advance"),
+                new PhasePacket.PhaseReadiness(true, "RUN", List.of(), 1.0, false),
+                List.of(),
+                List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED")),
+                true,
+                List.of(),
+                "",
+                "",
+                "v1.2.3",
+                "" // Empty target environment
+        );
+
+        PhasePacket.PhaseAction promote = action(actions, "run.promote");
+        assertThat(promote.enabled()).isFalse();
+        assertThat(promote.disabledReason()).isEqualTo("phaseAction.disabled.missingPromoteTarget");
+    }
+
+    @Test
+    @DisplayName("target version is included in rollback action parameters when available")
+    void targetVersionIncludedInRollbackParameters() {
+        List<PhasePacket.PhaseAction> actions = service.determineAvailableActions(
+                "RUN",
+                CapabilityEvaluationService.CapabilityModel.allGranted(),
+                PhasePacket.TenantTier.PRO,
+                Set.of("phase.advance"),
+                new PhasePacket.PhaseReadiness(true, "RUN", List.of(), 1.0, false),
+                List.of(),
+                List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED")),
+                true,
+                List.of(),
+                "",
+                "",
+                "v1.5.0",
+                "production"
+        );
+
+        PhasePacket.PhaseAction rollback = action(actions, "run.rollback");
+        assertThat(rollback.enabled()).isTrue();
+        assertThat(rollback.parameters()).containsEntry("targetVersion", "v1.5.0");
+    }
+
+    @Test
+    @DisplayName("target environment is included in promote action parameters when available")
+    void targetEnvironmentIncludedInPromoteParameters() {
+        List<PhasePacket.PhaseAction> actions = service.determineAvailableActions(
+                "RUN",
+                CapabilityEvaluationService.CapabilityModel.allGranted(),
+                PhasePacket.TenantTier.PRO,
+                Set.of("phase.advance"),
+                new PhasePacket.PhaseReadiness(true, "RUN", List.of(), 1.0, false),
+                List.of(),
+                List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED")),
+                true,
+                List.of(),
+                "",
+                "",
+                "v1.5.0",
+                "staging"
+        );
+
+        PhasePacket.PhaseAction promote = action(actions, "run.promote");
+        assertThat(promote.enabled()).isTrue();
+        assertThat(promote.parameters()).containsEntry("targetEnvironment", "staging");
+    }
+
+    @Test
+    @DisplayName("generate actions use i18n keys for labels and descriptions")
+    void generateActionsUseI18nKeys() {
+        List<PhasePacket.PhaseAction> actions = service.determineAvailableActions(
+                "GENERATE",
+                CapabilityEvaluationService.CapabilityModel.allGranted(),
+                PhasePacket.TenantTier.PRO,
+                Set.of("phase.advance"),
+                new PhasePacket.PhaseReadiness(true, "GENERATE", List.of(), 1.0, false),
+                List.of(),
+                List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED")),
+                true,
+                List.of(),
+                "",
+                "",
+                "",
+                ""
+        );
+
+        PhasePacket.PhaseAction apply = action(actions, "generate.apply");
+        assertThat(apply.label()).isEqualTo("phaseAction.generateApply.label");
+        assertThat(apply.description()).isEqualTo("phaseAction.generateApply.description");
+
+        PhasePacket.PhaseAction reject = action(actions, "generate.reject");
+        assertThat(reject.label()).isEqualTo("phaseAction.generateReject.label");
+        assertThat(reject.description()).isEqualTo("phaseAction.generateReject.description");
+
+        PhasePacket.PhaseAction rollback = action(actions, "generate.rollback");
+        assertThat(rollback.label()).isEqualTo("phaseAction.generateRollback.label");
+        assertThat(rollback.description()).isEqualTo("phaseAction.generateRollback.description");
+    }
+
+    @Test
+    @DisplayName("run actions use i18n keys for labels and descriptions")
+    void runActionsUseI18nKeys() {
+        List<PhasePacket.PhaseAction> actions = service.determineAvailableActions(
+                "RUN",
+                CapabilityEvaluationService.CapabilityModel.allGranted(),
+                PhasePacket.TenantTier.PRO,
+                Set.of("phase.advance"),
+                new PhasePacket.PhaseReadiness(true, "RUN", List.of(), 1.0, false),
+                List.of(),
+                List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED")),
+                true,
+                List.of(),
+                "",
+                "",
+                "v1.0.0",
+                "production"
+        );
+
+        PhasePacket.PhaseAction retry = action(actions, "run.retry");
+        assertThat(retry.label()).isEqualTo("phaseAction.runRetry.label");
+        assertThat(retry.description()).isEqualTo("phaseAction.runRetry.description");
+
+        PhasePacket.PhaseAction rollback = action(actions, "run.rollback");
+        assertThat(rollback.label()).isEqualTo("phaseAction.runRollback.label");
+        assertThat(rollback.description()).isEqualTo("phaseAction.runRollback.description");
+
+        PhasePacket.PhaseAction promote = action(actions, "run.promote");
+        assertThat(promote.label()).isEqualTo("phaseAction.runPromote.label");
+        assertThat(promote.description()).isEqualTo("phaseAction.runPromote.description");
+
+        PhasePacket.PhaseAction observe = action(actions, "run.observe");
+        assertThat(observe.label()).isEqualTo("phaseAction.runObserve.label");
+        assertThat(observe.description()).isEqualTo("phaseAction.runObserve.description");
+    }
+
+    @Test
+    @DisplayName("phase mismatch uses specific disabled reason instead of generic unauthorized")
+    void phaseMismatchUsesSpecificDisabledReason() {
+        List<PhasePacket.PhaseAction> actions = service.determineAvailableActions(
+                "INTENT", // Not GENERATE phase
+                CapabilityEvaluationService.CapabilityModel.allGranted(),
+                PhasePacket.TenantTier.PRO,
+                Set.of("phase.advance"),
+                new PhasePacket.PhaseReadiness(true, "INTENT", List.of(), 1.0, false),
+                List.of(),
+                List.of(governance("POLICY_APPROVAL", "POLICY_APPROVAL", "APPROVED")),
+                true,
+                List.of(),
+                "",
+                "",
+                "",
+                ""
+        );
+
+        PhasePacket.PhaseAction generateApply = action(actions, "generate.apply");
+        assertThat(generateApply.enabled()).isFalse();
+        assertThat(generateApply.disabledReason()).isEqualTo("phaseAction.disabled.notAvailableForCurrentPhase");
+
+        PhasePacket.PhaseAction runRetry = action(actions, "run.retry");
+        assertThat(runRetry.enabled()).isFalse();
+        assertThat(runRetry.disabledReason()).isEqualTo("phaseAction.disabled.notAvailableForCurrentPhase");
     }
 
     private static PhasePacket.PhaseAction action(List<PhasePacket.PhaseAction> actions, String actionId) {

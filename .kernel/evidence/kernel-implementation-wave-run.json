@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-28T20:11:00.546Z",
+  "generatedAt": "2026-05-29T00:46:24.611Z",
   "status": "failed",
   "mode": "execute",
   "includeHeavy": false,
@@ -32,68 +32,68 @@
     "pnpm:check:affected-product-strict-release-profile",
     "pnpm:check:product-release-readiness",
     "pnpm:check:validate-release-evidence",
-    "pnpm:check:release-gate"
+    "pnpm:check:data-cloud-release-gate"
   ],
   "commandRuns": [
     {
       "command": "pnpm:check:data-cloud-ui-a11y",
       "status": 0,
-      "durationMs": 1887
+      "durationMs": 1233
     },
     {
       "command": "pnpm:check:product-a11y-route-matrix",
       "status": 0,
-      "durationMs": 2267
+      "durationMs": 1175
     },
     {
       "command": "pnpm:check:i18n-conformance",
       "status": 0,
-      "durationMs": 2216
+      "durationMs": 1398
     },
     {
       "command": "pnpm:check:product-slo-budgets",
       "status": 0,
-      "durationMs": 2101
+      "durationMs": 1629
     },
     {
       "command": "pnpm:check:product-cost-budgets",
       "status": 0,
-      "durationMs": 3578
+      "durationMs": 1653
     },
     {
       "command": "pnpm:check:product-domain-invariants",
       "status": 0,
-      "durationMs": 3632
+      "durationMs": 1933
     },
     {
       "command": "pnpm:check:openapi-release-quality",
       "status": 0,
-      "durationMs": 1602
+      "durationMs": 1135
     },
     {
       "command": "pnpm:check:openapi-breaking-changes",
       "status": 0,
-      "durationMs": 3498
+      "durationMs": 2019
     },
     {
       "command": "pnpm:check:data-cloud-runbook-smoke",
       "status": 0,
-      "durationMs": 29858
+      "durationMs": 3513
     },
     {
       "command": "pnpm:check:release-rollback-drill",
       "status": 0,
-      "durationMs": 2245
+      "durationMs": 1119
     },
     {
       "command": "pnpm:check:affected-product-strict-release-profile",
       "status": 0,
-      "durationMs": 1472
+      "durationMs": 934
     },
     {
       "command": "pnpm:check:product-release-readiness",
       "status": 1,
-      "durationMs": 5179
+      "durationMs": 2435
     }
   ],
   "taskMatrixSummary": {
@@ -108,7 +108,7 @@
     "violationCount": 0
   },
   "incrementalRoadmap": {
-    "generatedAt": "2026-05-28T20:10:01.007Z",
+    "generatedAt": "2026-05-29T00:46:04.433Z",
     "targetMaturityDepth": 5,
     "remainingTaskCount": 51,
     "deferredTaskIds": [],

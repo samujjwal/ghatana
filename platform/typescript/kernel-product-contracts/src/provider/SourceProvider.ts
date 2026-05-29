@@ -7,6 +7,7 @@
  * @doc.pattern Interface
  */
 
+import { z } from "zod";
 import type { KernelProvider } from "./KernelProvider.js";
 
 /**
@@ -36,4 +37,26 @@ export interface SourceProvider extends KernelProvider {
     completed: boolean;
     success: boolean;
   }>;
+}
+
+export const SourceProviderSchema = z.custom<SourceProvider>(
+  (value) => {
+    if (typeof value !== "object" || value === null) {
+      return false;
+    }
+    const provider = value as Record<string, unknown>;
+    return (
+      typeof provider.getCurrentRef === "function" &&
+      typeof provider.getCommitHash === "function" &&
+      typeof provider.triggerBuild === "function" &&
+      typeof provider.getBuildStatus === "function"
+    );
+  },
+  "SourceProvider requires source and build functions"
+);
+
+export function validateSourceProvider(
+  value: unknown
+): value is SourceProvider {
+  return SourceProviderSchema.safeParse(value).success;
 }

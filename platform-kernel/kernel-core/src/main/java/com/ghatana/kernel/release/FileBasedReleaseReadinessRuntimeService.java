@@ -42,18 +42,18 @@ public final class FileBasedReleaseReadinessRuntimeService implements ReleaseRea
     @Override
     public Promise<Map<String, Object>> getReleaseReadiness(String productId, String environment) {
         try {
-            String phrEvidencePath = getEvidencePath(productId);
-            JsonNode phrEvidence = readRequired(phrEvidencePath);
+            String productEvidencePath = getEvidencePath(productId);
+            JsonNode productEvidence = readRequired(productEvidencePath);
             JsonNode providerEvidence = readOptional(".kernel/evidence/data-cloud/platform-provider-readiness.json");
             JsonNode runtimeProfile = readOptional(".kernel/evidence/data-cloud-release-runtime-profile.json");
             
             Map<String, Object> response = new LinkedHashMap<>();
             response.put("productId", productId);
             response.put("environment", environment);
-            response.put("generatedAt", text(phrEvidence.path("generatedAt"), text(phrEvidence.path("checkedAt"), "")));
-            response.put("targetCommitSha", text(phrEvidence.path("targetCommitSha"), text(phrEvidence.path("sourceCommitSha"), "")));
-            response.put("releaseReadiness", JSON.convertValue(phrEvidence.path("releaseReadiness"), Map.class));
-            response.put("evidenceCategories", JSON.convertValue(phrEvidence.path("evidenceCategories"), Map.class));
+            response.put("generatedAt", text(productEvidence.path("generatedAt"), text(productEvidence.path("checkedAt"), "")));
+            response.put("targetCommitSha", text(productEvidence.path("targetCommitSha"), text(productEvidence.path("sourceCommitSha"), "")));
+            response.put("releaseReadiness", JSON.convertValue(productEvidence.path("releaseReadiness"), Map.class));
+            response.put("evidenceCategories", JSON.convertValue(productEvidence.path("evidenceCategories"), Map.class));
             response.put("providerEvidence", JSON.convertValue(providerEvidence, Map.class));
             response.put("runtimeProfile", JSON.convertValue(runtimeProfile, Map.class));
             
@@ -66,10 +66,10 @@ public final class FileBasedReleaseReadinessRuntimeService implements ReleaseRea
     @Override
     public Promise<Map<String, Object>> getReleaseReadinessSection(String productId, String environment, String sectionId) {
         try {
-            String phrEvidencePath = getEvidencePath(productId);
-            JsonNode phrEvidence = readRequired(phrEvidencePath);
+            String productEvidencePath = getEvidencePath(productId);
+            JsonNode productEvidence = readRequired(productEvidencePath);
             
-            JsonNode category = phrEvidence.path("evidenceCategories").path(sectionId);
+            JsonNode category = productEvidence.path("evidenceCategories").path(sectionId);
             if (category.isMissingNode()) {
                 return Promise.ofException(new IllegalArgumentException("Section not found: " + sectionId));
             }
@@ -80,8 +80,8 @@ public final class FileBasedReleaseReadinessRuntimeService implements ReleaseRea
             sectionData.put("sectionId", sectionId);
             sectionData.put("section", JSON.convertValue(category, Map.class));
             sectionData.put("evidenceLinks", Map.of(
-                "phrReleaseReadiness", phrEvidencePath,
-                "categoryPath", phrEvidencePath + "#/evidenceCategories/" + sectionId,
+                "productReleaseReadiness", productEvidencePath,
+                "categoryPath", productEvidencePath + "#/evidenceCategories/" + sectionId,
                 "categoryStatus", text(category.path("status"), "unknown")
             ));
             

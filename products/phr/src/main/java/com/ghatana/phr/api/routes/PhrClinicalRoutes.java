@@ -90,7 +90,7 @@ public final class PhrClinicalRoutes {
     }
 
     private Promise<HttpResponse> handleRecordLabObservation(HttpRequest request) {
-        return withBodyAndConsent(request, "lab-results", LabResultService.LabObservation.class,
+        return withBodyAndConsent(request, "lab-results", "WRITE", LabResultService.LabObservation.class,
             observation -> labResultService.recordObservation(observation)
                 .then(stored -> PhrRouteSupport.jsonResponse(201, stored)));
     }
@@ -108,15 +108,15 @@ public final class PhrClinicalRoutes {
                 if (observation.isEmpty()) {
                     return PhrRouteSupport.errorResponse(404, "LAB_OBSERVATION_NOT_FOUND", "Lab observation not found");
                 }
-                return requireAccess(context, observation.get().patientId(), "lab-results")
+                return requireAccess(context, observation.get().patientId(), "lab-results", "READ")
                     .then(allowed -> allowed
                         ? PhrRouteSupport.jsonResponse(200, observation.get())
-                        : PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required to read lab results"));
+                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
             });
     }
 
     private Promise<HttpResponse> handleListLabObservations(HttpRequest request) {
-        return withPatientAccess(request, "lab-results", patientId -> labResultService.getPatientObservations(patientId)
+        return withPatientAccess(request, "lab-results", "READ", patientId -> labResultService.getPatientObservations(patientId)
             .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size()))));
     }
 
@@ -127,12 +127,12 @@ public final class PhrClinicalRoutes {
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "INVALID_TREND", ex.getMessage());
         }
-        return withPatientAccess(request, "lab-results", patientId -> labResultService.getTrend(patientId, loincCode)
+        return withPatientAccess(request, "lab-results", "READ", patientId -> labResultService.getTrend(patientId, loincCode)
             .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "loincCode", loincCode, "items", items, "count", items.size()))));
     }
 
     private Promise<HttpResponse> handlePrescribeMedication(HttpRequest request) {
-        return withBodyAndConsent(request, "medications", MedicationService.Prescription.class,
+        return withBodyAndConsent(request, "medications", "WRITE", MedicationService.Prescription.class,
             prescription -> medicationService.prescribe(prescription)
                 .then(stored -> PhrRouteSupport.jsonResponse(201, stored)));
     }
@@ -150,15 +150,15 @@ public final class PhrClinicalRoutes {
                 if (prescription.isEmpty()) {
                     return PhrRouteSupport.errorResponse(404, "PRESCRIPTION_NOT_FOUND", "Prescription not found");
                 }
-                return requireAccess(context, prescription.get().patientId(), "medications")
+                return requireAccess(context, prescription.get().patientId(), "medications", "READ")
                     .then(allowed -> allowed
                         ? PhrRouteSupport.jsonResponse(200, prescription.get())
-                        : PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required to read medications"));
+                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
             });
     }
 
     private Promise<HttpResponse> handleListActivePrescriptions(HttpRequest request) {
-        return withPatientAccess(request, "medications", patientId -> medicationService.getActivePrescriptions(patientId)
+        return withPatientAccess(request, "medications", "READ", patientId -> medicationService.getActivePrescriptions(patientId)
             .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size()))));
     }
 
@@ -168,7 +168,7 @@ public final class PhrClinicalRoutes {
         if (patientId == null || patientId.isBlank()) {
             return PhrRouteSupport.errorResponse(400, "INVALID_DISCONTINUE", "patientId query parameter is required");
         }
-        return withPatientAccess(request, "medications", ignored -> medicationService.discontinue(
+        return withPatientAccess(request, "medications", "WRITE", ignored -> medicationService.discontinue(
                 request.getPathParameter("prescriptionId"),
                 reason == null || reason.isBlank() ? "not specified" : reason)
             .then(updated -> PhrRouteSupport.jsonResponse(200, updated)));
@@ -179,12 +179,12 @@ public final class PhrClinicalRoutes {
         if (patientId == null || patientId.isBlank()) {
             return PhrRouteSupport.errorResponse(400, "INVALID_REFILL", "patientId query parameter is required");
         }
-        return withPatientAccess(request, "medications", ignored -> medicationService.refill(request.getPathParameter("prescriptionId"))
+        return withPatientAccess(request, "medications", "WRITE", ignored -> medicationService.refill(request.getPathParameter("prescriptionId"))
             .then(updated -> PhrRouteSupport.jsonResponse(200, updated)));
     }
 
     private Promise<HttpResponse> handleRecordImmunization(HttpRequest request) {
-        return withBodyAndConsent(request, "immunizations", ImmunizationService.ImmunizationRecord.class,
+        return withBodyAndConsent(request, "immunizations", "WRITE", ImmunizationService.ImmunizationRecord.class,
             immunization -> immunizationService.recordImmunization(immunization)
                 .then(stored -> PhrRouteSupport.jsonResponse(201, stored)));
     }
@@ -202,21 +202,22 @@ public final class PhrClinicalRoutes {
                 if (immunization.isEmpty()) {
                     return PhrRouteSupport.errorResponse(404, "IMMUNIZATION_NOT_FOUND", "Immunization not found");
                 }
-                return requireAccess(context, immunization.get().patientId(), "immunizations")
+                return requireAccess(context, immunization.get().patientId(), "immunizations", "READ")
                     .then(allowed -> allowed
                         ? PhrRouteSupport.jsonResponse(200, immunization.get())
-                        : PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required to read immunizations"));
+                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
             });
     }
 
     private Promise<HttpResponse> handleListImmunizations(HttpRequest request) {
-        return withPatientAccess(request, "immunizations", patientId -> immunizationService.getImmunizationHistory(patientId)
+        return withPatientAccess(request, "immunizations", "READ", patientId -> immunizationService.getImmunizationHistory(patientId)
             .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size()))));
     }
 
     private <T> Promise<HttpResponse> withBodyAndConsent(
             HttpRequest request,
             String resourceType,
+            String action,
             Class<T> type,
             java.util.function.Function<T, Promise<HttpResponse>> handler) {
         PhrRouteSupport.PhrRequestContext context;
@@ -237,16 +238,17 @@ public final class PhrClinicalRoutes {
                 } catch (Exception ex) {
                     return PhrRouteSupport.errorResponse(400, "INVALID_" + resourceType.toUpperCase().replace('-', '_'), ex.getMessage());
                 }
-                return requireAccess(finalContext, patientId, resourceType)
+                return requireAccess(finalContext, patientId, resourceType, action)
                     .then(allowed -> allowed
                         ? handler.apply(value)
-                        : PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required for " + resourceType));
+                        : PhrRouteSupport.policyDenialResponse(403, finalContext.correlationId()));
             });
     }
 
     private Promise<HttpResponse> withPatientAccess(
             HttpRequest request,
             String resourceType,
+            String action,
             java.util.function.Function<String, Promise<HttpResponse>> handler) {
         PhrRouteSupport.PhrRequestContext context;
         String patientId;
@@ -256,18 +258,22 @@ public final class PhrClinicalRoutes {
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT_SCOPE", ex.getMessage());
         }
-        return requireAccess(context, patientId, resourceType)
+        return requireAccess(context, patientId, resourceType, action)
             .then(allowed -> allowed
                 ? handler.apply(patientId)
-                : PhrRouteSupport.errorResponse(403, "CONSENT_REQUIRED", "Consent is required for " + resourceType));
+                : PhrRouteSupport.policyDenialResponse(403, context.correlationId()));
     }
 
-    private Promise<Boolean> requireAccess(PhrRouteSupport.PhrRequestContext context, String patientId, String resourceType) {
+    private Promise<Boolean> requireAccess(
+            PhrRouteSupport.PhrRequestContext context,
+            String patientId,
+            String resourceType,
+            String action) {
         return policyEvaluator.canAccessPhiResourceAsync(
                 context,
                 patientId,
                 resourceType,
-                "READ",
+                action,
                 context.tenantId(),
                 context.facilityId())
             .map(PhrPolicyEvaluator.PolicyDecision::isAllowed);
