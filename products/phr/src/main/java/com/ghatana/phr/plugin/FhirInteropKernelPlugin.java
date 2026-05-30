@@ -66,7 +66,7 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
         // Resolve mode to determine if DataCloud dependency is optional
         DependencyMode mode = resolveDataCloudMode();
         boolean dataCloudOptional = !mode.isStrict();
-        
+
         return PluginManifest.builder()
             .pluginId(PLUGIN_ID)
             .version(VERSION)
@@ -110,14 +110,14 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
     @Override
     public void initialize(KernelContext context) {
         this.context = context;
-        
+
         // Resolve DataCloud operation mode from environment or system property
         DependencyMode mode = resolveDataCloudMode();
         boolean datacloudAvailable = context != null && context.hasDependency(DataCloudKernelAdapter.class);
-        
+
         // Initialize DataCloud dependency availability tracker
         this.dataCloudAvailability = new DependencyAvailability("DataCloudKernelAdapter", mode, datacloudAvailable);
-        
+
         // In STRICT mode, DataCloud is required - fail fast if not available
         if (mode.isStrict() && !datacloudAvailable) {
             String errorMsg = "DataCloud adapter is required in STRICT mode but not available. " +
@@ -125,7 +125,7 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
             LOG.error("INITIALIZATION FAILED: {}", errorMsg);
             throw new IllegalStateException(errorMsg);
         }
-        
+
         LOG.info("PHR FHIR Plugin initialized with DataCloud mode: {} (available: {})", mode.name(), datacloudAvailable);
     }
 
@@ -144,7 +144,7 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
                 LOG.warn("Invalid {} system property value: {}; using default: {}", DATACLOUD_MODE_ENV, modeProp, DATACLOUD_MODE_DEFAULT);
             }
         }
-        
+
         // Fall back to environment variable
         String modeEnv = System.getenv(DATACLOUD_MODE_ENV);
         if (modeEnv != null && !modeEnv.isEmpty()) {

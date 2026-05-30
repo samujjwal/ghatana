@@ -301,6 +301,20 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                 return denyDispatch(agentId, traceId, tenantId,
                         "Release " + release.agentReleaseId() + " is SHADOW and cannot serve responses");
             }
+
+            // ── Kill switch check ───────────────────────────────────────────────
+            if (releaseRepository != null) {
+                return releaseRepository.findInstanceConfig(release.agentReleaseId(), tenantId)
+                    .then(optConfig -> {
+                        if (optConfig.isPresent() && optConfig.get().killSwitch()) {
+                            log.warn("Dispatch rejected for agent [{}]: kill switch is active for release {}",
+                                agentId, release.agentReleaseId());
+                            return denyDispatch(agentId, traceId, tenantId,
+                                "Kill switch is active for release " + release.agentReleaseId());
+                        }
+                        return doDispatch(agentId, input, ctx, release, tenantId, traceId);
+                    });
+            }
         }
 
         if (optRelease.isEmpty()) {

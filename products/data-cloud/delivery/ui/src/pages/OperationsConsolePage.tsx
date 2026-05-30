@@ -19,6 +19,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -65,6 +66,7 @@ function mapCapabilitiesToHealth(surfaces: SurfaceSignal[]): HealthStatus[] {
 }
 
 export const OperationsConsolePage: React.FC = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const {
@@ -152,11 +154,11 @@ export const OperationsConsolePage: React.FC = () => {
               {isLoading ? (
                 <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                   <RefreshCw className="h-4 w-4 animate-spin" />
-                  Loading health data…
+                  {t('loading.healthData')}
                 </div>
               ) : healthStatuses.length === 0 ? (
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  No capability signals available yet.
+                  {t('operations.noCapabilitySignals')}
                 </p>
               ) : (
                 <div className="space-y-3">

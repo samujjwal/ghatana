@@ -3,10 +3,7 @@ package com.ghatana.phr.kernel.service;
 import com.ghatana.phr.application.emergency.EmergencyAccessService;
 import com.ghatana.phr.application.emergency.EmergencyAccessServiceImpl;
 import com.ghatana.phr.application.patient.PatientOperationContext;
-import com.ghatana.phr.kernel.service.EmergencyAccessLogService.EmergencyAccessEvent;
-import com.ghatana.phr.kernel.service.EmergencyAccessLogService.ReviewStatus;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,11 +17,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -212,7 +205,7 @@ class BreakGlassWorkflowE2ETest extends EventloopTestBase {
         // Step 1: Emergency access initiated using real service
         String patientId = "patient-" + UUID.randomUUID();
         String providerId = "provider-" + UUID.randomUUID();
-        
+
         PatientOperationContext ctx = new PatientOperationContext(
             "tenant-" + UUID.randomUUID(),
             "default",
@@ -221,7 +214,7 @@ class BreakGlassWorkflowE2ETest extends EventloopTestBase {
             UUID.randomUUID().toString()
         );
 
-        EmergencyAccessService.EmergencyAccessRequest request = 
+        EmergencyAccessService.EmergencyAccessRequest request =
             new EmergencyAccessService.EmergencyAccessRequest(
                 patientId,
                 providerId,
@@ -229,7 +222,7 @@ class BreakGlassWorkflowE2ETest extends EventloopTestBase {
                 "Clinical emergency requiring immediate access"
             );
 
-        EmergencyAccessService.EmergencyAccess emergencyAccess = 
+        EmergencyAccessService.EmergencyAccess emergencyAccess =
             runPromise(() -> emergencyAccessService.requestEmergencyAccess(ctx, request));
 
         // Verify emergency access granted
@@ -261,14 +254,14 @@ class BreakGlassWorkflowE2ETest extends EventloopTestBase {
         assertThat(countRecords("review_cases")).isGreaterThan(0);
 
         // Step 7: Complete review
-        EmergencyAccessService.ReviewResult reviewResult = 
+        EmergencyAccessService.ReviewResult reviewResult =
             new EmergencyAccessService.ReviewResult(
                 "APPROVED",
                 providerId,
                 "Clinically justified - patient was unconscious and required immediate treatment"
             );
 
-        EmergencyAccessService.EmergencyAccess reviewedAccess = 
+        EmergencyAccessService.EmergencyAccess reviewedAccess =
             runPromise(() -> emergencyAccessService.completeReview(ctx, emergencyAccess.emergencyAccessId(), reviewResult));
 
         // Verify review completed
@@ -289,7 +282,7 @@ class BreakGlassWorkflowE2ETest extends EventloopTestBase {
     void breakGlassWorkflowWithEscalation() throws SQLException {
         String patientId = "patient-" + UUID.randomUUID();
         String providerId = "provider-" + UUID.randomUUID();
-        
+
         PatientOperationContext ctx = new PatientOperationContext(
             "tenant-" + UUID.randomUUID(),
             "default",
@@ -298,7 +291,7 @@ class BreakGlassWorkflowE2ETest extends EventloopTestBase {
             UUID.randomUUID().toString()
         );
 
-        EmergencyAccessService.EmergencyAccessRequest request = 
+        EmergencyAccessService.EmergencyAccessRequest request =
             new EmergencyAccessService.EmergencyAccessRequest(
                 patientId,
                 providerId,
@@ -306,7 +299,7 @@ class BreakGlassWorkflowE2ETest extends EventloopTestBase {
                 "Clinical emergency requiring immediate access"
             );
 
-        EmergencyAccessService.EmergencyAccess emergencyAccess = 
+        EmergencyAccessService.EmergencyAccess emergencyAccess =
             runPromise(() -> emergencyAccessService.requestEmergencyAccess(ctx, request));
 
         persistEmergencyAccess(emergencyAccess);
@@ -316,14 +309,14 @@ class BreakGlassWorkflowE2ETest extends EventloopTestBase {
         persistReviewCase(emergencyAccess.emergencyAccessId(), emergencyAccess.reviewDueAt());
 
         // Complete review with escalation
-        EmergencyAccessService.ReviewResult reviewResult = 
+        EmergencyAccessService.ReviewResult reviewResult =
             new EmergencyAccessService.ReviewResult(
                 "ESCALATED",
                 providerId,
                 "Access not clinically justified - requires disciplinary review"
             );
 
-        EmergencyAccessService.EmergencyAccess reviewedAccess = 
+        EmergencyAccessService.EmergencyAccess reviewedAccess =
             runPromise(() -> emergencyAccessService.completeReview(ctx, emergencyAccess.emergencyAccessId(), reviewResult));
 
         // Verify escalation
@@ -338,7 +331,7 @@ class BreakGlassWorkflowE2ETest extends EventloopTestBase {
     private void persistEmergencyAccess(EmergencyAccessService.EmergencyAccess access) throws SQLException {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement("""
-                 INSERT INTO emergency_access (id, patient_id, accessor_id, justification, reason, 
+                 INSERT INTO emergency_access (id, patient_id, accessor_id, justification, reason,
                      accessed_at, access_expires_at, review_due_at, status, review_case_id)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              """)) {
@@ -422,7 +415,7 @@ class BreakGlassWorkflowE2ETest extends EventloopTestBase {
     private void updateReviewCase(String caseId, String decision, String notes) throws SQLException {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement("""
-                 UPDATE review_cases 
+                 UPDATE review_cases
                  SET status = ?, review_decision = ?, review_notes = ?, reviewed_at = ?
                  WHERE case_id = ?
              """)) {

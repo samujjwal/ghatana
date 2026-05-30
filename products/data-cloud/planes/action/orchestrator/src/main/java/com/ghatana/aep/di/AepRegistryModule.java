@@ -213,13 +213,12 @@ public class AepRegistryModule extends AbstractModule {
     @Provides
     AgentExecutionService agentExecutionService(
             AgentRegistry agentRegistry,
-            LLMGateway llmGateway,
             AgentDispatcher agentDispatcher,
             AgentExecutionHistoryStore historyStore,
             AgentMemoryPlaneClient memoryClient) {
-        // Use the constructor that accepts AgentDispatcher for governed dispatch
-        // Pass null for agentRegistry and llmGateway since governed dispatch is preferred
-        return new AgentExecutionService(agentRegistry, llmGateway, agentDispatcher, historyStore, memoryClient);
+        // Use the constructor that requires governed AgentDispatcher for enforced governance
+        // Direct LLM gateway bypass is not permitted
+        return new AgentExecutionService(agentRegistry, agentDispatcher, historyStore, memoryClient);
     }
 
     /**

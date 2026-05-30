@@ -1,0 +1,85 @@
+id: vision-analysis-agent
+namespace: aep.operators.media
+name: Vision Analysis Agent
+version: 1.0.0
+status: active
+owners:
+  - team: data-cloud
+    contact: data-cloud-team@ghatana.com
+summary: Analyzes video content for object detection and scene analysis
+description: Analyzes video content for object detection, scene changes, and visual understanding
+
+metadata:
+  level: 3
+  domain: media-processing
+  tags: [vision, object-detection, scene-analysis, video, computer-vision]
+
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: stateless
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: semi-autonomous
+
+reasoningProfile:
+  primaryReasoner: service-call
+  reasonerPortfolio:
+    - type: service-call
+      role: vision-analysis
+      description: Analyze video frames for objects and scenes
+
+aep:
+  operatorType: TRANSFORMATION
+  inputEventTypes: ["video.uploaded"]
+  outputEventTypes: ["vision-analysis.completed", "vision-analysis.failed"]
+  backpressure:
+    bufferSize: 1000
+    overflowStrategy: DROP_OLDEST
+  reliability:
+    checkpointInterval: "60s"
+    maxRetries: 3
+
+capabilities:
+  - object-detection
+  - scene-detection
+  - frame-extraction
+
+tools:
+  - name: detectObjects
+    type: PRODUCT_CAPABILITY
+    product: audio-video
+    capabilityId: av.vision-analysis
+    contractRef: capabilities/vision-analysis.yaml
+  - name: detectScenes
+    type: PRODUCT_CAPABILITY
+    product: audio-video
+    capabilityId: av.vision-analysis
+    contractRef: capabilities/vision-analysis.yaml
+  - name: extractFrames
+    type: PRODUCT_CAPABILITY
+    product: audio-video
+    capabilityId: av.vision-analysis
+    contractRef: capabilities/vision-analysis.yaml
+
+interfaces:
+  inputs:
+    - name: videoFile
+      schema: video.uploaded
+      required: true
+  outputs:
+    - name: analysisResult
+      schema: vision-analysis.completed
+    - name: error
+      schema: vision-analysis.failed
+
+memory:
+  type: NONE
+  scope: none
+  retention: none
+
+resources:
+  memory: "2GB"
+  cpu: "4"
+  timeout: "600s"

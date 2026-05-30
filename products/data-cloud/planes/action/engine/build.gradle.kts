@@ -36,7 +36,6 @@ dependencies {
     api(project(":platform:java:config"))
     api(project(":platform:java:agent-core"))  // Agent runtime consolidation
     api(project(":platform:java:messaging"))   // Unified messaging
-    api(project(":products:data-cloud:extensions:agent-registry"))  // Registry/DataCloud integration types
 
     // Redis
     implementation(libs.jedis)
@@ -61,6 +60,7 @@ dependencies {
     testImplementation(project(":platform:java:testing"))
     testImplementation(project(":products:data-cloud:planes:action:security"))
     testImplementation(project(":products:data-cloud:planes:action:registry"))
+    testImplementation(project(":products:data-cloud:extensions:agent-registry"))  // Test-only: DataCloud integration types
 }
 
 tasks.test {

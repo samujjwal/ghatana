@@ -6,6 +6,8 @@ import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.entity.EntityInterface;
 import com.ghatana.datacloud.entity.storage.QuerySpecInterface;
 import com.ghatana.datacloud.DataRecordInterface;
+import com.ghatana.platform.observability.idempotency.IdempotencyHelper;
+import com.ghatana.platform.observability.idempotency.IdempotencyStore;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -31,6 +33,7 @@ public final class ComplianceHandler {
     private final HttpHandlerSupport http;
     private final ObjectMapper objectMapper;
     private final Map<String, List<Map<String, Object>>> legalHolds = new ConcurrentHashMap<>();
+    private IdempotencyStore idempotencyStore;
 
     public ComplianceHandler(DataCloudClient client,
                              HttpHandlerSupport http,
@@ -38,6 +41,17 @@ public final class ComplianceHandler {
         this.client = Objects.requireNonNull(client, "client");
         this.http = Objects.requireNonNull(http, "http");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
+    }
+
+    /**
+     * Wires an {@link IdempotencyStore} for idempotent compliance operations.
+     *
+     * @param idempotencyStore the idempotency store; may be {@code null}
+     * @return this handler for fluent chaining
+     */
+    public ComplianceHandler withIdempotencyStore(IdempotencyStore idempotencyStore) {
+        this.idempotencyStore = idempotencyStore;
+        return this;
     }
 
     @SuppressWarnings("unchecked")
@@ -52,42 +66,102 @@ public final class ComplianceHandler {
         }
         String requestId = http.resolveCorrelationId(request);
 
-        return request.loadBody().then(buf -> {
-            try {
-                Map<String, Object> input = objectMapper.readValue(
-                    buf.getString(StandardCharsets.UTF_8), Map.class);
-                String holdId = UUID.randomUUID().toString();
-                String reason = String.valueOf(input.getOrDefault("reason", ""));
-                String scope = String.valueOf(input.getOrDefault("scope", "tenant-wide"));
-                List<String> collections = (List<String>) input.getOrDefault("collections", List.of());
+        // Check idempotency before processing
+        return checkIdempotency(tenantId, "apply-legal-hold", request)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
+                }
 
-                Map<String, Object> hold = new LinkedHashMap<>();
-                hold.put("id", holdId);
-                hold.put("tenantId", tenantId);
-                hold.put("reason", reason);
-                hold.put("scope", scope);
-                hold.put("collections", collections);
-                hold.put("status", "ACTIVE");
-                hold.put("appliedAt", Instant.now().toString());
-                hold.put("appliedBy", input.getOrDefault("appliedBy", "admin"));
-                hold.put("expiresAt", input.getOrDefault("expiresAt", null));
-                hold.put("auditLog", List.of(Map.of("action", "applied", "timestamp", Instant.now().toString())));
+                return request.loadBody().then(buf -> {
+                    try {
+                        Map<String, Object> input = objectMapper.readValue(
+                            buf.getString(StandardCharsets.UTF_8), Map.class);
+                        String holdId = UUID.randomUUID().toString();
+                        String reason = String.valueOf(input.getOrDefault("reason", ""));
+                        String scope = String.valueOf(input.getOrDefault("scope", "tenant-wide"));
+                        List<String> collections = (List<String>) input.getOrDefault("collections", List.of());
 
-                legalHolds.computeIfAbsent(tenantId, k -> new ArrayList<>()).add(hold);
+                        Map<String, Object> hold = new LinkedHashMap<>();
+                        hold.put("id", holdId);
+                        hold.put("tenantId", tenantId);
+                        hold.put("reason", reason);
+                        hold.put("scope", scope);
+                        hold.put("collections", collections);
+                        hold.put("status", "ACTIVE");
+                        hold.put("appliedAt", Instant.now().toString());
+                        hold.put("appliedBy", input.getOrDefault("appliedBy", "admin"));
+                        hold.put("expiresAt", input.getOrDefault("expiresAt", null));
+                        hold.put("auditLog", List.of(Map.of("action", "applied", "timestamp", Instant.now().toString())));
 
-                log.info("Legal hold applied tenant={} holdId={} scope={}", tenantId, holdId, scope);
-                return Promise.of(http.jsonResponse(Map.of(
-                    "holdId", holdId,
-                    "status", "ACTIVE",
-                    "tenantId", tenantId,
-                    "appliedAt", hold.get("appliedAt"),
-                    "requestId", requestId
-                ), requestId));
-            } catch (JsonProcessingException | RuntimeException e) {
-                log.error("Failed to apply legal hold tenant={}", tenantId, e);
-                return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
-            }
-        });
+                        legalHolds.computeIfAbsent(tenantId, k -> new ArrayList<>()).add(hold);
+
+                        log.info("Legal hold applied tenant={} holdId={} scope={}", tenantId, holdId, scope);
+                        HttpResponse response = http.jsonResponse(Map.of(
+                            "holdId", holdId,
+                            "status", "ACTIVE",
+                            "tenantId", tenantId,
+                            "appliedAt", hold.get("appliedAt"),
+                            "requestId", requestId
+                        ), requestId);
+
+                        // Store idempotency response
+                        storeIdempotency(tenantId, "apply-legal-hold", request, response);
+
+                        return Promise.of(response);
+                    } catch (JsonProcessingException | RuntimeException e) {
+                        log.error("Failed to apply legal hold tenant={}", tenantId, e);
+                        return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
+                    }
+                });
+            });
+    }
+
+    // Idempotency Helpers
+    private Promise<HttpResponse> checkIdempotency(String tenantId, String routeAction, HttpRequest request) {
+        if (idempotencyStore == null) {
+            return Promise.of(null);
+        }
+        String idempotencyKey = IdempotencyHelper.extractIdempotencyKey(request);
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return Promise.of(null);
+        }
+        String principalId = http.resolvePrincipalId(request);
+        String scope = "compliance:" + routeAction;
+
+        return IdempotencyHelper.checkConflict(idempotencyStore, tenantId, scope, idempotencyKey, principalId,
+            IdempotencyHelper.computePayloadHash(request))
+            .then(conflict -> {
+                if (conflict) {
+                    log.warn("[compliance] Idempotency conflict for tenant={}, scope={}, key={}", tenantId, scope, idempotencyKey);
+                    return Promise.of(http.errorResponse(409,
+                        "Idempotency key conflict: same key used with different payload"));
+                }
+                return IdempotencyHelper.checkIdempotency(idempotencyStore, tenantId, scope, idempotencyKey, principalId)
+                    .then(cached -> {
+                        if (cached.isPresent()) {
+                            log.info("[compliance] Returning cached response for tenant={}, scope={}, key={}", tenantId, scope, idempotencyKey);
+                            return Promise.of(IdempotencyHelper.addIdempotencyHeaders((HttpResponse) cached.get(), "replay"));
+                        }
+                        return Promise.of(null);
+                    });
+            });
+    }
+
+    private Promise<Void> storeIdempotency(String tenantId, String routeAction,
+                                           HttpRequest request, HttpResponse response) {
+        if (idempotencyStore == null) {
+            return Promise.complete();
+        }
+        String idempotencyKey = IdempotencyHelper.extractIdempotencyKey(request);
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return Promise.complete();
+        }
+        String principalId = http.resolvePrincipalId(request);
+        String scope = "compliance:" + routeAction;
+        String payloadHash = IdempotencyHelper.computePayloadHash(request);
+
+        return IdempotencyHelper.storeResponse(idempotencyStore, tenantId, scope, idempotencyKey, principalId, payloadHash, response);
     }
 
     public Promise<HttpResponse> handleListLegalHolds(HttpRequest request) {

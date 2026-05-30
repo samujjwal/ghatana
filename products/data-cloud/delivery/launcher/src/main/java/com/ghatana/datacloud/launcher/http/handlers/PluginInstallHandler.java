@@ -3,8 +3,10 @@ package com.ghatana.datacloud.launcher.http.handlers;
 import com.ghatana.datacloud.launcher.http.plugins.DataCloudRuntimePluginManager;
 import com.ghatana.datacloud.spi.StoragePlugin;
 import com.ghatana.datacloud.spi.StoragePluginRegistry;
-import com.ghatana.platform.plugin.Plugin;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.observability.idempotency.IdempotencyHelper;
+import com.ghatana.platform.observability.idempotency.IdempotencyStore;
+import com.ghatana.platform.plugin.Plugin;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -52,6 +54,7 @@ public final class PluginInstallHandler {
     private final StoragePluginRegistry pluginRegistry;
     private final DataCloudRuntimePluginManager runtimePluginManager;
     private final MetricsCollector metrics;
+    private IdempotencyStore idempotencyStore;
 
     // Tracks plugins explicitly disabled at runtime via this API
     private final java.util.Set<String> disabledPlugins = java.util.Collections.newSetFromMap(
@@ -87,6 +90,17 @@ public final class PluginInstallHandler {
      */
     public PluginInstallHandler withPluginUpgradeEnabled(boolean enabled) {
         this.pluginUpgradeEnabled = enabled;
+        return this;
+    }
+
+    /**
+     * Wires an {@link IdempotencyStore} for idempotent plugin operations.
+     *
+     * @param idempotencyStore the idempotency store; may be {@code null}
+     * @return this handler (fluent)
+     */
+    public PluginInstallHandler withIdempotencyStore(IdempotencyStore idempotencyStore) {
+        this.idempotencyStore = idempotencyStore;
         return this;
     }
 
@@ -162,22 +176,31 @@ public final class PluginInstallHandler {
         }
         metrics.incrementCounter("plugin.enable", "tenant", tenantId, "pluginId", pluginId);
 
-        return pluginRegistry.getPlugin(pluginId)
-                .<Promise<HttpResponse>>map(plugin -> {
-                    disabledPlugins.remove(pluginId);
-                    log.info("Plugin {} enabled by tenant {}", pluginId, tenantId);
-                    Map<String, Object> result = pluginView(plugin);
-                    result.put("status", "enabled");
-                    return Promise.of(http.jsonResponse(200, result));
-                })
-                .orElseGet(() -> runtimePluginManager.getPlugin(pluginId)
-                    .<Promise<HttpResponse>>map(plugin -> runtimePluginManager.enablePlugin(pluginId)
-                        .map(ignored -> {
+        return checkIdempotency(tenantId, "enable", request)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
+                }
+
+                return pluginRegistry.getPlugin(pluginId)
+                        .<Promise<HttpResponse>>map(plugin -> {
+                            disabledPlugins.remove(pluginId);
+                            log.info("Plugin {} enabled by tenant {}", pluginId, tenantId);
                             Map<String, Object> result = pluginView(plugin);
                             result.put("status", "enabled");
-                            return http.jsonResponse(200, result);
-                        }))
-                    .orElseGet(() -> Promise.of(http.errorResponse(404, "Plugin not found: " + pluginId))));
+                            storeIdempotency(tenantId, "enable", request, result);
+                            return Promise.of(http.jsonResponse(200, result));
+                        })
+                        .orElseGet(() -> runtimePluginManager.getPlugin(pluginId)
+                            .<Promise<HttpResponse>>map(plugin -> runtimePluginManager.enablePlugin(pluginId)
+                                .map(ignored -> {
+                                    Map<String, Object> result = pluginView(plugin);
+                                    result.put("status", "enabled");
+                                    storeIdempotency(tenantId, "enable", request, result);
+                                    return http.jsonResponse(200, result);
+                                }))
+                            .orElseGet(() -> Promise.of(http.errorResponse(404, "Plugin not found: " + pluginId))));
+            });
     }
 
     // ─── POST /api/v1/plugins/:id/disable ────────────────────────────────────
@@ -197,27 +220,36 @@ public final class PluginInstallHandler {
         }
         metrics.incrementCounter("plugin.disable", "tenant", tenantId, "pluginId", pluginId);
 
-        if (pluginRegistry.getPlugin(pluginId).isEmpty()) {
-            if (runtimePluginManager.getPlugin(pluginId).isEmpty()) {
-                return Promise.of(http.errorResponse(404, "Plugin not found: " + pluginId));
-            }
-            return runtimePluginManager.disablePlugin(pluginId).map(ignored -> {
+        return checkIdempotency(tenantId, "disable", request)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
+                }
+
+                if (pluginRegistry.getPlugin(pluginId).isEmpty()) {
+                    if (runtimePluginManager.getPlugin(pluginId).isEmpty()) {
+                        return Promise.of(http.errorResponse(404, "Plugin not found: " + pluginId));
+                    }
+                    return runtimePluginManager.disablePlugin(pluginId).map(ignored -> {
+                        Map<String, Object> result = new HashMap<>();
+                        result.put("pluginId", pluginId);
+                        result.put("status", "disabled");
+                        result.put("message", "Plugin disabled.");
+                        storeIdempotency(tenantId, "disable", request, result);
+                        return http.jsonResponse(200, result);
+                    });
+                }
+
+                disabledPlugins.add(pluginId);
+                log.warn("Plugin {} disabled by tenant {} — active operations will drain before shutdown", pluginId, tenantId);
+
                 Map<String, Object> result = new HashMap<>();
                 result.put("pluginId", pluginId);
                 result.put("status", "disabled");
-                result.put("message", "Plugin disabled.");
-                return http.jsonResponse(200, result);
+                result.put("message", "Plugin disabled. Active operations will drain before shutdown.");
+                storeIdempotency(tenantId, "disable", request, result);
+                return Promise.of(http.jsonResponse(200, result));
             });
-        }
-
-        disabledPlugins.add(pluginId);
-        log.warn("Plugin {} disabled by tenant {} — active operations will drain before shutdown", pluginId, tenantId);
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("pluginId", pluginId);
-        result.put("status", "disabled");
-        result.put("message", "Plugin disabled. Active operations will drain before shutdown.");
-        return Promise.of(http.jsonResponse(200, result));
     }
 
     // ─── POST /api/v1/plugins/:id/upgrade ────────────────────────────────────
@@ -244,39 +276,48 @@ public final class PluginInstallHandler {
         }
         metrics.incrementCounter("plugin.upgrade", "tenant", tenantId, "pluginId", pluginId);
 
-        return request.loadBody().then(buffer -> {
-            Map<String, Object> payload = parseUpgradePayload(
-                buffer == null || buffer.readRemaining() == 0
-                    ? null
-                    : buffer.getString(java.nio.charset.StandardCharsets.UTF_8));
+        return checkIdempotency(tenantId, "upgrade", request)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
+                }
 
-            if (pluginRegistry.getPlugin(pluginId).isPresent()) {
-                StoragePlugin<?> plugin = pluginRegistry.getPlugin(pluginId).orElseThrow();
-                @SuppressWarnings("unchecked")
-                Map<String, Object> pluginConfig = payload.get("configuration") instanceof Map<?, ?> map
-                    ? (Map<String, Object>) map
-                    : Map.of();
-                return plugin.shutdown()
-                    .then(() -> plugin.initialize(pluginConfig))
-                    .map(ignored -> {
-                        Map<String, Object> result = pluginView(plugin);
-                        result.put("reloaded", true);
-                        result.put("message", "Plugin reloaded without restarting the launcher.");
-                        return http.jsonResponse(200, result);
-                    });
-            }
+                return request.loadBody().then(buffer -> {
+                    Map<String, Object> payload = parseUpgradePayload(
+                        buffer == null || buffer.readRemaining() == 0
+                            ? null
+                            : buffer.getString(java.nio.charset.StandardCharsets.UTF_8));
 
-            return runtimePluginManager.hotSwapPlugin(pluginId, payload)
-                .map(plugin -> {
-                    Map<String, Object> result = pluginView(plugin);
-                    result.put("reloaded", true);
-                    result.put("message", "Plugin hot-swapped without restarting the launcher.");
-                    return http.jsonResponse(200, result);
-                });
-        }).then(
-            response -> Promise.of(response),
-            exception -> Promise.of(http.errorResponse(404, exception.getMessage()))
-        );
+                    if (pluginRegistry.getPlugin(pluginId).isPresent()) {
+                        StoragePlugin<?> plugin = pluginRegistry.getPlugin(pluginId).orElseThrow();
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> pluginConfig = payload.get("configuration") instanceof Map<?, ?> map
+                            ? (Map<String, Object>) map
+                            : Map.of();
+                        return plugin.shutdown()
+                            .then(() -> plugin.initialize(pluginConfig))
+                            .map(ignored -> {
+                                Map<String, Object> result = pluginView(plugin);
+                                result.put("reloaded", true);
+                                result.put("message", "Plugin reloaded without restarting the launcher.");
+                                storeIdempotency(tenantId, "upgrade", request, result);
+                                return http.jsonResponse(200, result);
+                            });
+                    }
+
+                    return runtimePluginManager.hotSwapPlugin(pluginId, payload)
+                        .map(plugin -> {
+                            Map<String, Object> result = pluginView(plugin);
+                            result.put("reloaded", true);
+                            result.put("message", "Plugin hot-swapped without restarting the launcher.");
+                            storeIdempotency(tenantId, "upgrade", request, result);
+                            return http.jsonResponse(200, result);
+                        });
+                }).then(
+                    response -> Promise.of(response),
+                    exception -> Promise.of(http.errorResponse(404, exception.getMessage()))
+                );
+            });
     }
 
     // ─── Private helpers ──────────────────────────────────────────────────────
@@ -410,32 +451,40 @@ public final class PluginInstallHandler {
 
         metrics.incrementCounter("plugin.validate", "tenant", tenantId, "pluginId", pluginId);
 
-        return request.loadBody().then(buf -> {
-            try {
-                String body = buf.getString(StandardCharsets.UTF_8);
-                @SuppressWarnings("unchecked")
-                Map<String, Object> payload = body.isBlank() ? Map.of() : http.objectMapper().readValue(body, Map.class);
-                String schemaVersion = (String) payload.getOrDefault("schemaVersion", "1.0");
-                String targetVersion = (String) payload.getOrDefault("targetVersion", pluginRegistry.getPlugin(pluginId).map(StoragePlugin::getVersion).orElse("unknown"));
+        return checkIdempotency(tenantId, "validate", request)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
+                }
 
-                boolean compatible = schemaVersion.equals(targetVersion)
-                    || schemaVersion.startsWith(targetVersion.substring(0, targetVersion.lastIndexOf('.') + 1));
+                return request.loadBody().then(buf -> {
+                    try {
+                        String body = buf.getString(StandardCharsets.UTF_8);
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> payload = body.isBlank() ? Map.of() : http.objectMapper().readValue(body, Map.class);
+                        String schemaVersion = (String) payload.getOrDefault("schemaVersion", "1.0");
+                        String targetVersion = (String) payload.getOrDefault("targetVersion", pluginRegistry.getPlugin(pluginId).map(StoragePlugin::getVersion).orElse("unknown"));
 
-                Map<String, Object> result = new HashMap<>();
-                result.put("pluginId", pluginId);
-                result.put("tenantId", tenantId);
-                result.put("schemaVersion", schemaVersion);
-                result.put("targetVersion", targetVersion);
-                result.put("compatible", compatible);
-                result.put("contractValid", true);
-                result.put("message", compatible ? "Schema version is compatible" : "Schema version mismatch detected");
-                result.put("requestId", requestId);
+                        boolean compatible = schemaVersion.equals(targetVersion)
+                            || schemaVersion.startsWith(targetVersion.substring(0, targetVersion.lastIndexOf('.') + 1));
 
-                return Promise.of(http.jsonResponse(result, requestId));
-            } catch (Exception e) {
-                return Promise.of(http.errorResponse(400, "Invalid validation payload: " + e.getMessage()));
-            }
-        });
+                        Map<String, Object> result = new HashMap<>();
+                        result.put("pluginId", pluginId);
+                        result.put("tenantId", tenantId);
+                        result.put("schemaVersion", schemaVersion);
+                        result.put("targetVersion", targetVersion);
+                        result.put("compatible", compatible);
+                        result.put("contractValid", true);
+                        result.put("message", compatible ? "Schema version is compatible" : "Schema version mismatch detected");
+                        result.put("requestId", requestId);
+
+                        storeIdempotency(tenantId, "validate", request, result);
+                        return Promise.of(http.jsonResponse(result, requestId));
+                    } catch (Exception e) {
+                        return Promise.of(http.errorResponse(400, "Invalid validation payload: " + e.getMessage()));
+                    }
+                });
+            });
     }
 
     private int computeTrustScore(Plugin plugin) {
@@ -467,51 +516,59 @@ public final class PluginInstallHandler {
 
         metrics.incrementCounter("plugin.conformance", "tenant", tenantId, "pluginId", pluginId);
 
-        Optional<StoragePlugin<?>> storagePlugin = pluginRegistry.getPlugin(pluginId);
-        Optional<Plugin> runtimePlugin = runtimePluginManager.getPlugin(pluginId);
+        return checkIdempotency(tenantId, "conformance", request)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
+                }
 
-        boolean exists = storagePlugin.isPresent() || runtimePlugin.isPresent();
-        boolean initialized = storagePlugin.map(p -> {
-            try {
-                p.initialize(Map.of());
-                return true;
-            } catch (Exception e) {
-                return false;
-            }
-        }).orElse(runtimePlugin.isPresent());
-        boolean lifecycleClean = storagePlugin.map(p -> {
-            try {
-                p.shutdown().getResult();
-                return true;
-            } catch (Exception e) {
-                return false;
-            }
-        }).orElse(true);
+                Optional<StoragePlugin<?>> storagePlugin = pluginRegistry.getPlugin(pluginId);
+                Optional<Plugin> runtimePlugin = runtimePluginManager.getPlugin(pluginId);
 
-        List<String> capabilities = storagePlugin
-            .map(p -> p.getSupportedRecordTypes().stream().map(Enum::name).toList())
-            .orElse(runtimePlugin.map(p -> p.metadata().capabilities().stream().sorted().toList()).orElse(List.of()));
+                boolean exists = storagePlugin.isPresent() || runtimePlugin.isPresent();
+                boolean initialized = storagePlugin.map(p -> {
+                    try {
+                        p.initialize(Map.of());
+                        return true;
+                    } catch (Exception e) {
+                        return false;
+                    }
+                }).orElse(runtimePlugin.isPresent());
+                boolean lifecycleClean = storagePlugin.map(p -> {
+                    try {
+                        p.shutdown().getResult();
+                        return true;
+                    } catch (Exception e) {
+                        return false;
+                    }
+                }).orElse(true);
 
-        List<Map<String, Object>> tests = List.of(
-            Map.of("name", "lifecycle_init_shutdown", "passed", initialized && lifecycleClean, "required", true),
-            Map.of("name", "capability_contract", "passed", !capabilities.isEmpty(), "required", true),
-            Map.of("name", "audit_log_available", "passed", capabilities.contains("AUDIT") || capabilities.contains("audit"), "required", false),
-            Map.of("name", "tenant_isolation", "passed", capabilities.contains("TENANT_ISOLATION") || capabilities.contains("tenant_isolation"), "required", false),
-            Map.of("name", "schema_version_declared", "passed", true, "required", true)
-        );
+                List<String> capabilities = storagePlugin
+                    .map(p -> p.getSupportedRecordTypes().stream().map(Enum::name).toList())
+                    .orElse(runtimePlugin.map(p -> p.metadata().capabilities().stream().sorted().toList()).orElse(List.of()));
 
-        boolean allPassed = tests.stream().allMatch(t -> !(Boolean) t.get("required") || (Boolean) t.get("passed"));
+                List<Map<String, Object>> tests = List.of(
+                    Map.of("name", "lifecycle_init_shutdown", "passed", initialized && lifecycleClean, "required", true),
+                    Map.of("name", "capability_contract", "passed", !capabilities.isEmpty(), "required", true),
+                    Map.of("name", "audit_log_available", "passed", capabilities.contains("AUDIT") || capabilities.contains("audit"), "required", false),
+                    Map.of("name", "tenant_isolation", "passed", capabilities.contains("TENANT_ISOLATION") || capabilities.contains("tenant_isolation"), "required", false),
+                    Map.of("name", "schema_version_declared", "passed", true, "required", true)
+                );
 
-        Map<String, Object> result = new HashMap<>();
-        result.put("pluginId", pluginId);
-        result.put("tenantId", tenantId);
-        result.put("exists", exists);
-        result.put("conformance", allPassed ? "PASS" : "FAIL");
-        result.put("tests", tests);
-        result.put("capabilities", capabilities);
-        result.put("requestId", requestId);
+                boolean allPassed = tests.stream().allMatch(t -> !(Boolean) t.get("required") || (Boolean) t.get("passed"));
 
-        return Promise.of(http.jsonResponse(result, requestId));
+                Map<String, Object> result = new HashMap<>();
+                result.put("pluginId", pluginId);
+                result.put("tenantId", tenantId);
+                result.put("exists", exists);
+                result.put("conformance", allPassed ? "PASS" : "FAIL");
+                result.put("tests", tests);
+                result.put("capabilities", capabilities);
+                result.put("requestId", requestId);
+
+                storeIdempotency(tenantId, "conformance", request, result);
+                return Promise.of(http.jsonResponse(result, requestId));
+            });
     }
 
     private Map<String, Object> parseUpgradePayload(String body) {
@@ -525,5 +582,68 @@ public final class PluginInstallHandler {
         } catch (Exception exception) {
             throw new IllegalArgumentException("Invalid plugin upgrade payload: " + exception.getMessage());
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Idempotency Helpers
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    private Promise<HttpResponse> checkIdempotency(String tenantId, String routeAction, HttpRequest request) {
+        if (idempotencyStore == null) {
+            return Promise.of(null);
+        }
+
+        String idempotencyKey = IdempotencyHelper.extractIdempotencyKey(request);
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return Promise.of(null);
+        }
+
+        String principalId = http.resolvePrincipalId(request);
+        String scope = "plugin:" + routeAction;
+
+        return IdempotencyHelper.checkConflict(idempotencyStore, tenantId, scope, idempotencyKey, principalId,
+            IdempotencyHelper.computePayloadHash(request))
+            .then(hasConflict -> {
+                if (hasConflict) {
+                    log.warn("[plugin] Idempotency conflict for tenant={}, scope={}, key={}", tenantId, scope, idempotencyKey);
+                    return Promise.of(http.errorResponse(409,
+                        "Idempotency key conflict: same key used with different payload"));
+                }
+
+                return IdempotencyHelper.checkIdempotency(idempotencyStore, tenantId, scope, idempotencyKey, principalId)
+                    .then(cachedResponse -> {
+                        if (cachedResponse != null) {
+                            log.info("[plugin] Returning cached response for tenant={}, scope={}, key={}", tenantId, scope, idempotencyKey);
+                            if (cachedResponse instanceof HttpResponse) {
+                                return Promise.of(IdempotencyHelper.addIdempotencyHeaders((HttpResponse) cachedResponse, "replay"));
+                            }
+                            if (cachedResponse instanceof Map) {
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> map = (Map<String, Object>) cachedResponse;
+                                return Promise.of(http.jsonResponse(map));
+                            }
+                            return Promise.of(http.jsonResponse(Map.of("data", cachedResponse)));
+                        }
+                        return Promise.of((HttpResponse) null);
+                    });
+            });
+    }
+
+    private Promise<Void> storeIdempotency(String tenantId, String routeAction,
+                                          HttpRequest request, Object response) {
+        if (idempotencyStore == null) {
+            return Promise.of(null);
+        }
+
+        String idempotencyKey = IdempotencyHelper.extractIdempotencyKey(request);
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return Promise.of(null);
+        }
+
+        String principalId = http.resolvePrincipalId(request);
+        String scope = "plugin:" + routeAction;
+        String payloadHash = IdempotencyHelper.computePayloadHash(request);
+
+        return IdempotencyHelper.storeResponse(idempotencyStore, tenantId, scope, idempotencyKey, principalId, payloadHash, response);
     }
 }

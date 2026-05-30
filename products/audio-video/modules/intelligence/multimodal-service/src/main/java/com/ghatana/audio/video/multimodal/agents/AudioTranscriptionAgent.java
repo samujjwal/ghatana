@@ -14,6 +14,7 @@ import com.ghatana.agent.framework.tools.ToolExecutionEnvelope;
 import com.ghatana.agent.framework.tools.ToolExecutionStatus;
 import com.ghatana.agent.framework.tools.ToolContract;
 import com.ghatana.agent.framework.tools.ToolContractBuilder;
+import com.ghatana.platform.toolruntime.ToolExecutor;
 import com.ghatana.audio.video.tools.SpeechToTextToolHandler;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
@@ -41,23 +42,20 @@ public final class AudioTranscriptionAgent extends AbstractTypedAgent<AudioTrans
     public static final String AGENT_ID = "av.audio-transcription";
     private static final String VERSION = "1.0.0";
 
-    private final SpeechToTextToolHandler sttHandler;
+    private final ToolExecutor toolExecutor;
 
     /**
-     * Creates an instance using the default STT tool handler.
+     * Creates an instance using the governed tool executor.
      */
-    public AudioTranscriptionAgent() {
-        this(new SpeechToTextToolHandler());
+    public AudioTranscriptionAgent(ToolExecutor toolExecutor) {
+        this.toolExecutor = Objects.requireNonNull(toolExecutor, "toolExecutor must not be null");
     }
 
     /**
-     * Creates an instance with the given STT tool handler (for testing).
+     * Creates an instance with the given tool executor (for testing).
      *
-     * @param sttHandler the STT tool handler; must not be null
+     * @param toolExecutor the governed tool executor; must not be null
      */
-    public AudioTranscriptionAgent(SpeechToTextToolHandler sttHandler) {
-        this.sttHandler = Objects.requireNonNull(sttHandler, "sttHandler must not be null");
-    }
 
     @Override
     public AgentDescriptor descriptor() {
@@ -87,7 +85,7 @@ public final class AudioTranscriptionAgent extends AbstractTypedAgent<AudioTrans
                 "1.0",
                 input.toToolInput());
 
-        return sttHandler.handle(envelope, sttContract())
+        return toolExecutor.execute(envelope, sttContract())
                 .map(result -> {
                     Duration elapsed = Duration.between(start, Instant.now());
                     if (result.status() == ToolExecutionStatus.SUCCESS) {

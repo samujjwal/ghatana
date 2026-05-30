@@ -23,7 +23,7 @@ public class EmergencyAccessServiceImpl implements EmergencyAccessService {
 
     private static final Duration DEFAULT_ACCESS_DURATION = Duration.ofHours(1);
     private static final Duration REVIEW_DEADLINE = Duration.ofHours(1);
-    
+
     private final ConcurrentMap<String, EmergencyAccess> emergencyAccesses = new ConcurrentHashMap<>();
 
     @Override
@@ -32,7 +32,7 @@ public class EmergencyAccessServiceImpl implements EmergencyAccessService {
         Instant accessedAt = Instant.now();
         Instant accessExpiresAt = accessedAt.plus(DEFAULT_ACCESS_DURATION);
         Instant reviewDueAt = accessedAt.plus(REVIEW_DEADLINE);
-        
+
         EmergencyAccess emergencyAccess = new EmergencyAccess(
             emergencyAccessId,
             request.patientId(),
@@ -63,7 +63,7 @@ public class EmergencyAccessServiceImpl implements EmergencyAccessService {
         }
 
         Instant newExpiresAt = existing.accessExpiresAt().plus(Duration.ofMinutes(extensionMinutes));
-        
+
         EmergencyAccess extended = new EmergencyAccess(
             emergencyAccessId,
             existing.patientId(),
@@ -95,8 +95,8 @@ public class EmergencyAccessServiceImpl implements EmergencyAccessService {
             return Promise.ofException(new IllegalArgumentException("Emergency access not found: " + emergencyAccessId));
         }
 
-        EmergencyAccessStatus newStatus = "ESCALATED".equals(reviewResult.reviewStatus()) 
-            ? EmergencyAccessStatus.ESCALATED 
+        EmergencyAccessStatus newStatus = "ESCALATED".equals(reviewResult.reviewStatus())
+            ? EmergencyAccessStatus.ESCALATED
             : EmergencyAccessStatus.REVIEWED;
 
         EmergencyAccess reviewed = new EmergencyAccess(

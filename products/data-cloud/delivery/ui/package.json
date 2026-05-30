@@ -48,7 +48,6 @@
     "@ghatana/product-shell": "workspace:*",
     "@ghatana/realtime": "workspace:*",
     "@ghatana/theme": "workspace:*",
-    "@ghatana/tokens": "workspace:*",
     "@ghatana/wizard": "workspace:*",
     "@hookform/resolvers": "^5.2.2",
     "@monaco-editor/react": "^4.7.0",

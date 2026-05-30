@@ -70,7 +70,7 @@ public final class RetentionProofService {
             String resourceId,
             Instant createdAt,
             Instant lastActivity) {
-        
+
         RetentionPolicy policy = RETENTION_POLICIES.get(resourceType);
         if (policy == null) {
             // Default policy for unknown resource types
@@ -79,7 +79,7 @@ public final class RetentionProofService {
 
         Instant retentionExpiry = calculateRetentionExpiry(createdAt, lastActivity, policy);
         boolean isEligibleForDeletion = Instant.now().isAfter(retentionExpiry);
-        
+
         RetentionProof proof = new RetentionProof(
             resourceType,
             resourceId,
@@ -105,9 +105,9 @@ public final class RetentionProofService {
      */
     public static Promise<RetentionProofReport> generateReport(
             Set<ResourceForProof> resources) {
-        
+
         java.util.List<RetentionProof> proofs = new java.util.ArrayList<>();
-        
+
         for (ResourceForProof resource : resources) {
             RetentionPolicy policy = RETENTION_POLICIES.get(resource.resourceType());
             if (policy == null) {
@@ -116,7 +116,7 @@ public final class RetentionProofService {
 
             Instant retentionExpiry = calculateRetentionExpiry(resource.createdAt(), resource.lastActivity(), policy);
             boolean isEligibleForDeletion = Instant.now().isAfter(retentionExpiry);
-            
+
             proofs.add(new RetentionProof(
                 resource.resourceType(),
                 resource.resourceId(),
@@ -194,7 +194,7 @@ public final class RetentionProofService {
             long eligibleForDeletion,
             long mustRetain,
             long totalResources) {
-        
+
         public double eligiblePercentage() {
             return totalResources > 0 ? (eligibleForDeletion * 100.0) / totalResources : 0.0;
         }

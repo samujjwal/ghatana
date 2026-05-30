@@ -4,7 +4,10 @@
  */
 package com.ghatana.aep.eventcloud;
 
+import com.ghatana.aep.event.spi.EventCloudCheckpoint;
+import com.ghatana.aep.event.spi.EventCloudCheckpointStore;
 import com.ghatana.aep.event.spi.EventCloudConnector;
+import com.ghatana.aep.event.spi.EventCloudOffset;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry;
 import com.ghatana.platform.domain.eventstore.TenantContext;
@@ -21,9 +24,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -37,6 +43,9 @@ class DataCloudEventCloudConnectorTest extends EventloopTestBase {
     @Mock
     private EventLogStore eventLogStore;
 
+    @Mock
+    private EventCloudCheckpointStore checkpointStore;
+
     @Captor
     private ArgumentCaptor<EventEntry> entryCaptor;
 
@@ -47,11 +56,11 @@ class DataCloudEventCloudConnectorTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() { 
-        connector = new DataCloudEventCloudConnector(eventLogStore, "test-tenant"); 
+        connector = new DataCloudEventCloudConnector(eventLogStore, checkpointStore); 
     }
 
     @Test
-    void shouldPublishEventToEventLogStore() { 
+    void shouldPublishEventWithExplicitTenant() { 
         // GIVEN
         when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) 
             .thenReturn(Promise.of(Offset.of("1")));
@@ -59,14 +68,14 @@ class DataCloudEventCloudConnectorTest extends EventloopTestBase {
         byte[] payload = "{\"order\":123}".getBytes(StandardCharsets.UTF_8); 
 
         // WHEN
-        String eventId = runPromise(() -> connector.publish("order.created", payload)); 
+        String eventId = runPromise(() -> connector.publish("tenant-123", "order.created", payload)); 
 
         // THEN
         assertThat(eventId).isNotBlank(); 
         verify(eventLogStore).append(tenantCaptor.capture(), entryCaptor.capture()); 
 
         // Verify tenant
-        assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("test-tenant");
+        assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("tenant-123");
 
         // Verify event entry
         EventEntry entry = entryCaptor.getValue(); 
@@ -75,54 +84,94 @@ class DataCloudEventCloudConnectorTest extends EventloopTestBase {
     }
 
     @Test
-    void shouldReturnEventIdOnPublish() { 
-        // GIVEN
-        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) 
-            .thenReturn(Promise.of(Offset.of("42")));
-
-        // WHEN
-        String eventId = runPromise(() -> 
-            connector.publish("test.topic", "data".getBytes(StandardCharsets.UTF_8))); 
-
-        // THEN
-        assertThat(eventId).matches( 
-            "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
-    }
-
-    @Test
-    void shouldUseCustomTenantId() { 
-        // GIVEN
-        DataCloudEventCloudConnector customConnector =
-            new DataCloudEventCloudConnector(eventLogStore, "custom-tenant"); 
-        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) 
-            .thenReturn(Promise.of(Offset.of("1")));
-
-        // WHEN
-        runPromise(() -> customConnector.publish("topic", new byte[]{1})); 
-
-        // THEN
-        verify(eventLogStore).append(tenantCaptor.capture(), any()); 
-        assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("custom-tenant");
-    }
-
-    @Test
-    void shouldPublishWithExplicitTenantId() { 
+    void shouldPublishEventWithFullEnvelope() { 
         // GIVEN
         when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) 
             .thenReturn(Promise.of(Offset.of("1")));
 
+        byte[] payload = "{\"order\":123}".getBytes(StandardCharsets.UTF_8); 
+        DataCloudEventCloudConnector.EventEnvelope envelope = new DataCloudEventCloudConnector.EventEnvelope(
+            "order-service",
+            "order-123",
+            "v1",
+            "corr-123",
+            "caus-123",
+            "confidential",
+            "policy-ctx",
+            "prov-ctx",
+            "trace-123",
+            "user-123"
+        );
+
         // WHEN
-        String eventId = runPromise(() -> 
-            connector.publish("explicit-tenant", "topic", new byte[]{1})); 
+        String eventId = runPromise(() -> connector.publish("tenant-123", "order.created", payload, envelope)); 
 
         // THEN
         assertThat(eventId).isNotBlank(); 
-        verify(eventLogStore).append(tenantCaptor.capture(), any()); 
-        assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("explicit-tenant");
+        verify(eventLogStore).append(tenantCaptor.capture(), entryCaptor.capture()); 
+
+        // Verify envelope fields are preserved
+        EventEntry entry = entryCaptor.getValue(); 
+        assertThat(entry.eventVersion()).isEqualTo("v1");
+        assertThat(entry.correlationId()).isEqualTo("corr-123");
+        assertThat(entry.source()).isEqualTo("order-service");
+        assertThat(entry.userId()).isEqualTo("user-123");
+        assertThat(entry.headers()).containsKey("classification");
+        assertThat(entry.headers()).containsKey("subject");
     }
 
     @Test
-    void shouldSubscribeToEventLogStore() { 
+    void shouldRejectTenantAgnosticPublish() { 
+        // WHEN/THEN
+        assertThatThrownBy(() -> connector.publish("order.created", "data".getBytes()))
+            .isInstanceOf(UnsupportedOperationException.class)
+            .hasMessageContaining("Tenant-agnostic publish is not supported");
+    }
+
+    @Test
+    void shouldRejectTenantAgnosticSubscribe() { 
+        // WHEN/THEN
+        assertThatThrownBy(() -> connector.subscribe("order.created", "group-1", (e, t, p) -> {}))
+            .isInstanceOf(UnsupportedOperationException.class)
+            .hasMessageContaining("Tenant-agnostic subscribe is not supported");
+    }
+
+    @Test
+    void shouldSubscribeWithExplicitTenantAndResumeFromCheckpoint() { 
+        // GIVEN
+        when(checkpointStore.load(eq("tenant-123"), eq("tenant-123:group-1:order.created")))
+            .thenReturn(Promise.of(Optional.of(new EventCloudCheckpoint(
+                "tenant-123",
+                "tenant-123:group-1:order.created",
+                new EventCloudOffset(100, "100"),
+                Instant.now(),
+                java.util.Map.of("processed", 50L)
+            ))));
+        when(eventLogStore.tail(any(TenantContext.class), any(Offset.class), any()))
+            .thenReturn(Promise.of(() -> {}));
+
+        // WHEN
+        connector.subscribe("tenant-123", "order.created", "group-1", (e, t, p) -> {}, Optional.empty());
+
+        // THEN
+        verify(checkpointStore).load(eq("tenant-123"), eq("tenant-123:group-1:order.created"));
+    }
+
+    @Test
+    void shouldSubscribeWithReplayOffset() { 
+        // GIVEN
+        when(eventLogStore.tail(any(TenantContext.class), any(Offset.class), any()))
+            .thenReturn(Promise.of(() -> {}));
+
+        // WHEN
+        connector.subscribe("tenant-123", "order.created", "group-1", (e, t, p) -> {}, Optional.of(Offset.of("50")));
+
+        // THEN
+        verify(eventLogStore).tail(any(TenantContext.class), eq(Offset.of("50")), any());
+    }
+
+    @Test
+    void shouldSubscribeWithExplicitTenant() { 
         // GIVEN
         when(eventLogStore.getLatestOffset(any(TenantContext.class))) 
             .thenReturn(Promise.of(Offset.zero())); 
@@ -134,12 +183,65 @@ class DataCloudEventCloudConnectorTest extends EventloopTestBase {
 
         // WHEN
         EventCloudConnector.ConnectorSubscription sub = runPromise(() -> 
-            connector.subscribe("order.created", "group-1", 
+            connector.subscribe("tenant-123", "topic", "group", 
                 (eventId, topic, payload) -> {})); 
 
         // THEN
         assertThat(sub).isNotNull(); 
-        assertThat(sub.isCancelled()).isFalse(); 
+        verify(eventLogStore).getLatestOffset(tenantCaptor.capture());
+        assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("tenant-123");
+    }
+
+    @Test
+    void shouldResumeFromCheckpoint() { 
+        // GIVEN
+        EventCloudOffset checkpointOffset = new EventCloudOffset(100L, "offset-100");
+        EventCloudCheckpoint checkpoint = new EventCloudCheckpoint(
+            "tenant-1",
+            "tenant-1:group:topic",
+            checkpointOffset,
+            Instant.now(),
+            java.util.Map.of()
+        );
+        
+        when(checkpointStore.load(eq("tenant-1"), eq("tenant-1:group:topic")))
+            .thenReturn(Promise.of(Optional.of(checkpoint)));
+        when(eventLogStore.tail(any(TenantContext.class), any(Offset.class), any())) 
+            .thenReturn(Promise.of(new EventLogStore.Subscription() { 
+                @Override public void cancel() {} 
+                @Override public boolean isCancelled() { return false; } 
+            }));
+
+        // WHEN
+        EventCloudConnector.ConnectorSubscription sub = runPromise(() -> 
+            connector.subscribe("tenant-1", "topic", "group", 
+                (eventId, topic, payload) -> {})); 
+
+        // THEN
+        assertThat(sub).isNotNull(); 
+        verify(checkpointStore).load(eq("tenant-1"), eq("tenant-1:group:topic"));
+    }
+
+    @Test
+    void shouldReplayFromExplicitOffset() { 
+        // GIVEN
+        Offset replayOffset = Offset.of("50");
+        when(eventLogStore.tail(any(TenantContext.class), eq(replayOffset), any())) 
+            .thenReturn(Promise.of(new EventLogStore.Subscription() { 
+                @Override public void cancel() {} 
+                @Override public boolean isCancelled() { return false; } 
+            }));
+
+        // WHEN
+        EventCloudConnector.ConnectorSubscription sub = runPromise(() -> 
+            connector.subscribe("tenant-1", "topic", "group", 
+                (eventId, topic, payload) -> {}, 
+                Optional.of(replayOffset))); 
+
+        // THEN
+        assertThat(sub).isNotNull(); 
+        verify(eventLogStore).tail(tenantCaptor.capture(), eq(replayOffset), any());
+        assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("tenant-1");
     }
 
     @Test
@@ -178,5 +280,62 @@ class DataCloudEventCloudConnectorTest extends EventloopTestBase {
             assertThat(e).hasMessageContaining("Store unavailable");
         }
         clearFatalError(); 
+    }
+
+    @Test
+    void shouldEnforceTenantIsolation() { 
+        // GIVEN
+        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) 
+            .thenReturn(Promise.of(Offset.of("1")));
+
+        // WHEN - publish to tenant A
+        runPromise(() -> connector.publish("tenant-a", "topic", new byte[]{1})); 
+        verify(eventLogStore).append(tenantCaptor.capture(), any());
+        assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("tenant-a");
+
+        // WHEN - publish to tenant B
+        runPromise(() -> connector.publish("tenant-b", "topic", new byte[]{2})); 
+        verify(eventLogStore).append(tenantCaptor.capture(), any());
+        assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("tenant-b");
+
+        // THEN - verify no cross-tenant contamination
+        // Each publish should have used the correct tenant context
+    }
+
+    @Test
+    void shouldInvokeFailureCallbackOnHandlerError() {
+        // GIVEN
+        java.util.concurrent.atomic.AtomicBoolean failureCallbackInvoked = new java.util.concurrent.atomic.AtomicBoolean(false);
+        
+        when(eventLogStore.getLatestOffset(any(TenantContext.class)))
+            .thenReturn(Promise.of(Offset.zero()));
+        
+        when(eventLogStore.tail(any(TenantContext.class), any(Offset.class), any()))
+            .thenAnswer(invocation -> {
+                EventLogStore.EventPayloadHandler handler = invocation.getArgument(2);
+                // Simulate handler failure
+                try {
+                    handler.onEvent("event-1", "topic", new byte[]{1});
+                } catch (Exception e) {
+                    // Expected
+                }
+                return Promise.of(new EventLogStore.Subscription() {
+                    @Override public void cancel() {}
+                    @Override public boolean isCancelled() { return false; }
+                });
+            });
+
+        // WHEN
+        runPromise(() -> connector.subscribe(
+            "tenant-1", 
+            "topic", 
+            "group", 
+            (eventId, topic, payload) -> { throw new RuntimeException("Handler failed"); },
+            Optional.empty(),
+            e -> failureCallbackInvoked.set(true)
+        ));
+
+        // THEN
+        assertThat(failureCallbackInvoked).isTrue();
     }
 }

@@ -6,6 +6,7 @@
     "flashit",
     "data-cloud",
     "yappc",
+    "audio-video",
     "security-gateway"
   ],
   "productsWithUI": [
@@ -22,6 +23,7 @@
     "flashit",
     "data-cloud",
     "yappc",
+    "audio-video",
     "security-gateway"
   ],
   "productsWithIntegrationTests": [

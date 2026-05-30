@@ -2,7 +2,6 @@ package com.ghatana.phr.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -32,7 +31,7 @@ public class DocumentUploadRequest {
     private String description;
 
     @NotBlank(message = "contentType is required")
-    @Pattern(regexp = "^(application/pdf|image/jpeg|image/png|image/tiff|application/msword|application/vnd.openxmlformats-officedocument.wordprocessingml.document)$", 
+    @Pattern(regexp = "^(application/pdf|image/jpeg|image/png|image/tiff|application/msword|application/vnd.openxmlformats-officedocument.wordprocessingml.document)$",
              message = "contentType must be PDF, JPEG, PNG, TIFF, DOC, or DOCX")
     private String contentType;
 

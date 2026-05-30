@@ -1135,15 +1135,18 @@ export class ProductLifecyclePlanner {
   ): ProductExpectedArtifact[] {
     const configuredArtifacts = config.artifacts?.[phase];
     if (configuredArtifacts) {
-      return Object.entries(configuredArtifacts).map(([surface, artConfig]) => {
-        const type = String(((artConfig as unknown) as Record<string, unknown>).type ?? 'unknown');
-        return {
-          surface,
-          type,
-          required: Boolean(((artConfig as unknown) as Record<string, unknown>).required ?? true),
-          ...this.resolveArtifactProviderTruth(productId, surface, phase, type),
-        };
-      });
+      const selectedSurfaceNames = new Set(surfaces.map((surface) => surface.surface));
+      return Object.entries(configuredArtifacts)
+        .filter(([surface]) => selectedSurfaceNames.has(surface))
+        .map(([surface, artConfig]) => {
+          const type = String(((artConfig as unknown) as Record<string, unknown>).type ?? 'unknown');
+          return {
+            surface,
+            type,
+            required: Boolean(((artConfig as unknown) as Record<string, unknown>).required ?? true),
+            ...this.resolveArtifactProviderTruth(productId, surface, phase, type),
+          };
+        });
     }
 
     return surfaces.flatMap((sel) =>

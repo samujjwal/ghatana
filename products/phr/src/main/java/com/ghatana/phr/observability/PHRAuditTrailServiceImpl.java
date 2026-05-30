@@ -45,7 +45,7 @@ public class PHRAuditTrailServiceImpl implements AuditTrailService {
     public void recordAuditEvent(AuditTrailService.AuditTrailEvent event) {
         // Store in memory cache (for single instance)
         recordedEvents.putIfAbsent(event.getEventId(), event);
-        
+
         // Also persist to storage layer (for cross-instance durability)
         persistence.persist(event);
     }
@@ -56,11 +56,11 @@ public class PHRAuditTrailServiceImpl implements AuditTrailService {
         List<AuditTrailService.AuditTrailEvent> allEvents = persistence.loadAll();
         String entityId = query.getEntityId();
         int limit = query.getLimit();
-        
+
         List<AuditTrailService.AuditTrailEvent> results = allEvents.stream()
             .filter(event -> entityId == null || entityId.isBlank() || entityId.equals(event.getEntityId()))
             .toList();
-        
+
         if (limit > 0 && results.size() > limit) {
             return results.subList(0, limit);
         }
@@ -74,7 +74,7 @@ public class PHRAuditTrailServiceImpl implements AuditTrailService {
         List<AuditTrailService.AuditTrailEvent> events = allEvents.stream()
             .filter(event -> entityId.equals(event.getEntityId()))
             .toList();
-            
+
         return new AuditTrailService.ImmutableAuditTrail() {
             @Override
             public String getEntityId() { return entityId; }
@@ -93,7 +93,7 @@ public class PHRAuditTrailServiceImpl implements AuditTrailService {
         List<AuditTrailService.AuditTrailEvent> allEvents = persistence.loadAll();
         boolean valid = allEvents.stream()
             .anyMatch(event -> entityId.equals(event.getEntityId()));
-            
+
         String message = valid ? "Audit trail intact" : "No events found for entity";
         return new AuditTrailService.VerificationResult(valid, message, List.of());
     }

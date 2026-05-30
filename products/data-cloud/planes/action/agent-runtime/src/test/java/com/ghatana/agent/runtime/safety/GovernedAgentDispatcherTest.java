@@ -1031,5 +1031,27 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
                     .extracting(TraceEvent::eventType)
                     .contains(TraceEventType.MODE_SELECTED);
         }
+
+        @Test
+        @DisplayName("audio-video transcription tool dispatch requires governed path")
+        void audioVideoTranscriptionToolRequiresGovernedPath() {
+            // Simulate audio-video transcription agent dispatch
+            AgentContext audioCtx = ctx.toBuilder()
+                    .agentId("transcription-agent")
+                    .addConfig("toolType", "PRODUCT_CAPABILITY")
+                    .addConfig("product", "audio-video")
+                    .addConfig("capabilityId", "av.speech-to-text")
+                    .build();
+
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, releaseRepository);
+
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("transcription-agent", "audio-input", audioCtx));
+
+            // Verify dispatch went through governed path (trace events confirm this)
+            assertThat(capturedEvents)
+                    .extracting(TraceEvent::eventType)
+                    .contains(TraceEventType.DISPATCH_REQUESTED, TraceEventType.RELEASE_CHECKED);
+        }
     }
 }

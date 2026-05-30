@@ -65,11 +65,11 @@ public abstract class ApiContractConformanceTestBase {
 
         // Normalize paths to OpenAPI format for comparison
         Set<String> specPaths = specContract.getDefinedRoutes().stream()
-            .map(path -> HttpRouteScanner.normalizePathFormat(path, true))
+            .map(path -> canonicalizeRoute(path, specContract.getBasePath()))
             .collect(Collectors.toSet());
 
         Set<String> implPaths = implementedRoutes.stream()
-            .map(route -> HttpRouteScanner.normalizePathFormat(route.getPath(), true))
+            .map(route -> canonicalizeRoute(route.getPath(), specContract.getBasePath()))
             .collect(Collectors.toSet());
 
         // Check for routes in spec but unavailable
@@ -117,7 +117,8 @@ public abstract class ApiContractConformanceTestBase {
 
         for (HttpRouteScanner.RouteDefinition implRoute : implementedRoutes) {
             String normalizedPath = HttpRouteScanner.normalizePathFormat(implRoute.getPath(), true);
-            Set<String> specMethods = specContract.getMethodsForRoute(normalizedPath);
+            String contractPath = canonicalizeRoute(normalizedPath, specContract.getBasePath());
+            Set<String> specMethods = specContract.getMethodsForRoute(contractPath);
 
             if (!specMethods.isEmpty() && !specMethods.contains(implRoute.getMethod().name())) {
                 methodViolations.add(String.format(
@@ -132,6 +133,37 @@ public abstract class ApiContractConformanceTestBase {
         assertThat(methodViolations)
             .as("HTTP method conformance violations")
             .isEmpty();
+    }
+
+    private static String canonicalizeRoute(String route, String basePath) {
+        String normalized = HttpRouteScanner.normalizePathFormat(route, true);
+        String normalizedBase = normalizeBasePath(basePath);
+        if (!normalizedBase.isEmpty() && normalized.equals(normalizedBase)) {
+            return "/";
+        }
+        if (!normalizedBase.isEmpty() && normalized.startsWith(normalizedBase + "/")) {
+            return normalized.substring(normalizedBase.length());
+        }
+        return normalized;
+    }
+
+    private static String normalizeBasePath(String basePath) {
+        if (basePath == null || basePath.isBlank()) {
+            return "";
+        }
+        String normalized = basePath.trim();
+        if (normalized.startsWith("http://") || normalized.startsWith("https://")) {
+            try {
+                normalized = java.net.URI.create(normalized).getPath();
+            } catch (IllegalArgumentException ex) {
+                return "";
+            }
+        }
+        normalized = normalized.replaceAll("/{2,}", "/");
+        while (normalized.endsWith("/") && normalized.length() > 1) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+        return "/".equals(normalized) ? "" : normalized;
     }
 
     @Test

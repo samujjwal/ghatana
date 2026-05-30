@@ -18,8 +18,8 @@ import java.util.Optional;
 /**
  * SPI for persisting and retrieving {@link AgentCheckpoint} instances.
  *
- * <p>Implementations are expected to use <b>Data-Cloud exclusively</b> for
- * storage (per clean architecture). In-memory implementations may be used
+ * <p>Implementations should use the configured durable storage backend
+ * for production deployments. In-memory implementations may be used
  * for testing only.
  *
  * <h2>Contract</h2>
@@ -32,7 +32,7 @@ import java.util.Optional;
  * </ul>
  *
  * @doc.type interface
- * @doc.purpose SPI for agent checkpoint persistence (backed by Data-Cloud)
+ * @doc.purpose SPI for agent checkpoint persistence
  * @doc.layer framework
  * @doc.pattern Repository
  *

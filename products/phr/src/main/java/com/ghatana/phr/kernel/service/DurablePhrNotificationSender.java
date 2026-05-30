@@ -187,7 +187,7 @@ public final class DurablePhrNotificationSender extends PhrServiceBase implement
                 if (!entry.patientId().equals(sanitizedPrincipalId)) {
                     return Promise.ofException(new IllegalStateException("Cannot mark another user's notification as read"));
                 }
-                
+
                 NotificationOutboxEntry updated = new NotificationOutboxEntry(
                     entry.id(),
                     entry.patientId(),

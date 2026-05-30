@@ -15,6 +15,7 @@
 import React from "react";
 import type { RouteObject } from "react-router";
 import { Navigate, useNavigate, Outlet } from "react-router";
+import { useTranslation } from "react-i18next";
 import { DefaultLayout } from "./layouts/DefaultLayout";
 import { LoadingState } from "./components/common/LoadingState";
 import { RouteErrorBoundary } from "./components/common/RouteErrorBoundary";
@@ -74,6 +75,11 @@ const OperationsConsole = React.lazy(() =>
 const OperationsJobCenterPage = React.lazy(() =>
   import("./pages/OperationsJobCenterPage").then((m) => ({
     default: m.OperationsJobCenterPage,
+  })),
+);
+const MediaArtifactPage = React.lazy(() =>
+  import("./pages/MediaArtifactPage").then((m) => ({
+    default: m.MediaArtifactPage,
   })),
 );
 const ReleaseTruthDashboardPage = React.lazy(() =>
@@ -204,6 +210,8 @@ const EditCollectionPage = React.lazy(() =>
 // =============================================================================
 
 function PageLoader(): React.ReactElement {
+  const { t } = useTranslation();
+
   React.useEffect(() => {
     if (!import.meta.env.DEV) return;
     const startTime = Date.now();
@@ -216,7 +224,7 @@ function PageLoader(): React.ReactElement {
     return () => clearTimeout(timer);
   }, []);
 
-  return <LoadingState message="Loading..." className="w-full h-64" />;
+  return <LoadingState message={t('routes.loading')} className="w-full h-64" />;
 }
 
 /**
@@ -253,31 +261,38 @@ class LazyLoadErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div
-          role="alert"
-          className="flex items-center justify-center w-full min-h-64 p-6"
-        >
-          <div className="text-center max-w-md">
-            <h2 className="text-lg font-semibold text-red-600 mb-2">
-              Failed to load page
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              {this.state.error?.message ??
-                "Unknown error occurred while loading the component"}
-            </p>
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              Reload Page
-            </button>
-          </div>
-        </div>
+        <LazyLoadErrorBoundaryContent error={this.state.error} />
       );
     }
     return this.props.children;
   }
+}
+
+function LazyLoadErrorBoundaryContent({ error }: { error?: Error }): React.ReactElement {
+  const { t } = useTranslation();
+
+  return (
+    <div
+      role="alert"
+      className="flex items-center justify-center w-full min-h-64 p-6"
+    >
+      <div className="text-center max-w-md">
+        <h2 className="text-lg font-semibold text-red-600 mb-2">
+          {t('routes.loadFailed')}
+        </h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          {error?.message ?? t('routes.unknownError')}
+        </p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          {t('routes.reload')}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -317,15 +332,26 @@ function featureGatedRoute(
 ): React.ReactElement {
   if (!enabled) {
     return withSuspense(() => (
-      <DisabledSurfacePage
+      <DisabledSurfacePageContent
         surfaceName={surfaceName}
         surfaceDescription={surfaceDescription}
-        status="DISABLED"
-        nextAction="This surface is currently disabled in your deployment profile. Contact your administrator to enable it."
       />
     ));
   }
   return element;
+}
+
+function DisabledSurfacePageContent({ surfaceName, surfaceDescription }: { surfaceName: string; surfaceDescription: string }): React.ReactElement {
+  const { t } = useTranslation();
+
+  return (
+    <DisabledSurfacePage
+      surfaceName={surfaceName}
+      surfaceDescription={surfaceDescription}
+      status="DISABLED"
+      nextAction={t('disabledSurface.nextAction')}
+    />
+  );
 }
 
 // =============================================================================
@@ -488,14 +514,16 @@ export const routes: RouteObject[] = [
           </RoleProtectedRoute>
         ),
       },
+      // Media Artifacts - Audio-video lifecycle management
       {
-        path: "operations/release-truth",
+        path: "media/artifacts",
         element: (
-          <RoleProtectedRoute routePath="/operations/release-truth">
-            {withSuspense(ReleaseTruthDashboardPage)}
+          <RoleProtectedRoute routePath="/media/artifacts">
+            {withSuspense(MediaArtifactPage)}
           </RoleProtectedRoute>
         ),
       },
+      // Release-truth route hidden per Group 7 requirement - not discoverable in this iteration
 
       // DC-P3-002: Runtime Truth — plane/surface/dependency drilldown
       {

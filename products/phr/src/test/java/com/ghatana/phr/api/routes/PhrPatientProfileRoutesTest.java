@@ -1,8 +1,6 @@
 package com.ghatana.phr.api.routes;
 
 import com.ghatana.phr.kernel.service.PatientRecordService;
-import com.ghatana.phr.model.PHRUser;
-import com.ghatana.phr.repository.UserRepository;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
@@ -58,7 +56,7 @@ class PhrPatientProfileRoutesTest extends EventloopTestBase {
             new PatientRecordService.Address("Ward 1", "Lalitpur", "Lalitpur", "Bagmati", "44700"),
             new PatientRecordService.Contact("977-1234567890", "patient@example.com", "", "")
         );
-        
+
         PatientRecordService.Patient mockPatient = new PatientRecordService.Patient(
             "patient-1",
             "NP-123456",
@@ -70,7 +68,7 @@ class PhrPatientProfileRoutesTest extends EventloopTestBase {
         );
 
         lenient().when(patientRecordService.getPatient(anyString())).thenReturn(Promise.of(Optional.of(mockPatient)));
-        
+
         servlet = new PhrPatientProfileRoutes(eventloop(), patientRecordService).getServlet();
     }
 

@@ -118,10 +118,9 @@ class PhrFacilityScopeTest {
     @DisplayName("facility ID is validated when provided")
     void facilityIdIsValidated() {
         HttpRequest request = requestWithFacility("tenant-1", "clinician-1", "clinician", "invalid-facility!");
-        // PolicyValidationHelper.validateFacilityId should reject invalid format
-        // This test verifies the context extraction - validation happens in policy layer
-        PhrRouteSupport.PhrRequestContext ctx = PhrRouteSupport.requireContext(request);
-        assertThat(ctx.facilityId()).isEqualTo("invalid-facility!");
+        assertThatThrownBy(() -> PhrRouteSupport.requireContext(request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Facility ID must be");
     }
 
     @Test
@@ -132,7 +131,7 @@ class PhrFacilityScopeTest {
         when(request.getHeader(HttpHeaders.of("X-Principal-ID"))).thenReturn("clinician-1");
         when(request.getHeader(HttpHeaders.of("X-Role"))).thenReturn("clinician");
         when(request.getHeader(HttpHeaders.of("X-Facility-Id"))).thenReturn("facility-123");
-        
+
         PhrRouteSupport.PhrRequestContext ctx = PhrRouteSupport.requireContext(request);
         assertThat(ctx.facilityId()).isEqualTo("facility-123");
     }

@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -52,6 +53,15 @@ class PhrConditionRoutesTest extends EventloopTestBase {
     void setUp() {
         lenient().when(policyEvaluator.canAccessPatientRecordAsync(any(), anyString()))
             .thenReturn(Promise.of(PhrPolicyEvaluator.PolicyDecision.allowed("TEST_ALLOWED", "allowed")));
+        lenient().when(patientRecordServiceExtensions.getActiveConditions(anyString()))
+            .thenReturn(Promise.of(List.of(new PatientRecordServiceExtensions.Condition(
+                "cond-1",
+                "44054006",
+                "Type 2 diabetes mellitus",
+                "active",
+                "2020-01-01",
+                "chronic"
+            ))));
         servlet = new PhrConditionRoutes(eventloop(), policyEvaluator, patientRecordServiceExtensions).getServlet();
     }
 

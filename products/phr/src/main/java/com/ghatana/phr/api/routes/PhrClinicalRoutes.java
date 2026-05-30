@@ -353,4 +353,3 @@ public final class PhrClinicalRoutes {
         return patientId;
     }
 }
-

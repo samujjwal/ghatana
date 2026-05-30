@@ -5,7 +5,7 @@ info:
   description: Runtime-aligned API surface for PHR FHIR, patient records, consent, clinical, and billing workflows.
   x-sensitivity: healthcare
 servers:
-  - url: /api/v1/phr
+  - url: /api/v1
 security:
   - bearerAuth: []
 paths:
@@ -288,6 +288,21 @@ paths:
         "200": { $ref: "#/components/responses/ClinicalList" }
         "403": { $ref: "#/components/responses/Error" }
   /clinical/medications/prescriptions:
+    get:
+      operationId: listPrescriptionHistory
+      summary: List prescription history
+      tags: [Clinical]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/ClinicalList" }
+        "403": { $ref: "#/components/responses/Error" }
     post:
       operationId: prescribeMedication
       summary: Create a medication prescription
@@ -583,6 +598,23 @@ paths:
           schema: { type: string }
       responses:
         "200": { $ref: "#/components/responses/ClinicalList" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      operationId: bookAppointment
+      summary: Book a patient appointment
+      tags: [Administrative]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "201": { description: Appointment booked }
+        "400": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
   /admin/appointments/slots:
     get:
@@ -1971,6 +2003,156 @@ paths:
           schema: { type: string }
       responses:
         "200": { description: Claim status updated }
+  /records:
+    get:
+      operationId: searchRecordsAlias
+      summary: Search patient records through the canonical records alias
+      tags: [Records]
+      x-pii: true
+      responses:
+        "200": { $ref: "#/components/responses/PatientList" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      operationId: createRecordAlias
+      summary: Create a patient record through the canonical records alias
+      tags: [Records]
+      x-pii: true
+      responses:
+        "201": { description: Patient record created }
+        "403": { $ref: "#/components/responses/Error" }
+  /records/{patientId}:
+    get:
+      operationId: getRecordPatientAlias
+      summary: Read patient record through the canonical records alias
+      tags: [Records]
+      x-pii: true
+      responses:
+        "200": { description: Patient record }
+        "403": { $ref: "#/components/responses/Error" }
+    put:
+      operationId: updateRecordPatientAlias
+      summary: Update patient record through the canonical records alias
+      tags: [Records]
+      x-pii: true
+      responses:
+        "200": { description: Patient record updated }
+        "403": { $ref: "#/components/responses/Error" }
+  /records/{patientId}/history:
+    get:
+      operationId: getRecordPatientHistoryAlias
+      summary: Read patient record history
+      tags: [Records]
+      x-pii: true
+      responses:
+        "200": { description: Patient record history }
+        "403": { $ref: "#/components/responses/Error" }
+  /records/{patientId}/records:
+    get:
+      operationId: listPatientRecordsAlias
+      summary: List detailed records for a patient
+      tags: [Records]
+      x-pii: true
+      responses:
+        "200": { $ref: "#/components/responses/ClinicalList" }
+        "403": { $ref: "#/components/responses/Error" }
+  /records/{patientId}/records/{recordId}:
+    get:
+      operationId: getPatientRecordDetailAlias
+      summary: Read a patient record detail
+      tags: [Records]
+      x-pii: true
+      responses:
+        "200": { description: Patient record detail }
+        "403": { $ref: "#/components/responses/Error" }
+  /clinical/observations:
+    get:
+      operationId: listClinicalObservationsAlias
+      summary: List clinical observations
+      tags: [Clinical]
+      x-pii: true
+      responses:
+        "200": { $ref: "#/components/responses/ClinicalList" }
+        "403": { $ref: "#/components/responses/Error" }
+  /clinical/observations/{observationId}:
+    get:
+      operationId: getClinicalObservationAlias
+      summary: Read a clinical observation
+      tags: [Clinical]
+      x-pii: true
+      responses:
+        "200": { description: Clinical observation }
+        "403": { $ref: "#/components/responses/Error" }
+  /clinical/observations/trends:
+    get:
+      operationId: getClinicalObservationTrendAlias
+      summary: Read clinical observation trends
+      tags: [Clinical]
+      x-pii: true
+      responses:
+        "200": { description: Observation trends }
+        "403": { $ref: "#/components/responses/Error" }
+  /clinical/medications/prescriptions/{prescriptionId}/interactions:
+    get:
+      operationId: getPrescriptionInteractions
+      summary: Read prescription drug interaction checks
+      tags: [Clinical]
+      x-pii: true
+      responses:
+        "200": { description: Prescription interaction checks }
+        "403": { $ref: "#/components/responses/Error" }
+  /clinical/medications/prescriptions/{prescriptionId}/allergy-check:
+    get:
+      operationId: getPrescriptionAllergyCheck
+      summary: Read prescription allergy interaction checks
+      tags: [Clinical]
+      x-pii: true
+      responses:
+        "200": { description: Prescription allergy checks }
+        "403": { $ref: "#/components/responses/Error" }
+  /admin/appointments/{appointmentId}/reschedule:
+    post:
+      operationId: rescheduleAppointment
+      summary: Reschedule an appointment
+      tags: [Administrative]
+      x-pii: true
+      responses:
+        "200": { description: Appointment rescheduled }
+        "403": { $ref: "#/components/responses/Error" }
+  /provider/dashboard:
+    get:
+      operationId: getProviderDashboard
+      summary: Read provider dashboard
+      tags: [Provider]
+      x-pii: true
+      responses:
+        "200": { description: Provider dashboard }
+        "403": { $ref: "#/components/responses/Error" }
+  /caregiver/dashboard:
+    get:
+      operationId: getCaregiverDashboard
+      summary: Read caregiver dashboard
+      tags: [Caregiver]
+      x-pii: true
+      responses:
+        "200": { description: Caregiver dashboard }
+        "403": { $ref: "#/components/responses/Error" }
+  /profile/settings:
+    get:
+      operationId: getProfileSettings
+      summary: Read profile settings
+      tags: [Profile]
+      x-pii: true
+      responses:
+        "200": { description: Profile settings }
+        "403": { $ref: "#/components/responses/Error" }
+    put:
+      operationId: updateProfileSettings
+      summary: Update profile settings
+      tags: [Profile]
+      x-pii: true
+      responses:
+        "200": { description: Profile settings updated }
+        "403": { $ref: "#/components/responses/Error" }
 components:
   securitySchemes:
     bearerAuth:

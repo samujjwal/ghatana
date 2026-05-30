@@ -178,6 +178,10 @@ public final class PhrDocumentImagingRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
+        if ("caregiver".equals(context.role())) {
+            return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
+        }
+
         String documentId = request.getPathParameter("documentId");
         return policyEvaluator.canAccessPhiResourceAsync(
                 context,
@@ -376,19 +380,19 @@ public final class PhrDocumentImagingRoutes {
 
         String studyId = request.getPathParameter("studyId");
         if (studyId == null || studyId.isBlank()) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_STUDY_ID", 
+            return PhrRouteSupport.errorResponse(400, "INVALID_STUDY_ID",
                 "Study ID is required", context.correlationId());
         }
 
         return imagingService.getStudy(studyId)
             .then(studyOpt -> {
                 if (studyOpt.isEmpty()) {
-                    return PhrRouteSupport.errorResponse(404, "STUDY_NOT_FOUND", 
+                    return PhrRouteSupport.errorResponse(404, "STUDY_NOT_FOUND",
                         "Imaging study not found", context.correlationId());
                 }
 
                 ImagingService.ImagingStudy study = studyOpt.get();
-                
+
                 return requireAccess(context, study.patientId(), "imaging", "DOWNLOAD")
                     .then(decision -> {
                         if (!decision.isAllowed()) {
@@ -430,25 +434,25 @@ public final class PhrDocumentImagingRoutes {
 
         String studyId = request.getPathParameter("studyId");
         String seriesId = request.getPathParameter("seriesId");
-        
+
         if (studyId == null || studyId.isBlank()) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_STUDY_ID", 
+            return PhrRouteSupport.errorResponse(400, "INVALID_STUDY_ID",
                 "Study ID is required", context.correlationId());
         }
         if (seriesId == null || seriesId.isBlank()) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_SERIES_ID", 
+            return PhrRouteSupport.errorResponse(400, "INVALID_SERIES_ID",
                 "Series ID is required", context.correlationId());
         }
 
         return imagingService.getStudy(studyId)
             .then(studyOpt -> {
                 if (studyOpt.isEmpty()) {
-                    return PhrRouteSupport.errorResponse(404, "STUDY_NOT_FOUND", 
+                    return PhrRouteSupport.errorResponse(404, "STUDY_NOT_FOUND",
                         "Imaging study not found", context.correlationId());
                 }
 
                 ImagingService.ImagingStudy study = studyOpt.get();
-                
+
                 return requireAccess(context, study.patientId(), "imaging", "DOWNLOAD")
                     .then(decision -> {
                         if (!decision.isAllowed()) {
@@ -497,7 +501,7 @@ public final class PhrDocumentImagingRoutes {
                         String auditCorrelationId = PhrTraceContext.newCorrelationId("phr_document_upload");
                         return handler.apply(value)
                             .then(stored -> {
-                                auditDocumentUpload(finalContext, value.getPatientId(), stored.getDocumentId(), 
+                                auditDocumentUpload(finalContext, value.getPatientId(), stored.getDocumentId(),
                                     value.getDocumentType(), value.getContentType(), auditCorrelationId);
                                 return PhrRouteSupport.jsonResponse(201, stored);
                             });
@@ -573,20 +577,20 @@ public final class PhrDocumentImagingRoutes {
         JsonNode node = PhrRouteSupport.JSON.readTree(json);
         String encodedContent = requiredText(node, "content");
         String contentType = requiredText(node, "contentType");
-        
+
         // Validate content type
         if (!ALLOWED_CONTENT_TYPES.contains(contentType)) {
             throw new IllegalArgumentException(
                 "Invalid content type: " + contentType + ". Allowed types: " + ALLOWED_CONTENT_TYPES);
         }
-        
+
         // Decode and validate file size
         byte[] content = Base64.getDecoder().decode(encodedContent);
         if (content.length > MAX_FILE_SIZE_BYTES) {
             throw new IllegalArgumentException(
                 "File size exceeds maximum allowed size of 10MB. Actual size: " + (content.length / 1024 / 1024) + "MB");
         }
-        
+
         return new DocumentService.DocumentUploadRequest(
             requiredText(node, "patientId"),
             requiredText(node, "documentType"),

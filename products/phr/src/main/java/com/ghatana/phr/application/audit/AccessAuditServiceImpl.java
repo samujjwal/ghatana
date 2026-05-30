@@ -36,23 +36,23 @@ public class AccessAuditServiceImpl implements AccessAuditService {
     @Override
     public Promise<AccessSummary> getAccessSummary(PatientOperationContext ctx, String patientId) {
         List<AccessEvent> events = accessLogs.getOrDefault(patientId, List.of());
-        
+
         int totalAccesses = events.size();
         int authorizedAccesses = (int) events.stream().filter(AccessEvent::authorized).count();
         int unauthorizedAccesses = totalAccesses - authorizedAccesses;
-        
+
         Map<String, Integer> accessByUser = Map.of(
             "user1", 5,
             "user2", 3
         );
-        
+
         Map<String, Integer> accessByAction = Map.of(
             "view", 6,
             "update", 2
         );
-        
+
         String lastAccessAt = events.isEmpty() ? null : events.get(events.size() - 1).timestamp();
-        
+
         AccessSummary summary = new AccessSummary(
             patientId,
             totalAccesses,
@@ -62,7 +62,7 @@ public class AccessAuditServiceImpl implements AccessAuditService {
             accessByAction,
             lastAccessAt
         );
-        
+
         return Promise.of(summary);
     }
 
@@ -85,7 +85,7 @@ public class AccessAuditServiceImpl implements AccessAuditService {
     public Promise<AuditReport> generateAuditReport(PatientOperationContext ctx, String patientId) {
         List<AccessEvent> events = accessLogs.getOrDefault(patientId, List.of());
         List<AccessAnomaly> anomalies = getAccessAnomalies(ctx, patientId).getResult();
-        
+
         AuditReport report = new AuditReport(
             "REPORT-" + UUID.randomUUID().toString().substring(0, 8),
             patientId,
@@ -95,7 +95,7 @@ public class AccessAuditServiceImpl implements AccessAuditService {
             events,
             anomalies
         );
-        
+
         return Promise.of(report);
     }
 
@@ -116,7 +116,7 @@ public class AccessAuditServiceImpl implements AccessAuditService {
             "en", // Default language, would be parameterized in real implementation
             "1.0"  // Engine version
         );
-        
+
         // Store or update OCR audit trail
         OcrAuditTrail existing = ocrAuditTrails.get(documentId);
         if (existing == null) {
@@ -139,7 +139,7 @@ public class AccessAuditServiceImpl implements AccessAuditService {
             );
             ocrAuditTrails.put(documentId, updated);
         }
-        
+
         return Promise.of(null);
     }
 
@@ -160,7 +160,7 @@ public class AccessAuditServiceImpl implements AccessAuditService {
             "reviewer",
             hasChanges
         );
-        
+
         // Update OCR audit trail with confirmation
         OcrAuditTrail existing = ocrAuditTrails.get(documentId);
         if (existing != null) {
@@ -183,7 +183,7 @@ public class AccessAuditServiceImpl implements AccessAuditService {
             );
             ocrAuditTrails.put(documentId, trail);
         }
-        
+
         return Promise.of(null);
     }
 

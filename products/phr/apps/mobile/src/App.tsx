@@ -326,7 +326,7 @@ export default function App(): React.ReactElement {
   const renderScreen = (): React.ReactElement => {
     switch (activeScreen) {
       case 'records':
-        return <RecordsScreen records={dashboard.records} />;
+        return <RecordsScreen records={dashboard.records} session={session} />;
       case 'consents':
         return (
           <ConsentScreen

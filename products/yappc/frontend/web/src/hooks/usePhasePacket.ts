@@ -62,10 +62,20 @@ function hasPhasePanelViewShape(value: unknown): value is PhasePanelView {
     && Array.isArray(candidate.cards);
 }
 
+function normalizePhasePanelView(value: PhasePanelView): PhasePanelView {
+  return {
+    ...value,
+    cards: value.cards.map((card) => ({
+      ...card,
+      metadata: card.metadata ?? {},
+    })),
+  };
+}
+
 export function normalizePhaseCockpitPacket(data: GeneratedPhaseCockpitPacket): PhaseCockpitPacket {
-  const rawPacket = data as GeneratedPhaseCockpitPacket & { readonly phasePanels?: unknown };
-  const phasePanels = Array.isArray(rawPacket.phasePanels)
-    ? rawPacket.phasePanels.filter(hasPhasePanelViewShape)
+  const rawPhasePanels = (data as { readonly phasePanels?: unknown }).phasePanels;
+  const phasePanels = Array.isArray(rawPhasePanels)
+    ? rawPhasePanels.filter(hasPhasePanelViewShape).map(normalizePhasePanelView)
     : [];
 
   return {

@@ -858,12 +858,12 @@ flowchart TB
 
 | Area | Validation |
 |---|---|
-| Gradle modules | No `:products:data-cloud:planes:action:*` after merge |
-| Paths | No active `products/data-cloud/planes/action` after merge |
+| Gradle modules | Action Plane modules remain permanently co-located under `:products:data-cloud:planes:action:*` |
+| Paths | `products/data-cloud/planes/action` remains active as Data Cloud's Action Plane |
 | Contracts | Product-level OpenAPI validates |
 | Route sync | Runtime routes match OpenAPI |
 | Data Cloud core boundary | No dependency on AEP impl |
-| AEP engine boundary | No dependency on server/launcher/UI |
+| AEP engine boundary | No dependency on server/launcher/UI or durable registry implementation |
 | Production profile | Fail closed for missing durable/policy/audit deps |
 | Runtime Truth Registry | UI/SDK/docs read runtime truth |
 | SDK | Generates from product-level contracts |

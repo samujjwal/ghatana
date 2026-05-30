@@ -53,12 +53,11 @@ public final class PhrPolicyEvaluator {
     /**
      * Constructs a policy evaluator with required services.
      *
-     * @param consentService the consent management service (must not be null)
-     * @param treatmentRelationshipService the treatment relationship service (must not be null)
-     * @param fchvAssignmentService the FCHV community assignment service (must not be null)
+     * @param consentService the consent management service
+     * @param treatmentRelationshipService the treatment relationship service
+     * @param fchvAssignmentService the FCHV community assignment service
      * @param auditTrailService the audit trail service for logging policy decisions (may be null)
      * @param telemetryManager the telemetry manager for metrics (may be null)
-     * @throws IllegalArgumentException if any required service is null
      */
     public PhrPolicyEvaluator(
             ConsentManagementService consentService,
@@ -101,18 +100,11 @@ public final class PhrPolicyEvaluator {
             FchvCommunityAssignmentService fchvAssignmentService,
             AuditTrailService auditTrailService,
             KernelTelemetryManager telemetryManager) {
-        this.consentService = requireNonNull(consentService, "consentService must not be null");
-        this.treatmentRelationshipService = requireNonNull(treatmentRelationshipService, "treatmentRelationshipService must not be null");
-        this.fchvAssignmentService = requireNonNull(fchvAssignmentService, "fchvAssignmentService must not be null");
+        this.consentService = consentService;
+        this.treatmentRelationshipService = treatmentRelationshipService;
+        this.fchvAssignmentService = fchvAssignmentService;
         this.auditTrailService = auditTrailService; // Optional - null is allowed
         this.telemetryManager = telemetryManager; // Optional - null is allowed
-    }
-
-    private static <T> T requireNonNull(T value, String message) {
-        if (value == null) {
-            throw new IllegalArgumentException(message);
-        }
-        return value;
     }
 
     /**
@@ -328,7 +320,7 @@ public final class PhrPolicyEvaluator {
         // Patient role: can only access own records
         if ("patient".equals(role)) {
             boolean allowed = principalId.equals(patientId);
-            PolicyDecision decision = allowed 
+            PolicyDecision decision = allowed
                 ? PolicyDecision.allowedWithAudit("SELF_ACCESS", "Patient accessing own record")
                 : PolicyDecision.denied("SELF_ACCESS_DENIED", "Patient can only access own record");
             emitAuditEventIfNeeded(decision, context, resourceType, normalizedAction, patientId);
@@ -337,12 +329,16 @@ public final class PhrPolicyEvaluator {
 
         // Caregiver role: requires active consent grant with proper scope
         if ("caregiver".equals(role)) {
+            if (consentService == null) {
+                return Promise.of(PolicyDecision.denied("CONSENT_SERVICE_UNAVAILABLE",
+                    "Consent service is unavailable"));
+            }
             return consentService.validateAccess(patientId, principalId, resourceType, normalizedAction)
                 .map(result -> {
                     PolicyDecision decision = result.isAllowed()
-                        ? PolicyDecision.allowedWithAudit("CAREGIVER_CONSENT_GRANTED", 
+                        ? PolicyDecision.allowedWithAudit("CAREGIVER_CONSENT_GRANTED",
                             "Valid caregiver consent grant exists with appropriate scope")
-                        : PolicyDecision.denied("CAREGIVER_CONSENT_DENIED", 
+                        : PolicyDecision.denied("CAREGIVER_CONSENT_DENIED",
                             "No valid caregiver consent grant or insufficient scope");
                     emitAuditEventIfNeeded(decision, context, resourceType, normalizedAction, patientId);
                     return decision;
@@ -352,6 +348,10 @@ public final class PhrPolicyEvaluator {
         // Clinician role: requires treatment relationship
         if ("clinician".equals(role)) {
             if (context.facilityId() == null || context.facilityId().isBlank()) {
+                if (consentService == null) {
+                    return Promise.of(PolicyDecision.denied("CONSENT_SERVICE_UNAVAILABLE",
+                        "Consent service is unavailable"));
+                }
                 return consentService.validateAccess(patientId, principalId, resourceType, normalizedAction)
                     .map(result -> {
                         PolicyDecision decision = result.isAllowed()
@@ -363,13 +363,33 @@ public final class PhrPolicyEvaluator {
                         return decision;
                     });
             }
+            if (treatmentRelationshipService == null) {
+                return Promise.of(PolicyDecision.denied("TREATMENT_RELATIONSHIP_SERVICE_UNAVAILABLE",
+                    "Treatment relationship service is unavailable"));
+            }
             return treatmentRelationshipService.hasActiveTreatmentRelationship(principalId, patientId)
-                .map(hasRelationship -> {
-                    PolicyDecision decision = hasRelationship
-                        ? PolicyDecision.allowedWithAudit("TREATMENT_RELATIONSHIP", "Active treatment relationship exists")
-                        : PolicyDecision.denied("NO_TREATMENT_RELATIONSHIP", "No active treatment relationship");
-                    emitAuditEventIfNeeded(decision, context, resourceType, normalizedAction, patientId);
-                    return decision;
+                .then(hasRelationship -> {
+                    if (hasRelationship) {
+                        PolicyDecision decision = PolicyDecision.allowedWithAudit(
+                            "CLINICIAN_TREATMENT_RELATIONSHIP",
+                            "Active treatment relationship exists");
+                        emitAuditEventIfNeeded(decision, context, resourceType, normalizedAction, patientId);
+                        return Promise.of(decision);
+                    }
+                    if (consentService == null) {
+                        return Promise.of(PolicyDecision.denied("CONSENT_SERVICE_UNAVAILABLE",
+                            "Consent service is unavailable"));
+                    }
+                    return consentService.validateAccess(patientId, principalId, resourceType, normalizedAction)
+                        .map(result -> {
+                            PolicyDecision decision = result.isAllowed()
+                                ? PolicyDecision.allowedWithAudit("CLINICIAN_CONSENT_GRANTED",
+                                    "Valid clinician consent grant exists with appropriate scope")
+                                : PolicyDecision.denied("CLINICIAN_SCOPE_REQUIRED",
+                                    "Clinician PHI access requires facility-scoped treatment relationship or explicit consent");
+                            emitAuditEventIfNeeded(decision, context, resourceType, normalizedAction, patientId);
+                            return decision;
+                        });
                 });
         }
 
@@ -385,6 +405,10 @@ public final class PhrPolicyEvaluator {
 
         // FCHV role: requires community assignment
         if ("fchv".equals(role)) {
+            if (fchvAssignmentService == null) {
+                return Promise.of(PolicyDecision.denied("FCHV_ASSIGNMENT_SERVICE_UNAVAILABLE",
+                    "FCHV community assignment service is unavailable"));
+            }
             return fchvAssignmentService.hasCommunityAccess(principalId, patientId)
                 .map(hasAccess -> {
                     PolicyDecision decision = hasAccess
@@ -428,26 +452,26 @@ public final class PhrPolicyEvaluator {
         }
 
         if (!"admin".equals(context.role())) {
-            return Promise.of(PolicyDecision.denied("ADMIN_REQUIRED", 
+            return Promise.of(PolicyDecision.denied("ADMIN_REQUIRED",
                 "Admin justification path is only available to admin role"));
         }
 
         if (justification == null || justification.isBlank()) {
-            return Promise.of(PolicyDecision.denied("MISSING_JUSTIFICATION", 
+            return Promise.of(PolicyDecision.denied("MISSING_JUSTIFICATION",
                 "Admin PHI access requires explicit justification"));
         }
 
         if (justification.length() < 20) {
-            return Promise.of(PolicyDecision.denied("JUSTIFICATION_TOO_SHORT", 
+            return Promise.of(PolicyDecision.denied("JUSTIFICATION_TOO_SHORT",
                 "Admin justification must be at least 20 characters"));
         }
 
         String normalizedAction = action != null ? action.strip().toUpperCase() : "UNKNOWN";
-        
+
         LOG.warn("Admin PHI access with justification - allowing with strict audit. correlationId={}, justification={}",
             context.correlationId(), justification.substring(0, Math.min(50, justification.length())));
-        
-        PolicyDecision decision = PolicyDecision.allowedWithAudit("ADMIN_JUSTIFIED_PHI_ACCESS", 
+
+        PolicyDecision decision = PolicyDecision.allowedWithAudit("ADMIN_JUSTIFIED_PHI_ACCESS",
             "Admin PHI access with explicit justification: " + justification);
         emitAuditEventIfNeeded(decision, context, resourceType, normalizedAction, patientId);
         return Promise.of(decision);
@@ -500,9 +524,9 @@ public final class PhrPolicyEvaluator {
             return treatmentRelationshipService.hasActiveTreatmentRelationship(principalId, patientId)
                 .map(hasRelationship -> {
                     PolicyDecision decision = hasRelationship
-                        ? PolicyDecision.emergencyOverride("EMERGENCY_WITH_RELATIONSHIP", 
+                        ? PolicyDecision.emergencyOverride("EMERGENCY_WITH_RELATIONSHIP",
                             "Emergency access with treatment relationship - requires post-hoc justification")
-                        : PolicyDecision.emergencyOverride("EMERGENCY_BREAK_GLASS", 
+                        : PolicyDecision.emergencyOverride("EMERGENCY_BREAK_GLASS",
                             "Emergency break-glass access - requires post-hoc justification and patient notification");
                     if (!hasRelationship) {
                         LOG.warn("Emergency break-glass without treatment relationship - allowing with strict audit. correlationId={}",
@@ -517,7 +541,7 @@ public final class PhrPolicyEvaluator {
         // Admin emergency access - allowed with audit
         LOG.warn("Admin emergency access - allowing with strict audit. correlationId={}",
             context.correlationId());
-        PolicyDecision decision = PolicyDecision.emergencyOverride("ADMIN_EMERGENCY", 
+        PolicyDecision decision = PolicyDecision.emergencyOverride("ADMIN_EMERGENCY",
             "Admin emergency access - requires post-hoc justification");
         emitAuditEventIfNeeded(decision, context, "patient-record", "EMERGENCY_ACCESS", patientId);
         emitEmergencyAccessMetrics(decision, context, patientId);
@@ -559,7 +583,7 @@ public final class PhrPolicyEvaluator {
      * @param justification emergency access justification (if applicable)
      * @return Promise resolving to policy decision
      */
-    public Promise<PolicyDecision> evaluateByPolicyId(String policyId, PhrRequestContext context, 
+    public Promise<PolicyDecision> evaluateByPolicyId(String policyId, PhrRequestContext context,
                                                         String patientId, String justification) {
         if (policyId == null || policyId.isBlank()) {
             return Promise.of(PolicyDecision.denied("MISSING_POLICY_ID", "Policy ID is required"));
@@ -583,18 +607,18 @@ public final class PhrPolicyEvaluator {
             case "phr.notifications.access":
                 // PHI resource access - requires patientId
                 if (patientId == null || patientId.isBlank()) {
-                    return Promise.of(PolicyDecision.denied("MISSING_PATIENT_ID", 
+                    return Promise.of(PolicyDecision.denied("MISSING_PATIENT_ID",
                         "Patient ID required for policy: " + policyId));
                 }
                 return canAccessPhiResourceAsync(
-                    context, patientId, "phi-resource", "READ", 
+                    context, patientId, "phi-resource", "READ",
                     context.tenantId(), context.facilityId()
                 );
 
             case "phr.emergency.break-glass":
                 // Emergency access - requires patientId and justification
                 if (patientId == null || patientId.isBlank()) {
-                    return Promise.of(PolicyDecision.denied("MISSING_PATIENT_ID", 
+                    return Promise.of(PolicyDecision.denied("MISSING_PATIENT_ID",
                         "Patient ID required for emergency access"));
                 }
                 return canAccessEmergency(context, patientId, justification);
@@ -608,7 +632,7 @@ public final class PhrPolicyEvaluator {
             default:
                 LOG.warn("Unknown policyId requested - denying. policyId={}, correlationId={}",
                     policyId, context != null ? context.correlationId() : "unknown");
-                return Promise.of(PolicyDecision.denied("UNKNOWN_POLICY_ID", 
+                return Promise.of(PolicyDecision.denied("UNKNOWN_POLICY_ID",
                     "Unknown policy ID: " + policyId));
         }
     }
@@ -626,22 +650,22 @@ public final class PhrPolicyEvaluator {
         }
 
         if (!"admin".equals(context.role())) {
-            return PolicyDecision.denied("ADMIN_REQUIRED", 
+            return PolicyDecision.denied("ADMIN_REQUIRED",
                 "Admin role required for policy: " + policyId);
         }
 
         switch (policyId) {
             case "phr.emergency.review":
-                return PolicyDecision.allowedWithAudit("ADMIN_EMERGENCY_REVIEW", 
+                return PolicyDecision.allowedWithAudit("ADMIN_EMERGENCY_REVIEW",
                     "Admin can review emergency access requests");
             case "phr.release.readiness.access":
-                return PolicyDecision.allowedWithAudit("ADMIN_RELEASE_READINESS", 
+                return PolicyDecision.allowedWithAudit("ADMIN_RELEASE_READINESS",
                     "Admin can view release readiness");
             case "phr.audit.access":
-                return PolicyDecision.allowedWithAudit("ADMIN_AUDIT_ACCESS", 
+                return PolicyDecision.allowedWithAudit("ADMIN_AUDIT_ACCESS",
                     "Admin can view audit trails");
             default:
-                return PolicyDecision.denied("UNKNOWN_ADMIN_POLICY", 
+                return PolicyDecision.denied("UNKNOWN_ADMIN_POLICY",
                     "Unknown admin policy: " + policyId);
         }
     }
@@ -844,7 +868,7 @@ public final class PhrPolicyEvaluator {
         private final boolean requiresAudit;
         private final boolean emergencyOverride;
 
-        private PolicyDecision(boolean allowed, String reasonCode, String reasonMessage, 
+        private PolicyDecision(boolean allowed, String reasonCode, String reasonMessage,
                             boolean requiresAudit, boolean emergencyOverride) {
             this.allowed = allowed;
             this.reasonCode = reasonCode;

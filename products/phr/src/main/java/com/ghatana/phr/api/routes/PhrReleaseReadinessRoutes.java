@@ -87,21 +87,21 @@ public final class PhrReleaseReadinessRoutes {
 
         String sectionId = request.getPathParameter("sectionId");
         String environment = normalizeEnvironment(request.getQueryParameter("environment"));
-        
+
         return releaseReadinessService.getReleaseReadinessSection("phr", environment, sectionId)
             .then(sectionData -> {
                 if (sectionData == null) {
                     return PhrRouteSupport.errorResponse(404, "SECTION_NOT_FOUND",
                         "Release readiness section not found: " + sectionId);
                 }
-                
+
                 Map<String, Object> response = new LinkedHashMap<>();
                 response.put("product", "phr");
                 response.put("tenantId", context.tenantId());
                 response.put("principalId", context.principalId());
                 response.put("role", context.role());
                 response.putAll(sectionData);
-                
+
                 return PhrRouteSupport.jsonResponse(200, response);
             })
             .whenException(ex -> PhrRouteSupport.errorResponse(503, "PHR_RELEASE_READINESS_UNAVAILABLE", ex.getMessage()));

@@ -1,563 +1,680 @@
-Executed the audit against `samujjwal/ghatana` commit `2f2b5f6e7b42bbb614b28aba732062eae8dbac7c`.
+## Audit execution note
 
-I audited the full snapshot statically through the GitHub connector. I did **not** execute build/test commands locally, so the scores below are code-and-contract-grounded readiness scores, not runtime test results.
-
-## 1. Executive Summary
-
-**Overall production-readiness score: 2.9 / 5**
-
-Data Cloud is no longer a loose idea: the repo has a strong canonical plane architecture, generated Gradle/module registry, OpenAPI contracts, route-security manifest, UI route registry, production security filter, and meaningful readiness gates. The canonical docs define Data Cloud as one plane-based product, with Action Plane as the governed automation runtime formerly known as AEP. 
-
-However, it is **not production-ready as a coherent, simple, fully usable product suite yet**. The strongest blockers are: incomplete product manifest/conformance registration, incomplete plane migration, many important UI surfaces hidden/preview/non-discoverable, connector/data-fabric fallback behavior returning 503, generic entity-backed collection modeling instead of first-class product concepts, i18n leakage, remaining compatibility routes, and Action Plane/AEP ownership ambiguity.
-
-The canonical product registry marks Data Cloud as a platform provider with backend, web, and SDK surfaces implemented, but its conformance flags are still all false and it has no product manifest registered yet. 
-
-## 2. Scope Inspected
-
-Inspected representative code and docs across:
-
-* Root workspace/build: `package.json`, `pnpm-workspace.yaml`, `settings.gradle.kts`, generated Gradle includes.
-* Canonical Data Cloud docs: `PLANE_ARCHITECTURE.md`, unified product vision, route manifest system, Action Plane module inventory.
-* Contracts: `contracts/openapi/data-cloud.yaml`, `contracts/openapi/action-plane.yaml`.
-* Backend launcher/API: `DataCloudRouterBuilder.java`, `RouteSecurityRegistry.java`, `DataCloudSecurityFilter.java`, `EntityCrudHandler.java`.
-* UI: `App.tsx`, `routes.tsx`, `DefaultLayout.tsx`, `RouteSurfaceRegistry.ts`, `feature-gates.ts`, `DataExplorer.tsx`, collection API client.
-* Tests/gates: route truth tests, OpenAPI route parity test, root script registry.
-* Audio-video: generated product/module registry and multimodal service build file.
-* Product registry: `config/canonical-product-registry.json`.
-
-The commit itself appears to be a changelog-only commit for YAPPC, so the audit treats the **full tree at that SHA** as the source of truth, not the diff.
-
-## 3. Current Product Map
-
-Data Cloud has the right intended shape: Experience, Contract, Runtime Truth, Data, Event, Context, Intelligence, Governance, Action, and Operations planes are defined as the target architecture. 
-
-The generated Gradle registry includes the major Data Cloud planes and Action Plane modules, including data/entity, event/core, event/store, intelligence/analytics, governance/core, delivery API/launcher/SDK, integration tests, and many Action Plane modules such as operator-contracts, central-runtime, engine, registry, event-bridge, agent-runtime, observability, orchestrator, server, identity, and compliance. 
-
-Audio-video is present as a shared service with persistence, security, cache, messaging, integration tests, multimodal, STT, TTS, vision, and common libraries.  Its root build is still mostly an aggregate/polyglot build wrapper, not a Data Cloud-integrated modality workflow. 
-
-## 4. Readiness Scorecard
-
-| Dimension                       | Score | Rationale                                                                                                                            |
-| ------------------------------- | ----: | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Product coherence               |   3.2 | Strong canonical vision, but product registry/conformance and UI discoverability still lag.                                          |
-| Feature completeness            |   2.7 | Many surfaces/routes exist, but several product journeys are generic, preview, hidden, or fallback-only.                             |
-| E2E workflow completeness       |   2.6 | Backend has broad routes; UI journeys are not yet uniformly first-class from source → ingest → quality → lineage → action.           |
-| Data Cloud core architecture    |   3.4 | Plane architecture is strong; migration is incomplete.                                                                               |
-| AEP / Action Plane architecture |   3.1 | Canonical Action Plane namespace exists, but module inventory still says several AEP semantic modules are temporarily co-located.    |
-| Agent architecture              |   2.8 | Agent catalog/memory/routes exist, but UX and runtime lifecycle are not fully discoverable/productized.                              |
-| Audio-video integration         |   2.0 | Modules exist, but I found no clear first-class Data Cloud audio-video ingestion/catalog/action journey.                             |
-| Shared library quality          |   2.8 | Reuse is extensive, but Data Cloud UI package explicitly notes dependency-sprawl audit is still required.                            |
-| UI/UX simplicity                |   2.7 | Primary IA is simplified, but advanced/important surfaces are hidden and many strings/styles are page-local.                         |
-| Backend/API correctness         |   3.4 | Router, OpenAPI, route security, auth, tenant, policy, and audit foundations are strong.                                             |
-| Plugin/extensibility            |   3.0 | Plugin routes and modules exist, but lifecycle and product UX are still not fully coherent.                                          |
-| Security/authorization          |   3.8 | Fail-closed security metadata, tenant/JWT checks, access levels, policy checks, and blocking audit are strong.                       |
-| Privacy/governance              |   3.2 | Retention, redaction, policies, compliance routes exist; end-user journeys remain incomplete.                                        |
-| Observability/operations        |   3.1 | Health, metrics, runtime truth, operations, audit, and Action Plane observability exist, but async workflow observability is uneven. |
-| Reliability/failure handling    |   3.0 | Production requirements exist for entity writes; several optional engines still degrade to 503.                                      |
-| Performance/scalability         |   2.7 | Query limits, caching, async patterns exist, but large data/audio-video scale is not proven.                                         |
-| i18n                            |   2.2 | i18n is initialized, but many raw user-visible strings remain in routes/layout/pages.                                                |
-| Accessibility                   |   2.7 | Some ARIA labels and a11y scripts exist, but not consistently across all surfaces.                                                   |
-| Test quality                    |   3.1 | Good route/contract tests exist; behavior-level journey tests are still insufficient.                                                |
-| Developer experience            |   3.3 | Many scripts and gates exist; command surface is large and release-evidence-heavy.                                                   |
-| Configuration/feature flags     |   3.0 | Central feature gates exist; some production defaults hide important surfaces.                                                       |
-| Docs/code alignment             |   2.8 | Strong docs, but target architecture and migration inventory confirm work remains.                                                   |
-| Deployment readiness            |   2.6 | Registry says Data Cloud lifecycle execution is disabled and conformance flags are false.                                            |
-| Maintainability/SRP/DRY         |   3.0 | Router split is better, but route, UI, and compatibility surfaces remain broad.                                                      |
-| Overall                         |   2.9 | Strong foundation, not yet a production-grade coherent product suite.                                                                |
-
-## 5. Top Blockers
-
-1. **Data Cloud is marked “ready” in lifecycle metadata while core conformance flags are false.** This is a governance/readiness mismatch: product registry says backend/web/SDK/kernel bridge are ready, but manifest, observability, security, dataAccess, bridge, agent definitions, mastery bindings, evaluation packs, and runtime module conformance are false. 
-
-2. **Action Plane ownership is still transitional.** The inventory says several AEP semantic modules are active but temporarily co-located, and temporary compatibility modules are release-blocking. 
-
-3. **Default UI hides too much of the product.** The canonical architecture says default navigation should include Home, Data, Events, Query, Pipelines, Trust, and Operations.  The actual sidebar only includes Home, Data, Pipelines, Query, Trust, and Operations; Events is routeable but non-discoverable. 
-
-4. **Several important surfaces are preview/non-discoverable.** Events, alerts, memory, entities, context, fabric, agents, plugins, connectors, insights, and settings are either non-discoverable, preview, or boundary surfaces in the route registry. 
-
-5. **Connector/Data Fabric journey can be routeable but unavailable.** Connector routes are registered, but if the handler is missing or the feature flag is disabled, the router returns 503 for canonical and compatibility connector routes. 
-
-6. **Collections are still modeled through generic entity storage.** The UI collection API is backed by `/api/v1/entities/dc_collections`, not first-class collection/dataset contracts. Create/update are implemented as generic entity POST/upsert. 
-
-7. **Data Explorer has incomplete action behavior.** “More actions” currently only stops propagation and does not open a real action menu. 
-
-8. **i18n is not complete.** i18n is initialized at app startup, but route loading errors, Data Explorer headings, filters, empty/error states, and many labels are raw strings.   
-
-9. **Idempotency is incomplete across mutating routes.** Entity handler comments explicitly state idempotency is implemented for entity POST/batch, while events, governance, analytics, and pipeline routes still need idempotency support or explicit non-idempotent documentation. 
-
-10. **Audio-video is not yet a first-class Data Cloud modality.** Audio-video modules exist and multimodal service depends on persistence, STT, vision, agent core, governance, and audit, but I did not find a clear Data Cloud UI/API journey for ingesting, cataloging, governing, indexing, and triggering Action Plane processing for audio/video assets. 
-
-## 6. Key Strengths
-
-1. Clear plane architecture and target repository layout. 
-2. Strong product thesis: Data Cloud as unified AI-native operational data fabric; AEP no longer a separate customer-facing product. 
-3. Canonical route manifest system ties backend routing, security, OpenAPI, UI gating, SDK metadata, and docs. 
-4. Route manifest includes auth, tenant, policy, blocking audit, access, idempotency, lifecycle, and runtime surface metadata. 
-5. Backend security filter enforces auth, tenant isolation, policy checks, and audit emission. 
-6. Production-like profiles fail closed when route security metadata is missing. 
-7. Critical routes can require blocking audit and fail if audit persistence fails. 
-8. Entity write production requirements enforce durable idempotency, transactions, audit, and outbox in production/staging/sovereign profiles. 
-9. OpenAPI route parity tests verify OpenAPI ↔ router alignment, critical-route security, runtime truth extensions, and idempotency metadata. 
-10. UI has meaningful route gating and disabled-surface UX rather than silent 404s. 
-
-## 7. Feature Completeness Matrix
-
-| Capability                  | Current state                                                | Gap                                                     | Severity | Action                                                                                                              |
-| --------------------------- | ------------------------------------------------------------ | ------------------------------------------------------- | -------: | ------------------------------------------------------------------------------------------------------------------- |
-| Data source/connectors      | Routes exist, gated by feature flag and handler availability | 503 fallback means routeable but not necessarily usable |       P0 | Make connectors a production-supported surface with durable registry, sync jobs, health, credentials, and UI state. |
-| Dataset/collection registry | Generic entity-backed `dc_collections`                       | Not a first-class domain contract                       |       P0 | Introduce canonical collection/dataset API and migrate UI client off generic entity assumptions.                    |
-| Event log                   | Append/query routes exist                                    | UI Events surface is non-discoverable and gated         |       P1 | Promote Events into default IA once stable.                                                                         |
-| Pipelines                   | Action pipeline routes exist                                 | UX and execution lifecycle need stronger user journey   |       P1 | Consolidate Pipeline Center around run lifecycle, retries, logs, checkpoints, lineage, policy.                      |
-| AEP/patterns                | Action modules exist                                         | AEP semantic ownership still transitional               |       P0 | Finish split/ownership cleanup per module inventory.                                                                |
-| Agents                      | Agent catalog/memory routes exist                            | Agent UX is preview/non-discoverable                    |       P1 | Productize agent catalog, lifecycle, approvals, memory, and observability.                                          |
-| Audio-video                 | Modules exist                                                | No visible Data Cloud modality journey found            |       P1 | Add AV asset ingestion/catalog/index/action-plane integration.                                                      |
-| Governance                  | Retention, redaction, policy, compliance routes exist        | Needs coherent Trust Center workflows                   |       P1 | Make policy simulation, retention, redaction, audit, data subject controls one journey.                             |
-| Observability               | Health/metrics/runtime truth/operations exist                | Async workflow visibility uneven                        |       P1 | One run/job/operation ledger across ingestion, connectors, pipelines, agents, AV.                                   |
-| UI simplicity               | Primary IA simplified                                        | Too many valuable surfaces hidden; raw strings remain   |       P1 | Move toward backend-owned navigation with progressive disclosure.                                                   |
-| i18n/a11y                   | Tools and partial labels exist                               | Raw strings and page-local styles remain                |       P1 | Single i18n pass across all pages/components/actions/states.                                                        |
-| Tests                       | Route/contract/readiness tests exist                         | Need true E2E journey tests                             |       P1 | Add journey tests grouped with implementation passes.                                                               |
-
-## 8. End-to-End Journey Findings
-
-### 8.1 Connect data source → ingest → observe sync
-
-Expected: user opens Connectors, registers source, tests credentials, maps schema, triggers sync, sees job state, errors, quality impact, lineage, and resulting dataset.
-
-Current: connector routes exist for list/register/update/delete/test/enable/disable/rotate credentials/health/schema/sync/status, but they are feature-gated and can return 503 if handler unavailable or disabled. 
-
-Gap: this journey is not safe as a default production path.
-
-### 8.2 Manage collections/datasets
-
-Expected: first-class collection/dataset registry with lifecycle, schema, owner, quality, lineage, retention, permissions, and drilldown.
-
-Current: UI lists collections from `/entities/dc_collections` and maps generic backend entity data into collection objects. 
-
-Gap: this works as a pragmatic bridge, but not as a robust product contract.
-
-### 8.3 Quality and lineage drilldown
-
-Current: Data Explorer supports table, lineage, quality, and schema views; lineage fetches backend graph and impact analysis when selected. 
-
-Gap: detail panel only appears when `selectedCollection` is set in component state. Navigating directly to `/data/:id?view=lineage` risks showing list without loading the selected detail unless the page handles the route param elsewhere; from inspected code, the primary selected collection path is click-state based. 
-
-### 8.4 Action Plane / pipeline execution
-
-Current: canonical routes exist under `/api/v1/action/pipelines`, `/executions`, `/learning`, `/memory`, `/plugins`, and `/autonomy`.  
-
-Gap: canonical route shape is strong, but AEP semantic modules are still in temporary co-location/migration state. 
-
-### 8.5 Agent workflow
-
-Current: agent catalog and memory routes are registered and protected.  
-
-Gap: Agents are preview/non-discoverable in UI route registry, so normal users do not have a coherent, discoverable agent journey. 
-
-### 8.6 Audio-video
-
-Current: audio-video is included in generated product modules and has multimodal/STT/TTS/vision modules.  The multimodal service depends on common AV library, agent core, vision, persistence, STT, governance, and audit. 
-
-Gap: no inspected Data Cloud API/UI route showed first-class AV ingestion, catalog, consent, retention, processing job, search/index, or Action Plane trigger integration.
-
-## 9. UI/UX Findings
-
-The UI has moved in the right direction: route config explicitly says it simplified IA around Data Explorer, Pipeline Center, Insights, and Trust Center. 
-
-But the product is still not “0 cognitive load”:
-
-* Default navigation is too narrow and omits Events despite canonical docs listing Events as default navigation.  
-* Many route surfaces are non-discoverable, including connectors, insights, events, agents, plugins, and settings. 
-* Feature gates disable many surfaces in production/staging unless explicitly enabled; Fabric is disabled by default in all profiles unless explicitly enabled. 
-* Data Explorer has raw strings, page-local visual styles, and an incomplete “More actions” button. 
-* Data Explorer quality view exposes raw JSON for retention and lineage, which is useful for developers but too high-cognitive-load for normal users. 
-
-## 10. Architecture and Boundary Findings
-
-The architecture direction is correct, but migration is incomplete.
-
-The canonical architecture explicitly forbids Data/Event/Context/Governance planes from depending on Action Plane implementation internals and says contracts must not depend on runtime implementation. 
-
-The Action Plane inventory still says AEP-owned semantic modules are temporarily co-located and several compatibility/migration modules remain release-blocking. 
-
-Shared platform rules are also explicit: keep modules in platform only when generic and reused by three or more unrelated products; move/split into Data Cloud when the module primarily describes Data Cloud or Action Plane behavior. 
-
-## 11. Security, Privacy, Governance Findings
-
-Security is one of the strongest areas.
-
-The security filter authenticates via API key or JWT, extracts tenant identity, rejects missing/mismatched tenant claims, enforces route access level, evaluates policy for critical routes, and audits sensitive/critical routes. 
-
-Critical routes fail closed when policy engine is missing in enforcing mode. 
-
-Remaining security/governance gaps:
-
-* Not all mutating routes have fully implemented idempotency behavior, even if metadata checks exist. 
-* Data Explorer and collections still rely on generic entities; permissions around first-class dataset/collection lifecycle need to be enforced through explicit backend domain contracts, not just generic entity access.
-* Audio-video consent, retention, PII/biometric handling, and large-file governance were not visible as a coherent Data Cloud journey.
-
-## 12. Test and Verification Gap Analysis
-
-Strong existing gates:
-
-* UI has route manifest, route docs, API types, contract-backed tests, route truth tests, and critical journey contract test in `test:readiness`. 
-* Route truth tests assert canonical routes, preview routes, runtime capability gates, and role protected routes. 
-* Backend OpenAPI parity tests check OpenAPI ↔ router parity, route count, security schemes, runtime truth extensions, and idempotency metadata. 
-
-Missing or weak verification areas:
-
-* Source connector full journey: create → test → sync → job status → dataset created → quality/lineage updated.
-* Direct deep-link route tests for `/data/:id?view=lineage|quality|schema`.
-* Pipeline run lifecycle: draft → save → execute → checkpoint → retry/cancel/rollback → logs.
-* Agent lifecycle: catalog → enable/configure → run → memory write/search/delete/retain → audit.
-* Audio-video lifecycle: upload/ingest → metadata → processing job → transcript/frame index → pattern/agent trigger → retention/audit.
-* UI i18n raw text enforcement for all Data Cloud pages.
-* Accessibility tests for all route surfaces, not only selected happy paths.
-* Runtime truth behavior when services degrade or return 503.
-
-## 13. Consolidated Task Plan Grouped to Minimize Verification Passes
-
-### Group 1 — Product registry, conformance, and lifecycle truth
-
-**Goal:** Stop readiness contradictions.
-
-**Change:**
-
-* `config/canonical-product-registry.json`
-* `products/data-cloud/product-manifest.yaml` or equivalent manifest path
-* `products/data-cloud/lifecycle/*`
-* Product registry generation/validation scripts
-
-**Tasks:**
-
-* Add a real Data Cloud product manifest or explicitly model Data Cloud as a platform-provider with a different conformance schema.
-* Replace false conformance flags with concrete pass/fail gates tied to current code.
-* Remove “ready” status if conformance is false, or define what “platform-provider ready” actually means.
-
-**Tests/verification:**
-
-* `pnpm check:product-registry`
-* Data Cloud platform-provider readiness check
-* Registry drift check
-
-**Acceptance:** Product registry no longer reports ready while conformance is disabled/false.
+I audited the code snapshot at commit `bdfa732ddbbb53228ab5a21a6704877c4f3ba8dc`. I did **not** run local build/test/readiness commands and I am **not** planning release-readiness execution in this pass. The commit itself is a merge commit whose visible file change is a YAPPC changelog update, so the findings below are based on the full repository state at that commit, not on that small diff alone. 
 
 ---
 
-### Group 2 — Plane/module boundary cleanup
+# 1. Executive Summary
 
-**Goal:** Finish Data Cloud vs AEP/Action Plane ownership cleanup.
+**Overall readiness score: 2.8 / 5.0**
 
-**Change:**
+Data Cloud is no longer just a random set of modules. It has a serious product architecture: a plane-based model, canonical route manifest, runtime truth endpoint, generated UI route posture, backend route security registry, broad API surface, and a simplified UI information architecture. The README defines Data Cloud as a governed operational data fabric and explicitly places Action Plane/AEP under `products/data-cloud/planes/action`. 
 
-* `products/data-cloud/planes/action/*`
-* `products/data-cloud/docs/architecture/ACTION_PLANE_MODULE_INVENTORY.md`
-* Gradle generated includes
-* Architecture boundary tests
+However, the product is still **not production-ready as a coherent, simple, pluggable Data Cloud product suite**. The main blockers are not missing folders; they are **workflow completeness, boundary consistency, runtime durability, tenant-safe AEP semantics, agent governance enforcement, audio-video integration, and UI/API truth alignment**.
 
-**Tasks:**
+## Top 10 blockers
 
-* Split or reclassify temporary compatibility modules.
-* Move AEP-owned semantic modules to the intended AEP location or explicitly document a final co-location decision.
-* Keep Data Cloud-owned persistence/governance/audit/observability modules in Data Cloud.
-* Add dependency rules preventing Data/Event/Context/Governance from depending on Action internals.
+1. **Docs/code conflict around Action Plane permanence.** Canonical docs and Gradle includes keep Action Plane modules active, but the detailed architecture validation matrix still says no active `products/data-cloud/planes/action` should remain after merge.  
+2. **AEP EventCloud bridge is not production-grade for tenant-safe stream processing.** It has a default tenant `aep-system`, `publish(topic,payload)` writes without explicit tenant context, `subscribe()` tails from latest offset, and `consumerGroup` is not used for durable offset management.  
+3. **Pattern lifecycle is in-memory at the operator-contract level.** `PatternLifecycleRegistry` stores state/events in `HashMap`, so lifecycle state is not durable by default. 
+4. **Action engine boundary is suspiciously inverted.** The engine module depends directly on `products:data-cloud:extensions:agent-registry`, despite docs saying HTTP/persistence belong outside the engine.  
+5. **Idempotency is incomplete across mutating APIs.** Entity create/batch is covered, but the handler itself documents that pipelines, events, governance, analytics, and other mutating routes still need idempotency or explicit non-idempotent contracts. 
+6. **Audio-video exists as infrastructure, not as a first-class Data Cloud modality.** It has persistence/security/cache/messaging modules, but the implementation summary describes infrastructure completion rather than Data Cloud catalog, lineage, AEP, agent, or UI integration.  
+7. **UI breadth is high, but some surfaces are preview/hidden and many pages still expose advanced surfaces before their workflows are clearly complete.** Route registry marks alerts, memory, entities, context, fabric, and agents as preview/non-discoverable. 
+8. **Runtime truth exists, but not every UI feature gate is runtime-truth-owned.** Several frontend gates are environment-driven with production-safe defaults, which is useful, but still creates a second gating layer beside `/api/v1/surfaces`.  
+9. **Several user-visible UI strings still bypass i18n.** Examples include route loading/error text in `routes.tsx`. 
+10. **Release/readiness surfaces are still present in UI routing.** `operations/release-truth` exists and is described as a release gates/evidence dashboard; this should stay out of the current implementation pass per your instruction. 
 
-**Tests/verification:**
+## Top strengths
 
-* Gradle build for affected modules
-* boundary/dependency tests
-* generated module inventory check
+Data Cloud has a strong canonical product direction: one product, many planes, runtime truth, public contracts, backend security metadata, generated route manifest, and role-disclosed UI. 
 
-**Acceptance:** No “temporary compatibility module” remains release-blocking without a concrete migration ticket.
+The route manifest system is a major production-readiness asset because it connects backend route/security metadata, OpenAPI, UI gating/runtime truth, SDK generation, and documentation. 
 
----
+The entity write path shows real hardening: production-like profiles require durable idempotency, transaction manager, audit service, and outbox processor. 
 
-### Group 3 — First-class Data Cloud domain contracts
-
-**Goal:** Replace generic entity-backed product concepts with canonical product APIs.
-
-**Change:**
-
-* `products/data-cloud/contracts/openapi/data-cloud.yaml`
-* `delivery/launcher/.../DataCloudRouterBuilder.java`
-* `delivery/launcher/.../handlers/*`
-* `delivery/ui/src/lib/api/collections.ts`
-* `delivery/ui/src/pages/DataExplorer.tsx`
-
-**Tasks:**
-
-* Introduce first-class Collection/Dataset/DataSource contracts.
-* Keep generic entity storage as implementation detail.
-* Add backend-owned lifecycle, owner, quality, retention, lineage, and permission fields.
-* Update UI client to use canonical endpoints.
-* Add direct deep-link loading for `/data/:id`.
-
-**Tests/verification:**
-
-* OpenAPI parity tests
-* Collection API integration tests
-* Data Explorer direct deep-link component/E2E tests
-
-**Acceptance:** Data Explorer does not need generic `/entities/dc_collections` knowledge.
+The UI is moving toward low cognitive load with a simplified route structure: Data Explorer, Pipeline Center, Insights, Trust Center, and Operations. 
 
 ---
 
-### Group 4 — Connectors and Data Fabric production path
+# 2. Scope Inspected
 
-**Goal:** Make source connection and ingestion usable end-to-end.
+Inspected core evidence from:
 
-**Change:**
-
-* Connector handlers/services
-* `withConnectorRoutes`
-* `DataConnectorsPage`
-* operations/job center
-* route manifest/OpenAPI
-
-**Tasks:**
-
-* Ensure connector handler is production-wired.
-* Replace generic 503-only behavior with runtime truth states surfaced in UI.
-* Add credential rotation, health, schema preview, sync job, and sync status.
-* Link connector sync output to dataset/collection registry.
-
-**Tests/verification:**
-
-* API contract tests
-* connector journey E2E
-* degraded-service UI test
-
-**Acceptance:** A user can create/test/sync a connector and see resulting data and job state.
+| Area                    | Files inspected                                                                                                                                                                     |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Data Cloud product docs | `products/data-cloud/README.md`, `docs/architecture/PLANE_ARCHITECTURE.md`, `docs/product/02_data_cloud_unified_detailed_architecture.md`                                           |
+| Module registry         | `settings.gradle.kts`, `config/generated/settings-gradle-includes.kts`                                                                                                              |
+| Runtime routes/security | `DataCloudRouterBuilder.java`, `RouteSecurityRegistry.java`, `config/route-manifest.json`, `ROUTE_MANIFEST_SYSTEM.md`                                                               |
+| Data/entity runtime     | `EntityCrudHandler.java`, `DataCloudClient.java`                                                                                                                                    |
+| AEP/Action Plane        | `ACTION_PLANE_MODULE_INVENTORY.md`, `planes/action/engine/README.md`, `planes/action/engine/build.gradle.kts`, `PatternLifecycleRegistry.java`, `DataCloudEventCloudConnector.java` |
+| Agent architecture      | `ADR-020-agent-system-five-layer-architecture.md`, `DataCloudSafetyPolicyRepository.java`                                                                                           |
+| Audio-video             | `products/audio-video/IMPLEMENTATION_SUMMARY.md`                                                                                                                                    |
+| UI/UX                   | `delivery/ui/package.json`, `App.tsx`, `routes.tsx`, `DefaultLayout.tsx`, `session.ts`, `feature-gates.ts`, `RouteSurfaceRegistry.ts`                                               |
 
 ---
 
-### Group 5 — UI IA and 0-cognitive-load pass
+# 3. Current Product Map
 
-**Goal:** Make the product simple, discoverable, and coherent.
+## Data Cloud
 
-**Change:**
+Data Cloud is organized around planes: Experience, Contract, Runtime Truth, Data, Event, Context, Intelligence, Governance, Action, and Operations. 
 
-* `RouteSurfaceRegistry.ts`
-* `DefaultLayout.tsx`
-* `routes.tsx`
-* primary pages: Data, Events, Pipelines, Query, Trust, Operations, Insights, Agents, Plugins, Connectors
+The current module map includes `planes/shared-spi`, `planes/data/entity`, `planes/event/core`, `planes/event/store`, `planes/intelligence`, `planes/governance`, `planes/operations`, `planes/action/*`, delivery modules, extensions, and deploy assets. 
 
-**Tasks:**
+## AEP / Action Plane
 
-* Align sidebar with canonical navigation: Home, Data, Events, Query, Pipelines, Trust, Operations.
-* Use progressive disclosure for advanced surfaces rather than hiding them completely.
-* Fix `buildNavFromRegistry` vs static `navSections` split.
-* Add route cards/action cards from backend/runtime truth contracts.
-* Replace raw developer JSON panels with human-friendly summaries and expandable technical details.
+AEP is integrated as Data Cloud’s Action Plane. The module inventory says AEP semantic modules are intentionally and permanently co-located under `products/data-cloud/planes/action/*`, while Data Cloud owns persisted action metadata, review evidence, policy evidence, audit evidence, and storage integration. 
 
-**Tests/verification:**
+## Agents
 
-* route truth tests
-* global search tests
-* navigation E2E
-* role/feature-flag matrix tests
+The accepted five-layer agent ADR says the previous system had split registry authority, partial spec enforcement, documentation drift, and no release model. It defines `platform/java/agent-core` as the contract plane, Data Cloud Action Plane as execution, Data Cloud agent registry as durable memory/context/evaluation, and audio-video as product capability tools.  
 
-**Acceptance:** All core product capabilities are findable without memorizing URLs.
+## Audio-video
+
+Audio-video is registered as a shared-service in generated Gradle includes with persistence, security, cache, messaging, integration tests, multimodal, STT, TTS, vision, and common libraries. 
+
+Its implementation summary shows infrastructure depth, but not yet a Data Cloud-first modality workflow. 
+
+## UI
+
+The UI has a simplified route model and outcome-first pages. It uses React Router, Jotai, TanStack Query, theme provider, i18n, lazy loading, route guards, runtime capability gates, and onboarding.  
 
 ---
 
-### Group 6 — Data Explorer action and drilldown correctness
+# 4. Readiness Scorecard
 
-**Goal:** Ensure drilldown preserves meaning and adds detail.
-
-**Change:**
-
-* `DataExplorer.tsx`
-* collection detail components
-* lineage/quality/schema components
-* collection API client
-
-**Tasks:**
-
-* Load selected collection from route param, not only click-state.
-* Make each collection row action deterministic: view, edit, quality, lineage, schema, delete/archive where permitted.
-* Implement “More actions” menu or remove it.
-* Ensure clicking quality value opens quality detail, lineage opens lineage detail, records opens data records.
-* Fix advisory route mismatch text.
-
-**Tests/verification:**
-
-* `/data/:id?view=quality|lineage|schema` E2E
-* click-through tests from cards/rows to details
-* API mock contract tests
-
-**Acceptance:** Drilldown never changes meaning; it shows a deeper version of the clicked concept.
-
----
-
-### Group 7 — Action Plane/AEP lifecycle hardening
-
-**Goal:** Make Action Plane a governed automation product surface.
-
-**Change:**
-
-* Action pipeline/execution handlers
-* agent runtime
-* learning/review handlers
-* memory handlers
-* plugin handlers
-* Action Plane OpenAPI
-
-**Tasks:**
-
-* Define pipeline lifecycle states and transitions.
-* Add idempotency to mutating Action Plane routes.
-* Add execution run ledger with logs, checkpoints, retries, rollback, cancellation, policy decisions.
-* Wire learning review approve/reject into policy promotion and audit.
-* Make agents and memory first-class UI surfaces with governance.
-
-**Tests/verification:**
-
-* action-plane API lifecycle tests
-* pipeline E2E
-* policy/audit tests
-* agent memory lifecycle tests
-
-**Acceptance:** Pipeline/agent action lifecycle is executable, observable, auditable, and reversible.
+| Dimension                        | Score | Rationale                                                                                                 |
+| -------------------------------- | ----: | --------------------------------------------------------------------------------------------------------- |
+| Product coherence                |   3.5 | Clear plane architecture and product positioning, but docs conflict on Action Plane permanence.           |
+| Feature completeness             |   2.6 | Many APIs/routes exist; E2E product workflows remain uneven.                                              |
+| End-to-end workflow completeness |   2.5 | Entity flows are stronger than connector, AEP, agent, and audio-video journeys.                           |
+| Data Cloud core architecture     |   3.4 | Good SPI/client/route/runtime-truth direction; durability gaps remain outside entity writes.              |
+| AEP architecture/integration     |   2.8 | Rich module set, but event bridge and lifecycle durability are not production-grade.                      |
+| Agent architecture/integration   |   2.7 | Strong ADR, registry persistence exists, but governance path enforcement is not clearly universal.        |
+| Audio-video integration          |   1.9 | Infrastructure exists, but Data Cloud modality/catalog/lineage/agent workflow integration is immature.    |
+| Shared library quality           |   2.8 | Reuse-first intent is strong; boundary leakage remains likely.                                            |
+| UI/UX simplicity                 |   3.6 | Simplified IA and role-disclosed surfaces are good; still has raw strings and too many advanced surfaces. |
+| Backend/API correctness          |   3.2 | Route registry/security manifest is strong; idempotency and policy consistency incomplete.                |
+| Plugin/extensibility             |   2.8 | Plugin routes and module structure exist; lifecycle/isolation/versioning need stronger E2E proof.         |
+| Security/authz                   |   3.1 | Backend route metadata is strong; must ensure every mutation has policy/audit/idempotency semantics.      |
+| Privacy/governance               |   2.9 | Governance model exists; audio-video consent/retention and agent memory access need integration.          |
+| Observability/operations         |   2.9 | Telemetry taxonomy and operations surfaces exist; async flows need uniform traces/status.                 |
+| Reliability/failure handling     |   2.7 | Entity write path is hardened; AEP connector offsets/replay/backpressure are weaker.                      |
+| Performance/scalability          |   2.5 | Pagination/query models exist; large audio-video and event stream scalability not proven.                 |
+| i18n readiness                   |   2.5 | i18n is wired, but raw strings remain.                                                                    |
+| Accessibility readiness          |   2.7 | a11y dependencies/scripts exist; route/page-level behavior needs coverage.                                |
+| Test quality                     |   3.0 | Unit/integration/E2E/a11y scripts exist; breadth is better than verified journey depth.                   |
+| Developer experience             |   3.4 | Generated route manifest and scripts help; dependency sprawl noted by UI package itself.                  |
+| Config/feature flags             |   3.0 | Centralized gates exist; some gates are env-owned rather than runtime-truth-owned.                        |
+| Docs/code alignment              |   2.4 | Major conflict on Action Plane migration/permanence.                                                      |
+| Deployment readiness             |   2.7 | Deployment assets and runtime profiles exist; production posture still uneven.                            |
+| Maintainability/SRP/DRY          |   3.0 | Router extracted into groups, but large surfaces and compatibility aliases remain.                        |
+| Overall production readiness     |   2.8 | Good foundation, not yet coherent production suite.                                                       |
 
 ---
 
-### Group 8 — Audio-video as Data Cloud modality
+# 5. Feature Completeness Matrix
 
-**Goal:** Integrate AV into Data Cloud rather than leaving it as parallel shared service.
-
-**Change:**
-
-* `products/audio-video/*`
-* Data Cloud contracts
-* Data Cloud UI route/surface registry
-* Action Plane bridge
-
-**Tasks:**
-
-* Add AV asset/entity model: file, stream, transcript, frame index, metadata, consent, retention.
-* Add ingestion and processing job APIs.
-* Connect multimodal/STT/vision outputs to Data Cloud search/catalog/context.
-* Add Action Plane trigger: AV event → pattern/agent/pipeline.
-* Add AV governance: retention, redaction, legal hold, consent.
-
-**Tests/verification:**
-
-* AV ingest API tests
-* multimodal processing integration tests
-* UI journey tests
-* privacy/retention tests
-
-**Acceptance:** Audio/video can be ingested, processed, searched, governed, and used by agents/patterns.
+| Capability                | Current state                                                                     | Gap                                                                                          | Severity                                                           | Recommended action                                                                           |                                                |
+| ------------------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| Data entities/collections | Strongest area; CRUD, metadata, validation, export, anomaly routes exist.         | Need consistent schema/contract/data-quality workflow from UI through backend.               | High                                                               | Consolidate Data Explorer around collection lifecycle, schema, quality, lineage, export.     |                                                |
+| Event plane               | Event append/query/get offset routes exist.                                       | Required envelope metadata not consistently enforced at every bridge.                        | High                                                               | Make envelope validation mandatory before AEP/event bridge ingestion.                        |                                                |
+| AEP event bridge          | Data Cloud EventLogStore bridge exists.                                           | Default tenant, no durable consumer group offsets, starts at latest offset.                  | Critical                                                           | Add explicit tenant subscribe, durable checkpoints, replay semantics, full envelope mapping. |                                                |
+| Pattern lifecycle         | Registry/state machine exists.                                                    | In-memory state/events.                                                                      | Critical                                                           | Move lifecycle state/events behind Data Cloud durable repository + audit.                    |                                                |
+| Pipelines                 | Action pipeline CRUD and execution routes exist. ritical                          | Add explicit tenant subscribe, durable checkpoints, replay semantics, full envelope mapping. |                                                                    |                                                                                              |                                                |
+| Pattern lifecycle         | Registry/state machine exists. fileciteturn33file0L30-L63                     | In-memory state/cycle state/events behind Data Cloud durable repository + audit.             |                                                                    |                                                                                              |                                                |
+| Pipelines                 | Action pipeline CRUD and execution routes exist. fileciteturn15file0L168-L187 | Execution routes depend on optional handler; idempotency not complehturn50file0L33-L130   | Need proof all invocations pass governed dispatcher/tool executor. | Critical                                                                                     | Enforce single governed agent invocation path. |
+| Agent safety policy       | Data Cloud-backed safety policy repository exists. fileciteturn51file0L21-L31 | visible policy transition/audit semantics here.                                              | High                                                               | Add actor, audit, versioning, active-policy uniqueness, lifecycle rules.                     |                                                |
+| Audio-video               | Persistence/security/cache/messaging im0L62-L110                                | No visible Data Cloud catalog/lineage/AEP/agent/UI journey.                                  | Critical                                                           | Treat audio/video asset as Data Cloud dataset/entity + event source + agent to journey.      |                                                |
+| UI navigation             | Registry-driven navigation exists. fileciteturn42file0L90-L100                | Preview/advanced surfaces still fragmented.                                                  | Medium                                                             | Keep default nav minimal; move preview surfaces behind contextual disclosure.                |                                                |
+| i18n                      | i18n initialized. fileciteturn39file0L28-L32                                  | Raw strings in route loading/error stateute fallbacknslation keys.                           |                                                                    |                                                                                              |                                                |
+| Release readiness UI      | Release truth route exists. fileciteturn46file0L243-L253                      | Out of scope for this iteration.                                                             | Medium                                                             | Keep hidden; do not expand or verify release readiness in this pass.                         |                                                |
 
 ---
 
-### Group 9 — i18n/a11y/design-system consolidation
+# 6. End-to-End Journey Analysis
 
-**Goal:** Remove raw strings and page-local visual drift.
+## 1. Create/connect data source
 
-**Change:**
+**Current path:** `/connAPIs exist, and disabled/handler-missing state returns structured runtime truth JSON. fileciteturn41file0L364-L386 fileciteturn17file0L179-L223
+**Gap:** Connection test, schema discovery, sync, sync status, mapping suggestions, data catalog update, lineage event, and UI status are not  st dataset or stream
 
-* `delivery/ui/src/**/*.tsx`
-* translation files
-* design-system/shared UI components
+**Current path:** Entity save/batch, event append/query, and CDC/stream routes exist. fileciteturn15file0L119-L133
+**Gap:** Stream ingestion needs consistent envelope enforcement, idempotency, checkpoints, replay, and tenant isolation.
+**Sev schema/contract
 
-**Tasks:**
+**Current path:** Collection metadata, validation, infer-schema, OpenAPI contracts, and generated API types exist. fileciteturn15file0L119-L149 fileciteturn16file0L176-L214
+**Gap:** Schema lifecycle is not yet visible as a simple peback/retire.
+**Severity:** High.
 
-* Replace raw strings with i18n keys.
-* Move badges, tables, cards, filters, buttons, empty/error/loading states into shared components.
-* Ensure focus, keyboard, screen-reader, and contrast coverage.
-* Remove page-local color intent where explicit labels/status should carry meaning.
+## 4. Run quality checks
 
-**Tests/verification:**
+**Current path:** Data quality trust score endpoint and validation endpoints exist. fileciteturn15file0L119-L149
+**Gap:** Quality summary, drift detect, trust score, and UI drilldown need one canonical qu** High.
 
-* i18n raw-text scan
-* axe tests
-* component tests for common states
+## 5. Build/run pipeline
 
-**Acceptance:** No user-visible raw strings in Data Cloud UI except allowed test/dev strings.
+**Current path:** Pipeline CRUD, execution, logs, cancel, retries, checkpoint/restore routes exist. fileciteturn15file0L168-L187 fileciteturn16file0L99 , UI state transitions, and handler availability need consistent treatment.
+**Severity:** High.
+
+## 6. Detect event patterns
+
+**Current path:** Action engine claims patternoL7-L13
+**Gap:** Durable pattern lifecycle and replayable detection path are not yet production-grade because lifecycle registry is in-memory and event bridge lacks durable consumer-group semantics. fileciteturn33file0L20-L24 fileciteturn*e feedback
+
+**Current path:** Learning trigger/status/review approve/reject routes exist, and docs define HITL + learning loops. fileciteturn16file0L36-L48 fileciteturn5file0L302-L358
+**Gap:** Need durable learning episodes, evaluation gates, policy promotion evidence, and runtime gating, not just endpoints.
+**Severity:** High.
+
+## 8. Trigger agengent catalog routes and five-layer ADR exist. fileciteturn17file0L103-L120 fileciteturn50file0L76-L94
+
+**Gap:** Every agent action must pass governed dispatcher + ToolExecutor + approval/sandbox/policy/audit path. The ADR requires it, but the audit did not find enough implementation proof.
+**Severity:** Critical.
+
+## 9. Process audio/video asset
+
+**Current path:** Audio-video has mmodal modules. fileciteturn8file0L133-L145
+**Gap:** Missing product journey: upload/register asset → classify/consent/retention → process job → transcription/vision result → Data Cloud catalog/entity/event → AEP pattern/agent tool → searchable UI.
+**Severity:** Critical.
+
+## 10. Search/catalog/discover data
+
+**Current path:** Data Explorer,e Data Product routes exist. fileciteturn41file0L17-L40 fileciteturn17file0L56-L69
+**Gap:** Catalog/search is split across Data Explorer, entities, context, data products, connectors, semantic search. Needs one user mental model.
+**Severity:** High.ar routes, governance route group, policy simulation, tenant governance, and backend route security metadata exist. fileciteturn41file0L73-L115 fileciteturn11file0L17-L23
+**Gap:** Need consistent mutation policy/audit/idempotency semantics across all product routes.
+**Severity:** High.
+
+## 12. Observe/debugperations, jobs, alerts, runtime truth, execution logs, and telemetry taxonomy exist. fileciteturn41file0L140-L174 fileciteturn6file0L137-L185
+
+**Gap:** Async workflows need uniform run/job status, trace IDs, failure causes, retry/rollback semantics, and UI drilldown.
+**Severity:** High.
 
 ---
 
-### Group 10 — Observability and operations ledger
+# 7. UI/UX Findings
 
-**Goal:** One operational truth for every async workflow.
+The UI’s direction is strong: route registry drives navigation, and default nav is divided into Crole are helpful but could confuse users if they look like permissions. The code warns shell role is disclosure-only. fileciteturn44file0L9-L14 | Rename UI copy to “V itecture and Bounda# A. Data Cloud architecture is coherent but not fully settled
 
-**Change:**
+The canonical docs define planes, surfaces, modules, runtime truth, and Action Plane, which is correct. fileciteturn3file0L9-L19
 
-* operations plane
-* runtime truth registry
-* job center
-* connector/pipeline/agent/AV handlers
-* audit events
+But the detailed architecture still contains a validation matrix that says there should be no active Action Plane module path after merge, while the module inventory says Action Plane modules are permher migration is required. fileciteturn6file0L240-L255 fileciteturn27file0L59-L70
 
-**Tasks:**
+**Required fix:** nt so the accepted state is: Action Plane remains under Data Cloud, AEP semantics remain AEP-owned, and dependency direction is enforced by boundaries.
 
-* Add unified operation/run model.
-* Emit structured audit/domain events for every mutation.
-* Surface retries, failures, dead-letter/recovery, policy decisions, and runtime dependencies.
-* Link UI pages to operation details.
+## B. Action engine has boundary pressure
 
-**Tests/verification:**
+The engine README says it owns runtime primitives but not agent runtime, identity, scaling, compliance, HTTP endpoints, or persistence. fileciteturn29file0L14-L18
 
-* operation ledger integration tests
-* error-path tests
-* runtime truth degraded/unavailable tests
+The engine build depends omantics should move/split into Data Cloud. fileciteturn3file0L201-L230
 
-**Acceptance:** Operators can debug failed connector sync, pipeline run, agent action, or AV job from one place.
+**Required fix:** Review platform `agent-core`, `workflow`, `messaging`, `ai-integratiernance`, and `contracts` against current usage and remove Data Cloud semantic leakage.
 
 ---
 
-## 14. Priority Roadmap
+# 9. Security, Privacy, Governance Findings
 
-**P0 — Production blockers**
+Backend route metadata is strong: `RouteSecurityRegistry` is the authoritative regplementation is infrastructure-level, not a full consent/retention/classification journey. fileciteturn47file0L62-L76
+4. **AEP default tenant is unsafe as a pre event bridge default tenant must not be used for tenant-scoped production event flows. fileciteturn34file0L47-L58
 
-* Fix product registry/conformance mismatch.
-* Finish Action Plane/AEP ownership boundary.
-* Replace generic collection registry with first-class contracts.
-* Make connector ingestion production-usable.
-* Add idempotency to remaining mutating routes or explicitly classify non-idempotent routes.
+---
 
-Expected readiness improvement: **2.9 → 3.5**
+# 10. Observability, Reliability, and Performance Findings
 
-**P1 — Coherent product completeness**
+The architecture defines telemetry taxonomy and trace flow across client, API, Data Cloud, AEP, store, audit, and metrics. fileciteturn6file0L137-L185
 
-* Align UI navigation with canonical architecture.
-* Promote Events, Connectors, Agents, Plugins, and Insights into coherent progressive-disclosure surfaces.
-* Harden Data Explorer drilldowns.
-* Add Action Plane lifecycle E2E.
-* Add audio-video Data Cloud modality journey.
+Actual implementation is uneven:
 
-Expected readiness improvement: **3.5 → 4.1**
+| Area              | Gap                                                                                                                              |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Entity writes     | Stronger: trace spans, event append, audit payload, outbox. fileciteturn22file0L89-L205                                      |
+| AEP event bridge  | Logs publish/subscribe, but lacks durable consumer group offsets, replay start control, full envelope, policy/audit propagation. |
+| Pattern lifecycle | In-memory lifecycle state makes runtime recovery and audit incomplete.                                                           |
+| Audio-video       | Messaging and persistence exist, but no visible unified job/run status across Data Cloud Operations.                             |
+| UI operations     | Operations pages exist, but job/debug status needs to become one cross-plane operational model.                                  |
 
-**P2 — Hardening and extensibility**
+---
 
-* Plugin lifecycle conformance.
-* Runtime truth + operations ledger for all async workflows.
-* Security/privacy matrix tests.
-* Cross-plane architecture enforcement.
+# 11. Test and Verification Gap Analysis
 
-Expected readiness improvement: **4.1 → 4.5**
+This pass should **not run or plan release-readiness checks**.
 
-**P3 — Polish and optimization**
+Do **not** run or plan:
 
-* UI visual polish.
-* Performance budgets.
-* Advanced search/discovery.
-* Storybook/design-system completion.
-* Developer command simplification.
+```text
+pnpm test:readiness
+check:product-release-readiness
+check:production-readiness
+verify-production-readiness.sh
+validate-data-cloud-release-evidence
+readiness evidence generation
+release bundle generation
+```
 
-Expected readiness improvement: **4.5 → 4.8+**
+Minimum focused verification to add later inside implementation groups:
 
-## Final Recommendation
+| Test type     | Needed coverage                                                                                           |
+| ------------- | --------------------------------------------------------------------------------------------------------- |
+| Unit          | Event envelope validation, pattern lifecycle transitions, agent safety policy versioning, UI i18n helpers |
+| Integration   | Entity write + event + audit + outbox; AEP event bridge publish/subscribe/checkpoint/replay               |
+| API/contract  | Route manifest route/action parity; idempotency semantics per mutation                                    |
+| UI/component  | Data Explorer, Pipeline Center, Event Explorer, DisabledSurface, RouteCapabilityGate                      |
+| E2E           | Connector → schema → ingest → quality → catalog → event → pipeline → operations status                    |
+| Security      | Tenant isolation, policy required, blocking audit required, admin/operator/viewer access                  |
+| i18n/a11y     | No raw user-visible strings; keyboard/focus for nav/actions/modals                                        |
+| Observability | Trace/correlation ID appears in API response, audit record, operation/job UI                              |
 
-Data Cloud at this commit is **not production-ready**, but it has a strong production-grade foundation.
+---
+
+# 12. Consolidated Task Plan Grouped to Minimize Verification Passes
+
+## Group 1 — Canonical architecture and boundary cleanup
+
+**Goal:** Remove architecture ambiguity before touching implementation.
+
+**Files/directories:**
+
+```text
+products/data-cloud/docs/product/02_data_cloud_unified_detailed_architecture.md
+products/data-cloud/docs/architecture/PLANE_ARCHITECTURE.md
+products/data-cloud/docs/architecture/ACTION_PLANE_MODULE_INVENTORY.md
+products/data-cloud/planes/action/engine/build.gradle.kts
+products/data-cloud/planes/action/orchestrator/build.gradle.kts
+products/data-cloud/planes/action/agent-runtime/build.gradle.kts
+products/data-cloud/extensions/agent-registry/*
+```
+
+**Changes:**
+
+* Replace “no active `planes/action` after merge” language with the accepted co-location decision.
+* State final boundary rule: Action Plane modules stay, AEP semantics remain AEP-owned, Data Cloud owns durable metadata/governance/storage integration.
+* Move direct engine dependency on `extensions:agent-registry` behind a stable SPI or into runtime composition/orchestrator.
+* Add a boundary note that engine cannot depend on durable registry implementation.
+
+**Tests to add/update:**
+
+* Focused dependency-boundary unit/architecture test for Action engine imports.
+* Build-level module dependency assertion test only for touched module graph.
+
+**Verification:** targeted module boundary tests only. **Do not run readiness checks.**
+
+**Acceptance criteria:**
+
+* No doc contradiction.
+* Engine is free of Data Cloud durable registry implementation dependency.
+* Runtime composition still wires engine + registry.
+
+**Risk:** High.
+
+---
+
+## Group 2 — Data Cloud event envelope and AEP bridge hardening
+
+**Goal:** Make AEP integration tenant-safe, replayable, and production-grade.
+
+**Files/directories:**
+
+```text
+products/data-cloud/planes/shared-spi/src/main/java/com/ghatana/datacloud/DataCloudClient.java
+products/data-cloud/planes/action/event-bridge/src/main/java/com/ghatana/aep/eventcloud/DataCloudEventCloudConnector.java
+products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/aep/event/spi/*
+products/data-cloud/planes/event/core/*
+products/data-cloud/planes/event/store/*
+```
+
+**Changes:**
+
+* Remove production use of default tenant `aep-system`.
+* Add explicit tenant-aware subscribe API.
+* Use Data Cloud event envelope fields: source, subject, schemaVersion, correlationId, causationId, classification, policyContext, provenance, traceContext.
+* Persist consumer-group offsets/checkpoints.
+* Support replay from requested offset, not only latest offset.
+* Add backpressure/failure callback semantics.
+* Emit trace/audit metadata for bridge operations.
+
+**Tests to add/update:**
+
+* Publish with explicit tenant.
+* Subscribe with consumer group and resume from checkpoint.
+* Replay from offset.
+* Reject/flag missing source/classification/policy metadata where required.
+* Cross-tenant isolation test.
+
+**Verification:** focused event bridge and event store tests only. **Do not run readiness checks.**
+
+**Acceptance criteria:**
+
+* No default-tenant production path.
+* Consumer group offsets are durable.
+* Replay is deterministic.
+* Event metadata is not lost crossing Data Cloud ↔ AEP.
+
+**Risk:** Critical.
+
+---
+
+## Group 3 — Durable Action Plane pattern lifecycle and learning loop
+
+**Goal:** Move pattern lifecycle and adaptive learning from in-memory control to durable, auditable Data Cloud state.
+
+**Files/directories:**
+
+```text
+products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/aep/pattern/lifecycle/*
+products/data-cloud/planes/action/registry/*
+products/data-cloud/planes/action/engine/*
+products/data-cloud/extensions/agent-registry/*
+products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/LearningHandler.java
+```
+
+**Changes:**
+
+* Introduce durable `PatternLifecycleRepository`.
+* Store pattern state, lifecycle events, promotion decisions, actor, policy decision, confidence, and trace ID.
+* Replace raw `HashMap` lifecycle state in production path.
+* Keep in-memory registry only for deterministic local/unit tests.
+* Connect learning review approve/reject to durable lifecycle transitions.
+* Ensure pattern promotion creates governance/audit events.
+
+**Tests to add/update:**
+
+* Draft → validated → shadow → active transition.
+* Invalid transition rejected.
+* Lifecycle survives restart/repository reload.
+* Approve/reject review writes audit/lifecycle event.
+* Tenant isolation.
+
+**Verification:** focused lifecycle/learning tests only. **Do not run readiness checks.**
+
+**Acceptance criteria:**
+
+* Production lifecycle state is durable.
+* Every transition has actor, tenant, policy, audit, trace.
+* UI can show lifecycle history.
+
+**Risk:** Critical.
+
+---
+
+## Group 4 — Idempotency and mutation semantics pass
+
+**Goal:** Make all mutating APIs explicit: idempotent, non-idempotent, or guarded.
+
+**Files/directories:**
+
+```text
+products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java
+products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudRouterBuilder.java
+products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/*
+products/data-cloud/config/route-manifest.json
+products/data-cloud/contracts/openapi/*.yaml
+```
+
+**Changes:**
+
+* Inventory every POST/PUT/PATCH/DELETE route.
+* Add idempotency key support where retry-safe mutations are expected.
+* Explicitly mark non-idempotent operations with reason.
+* Ensure blocking audit for destructive and governance-sensitive actions.
+* Align route manifest metadata with actual handler behavior.
+
+**Tests to add/update:**
+
+* Retry same idempotency key returns same response.
+* Conflicting payload same key rejected.
+* Non-idempotent operation documented and guarded.
+* Destructive operation requires blocking audit.
+
+**Verification:** focused route/action metadata + handler tests only. **Do not run readiness checks.**
+
+**Acceptance criteria:**
+
+* No ambiguous mutating route.
+* Route manifest truth matches handler behavior.
+* Entity idempotency pattern generalized.
+
+**Risk:** High.
+
+---
+
+## Group 5 — Agent governance and tool execution unification
+
+**Goal:** Enforce the five-layer agent architecture in runtime code.
+
+**Files/directories:**
+
+```text
+platform/java/agent-core/*
+platform/java/tool-runtime/*
+platform/java/workflow/*
+platform/java/policy-as-code/*
+products/data-cloud/planes/action/agent-runtime/*
+products/data-cloud/planes/action/orchestrator/*
+products/data-cloud/extensions/agent-registry/*
+products/data-cloud/extensions/agent-catalog/*
+products/audio-video/*
+```
+
+**Changes:**
+
+* Ensure every agent invocation enters through governed dispatcher.
+* Ensure every side-effecting tool call uses `ToolExecutor`.
+* Enforce policy, approval, sandbox, audit, and trace ledger.
+* Add agent release state checks before invocation.
+* Add kill switch and capability manifest enforcement.
+* Make audio-video tools register as product capability tools, not private runtime clones.
+
+**Tests to add/update:**
+
+* Agent cannot run without active release.
+* Tool call cannot bypass ToolExecutor.
+* Policy denial blocks action.
+* HITL-required action creates review item.
+* Audio transcription tool appears in agent catalog and uses governed path.
+
+**Verification:** focused agent runtime/tool governance tests only. **Do not run readiness checks.**
+
+**Acceptance criteria:**
+
+* One governed agent invocation path.
+* No direct product-owned tool execution bypass.
+* Agent registry is durable memory/context/evaluation authority.
+
+**Risk:** Critical.
+
+---
+
+## Group 6 — Audio-video as first-class Data Cloud modality
+
+**Goal:** Convert audio-video from infrastructure service to integrated Data Cloud capability.
+
+**Files/directories:**
+
+```text
+products/audio-video/modules/infrastructure/*
+products/audio-video/modules/intelligence/multimodal-service/*
+products/audio-video/modules/speech/stt-service/*
+products/audio-video/modules/speech/tts-service/*
+products/audio-video/modules/vision/vision-service/*
+products/data-cloud/delivery/api/*
+products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/api/controller/MediaArtifactController.java
+products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudRouterBuilder.java
+products/data-cloud/delivery/ui/src/pages/*
+products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts
+```
+
+**Changes:**
+
+* Define `MediaArtifact` as Data Cloud entity/dataset with classification, consent, retention, owner, source, and lineage.
+* Emit events for upload, transcription requested, transcription completed, vision analysis completed, processing failed.
+* Connect audio-video jobs to Operations Job Center.
+* Register transcription/vision/multimodal tools in agent catalog.
+* Add Data Cloud UI path for media artifact lifecycle.
+* Ensure large file handling, async job status, retry, failure reason, and retention policy.
+
+**Tests to add/update:**
+
+* Register artifact → create Data Cloud entity/event.
+* Trigger transcription → job visible in operations.
+* Completion writes transcript entity + lineage.
+* Privacy/retention policy enforced.
+* Agent tool can invoke transcription through governed path.
+
+**Verification:** focused audio-video/Data Cloud integration tests only. **Do not run readiness checks.**
+
+**Acceptance criteria:**
+
+* Audio/video is searchable, governed, observable, and agent-usable through Data Cloud.
+* No standalone-only audio-video island.
+
+**Risk:** Critical.
+
+---
+
+## Group 7 — UI simplification, runtime-truth gating, and no-release-readiness scope
+
+**Goal:** Keep the UI powerful but simple with zero cognitive load.
+
+**Files/directories:**
+
+```text
+products/data-cloud/delivery/ui/src/routes.tsx
+products/data-cloud/delivery/ui/src/layouts/DefaultLayout.tsx
+products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts
+products/data-cloud/delivery/ui/src/lib/feature-gates.ts
+products/data-cloud/delivery/ui/src/components/common/*
+products/data-cloud/delivery/ui/src/pages/*
+products/data-cloud/delivery/ui/src/lib/i18n/*
+```
+
+**Changes:**
+
+* Keep default nav outcome-first: Home, Data, Events, Query, Pipelines, Trust, Operations.
+* Keep Agents, Memory, Context, Fabric, Alerts as contextual/advanced surfaces.
+* Move env feature gates behind runtime-truth-derived capability service.
+* Keep `operations/release-truth` hidden and do not expand release-readiness UI this iteration.
+* Replace route loading/error raw strings with i18n.
+* Standardize page shell: title, summary, primary action, table/card area, empty/error/disabled state.
+* Use one table/list/action pattern across Data, Events, Pipelines, Agents, Plugins, Connectors.
+
+**Tests to add/update:**
+
+* Navigation shows only appropriate discoverable surfaces per view mode.
+* Disabled surface explains why feature is unavailable.
+* No release-readiness route is discoverable by default.
+* Raw string scan for touched UI files.
+* Keyboard/focus test for nav and action menus.
+
+**Verification:** focused UI unit/component/a11y tests only. **Do not run readiness checks.**
+
+**Acceptance criteria:**
+
+* A normal user sees a simple product.
+* Advanced surfaces are discoverable only when useful.
+* Release-readiness execution remains out of scope.
+
+**Risk:** High.
+
+---
+
+## Group 8 — Shared library and dependency sprawl cleanup
+
+**Goal:** Make shared libraries truly shared and product libraries product-owned.
+
+**Files/directories:**
+
+```text
+platform/java/agent-core
+platform/java/workflow
+platform/java/messaging
+platform/java/ai-integration
+platform/java/data-governance
+platform/contracts
+products/data-cloud/planes/shared-spi
+products/data-cloud/delivery/ui/package.json
+```
+
+**Changes:**
+
+* Apply “shared only if used by 3+ unrelated products” rule from plane architecture.
+* Move Data Cloud semantics from platform into Data Cloud planes.
+* Keep platform libraries generic.
+* Remove unused UI workspace dependencies noted by UI package metadata.
+* Ensure product code uses `products/data-cloud/contracts` instead of platform contracts for Data Cloud APIs.
+
+**Tests to add/update:**
+
+* Dependency boundary tests.
+* Import-path checks for product semantic leakage.
+* UI dependency usage check for touched dependencies.
+
+**Verification:** focused dependency-boundary tests only. **Do not run readiness checks.**
+
+**Acceptance criteria:**
+
+* Platform libraries are generic.
+* Data Cloud semantics are inside Data Cloud.
+* UI package no longer carries obvious unused workspace sprawl.
+
+**Risk:** Medium.
+
+---
+
+# 13. Priority Roadmap
+
+## P0 — Production blockers
+
+1. Fix Action Plane doc/code contradiction.
+2. Harden AEP EventCloud bridge: tenant, envelope, consumer groups, replay.
+3. Make pattern lifecycle durable.
+4. Enforce governed agent/tool execution path.
+5. Integrate audio-video as governed Data Cloud modality.
+
+Expected score improvement: **2.8 → 3.5**
+
+## P1 — Coherent product completeness
+
+1. Complete connector → ingest → schema → quality → catalog journey.
+2. Generalize idempotency and mutation metadata.
+3. Consolidate UI runtime-truth gating.
+4. Standardize operations/job/run status.
+
+Expected score improvement: **3.5 → 4.0**
+
+## P2 — Hardening and extensibility
+
+1. Plugin lifecycle/version/isolation.
+2. Shared library cleanup.
+3. Data product/catalog/search consolidation.
+4. Agent memory/evaluation promotion lifecycle.
+
+Expected score improvement: **4.0 → 4.4**
+
+## P3 — Polish and optimization
+
+1. UI polish and full i18n cleanup.
+2. a11y keyboard/focus pass.
+3. Performance/load-specific hardening.
+4. Better progressive disclosure and onboarding.
+
+Expected score improvement: **4.4 → 4.7+**
+
+---
+
+# 14. Final Recommendation
+
+**Data Cloud is not production-ready yet**, but it has crossed an important threshold: it now has a credible product architecture and enough runtime/UI structure to harden systematically.
 
 The next implementation pass should focus on:
 
-1. **Product truth and boundary cleanup**
-2. **First-class Data Cloud collection/source/dataset contracts**
-3. **Connector → ingest → dataset → quality/lineage → operations E2E journey**
-4. **UI IA/navigation/discoverability cleanup**
-5. **Action Plane lifecycle hardening**
+1. **Action Plane boundary correctness**
+2. **AEP event bridge durability and tenant safety**
+3. **Durable pattern lifecycle**
+4. **Agent governance enforcement**
+5. **Audio-video as a first-class Data Cloud modality**
+6. **UI simplification/runtime-truth gating**
 
-Do **not** spend the next pass generating more release evidence artifacts. The code already has many readiness/evidence scripts; the gap is product completeness, deterministic journeys, UI simplicity, and reducing transitional architecture.
+Explicitly **do not** work on release-readiness execution, release evidence generation, release bundle validation, or readiness check orchestration in this iteration.
+
+Highest-return task group: **Group 2 — Data Cloud event envelope and AEP bridge hardening**, because it unlocks reliable AEP, agents, pipelines, learning, operations, and audio-video event integration.

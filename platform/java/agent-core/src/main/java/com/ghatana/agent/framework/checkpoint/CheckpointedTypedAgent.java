@@ -47,7 +47,7 @@ import java.util.function.Function;
  * <pre>{@code
  * CheckpointedTypedAgent<Req, Resp> agent = CheckpointedTypedAgent.<Req, Resp>builder()
  *     .delegate(rawAgent)
- *     .store(dataCloudCheckpointStore)
+ *     .store(checkpointStore)
  *     .policy(CheckpointPolicy.everyN(10))
  *     .stateSerializer(resp -> objectMapper.writeValueAsBytes(resp))
  *     .build();

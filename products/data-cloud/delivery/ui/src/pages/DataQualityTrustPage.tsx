@@ -10,6 +10,7 @@
  */
 
 import type { ReactElement } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, CheckCircle2, MinusCircle } from 'lucide-react';
 import { useDataQualityTrustScores } from '../api/data-quality.service';
 
@@ -46,6 +47,7 @@ function ScoreBadge({ score }: { score: number }): ReactElement {
 }
 
 export function DataQualityTrustPage(): ReactElement {
+  const { t } = useTranslation();
   const { data, isLoading, isError, error } = useDataQualityTrustScores();
 
   return (
@@ -60,13 +62,13 @@ export function DataQualityTrustPage(): ReactElement {
 
         {isLoading && (
           <div className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
-            Loading trust scores...
+            {t('loading.trustScores')}
           </div>
         )}
 
         {isError && (
           <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-900/40 dark:bg-rose-900/10 dark:text-rose-300">
-            {error instanceof Error ? error.message : 'Failed to load trust scores.'}
+            {error instanceof Error ? error.message : t('error.failedToLoadTrustScores')}
           </div>
         )}
 

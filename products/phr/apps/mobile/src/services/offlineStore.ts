@@ -19,23 +19,30 @@
  *
  * NEVER call `AsyncStorage.setItem` with PHI outside this module.
  */
-import { phiGet, phiRemove, phiSet } from './phiEncryptedStorage';
-import type { MobileDashboard } from '../types';
+import { phiGet, phiRemove, phiSet } from "./phiEncryptedStorage";
+import type { MobileDashboard } from "../types";
 /**
  * G11-T07: Mobile offline cache telemetry without PHI.
  * Emits cache hit/miss/stale counters without including any PHI.
  */
 function emitCacheMetric(
-  operation: 'hit' | 'miss' | 'stale' | 'session_mismatch' | 'schema_mismatch' | 'corrupt',
-  sessionIdentity: SessionIdentity
+  operation:
+    | "hit"
+    | "miss"
+    | "stale"
+    | "session_mismatch"
+    | "schema_mismatch"
+    | "corrupt",
+  sessionIdentity: SessionIdentity,
 ): void {
   // In a real implementation, this would call a telemetry service.
   // For now, we log at debug level without PHI.
-  console.debug(`[phr.cache] operation=${operation}, role=${sessionIdentity.role}, tenantId=${sessionIdentity.tenantId}`);
+  console.debug(
+    `[phr.cache] operation=${operation}, role=${sessionIdentity.role}, tenantId=${sessionIdentity.tenantId}`,
+  );
 }
 
-
-const DASHBOARD_KEY = 'phr-mobile-dashboard';
+const DASHBOARD_KEY = "phr-mobile-dashboard";
 const SCHEMA_VERSION = 1;
 
 /** Default cache lifetime: 8 hours (one clinical shift). */
@@ -43,13 +50,13 @@ const DEFAULT_TTL_MS = 8 * 60 * 60 * 1000;
 
 /** Restricted PHI fields that must never be cached */
 const RESTRICTED_FIELDS = new Set([
-  'mentalHealth',
-  'substanceUse',
-  'geneticInfo',
-  'reproductiveHealth',
-  'hivStatus',
-  'psychiatricHistory',
-  'substanceAbuseHistory',
+  "mentalHealth",
+  "substanceUse",
+  "geneticInfo",
+  "reproductiveHealth",
+  "hivStatus",
+  "psychiatricHistory",
+  "substanceAbuseHistory",
 ]);
 
 type JsonPrimitive = string | number | boolean | null;
@@ -73,7 +80,7 @@ export async function saveDashboardOffline(
 ): Promise<void> {
   // Sanitize restricted fields before caching
   const sanitizedDashboard = sanitizeRestrictedFields(dashboard);
-  
+
   const envelope: DashboardCacheEnvelope = {
     schemaVersion: SCHEMA_VERSION,
     savedAt: Date.now(),
@@ -96,7 +103,7 @@ export async function loadDashboardOffline(
 ): Promise<MobileDashboard | null> {
   const raw = await phiGet(DASHBOARD_KEY);
   if (!raw) {
-    emitCacheMetric('miss', sessionIdentity);
+    emitCacheMetric("miss", sessionIdentity);
     return null;
   }
 
@@ -105,21 +112,21 @@ export async function loadDashboardOffline(
     envelope = JSON.parse(raw) as DashboardCacheEnvelope;
   } catch {
     // Corrupt payload; discard.
-    emitCacheMetric('corrupt', sessionIdentity);
+    emitCacheMetric("corrupt", sessionIdentity);
     await clearDashboardOffline();
     return null;
   }
 
   if (envelope.schemaVersion !== SCHEMA_VERSION) {
     // Schema mismatch; discard so stale structure is not used.
-    emitCacheMetric('schema_mismatch', sessionIdentity);
+    emitCacheMetric("schema_mismatch", sessionIdentity);
     await clearDashboardOffline();
     return null;
   }
 
   // Check session binding - reject cache if session differs
   if (!sessionMatches(envelope, sessionIdentity)) {
-    emitCacheMetric('session_mismatch', sessionIdentity);
+    emitCacheMetric("session_mismatch", sessionIdentity);
     await clearDashboardOffline();
     return null;
   }
@@ -127,13 +134,13 @@ export async function loadDashboardOffline(
   const ageMs = Date.now() - envelope.savedAt;
   if (ageMs > envelope.ttlMs) {
     // Cache expired; discard PHI proactively.
-    emitCacheMetric('stale', sessionIdentity);
+    emitCacheMetric("stale", sessionIdentity);
     await clearDashboardOffline();
     return null;
   }
 
   try {
-    emitCacheMetric('hit', sessionIdentity);
+    emitCacheMetric("hit", sessionIdentity);
     return parseMobileDashboard(envelope.data);
   } catch {
     await clearDashboardOffline();
@@ -156,7 +163,6 @@ export async function clearDashboardOffline(): Promise<void> {
 export async function getDashboardOfflineTimestamp(): Promise<number | null> {
   const raw = await phiGet(DASHBOARD_KEY);
   if (!raw) {
-    emitCacheMetric('miss', sessionIdentity);
     return null;
   }
 
@@ -179,13 +185,18 @@ function sanitizeRestrictedFields(dashboard: MobileDashboard): JsonValue {
 }
 
 function toJsonValue(value: unknown): JsonValue {
-  if (value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
     return value;
   }
   if (Array.isArray(value)) {
     return value.map(toJsonValue);
   }
-  if (typeof value === 'object') {
+  if (typeof value === "object") {
     const result: JsonObject = {};
     for (const [key, childValue] of Object.entries(value)) {
       result[key] = toJsonValue(childValue);
@@ -196,40 +207,47 @@ function toJsonValue(value: unknown): JsonValue {
 }
 
 function isJsonObject(value: JsonValue | undefined): value is JsonObject {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function isString(value: JsonValue | undefined): value is string {
-  return typeof value === 'string';
+  return typeof value === "string";
 }
 
 function isNumber(value: JsonValue | undefined): value is number {
-  return typeof value === 'number' && Number.isFinite(value);
+  return typeof value === "number" && Number.isFinite(value);
 }
 
 function isBoolean(value: JsonValue | undefined): value is boolean {
-  return typeof value === 'boolean';
+  return typeof value === "boolean";
 }
 
 function parseMobileDashboard(value: JsonValue): MobileDashboard {
   if (!isJsonObject(value)) {
-    throw new Error('Invalid cached dashboard envelope');
+    throw new Error("Invalid cached dashboard envelope");
   }
   const patient = value.patient;
   const records = value.records;
   const consents = value.consents;
   const notifications = value.notifications;
-  if (!isJsonObject(patient) || !isString(patient.id) || !isString(patient.name) || !isNumber(patient.age) || !isString(patient.bloodType) || !isString(patient.district)) {
-    throw new Error('Invalid cached patient profile');
+  if (
+    !isJsonObject(patient) ||
+    !isString(patient.id) ||
+    !isString(patient.name) ||
+    !isNumber(patient.age) ||
+    !isString(patient.bloodType) ||
+    !isString(patient.district)
+  ) {
+    throw new Error("Invalid cached patient profile");
   }
   if (!Array.isArray(records) || !records.every(isJsonObject)) {
-    throw new Error('Invalid cached records');
+    throw new Error("Invalid cached records");
   }
   if (!Array.isArray(consents) || !consents.every(isJsonObject)) {
-    throw new Error('Invalid cached consents');
+    throw new Error("Invalid cached consents");
   }
   if (!Array.isArray(notifications) || !notifications.every(isJsonObject)) {
-    throw new Error('Invalid cached notifications');
+    throw new Error("Invalid cached notifications");
   }
   return {
     patient: {
@@ -240,8 +258,13 @@ function parseMobileDashboard(value: JsonValue): MobileDashboard {
       district: patient.district,
     },
     records: records.map((record) => {
-      if (!isString(record.id) || !isString(record.title) || !isString(record.summary) || !isString(record.fhirPreview)) {
-        throw new Error('Invalid cached record');
+      if (
+        !isString(record.id) ||
+        !isString(record.title) ||
+        !isString(record.summary) ||
+        !isString(record.fhirPreview)
+      ) {
+        throw new Error("Invalid cached record");
       }
       return {
         id: record.id,
@@ -251,8 +274,13 @@ function parseMobileDashboard(value: JsonValue): MobileDashboard {
       };
     }),
     consents: consents.map((consent) => {
-      if (!isString(consent.id) || !isString(consent.grantee) || !isString(consent.purpose) || !isBoolean(consent.active)) {
-        throw new Error('Invalid cached consent');
+      if (
+        !isString(consent.id) ||
+        !isString(consent.grantee) ||
+        !isString(consent.purpose) ||
+        !isBoolean(consent.active)
+      ) {
+        throw new Error("Invalid cached consent");
       }
       return {
         id: consent.id,
@@ -262,8 +290,12 @@ function parseMobileDashboard(value: JsonValue): MobileDashboard {
       };
     }),
     notifications: notifications.map((notification) => {
-      if (!isString(notification.id) || !isString(notification.title) || !isString(notification.detail)) {
-        throw new Error('Invalid cached notification');
+      if (
+        !isString(notification.id) ||
+        !isString(notification.title) ||
+        !isString(notification.detail)
+      ) {
+        throw new Error("Invalid cached notification");
       }
       return {
         id: notification.id,
@@ -275,21 +307,21 @@ function parseMobileDashboard(value: JsonValue): MobileDashboard {
 }
 
 function removeRestrictedFields(value: JsonValue): JsonValue {
-  if (value === null || typeof value !== 'object') {
+  if (value === null || typeof value !== "object") {
     return value;
   }
-  
+
   if (Array.isArray(value)) {
     return value.map(removeRestrictedFields);
   }
-  
+
   const result: { [key: string]: JsonValue } = {};
   for (const [key, childValue] of Object.entries(value)) {
     if (!RESTRICTED_FIELDS.has(key)) {
       result[key] = removeRestrictedFields(childValue);
     }
   }
-  
+
   return result;
 }
 

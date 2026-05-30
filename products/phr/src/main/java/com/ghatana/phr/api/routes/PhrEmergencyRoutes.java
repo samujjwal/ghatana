@@ -86,25 +86,25 @@ public final class PhrEmergencyRoutes {
                 } catch (IllegalArgumentException ex) {
                     return PhrRouteSupport.errorResponse(400, "INVALID_EMERGENCY_ACCESS", ex.getMessage());
                 }
-                
+
                 // Policy gate: validate justification is provided and non-empty
                 if (event.justification() == null || event.justification().isBlank()) {
                     return PhrRouteSupport.errorResponse(400, "INVALID_JUSTIFICATION",
                         "Emergency access requires a documented justification");
                 }
-                
+
                 // Policy gate: justification must be at least 20 characters to prevent trivial entries
                 if (event.justification().length() < 20) {
                     return PhrRouteSupport.errorResponse(400, "JUSTIFICATION_TOO_SHORT",
                         "Emergency access justification must be at least 20 characters");
                 }
-                
+
                 // Policy gate: validate at least one resource is being accessed
                 if (event.resourcesAccessed() == null || event.resourcesAccessed().isEmpty()) {
                     return PhrRouteSupport.errorResponse(400, "INVALID_RESOURCES",
                         "Emergency access must specify at least one resource being accessed");
                 }
-                
+
                 return policyEvaluator.canAccessEmergency(context, event.patientId(), event.justification())
                     .then(decision -> {
                         if (!decision.isAllowed()) {
@@ -116,7 +116,7 @@ public final class PhrEmergencyRoutes {
                                     return PhrRouteSupport.errorResponse(403, "PATIENT_SCOPE_DENIED",
                                         "Emergency access requires treatment relationship or same facility assignment");
                                 }
-                                
+
                                 // Policy gate: log emergency access attempt for audit trail
                                 // This is done before the actual access to ensure auditability
                                 return emergencyAccessLogService.logAccess(event)
@@ -239,14 +239,14 @@ public final class PhrEmergencyRoutes {
                 } catch (IllegalArgumentException ex) {
                     return PhrRouteSupport.errorResponse(400, "INVALID_EMERGENCY_REVIEW", ex.getMessage());
                 }
-                
+
                 // Policy gate: require notes for escalated reviews
-                if (payload.status() == EmergencyAccessLogService.ReviewStatus.ESCALATED 
+                if (payload.status() == EmergencyAccessLogService.ReviewStatus.ESCALATED
                     && (payload.notes() == null || payload.notes().isBlank())) {
                     return PhrRouteSupport.errorResponse(400, "REVIEW_NOTES_REQUIRED",
                         "Escalated emergency access reviews require documented notes");
                 }
-                
+
                 return emergencyAccessLogService.markReviewed(
                         request.getPathParameter("eventId"),
                         context.principalId(),
@@ -268,7 +268,7 @@ public final class PhrEmergencyRoutes {
      * Policy gate: Check if accessor has patient scope for emergency access.
      * Requires either treatment relationship or same facility assignment.
      * Uses policy evaluator for PHI access decision (POL-001).
-     * 
+     *
      * @param context the request context
      * @param patientId the target patient ID
      * @return Promise containing true if accessor has patient scope

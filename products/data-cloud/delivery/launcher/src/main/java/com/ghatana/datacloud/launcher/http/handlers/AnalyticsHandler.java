@@ -6,6 +6,8 @@ import com.ghatana.datacloud.analytics.report.ReportResult;
 import com.ghatana.datacloud.analytics.report.ReportService;
 import com.ghatana.datacloud.launcher.http.plugins.ReportExecutionCapability;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpMetrics;
+import com.ghatana.platform.observability.idempotency.IdempotencyHelper;
+import com.ghatana.platform.observability.idempotency.IdempotencyStore;
 import io.activej.http.*;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -47,6 +49,7 @@ public class AnalyticsHandler {
     private DataCloudHttpMetrics httpMetrics = DataCloudHttpMetrics.noop();
     // DC-P1-001: cancellation is unavailable; capability registry advertises analytics.cancellation.configured=false
     private boolean cancellationSupported = false;
+    private IdempotencyStore idempotencyStore;
 
     public AnalyticsHandler(AnalyticsQueryEngine analyticsEngine, HttpHandlerSupport http) {
         this.analyticsEngine = analyticsEngine;
@@ -80,6 +83,17 @@ public class AnalyticsHandler {
         return this;
     }
 
+    /**
+     * Wires an {@link IdempotencyStore} for idempotent analytics operations.
+     *
+     * @param idempotencyStore the idempotency store; may be {@code null}
+     * @return this handler for fluent chaining
+     */
+    public AnalyticsHandler withIdempotencyStore(IdempotencyStore idempotencyStore) {
+        this.idempotencyStore = idempotencyStore;
+        return this;
+    }
+
     // ==================== Analytics Endpoints (DC-9) ====================
 
     @SuppressWarnings("unchecked")
@@ -100,46 +114,53 @@ public class AnalyticsHandler {
         }
         String traceId = http.resolveCorrelationId(request);
         long start = System.currentTimeMillis();
-        
-        return request.loadBody()
-            .then(
-                buf -> {
-                    String body;
-                    Map<String, Object> payload;
-                    String queryText;
-                    int rowLimit;
-                    Map<String, Object> paramsWithLimit;
-                    try {
-                        body = buf.getString(StandardCharsets.UTF_8);
-                        payload = http.objectMapper().readValue(body, Map.class);
-                        queryText = (String) payload.get("query");
-                        if (queryText == null || queryText.isBlank()) {
-                            return Promise.of(http.errorResponse(400, "Missing required field: 'query'"));
-                        }
-                        rowLimit = DEFAULT_ROW_LIMIT;
-                        if (payload.containsKey("limit")) {
+
+        // Check idempotency before processing
+        return checkIdempotency(tenantId, "query", request)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
+                }
+
+                return request.loadBody()
+                    .then(
+                        buf -> {
+                            String body;
+                            Map<String, Object> payload;
+                            String queryText;
+                            int rowLimit;
+                            Map<String, Object> paramsWithLimit;
                             try {
-                                int requestedLimit = ((Number) payload.get("limit")).intValue();
-                                rowLimit = Math.min(Math.max(requestedLimit, 1), MAX_ROW_LIMIT);
+                                body = buf.getString(StandardCharsets.UTF_8);
+                                payload = http.objectMapper().readValue(body, Map.class);
+                                queryText = (String) payload.get("query");
+                                if (queryText == null || queryText.isBlank()) {
+                                    return Promise.of(http.errorResponse(400, "Missing required field: 'query'"));
+                                }
+                                rowLimit = DEFAULT_ROW_LIMIT;
+                                if (payload.containsKey("limit")) {
+                                    try {
+                                        int requestedLimit = ((Number) payload.get("limit")).intValue();
+                                        rowLimit = Math.min(Math.max(requestedLimit, 1), MAX_ROW_LIMIT);
+                                    } catch (Exception e) {
+                                        log.warn("[DC-P1-005] Invalid limit parameter type in analytics submit: {}", e.getMessage());
+                                        return Promise.of(http.errorResponse(400, "Invalid 'limit' field: must be a positive integer between 1 and " + MAX_ROW_LIMIT));
+                                    }
+                                }
+                                Map<String, Object> params = payload.containsKey("parameters")
+                                    ? (Map<String, Object>) payload.get("parameters")
+                                    : Map.of();
+                                paramsWithLimit = new LinkedHashMap<>(params);
+                                paramsWithLimit.put("_rowLimit", rowLimit);
                             } catch (Exception e) {
-                                log.warn("[DC-P1-005] Invalid limit parameter type in analytics submit: {}", e.getMessage());
-                                return Promise.of(http.errorResponse(400, "Invalid 'limit' field: must be a positive integer between 1 and " + MAX_ROW_LIMIT));
+                                log.error("[DC-9] analytics query request parse error traceId={}: {}", traceId, e.getMessage(), e);
+                                return Promise.of(http.errorResponse(400, "Invalid request body"));
                             }
-                        }
-                        Map<String, Object> params = payload.containsKey("parameters")
-                            ? (Map<String, Object>) payload.get("parameters")
-                            : Map.of();
-                        paramsWithLimit = new LinkedHashMap<>(params);
-                        paramsWithLimit.put("_rowLimit", rowLimit);
-                    } catch (Exception e) {
-                        log.error("[DC-9] analytics query request parse error traceId={}: {}", traceId, e.getMessage(), e);
-                        return Promise.of(http.errorResponse(400, "Invalid request body"));
-                    }
-                    final int finalRowLimit = rowLimit;
-                    return analyticsEngine.submitQuery(tenantId, queryText, paramsWithLimit)
-                        .map(result -> {
-                            List<Map<String, Object>> allRows = result.getRows();
-                            // DC-P1-005: Defensive cap — engine may return more rows than requested.
+                            final int finalRowLimit = rowLimit;
+                            return analyticsEngine.submitQuery(tenantId, queryText, paramsWithLimit)
+                                .map(result -> {
+                                    List<Map<String, Object>> allRows = result.getRows();
+                                    // DC-P1-005: Defensive cap — engine may return more rows than requested.
                             // Apply subList so the response cannot exceed MAX_ROW_LIMIT regardless
                             // of what the engine returned.
                             int cappedCount = Math.min(allRows.size(), finalRowLimit);
@@ -166,6 +187,10 @@ public class AnalyticsHandler {
                             HttpResponse response = http.jsonResponse(responseBody);
                             httpMetrics.recordRequest(HANDLER_NAME, "handleAnalyticsQuery", tenantId, response.getCode());
                             httpMetrics.recordLatency(HANDLER_NAME, "handleAnalyticsQuery", System.currentTimeMillis() - start);
+
+                            // Store idempotency response
+                            storeIdempotency(tenantId, "query", request, response);
+
                             return response;
                         })
                         .then(
@@ -297,26 +322,34 @@ public class AnalyticsHandler {
         }
         String traceId = http.resolveCorrelationId(request);
         long start = System.currentTimeMillis();
-        return request.loadBody()
-            .then(
-                buf -> {
-                    try {
-                        String bodyStr       = buf.getString(StandardCharsets.UTF_8);
-                        Map<String, Object> payload = http.objectMapper().readValue(bodyStr, Map.class);
-                        String queryText = (String) payload.get("query");
-                        if (queryText == null || queryText.isBlank()) {
-                            return Promise.of(http.errorResponse(400, "Missing required field: 'query'"));
-                        }
-                        String upperQuery = queryText.toUpperCase();
-                        if (!upperQuery.contains("GROUP BY") && !upperQuery.contains("COUNT(")
-                                && !upperQuery.contains("SUM(") && !upperQuery.contains("AVG(")) {
-                            return Promise.of(http.errorResponse(400,
-                                "Aggregate endpoint requires a query with GROUP BY, COUNT, SUM, or AVG"));
-                        }
-                        Map<String, Object> params = payload.containsKey("parameters")
-                            ? (Map<String, Object>) payload.get("parameters")
-                            : Map.of();
-                        return analyticsEngine.submitQuery(tenantId, queryText, params)
+
+        // Check idempotency before processing
+        return checkIdempotency(tenantId, "aggregate", request)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
+                }
+
+                return request.loadBody()
+                    .then(
+                        buf -> {
+                            try {
+                                String bodyStr       = buf.getString(StandardCharsets.UTF_8);
+                                Map<String, Object> payload = http.objectMapper().readValue(bodyStr, Map.class);
+                                String queryText = (String) payload.get("query");
+                                if (queryText == null || queryText.isBlank()) {
+                                    return Promise.of(http.errorResponse(400, "Missing required field: 'query'"));
+                                }
+                                String upperQuery = queryText.toUpperCase();
+                                if (!upperQuery.contains("GROUP BY") && !upperQuery.contains("COUNT(")
+                                        && !upperQuery.contains("SUM(") && !upperQuery.contains("AVG(")) {
+                                    return Promise.of(http.errorResponse(400,
+                                        "Aggregate endpoint requires a query with GROUP BY, COUNT, SUM, or AVG"));
+                                }
+                                Map<String, Object> params = payload.containsKey("parameters")
+                                    ? (Map<String, Object>) payload.get("parameters")
+                                    : Map.of();
+                                return analyticsEngine.submitQuery(tenantId, queryText, params)
                             .map(result -> {
                                 Map<String, Object> responseBody = new LinkedHashMap<>();
                                 responseBody.put("queryId",         result.getQueryId());
@@ -330,6 +363,10 @@ public class AnalyticsHandler {
                                 HttpResponse response = http.jsonResponse(responseBody);
                                 httpMetrics.recordRequest(HANDLER_NAME, "handleAnalyticsAggregate", tenantId, response.getCode());
                                 httpMetrics.recordLatency(HANDLER_NAME, "handleAnalyticsAggregate", System.currentTimeMillis() - start);
+
+                                // Store idempotency response
+                                storeIdempotency(tenantId, "aggregate", request, response);
+
                                 return response;
                             })
                             .then(
@@ -382,26 +419,39 @@ public class AnalyticsHandler {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
         String traceId = http.resolveCorrelationId(request);
-        return request.loadBody().then(buf -> {
-            try {
-                String body = buf.getString(StandardCharsets.UTF_8);
-                Map<String, Object> payload = http.objectMapper().readValue(body, Map.class);
-                String queryText = (String) payload.get("query");
-                if (queryText == null || queryText.isBlank()) {
-                    return Promise.of(http.errorResponse(400, "Missing required field: 'query'"));
+
+        // Check idempotency before processing
+        return checkIdempotency(tenantId, "explain", request)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
                 }
-                Map<String, Object> params = payload.containsKey("parameters")
-                        ? (Map<String, Object>) payload.get("parameters")
-                        : Map.of();
-                return analyticsEngine.explainQuery(tenantId, queryText, params)
-                        .map(plan -> {
+
+                return request.loadBody().then(buf -> {
+                    try {
+                        String body = buf.getString(StandardCharsets.UTF_8);
+                        Map<String, Object> payload = http.objectMapper().readValue(body, Map.class);
+                        String queryText = (String) payload.get("query");
+                        if (queryText == null || queryText.isBlank()) {
+                            return Promise.of(http.errorResponse(400, "Missing required field: 'query'"));
+                        }
+                        Map<String, Object> params = payload.containsKey("parameters")
+                                ? (Map<String, Object>) payload.get("parameters")
+                                : Map.of();
+                        return analyticsEngine.explainQuery(tenantId, queryText, params)
+                                .map(plan -> {
                             Map<String, Object> planFields =
                                     http.objectMapper().convertValue(plan, Map.class);
                             Map<String, Object> response = new LinkedHashMap<>(planFields);
                             response.put("explain", true);
                             response.put("timestamp", Instant.now().toString());
                             response.put("traceId", traceId);
-                            return http.jsonResponse(response);
+                            HttpResponse httpResponse = http.jsonResponse(response);
+
+                            // Store idempotency response
+                            storeIdempotency(tenantId, "explain", request, httpResponse);
+
+                            return httpResponse;
                         })
                         .then(Promise::of, e -> {
                             log.error("[DC-9] analytics explain failed traceId={} errorType={}: {}",
@@ -421,47 +471,60 @@ public class AnalyticsHandler {
             return Promise.of(http.errorResponse(503, "Report service not available in this deployment"));
         }
         String traceId = http.resolveCorrelationId(request);
-        return request.loadBody()
-            .then(buf -> {
-                try {
-                    String bodyStr = buf.getString(StandardCharsets.UTF_8);
-                    Map<String, Object> payload = http.objectMapper().readValue(bodyStr, Map.class);
-                    ReportDefinition definition;
-                    try {
-                        definition = ReportDefinition.fromMap(payload);
-                    } catch (IllegalArgumentException e) {
-                        log.warn("[DC-10] invalid report definition: {}", e.getMessage());
-                        return Promise.of(http.errorResponse(400, "Invalid report definition"));
-                    }
-                    HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
         if (!resolutionResult.isSuccess()) {
             return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
         String tenantId = resolutionResult.tenantId();
-                    if (tenantId == null) {
-                        return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
-                    }
-                    return reportExecutor().generate(tenantId, definition)
-                        .map(result -> {
-                            Map<String, Object> response = new LinkedHashMap<>();
-                            response.put("reportId",       result.getReportId());
-                            response.put("reportName",     result.getReportName());
-                            response.put("format",         result.getFormat().name());
-                            response.put("rowCount",       result.getRowCount());
-                            response.put("contentType",    result.getContentType());
-                            response.put("executionTimeMs", result.getExecutionTime().toMillis());
-                            response.put("generatedAt",    result.getGeneratedAt().toString());
-                            if (result.getFormattedBody() != null) {
-                                response.put("body", result.getFormattedBody());
-                            } else {
-                                response.put("rows", result.getRows());
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
+        // Check idempotency before processing
+        return checkIdempotency(tenantId, "create-report", request)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
+                }
+
+                return request.loadBody()
+                    .then(buf -> {
+                        try {
+                            String bodyStr = buf.getString(StandardCharsets.UTF_8);
+                            Map<String, Object> payload = http.objectMapper().readValue(bodyStr, Map.class);
+                            ReportDefinition definition;
+                            try {
+                                definition = ReportDefinition.fromMap(payload);
+                            } catch (IllegalArgumentException e) {
+                                log.warn("[DC-10] invalid report definition: {}", e.getMessage());
+                                return Promise.of(http.errorResponse(400, "Invalid report definition"));
                             }
-                            return http.jsonResponse(response);
-                        })
-                        .then(Promise::of, e -> {
-                            log.error("[DC-10] report generation failed name='{}' traceId={} errorType={}: {}",
-                                    definition.getName(), traceId, e.getClass().getSimpleName(), e.getMessage(), e);
-                            return Promise.of(http.errorResponse(500, "Report generation failed", traceId));
+                            return reportExecutor().generate(tenantId, definition)
+                                .map(result -> {
+                                    Map<String, Object> response = new LinkedHashMap<>();
+                                    response.put("reportId",       result.getReportId());
+                                    response.put("reportName",     result.getReportName());
+                                    response.put("format",         result.getFormat().name());
+                                    response.put("rowCount",       result.getRowCount());
+                                    response.put("contentType",    result.getContentType());
+                                    response.put("executionTimeMs", result.getExecutionTime().toMillis());
+                                    response.put("generatedAt",    result.getGeneratedAt().toString());
+                                    if (result.getFormattedBody() != null) {
+                                        response.put("body", result.getFormattedBody());
+                                    } else {
+                                        response.put("rows", result.getRows());
+                                    }
+                                    HttpResponse httpResponse = http.jsonResponse(response);
+
+                                    // Store idempotency response
+                                    storeIdempotency(tenantId, "create-report", request, httpResponse);
+
+                                    return httpResponse;
+                                })
+                                .then(Promise::of, e -> {
+                                    log.error("[DC-10] report generation failed name='{}' traceId={} errorType={}: {}",
+                                            definition.getName(), traceId, e.getClass().getSimpleName(), e.getMessage(), e);
+                                    return Promise.of(http.errorResponse(500, "Report generation failed", traceId));
                         });
                 } catch (Exception e) {
                     log.error("[DC-10] report request parse error traceId={}: {}", traceId, e.getMessage(), e);
@@ -553,22 +616,34 @@ public class AnalyticsHandler {
 
         log.info("[DC-9] cancel query requested queryId={} tenantId={} traceId={}", queryId, tenantId, traceId);
 
-        // DC-P1-001: Use the distributed query tracker to cancel the query
-        return analyticsEngine.cancelQuery(queryId, tenantId)
-            .then(result -> {
-                if (result.success()) {
-                    log.info("[DC-9] cancel query succeeded queryId={} tenantId={} traceId={}", queryId, tenantId, traceId);
-                    Map<String, Object> response = new java.util.HashMap<>();
-                    response.put("queryId", queryId);
-                    response.put("status", "CANCELLED");
-                    response.put("message", result.message());
-                    response.put("cancelledAt", result.cancelledAt().toString());
-                    response.put("traceId", traceId);
-                    return Promise.of(http.jsonResponse(response));
-                } else {
-                    log.warn("[DC-9] cancel query failed queryId={} tenantId={} traceId={} reason={}",
-                        queryId, tenantId, traceId, result.message());
-                    if (result.message().contains("unauthorized")) {
+        // Check idempotency before processing
+        return checkIdempotency(tenantId, "cancel-query", request)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
+                }
+
+                // DC-P1-001: Use the distributed query tracker to cancel the query
+                return analyticsEngine.cancelQuery(queryId, tenantId)
+                    .then(result -> {
+                        if (result.success()) {
+                            log.info("[DC-9] cancel query succeeded queryId={} tenantId={} traceId={}", queryId, tenantId, traceId);
+                            Map<String, Object> response = new java.util.HashMap<>();
+                            response.put("queryId", queryId);
+                            response.put("status", "CANCELLED");
+                            response.put("message", result.message());
+                            response.put("cancelledAt", result.cancelledAt().toString());
+                            response.put("traceId", traceId);
+                            HttpResponse httpResponse = http.jsonResponse(response);
+
+                            // Store idempotency response
+                            storeIdempotency(tenantId, "cancel-query", request, httpResponse);
+
+                            return Promise.of(httpResponse);
+                        } else {
+                            log.warn("[DC-9] cancel query failed queryId={} tenantId={} traceId={} reason={}",
+                                queryId, tenantId, traceId, result.message());
+                            if (result.message().contains("unauthorized")) {
                         return Promise.of(http.errorResponse(403, result.message()));
                     }
                     return Promise.of(http.errorResponse(404, result.message()));
@@ -601,6 +676,53 @@ public class AnalyticsHandler {
                 return reportService.getResult(reportId);
             }
         };
+    }
+
+    // Idempotency Helpers
+    private Promise<HttpResponse> checkIdempotency(String tenantId, String routeAction, HttpRequest request) {
+        if (idempotencyStore == null) {
+            return Promise.of(null);
+        }
+        String idempotencyKey = IdempotencyHelper.extractIdempotencyKey(request);
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return Promise.of(null);
+        }
+        String principalId = http.resolvePrincipalId(request);
+        String scope = "analytics:" + routeAction;
+
+        return IdempotencyHelper.checkConflict(idempotencyStore, tenantId, scope, idempotencyKey, principalId,
+            IdempotencyHelper.computePayloadHash(request))
+            .then(conflict -> {
+                if (conflict) {
+                    log.warn("[analytics] Idempotency conflict for tenant={}, scope={}, key={}", tenantId, scope, idempotencyKey);
+                    return Promise.of(http.errorResponse(409,
+                        "Idempotency key conflict: same key used with different payload"));
+                }
+                return IdempotencyHelper.checkIdempotency(idempotencyStore, tenantId, scope, idempotencyKey, principalId)
+                    .then(cached -> {
+                        if (cached.isPresent()) {
+                            log.info("[analytics] Returning cached response for tenant={}, scope={}, key={}", tenantId, scope, idempotencyKey);
+                            return Promise.of(IdempotencyHelper.addIdempotencyHeaders((HttpResponse) cached.get(), "replay"));
+                        }
+                        return Promise.of(null);
+                    });
+            });
+    }
+
+    private Promise<Void> storeIdempotency(String tenantId, String routeAction,
+                                           HttpRequest request, HttpResponse response) {
+        if (idempotencyStore == null) {
+            return Promise.complete();
+        }
+        String idempotencyKey = IdempotencyHelper.extractIdempotencyKey(request);
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return Promise.complete();
+        }
+        String principalId = http.resolvePrincipalId(request);
+        String scope = "analytics:" + routeAction;
+        String payloadHash = IdempotencyHelper.computePayloadHash(request);
+
+        return IdempotencyHelper.storeResponse(idempotencyStore, tenantId, scope, idempotencyKey, principalId, payloadHash, response);
     }
 
 }

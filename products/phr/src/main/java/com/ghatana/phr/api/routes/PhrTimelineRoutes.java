@@ -147,7 +147,7 @@ public final class PhrTimelineRoutes {
                         "details", entry.details()
                     ))
                     .toList();
-                
+
                 Map<String, Object> response = new java.util.LinkedHashMap<>();
                 response.put("patientId", patientId);
                 response.put("category", category);

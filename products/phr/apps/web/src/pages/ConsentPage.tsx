@@ -263,12 +263,12 @@ export function ConsentPage(): React.ReactElement {
                     dispatch({ type: 'set_boolean_field', field: 'allDocuments', value: e.target.checked })
                   }
                 />
-                <span>Grant access to all documents</span>
+                <span>{t('consents.grant.allDocuments')}</span>
               </label>
               {!state.form.allDocuments && (
                 <Input
-                  aria-label="Specific document IDs (comma-separated)"
-                  placeholder="Document IDs (comma-separated)"
+                  aria-label={t('consents.grant.specificDocumentIds')}
+                  placeholder={t('consents.grant.specificDocumentIds.placeholder')}
                   value={state.form.specificDocumentIds}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     dispatch({ type: 'set_field', field: 'specificDocumentIds', value: e.target.value })
@@ -276,8 +276,8 @@ export function ConsentPage(): React.ReactElement {
                 />
               )}
               <Input
-                aria-label="Allowed actions (comma-separated, e.g., read, download)"
-                placeholder="Actions (e.g., read, download)"
+                aria-label={t('consents.grant.actions')}
+                placeholder={t('consents.grant.actions.placeholder')}
                 value={state.form.actions}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   dispatch({ type: 'set_field', field: 'actions', value: e.target.value })

@@ -87,4 +87,28 @@ class AepBoundaryTest {
                     .because("AEP engine must not depend on the HTTP server or launcher. " 
                             + "Transport (HTTP, SSE) is wired by AepLauncher; engine logic must stay transport-agnostic. " 
                             + "See products/data-cloud/docs/aep/docs/TOPOLOGY.md §API-Routing-Rules.");
+
+    /**
+     * AEP engine must not depend on durable registry implementation.
+     *
+     * <p>The engine should only depend on the registry interface/SPI, not the concrete
+     * implementation. This ensures the engine remains decoupled from persistence details
+     * and can work with different repository implementations (in-memory, PostgreSQL, etc.).
+     *
+     * <p>See: {@code platform/comp-decomp-todo.md §Group 1 boundary note}
+     */
+    @ArchTest
+    static final ArchRule engine_must_not_depend_on_durable_registry_implementation =
+            noClasses() 
+                    .that().resideInAPackage("com.ghatana.aep.engine..")
+                    .should().dependOnClassesThat().resideInAnyPackage(
+                            "com.ghatana.aep.pattern.lifecycle..",
+                            "com.ghatana.datacloud.persistence..",
+                            "com.ghatana.datacloud.agent.."
+                    )
+                    .allowEmptyShould(true) 
+                    .because("AEP engine must not depend on durable registry implementation. " 
+                            + "The engine should only depend on registry interfaces/SPI, not concrete persistence. " 
+                            + "Test-only dependency on agent-registry is acceptable for integration types. " 
+                            + "See platform/comp-decomp-todo.md §Group 1 boundary note.");
 }

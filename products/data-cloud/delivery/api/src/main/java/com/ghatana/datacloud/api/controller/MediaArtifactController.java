@@ -1,6 +1,7 @@
 package com.ghatana.datacloud.api.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.datacloud.memory.media.MediaArtifactEventEmitter;
 import com.ghatana.datacloud.memory.media.MediaArtifactRecord;
 import com.ghatana.datacloud.memory.media.MediaArtifactRepository;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
@@ -23,6 +24,9 @@ import java.util.Objects;
 /**
  * REST controller for Data Cloud media artifact metadata.
  *
+ * <p>Emits events for all mutating operations to enable cross-plane integration
+ * with Data Cloud Operations and agent catalog tool registration.
+ *
  * @doc.type class
  * @doc.purpose Tenant-scoped API for media artifact registration and retrieval
  * @doc.layer product
@@ -34,13 +38,27 @@ public final class MediaArtifactController {
 
     private static final HttpHeader HEADER_TENANT_ID = HttpHeaders.of("X-Tenant-ID");
     private static final String COLLECTION_PATH = "/api/v1/media/artifacts";
+    private static final String TRANSCRIPTION_PATH = "/api/v1/media/artifacts/%s/transcribe";
+    private static final String VISION_PATH = "/api/v1/media/artifacts/%s/analyze";
 
     private final MediaArtifactRepository repository;
     private final ObjectMapper objectMapper;
+    private final MediaArtifactEventEmitter eventEmitter;
 
     public MediaArtifactController(MediaArtifactRepository repository, ObjectMapper objectMapper) {
+        this(repository, objectMapper, null);
+    }
+
+    public MediaArtifactController(MediaArtifactRepository repository, ObjectMapper objectMapper, MediaArtifactEventEmitter eventEmitter) {
         this.repository = Objects.requireNonNull(repository, "repository cannot be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper cannot be null");
+        this.eventEmitter = eventEmitter;
+        
+        if (eventEmitter != null) {
+            log.info("[media-artifact] Controller initialized with event emitter");
+        } else {
+            log.warn("[media-artifact] Controller initialized without event emitter - events will not be emitted");
+        }
     }
 
     public Promise<HttpResponse> handle(HttpRequest request) {
@@ -72,6 +90,12 @@ public final class MediaArtifactController {
             }
             if (method == HttpMethod.DELETE) {
                 return deleteArtifact(artifactId, tenantId);
+            }
+            if (method == HttpMethod.POST && path.endsWith("/transcribe")) {
+                return triggerTranscription(artifactId, tenantId, request);
+            }
+            if (method == HttpMethod.POST && path.endsWith("/analyze")) {
+                return triggerVisionAnalysis(artifactId, tenantId, request);
             }
         }
 
@@ -133,7 +157,13 @@ public final class MediaArtifactController {
                     Map.copyOf(metadata));
 
                 return repository.save(record)
-                    .map(saved -> ResponseBuilder.created().json(toResponse(saved)).build());
+                    .then(saved -> {
+                        if (eventEmitter != null) {
+                            return eventEmitter.emitCreated(saved)
+                                .map(offset -> ResponseBuilder.created().json(toResponse(saved)).build());
+                        }
+                        return Promise.of(ResponseBuilder.created().json(toResponse(saved)).build());
+                    });
             } catch (Exception e) {
                 log.warn("Invalid create media artifact request", e);
                 return Promise.of(ResponseBuilder.badRequest()
@@ -176,10 +206,152 @@ public final class MediaArtifactController {
     }
 
     private Promise<HttpResponse> deleteArtifact(String artifactId, String tenantId) {
-        return repository.delete(artifactId, tenantId)
-            .map(deleted -> deleted
-                ? ResponseBuilder.noContent().build()
-                : ResponseBuilder.notFound().json(Map.of("error", "Media artifact not found")).build());
+        return repository.findById(artifactId, tenantId)
+            .then(optional -> {
+                if (optional.isEmpty()) {
+                    return Promise.of(ResponseBuilder.notFound()
+                        .json(Map.of("error", "Media artifact not found"))
+                        .build());
+                }
+                
+                MediaArtifactRecord record = optional.get();
+                return repository.delete(artifactId, tenantId)
+                    .then(deleted -> {
+                        if (deleted && eventEmitter != null) {
+                            return eventEmitter.emitDeleted(artifactId, tenantId, record.agentId())
+                                .map(offset -> ResponseBuilder.noContent().build());
+                        }
+                        return Promise.of(deleted
+                            ? ResponseBuilder.noContent().build()
+                            : ResponseBuilder.notFound().json(Map.of("error", "Media artifact not found")).build());
+                    });
+            });
+    }
+
+    private Promise<HttpResponse> triggerTranscription(String artifactId, String tenantId, HttpRequest request) {
+        return repository.findById(artifactId, tenantId)
+            .then(optional -> {
+                if (optional.isEmpty()) {
+                    return Promise.of(ResponseBuilder.notFound()
+                        .json(Map.of("error", "Media artifact not found"))
+                        .build());
+                }
+                
+                MediaArtifactRecord record = optional.get();
+                if (!record.mediaType().startsWith("audio/")) {
+                    return Promise.of(ResponseBuilder.badRequest()
+                        .json(Map.of("error", "Transcription is only supported for audio artifacts"))
+                        .build());
+                }
+
+                return request.loadBody().then(body -> {
+                    try {
+                        String languageCode = "en-US";
+                        if (body != null && body.asArray().length > 0) {
+                            Map<String, String> payload = objectMapper.readValue(
+                                body.asArray(),
+                                objectMapper.getTypeFactory().constructMapType(Map.class, String.class, String.class));
+                            if (payload.containsKey("languageCode")) {
+                                languageCode = payload.get("languageCode");
+                            }
+                        }
+
+                        String jobId = "transcription-" + artifactId + "-" + System.currentTimeMillis();
+                        String requestedLanguageCode = languageCode;
+                        
+                        if (eventEmitter != null) {
+                            return eventEmitter.emitTranscriptionRequested(artifactId, tenantId, record.agentId(), requestedLanguageCode)
+                                .map(offset -> ResponseBuilder.accepted()
+                                    .json(Map.of(
+                                        "jobId", jobId,
+                                        "artifactId", artifactId,
+                                        "status", "pending",
+                                        "message", "Transcription job queued",
+                                        "languageCode", requestedLanguageCode
+                                    ))
+                                    .build());
+                        }
+                        
+                        return Promise.of(ResponseBuilder.accepted()
+                            .json(Map.of(
+                                "jobId", jobId,
+                                "artifactId", artifactId,
+                                "status", "pending",
+                                "message", "Transcription job queued",
+                                "languageCode", requestedLanguageCode
+                            ))
+                            .build());
+                    } catch (Exception e) {
+                        log.warn("Invalid transcription request", e);
+                        return Promise.of(ResponseBuilder.badRequest()
+                            .json(Map.of("error", "Invalid request payload"))
+                            .build());
+                    }
+                });
+            });
+    }
+
+    private Promise<HttpResponse> triggerVisionAnalysis(String artifactId, String tenantId, HttpRequest request) {
+        return repository.findById(artifactId, tenantId)
+            .then(optional -> {
+                if (optional.isEmpty()) {
+                    return Promise.of(ResponseBuilder.notFound()
+                        .json(Map.of("error", "Media artifact not found"))
+                        .build());
+                }
+                
+                MediaArtifactRecord record = optional.get();
+                if (!record.mediaType().startsWith("image/") && !record.mediaType().startsWith("video/")) {
+                    return Promise.of(ResponseBuilder.badRequest()
+                        .json(Map.of("error", "Vision analysis is only supported for image or video artifacts"))
+                        .build());
+                }
+
+                return request.loadBody().then(body -> {
+                    try {
+                        String analysisType = "OBJECT_DETECTION";
+                        if (body != null && body.asArray().length > 0) {
+                            Map<String, String> payload = objectMapper.readValue(
+                                body.asArray(),
+                                objectMapper.getTypeFactory().constructMapType(Map.class, String.class, String.class));
+                            if (payload.containsKey("analysisType")) {
+                                analysisType = payload.get("analysisType");
+                            }
+                        }
+
+                        String jobId = "vision-" + artifactId + "-" + System.currentTimeMillis();
+                        String requestedAnalysisType = analysisType;
+                        
+                        if (eventEmitter != null) {
+                            return eventEmitter.emitProcessingRequested(artifactId, tenantId, record.agentId(), "vision-analysis", requestedAnalysisType)
+                                .map(offset -> ResponseBuilder.accepted()
+                                    .json(Map.of(
+                                        "jobId", jobId,
+                                        "artifactId", artifactId,
+                                        "status", "pending",
+                                        "message", "Vision analysis job queued",
+                                        "analysisType", requestedAnalysisType
+                                    ))
+                                    .build());
+                        }
+                        
+                        return Promise.of(ResponseBuilder.accepted()
+                            .json(Map.of(
+                                "jobId", jobId,
+                                "artifactId", artifactId,
+                                "status", "pending",
+                                "message", "Vision analysis job queued",
+                                "analysisType", requestedAnalysisType
+                            ))
+                            .build());
+                    } catch (Exception e) {
+                        log.warn("Invalid vision analysis request", e);
+                        return Promise.of(ResponseBuilder.badRequest()
+                            .json(Map.of("error", "Invalid request payload"))
+                            .build());
+                    }
+                });
+            });
     }
 
     private int parseLimit(String limitValue) {

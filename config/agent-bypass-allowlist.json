@@ -12,6 +12,22 @@
         "reviewDate": "2026-08-26"
       }
     ],
+    "internalMLServices": [
+      {
+        "path": "products/data-cloud/planes/action/analytics/src/main/java/com/ghatana/validation/ai/MLOperatorGenerator.java",
+        "justification": "Internal ML service for pattern generation from event data - not an agent invocation, uses LLMGateway for structured pattern detection",
+        "owner": "analytics-team",
+        "approvedDate": "2026-05-26",
+        "reviewDate": "2026-08-26"
+      },
+      {
+        "path": "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/learning/consolidation/DefaultLLMFactExtractor.java",
+        "justification": "Internal learning service for fact extraction from episodes - not an agent invocation, uses LLMGateway for semantic fact extraction",
+        "owner": "agent-learning-team",
+        "approvedDate": "2026-05-26",
+        "reviewDate": "2026-08-26"
+      }
+    ],
     "testFiles": [
       {
         "pattern": "**/test/**/*.java",
@@ -31,7 +47,7 @@
     "legacyExceptions": []
   },
   "governance": {
-    "maxExceptionCount": 1,
+    "maxExceptionCount": 3,
     "requireJustification": true,
     "requireOwner": true,
     "requireReviewDate": true,

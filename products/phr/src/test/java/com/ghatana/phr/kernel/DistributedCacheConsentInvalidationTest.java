@@ -1,7 +1,6 @@
 package com.ghatana.phr.kernel;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.platform.cache.DistributedCachePort;
 import com.ghatana.platform.cache.RedisDistributedCacheAdapter;
 import io.activej.eventloop.Eventloop;
@@ -199,7 +198,7 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
     void testConsentCacheStorage() throws Exception {
         String patientId = "patient-123";
         String recipientId = "recipient-456";
-        
+
         String entry = "granted";
 
         Promise<Void> storePromise = cache.put(patientId + ":" + recipientId, entry);

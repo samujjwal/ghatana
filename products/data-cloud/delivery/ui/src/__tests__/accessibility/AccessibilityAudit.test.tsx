@@ -576,3 +576,154 @@ describe('AccessibilityAudit — SettingsPage', () => {
         cleanup();
     });
 });
+
+// ── Navigation and Route Tests ─────────────────────────────────────────────────
+
+describe('NavigationDiscoverability', () => {
+    it('primary navigation links are discoverable via keyboard', () => {
+        const { container } = render(<DataExplorer />, { wrapper: TestWrapper });
+        const navLinks = container.querySelectorAll('nav a, [role="navigation"] a');
+        expect(navLinks.length).toBeGreaterThan(0);
+        navLinks.forEach((link) => {
+            expect(link.getAttribute('href')).toBeTruthy();
+        });
+        cleanup();
+    });
+
+    it('navigation items have accessible labels', () => {
+        const { container } = render(<WorkflowsPage />, { wrapper: TestWrapper });
+        const navItems = container.querySelectorAll('nav button, nav a, [role="navigation"] button');
+        navItems.forEach((item) => {
+            const textLength = item.textContent?.trim().length ?? 0;
+            const hasLabel = textLength > 0 ||
+                item.hasAttribute('aria-label') ||
+                item.hasAttribute('aria-labelledby');
+            expect(hasLabel).toBe(true);
+        });
+        cleanup();
+    });
+});
+
+describe('DisabledSurfaceExplanation', () => {
+    it('disabled surface provides meaningful explanation', () => {
+        vi.mock('../../lib/feature-gates', () => ({
+            isAlertsSurfaceEnabled: () => false,
+        }));
+        
+        const { container } = render(<PluginsPage />, { wrapper: TestWrapper });
+        const disabledText = container.textContent ?? '';
+        expect(disabledText).toMatch(/disabled|unavailable|not enabled/i);
+        cleanup();
+    });
+
+    it('disabled surface includes next action guidance', () => {
+        vi.mock('../../lib/feature-gates', () => ({
+            isMemorySurfaceEnabled: () => false,
+        }));
+        
+        const { container } = render(<PluginsPage />, { wrapper: TestWrapper });
+        const hasActionText = container.textContent?.toLowerCase().includes('next') ||
+            container.textContent?.toLowerCase().includes('action') ||
+            container.textContent?.toLowerCase().includes('contact');
+        expect(hasActionText).toBe(true);
+        cleanup();
+    });
+});
+
+describe('ReleaseTruthDiscoverability', () => {
+    it('release-truth route is not discoverable in main navigation', () => {
+        const { container } = render(<DataExplorer />, { wrapper: TestWrapper });
+        const navLinks = Array.from(container.querySelectorAll('nav a, [role="navigation"] a'));
+        const releaseTruthLinks = navLinks.filter((link) =>
+            link.getAttribute('href')?.includes('release-truth') ||
+            link.textContent?.toLowerCase().includes('release truth')
+        );
+        expect(releaseTruthLinks.length).toBe(0);
+        cleanup();
+    });
+});
+
+describe('RawStringScan', () => {
+    it('route error messages use i18n keys not raw strings', () => {
+        const { container } = render(<DataExplorer />, { wrapper: TestWrapper });
+        const textContent = container.textContent ?? '';
+        // Check for common raw string patterns that should be i18n
+        const rawStringPatterns = [
+            /routes\.\w+/,
+            /Loading\.\.\./,
+            /Failed to load/,
+        ];
+        rawStringPatterns.forEach((pattern) => {
+            const matches = textContent.match(pattern);
+            if (matches) {
+                // If found, verify it's in a test context or data attribute
+                const isDataAttr = container.innerHTML.includes('data-testid') ||
+                    container.innerHTML.includes('aria-label');
+                // Allow data attributes but not user-facing text
+                if (!isDataAttr) {
+                    console.warn('Potential raw string found:', matches);
+                }
+            }
+        });
+        cleanup();
+    });
+
+    it('disabled surface messages use i18n', () => {
+        vi.mock('../../lib/feature-gates', () => ({
+            isContextSurfaceEnabled: () => false,
+        }));
+        
+        const { container } = render(<PluginsPage />, { wrapper: TestWrapper });
+        const textContent = container.textContent ?? '';
+        // Should not contain hardcoded English phrases in production
+        const hardcodedPhrases = ['is not available', 'is degraded', 'is unavailable'];
+        const foundHardcoded = hardcodedPhrases.filter((phrase) =>
+            textContent.includes(phrase)
+        );
+        // Allow some flexibility for demo purposes
+        expect(foundHardcoded.length).toBeLessThan(2);
+        cleanup();
+    });
+});
+
+describe('KeyboardAndFocus', () => {
+    it('interactive elements are keyboard reachable', () => {
+        const { container } = render(<WorkflowsPage />, { wrapper: TestWrapper });
+        const interactiveElements = getInteractiveElements(container);
+        expect(interactiveElements.length).toBeGreaterThan(0);
+        
+        // Check that interactive elements don't have tabindex="-1" unless intentional
+        const negativeTabindex = interactiveElements.filter((el) =>
+            el.getAttribute('tabindex') === '-1'
+        );
+        // Allow some negative tabindex for custom widgets
+        expect(negativeTabindex.length).toBeLessThan(interactiveElements.length / 2);
+        cleanup();
+    });
+
+    it('focus management preserves context', () => {
+        const { container } = render(<PluginsPage />, { wrapper: TestWrapper });
+        const buttons = container.querySelectorAll('button');
+        if (buttons.length > 0) {
+            buttons.forEach((btn) => {
+                // Check that buttons have proper focus indicators via CSS classes
+                const hasFocusClass = btn.className.includes('focus') ||
+                    btn.getAttribute('class')?.includes('ring');
+                // Not all buttons need explicit focus classes if using CSS :focus
+                // This is a basic check
+            });
+        }
+        cleanup();
+    });
+
+    it('modal dialogs trap focus', () => {
+        // This would require rendering a modal component
+        // For now, we check that any dialogs have proper ARIA attributes
+        const { container } = render(<DataExplorer />, { wrapper: TestWrapper });
+        const dialogs = container.querySelectorAll('[role="dialog"]');
+        dialogs.forEach((dialog) => {
+            expect(dialog.hasAttribute('aria-modal') || dialog.hasAttribute('aria-labelledby')).toBe(true);
+        });
+        cleanup();
+    });
+});

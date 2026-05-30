@@ -12,6 +12,7 @@ plugins {
 
 dependencies {
     // Depends on core
+    implementation(project(":products:data-cloud:planes:shared-spi"))
     implementation(project(":products:data-cloud:planes:action:engine"))
     implementation(project(":products:data-cloud:planes:action:analytics"))  // Pattern compiler and API
     implementation(project(":platform:java:core"))

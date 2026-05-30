@@ -1,5 +1,7 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
+import com.ghatana.datacloud.api.idempotency.IdempotencyService;
+import com.ghatana.datacloud.api.idempotency.InMemoryIdempotencyService;
 import com.ghatana.platform.http.security.filter.TenantExtractor;
 import io.activej.http.*;
 import io.activej.promise.Promise;
@@ -10,12 +12,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 /**
  * HTTP middleware filters for Data-Cloud: CORS, rate-limiting, content-type
- * enforcement, and payload-size limiting.
+ * enforcement, payload-size limiting, and idempotency.
  *
  * <p>Extracted from {@code DataCloudHttpServer} to reduce its surface and
  * allow independent testing of each filter.
@@ -29,6 +32,7 @@ public final class DataCloudMiddleware {
 
     private static final Logger log = LoggerFactory.getLogger(DataCloudMiddleware.class);
     private static final String JSON_CONTENT_TYPE = "application/json";
+    private static final String IDEMPOTENCY_KEY_HEADER = "X-Idempotency-Key";
     private static final Set<Pattern> BODYLESS_MUTATION_ROUTES = Set.of(
             Pattern.compile("^/api/v1/plugins/[^/]+/(enable|disable|upgrade)$"),
             Pattern.compile("^/api/v1/collections/[^/]+/migrate$"),
@@ -46,6 +50,7 @@ public final class DataCloudMiddleware {
     private final long maxBodyBytes;
     private final int rateLimitTenantRequests;
     private final long rateLimitTenantWindowMs;
+    private final IdempotencyService idempotencyService;
 
     private final Map<String, long[]> rateLimitState = new ConcurrentHashMap<>();
     private final Map<String, long[]> tenantRateLimitState = new ConcurrentHashMap<>();
@@ -73,6 +78,26 @@ public final class DataCloudMiddleware {
             long maxBodyBytes,
             int rateLimitTenantRequests,
             long rateLimitTenantWindowMs) {
+        this(corsAllowOrigin, corsAllowMethods, corsAllowHeaders, corsMaxAge,
+            rateLimitRequests, rateLimitWindowMs, rateLimitMaxEntries, maxBodyBytes,
+            rateLimitTenantRequests, rateLimitTenantWindowMs, new InMemoryIdempotencyService());
+    }
+
+    /**
+     * Constructor with idempotency service injection.
+     */
+    public DataCloudMiddleware(
+            String corsAllowOrigin,
+            String corsAllowMethods,
+            String corsAllowHeaders,
+            String corsMaxAge,
+            int rateLimitRequests,
+            long rateLimitWindowMs,
+            int rateLimitMaxEntries,
+            long maxBodyBytes,
+            int rateLimitTenantRequests,
+            long rateLimitTenantWindowMs,
+            IdempotencyService idempotencyService) {
         this.corsAllowOrigin = corsAllowOrigin;
         this.corsAllowMethods = corsAllowMethods;
         this.corsAllowHeaders = corsAllowHeaders;
@@ -83,14 +108,15 @@ public final class DataCloudMiddleware {
         this.maxBodyBytes = maxBodyBytes;
         this.rateLimitTenantRequests = rateLimitTenantRequests;
         this.rateLimitTenantWindowMs = rateLimitTenantWindowMs;
+        this.idempotencyService = idempotencyService;
     }
 
     /**
      * Applies the full middleware chain in the canonical order:
-     * CORS → Rate Limit → Payload Size → Content-Type.
+     * CORS → Rate Limit → Payload Size → Content-Type → Idempotency.
      */
     public AsyncServlet applyAll(AsyncServlet delegate) {
-        return corsFilter(rateLimitFilter(payloadSizeLimitFilter(contentTypeFilter(delegate))));
+        return corsFilter(rateLimitFilter(payloadSizeLimitFilter(contentTypeFilter(idempotencyFilter(delegate)))));
     }
 
     public AsyncServlet corsFilter(AsyncServlet delegate) {
@@ -296,5 +322,109 @@ public final class DataCloudMiddleware {
         return Optional.ofNullable(request.getRemoteAddress())
                 .map(Object::toString)
                 .orElse("unknown");
+    }
+
+    /**
+     * Idempotency filter - handles X-Idempotency-Key header for safe retry of mutating operations.
+     */
+    public AsyncServlet idempotencyFilter(AsyncServlet delegate) {
+        return request -> {
+            String idempotencyKey = request.getHeader(HttpHeaders.of(IDEMPOTENCY_KEY_HEADER));
+            
+            // Only process idempotency for mutation methods with a key
+            if (idempotencyKey == null || idempotencyKey.isBlank()) {
+                return delegate.serve(request);
+            }
+            
+            // Validate idempotency key format (UUID)
+            try {
+                UUID.fromString(idempotencyKey);
+            } catch (IllegalArgumentException e) {
+                return Promise.of(HttpResponse.ofCode(400)
+                    .withHeader(HttpHeaders.CONTENT_TYPE,
+                        HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                    .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),
+                        HttpHeaderValue.of(corsAllowOrigin))
+                    .withHeader(HttpHeaders.of("Access-Control-Allow-Credentials"),
+                        HttpHeaderValue.of("true"))
+                    .withBody("{\"error\":\"Invalid idempotency key format: must be UUID\"}"
+                        .getBytes(StandardCharsets.UTF_8))
+                    .build());
+            }
+            
+            HttpMethod method = request.getMethod();
+            String path = request.getPath();
+            
+            // Check if operation is idempotent
+            if (!idempotencyService.isIdempotentOperation(method.name(), path)) {
+                return Promise.of(HttpResponse.ofCode(409)
+                    .withHeader(HttpHeaders.CONTENT_TYPE,
+                        HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                    .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),
+                        HttpHeaderValue.of(corsAllowOrigin))
+                    .withHeader(HttpHeaders.of("Access-Control-Allow-Credentials"),
+                        HttpHeaderValue.of("true"))
+                    .withBody("{\"error\":\"Operation is not idempotent and cannot be retried with idempotency key\"}"
+                        .getBytes(StandardCharsets.UTF_8))
+                    .build());
+            }
+            
+            // Check if key has been used before
+            return idempotencyService.get(idempotencyKey)
+                .then(recordOpt -> {
+                    if (recordOpt.isPresent()) {
+                        // Replay detected - return cached response
+                        IdempotencyRecord record = recordOpt.get();
+                        log.info("[idempotency] Replay detected key={} method={} path={}", 
+                            idempotencyKey, method, path);
+                        
+                        return Promise.of(HttpResponse.ofCode(record.statusCode())
+                            .withHeader(HttpHeaders.CONTENT_TYPE,
+                                HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                            .withHeader(HttpHeaders.of(IDEMPOTENCY_KEY_HEADER), 
+                                HttpHeaderValue.of(idempotencyKey))
+                            .withHeader(HttpHeaders.of("X-Idempotency-Replayed"), 
+                                HttpHeaderValue.of("true"))
+                            .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),
+                                HttpHeaderValue.of(corsAllowOrigin))
+                            .withHeader(HttpHeaders.of("Access-Control-Allow-Credentials"),
+                                HttpHeaderValue.of("true"))
+                            .withBody(record.responseBody().getBytes(StandardCharsets.UTF_8))
+                            .build());
+                    }
+                    
+                    // First time with this key - execute request and store response
+                    return delegate.serve(request)
+                        .then(response -> {
+                            // Store the response for future replays
+                            String body = response.getBody() != null 
+                                ? response.getBody().asString(StandardCharsets.UTF_8) 
+                                : "";
+                            
+                            IdempotencyRecord record = new IdempotencyRecord(
+                                idempotencyKey,
+                                method.name(),
+                                path,
+                                InMemoryIdempotencyService.hashRequestBody(body),
+                                response.getCode(),
+                                body,
+                                System.currentTimeMillis()
+                            );
+                            
+                            idempotencyService.store(idempotencyKey, record)
+                                .whenResult(v -> log.debug("[idempotency] Stored response key={} method={} path={}", 
+                                    idempotencyKey, method, path))
+                                .whenException(e -> log.warn("[idempotency] Failed to store response key={}: {}", 
+                                    idempotencyKey, e.getMessage()));
+                            
+                            // Add idempotency headers to response
+                            return Promise.of(response
+                                .withHeader(HttpHeaders.of(IDEMPOTENCY_KEY_HEADER), 
+                                    HttpHeaderValue.of(idempotencyKey))
+                                .withHeader(HttpHeaders.of("X-Idempotency-Replayed"), 
+                                    HttpHeaderValue.of("false")));
+                        });
+                });
+        };
     }
 }

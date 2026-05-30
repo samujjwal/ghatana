@@ -28,10 +28,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.when;
 
 import java.util.List;
 
@@ -80,7 +78,7 @@ class PhrDashboardRoutesTest extends EventloopTestBase {
         userRepository.save(new PHRUser("patient-1", "Patient One", "patient@example.test"));
         userRepository.save(new PHRUser("dr-1", "Doctor One", "doctor@example.test"));
         userRepository.save(new PHRUser("admin-1", "Admin One", "admin@example.test"));
-        
+
         // Create extension instances with mocked services
         // Their default implementations return empty data, which is sufficient for testing
         MedicationServiceExtensions medicationExtensions = new MedicationServiceExtensions(medicationService);
@@ -88,7 +86,7 @@ class PhrDashboardRoutesTest extends EventloopTestBase {
         DocumentServiceExtensions documentExtensions = new DocumentServiceExtensions(documentService);
         ConsentManagementServiceExtensions consentExtensions = new ConsentManagementServiceExtensions(consentService);
         EmergencyAccessLogServiceExtensions emergencyExtensions = new EmergencyAccessLogServiceExtensions(emergencyAccessLogService);
-        
+
         // Mock service methods that extensions call
         // Create a mock appointment with necessary fields
         AppointmentService.Appointment mockAppointment = new AppointmentService.Appointment(
@@ -107,7 +105,7 @@ class PhrDashboardRoutesTest extends EventloopTestBase {
         );
         lenient().when(appointmentService.getNextAppointment(anyString())).thenReturn(Promise.of(mockAppointment));
         lenient().when(medicationService.getActivePrescriptions(anyString())).thenReturn(Promise.of(List.of()));
-        
+
         servlet = new PhrDashboardRoutes(
             eventloop(),
             userRepository,

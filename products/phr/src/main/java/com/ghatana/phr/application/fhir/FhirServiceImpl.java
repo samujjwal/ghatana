@@ -27,7 +27,7 @@ public class FhirServiceImpl implements FhirService {
     @Override
     public Promise<FhirResource> createResource(PatientOperationContext ctx, String resourceType, Map<String, Object> resource) {
         String resourceId = resourceType + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        
+
         FhirResource fhirResource = new FhirResource(
             resourceId,
             resourceType,
@@ -38,7 +38,7 @@ public class FhirServiceImpl implements FhirService {
         );
 
         resources.put(resourceId, fhirResource);
-        
+
         // Add to history
         FhirResourceVersion version = new FhirResourceVersion(
             "1",
@@ -47,7 +47,7 @@ public class FhirServiceImpl implements FhirService {
             ctx.userId()
         );
         resourceHistory.put(resourceId, List.of(version));
-        
+
         return Promise.of(fhirResource);
     }
 
@@ -64,7 +64,7 @@ public class FhirServiceImpl implements FhirService {
         }
 
         String newVersion = String.valueOf(Integer.parseInt(existing.version()) + 1);
-        
+
         FhirResource updated = new FhirResource(
             resourceId,
             resourceType,
@@ -75,7 +75,7 @@ public class FhirServiceImpl implements FhirService {
         );
 
         resources.put(resourceId, updated);
-        
+
         // Add to history
         FhirResourceVersion version = new FhirResourceVersion(
             newVersion,
@@ -83,11 +83,11 @@ public class FhirServiceImpl implements FhirService {
             resource,
             ctx.userId()
         );
-        
+
         List<FhirResourceVersion> history = new java.util.ArrayList<>(resourceHistory.getOrDefault(resourceId, List.of()));
         history.add(version);
         resourceHistory.put(resourceId, history);
-        
+
         return Promise.of(updated);
     }
 

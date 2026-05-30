@@ -3,6 +3,8 @@ package com.ghatana.datacloud.launcher.http.handlers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.ghatana.datacloud.client.autonomy.AutonomyController;
 import com.ghatana.datacloud.client.autonomy.AutonomyLevel;
+import com.ghatana.platform.observability.idempotency.IdempotencyHelper;
+import com.ghatana.platform.observability.idempotency.IdempotencyStore;
 import com.ghatana.platform.security.annotation.RequiresRole;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -51,6 +53,7 @@ public final class AutonomyHandler {
 
     private final AutonomyController autonomyController;
     private final HttpHandlerSupport http;
+    private IdempotencyStore idempotencyStore;
 
     /**
      * Global override level. When set, reflects the latest operator-forced level for
@@ -65,6 +68,17 @@ public final class AutonomyHandler {
     public AutonomyHandler(AutonomyController autonomyController, HttpHandlerSupport http) {
         this.autonomyController = autonomyController;
         this.http = http;
+    }
+
+    /**
+     * Wires an {@link IdempotencyStore} for idempotent autonomy operations.
+     *
+     * @param idempotencyStore the idempotency store; may be {@code null}
+     * @return this handler (fluent)
+     */
+    public AutonomyHandler withIdempotencyStore(IdempotencyStore idempotencyStore) {
+        this.idempotencyStore = idempotencyStore;
+        return this;
     }
 
     /**
@@ -347,47 +361,121 @@ public final class AutonomyHandler {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
 
-        return request.loadBody().then(buf -> {
-            try {
-                Map<String, Object> body = buf.getString(StandardCharsets.UTF_8).isBlank()
-                    ? Map.of()
-                    : http.objectMapper().readValue(buf.getString(StandardCharsets.UTF_8), Map.class);
-                String domain = String.valueOf(body.getOrDefault("domain", "default"));
-                Map<String, Object> feedbackSummary = (Map<String, Object>) body.getOrDefault("feedbackSummary", Map.of());
-                int accepted = Integer.parseInt(String.valueOf(feedbackSummary.getOrDefault("accepted", 0)));
-                int rejected = Integer.parseInt(String.valueOf(feedbackSummary.getOrDefault("rejected", 0)));
-                int total = accepted + rejected;
+        // Check idempotency before processing
+        return checkIdempotency(tenantId, "feedback-policy", request)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
+                }
 
-                double acceptanceRate = total > 0 ? (double) accepted / total : 0.0;
-                double newConfidenceThreshold = acceptanceRate > 0.9 ? 0.85
-                    : acceptanceRate > 0.7 ? 0.75
-                    : acceptanceRate > 0.5 ? 0.65
-                    : 0.55;
-                boolean newApprovalRequired = acceptanceRate < 0.7 || rejected > 10;
+                return request.loadBody().then(buf -> {
+                    try {
+                        Map<String, Object> body = buf.getString(StandardCharsets.UTF_8).isBlank()
+                            ? Map.of()
+                            : http.objectMapper().readValue(buf.getString(StandardCharsets.UTF_8), Map.class);
+                        String domain = String.valueOf(body.getOrDefault("domain", "default"));
+                        Map<String, Object> feedbackSummary = (Map<String, Object>) body.getOrDefault("feedbackSummary", Map.of());
+                        int accepted = Integer.parseInt(String.valueOf(feedbackSummary.getOrDefault("accepted", 0)));
+                        int rejected = Integer.parseInt(String.valueOf(feedbackSummary.getOrDefault("rejected", 0)));
+                        int total = accepted + rejected;
 
-                String newLevel = acceptanceRate > 0.95 ? "AUTONOMOUS"
-                    : acceptanceRate > 0.8 ? "NOTIFY"
-                    : acceptanceRate > 0.6 ? "CONFIRM"
-                    : "SUGGEST";
+                        double acceptanceRate = total > 0 ? (double) accepted / total : 0.0;
+                        double newConfidenceThreshold = acceptanceRate > 0.9 ? 0.85
+                            : acceptanceRate > 0.7 ? 0.75
+                            : acceptanceRate > 0.5 ? 0.65
+                            : 0.55;
+                        boolean newApprovalRequired = acceptanceRate < 0.7 || rejected > 10;
 
-                Map<String, Object> update = new java.util.LinkedHashMap<>();
-                update.put("domain", domain);
-                update.put("tenantId", tenantId);
-                update.put("acceptanceRate", Math.round(acceptanceRate * 100) / 100.0);
-                update.put("newConfidenceThreshold", newConfidenceThreshold);
-                update.put("newApprovalRequired", newApprovalRequired);
-                update.put("recommendedLevel", newLevel);
-                update.put("feedbackCount", total);
-                update.put("updatedAt", Instant.now().toString());
-                update.put("policyVersion", "v" + Instant.now().toEpochMilli());
+                        String newLevel = acceptanceRate > 0.95 ? "AUTONOMOUS"
+                            : acceptanceRate > 0.8 ? "NOTIFY"
+                            : acceptanceRate > 0.6 ? "CONFIRM"
+                            : "SUGGEST";
 
-                log.info("[P2.6] Autonomy policy updated for domain={} tenant={}: level={} threshold={} approval={}",
-                    domain, tenantId, newLevel, newConfidenceThreshold, newApprovalRequired);
+                        Map<String, Object> update = new java.util.LinkedHashMap<>();
+                        update.put("domain", domain);
+                        update.put("tenantId", tenantId);
+                        update.put("acceptanceRate", Math.round(acceptanceRate * 100) / 100.0);
+                        update.put("newConfidenceThreshold", newConfidenceThreshold);
+                        update.put("newApprovalRequired", newApprovalRequired);
+                        update.put("recommendedLevel", newLevel);
+                        update.put("feedbackCount", total);
+                        update.put("updatedAt", Instant.now().toString());
+                        update.put("policyVersion", "v" + Instant.now().toEpochMilli());
 
-                return Promise.of(http.jsonResponse(update));
-            } catch (JsonProcessingException | RuntimeException e) {
-                return Promise.of(http.errorResponse(400, "Invalid feedback policy payload: " + e.getMessage()));
-            }
-        });
+                        log.info("[P2.6] Autonomy policy updated for domain={} tenant={}: level={} threshold={} approval={}",
+                            domain, tenantId, newLevel, newConfidenceThreshold, newApprovalRequired);
+
+                        // Store idempotency response
+                        storeIdempotency(tenantId, "feedback-policy", request, update);
+
+                        return Promise.of(http.jsonResponse(update));
+                    } catch (JsonProcessingException | RuntimeException e) {
+                        return Promise.of(http.errorResponse(400, "Invalid feedback policy payload: " + e.getMessage()));
+                    }
+                });
+            });
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Idempotency Helpers
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    private Promise<HttpResponse> checkIdempotency(String tenantId, String routeAction, HttpRequest request) {
+        if (idempotencyStore == null) {
+            return Promise.of(null);
+        }
+
+        String idempotencyKey = IdempotencyHelper.extractIdempotencyKey(request);
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return Promise.of(null);
+        }
+
+        String principalId = http.resolvePrincipalId(request);
+        String scope = "autonomy:" + routeAction;
+
+        return IdempotencyHelper.checkConflict(idempotencyStore, tenantId, scope, idempotencyKey, principalId,
+            IdempotencyHelper.computePayloadHash(request))
+            .then(hasConflict -> {
+                if (hasConflict) {
+                    log.warn("[autonomy] Idempotency conflict for tenant={}, scope={}, key={}", tenantId, scope, idempotencyKey);
+                    return Promise.of(http.errorResponse(409,
+                        "Idempotency key conflict: same key used with different payload"));
+                }
+
+                return IdempotencyHelper.checkIdempotency(idempotencyStore, tenantId, scope, idempotencyKey, principalId)
+                    .then(cachedResponse -> {
+                        if (cachedResponse != null) {
+                            log.info("[autonomy] Returning cached response for tenant={}, scope={}, key={}", tenantId, scope, idempotencyKey);
+                            if (cachedResponse instanceof HttpResponse) {
+                                return Promise.of(IdempotencyHelper.addIdempotencyHeaders((HttpResponse) cachedResponse, "replay"));
+                            }
+                            if (cachedResponse instanceof Map) {
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> map = (Map<String, Object>) cachedResponse;
+                                return Promise.of(http.jsonResponse(map));
+                            }
+                            return Promise.of(http.jsonResponse(Map.of("data", cachedResponse)));
+                        }
+                        return Promise.of((HttpResponse) null);
+                    });
+            });
+    }
+
+    private Promise<Void> storeIdempotency(String tenantId, String routeAction,
+                                          HttpRequest request, Object response) {
+        if (idempotencyStore == null) {
+            return Promise.of(null);
+        }
+
+        String idempotencyKey = IdempotencyHelper.extractIdempotencyKey(request);
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return Promise.of(null);
+        }
+
+        String principalId = http.resolvePrincipalId(request);
+        String scope = "autonomy:" + routeAction;
+        String payloadHash = IdempotencyHelper.computePayloadHash(request);
+
+        return IdempotencyHelper.storeResponse(idempotencyStore, tenantId, scope, idempotencyKey, principalId, payloadHash, response);
     }
 }

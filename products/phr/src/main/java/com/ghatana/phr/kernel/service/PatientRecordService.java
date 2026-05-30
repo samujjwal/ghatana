@@ -267,11 +267,11 @@ public class PatientRecordService extends PhrServiceBase {
         public String getGender() { return gender; }
         public Address getAddress() { return address; }
         public Contact getContact() { return contact; }
-        
-        public String getFullName() { 
-            return (givenName != null ? givenName : "") + (familyName != null ? " " + familyName : ""); 
+
+        public String getFullName() {
+            return (givenName != null ? givenName : "") + (familyName != null ? " " + familyName : "");
         }
-        
+
         public String getAge() {
             if (dateOfBirth == null || dateOfBirth.isBlank()) {
                 return "unknown";
@@ -284,19 +284,19 @@ public class PatientRecordService extends PhrServiceBase {
                 return "unknown";
             }
         }
-        
+
         public String getDistrict() {
             return address != null ? address.getDistrict() : null;
         }
-        
+
         public String getMunicipality() {
             return address != null ? address.getCity() : null;
         }
-        
+
         public String getPhone() {
             return contact != null ? contact.getPhone() : null;
         }
-        
+
         public String getEmail() {
             return contact != null ? contact.getEmail() : null;
         }

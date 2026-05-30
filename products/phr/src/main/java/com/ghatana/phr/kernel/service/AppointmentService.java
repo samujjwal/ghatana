@@ -390,7 +390,7 @@ public class AppointmentService extends PhrServiceBase {
 
                 return updateAppointment(rescheduled)
                     .then($ -> scheduleReminders(rescheduled))
-                    .then($ -> audit("APPOINTMENT_RESCHEDULE", appointment.getPatientId(), 
+                    .then($ -> audit("APPOINTMENT_RESCHEDULE", appointment.getPatientId(),
                         "Rescheduled to " + newDateTime))
                     .map($ -> rescheduled);
             });

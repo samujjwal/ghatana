@@ -1,0 +1,80 @@
+id: transcription-agent
+namespace: aep.operators.media
+name: Audio Transcription Agent
+version: 1.0.0
+status: active
+owners:
+  - team: data-cloud
+    contact: data-cloud-team@ghatana.com
+summary: Transcribes audio content using speech-to-text models
+description: Transcribes audio content using speech-to-text models with multi-language support
+
+metadata:
+  level: 3
+  domain: media-processing
+  tags: [transcription, speech-to-text, audio, stt, whisper]
+
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: stateless
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: semi-autonomous
+
+reasoningProfile:
+  primaryReasoner: service-call
+  reasonerPortfolio:
+    - type: service-call
+      role: transcription
+      description: Transcribe audio using speech-to-text service
+
+aep:
+  operatorType: TRANSFORMATION
+  inputEventTypes: ["audio.uploaded"]
+  outputEventTypes: ["transcription.completed", "transcription.failed"]
+  backpressure:
+    bufferSize: 1000
+    overflowStrategy: DROP_OLDEST
+  reliability:
+    checkpointInterval: "60s"
+    maxRetries: 3
+
+capabilities:
+  - audio-transcription
+  - multi-language-stt
+  - timestamped-transcript
+
+tools:
+  - name: speechToText
+    type: PRODUCT_CAPABILITY
+    product: audio-video
+    capabilityId: av.speech-to-text
+    contractRef: capabilities/speech-to-text.yaml
+  - name: languageDetection
+    type: PRODUCT_CAPABILITY
+    product: audio-video
+    capabilityId: av.speech-to-text
+    contractRef: capabilities/speech-to-text.yaml
+
+interfaces:
+  inputs:
+    - name: audioFile
+      schema: audio.uploaded
+      required: true
+  outputs:
+    - name: transcript
+      schema: transcription.completed
+    - name: error
+      schema: transcription.failed
+
+memory:
+  type: NONE
+  scope: none
+  retention: none
+
+resources:
+  memory: "1GB"
+  cpu: "2"
+  timeout: "300s"

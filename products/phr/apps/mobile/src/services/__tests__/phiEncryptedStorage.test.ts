@@ -5,9 +5,9 @@
  * clearing behavior.
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SecureStore from 'expo-secure-store';
-import * as LocalAuthentication from 'expo-local-authentication';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
+import * as LocalAuthentication from "expo-local-authentication";
 import {
   phiSet,
   phiGet,
@@ -17,35 +17,35 @@ import {
   setPhiStorageAdapter,
   resetPhiStorageAdapter,
   type PhiStorageAdapter,
-} from '../phiEncryptedStorage';
+} from "../phiEncryptedStorage";
 
 // Mock SecureStore
-jest.mock('expo-secure-store', () => ({
+jest.mock("expo-secure-store", () => ({
   getItemAsync: jest.fn(),
   setItemAsync: jest.fn(),
   deleteItemAsync: jest.fn(),
-  AFTER_FIRST_UNLOCK: 'afterFirstUnlock',
+  AFTER_FIRST_UNLOCK: "afterFirstUnlock",
 }));
 
 // Mock AsyncStorage
-jest.mock('@react-native-async-storage/async-storage', () => ({
+jest.mock("@react-native-async-storage/async-storage", () => ({
   getItem: jest.fn(),
   setItem: jest.fn(),
   removeItem: jest.fn(),
   getAllKeys: jest.fn(),
 }));
 
-jest.mock('expo-local-authentication', () => ({
+jest.mock("expo-local-authentication", () => ({
   hasHardwareAsync: jest.fn(),
   isEnrolledAsync: jest.fn(),
   authenticateAsync: jest.fn(),
 }));
 
-jest.mock('../../i18n/phrMobileI18n', () => ({
+jest.mock("../../i18n/phrMobileI18n", () => ({
   t: (key: string) => key,
 }));
 
-describe('phiEncryptedStorage', () => {
+describe("phiEncryptedStorage", () => {
   let mockAdapter: PhiStorageAdapter;
   const mockStorage = new Map<string, string>();
 
@@ -66,14 +66,18 @@ describe('phiEncryptedStorage', () => {
       },
       async clearAllPhi(): Promise<void> {
         for (const key of Array.from(mockStorage.keys())) {
-          if (key.startsWith('phr-phi-cipher:')) {
+          if (key.startsWith("phr-phi-cipher:")) {
             mockStorage.delete(key);
           }
         }
       },
     };
 
-    (AsyncStorage.getAllKeys as jest.MockedFunction<typeof AsyncStorage.getAllKeys>).mockResolvedValue([]);
+    (
+      AsyncStorage.getAllKeys as jest.MockedFunction<
+        typeof AsyncStorage.getAllKeys
+      >
+    ).mockResolvedValue([]);
     setPhiStorageAdapter(mockAdapter);
   });
 
@@ -81,80 +85,80 @@ describe('phiEncryptedStorage', () => {
     resetPhiStorageAdapter();
   });
 
-  describe('basic encryption/decryption', () => {
-    it('encrypts and decrypts a simple string', async () => {
-      await phiSet('test-key', 'hello world');
-      const result = await phiGet('test-key');
-      expect(result).toBe('hello world');
+  describe("basic encryption/decryption", () => {
+    it("encrypts and decrypts a simple string", async () => {
+      await phiSet("test-key", "hello world");
+      const result = await phiGet("test-key");
+      expect(result).toBe("hello world");
     });
 
-    it('encrypts and decrypts JSON data', async () => {
-      const data = { patientId: '123', name: 'John Doe' };
-      await phiSet('patient-data', JSON.stringify(data));
-      const result = await phiGet('patient-data');
+    it("encrypts and decrypts JSON data", async () => {
+      const data = { patientId: "123", name: "John Doe" };
+      await phiSet("patient-data", JSON.stringify(data));
+      const result = await phiGet("patient-data");
       expect(result).toBe(JSON.stringify(data));
     });
 
-    it('returns null for non-existent keys', async () => {
-      const result = await phiGet('non-existent');
+    it("returns null for non-existent keys", async () => {
+      const result = await phiGet("non-existent");
       expect(result).toBeNull();
     });
 
-    it('removes a specific key', async () => {
-      await phiSet('test-key', 'value');
-      await phiRemove('test-key');
-      const result = await phiGet('test-key');
+    it("removes a specific key", async () => {
+      await phiSet("test-key", "value");
+      await phiRemove("test-key");
+      const result = await phiGet("test-key");
       expect(result).toBeNull();
     });
 
-    it('handles empty strings', async () => {
-      await phiSet('empty', '');
-      const result = await phiGet('empty');
-      expect(result).toBe('');
+    it("handles empty strings", async () => {
+      await phiSet("empty", "");
+      const result = await phiGet("empty");
+      expect(result).toBe("");
     });
 
-    it('handles special characters', async () => {
+    it("handles special characters", async () => {
       const special = 'नेपाली 🇳🇵 <script>alert("xss")</script>';
-      await phiSet('special', special);
-      const result = await phiGet('special');
+      await phiSet("special", special);
+      const result = await phiGet("special");
       expect(result).toBe(special);
     });
 
-    it('handles large payloads', async () => {
-      const large = 'x'.repeat(10000);
-      await phiSet('large', large);
-      const result = await phiGet('large');
+    it("handles large payloads", async () => {
+      const large = "x".repeat(10000);
+      await phiSet("large", large);
+      const result = await phiGet("large");
       expect(result).toBe(large);
     });
   });
 
-  describe('phiClearAll', () => {
+  describe("phiClearAll", () => {
     beforeEach(async () => {
-      await phiSet('phr-phi-cipher:key1', 'value1');
-      await phiSet('phr-phi-cipher:key2', 'value2');
-      await phiSet('other-key', 'value3');
+      await phiSet("phr-phi-cipher:key1", "value1");
+      await phiSet("phr-phi-cipher:key2", "value2");
+      await phiSet("other-key", "value3");
     });
 
-    it('clears all PHI-prefixed keys', async () => {
+    it("clears all PHI-prefixed keys", async () => {
       await phiClearAll();
-      expect(await phiGet('phr-phi-cipher:key1')).toBeNull();
-      expect(await phiGet('phr-phi-cipher:key2')).toBeNull();
+      expect(await phiGet("phr-phi-cipher:key1")).toBeNull();
+      expect(await phiGet("phr-phi-cipher:key2")).toBeNull();
     });
 
-    it('does not clear non-PHI keys', async () => {
+    it("does not clear non-PHI keys", async () => {
       await phiClearAll();
-      expect(await phiGet('other-key')).toBe('value3');
+      expect(await phiGet("other-key")).toBe("value3");
     });
 
-    it('handles empty storage gracefully', async () => {
+    it("handles empty storage gracefully", async () => {
       await phiClearAll();
       await phiClearAll(); // Should not throw
-      expect(await phiGet('phr-phi-cipher:key1')).toBeNull();
+      expect(await phiGet("phr-phi-cipher:key1")).toBeNull();
     });
   });
 
-  describe('adapter injection', () => {
-    it('allows custom adapter injection', async () => {
+  describe("adapter injection", () => {
+    it("allows custom adapter injection", async () => {
       const customAdapter: PhiStorageAdapter = {
         async setItem(key: string, value: string): Promise<void> {
           // Custom behavior: add prefix
@@ -169,12 +173,12 @@ describe('phiEncryptedStorage', () => {
       };
 
       setPhiStorageAdapter(customAdapter);
-      await phiSet('test', 'value');
-      expect(await phiGet('test')).toBe('value');
-      expect(mockStorage.has('custom:test')).toBe(true);
+      await phiSet("test", "value");
+      expect(await phiGet("test")).toBe("value");
+      expect(mockStorage.has("custom:test")).toBe(true);
     });
 
-    it('resets to production adapter', async () => {
+    it("resets to production adapter", async () => {
       setPhiStorageAdapter(mockAdapter);
       resetPhiStorageAdapter();
       // After reset, should use production adapter
@@ -183,28 +187,28 @@ describe('phiEncryptedStorage', () => {
     });
   });
 
-  describe('error handling', () => {
-    it('handles adapter errors gracefully', async () => {
+  describe("error handling", () => {
+    it("handles adapter errors gracefully", async () => {
       const failingAdapter: PhiStorageAdapter = {
         async setItem(): Promise<void> {
-          throw new Error('Storage failed');
+          throw new Error("Storage failed");
         },
         async getItem(): Promise<string | null> {
-          throw new Error('Read failed');
+          throw new Error("Read failed");
         },
         async removeItem(): Promise<void> {
-          throw new Error('Delete failed');
+          throw new Error("Delete failed");
         },
       };
 
       setPhiStorageAdapter(failingAdapter);
 
-      await expect(phiSet('key', 'value')).rejects.toThrow('Storage failed');
-      await expect(phiGet('key')).rejects.toThrow('Read failed');
-      await expect(phiRemove('key')).rejects.toThrow('Delete failed');
+      await expect(phiSet("key", "value")).rejects.toThrow("Storage failed");
+      await expect(phiGet("key")).rejects.toThrow("Read failed");
+      await expect(phiRemove("key")).rejects.toThrow("Delete failed");
     });
 
-    it('handles null values in adapter', async () => {
+    it("handles null values in adapter", async () => {
       const nullReturningAdapter: PhiStorageAdapter = {
         async setItem(): Promise<void> {
           // Do nothing
@@ -218,12 +222,12 @@ describe('phiEncryptedStorage', () => {
       };
 
       setPhiStorageAdapter(nullReturningAdapter);
-      expect(await phiGet('key')).toBeNull();
+      expect(await phiGet("key")).toBeNull();
     });
   });
 
-  describe('concurrent operations', () => {
-    it('handles concurrent writes', async () => {
+  describe("concurrent operations", () => {
+    it("handles concurrent writes", async () => {
       const promises = [];
       for (let i = 0; i < 10; i++) {
         promises.push(phiSet(`key${i}`, `value${i}`));
@@ -235,158 +239,215 @@ describe('phiEncryptedStorage', () => {
       }
     });
 
-    it('handles concurrent reads', async () => {
-      await phiSet('shared', 'shared-value');
+    it("handles concurrent reads", async () => {
+      await phiSet("shared", "shared-value");
       const promises = [];
       for (let i = 0; i < 10; i++) {
-        promises.push(phiGet('shared'));
+        promises.push(phiGet("shared"));
       }
       const results = await Promise.all(promises);
-      expect(results.every((r) => r === 'shared-value')).toBe(true);
+      expect(results.every((r) => r === "shared-value")).toBe(true);
     });
   });
 
-  describe('production key lifecycle', () => {
-    it('initializes production metadata on first encrypted write', async () => {
+  describe("production key lifecycle", () => {
+    it("initializes production metadata on first encrypted write", async () => {
       const secureStore = new Map<string, string>();
       const asyncStore = new Map<string, string>();
-      (SecureStore.getItemAsync as jest.MockedFunction<typeof SecureStore.getItemAsync>).mockImplementation(
-        async (key: string) => secureStore.get(key) ?? null,
-      );
-      (SecureStore.setItemAsync as jest.MockedFunction<typeof SecureStore.setItemAsync>).mockImplementation(
-        async (key: string, value: string) => {
-          secureStore.set(key, value);
-        },
-      );
-      (SecureStore.deleteItemAsync as jest.MockedFunction<typeof SecureStore.deleteItemAsync>).mockImplementation(
-        async (key: string) => {
-          secureStore.delete(key);
-        },
-      );
-      (AsyncStorage.setItem as jest.MockedFunction<typeof AsyncStorage.setItem>).mockImplementation(
-        async (key: string, value: string) => {
-          asyncStore.set(key, value);
-        },
-      );
-      (AsyncStorage.getItem as jest.MockedFunction<typeof AsyncStorage.getItem>).mockImplementation(
-        async (key: string) => asyncStore.get(key) ?? null,
-      );
-      (AsyncStorage.removeItem as jest.MockedFunction<typeof AsyncStorage.removeItem>).mockImplementation(
-        async (key: string) => {
-          asyncStore.delete(key);
-        },
-      );
-      (AsyncStorage.getAllKeys as jest.MockedFunction<typeof AsyncStorage.getAllKeys>).mockImplementation(
-        async () => Array.from(asyncStore.keys()),
-      );
+      (
+        SecureStore.getItemAsync as jest.MockedFunction<
+          typeof SecureStore.getItemAsync
+        >
+      ).mockImplementation(async (key: string) => secureStore.get(key) ?? null);
+      (
+        SecureStore.setItemAsync as jest.MockedFunction<
+          typeof SecureStore.setItemAsync
+        >
+      ).mockImplementation(async (key: string, value: string) => {
+        secureStore.set(key, value);
+      });
+      (
+        SecureStore.deleteItemAsync as jest.MockedFunction<
+          typeof SecureStore.deleteItemAsync
+        >
+      ).mockImplementation(async (key: string) => {
+        secureStore.delete(key);
+      });
+      (
+        AsyncStorage.setItem as jest.MockedFunction<typeof AsyncStorage.setItem>
+      ).mockImplementation(async (key: string, value: string) => {
+        asyncStore.set(key, value);
+      });
+      (
+        AsyncStorage.getItem as jest.MockedFunction<typeof AsyncStorage.getItem>
+      ).mockImplementation(async (key: string) => asyncStore.get(key) ?? null);
+      (
+        AsyncStorage.removeItem as jest.MockedFunction<
+          typeof AsyncStorage.removeItem
+        >
+      ).mockImplementation(async (key: string) => {
+        asyncStore.delete(key);
+      });
+      (
+        AsyncStorage.getAllKeys as jest.MockedFunction<
+          typeof AsyncStorage.getAllKeys
+        >
+      ).mockImplementation(async () => Array.from(asyncStore.keys()));
 
       resetPhiStorageAdapter();
 
-      await phiSet('phr-phi-cipher:patient-summary', 'encrypted payload source');
+      await phiSet(
+        "phr-phi-cipher:patient-summary",
+        "encrypted payload source",
+      );
 
-      expect(secureStore.get('phr-phi-encryption-key-v1')).toEqual(expect.any(String));
-      expect(secureStore.get('phr-phi-key-version')).toBe('1');
-      expect(secureStore.get('phr-phi-key-created-at')).toEqual(expect.any(String));
-      expect(secureStore.get('phr-phi-device-install-id')).toEqual(expect.any(String));
-      expect(secureStore.get('phr-phi-key-registry')).toContain('phr-phi-cipher:patient-summary');
-      expect(asyncStore.get('phr-phi-cipher:patient-summary')).not.toBe('encrypted payload source');
+      expect(secureStore.get("phr-phi-encryption-key-v1")).toEqual(
+        expect.any(String),
+      );
+      expect(secureStore.get("phr-phi-key-version")).toBe("1");
+      expect(secureStore.get("phr-phi-key-created-at")).toEqual(
+        expect.any(String),
+      );
+      expect(secureStore.get("phr-phi-device-install-id")).toEqual(
+        expect.any(String),
+      );
+      expect(secureStore.get("phr-phi-key-registry")).toContain(
+        "phr-phi-cipher:patient-summary",
+      );
+      expect(asyncStore.get("phr-phi-cipher:patient-summary")).not.toBe(
+        "encrypted payload source",
+      );
     });
 
-    it('requires biometric authentication before decrypting with a cached key when policy is enabled', async () => {
+    it("requires biometric authentication before decrypting with a cached key when policy is enabled", async () => {
       const secureStore = new Map<string, string>();
       const asyncStore = new Map<string, string>();
-      (SecureStore.getItemAsync as jest.MockedFunction<typeof SecureStore.getItemAsync>).mockImplementation(
-        async (key: string) => secureStore.get(key) ?? null,
-      );
-      (SecureStore.setItemAsync as jest.MockedFunction<typeof SecureStore.setItemAsync>).mockImplementation(
-        async (key: string, value: string) => {
-          secureStore.set(key, value);
-        },
-      );
-      (SecureStore.deleteItemAsync as jest.MockedFunction<typeof SecureStore.deleteItemAsync>).mockImplementation(
-        async (key: string) => {
-          secureStore.delete(key);
-        },
-      );
-      (AsyncStorage.setItem as jest.MockedFunction<typeof AsyncStorage.setItem>).mockImplementation(
-        async (key: string, value: string) => {
-          asyncStore.set(key, value);
-        },
-      );
-      (AsyncStorage.getItem as jest.MockedFunction<typeof AsyncStorage.getItem>).mockImplementation(
-        async (key: string) => asyncStore.get(key) ?? null,
-      );
-      (AsyncStorage.removeItem as jest.MockedFunction<typeof AsyncStorage.removeItem>).mockImplementation(
-        async (key: string) => {
-          asyncStore.delete(key);
-        },
-      );
-      (AsyncStorage.getAllKeys as jest.MockedFunction<typeof AsyncStorage.getAllKeys>).mockImplementation(
-        async () => Array.from(asyncStore.keys()),
-      );
-      (LocalAuthentication.hasHardwareAsync as jest.MockedFunction<typeof LocalAuthentication.hasHardwareAsync>).mockResolvedValue(true);
-      (LocalAuthentication.isEnrolledAsync as jest.MockedFunction<typeof LocalAuthentication.isEnrolledAsync>).mockResolvedValue(true);
-      (LocalAuthentication.authenticateAsync as jest.MockedFunction<typeof LocalAuthentication.authenticateAsync>).mockResolvedValue({ success: false, error: 'user_cancel' });
+      (
+        SecureStore.getItemAsync as jest.MockedFunction<
+          typeof SecureStore.getItemAsync
+        >
+      ).mockImplementation(async (key: string) => secureStore.get(key) ?? null);
+      (
+        SecureStore.setItemAsync as jest.MockedFunction<
+          typeof SecureStore.setItemAsync
+        >
+      ).mockImplementation(async (key: string, value: string) => {
+        secureStore.set(key, value);
+      });
+      (
+        SecureStore.deleteItemAsync as jest.MockedFunction<
+          typeof SecureStore.deleteItemAsync
+        >
+      ).mockImplementation(async (key: string) => {
+        secureStore.delete(key);
+      });
+      (
+        AsyncStorage.setItem as jest.MockedFunction<typeof AsyncStorage.setItem>
+      ).mockImplementation(async (key: string, value: string) => {
+        asyncStore.set(key, value);
+      });
+      (
+        AsyncStorage.getItem as jest.MockedFunction<typeof AsyncStorage.getItem>
+      ).mockImplementation(async (key: string) => asyncStore.get(key) ?? null);
+      (
+        AsyncStorage.removeItem as jest.MockedFunction<
+          typeof AsyncStorage.removeItem
+        >
+      ).mockImplementation(async (key: string) => {
+        asyncStore.delete(key);
+      });
+      (
+        AsyncStorage.getAllKeys as jest.MockedFunction<
+          typeof AsyncStorage.getAllKeys
+        >
+      ).mockImplementation(async () => Array.from(asyncStore.keys()));
+      (
+        LocalAuthentication.hasHardwareAsync as jest.MockedFunction<
+          typeof LocalAuthentication.hasHardwareAsync
+        >
+      ).mockResolvedValue(true);
+      (
+        LocalAuthentication.isEnrolledAsync as jest.MockedFunction<
+          typeof LocalAuthentication.isEnrolledAsync
+        >
+      ).mockResolvedValue(true);
+      (
+        LocalAuthentication.authenticateAsync as jest.MockedFunction<
+          typeof LocalAuthentication.authenticateAsync
+        >
+      ).mockResolvedValue({ success: false, error: "user_cancel" });
 
       resetPhiStorageAdapter();
 
-      await phiSet('patient-summary', 'encrypted payload source');
+      await phiSet("patient-summary", "encrypted payload source");
       await phiEnableBiometricPolicy();
 
-      await expect(phiGet('patient-summary')).rejects.toThrow('biometric.requiredForPhi');
+      await expect(phiGet("patient-summary")).rejects.toThrow(
+        "biometric.requiredForPhi",
+      );
       expect(LocalAuthentication.authenticateAsync).toHaveBeenCalledWith({
-        promptMessage: 'biometric.protectedHealthPrompt',
-        fallbackLabel: 'biometric.fallbackLabel',
-        cancelLabel: 'biometric.cancelLabel',
+        promptMessage: "biometric.protectedHealthPrompt",
+        fallbackLabel: "biometric.fallbackLabel",
+        cancelLabel: "biometric.cancelLabel",
         disableDeviceFallback: false,
       });
     });
 
-    it('returns null and removes modified ciphertext', async () => {
+    it("returns null and removes modified ciphertext", async () => {
       const secureStore = new Map<string, string>();
       const asyncStore = new Map<string, string>();
-      (SecureStore.getItemAsync as jest.MockedFunction<typeof SecureStore.getItemAsync>).mockImplementation(
-        async (key: string) => secureStore.get(key) ?? null,
-      );
-      (SecureStore.setItemAsync as jest.MockedFunction<typeof SecureStore.setItemAsync>).mockImplementation(
-        async (key: string, value: string) => {
-          secureStore.set(key, value);
-        },
-      );
-      (SecureStore.deleteItemAsync as jest.MockedFunction<typeof SecureStore.deleteItemAsync>).mockImplementation(
-        async (key: string) => {
-          secureStore.delete(key);
-        },
-      );
-      (AsyncStorage.setItem as jest.MockedFunction<typeof AsyncStorage.setItem>).mockImplementation(
-        async (key: string, value: string) => {
-          asyncStore.set(key, value);
-        },
-      );
-      (AsyncStorage.getItem as jest.MockedFunction<typeof AsyncStorage.getItem>).mockImplementation(
-        async (key: string) => asyncStore.get(key) ?? null,
-      );
-      (AsyncStorage.removeItem as jest.MockedFunction<typeof AsyncStorage.removeItem>).mockImplementation(
-        async (key: string) => {
-          asyncStore.delete(key);
-        },
-      );
-      (AsyncStorage.getAllKeys as jest.MockedFunction<typeof AsyncStorage.getAllKeys>).mockImplementation(
-        async () => Array.from(asyncStore.keys()),
-      );
+      (
+        SecureStore.getItemAsync as jest.MockedFunction<
+          typeof SecureStore.getItemAsync
+        >
+      ).mockImplementation(async (key: string) => secureStore.get(key) ?? null);
+      (
+        SecureStore.setItemAsync as jest.MockedFunction<
+          typeof SecureStore.setItemAsync
+        >
+      ).mockImplementation(async (key: string, value: string) => {
+        secureStore.set(key, value);
+      });
+      (
+        SecureStore.deleteItemAsync as jest.MockedFunction<
+          typeof SecureStore.deleteItemAsync
+        >
+      ).mockImplementation(async (key: string) => {
+        secureStore.delete(key);
+      });
+      (
+        AsyncStorage.setItem as jest.MockedFunction<typeof AsyncStorage.setItem>
+      ).mockImplementation(async (key: string, value: string) => {
+        asyncStore.set(key, value);
+      });
+      (
+        AsyncStorage.getItem as jest.MockedFunction<typeof AsyncStorage.getItem>
+      ).mockImplementation(async (key: string) => asyncStore.get(key) ?? null);
+      (
+        AsyncStorage.removeItem as jest.MockedFunction<
+          typeof AsyncStorage.removeItem
+        >
+      ).mockImplementation(async (key: string) => {
+        asyncStore.delete(key);
+      });
+      (
+        AsyncStorage.getAllKeys as jest.MockedFunction<
+          typeof AsyncStorage.getAllKeys
+        >
+      ).mockImplementation(async () => Array.from(asyncStore.keys()));
 
       resetPhiStorageAdapter();
 
-      await phiSet('patient-summary', 'encrypted payload source');
-      asyncStore.set('patient-summary', 'not-valid-ciphertext');
+      await phiSet("patient-summary", "encrypted payload source");
+      asyncStore.set("patient-summary", "not-valid-ciphertext");
 
-      await expect(phiGet('patient-summary')).resolves.toBeNull();
-      expect(asyncStore.has('patient-summary')).toBe(false);
+      await expect(phiGet("patient-summary")).resolves.toBeNull();
+      expect(asyncStore.has("patient-summary")).toBe(false);
     });
   });
 });
 
-describe('phiEncryptedStorage — AsyncStorage contains ciphertext only (G7-002, G11-005)', () => {
+describe("phiEncryptedStorage — AsyncStorage contains ciphertext only (G7-002, G11-005)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -395,87 +456,124 @@ describe('phiEncryptedStorage — AsyncStorage contains ciphertext only (G7-002,
     resetPhiStorageAdapter();
   });
 
-  it('stored value in AsyncStorage is valid base64 and contains no plaintext PHI', async () => {
+  it("stored value in AsyncStorage is valid base64 and contains no plaintext PHI", async () => {
     const asyncStore = new Map<string, string>();
     const secureStore = new Map<string, string>();
 
-    (SecureStore.getItemAsync as jest.MockedFunction<typeof SecureStore.getItemAsync>).mockImplementation(
-      async (key: string) => secureStore.get(key) ?? null,
-    );
-    (SecureStore.setItemAsync as jest.MockedFunction<typeof SecureStore.setItemAsync>).mockImplementation(
-      async (key: string, value: string) => { secureStore.set(key, value); },
-    );
-    (SecureStore.deleteItemAsync as jest.MockedFunction<typeof SecureStore.deleteItemAsync>).mockImplementation(
-      async (key: string) => { secureStore.delete(key); },
-    );
-    (AsyncStorage.setItem as jest.MockedFunction<typeof AsyncStorage.setItem>).mockImplementation(
-      async (key: string, value: string) => { asyncStore.set(key, value); },
-    );
-    (AsyncStorage.getItem as jest.MockedFunction<typeof AsyncStorage.getItem>).mockImplementation(
-      async (key: string) => asyncStore.get(key) ?? null,
-    );
-    (AsyncStorage.removeItem as jest.MockedFunction<typeof AsyncStorage.removeItem>).mockImplementation(
-      async (key: string) => { asyncStore.delete(key); },
-    );
-    (AsyncStorage.getAllKeys as jest.MockedFunction<typeof AsyncStorage.getAllKeys>).mockImplementation(
-      async () => Array.from(asyncStore.keys()),
-    );
+    (
+      SecureStore.getItemAsync as jest.MockedFunction<
+        typeof SecureStore.getItemAsync
+      >
+    ).mockImplementation(async (key: string) => secureStore.get(key) ?? null);
+    (
+      SecureStore.setItemAsync as jest.MockedFunction<
+        typeof SecureStore.setItemAsync
+      >
+    ).mockImplementation(async (key: string, value: string) => {
+      secureStore.set(key, value);
+    });
+    (
+      SecureStore.deleteItemAsync as jest.MockedFunction<
+        typeof SecureStore.deleteItemAsync
+      >
+    ).mockImplementation(async (key: string) => {
+      secureStore.delete(key);
+    });
+    (
+      AsyncStorage.setItem as jest.MockedFunction<typeof AsyncStorage.setItem>
+    ).mockImplementation(async (key: string, value: string) => {
+      asyncStore.set(key, value);
+    });
+    (
+      AsyncStorage.getItem as jest.MockedFunction<typeof AsyncStorage.getItem>
+    ).mockImplementation(async (key: string) => asyncStore.get(key) ?? null);
+    (
+      AsyncStorage.removeItem as jest.MockedFunction<
+        typeof AsyncStorage.removeItem
+      >
+    ).mockImplementation(async (key: string) => {
+      asyncStore.delete(key);
+    });
+    (
+      AsyncStorage.getAllKeys as jest.MockedFunction<
+        typeof AsyncStorage.getAllKeys
+      >
+    ).mockImplementation(async () => Array.from(asyncStore.keys()));
 
     resetPhiStorageAdapter();
 
-    const plaintext = 'patient-name:Ram Bahadur Thapa,dob:1985-04-12,bloodType:A+';
-    await phiSet('phr-phi-cipher:patient-summary', plaintext);
+    const plaintext =
+      "patient-name:Ram Bahadur Thapa,dob:1985-04-12,bloodType:A+";
+    await phiSet("phr-phi-cipher:patient-summary", plaintext);
 
-    const storedValue = asyncStore.get('phr-phi-cipher:patient-summary');
+    const storedValue = asyncStore.get("phr-phi-cipher:patient-summary");
     expect(storedValue).toBeDefined();
 
     expect(storedValue).not.toBe(plaintext);
     expect(storedValue).toMatch(/^[A-Za-z0-9+/]+=*$/);
 
-    const decoded = Buffer.from(storedValue!, 'base64');
+    const decoded = Buffer.from(storedValue!, "base64");
     expect(decoded.length).toBeGreaterThan(plaintext.length);
 
     for (const [, value] of asyncStore.entries()) {
-      expect(value).not.toContain('Ram Bahadur Thapa');
-      expect(value).not.toContain('1985-04-12');
-      expect(value).not.toContain('patient-name:');
+      expect(value).not.toContain("Ram Bahadur Thapa");
+      expect(value).not.toContain("1985-04-12");
+      expect(value).not.toContain("patient-name:");
     }
   });
 
-  it('same plaintext encrypted twice produces distinct ciphertexts (fresh IV per write)', async () => {
+  it("same plaintext encrypted twice produces distinct ciphertexts (fresh IV per write)", async () => {
     const asyncStore = new Map<string, string>();
     const secureStore = new Map<string, string>();
 
-    (SecureStore.getItemAsync as jest.MockedFunction<typeof SecureStore.getItemAsync>).mockImplementation(
-      async (key: string) => secureStore.get(key) ?? null,
-    );
-    (SecureStore.setItemAsync as jest.MockedFunction<typeof SecureStore.setItemAsync>).mockImplementation(
-      async (key: string, value: string) => { secureStore.set(key, value); },
-    );
-    (SecureStore.deleteItemAsync as jest.MockedFunction<typeof SecureStore.deleteItemAsync>).mockImplementation(
-      async (key: string) => { secureStore.delete(key); },
-    );
-    (AsyncStorage.setItem as jest.MockedFunction<typeof AsyncStorage.setItem>).mockImplementation(
-      async (key: string, value: string) => { asyncStore.set(key, value); },
-    );
-    (AsyncStorage.getItem as jest.MockedFunction<typeof AsyncStorage.getItem>).mockImplementation(
-      async (key: string) => asyncStore.get(key) ?? null,
-    );
-    (AsyncStorage.removeItem as jest.MockedFunction<typeof AsyncStorage.removeItem>).mockImplementation(
-      async (key: string) => { asyncStore.delete(key); },
-    );
-    (AsyncStorage.getAllKeys as jest.MockedFunction<typeof AsyncStorage.getAllKeys>).mockImplementation(
-      async () => Array.from(asyncStore.keys()),
-    );
+    (
+      SecureStore.getItemAsync as jest.MockedFunction<
+        typeof SecureStore.getItemAsync
+      >
+    ).mockImplementation(async (key: string) => secureStore.get(key) ?? null);
+    (
+      SecureStore.setItemAsync as jest.MockedFunction<
+        typeof SecureStore.setItemAsync
+      >
+    ).mockImplementation(async (key: string, value: string) => {
+      secureStore.set(key, value);
+    });
+    (
+      SecureStore.deleteItemAsync as jest.MockedFunction<
+        typeof SecureStore.deleteItemAsync
+      >
+    ).mockImplementation(async (key: string) => {
+      secureStore.delete(key);
+    });
+    (
+      AsyncStorage.setItem as jest.MockedFunction<typeof AsyncStorage.setItem>
+    ).mockImplementation(async (key: string, value: string) => {
+      asyncStore.set(key, value);
+    });
+    (
+      AsyncStorage.getItem as jest.MockedFunction<typeof AsyncStorage.getItem>
+    ).mockImplementation(async (key: string) => asyncStore.get(key) ?? null);
+    (
+      AsyncStorage.removeItem as jest.MockedFunction<
+        typeof AsyncStorage.removeItem
+      >
+    ).mockImplementation(async (key: string) => {
+      asyncStore.delete(key);
+    });
+    (
+      AsyncStorage.getAllKeys as jest.MockedFunction<
+        typeof AsyncStorage.getAllKeys
+      >
+    ).mockImplementation(async () => Array.from(asyncStore.keys()));
 
     resetPhiStorageAdapter();
 
-    const samePlaintext = 'identical-patient-value';
-    await phiSet('phr-phi-cipher:record-a', samePlaintext);
-    await phiSet('phr-phi-cipher:record-b', samePlaintext);
+    const samePlaintext = "identical-patient-value";
+    await phiSet("phr-phi-cipher:record-a", samePlaintext);
+    await phiSet("phr-phi-cipher:record-b", samePlaintext);
 
-    const storedA = asyncStore.get('phr-phi-cipher:record-a');
-    const storedB = asyncStore.get('phr-phi-cipher:record-b');
+    const storedA = asyncStore.get("phr-phi-cipher:record-a");
+    const storedB = asyncStore.get("phr-phi-cipher:record-b");
 
     expect(storedA).toMatch(/^[A-Za-z0-9+/]+=*$/);
     expect(storedB).toMatch(/^[A-Za-z0-9+/]+=*$/);

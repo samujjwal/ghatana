@@ -79,7 +79,7 @@ class FhirGoldenFixturesTest {
             JsonNode identifiers = root.path("identifier");
             assertThat(identifiers.isArray()).isTrue();
             assertThat(identifiers.size()).isGreaterThan(0);
-            
+
             JsonNode identifier = identifiers.get(0);
             assertThat(identifier.path("system").asText()).isEqualTo("https://fhir.nhs.uk/Id/nhs-number");
             assertThat(identifier.path("value").asText()).isNotEmpty();
@@ -92,7 +92,7 @@ class FhirGoldenFixturesTest {
             JsonNode names = root.path("name");
             assertThat(names.isArray()).isTrue();
             assertThat(names.size()).isGreaterThan(0);
-            
+
             JsonNode name = names.get(0);
             assertThat(name.path("family").asText()).isNotEmpty();
             assertThat(name.path("given").isArray()).isTrue();
@@ -121,7 +121,7 @@ class FhirGoldenFixturesTest {
             JsonNode root = loadFixture("patient-golden.json");
             JsonNode telecoms = root.path("telecom");
             assertThat(telecoms.isArray()).isTrue();
-            
+
             for (JsonNode telecom : telecoms) {
                 assertThat(telecom.path("system").asText()).isIn("phone", "email", "fax", "pager", "url", "sms", "other");
                 assertThat(telecom.path("value").asText()).isNotEmpty();
@@ -135,7 +135,7 @@ class FhirGoldenFixturesTest {
             JsonNode addresses = root.path("address");
             assertThat(addresses.isArray()).isTrue();
             assertThat(addresses.size()).isGreaterThan(0);
-            
+
             JsonNode address = addresses.get(0);
             assertThat(address.path("city").asText()).isNotEmpty();
             assertThat(address.path("country").asText()).isNotEmpty();
@@ -181,7 +181,7 @@ class FhirGoldenFixturesTest {
             JsonNode root = loadFixture("observation-lab-golden.json");
             JsonNode categories = root.path("category");
             assertThat(categories.isArray()).isTrue();
-            
+
             boolean hasLab = false;
             for (JsonNode category : categories) {
                 for (JsonNode coding : category.path("coding")) {
@@ -226,7 +226,7 @@ class FhirGoldenFixturesTest {
             JsonNode referenceRanges = root.path("referenceRange");
             assertThat(referenceRanges.isArray()).isTrue();
             assertThat(referenceRanges.size()).isGreaterThan(0);
-            
+
             JsonNode range = referenceRanges.get(0);
             assertThat(range.path("low").path("value").isNumber()).isTrue();
             assertThat(range.path("high").path("value").isNumber()).isTrue();
@@ -284,7 +284,7 @@ class FhirGoldenFixturesTest {
             JsonNode dosageInstructions = root.path("dosageInstruction");
             assertThat(dosageInstructions.isArray()).isTrue();
             assertThat(dosageInstructions.size()).isGreaterThan(0);
-            
+
             JsonNode dosage = dosageInstructions.get(0);
             assertThat(dosage.path("text").asText()).isNotEmpty();
             assertThat(dosage.path("timing")).isNotNull();
@@ -365,7 +365,7 @@ class FhirGoldenFixturesTest {
             JsonNode protocols = root.path("protocolApplied");
             assertThat(protocols.isArray()).isTrue();
             assertThat(protocols.size()).isGreaterThan(0);
-            
+
             JsonNode protocol = protocols.get(0);
             assertThat(protocol.path("doseNumberPositiveInt").isInt()).isTrue();
         }
@@ -411,7 +411,7 @@ class FhirGoldenFixturesTest {
             JsonNode root = loadFixture("imaging-study-golden.json");
             JsonNode modalities = root.path("modality");
             assertThat(modalities.isArray()).isTrue();
-            
+
             JsonNode coding = modalities.get(0).path("coding").get(0);
             assertThat(coding.path("system").asText()).isEqualTo("http://dicom.nema.org/resources/ontology/DCM");
             assertThat(coding.path("code").asText()).isNotEmpty();
@@ -431,7 +431,7 @@ class FhirGoldenFixturesTest {
             JsonNode series = root.path("series");
             assertThat(series.isArray()).isTrue();
             assertThat(series.size()).isGreaterThan(0);
-            
+
             JsonNode firstSeries = series.get(0);
             assertThat(firstSeries.path("uid").asText()).isNotEmpty();
             assertThat(firstSeries.path("instance").isArray()).isTrue();
@@ -494,7 +494,7 @@ class FhirGoldenFixturesTest {
             JsonNode notes = root.path("note");
             assertThat(notes.isArray()).isTrue();
             assertThat(notes.size()).isGreaterThan(0);
-            
+
             JsonNode note = notes.get(0);
             assertThat(note.path("authorReference").path("reference").asText()).startsWith("Practitioner/");
             assertThat(note.path("time").asText()).matches("\\d{4}-\\d{2}-\\d{2}T.*");
@@ -541,7 +541,7 @@ class FhirGoldenFixturesTest {
             JsonNode root = loadFixture("service-request-referral-golden.json");
             JsonNode categories = root.path("category");
             assertThat(categories.isArray()).isTrue();
-            
+
             boolean hasReferral = false;
             for (JsonNode category : categories) {
                 for (JsonNode coding : category.path("coding")) {
@@ -567,7 +567,7 @@ class FhirGoldenFixturesTest {
             JsonNode performers = root.path("performer");
             assertThat(performers.isArray()).isTrue();
             assertThat(performers.size()).isGreaterThan(0);
-            
+
             assertThat(performers.get(0).path("reference").asText()).startsWith("Practitioner/");
         }
 

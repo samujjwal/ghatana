@@ -1,14 +1,16 @@
 /**
  * Runtime feature gates with production-safe defaults.
  *
- * In production-like profiles, optional and preview features are disabled
- * unless explicitly enabled via environment flags.
+ * Uses runtime-truth-derived capability service for dynamic capability resolution.
+ * Falls back to environment variables if the backend is unavailable.
  *
  * @doc.type module
  * @doc.purpose Centralized runtime feature-gate policy
  * @doc.layer frontend
  * @doc.pattern Policy
  */
+
+import { runtimeCapabilityService } from './capabilities/RuntimeCapabilityService';
 
 const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
 const FALSE_VALUES = new Set(["0", "false", "no", "off"]);
@@ -50,47 +52,48 @@ function resolveGate(key: string, defaultInNonStrict: boolean): boolean {
   return isStrictProfile(resolveRuntimeProfile()) ? false : defaultInNonStrict;
 }
 
+/**
+ * Runtime-truth-derived capability checks.
+ * These query the backend for dynamic capability flags.
+ */
 export function isAlertsSurfaceEnabled(): boolean {
-  return resolveGate("VITE_FEATURE_ALERTS", true);
+  return runtimeCapabilityService.isCapabilityEnabled('alerts') ?? resolveGate("VITE_FEATURE_ALERTS", true);
 }
 
 export function isFabricSurfaceEnabled(): boolean {
-  // Data Fabric is a preview capability and disabled by default in production
-  // Requires explicit VITE_FEATURE_FABRIC=true even in non-production profiles
-  const explicit = readBooleanEnv("VITE_FEATURE_FABRIC");
-  if (typeof explicit === "boolean") {
-    return explicit;
-  }
-  // Default to disabled in all profiles unless explicitly enabled
-  return false;
+  return runtimeCapabilityService.isCapabilityEnabled('fabric') ?? false;
 }
 
+export function isMemorySurfaceEnabled(): boolean {
+  return runtimeCapabilityService.isCapabilityEnabled('memory') ?? resolveGate("VITE_FEATURE_MEMORY", true);
+}
+
+export function isEntityBrowserSurfaceEnabled(): boolean {
+  return runtimeCapabilityService.isCapabilityEnabled('entity-browser') ?? resolveGate("VITE_FEATURE_ENTITY_BROWSER", true);
+}
+
+export function isContextSurfaceEnabled(): boolean {
+  return runtimeCapabilityService.isCapabilityEnabled('context-explorer') ?? resolveGate("VITE_FEATURE_CONTEXT_EXPLORER", true);
+}
+
+export function isAgentCatalogSurfaceEnabled(): boolean {
+  return runtimeCapabilityService.isCapabilityEnabled('agent-catalog') ?? resolveGate("VITE_FEATURE_AGENT_CATALOG", true);
+}
+
+export function isSettingsSurfaceEnabled(): boolean {
+  return runtimeCapabilityService.isCapabilityEnabled('settings') ?? resolveGate("VITE_FEATURE_SETTINGS", true);
+}
+
+/**
+ * Legacy environment-based gates (kept for backward compatibility).
+ * These will be deprecated in favor of runtime-truth-derived capabilities.
+ */
 export function isAiOperationsEnabled(): boolean {
   return resolveGate("VITE_FEATURE_AI_OPERATIONS", true);
 }
 
 export function isAiAlertGroupingFallbackEnabled(): boolean {
   return resolveGate("VITE_FEATURE_AI_ALERT_GROUPING_FALLBACK", true);
-}
-
-export function isMemorySurfaceEnabled(): boolean {
-  return resolveGate("VITE_FEATURE_MEMORY", true);
-}
-
-export function isEntityBrowserSurfaceEnabled(): boolean {
-  return resolveGate("VITE_FEATURE_ENTITY_BROWSER", true);
-}
-
-export function isContextSurfaceEnabled(): boolean {
-  return resolveGate("VITE_FEATURE_CONTEXT_EXPLORER", true);
-}
-
-export function isAgentCatalogSurfaceEnabled(): boolean {
-  return resolveGate("VITE_FEATURE_AGENT_CATALOG", true);
-}
-
-export function isSettingsSurfaceEnabled(): boolean {
-  return resolveGate("VITE_FEATURE_SETTINGS", true);
 }
 
 export function isAnalyticsAiEnabled(): boolean {

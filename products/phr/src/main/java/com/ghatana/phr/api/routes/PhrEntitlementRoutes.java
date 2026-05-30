@@ -19,7 +19,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Route entitlement API for the PHR product.
@@ -81,7 +80,7 @@ public final class PhrEntitlementRoutes {
     /**
      * Loads the route contract from the canonical JSON file.
      * This ensures web and backend use the same source of truth for routes.
-     * 
+     *
      * E-001, E-002, E-008: No fallback route list or role order - fail closed if contract missing/invalid.
      * E-003: Validate loaded route contract fields.
      */
@@ -247,7 +246,7 @@ public final class PhrEntitlementRoutes {
             this.roleOrder = loadedRoleOrder;
             this.cachedRouteMeta = loadedMeta;
             this.contractLoaded = true;
-            
+
             LOG.info("Loaded {} routes from contract file {}", loadedRoutes.size(), routeContractPath);
         } catch (Exception ex) {
             LOG.error("Failed to load route contract - failing closed", ex);
@@ -269,7 +268,7 @@ public final class PhrEntitlementRoutes {
     private Promise<HttpResponse> handleRouteEntitlements(io.activej.http.HttpRequest request) {
         // E-001, E-002: Fail closed if route contract not loaded
         if (!contractLoaded) {
-            return PhrRouteSupport.errorResponse(503, "ROUTE_CONTRACT_NOT_LOADED", 
+            return PhrRouteSupport.errorResponse(503, "ROUTE_CONTRACT_NOT_LOADED",
                 "Route contract not loaded or invalid - service unavailable");
         }
 
@@ -332,7 +331,7 @@ public final class PhrEntitlementRoutes {
 
         // Cache for 5 minutes (300 seconds)
         entitlementCache.put(context.principalId(), context.tenantId(), "/route-entitlements", cacheKey, entitlementMap);
-        
+
         return jsonResponse(200, entitlementMap, context.correlationId());
     }
 

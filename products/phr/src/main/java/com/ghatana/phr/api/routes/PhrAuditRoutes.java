@@ -84,13 +84,13 @@ public final class PhrAuditRoutes {
 
         PhrPolicyEvaluator.PolicyDecision auditDecision = policyEvaluator.canQueryAuditEvents(context, patientIdParam);
         if (!auditDecision.isAllowed()) {
-            return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), auditDecision.getReasonCode());
+            return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
         }
 
         // Use policy evaluator for audit access decision (POL-001)
         PhrPolicyEvaluator.PolicyDecision entityScopeDecision = policyEvaluator.canQueryAuditEvents(context, patientIdParam);
         if (!entityScopeDecision.isAllowed()) {
-            return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), entityScopeDecision.getReasonCode());
+            return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
         }
 
         // Use policy evaluator to determine effective entity ID scope (POL-001)
@@ -192,7 +192,7 @@ public final class PhrAuditRoutes {
 
         PhrPolicyEvaluator.PolicyDecision exportDecision = policyEvaluator.canViewAuditTrail(context);
         if (!exportDecision.isAllowed()) {
-            return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), exportDecision.getReasonCode());
+            return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
         }
 
         String patientIdParam = request.getQueryParameter("patientId");
@@ -220,7 +220,7 @@ public final class PhrAuditRoutes {
 
         try {
             List<AuditTrailService.AuditTrailEvent> events = auditTrailService.queryAuditEvents(queryBuilder.build());
-            
+
             if ("csv".equalsIgnoreCase(format)) {
                 String csv = convertToCsv(events);
                 return PhrRouteSupport.textResponse(200, csv, "text/csv");
@@ -242,7 +242,7 @@ public final class PhrAuditRoutes {
     private String convertToCsv(List<AuditTrailService.AuditTrailEvent> events) {
         StringBuilder csv = new StringBuilder();
         csv.append("eventId,tenantId,eventType,principal,timestamp,success,resourceType,resourceId\n");
-        
+
         for (AuditTrailService.AuditTrailEvent event : events) {
             csv.append(event.getEventId()).append(",");
             csv.append(event.getTenantId()).append(",");
@@ -250,13 +250,13 @@ public final class PhrAuditRoutes {
             csv.append(csvField(event.getUserId())).append(",");
             csv.append(Instant.ofEpochMilli(event.getTimestamp()).toString()).append(",");
             csv.append(isSuccessEvent(event)).append(",");
-            
+
             Map<String, Object> data = event.getData();
             csv.append(csvField(data != null && data.containsKey("resourceType") ? data.get("resourceType") : "")).append(",");
             csv.append(csvField(data != null && data.containsKey("resourceId") ? data.get("resourceId") :
                   (event.getEntityId() != null ? event.getEntityId() : ""))).append("\n");
         }
-        
+
         return csv.toString();
     }
 

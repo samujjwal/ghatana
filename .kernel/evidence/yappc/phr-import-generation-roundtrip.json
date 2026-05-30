@@ -1,16 +1,16 @@
 {
   "checkId": "YAPPC-010 PHR import and generation roundtrip",
-  "generatedAt": "2026-05-29T01:23:44.163Z",
-  "pass": true,
+  "generatedAt": "2026-05-30T06:24:12.986Z",
+  "pass": false,
   "evidenceRun": {
     "generatedBy": "scripts/check-yappc-phr-roundtrip.mjs",
     "command": "node scripts/check-yappc-phr-roundtrip.mjs",
-    "commit": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8"
+    "commit": "bdfa732ddbbb53228ab5a21a6704877c4f3ba8dc"
   },
   "summary": {
     "checkCount": 17,
-    "passedChecks": 17,
-    "violationCount": 0
+    "passedChecks": 16,
+    "violationCount": 1
   },
   "checks": [
     {
@@ -91,21 +91,24 @@
     },
     {
       "name": "YAPPC PHR importer and template pack tests",
-      "pass": true,
-      "command": "gradlew.bat :products:yappc:core:scaffold:api:test --tests com.ghatana.yappc.kernel.PhrProductContractImporterTest --tests com.ghatana.yappc.kernel.PhrProductUnitTemplatePackTest --no-daemon"
+      "pass": false,
+      "command": "./gradlew :products:yappc:core:scaffold:api:test --tests com.ghatana.yappc.kernel.PhrProductContractImporterTest --tests com.ghatana.yappc.kernel.PhrProductUnitTemplatePackTest --no-daemon",
+      "message": "Command failed: ./gradlew :products:yappc:core:scaffold:api:test --tests com.ghatana.yappc.kernel.PhrProductContractImporterTest --tests com.ghatana.yappc.kernel.PhrProductUnitTemplatePackTest --no-daemon"
     },
     {
       "name": "YAPPC PHR canvas overlay and degraded AI tests",
       "pass": true,
-      "command": "pnpm.cmd --dir products/yappc/frontend/web exec vitest run src/lib/phr/__tests__/phrCompletenessOverlay.test.ts src/components/canvas/__tests__/CanvasOverlays.test.tsx src/lib/canvas-ai/__tests__/yappc-ai-adapter.test.ts src/hooks/__tests__/usePhasePacket.test.ts src/routes/app/project/__tests__/phasePacketMappers.test.ts src/routes/app/project/__tests__/usePhaseActionHandlers.test.tsx"
+      "command": "pnpm --dir products/yappc/frontend/web exec vitest run src/lib/phr/__tests__/phrCompletenessOverlay.test.ts src/components/canvas/__tests__/CanvasOverlays.test.tsx src/lib/canvas-ai/__tests__/yappc-ai-adapter.test.ts src/hooks/__tests__/usePhasePacket.test.ts src/routes/app/project/__tests__/phasePacketMappers.test.ts src/routes/app/project/__tests__/usePhaseActionHandlers.test.tsx"
     },
     {
       "name": "YAPPC web typecheck with generated routes",
       "pass": true,
-      "command": "pnpm.cmd --dir products/yappc/frontend/web typecheck"
+      "command": "pnpm --dir products/yappc/frontend/web typecheck"
     }
   ],
-  "violations": [],
+  "violations": [
+    "YAPPC PHR importer and template pack tests: Command failed: ./gradlew :products:yappc:core:scaffold:api:test --tests com.ghatana.yappc.kernel.PhrProductContractImporterTest --tests com.ghatana.yappc.kernel.PhrProductUnitTemplatePackTest --no-daemon"
+  ],
   "routeSummary": {
     "routes": 28,
     "stableRoutes": 24,

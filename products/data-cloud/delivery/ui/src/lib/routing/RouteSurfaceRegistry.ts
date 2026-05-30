@@ -243,11 +243,11 @@ export const canonicalRouteSurfaceRegistry: RouteSurfaceRegistry = {
     label: 'Release Truth',
     labelKey: 'routes.operationsReleaseTruth.label',
     minimumShellRole: 'admin',
-    lifecycle: 'active',
+    lifecycle: 'boundary',
     capabilities: ['runtime-truth', 'governance.audit', 'health.eventStore'],
     discoverable: false,
     iconName: 'ShieldCheck',
-    description: 'Runtime truth, release gates, and evidence dashboard',
+    description: 'Runtime truth, release gates, and evidence dashboard (non-release-readiness scope)',
     descriptionKey: 'routes.operationsReleaseTruth.description',
   },
   plugins: {

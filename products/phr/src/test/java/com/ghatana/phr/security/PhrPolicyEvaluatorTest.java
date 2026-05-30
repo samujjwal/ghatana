@@ -586,7 +586,7 @@ class PhrPolicyEvaluatorTest extends EventloopTestBase {
 
         PhrPolicyEvaluator.PolicyDecision decision = runPromise(
             () -> harness.evaluator().canAccessPhiWithAdminJustification(
-                context, "patient-1", "Observation", "READ", 
+                context, "patient-1", "Observation", "READ",
                 "Compliance audit for patient record review - case #12345"));
 
         assertThat(decision.isAllowed()).isTrue();
@@ -602,7 +602,7 @@ class PhrPolicyEvaluatorTest extends EventloopTestBase {
 
         PhrPolicyEvaluator.PolicyDecision decision = runPromise(
             () -> harness.evaluator().canAccessPhiWithAdminJustification(
-                context, "patient-1", "Observation", "READ", 
+                context, "patient-1", "Observation", "READ",
                 "Compliance audit for patient record review"));
 
         assertThat(decision.isAllowed()).isFalse();
@@ -718,7 +718,7 @@ class PhrPolicyEvaluatorTest extends EventloopTestBase {
 
         PhrPolicyEvaluator.PolicyDecision decision = runPromise(
             () -> harness.evaluator().canAccessPhiWithAdminJustification(
-                null, "patient-1", "Observation", "READ", 
+                null, "patient-1", "Observation", "READ",
                 "Compliance audit for patient record review"));
 
         assertThat(decision.isAllowed()).isFalse();
@@ -732,7 +732,7 @@ class PhrPolicyEvaluatorTest extends EventloopTestBase {
         PhrRouteSupport.PhrRequestContext context = context("tenant-1", "clinician-1", "clinician", "facility-1");
 
         PhrPolicyEvaluator.PolicyDecision decision = runPromise(
-            () -> harness.evaluator().canAccessEmergency(context, "patient-1", 
+            () -> harness.evaluator().canAccessEmergency(context, "patient-1",
                 "Emergency treatment - patient unconscious"));
 
         assertThat(decision.isAllowed()).isTrue();
@@ -748,7 +748,7 @@ class PhrPolicyEvaluatorTest extends EventloopTestBase {
         PhrRouteSupport.PhrRequestContext context = context("tenant-1", "admin-1", "admin", "facility-1");
 
         PhrPolicyEvaluator.PolicyDecision decision = runPromise(
-            () -> harness.evaluator().canAccessEmergency(context, "patient-1", 
+            () -> harness.evaluator().canAccessEmergency(context, "patient-1",
                 "Emergency compliance audit - legal requirement"));
 
         assertThat(decision.isAllowed()).isTrue();
@@ -764,7 +764,7 @@ class PhrPolicyEvaluatorTest extends EventloopTestBase {
         PhrRouteSupport.PhrRequestContext context = context("tenant-1", "patient-1", "patient", null);
 
         PhrPolicyEvaluator.PolicyDecision decision = runPromise(
-            () -> harness.evaluator().canAccessEmergency(context, "patient-1", 
+            () -> harness.evaluator().canAccessEmergency(context, "patient-1",
                 "Emergency treatment"));
 
         assertThat(decision.isAllowed()).isFalse();
@@ -778,7 +778,7 @@ class PhrPolicyEvaluatorTest extends EventloopTestBase {
         PhrRouteSupport.PhrRequestContext context = context("tenant-1", "caregiver-1", "caregiver", null);
 
         PhrPolicyEvaluator.PolicyDecision decision = runPromise(
-            () -> harness.evaluator().canAccessEmergency(context, "patient-1", 
+            () -> harness.evaluator().canAccessEmergency(context, "patient-1",
                 "Emergency treatment"));
 
         assertThat(decision.isAllowed()).isFalse();
@@ -792,7 +792,7 @@ class PhrPolicyEvaluatorTest extends EventloopTestBase {
         PhrRouteSupport.PhrRequestContext context = context("tenant-1", "fchv-1", "fchv", "facility-1");
 
         PhrPolicyEvaluator.PolicyDecision decision = runPromise(
-            () -> harness.evaluator().canAccessEmergency(context, "patient-1", 
+            () -> harness.evaluator().canAccessEmergency(context, "patient-1",
                 "Emergency treatment"));
 
         assertThat(decision.isAllowed()).isFalse();
@@ -806,7 +806,7 @@ class PhrPolicyEvaluatorTest extends EventloopTestBase {
         PhrRouteSupport.PhrRequestContext context = context("tenant-1", "clinician-1", "clinician", "facility-1");
 
         PhrPolicyEvaluator.PolicyDecision decision = runPromise(
-            () -> harness.evaluator().canAccessEmergency(context, "", 
+            () -> harness.evaluator().canAccessEmergency(context, "",
                 "Emergency treatment"));
 
         assertThat(decision.isAllowed()).isFalse();
@@ -848,7 +848,7 @@ class PhrPolicyEvaluatorTest extends EventloopTestBase {
         PhrRouteSupport.PhrRequestContext context = context("tenant-1", "clinician-1", "clinician", "facility-1");
 
         PhrPolicyEvaluator.PolicyDecision decision = runPromise(
-            () -> harness.evaluator().canAccessEmergency(context, "patient-1", 
+            () -> harness.evaluator().canAccessEmergency(context, "patient-1",
                 "Emergency treatment - no prior relationship"));
 
         assertThat(decision.isAllowed()).isTrue();
@@ -865,10 +865,10 @@ class PhrPolicyEvaluatorTest extends EventloopTestBase {
         PhrRouteSupport.PhrRequestContext adminContext = context("tenant-1", "admin-1", "admin", "facility-1");
 
         PhrPolicyEvaluator.PolicyDecision clinicianDecision = runPromise(
-            () -> harness.evaluator().canAccessEmergency(clinicianContext, "patient-1", 
+            () -> harness.evaluator().canAccessEmergency(clinicianContext, "patient-1",
                 "Emergency treatment"));
         PhrPolicyEvaluator.PolicyDecision adminDecision = runPromise(
-            () -> harness.evaluator().canAccessEmergency(adminContext, "patient-1", 
+            () -> harness.evaluator().canAccessEmergency(adminContext, "patient-1",
                 "Emergency compliance audit"));
 
         assertThat(clinicianDecision.requiresAudit()).isTrue();
@@ -882,7 +882,7 @@ class PhrPolicyEvaluatorTest extends EventloopTestBase {
         PhrRouteSupport.PhrRequestContext context = context("tenant-1", "clinician-1", "clinician", "facility-1");
 
         PhrPolicyEvaluator.PolicyDecision decision = runPromise(
-            () -> harness.evaluator().canAccessEmergency(context, "patient-1", 
+            () -> harness.evaluator().canAccessEmergency(context, "patient-1",
                 "Emergency treatment"));
 
         assertThat(decision.isEmergencyOverride()).isTrue();

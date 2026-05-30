@@ -76,7 +76,7 @@ public final class PhrAppointmentRoutes {
                 } catch (IllegalArgumentException ex) {
                     return PhrRouteSupport.errorResponse(400, "INVALID_APPOINTMENT_REQUEST", ex.getMessage());
                 }
-                
+
                 return requireAccess(context, appointmentRequest.getPatientId(), "appointments", "WRITE")
                     .then(decision -> {
                         if (!decision.isAllowed()) {
@@ -111,19 +111,19 @@ public final class PhrAppointmentRoutes {
                 } catch (Exception ex) {
                     return PhrRouteSupport.errorResponse(400, "INVALID_RESCHEDULE", ex.getMessage());
                 }
-                
+
                 // For rescheduling, we need to get the appointment first to check patient access
                 return appointmentService.getPatientAppointments(context.principalId(), null)
                     .then(appointments -> {
                         // Check if the appointment belongs to the patient
                         boolean hasAccess = appointments.stream()
                             .anyMatch(app -> app.getId().equals(appointmentId));
-                        
+
                         if (!hasAccess) {
-                            return PhrRouteSupport.errorResponse(403, "APPOINTMENT_ACCESS_DENIED", 
+                            return PhrRouteSupport.errorResponse(403, "APPOINTMENT_ACCESS_DENIED",
                                 "You do not have access to this appointment", context.correlationId());
                         }
-                        
+
                         // TODO: Implement reschedule logic in AppointmentService
                         return PhrRouteSupport.jsonResponse(200, Map.of(
                             "appointmentId", appointmentId,
@@ -152,13 +152,13 @@ public final class PhrAppointmentRoutes {
                 // Check if the appointment belongs to the patient
                 boolean hasAccess = appointments.stream()
                     .anyMatch(app -> app.getId().equals(appointmentId));
-                
+
                 if (!hasAccess) {
-                    return PhrRouteSupport.errorResponse(403, "APPOINTMENT_ACCESS_DENIED", 
+                    return PhrRouteSupport.errorResponse(403, "APPOINTMENT_ACCESS_DENIED",
                         "You do not have access to this appointment", context.correlationId());
                 }
-                
-                return appointmentService.cancelAppointment(appointmentId, 
+
+                return appointmentService.cancelAppointment(appointmentId,
                     reason != null ? reason : "Cancelled by patient")
                     .then($ -> PhrRouteSupport.jsonResponse(200, Map.of(
                         "appointmentId", appointmentId,
@@ -205,12 +205,12 @@ public final class PhrAppointmentRoutes {
                 var appointment = appointments.stream()
                     .filter(app -> app.getId().equals(appointmentId))
                     .findFirst();
-                
+
                 if (appointment.isEmpty()) {
-                    return PhrRouteSupport.errorResponse(404, "APPOINTMENT_NOT_FOUND", 
+                    return PhrRouteSupport.errorResponse(404, "APPOINTMENT_NOT_FOUND",
                         "Appointment not found or not accessible", context.correlationId());
                 }
-                
+
                 return PhrRouteSupport.jsonResponse(200, appointment.get());
             });
     }
@@ -256,7 +256,7 @@ public final class PhrAppointmentRoutes {
         Instant scheduledTime = Instant.parse(requiredText(node, "scheduledTime"));
         int durationMinutes = node.path("durationMinutes").asInt(30);
         String appointmentType = text(node, "appointmentType", text(node, "type", "GENERAL"));
-        
+
         return new AppointmentService.AppointmentRequest(
             patientId,
             providerId,

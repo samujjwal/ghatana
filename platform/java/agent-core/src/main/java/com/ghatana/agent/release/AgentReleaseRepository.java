@@ -103,4 +103,19 @@ public interface AgentReleaseRepository {
      * @return an {@code Optional} containing the governing release if one exists
      */
     Promise<Optional<AgentRelease>> findGoverningRelease(String agentId, String tenantId);
+
+    /**
+     * Finds an optional tenant-scoped runtime configuration overlay for a release.
+     *
+     * <p>Repository implementations that do not persist instance overlays may rely
+     * on this fail-open default so dispatch can continue enforcing release-state
+     * policy without a kill-switch overlay.
+     *
+     * @param agentReleaseId the release ID
+     * @param tenantId the tenant scoping the lookup
+     * @return an optional runtime configuration overlay
+     */
+    default Promise<Optional<AgentInstanceConfig>> findInstanceConfig(String agentReleaseId, String tenantId) {
+        return Promise.of(Optional.empty());
+    }
 }

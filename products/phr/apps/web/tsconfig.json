@@ -17,10 +17,26 @@
     "types": ["vite/client", "node", "react", "react-dom", "vitest/globals"],
     "paths": {
       "@/*": ["src/*"],
-      "@ghatana/charts": ["../../../../platform/typescript/charts/src/index.ts"],
-      "@ghatana/product-shell": ["../../../../platform/typescript/product-shell/src/index.ts"]
+      "@ghatana/charts": [
+        "../../../../platform/typescript/charts/src/index.ts"
+      ],
+      "@ghatana/kernel-product-contracts": [
+        "../../../../platform/typescript/kernel-product-contracts/dist/index.d.ts"
+      ],
+      "@ghatana/kernel-product-contracts/route": [
+        "../../../../platform/typescript/kernel-product-contracts/src/route/ProductRouteContract.ts"
+      ],
+      "@ghatana/product-shell": [
+        "../../../../platform/typescript/product-shell/src/index.ts"
+      ]
     }
   },
-  "include": ["src", "tests", "playwright.config.ts", "vite.config.ts", "vitest.config.ts"],
+  "include": [
+    "src",
+    "tests",
+    "playwright.config.ts",
+    "vite.config.ts",
+    "vitest.config.ts"
+  ],
   "exclude": ["dist", "node_modules"]
 }

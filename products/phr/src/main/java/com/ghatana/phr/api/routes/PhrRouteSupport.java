@@ -1,6 +1,5 @@
 package com.ghatana.phr.api.routes;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.kernel.observability.KernelTelemetryManager;
 import com.ghatana.kernel.security.PolicyValidationHelper;
@@ -232,7 +231,7 @@ public final class PhrRouteSupport {
         // Admin and FCHV roles may have broader facility access
         String role = context.role();
         PolicyValidationHelper.validateFacilityScope(facilityId, role, "admin", "fchv");
-        
+
         // For clinicians and caregivers, route handlers defer the final facility-scoped
         // PHI decision to PhrPolicyEvaluator.
     }

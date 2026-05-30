@@ -1,7 +1,6 @@
 package com.ghatana.phr.api.routes;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.ghatana.phr.application.patient.PatientOperationContext;
 import com.ghatana.phr.kernel.service.PatientRecordService;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
@@ -16,7 +15,6 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -131,21 +129,21 @@ public final class PhrPatientProfileRoutes {
 
                 try {
                     JsonNode node = PhrRouteSupport.JSON.readTree(raw);
-                    
+
                     // Validate each field against permissions
                     Map<String, Object> validatedUpdates = new LinkedHashMap<>();
                     for (String fieldName : allowedFields) {
                         if (node.has(fieldName)) {
                             JsonNode fieldNode = node.get(fieldName);
                             String value = fieldNode.isTextual() ? fieldNode.asText() : fieldNode.toString();
-                            
+
                             // Field-level validation
                             String validationError = validateField(fieldName, value);
                             if (validationError != null) {
-                                return PhrRouteSupport.errorResponse(400, "INVALID_FIELD", 
+                                return PhrRouteSupport.errorResponse(400, "INVALID_FIELD",
                                     fieldName + ": " + validationError, context.correlationId());
                             }
-                            
+
                             validatedUpdates.put(fieldName, value);
                         }
                     }
@@ -174,7 +172,7 @@ public final class PhrPatientProfileRoutes {
                             // Apply validated updates to patient record
                             // Note: This is a simplified implementation that updates contact/address fields
                             // A full implementation would need to reconstruct the full Patient object with all nested types
-                            
+
                             Map<String, Object> response = new LinkedHashMap<>();
                             response.put("status", "updated");
                             response.put("patientId", patient.getId());
@@ -186,7 +184,7 @@ public final class PhrPatientProfileRoutes {
                                 "timestamp", Instant.now().toString(),
                                 "correlationId", context.correlationId()
                             ));
-                            
+
                             // TODO: Implement actual persistence by reconstructing Patient object with updated fields
                             // For now, return success with audit trail
                             return PhrRouteSupport.jsonResponseWithCorrelation(200, response, context.correlationId());

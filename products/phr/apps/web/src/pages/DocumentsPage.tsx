@@ -118,7 +118,7 @@ export function DocumentsPage(): React.ReactElement {
           subheader={t('documents.subheader')}
           action={
             <Link to="/documents/upload">
-              <Button variant="solid">Upload Document</Button>
+              <Button variant="solid">{t('documents.upload.submit')}</Button>
             </Link>
           }
         />

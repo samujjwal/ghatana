@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * PHR-P1-005: Contract tests for web-exposed PHR routes.
  * Validates that every web API method has a backend handler + tenant/security test.
- * 
+ *
  * @doc.type class
  * @doc.purpose Contract conformance tests for web-exposed PHR routes
  * @doc.layer product
@@ -43,13 +43,13 @@ public final class PhrWebExposedRoutesContractTest extends ApiContractConformanc
     @Test
     @DisplayName("POST /auth/login should be implemented and documented")
     void testAuthLoginRoute() {
-        HttpRouteScanner.RouteDefinition route = 
+        HttpRouteScanner.RouteDefinition route =
             new HttpRouteScanner.RouteDefinition(HttpMethod.POST, "/auth/login");
-        
+
         assertThatRouteExists(route)
             .as("POST /auth/login should be implemented")
             .isTrue();
-        
+
         assertThatRouteDocumented(route)
             .as("POST /auth/login should be documented in OpenAPI spec")
             .isTrue();
@@ -58,13 +58,13 @@ public final class PhrWebExposedRoutesContractTest extends ApiContractConformanc
     @Test
     @DisplayName("POST /auth/logout should be implemented and documented")
     void testAuthLogoutRoute() {
-        HttpRouteScanner.RouteDefinition route = 
+        HttpRouteScanner.RouteDefinition route =
             new HttpRouteScanner.RouteDefinition(HttpMethod.POST, "/auth/logout");
-        
+
         assertThatRouteExists(route)
             .as("POST /auth/logout should be implemented")
             .isTrue();
-        
+
         assertThatRouteDocumented(route)
             .as("POST /auth/logout should be documented in OpenAPI spec")
             .isTrue();
@@ -73,13 +73,13 @@ public final class PhrWebExposedRoutesContractTest extends ApiContractConformanc
     @Test
     @DisplayName("GET /profile should be implemented and documented")
     void testProfileGetRoute() {
-        HttpRouteScanner.RouteDefinition route = 
+        HttpRouteScanner.RouteDefinition route =
             new HttpRouteScanner.RouteDefinition(HttpMethod.GET, "/profile");
-        
+
         assertThatRouteExists(route)
             .as("GET /profile should be implemented")
             .isTrue();
-        
+
         assertThatRouteDocumented(route)
             .as("GET /profile should be documented in OpenAPI spec")
             .isTrue();
@@ -88,13 +88,13 @@ public final class PhrWebExposedRoutesContractTest extends ApiContractConformanc
     @Test
     @DisplayName("PUT /profile should be implemented and documented")
     void testProfileUpdateRoute() {
-        HttpRouteScanner.RouteDefinition route = 
+        HttpRouteScanner.RouteDefinition route =
             new HttpRouteScanner.RouteDefinition(HttpMethod.PUT, "/profile");
-        
+
         assertThatRouteExists(route)
             .as("PUT /profile should be implemented")
             .isTrue();
-        
+
         assertThatRouteDocumented(route)
             .as("PUT /profile should be documented in OpenAPI spec")
             .isTrue();
@@ -103,13 +103,13 @@ public final class PhrWebExposedRoutesContractTest extends ApiContractConformanc
     @Test
     @DisplayName("GET /documents should be implemented and documented")
     void testDocumentsGetRoute() {
-        HttpRouteScanner.RouteDefinition route = 
+        HttpRouteScanner.RouteDefinition route =
             new HttpRouteScanner.RouteDefinition(HttpMethod.GET, "/documents");
-        
+
         assertThatRouteExists(route)
             .as("GET /documents should be implemented")
             .isTrue();
-        
+
         assertThatRouteDocumented(route)
             .as("GET /documents should be documented in OpenAPI spec")
             .isTrue();
@@ -118,13 +118,13 @@ public final class PhrWebExposedRoutesContractTest extends ApiContractConformanc
     @Test
     @DisplayName("POST /documents should be implemented and documented")
     void testDocumentsUploadRoute() {
-        HttpRouteScanner.RouteDefinition route = 
+        HttpRouteScanner.RouteDefinition route =
             new HttpRouteScanner.RouteDefinition(HttpMethod.POST, "/documents");
-        
+
         assertThatRouteExists(route)
             .as("POST /documents should be implemented")
             .isTrue();
-        
+
         assertThatRouteDocumented(route)
             .as("POST /documents should be documented in OpenAPI spec")
             .isTrue();
@@ -133,13 +133,13 @@ public final class PhrWebExposedRoutesContractTest extends ApiContractConformanc
     @Test
     @DisplayName("GET /documents/{documentId}/ocr should be implemented and documented")
     void testDocumentOcrGetRoute() {
-        HttpRouteScanner.RouteDefinition route = 
+        HttpRouteScanner.RouteDefinition route =
             new HttpRouteScanner.RouteDefinition(HttpMethod.GET, "/documents/{documentId}/ocr");
-        
+
         assertThatRouteExists(route)
             .as("GET /documents/{documentId}/ocr should be implemented")
             .isTrue();
-        
+
         assertThatRouteDocumented(route)
             .as("GET /documents/{documentId}/ocr should be documented in OpenAPI spec")
             .isTrue();
@@ -148,13 +148,13 @@ public final class PhrWebExposedRoutesContractTest extends ApiContractConformanc
     @Test
     @DisplayName("POST /documents/{documentId}/ocr/confirm should be implemented and documented")
     void testDocumentOcrConfirmRoute() {
-        HttpRouteScanner.RouteDefinition route = 
+        HttpRouteScanner.RouteDefinition route =
             new HttpRouteScanner.RouteDefinition(HttpMethod.POST, "/documents/{documentId}/ocr/confirm");
-        
+
         assertThatRouteExists(route)
             .as("POST /documents/{documentId}/ocr/confirm should be implemented")
             .isTrue();
-        
+
         assertThatRouteDocumented(route)
             .as("POST /documents/{documentId}/ocr/confirm should be documented in OpenAPI spec")
             .isTrue();
@@ -163,13 +163,13 @@ public final class PhrWebExposedRoutesContractTest extends ApiContractConformanc
     @Test
     @DisplayName("GET /provider/patients should be implemented and documented")
     void testProviderPatientsRoute() {
-        HttpRouteScanner.RouteDefinition route = 
+        HttpRouteScanner.RouteDefinition route =
             new HttpRouteScanner.RouteDefinition(HttpMethod.GET, "/provider/patients");
-        
+
         assertThatRouteExists(route)
             .as("GET /provider/patients should be implemented")
             .isTrue();
-        
+
         assertThatRouteDocumented(route)
             .as("GET /provider/patients should be documented in OpenAPI spec")
             .isTrue();
@@ -178,13 +178,13 @@ public final class PhrWebExposedRoutesContractTest extends ApiContractConformanc
     @Test
     @DisplayName("GET /caregiver/dependents should be implemented and documented")
     void testCaregiverDependentsRoute() {
-        HttpRouteScanner.RouteDefinition route = 
+        HttpRouteScanner.RouteDefinition route =
             new HttpRouteScanner.RouteDefinition(HttpMethod.GET, "/caregiver/dependents");
-        
+
         assertThatRouteExists(route)
             .as("GET /caregiver/dependents should be implemented")
             .isTrue();
-        
+
         assertThatRouteDocumented(route)
             .as("GET /caregiver/dependents should be documented in OpenAPI spec")
             .isTrue();
@@ -193,13 +193,13 @@ public final class PhrWebExposedRoutesContractTest extends ApiContractConformanc
     @Test
     @DisplayName("GET /fchv/dashboard should be implemented and documented")
     void testFchvDashboardRoute() {
-        HttpRouteScanner.RouteDefinition route = 
+        HttpRouteScanner.RouteDefinition route =
             new HttpRouteScanner.RouteDefinition(HttpMethod.GET, "/fchv/dashboard");
-        
+
         assertThatRouteExists(route)
             .as("GET /fchv/dashboard should be implemented")
             .isTrue();
-        
+
         assertThatRouteDocumented(route)
             .as("GET /fchv/dashboard should be documented in OpenAPI spec")
             .isTrue();
@@ -208,13 +208,13 @@ public final class PhrWebExposedRoutesContractTest extends ApiContractConformanc
     @Test
     @DisplayName("POST /consents/grants should be implemented and documented")
     void testConsentGrantRoute() {
-        HttpRouteScanner.RouteDefinition route = 
+        HttpRouteScanner.RouteDefinition route =
             new HttpRouteScanner.RouteDefinition(HttpMethod.POST, "/consents/grants");
-        
+
         assertThatRouteExists(route)
             .as("POST /consents/grants should be implemented")
             .isTrue();
-        
+
         assertThatRouteDocumented(route)
             .as("POST /consents/grants should be documented in OpenAPI spec")
             .isTrue();
@@ -223,13 +223,13 @@ public final class PhrWebExposedRoutesContractTest extends ApiContractConformanc
     @Test
     @DisplayName("POST /consents/grants/{grantId}/revoke should be implemented and documented")
     void testConsentRevokeRoute() {
-        HttpRouteScanner.RouteDefinition route = 
+        HttpRouteScanner.RouteDefinition route =
             new HttpRouteScanner.RouteDefinition(HttpMethod.POST, "/consents/grants/{grantId}/revoke");
-        
+
         assertThatRouteExists(route)
             .as("POST /consents/grants/{grantId}/revoke should be implemented")
             .isTrue();
-        
+
         assertThatRouteDocumented(route)
             .as("POST /consents/grants/{grantId}/revoke should be documented in OpenAPI spec")
             .isTrue();
@@ -238,13 +238,13 @@ public final class PhrWebExposedRoutesContractTest extends ApiContractConformanc
     @Test
     @DisplayName("POST /emergency/access should be implemented and documented")
     void testEmergencyAccessRoute() {
-        HttpRouteScanner.RouteDefinition route = 
+        HttpRouteScanner.RouteDefinition route =
             new HttpRouteScanner.RouteDefinition(HttpMethod.POST, "/emergency/access");
-        
+
         assertThatRouteExists(route)
             .as("POST /emergency/access should be implemented")
             .isTrue();
-        
+
         assertThatRouteDocumented(route)
             .as("POST /emergency/access should be documented in OpenAPI spec")
             .isTrue();
@@ -253,13 +253,13 @@ public final class PhrWebExposedRoutesContractTest extends ApiContractConformanc
     @Test
     @DisplayName("POST /emergency/reviews/{eventId} should be implemented and documented")
     void testEmergencyReviewRoute() {
-        HttpRouteScanner.RouteDefinition route = 
+        HttpRouteScanner.RouteDefinition route =
             new HttpRouteScanner.RouteDefinition(HttpMethod.POST, "/emergency/reviews/{eventId}");
-        
+
         assertThatRouteExists(route)
             .as("POST /emergency/reviews/{eventId} should be implemented")
             .isTrue();
-        
+
         assertThatRouteDocumented(route)
             .as("POST /emergency/reviews/{eventId} should be documented in OpenAPI spec")
             .isTrue();
@@ -268,13 +268,13 @@ public final class PhrWebExposedRoutesContractTest extends ApiContractConformanc
     @Test
     @DisplayName("GET /audit/events should be implemented and documented")
     void testAuditEventsRoute() {
-        HttpRouteScanner.RouteDefinition route = 
+        HttpRouteScanner.RouteDefinition route =
             new HttpRouteScanner.RouteDefinition(HttpMethod.GET, "/audit/events");
-        
+
         assertThatRouteExists(route)
             .as("GET /audit/events should be implemented")
             .isTrue();
-        
+
         assertThatRouteDocumented(route)
             .as("GET /audit/events should be documented in OpenAPI spec")
             .isTrue();
@@ -283,13 +283,13 @@ public final class PhrWebExposedRoutesContractTest extends ApiContractConformanc
     @Test
     @DisplayName("POST /appointments should be implemented and documented")
     void testAppointmentCreateRoute() {
-        HttpRouteScanner.RouteDefinition route = 
+        HttpRouteScanner.RouteDefinition route =
             new HttpRouteScanner.RouteDefinition(HttpMethod.POST, "/appointments");
-        
+
         assertThatRouteExists(route)
             .as("POST /appointments should be implemented")
             .isTrue();
-        
+
         assertThatRouteDocumented(route)
             .as("POST /appointments should be documented in OpenAPI spec")
             .isTrue();

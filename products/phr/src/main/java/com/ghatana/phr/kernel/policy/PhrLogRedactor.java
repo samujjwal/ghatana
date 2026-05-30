@@ -5,7 +5,7 @@ import java.util.regex.Pattern;
 
 /**
  * PHI/PII log redaction utility for PHR Nepal.
- * 
+ *
  * Redacts sensitive fields from log messages based on field classification.
  * Used by logging appenders and audit export handlers to ensure PHI
  * is not exposed in logs or non-admin audit exports.
@@ -27,7 +27,7 @@ public final class PhrLogRedactor {
 
     /**
      * Redacts a single field value based on its field name.
-     * 
+     *
      * @param fieldName the field name to classify
      * @param value the field value
      * @return the redacted value, or the original if not sensitive
@@ -41,7 +41,7 @@ public final class PhrLogRedactor {
 
     /**
      * Redacts all sensitive fields in a map of data.
-     * 
+     *
      * @param data the data map to redact
      * @return a new map with sensitive fields redacted
      */
@@ -54,7 +54,7 @@ public final class PhrLogRedactor {
         for (Map.Entry<String, Object> entry : data.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
-            
+
             if (value instanceof String stringValue) {
                 redacted.put(key, redactField(key, stringValue));
             } else if (value instanceof Map<?, ?> nestedMap) {
@@ -70,10 +70,10 @@ public final class PhrLogRedactor {
 
     /**
      * Redacts PHI from a free-form log message.
-     * 
+     *
      * This is a best-effort scan for common PHI patterns.
      * Structured logging with field-level redaction is preferred.
-     * 
+     *
      * @param message the log message
      * @return the message with PHI redacted
      */
@@ -87,15 +87,15 @@ public final class PhrLogRedactor {
         redacted = PHONE_PATTERN.matcher(redacted).replaceAll("[REDACTED-PHONE]");
         redacted = EMAIL_PATTERN.matcher(redacted).replaceAll("[REDACTED-EMAIL]");
         redacted = SSN_PATTERN.matcher(redacted).replaceAll("[REDACTED-SSN]");
-        
+
         return redacted;
     }
 
     /**
      * Redacts a message for audit export (less aggressive than logs).
-     * 
+     *
      * Audit exports may show identifiable information but not restricted PHI.
-     * 
+     *
      * @param message the message
      * @return the message with restricted PHI redacted
      */
@@ -107,15 +107,15 @@ public final class PhrLogRedactor {
         String redacted = message;
         // Only redact highly sensitive fields in audit exports
         redacted = SSN_PATTERN.matcher(redacted).replaceAll("[REDACTED-SSN]");
-        
+
         return redacted;
     }
 
     /**
      * Redacts a message for mobile cache (most aggressive).
-     * 
+     *
      * Mobile cache should not contain any PHI or PII.
-     * 
+     *
      * @param message the message
      * @return the message with all PHI/PII redacted
      */
@@ -129,20 +129,20 @@ public final class PhrLogRedactor {
         redacted = PHONE_PATTERN.matcher(redacted).replaceAll("[REDACTED-PHONE]");
         redacted = EMAIL_PATTERN.matcher(redacted).replaceAll("[REDACTED-EMAIL]");
         redacted = SSN_PATTERN.matcher(redacted).replaceAll("[REDACTED-SSN]");
-        
+
         // Also redact common PHI terms
         redacted = redacted.replaceAll("(?i)\\bdiagnosis\\b", "[REDACTED-PHI]");
         redacted = redacted.replaceAll("(?i)\\bmedication\\b", "[REDACTED-PHI]");
         redacted = redacted.replaceAll("(?i)\\blab result\\b", "[REDACTED-PHI]");
-        
+
         return redacted;
     }
 
     /**
      * Redacts a message for push notifications.
-     * 
+     *
      * Push notifications should not contain PHI.
-     * 
+     *
      * @param message the message
      * @return the message with PHI redacted
      */
@@ -156,12 +156,12 @@ public final class PhrLogRedactor {
         redacted = PHONE_PATTERN.matcher(redacted).replaceAll("[REDACTED-PHONE]");
         redacted = EMAIL_PATTERN.matcher(redacted).replaceAll("[REDACTED-EMAIL]");
         redacted = SSN_PATTERN.matcher(redacted).replaceAll("[REDACTED-SSN]");
-        
+
         // Redact clinical terms
         redacted = redacted.replaceAll("(?i)\\bdiagnosis\\b", "[REDACTED]");
         redacted = redacted.replaceAll("(?i)\\bmedication\\b", "[REDACTED]");
         redacted = redacted.replaceAll("(?i)\\bcondition\\b", "[REDACTED]");
-        
+
         return redacted;
     }
 }

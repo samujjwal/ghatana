@@ -1,7 +1,6 @@
 package com.ghatana.phr.api.routes;
 
 import com.ghatana.phr.hie.NepalHieIntegrationService;
-import com.ghatana.phr.hie.NepalHieSyncResult;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -80,11 +79,11 @@ public final class PhrHieRoutes {
                         "correlationId", context.correlationId()
                     ), context.correlationId());
                 } else {
-                    return PhrRouteSupport.errorResponse(502, "HIE_EXPORT_FAILED", "HIE service rejected the export request: " + result.message(), 
+                    return PhrRouteSupport.errorResponse(502, "HIE_EXPORT_FAILED", "HIE service rejected the export request: " + result.message(),
                         context.correlationId());
                 }
             })
-            .whenException(ex -> PhrRouteSupport.errorResponse(500, "HIE_EXPORT_ERROR", "Failed to submit HIE export request: " + ex.getMessage(), 
+            .whenException(ex -> PhrRouteSupport.errorResponse(500, "HIE_EXPORT_ERROR", "Failed to submit HIE export request: " + ex.getMessage(),
                 context.correlationId()));
     }
 
@@ -117,11 +116,11 @@ public final class PhrHieRoutes {
                         "correlationId", context.correlationId()
                     ), context.correlationId());
                 } else {
-                    return PhrRouteSupport.errorResponse(502, "HIE_IMPORT_FAILED", "HIE service rejected the import request: " + result.message(), 
+                    return PhrRouteSupport.errorResponse(502, "HIE_IMPORT_FAILED", "HIE service rejected the import request: " + result.message(),
                         context.correlationId());
                 }
             })
-            .whenException(ex -> PhrRouteSupport.errorResponse(500, "HIE_IMPORT_ERROR", "Failed to submit HIE import request: " + ex.getMessage(), 
+            .whenException(ex -> PhrRouteSupport.errorResponse(500, "HIE_IMPORT_ERROR", "Failed to submit HIE import request: " + ex.getMessage(),
                 context.correlationId()));
     }
 
@@ -141,7 +140,7 @@ public final class PhrHieRoutes {
 
         String requestId = request.getPathParameter("requestId");
         if (requestId == null || requestId.isBlank()) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_REQUEST_ID", 
+            return PhrRouteSupport.errorResponse(400, "INVALID_REQUEST_ID",
                 "Request ID is required", context.correlationId());
         }
 

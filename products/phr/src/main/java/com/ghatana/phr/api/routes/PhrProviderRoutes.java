@@ -148,6 +148,11 @@ public final class PhrProviderRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
+        if (!"clinician".equals(context.role()) && !"admin".equals(context.role())) {
+            return PhrRouteSupport.errorResponse(403, "PROVIDER_ROLE_REQUIRED",
+                "Provider roster access requires clinician or admin role", context.correlationId());
+        }
+
         // Use policy evaluator for PHI access decision (POL-001)
         String searchQuery = request.getQueryParameter("q");
         String limitParam = request.getQueryParameter("limit");
@@ -210,7 +215,7 @@ public final class PhrProviderRoutes {
             if (!decision.isAllowed()) {
                 return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
             }
-            
+
             return patientRecordService.getPatient(patientId)
                 .then(opt -> {
                     if (opt.isEmpty()) {
@@ -253,7 +258,7 @@ public final class PhrProviderRoutes {
             if (!decision.isAllowed()) {
                 return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
             }
-            
+
             return patientRecordService.getPatient(patientId)
                 .then(opt -> {
                     if (opt.isEmpty()) {
@@ -264,7 +269,7 @@ public final class PhrProviderRoutes {
                     var patient = opt.get();
                     var demographics = patient.getDemographics();
                     var medicalHistory = patient.getMedicalHistory();
-                    
+
                     return PhrRouteSupport.jsonResponse(200, Map.of(
                         "patientId", patientId,
                         "tenantId", context.tenantId(),
@@ -314,16 +319,16 @@ public final class PhrProviderRoutes {
             if (!decision.isAllowed()) {
                 return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
             }
-            
+
             return request.loadBody()
                 .then(body -> {
                     try {
                         String json = body.getString(java.nio.charset.StandardCharsets.UTF_8);
                         var node = PhrRouteSupport.JSON.readTree(json);
-                        
+
                         String encounterType = node.path("encounterType").asText();
                         String location = node.path("location").asText();
-                        
+
                         PatientOperationContext ctx = new PatientOperationContext(
                             context.tenantId(),
                             "default",
@@ -331,14 +336,14 @@ public final class PhrProviderRoutes {
                             patientId,
                             context.correlationId()
                         );
-                        
+
                         CreateEncounterRequest createRequest = new CreateEncounterRequest(
                             patientId,
                             encounterType,
                             context.principalId(),
                             location
                         );
-                        
+
                         return clinicalService.createEncounter(ctx, createRequest)
                             .then(encounter -> PhrRouteSupport.jsonResponse(201, Map.of(
                                 "encounterId", encounter.encounterId(),
@@ -379,7 +384,7 @@ public final class PhrProviderRoutes {
             if (!decision.isAllowed()) {
                 return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
             }
-            
+
             PatientOperationContext ctx = new PatientOperationContext(
                 context.tenantId(),
                 "default",
@@ -387,7 +392,7 @@ public final class PhrProviderRoutes {
                 patientId,
                 context.correlationId()
             );
-            
+
             return clinicalService.getEncounter(ctx, encounterId)
                 .then(opt -> {
                     if (opt.isEmpty()) {
@@ -432,16 +437,16 @@ public final class PhrProviderRoutes {
             if (!decision.isAllowed()) {
                 return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
             }
-            
+
             return request.loadBody()
                 .then(body -> {
                     try {
                         String json = body.getString(java.nio.charset.StandardCharsets.UTF_8);
                         var node = PhrRouteSupport.JSON.readTree(json);
-                        
+
                         String encounterType = node.has("encounterType") ? node.path("encounterType").asText() : null;
                         String participant = node.has("participant") ? node.path("participant").asText() : null;
-                        
+
                         PatientOperationContext ctx = new PatientOperationContext(
                             context.tenantId(),
                             "default",
@@ -449,13 +454,13 @@ public final class PhrProviderRoutes {
                             patientId,
                             context.correlationId()
                         );
-                        
+
                         UpdateEncounterRequest updateRequest = new UpdateEncounterRequest(
                             encounterType,
                             participant,
                             null
                         );
-                        
+
                         return clinicalService.updateEncounter(ctx, encounterId, updateRequest)
                             .then(encounter -> PhrRouteSupport.jsonResponse(200, Map.of(
                                 "encounterId", encounter.encounterId(),
@@ -497,7 +502,7 @@ public final class PhrProviderRoutes {
             if (!decision.isAllowed()) {
                 return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
             }
-            
+
             PatientOperationContext ctx = new PatientOperationContext(
                 context.tenantId(),
                 "default",
@@ -505,7 +510,7 @@ public final class PhrProviderRoutes {
                 patientId,
                 context.correlationId()
             );
-            
+
             return clinicalService.completeEncounter(ctx, encounterId)
                 .then(encounter -> PhrRouteSupport.jsonResponse(200, Map.of(
                     "encounterId", encounter.encounterId(),
@@ -541,18 +546,18 @@ public final class PhrProviderRoutes {
             if (!decision.isAllowed()) {
                 return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
             }
-            
+
             return request.loadBody()
                 .then(body -> {
                     try {
                         String json = body.getString(java.nio.charset.StandardCharsets.UTF_8);
                         var node = PhrRouteSupport.JSON.readTree(json);
-                        
+
                         String medicationName = node.path("medicationName").asText();
                         String dosage = node.path("dosage").asText();
                         String frequency = node.path("frequency").asText();
                         String route = node.path("route").asText();
-                        
+
                         PatientOperationContext ctx = new PatientOperationContext(
                             context.tenantId(),
                             "default",
@@ -560,7 +565,7 @@ public final class PhrProviderRoutes {
                             patientId,
                             context.correlationId()
                         );
-                        
+
                         PrescribeMedicationRequest prescribeRequest = new PrescribeMedicationRequest(
                             patientId,
                             medicationName,
@@ -568,7 +573,7 @@ public final class PhrProviderRoutes {
                             frequency,
                             route
                         );
-                        
+
                         return clinicalService.prescribeMedication(ctx, prescribeRequest)
                             .then(medication -> PhrRouteSupport.jsonResponse(201, Map.of(
                                 "medicationId", medication.medicationId(),

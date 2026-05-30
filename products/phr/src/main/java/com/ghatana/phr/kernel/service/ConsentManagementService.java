@@ -812,13 +812,13 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
             if (field == null || field.isBlank()) {
                 return true; // No field specified, allow access
             }
-            
+
             Set<String> allowedFields = fieldLevelAccess.get(resourceType);
             if (allowedFields == null || allowedFields.isEmpty()) {
                 // No field-level restrictions for this resource type
                 return true;
             }
-            
+
             // If field-level restrictions exist, check if field is allowed
             return allowedFields.contains(field) || allowedFields.contains("*");
         }

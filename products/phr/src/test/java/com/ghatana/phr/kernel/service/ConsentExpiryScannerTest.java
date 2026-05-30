@@ -46,7 +46,7 @@ class ConsentExpiryScannerTest {
             Runnable::run
         ));
         when(mockContext.getEnvironment()).thenReturn("test");
-        
+
         mockEvidenceOutbox = mock(PhrEvidenceOutbox.class);
 
         scanner = new ConsentExpiryScanner(mockContext, mockEvidenceOutbox);
@@ -63,9 +63,9 @@ class ConsentExpiryScannerTest {
     @Test
     @DisplayName("ExpiryScanResult should correctly report zero expired grants")
     void expiryScanResultShouldReportZeroExpiredGrants() {
-        ConsentExpiryScanner.ExpiryScanResult result = 
+        ConsentExpiryScanner.ExpiryScanResult result =
             new ConsentExpiryScanner.ExpiryScanResult(0, 0, 0);
-        
+
         assertEquals(0, result.expiredCount());
         assertEquals(0, result.evidencePublished());
         assertEquals(0, result.cacheInvalidated());
@@ -75,9 +75,9 @@ class ConsentExpiryScannerTest {
     @Test
     @DisplayName("ExpiryScanResult should correctly report expired grants")
     void expiryScanResultShouldReportExpiredGrants() {
-        ConsentExpiryScanner.ExpiryScanResult result = 
+        ConsentExpiryScanner.ExpiryScanResult result =
             new ConsentExpiryScanner.ExpiryScanResult(5, 5, 5);
-        
+
         assertEquals(5, result.expiredCount());
         assertEquals(5, result.evidencePublished());
         assertEquals(5, result.cacheInvalidated());
@@ -87,9 +87,9 @@ class ConsentExpiryScannerTest {
     @Test
     @DisplayName("ExpiryScanResult should handle partial failures")
     void expiryScanResultShouldHandlePartialFailures() {
-        ConsentExpiryScanner.ExpiryScanResult result = 
+        ConsentExpiryScanner.ExpiryScanResult result =
             new ConsentExpiryScanner.ExpiryScanResult(10, 8, 8);
-        
+
         assertEquals(10, result.expiredCount());
         assertEquals(8, result.evidencePublished());
         assertEquals(8, result.cacheInvalidated());

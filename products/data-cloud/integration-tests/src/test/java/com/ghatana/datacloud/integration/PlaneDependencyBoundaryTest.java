@@ -59,6 +59,55 @@ class PlaneDependencyBoundaryTest {
             .isEmpty();
     }
 
+    @Test
+    @DisplayName("Data Cloud Java code does not import from internal platform runtime modules")
+    void dataCloudJavaDoesNotImportInternalPlatformRuntime() throws IOException {
+        Path planesRoot = DATA_CLOUD_ROOT.resolve("planes");
+        Path deliveryRoot = DATA_CLOUD_ROOT.resolve("delivery");
+
+        // Check for forbidden internal platform imports
+        List<String> forbiddenImports = List.of(
+            "com.ghatana.platform.runtime",
+            "com.ghatana.platform.data"
+        );
+
+        for (String forbiddenImport : forbiddenImports) {
+            List<Path> violations = javaFilesContaining(planesRoot, forbiddenImport);
+            violations.addAll(javaFilesContaining(deliveryRoot, forbiddenImport));
+
+            assertThat(violations)
+                .as("Data Cloud code must not import from internal platform module: %s", forbiddenImport)
+                .isEmpty();
+        }
+    }
+
+    @Test
+    @DisplayName("UI workspace dependencies are actually used in the codebase")
+    void uiWorkspaceDependenciesAreUsed() throws IOException {
+        Path uiSrcRoot = DATA_CLOUD_ROOT.resolve("delivery").resolve("ui").resolve("src");
+
+        // These are the workspace dependencies that should be used
+        List<String> requiredWorkspaceDeps = List.of(
+            "@ghatana/audit",
+            "@ghatana/canvas",
+            "@ghatana/design-system",
+            "@ghatana/domain-components",
+            "@ghatana/platform-utils",
+            "@ghatana/product-shell",
+            "@ghatana/realtime",
+            "@ghatana/theme",
+            "@ghatana/wizard"
+        );
+
+        for (String dep : requiredWorkspaceDeps) {
+            List<Path> usages = filesContaining(uiSrcRoot, dep);
+
+            assertThat(usages)
+                .as("Workspace dependency %s must be used in the UI codebase", dep)
+                .isNotEmpty();
+        }
+    }
+
     private static List<Path> filesContaining(Path root, String needle) throws IOException {
         if (!Files.exists(root)) {
             return List.of();
@@ -68,6 +117,19 @@ class PlaneDependencyBoundaryTest {
             return paths
                 .filter(Files::isRegularFile)
                 .filter(path -> isTextFile(path) && contains(path, needle))
+                .toList();
+        }
+    }
+
+    private static List<Path> javaFilesContaining(Path root, String needle) throws IOException {
+        if (!Files.exists(root)) {
+            return List.of();
+        }
+
+        try (Stream<Path> paths = Files.walk(root)) {
+            return paths
+                .filter(Files::isRegularFile)
+                .filter(path -> path.getFileName().toString().endsWith(".java") && contains(path, needle))
                 .toList();
         }
     }

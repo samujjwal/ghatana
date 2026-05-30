@@ -25,43 +25,50 @@
  * adapter instead.
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SecureStore from 'expo-secure-store';
-import * as LocalAuthentication from 'expo-local-authentication';
-import { t } from '../i18n/phrMobileI18n';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
+import * as LocalAuthentication from "expo-local-authentication";
+import { t } from "../i18n/phrMobileI18n";
 
-const KEY_SECURE_STORE_NAME = 'phr-phi-encryption-key-v1';
-const KEY_VERSION_STORE_NAME = 'phr-phi-key-version';
-const KEY_CREATED_AT_STORE_NAME = 'phr-phi-key-created-at';
-const KEY_LAST_ACCESS_STORE_NAME = 'phr-phi-key-last-access';
-const CIPHERTEXT_STORAGE_PREFIX = 'phr-phi-cipher:';
+const KEY_SECURE_STORE_NAME = "phr-phi-encryption-key-v1";
+const KEY_VERSION_STORE_NAME = "phr-phi-key-version";
+const KEY_CREATED_AT_STORE_NAME = "phr-phi-key-created-at";
+const KEY_LAST_ACCESS_STORE_NAME = "phr-phi-key-last-access";
+const CIPHERTEXT_STORAGE_PREFIX = "phr-phi-cipher:";
 const KEY_LENGTH_BITS = 256;
 const IV_LENGTH_BYTES = 12;
-const ALGORITHM = 'AES-GCM';
+const ALGORITHM = "AES-GCM";
 const KEY_ROTATION_THRESHOLD_DAYS = 90;
 const MAX_KEY_AGE_DAYS = 365; // Force key rotation after 1 year regardless of threshold
-const BIOMETRIC_POLICY_KEY = 'phr-phi-biometric-policy-enabled';
-const DEVICE_INSTALL_ID_KEY = 'phr-phi-device-install-id';
+const BIOMETRIC_POLICY_KEY = "phr-phi-biometric-policy-enabled";
+const DEVICE_INSTALL_ID_KEY = "phr-phi-device-install-id";
 
 // Crypto helpers
 
 class BiometricAuthenticationRequiredError extends Error {
   constructor() {
-    super(t('biometric.requiredForPhi'));
-    this.name = 'BiometricAuthenticationRequiredError';
+    super(t("biometric.requiredForPhi"));
+    this.name = "BiometricAuthenticationRequiredError";
   }
+}
+
+function requireCrypto(): Crypto {
+  if (!globalThis.crypto?.subtle || !globalThis.crypto.getRandomValues) {
+    throw new Error("PHI encrypted storage requires WebCrypto support");
+  }
+  return globalThis.crypto;
 }
 
 function uint8ArrayToBase64(bytes: Uint8Array): string {
-  let binary = '';
+  let binary = "";
   for (let i = 0; i < bytes.length; i++) {
     binary += String.fromCharCode(bytes[i] ?? 0);
   }
-  return btoa(binary);
+  return globalThis.btoa(binary);
 }
 
 function base64ToUint8Array(b64: string): Uint8Array {
-  const binary = atob(b64);
+  const binary = globalThis.atob(b64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);
@@ -69,26 +76,39 @@ function base64ToUint8Array(b64: string): Uint8Array {
   return bytes;
 }
 
-async function generateAesKey(): Promise<{ rawKey: string; cryptoKey: CryptoKey }> {
+async function generateAesKey(): Promise<{
+  rawKey: string;
+  cryptoKey: CryptoKey;
+}> {
+  const cryptoProvider = requireCrypto();
   // Generate raw key bytes directly for storage
-  const rawKeyBytes = crypto.getRandomValues(new Uint8Array(KEY_LENGTH_BITS / 8));
+  const rawKeyBytes = cryptoProvider.getRandomValues(
+    new Uint8Array(KEY_LENGTH_BITS / 8),
+  );
   const rawKeyBase64 = uint8ArrayToBase64(rawKeyBytes);
-  
+
   // Import as non-extractable CryptoKey for crypto operations
-  const cryptoKey = await crypto.subtle.importKey(
-    'raw',
+  const cryptoKey = await cryptoProvider.subtle.importKey(
+    "raw",
     rawKeyBytes.buffer,
     { name: ALGORITHM, length: KEY_LENGTH_BITS },
     false, // non-extractable for security
-    ['encrypt', 'decrypt']
+    ["encrypt", "decrypt"],
   );
-  
+
   return { rawKey: rawKeyBase64, cryptoKey };
 }
 
 async function importKey(b64: string): Promise<CryptoKey> {
+  const cryptoProvider = requireCrypto();
   const raw = base64ToUint8Array(b64).buffer as ArrayBuffer;
-  return crypto.subtle.importKey('raw', raw, { name: ALGORITHM, length: KEY_LENGTH_BITS }, false, ['encrypt', 'decrypt']);
+  return cryptoProvider.subtle.importKey(
+    "raw",
+    raw,
+    { name: ALGORITHM, length: KEY_LENGTH_BITS },
+    false,
+    ["encrypt", "decrypt"],
+  );
 }
 
 // Key retrieval
@@ -106,31 +126,33 @@ async function getOrCreateKey(): Promise<CryptoKey> {
 
   // Verify that the per-install marker is available before key access.
   if (!(await verifyDeviceInstallMarker())) {
-    await logSecurityEvent('DEVICE_INSTALL_MARKER_MISSING');
-    await phiClearAll();
+    await logSecurityEvent("DEVICE_INSTALL_MARKER_MISSING");
+    await clearRegisteredPhiKeys();
     await clearKey();
     return initializeFreshKey();
   }
 
   const stored = await SecureStore.getItemAsync(KEY_SECURE_STORE_NAME);
   const versionStr = await SecureStore.getItemAsync(KEY_VERSION_STORE_NAME);
-  const createdAtStr = await SecureStore.getItemAsync(KEY_CREATED_AT_STORE_NAME);
+  const createdAtStr = await SecureStore.getItemAsync(
+    KEY_CREATED_AT_STORE_NAME,
+  );
   const currentVersion = versionStr ? parseInt(versionStr, 10) : 0;
-  
+
   if (stored) {
     await requireBiometricIfEnabled();
 
     cachedKey = await importKey(stored);
     cachedKeyVersion = currentVersion;
-    
+
     // Check if key rotation is needed based on age
-    if (createdAtStr && await shouldRotateKey(createdAtStr)) {
+    if (createdAtStr && (await shouldRotateKey(createdAtStr))) {
       await rotateKey();
     }
-    
+
     // Update last access time
     await updateKeyAccessTime();
-    
+
     return cachedKey;
   }
 
@@ -149,17 +171,17 @@ async function requireBiometricIfEnabled(): Promise<void> {
 async function initializeFreshKey(): Promise<CryptoKey> {
   const { rawKey, cryptoKey } = await generateAesKey();
   const createdAt = Date.now().toString();
-  
+
   await SecureStore.setItemAsync(KEY_SECURE_STORE_NAME, rawKey, {
     keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
   });
-  await SecureStore.setItemAsync(KEY_VERSION_STORE_NAME, '1');
+  await SecureStore.setItemAsync(KEY_VERSION_STORE_NAME, "1");
   await SecureStore.setItemAsync(KEY_CREATED_AT_STORE_NAME, createdAt);
   await SecureStore.setItemAsync(KEY_LAST_ACCESS_STORE_NAME, createdAt);
-  
+
   // Initialize device install ID
   await getOrCreateDeviceInstallId();
-  
+
   cachedKey = cryptoKey;
   cachedKeyVersion = 1;
   return cachedKey;
@@ -181,11 +203,11 @@ async function rotateKey(): Promise<void> {
   const { rawKey: newRawKey, cryptoKey: newCryptoKey } = await generateAesKey();
   const newVersion = cachedKeyVersion + 1;
   const newCreatedAt = Date.now().toString();
-  
+
   // Re-encrypt all existing PHI with new key
   const keys = await AsyncStorage.getAllKeys();
   const phiKeys = keys.filter((k) => k.startsWith(CIPHERTEXT_STORAGE_PREFIX));
-  
+
   for (const key of phiKeys) {
     const ciphertext = await AsyncStorage.getItem(key);
     if (ciphertext) {
@@ -195,19 +217,19 @@ async function rotateKey(): Promise<void> {
         await AsyncStorage.setItem(key, reencrypted);
       } catch (e) {
         // If re-encryption fails, log security event and continue - the item will be inaccessible
-        await logSecurityEvent('KEY_ROTATION_REENCRYPT_FAILED');
+        await logSecurityEvent("KEY_ROTATION_REENCRYPT_FAILED");
         await AsyncStorage.removeItem(key);
       }
     }
   }
-  
+
   // Replace old key with new key
   await SecureStore.setItemAsync(KEY_SECURE_STORE_NAME, newRawKey, {
     keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
   });
   await SecureStore.setItemAsync(KEY_VERSION_STORE_NAME, newVersion.toString());
   await SecureStore.setItemAsync(KEY_CREATED_AT_STORE_NAME, newCreatedAt);
-  
+
   cachedKey = newCryptoKey;
   cachedKeyVersion = newVersion;
 }
@@ -232,11 +254,11 @@ async function updateKeyAccessTime(): Promise<void> {
 
 async function isBiometricPolicyEnabled(): Promise<boolean> {
   const enabled = await SecureStore.getItemAsync(BIOMETRIC_POLICY_KEY);
-  return enabled === 'true';
+  return enabled === "true";
 }
 
 async function enableBiometricPolicy(): Promise<void> {
-  await SecureStore.setItemAsync(BIOMETRIC_POLICY_KEY, 'true', {
+  await SecureStore.setItemAsync(BIOMETRIC_POLICY_KEY, "true", {
     keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
   });
 }
@@ -249,32 +271,32 @@ async function authenticateWithBiometrics(): Promise<boolean> {
   try {
     const hasHardware = await LocalAuthentication.hasHardwareAsync();
     if (!hasHardware) {
-      await logSecurityEvent('BIOMETRIC_HARDWARE_UNAVAILABLE');
+      await logSecurityEvent("BIOMETRIC_HARDWARE_UNAVAILABLE");
       return false;
     }
 
     const isEnrolled = await LocalAuthentication.isEnrolledAsync();
     if (!isEnrolled) {
-      await logSecurityEvent('BIOMETRIC_NOT_ENROLLED');
+      await logSecurityEvent("BIOMETRIC_NOT_ENROLLED");
       return false;
     }
 
     const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: t('biometric.protectedHealthPrompt'),
-      fallbackLabel: t('biometric.fallbackLabel'),
-      cancelLabel: t('biometric.cancelLabel'),
+      promptMessage: t("biometric.protectedHealthPrompt"),
+      fallbackLabel: t("biometric.fallbackLabel"),
+      cancelLabel: t("biometric.cancelLabel"),
       disableDeviceFallback: false,
     });
 
     if (result.success) {
-      await logSecurityEvent('BIOMETRIC_AUTH_SUCCESS');
+      await logSecurityEvent("BIOMETRIC_AUTH_SUCCESS");
     } else {
-      await logSecurityEvent('BIOMETRIC_AUTH_FAILED');
+      await logSecurityEvent("BIOMETRIC_AUTH_FAILED");
     }
-    
+
     return result.success;
   } catch (error) {
-    await logSecurityEvent('BIOMETRIC_AUTH_ERROR');
+    await logSecurityEvent("BIOMETRIC_AUTH_ERROR");
     return false;
   }
 }
@@ -283,7 +305,7 @@ async function logSecurityEvent(event: string): Promise<void> {
   // Store safe reason codes only; no PHI or key material is logged.
   const timestamp = Date.now();
   const logEntry = `${timestamp}:${event}`;
-  await SecureStore.setItemAsync('phr-security-log', logEntry, {
+  await SecureStore.setItemAsync("phr-security-log", logEntry, {
     keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
   });
 }
@@ -293,7 +315,7 @@ async function logSecurityEvent(event: string): Promise<void> {
 async function getOrCreateDeviceInstallId(): Promise<string> {
   let installId = await SecureStore.getItemAsync(DEVICE_INSTALL_ID_KEY);
   if (!installId) {
-    installId = crypto.randomUUID();
+    installId = requireCrypto().randomUUID();
     await SecureStore.setItemAsync(DEVICE_INSTALL_ID_KEY, installId, {
       keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
     });
@@ -301,43 +323,71 @@ async function getOrCreateDeviceInstallId(): Promise<string> {
   return installId;
 }
 
-* PHI key registry for reliable clearing
+// PHI key registry for reliable clearing.
 
-const PHI_KEY_REGISTRY_KEY = 'phr-phi-key-registry';
+const PHI_KEY_REGISTRY_KEY = "phr-phi-key-registry";
+
+function parseRegisteredPhiKeys(registryJson: string | null): string[] {
+  if (!registryJson) {
+    return [];
+  }
+  try {
+    const parsed: unknown = JSON.parse(registryJson);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return parsed.filter(
+      (value: unknown): value is string =>
+        typeof value === "string" && value.length > 0,
+    );
+  } catch {
+    return [];
+  }
+}
 
 async function registerPhiKey(key: string): Promise<void> {
   const registryJson = await SecureStore.getItemAsync(PHI_KEY_REGISTRY_KEY);
-  const phiKeys = registryJson ? JSON.parse(registryJson) as string[] : [];
-  
+  const phiKeys = parseRegisteredPhiKeys(registryJson);
+
   if (!phiKeys.includes(key)) {
     phiKeys.push(key);
-    await SecureStore.setItemAsync(PHI_KEY_REGISTRY_KEY, JSON.stringify(phiKeys), {
-      keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
-    });
+    await SecureStore.setItemAsync(
+      PHI_KEY_REGISTRY_KEY,
+      JSON.stringify(phiKeys),
+      {
+        keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
+      },
+    );
   }
 }
 
 async function unregisterPhiKey(key: string): Promise<void> {
   const registryJson = await SecureStore.getItemAsync(PHI_KEY_REGISTRY_KEY);
   if (!registryJson) return;
-  
-  const phiKeys = JSON.parse(registryJson) as string[];
+
+  const phiKeys = parseRegisteredPhiKeys(registryJson);
   const filteredKeys = phiKeys.filter((k) => k !== key);
-  
-  await SecureStore.setItemAsync(PHI_KEY_REGISTRY_KEY, JSON.stringify(filteredKeys), {
-    keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
-  });
+
+  await SecureStore.setItemAsync(
+    PHI_KEY_REGISTRY_KEY,
+    JSON.stringify(filteredKeys),
+    {
+      keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
+    },
+  );
 }
 
 async function verifyDeviceInstallMarker(): Promise<boolean> {
   try {
-    const storedInstallId = await SecureStore.getItemAsync(DEVICE_INSTALL_ID_KEY);
+    const storedInstallId = await SecureStore.getItemAsync(
+      DEVICE_INSTALL_ID_KEY,
+    );
     if (!storedInstallId) {
       // First install - generate and store
       await getOrCreateDeviceInstallId();
       return true;
     }
-    
+
     return storedInstallId.length > 0;
   } catch {
     return false;
@@ -347,11 +397,16 @@ async function verifyDeviceInstallMarker(): Promise<boolean> {
 // Encrypt and decrypt
 
 async function encrypt(plaintext: string): Promise<string> {
+  const cryptoProvider = requireCrypto();
   const key = await getOrCreateKey();
-  const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH_BYTES));
+  const iv = cryptoProvider.getRandomValues(new Uint8Array(IV_LENGTH_BYTES));
   const encoded = new TextEncoder().encode(plaintext);
 
-  const cipherBuffer = await crypto.subtle.encrypt({ name: ALGORITHM, iv }, key, encoded);
+  const cipherBuffer = await cryptoProvider.subtle.encrypt(
+    { name: ALGORITHM, iv },
+    key,
+    encoded,
+  );
 
   const combined = new Uint8Array(IV_LENGTH_BYTES + cipherBuffer.byteLength);
   combined.set(iv, 0);
@@ -361,13 +416,18 @@ async function encrypt(plaintext: string): Promise<string> {
 }
 
 async function decrypt(b64: string): Promise<string> {
+  const cryptoProvider = requireCrypto();
   const key = await getOrCreateKey();
   const combined = base64ToUint8Array(b64);
 
   const iv = combined.slice(0, IV_LENGTH_BYTES);
   const ciphertext = combined.slice(IV_LENGTH_BYTES);
 
-  const plainBuffer = await crypto.subtle.decrypt({ name: ALGORITHM, iv }, key, ciphertext);
+  const plainBuffer = await cryptoProvider.subtle.decrypt(
+    { name: ALGORITHM, iv },
+    key,
+    ciphertext,
+  );
   return new TextDecoder().decode(plainBuffer);
 }
 
@@ -467,8 +527,8 @@ export async function phiRemove(key: string): Promise<void> {
 /**
  * Clears all PHI-bearing values from encrypted storage.
  * Must be called on consent revocation, logout, session expiry, and role/persona change.
- * 
-* PHI key registry for reliable clearing
+ *
+ * PHI key registry for reliable clearing
  * All PHI keys are registered when set, so we can clear them all reliably.
  */
 export async function phiClearAll(): Promise<void> {
@@ -476,19 +536,18 @@ export async function phiClearAll(): Promise<void> {
     await activeAdapter.clearAllPhi();
   }
 
-  // Get all PHI keys from registry
-  const registryJson = await SecureStore.getItemAsync('phr-phi-key-registry');
-  const phiKeys = registryJson ? JSON.parse(registryJson) as string[] : [];
-  
-  // Clear all registered PHI keys from AsyncStorage
+  await clearRegisteredPhiKeys();
+}
+
+async function clearRegisteredPhiKeys(): Promise<void> {
+  const registryJson = await SecureStore.getItemAsync(PHI_KEY_REGISTRY_KEY);
+  const phiKeys = parseRegisteredPhiKeys(registryJson);
+
   for (const key of phiKeys) {
     await AsyncStorage.removeItem(key);
   }
-  
-  // Clear the registry itself
-  await SecureStore.deleteItemAsync('phr-phi-key-registry');
-  
 
+  await SecureStore.deleteItemAsync(PHI_KEY_REGISTRY_KEY);
 }
 
 /**
@@ -498,7 +557,7 @@ export async function phiClearAll(): Promise<void> {
  */
 export async function phiEnableBiometricPolicy(): Promise<void> {
   await enableBiometricPolicy();
-  await logSecurityEvent('BIOMETRIC_POLICY_ENABLED');
+  await logSecurityEvent("BIOMETRIC_POLICY_ENABLED");
 }
 
 /**
@@ -507,7 +566,7 @@ export async function phiEnableBiometricPolicy(): Promise<void> {
  */
 export async function phiDisableBiometricPolicy(): Promise<void> {
   await disableBiometricPolicy();
-  await logSecurityEvent('BIOMETRIC_POLICY_DISABLED');
+  await logSecurityEvent("BIOMETRIC_POLICY_DISABLED");
 }
 
 /**
@@ -518,7 +577,7 @@ export async function phiEnableDefaultBiometricPolicy(): Promise<void> {
   const policyEnabled = await isBiometricPolicyEnabled();
   if (!policyEnabled) {
     await enableBiometricPolicy();
-    await logSecurityEvent('BIOMETRIC_POLICY_DEFAULT_ENABLED');
+    await logSecurityEvent("BIOMETRIC_POLICY_DEFAULT_ENABLED");
   }
 }
 
@@ -536,4 +595,3 @@ export async function phiIsBiometricPolicyEnabled(): Promise<boolean> {
 export async function phiGetDeviceInstallId(): Promise<string> {
   return getOrCreateDeviceInstallId();
 }
-

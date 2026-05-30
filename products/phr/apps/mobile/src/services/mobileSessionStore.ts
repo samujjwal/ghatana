@@ -16,12 +16,12 @@
  * NEVER store `MobileSession` or any auth token in AsyncStorage directly.
  */
 
-import * as SecureStore from 'expo-secure-store';
-import { phiClearAll } from './phiEncryptedStorage';
-import { clearDashboardOffline } from './offlineStore';
-import type { MobileSession } from '../types';
+import * as SecureStore from "expo-secure-store";
+import { phiClearAll } from "./phiEncryptedStorage";
+import { clearDashboardOffline } from "./offlineStore";
+import type { MobileSession } from "../types";
 
-const SESSION_KEY = 'phr-mobile-session-v1';
+const SESSION_KEY = "phr-mobile-session-v1";
 
 /**
  * Persists the mobile session to the OS secure keychain.
@@ -41,7 +41,9 @@ export async function saveMobileSession(session: MobileSession): Promise<void> {
  * @param currentSession Optional current in-memory session to detect role/persona changes
  * @returns the live session or null
  */
-export async function loadMobileSession(currentSession?: MobileSession | null): Promise<MobileSession | null> {
+export async function loadMobileSession(
+  currentSession?: MobileSession | null,
+): Promise<MobileSession | null> {
   const raw = await SecureStore.getItemAsync(SESSION_KEY);
   if (!raw) return null;
 
@@ -59,14 +61,35 @@ export async function loadMobileSession(currentSession?: MobileSession | null): 
     return null;
   }
 
-  // Detect role/persona changes and clear PHI cache if changed
-  if (currentSession && (currentSession.role !== session.role || currentSession.principalId !== session.principalId)) {
-    // Role or principal changed - clear encrypted PHI cache to prevent unauthorized access
-    await phiClearAll();
-    await clearDashboardOffline();
+  if (currentSession && hasSessionScopeChanged(currentSession, session)) {
+    await clearMobileSession();
+    return null;
   }
 
   return session;
+}
+
+function hasSessionScopeChanged(
+  currentSession: MobileSession,
+  restoredSession: MobileSession,
+): boolean {
+  return (
+    currentSession.tenantId !== restoredSession.tenantId ||
+    currentSession.principalId !== restoredSession.principalId ||
+    currentSession.role !== restoredSession.role ||
+    currentSession.persona !== restoredSession.persona ||
+    currentSession.tier !== restoredSession.tier ||
+    currentSession.facilityId !== restoredSession.facilityId
+  );
+}
+
+/**
+ * Clears PHI cache when a persisted session cannot safely be reused.
+ */
+async function clearSessionAndPhi(): Promise<void> {
+  await SecureStore.deleteItemAsync(SESSION_KEY);
+  await phiClearAll();
+  await clearDashboardOffline();
 }
 
 /**
@@ -75,8 +98,5 @@ export async function loadMobileSession(currentSession?: MobileSession | null): 
  * Also clears encrypted PHI cache to ensure no PHI persists after session termination.
  */
 export async function clearMobileSession(): Promise<void> {
-  await SecureStore.deleteItemAsync(SESSION_KEY);
-  // Clear encrypted PHI cache on session expiry, logout, or role/persona change
-  await phiClearAll();
-  await clearDashboardOffline();
+  await clearSessionAndPhi();
 }

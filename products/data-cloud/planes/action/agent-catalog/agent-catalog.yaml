@@ -16,6 +16,7 @@ catalog:
   agents:
     - "operators/**/*-agent.yaml"
     - "operators/**/*-orchestrator.yaml"
+    - "operators/media/*-agent.yaml"
 
   # AEP-specific capabilities extending base taxonomy
   capabilities:

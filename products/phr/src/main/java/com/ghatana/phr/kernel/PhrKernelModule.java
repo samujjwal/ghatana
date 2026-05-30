@@ -191,23 +191,23 @@ public class PhrKernelModule implements KernelModule {
         if (initialized.getAndSet(true)) {
             throw new IllegalStateException("PhrKernelModule already initialized");
         }
-        
+
         this.context = context;
-        
+
         // Validate dependencies
         if (!context.hasDependency(KernelConfigResolver.class)) {
             throw new IllegalStateException("KernelConfigResolver not available");
         }
-        
+
         // Initialize configuration
         context.getDependency(KernelConfigResolver.class);
-        
+
         // Register event handlers
         registerEventHandlers(context);
-        
+
         // Register services
         registerServices(context);
-        
+
         // Register module contract
         registerModuleContract(context);
     }
@@ -217,7 +217,7 @@ public class PhrKernelModule implements KernelModule {
         if (!initialized.get()) {
             return Promise.ofException(new IllegalStateException("Module not initialized"));
         }
-        
+
         started.set(true);
         List<Promise<Void>> startPromises = new ArrayList<>();
         for (KernelLifecycleAware service : services) {
@@ -245,11 +245,11 @@ public class PhrKernelModule implements KernelModule {
         if (!started.get()) {
             return HealthStatus.unhealthy("Module not started");
         }
-        
+
         HealthStatus.Builder builder = HealthStatus.builder()
             .withStatus(HealthStatus.Status.HEALTHY)
             .withMessage("PHR module operational");
-        
+
         boolean allHealthy = true;
         for (KernelLifecycleAware service : services) {
             boolean serviceHealthy = service.isHealthy();
@@ -261,7 +261,7 @@ public class PhrKernelModule implements KernelModule {
             );
             allHealthy = allHealthy && serviceHealthy;
         }
-        
+
         if (!allHealthy) {
             builder.withStatus(HealthStatus.Status.UNHEALTHY);
         }
@@ -282,7 +282,7 @@ public class PhrKernelModule implements KernelModule {
                 builder.withStatus(HealthStatus.Status.DEGRADED);
             }
         }
-        
+
         return builder.build();
     }
 
@@ -431,7 +431,7 @@ public class PhrKernelModule implements KernelModule {
         context.registerService(PhrPolicyEvaluator.class, policyEvaluator);
         EmergencyAccessReviewWorkflow emergencyReview = EmergencyAccessReviewWorkflow.fromContext(context);
         EmergencyAccessLogService emergencyAccess = new EmergencyAccessLogService(context, emergencyReview);
-        
+
         // Create route objects with eventloop
         Eventloop eventloop = context.getEventloop();
         PhrFhirRoutes fhirRoutes = new PhrFhirRoutes(eventloop, fhirController);
@@ -497,7 +497,7 @@ public class PhrKernelModule implements KernelModule {
         PhrFchvRoutes fchvRoutes = new PhrFchvRoutes(eventloop, policyEvaluator);
         PhrNotificationRoutes notificationRoutes = new PhrNotificationRoutes(eventloop, notificationSender);
         PhrPatientProfileRoutes patientProfileRoutes = new PhrPatientProfileRoutes(eventloop, patientRecords);
-        
+
         PhrHttpServer phrHttpServer = new PhrHttpServer(
             eventloop,
             fhirRoutes,

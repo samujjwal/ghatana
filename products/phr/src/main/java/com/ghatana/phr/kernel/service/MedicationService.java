@@ -261,20 +261,20 @@ public class MedicationService extends PhrServiceBase {
             Prescription.class
         ).then(activePrescriptions -> {
             List<InteractionWarning> warnings = new java.util.ArrayList<>();
-            
+
             // Check for known interactions between active medications
             for (int i = 0; i < activePrescriptions.size(); i++) {
                 for (int j = i + 1; j < activePrescriptions.size(); j++) {
                     Prescription rx1 = activePrescriptions.get(i);
                     Prescription rx2 = activePrescriptions.get(j);
-                    
+
                     InteractionWarning warning = checkInteraction(rx1, rx2);
                     if (warning != null) {
                         warnings.add(warning);
                     }
                 }
             }
-            
+
             return Promise.of(warnings);
         });
     }
@@ -317,7 +317,7 @@ public class MedicationService extends PhrServiceBase {
                 "Consider alternative analgesic or monitor INR closely"
             );
         }
-        
+
         // ACE inhibitors + potassium-sparing diuretics (hyperkalemia risk)
         if (isAceInhibitor(rx1.medicationCode()) && isPotassiumSparingDiuretic(rx2.medicationCode()) ||
             isAceInhibitor(rx2.medicationCode()) && isPotassiumSparingDiuretic(rx1.medicationCode())) {
@@ -329,17 +329,17 @@ public class MedicationService extends PhrServiceBase {
                 "Monitor potassium levels regularly"
             );
         }
-        
+
         return null;
     }
 
     private boolean isWarfarin(String code) {
-        return code != null && (code.equalsIgnoreCase("B01AA03") || 
+        return code != null && (code.equalsIgnoreCase("B01AA03") ||
             code.toLowerCase().contains("warfarin"));
     }
 
     private boolean isNsaid(String code) {
-        return code != null && (code.startsWith("M01A") || 
+        return code != null && (code.startsWith("M01A") ||
             code.toLowerCase().contains("ibuprofen") ||
             code.toLowerCase().contains("naproxen") ||
             code.toLowerCase().contains("aspirin"));
@@ -449,4 +449,3 @@ public class MedicationService extends PhrServiceBase {
             String details
     ) {}
 }
-

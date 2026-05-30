@@ -60,6 +60,11 @@ public final class PhrFchvRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
+        if (!"fchv".equals(context.role()) && !"admin".equals(context.role())) {
+            return PhrRouteSupport.errorResponse(403, "FCHV_ROLE_REQUIRED",
+                "FCHV dashboard access requires fchv or admin role", context.correlationId());
+        }
+
         // Use policy evaluator for PHI access decision (POL-001)
         return policyEvaluator.canAccessPhiResourceAsync(
                 context,

@@ -1,7 +1,6 @@
 package com.ghatana.phr.service;
 
 import com.ghatana.kernel.service.KernelLifecycleAware;
-import com.ghatana.phr.kernel.retention.DeletionOutcome;
 import com.ghatana.phr.kernel.retention.LegalHoldService;
 import com.ghatana.phr.kernel.retention.PatientDeletionWorkflow;
 import io.activej.promise.Promise;

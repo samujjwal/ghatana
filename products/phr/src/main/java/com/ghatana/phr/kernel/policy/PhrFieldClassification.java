@@ -1,10 +1,9 @@
 package com.ghatana.phr.kernel.policy;
 
-import java.util.Set;
 
 /**
  * Canonical PHI/PII field classification for PHR Nepal.
- * 
+ *
  * Defines sensitivity levels for health data fields per Nepal Privacy Act 2075
  * and HIPAA standards. Used for log redaction, audit export filtering, and
  * notification content sanitization.
@@ -24,13 +23,13 @@ public final class PhrFieldClassification {
     public enum SensitivityLevel {
         /** Public information that can be safely logged and displayed. */
         PUBLIC,
-        
+
         /** Identifiable information requiring redaction in logs but may appear in audit exports. */
         IDENTIFIABLE,
-        
+
         /** Sensitive health information requiring strict redaction in logs and limited audit export. */
         SENSITIVE_PHI,
-        
+
         /** Highly sensitive information requiring maximum protection. */
         RESTRICTED
     }
@@ -90,7 +89,7 @@ public final class PhrFieldClassification {
 
     /**
      * Returns the sensitivity level for a given field name.
-     * 
+     *
      * @param fieldName the field name to classify
      * @return the sensitivity level, or SENSITIVE_PHI if unknown (fail closed)
      */
@@ -126,7 +125,7 @@ public final class PhrFieldClassification {
 
     /**
      * Returns whether a field should be redacted in logs.
-     * 
+     *
      * @param fieldName the field name to check
      * @return true if the field should be redacted in logs
      */
@@ -137,7 +136,7 @@ public final class PhrFieldClassification {
 
     /**
      * Returns whether a field should be redacted in audit exports.
-     * 
+     *
      * @param fieldName the field name to check
      * @return true if the field should be redacted in audit exports
      */
@@ -148,7 +147,7 @@ public final class PhrFieldClassification {
 
     /**
      * Returns whether a field should be redacted in notifications.
-     * 
+     *
      * @param fieldName the field name to check
      * @return true if the field should be redacted in notifications
      */
@@ -159,7 +158,7 @@ public final class PhrFieldClassification {
 
     /**
      * Returns whether a field should be redacted in mobile cache.
-     * 
+     *
      * @param fieldName the field name to check
      * @return true if the field should be redacted in mobile cache
      */
@@ -170,7 +169,7 @@ public final class PhrFieldClassification {
 
     /**
      * Redacts a field value based on its sensitivity level.
-     * 
+     *
      * @param fieldName the field name
      * @param value the field value
      * @return the redacted value, or the original if not sensitive

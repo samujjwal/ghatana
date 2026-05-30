@@ -78,6 +78,10 @@
             "default": false,
             "description": "Whether route is idempotent (safe to retry)"
           },
+          "nonIdempotentReason": {
+            "type": "string",
+            "description": "Reason why route is non-idempotent (required when idempotent=false for mutating operations)"
+          },
           "description": {
             "type": "string",
             "description": "Human-readable route description"

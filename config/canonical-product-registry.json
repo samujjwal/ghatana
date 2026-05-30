@@ -922,7 +922,7 @@
             "file": "products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudKernelAdapterImpl.java",
             "tests": [
               {
-                "file": "products/data-cloud/extensions/kernel-bridge/src/test/java/com/ghatana/datacloud/kernel/DataCloudKernelAdapterImplTest.java"
+                "file": "products/data-cloud/extensions/kernel-bridge/src/test/java/com/ghatana/datacloud/kernel/DataCloudKernelBridgeMappingTest.java"
               },
               {
                 "file": "products/data-cloud/extensions/kernel-bridge/src/test/java/com/ghatana/datacloud/kernel/DataCloudProviderTest.java"
@@ -1067,8 +1067,9 @@
         ":products:yappc:core:cli-tools",
         ":products:yappc:core:knowledge-graph",
         ":products:yappc:core:refactorer:api",
-        ":products:yappc:core:refactorer:engine",
-        ":products:yappc:infrastructure:datacloud",
+    ":products:yappc:core:refactorer:engine",
+    ":products:yappc:infrastructure:aep",
+    ":products:yappc:infrastructure:datacloud",
         ":products:yappc:libs:java:yappc-domain",
         ":products:yappc:integration",
         ":products:yappc:kernel-bridge"
@@ -1111,6 +1112,19 @@
         "security": true,
         "dataAccess": true,
         "bridge": true,
+        "bridgeAdapters": [
+          {
+            "file": "products/yappc/kernel-bridge/src/main/java/com/ghatana/yappc/kernel/YappcProductUnitIntentProvider.java",
+            "tests": [
+              {
+                "file": "products/yappc/kernel-bridge/src/test/java/com/ghatana/yappc/kernel/YappcPluginBridgeExtensionTest.java"
+              },
+              {
+                "file": "products/yappc/core/scaffold/api/src/test/java/com/ghatana/yappc/kernel/ProductUnitIntentExporterTest.java"
+              }
+            ]
+          }
+        ],
         "agentDefinitions": true,
         "masteryBindings": true,
         "evaluationPacks": true,
@@ -1182,9 +1196,9 @@
             }
           ]
         },
-        "status": "ready"
+        "status": "declared-only"
       },
-      "lifecycleExecutionAllowed": true,
+      "lifecycleExecutionAllowed": false,
       "productionReadinessStatus": "ready",
       "productionReadinessReason": "YAPPC conformance gates are satisfied. Product is production-ready with full manifest, observability, security, data access, bridge, agent definitions, mastery bindings, evaluation packs, and runtime module conformance."
     },

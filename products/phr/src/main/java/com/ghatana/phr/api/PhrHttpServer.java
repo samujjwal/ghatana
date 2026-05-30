@@ -25,7 +25,6 @@ import com.ghatana.phr.api.routes.PhrPatientProfileRoutes;
 import com.ghatana.phr.api.routes.PhrPatientRecordRoutes;
 import com.ghatana.phr.api.routes.PhrProviderRoutes;
 import com.ghatana.phr.api.routes.PhrReleaseReadinessRoutes;
-import com.ghatana.phr.fhir.server.PhrFhirR4Server;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.RoutingServlet;
@@ -235,6 +234,7 @@ public final class PhrHttpServer implements KernelLifecycleAware {
             // Legacy mounts kept for existing clients and test contract.
             .with("/dashboard", dashboardRoutes.getServlet())
             .with("/records/*", documentImagingRoutes.getServlet())
+            .with("/documents/*", documentImagingRoutes.getDocumentServlet())
             .with("/patients/*", patientRecordRoutes.getServlet())
             .with("/consents/*", consentRoutes.getServlet())
             .with("/clinical/*", clinicalRoutes.getServlet())
@@ -242,6 +242,7 @@ public final class PhrHttpServer implements KernelLifecycleAware {
             .with("/release-readiness", releaseReadinessRoutes.getServlet())
             .with("/appointments/*", administrativeRoutes.getPatientFacingServlet())
             .with("/admin/*", administrativeRoutes.getServlet())
+            .with("/phr/billing/*", administrativeRoutes.getBillingServlet())
             .with("/audit/*", auditRoutes.getServlet())
             .with("/auth/*", authRoutes.getServlet())
             .with("/provider/*", providerRoutes.getServlet())
@@ -261,6 +262,7 @@ public final class PhrHttpServer implements KernelLifecycleAware {
             .with("/api/v1/release-readiness", releaseReadinessRoutes.getServlet())
             .with("/api/v1/appointments/*", administrativeRoutes.getPatientFacingServlet())
             .with("/api/v1/admin/*", administrativeRoutes.getServlet())
+            .with("/api/v1/phr/billing/*", administrativeRoutes.getBillingServlet())
             .with("/api/v1/audit/*", auditRoutes.getServlet())
             .with("/api/v1/auth/*", authRoutes.getServlet())
             .with("/api/v1/provider/*", providerRoutes.getServlet())

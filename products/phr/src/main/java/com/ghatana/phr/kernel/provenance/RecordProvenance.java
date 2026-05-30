@@ -3,7 +3,6 @@ package com.ghatana.phr.kernel.provenance;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * Canonical record provenance model for PHR data imports.

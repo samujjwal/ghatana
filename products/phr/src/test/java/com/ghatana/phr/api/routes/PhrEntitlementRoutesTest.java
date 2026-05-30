@@ -1,7 +1,6 @@
 package com.ghatana.phr.api.routes;
 
 import com.ghatana.platform.cache.IdentityAwareBoundedCache;
-import com.ghatana.platform.http.security.ProductRouteEntitlement;
 import com.ghatana.platform.http.security.RouteEntitlementEvaluator;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.AsyncServlet;
@@ -103,19 +102,19 @@ class PhrEntitlementRoutesTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("preview routes are included in backend entitlement evaluation")
-    void previewRoutesAreEntitled() throws Exception {
+    @DisplayName("hidden routes are excluded from backend entitlement evaluation")
+    void hiddenRoutesAreExcludedFromEntitlements() throws Exception {
         HttpRequest request = contextRequest("t1", "admin-1", "admin");
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         assertThat(response.getCode()).isEqualTo(200);
         verify(routeEntitlementEvaluator).filterByRole(
-            argThat(routes -> routes.stream().anyMatch(route -> 
-                route.path().equals("/provider/dashboard") || 
-                route.path().equals("/provider/patients") ||
-                route.path().equals("/caregiver/dependents") ||
-                route.path().equals("/fchv/dashboard"))),
+            argThat(routes -> routes.stream().noneMatch(route ->
+                route.path().endsWith("/provider/dashboard") ||
+                    route.path().endsWith("/provider/patients") ||
+                    route.path().endsWith("/caregiver/dependents") ||
+                    route.path().endsWith("/fchv/dashboard"))),
             eq("admin"),
             any()
         );

@@ -57,11 +57,36 @@ const enTranslations: TranslationTree = {
     collapse: 'Collapse',
     sectionCore: 'Core',
     sectionManage: 'Manage',
+    sectionAdvanced: 'Advanced',
+    sectionPreview: 'Preview',
     viewModePresetTitle: 'View mode preset',
     viewModePresetDescription: 'View mode presets tune UI focus only. Backend permissions are always enforced independently.',
     footerProduct: 'Data Cloud • Ghatana Platform',
   },
+  // Media Artifacts
+  mediaArtifacts: {
+    title: 'Media Artifacts',
+    description: 'Manage audio and video media artifacts with transcription and vision analysis',
+    tabs: {
+      all: 'All',
+      audio: 'Audio',
+      video: 'Video',
+    },
+    actions: {
+      upload: 'Upload',
+    },
+    empty: 'No media artifacts found',
+    stats: {
+      pendingJobs: 'Pending Jobs',
+      retentionAlerts: 'Retention Alerts',
+      expiringSoon: 'Expiring Soon',
+    },
+  },
   routes: {
+    loading: 'Loading page...',
+    loadFailed: 'Failed to load page',
+    unknownError: 'An unknown error occurred',
+    reload: 'Reload',
     home: {
       label: 'Home',
       description: 'Dashboard overview and quick actions',

@@ -11,7 +11,6 @@ import io.activej.promise.Promises;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -63,7 +62,7 @@ public final class ConsentExpiryScanner extends PhrServiceBase {
         ensureRunning();
 
         Instant now = Instant.now();
-        
+
         return queryRecords(
             CONSENT_DATASET,
             "status = :status AND expiresAt < :expiresAt",
@@ -90,7 +89,7 @@ public final class ConsentExpiryScanner extends PhrServiceBase {
                 int expired = results.size();
                 int published = (int) results.stream().filter(r -> r).count();
                 int invalidated = published; // Assume successful publish leads to invalidation
-                
+
                 return Promise.of(new ExpiryScanResult(expired, published, invalidated));
             });
         });
@@ -109,7 +108,7 @@ public final class ConsentExpiryScanner extends PhrServiceBase {
             .consentType("delegated-access")
             .patientId(grant.getPatientId())
             .recipientId(grant.getRecipientId())
-            .resourceType(grant.getScope().getResourceTypes().isEmpty() ? "*" 
+            .resourceType(grant.getScope().getResourceTypes().isEmpty() ? "*"
                 : grant.getScope().getResourceTypes().iterator().next())
             .purpose("consent-expiry")
             .expiresAt(grant.getExpiresAt())
@@ -123,7 +122,7 @@ public final class ConsentExpiryScanner extends PhrServiceBase {
 
         // Serialize event to JSON for evidence body
         String eventJson = serializeEvent(expiryEvent);
-        
+
         // Enqueue to evidence outbox
         evidenceOutbox.enqueue(
             EVIDENCE_DATASET,

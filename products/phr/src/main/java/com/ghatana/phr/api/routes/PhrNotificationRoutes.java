@@ -67,11 +67,11 @@ public final class PhrNotificationRoutes {
             try {
                 limit = Integer.parseInt(limitParam);
                 if (limit < 1 || limit > 100) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_LIMIT", 
+                    return PhrRouteSupport.errorResponse(400, "INVALID_LIMIT",
                         "Limit must be between 1 and 100", context.correlationId());
                 }
             } catch (NumberFormatException ex) {
-                return PhrRouteSupport.errorResponse(400, "INVALID_LIMIT", 
+                return PhrRouteSupport.errorResponse(400, "INVALID_LIMIT",
                     "Limit must be a valid integer", context.correlationId());
             }
         }
@@ -106,7 +106,7 @@ public final class PhrNotificationRoutes {
                     "principalId", context.principalId()
                 ), context.correlationId());
             })
-            .whenException(ex -> PhrRouteSupport.errorResponse(500, "NOTIFICATION_FETCH_ERROR", 
+            .whenException(ex -> PhrRouteSupport.errorResponse(500, "NOTIFICATION_FETCH_ERROR",
                 "Failed to fetch notifications", context.correlationId()));
     }
 
@@ -121,7 +121,7 @@ public final class PhrNotificationRoutes {
 
         String notificationId = request.getPathParameter("notificationId");
         if (notificationId == null || notificationId.isBlank()) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_NOTIFICATION_ID", 
+            return PhrRouteSupport.errorResponse(400, "INVALID_NOTIFICATION_ID",
                 "Notification ID is required", context.correlationId());
         }
 
@@ -130,7 +130,7 @@ public final class PhrNotificationRoutes {
                 "notificationId", notificationId,
                 "read", true
             ), context.correlationId()))
-            .whenException(ex -> PhrRouteSupport.errorResponse(500, "MARK_READ_ERROR", 
+            .whenException(ex -> PhrRouteSupport.errorResponse(500, "MARK_READ_ERROR",
                 "Failed to mark notification as read", context.correlationId()));
     }
 
@@ -145,7 +145,7 @@ public final class PhrNotificationRoutes {
 
         String notificationId = request.getPathParameter("notificationId");
         if (notificationId == null || notificationId.isBlank()) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_NOTIFICATION_ID", 
+            return PhrRouteSupport.errorResponse(400, "INVALID_NOTIFICATION_ID",
                 "Notification ID is required", context.correlationId());
         }
 
@@ -153,7 +153,7 @@ public final class PhrNotificationRoutes {
             .then(body -> {
                 String action = request.getQueryParameter("action");
                 if (action == null || action.isBlank()) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_ACTION", 
+                    return PhrRouteSupport.errorResponse(400, "INVALID_ACTION",
                         "Action parameter is required", context.correlationId());
                 }
 
@@ -163,7 +163,7 @@ public final class PhrNotificationRoutes {
                         "action", action,
                         "result", result
                     ), context.correlationId()))
-                    .whenException(ex -> PhrRouteSupport.errorResponse(500, "ACTION_ERROR", 
+                    .whenException(ex -> PhrRouteSupport.errorResponse(500, "ACTION_ERROR",
                         "Failed to handle notification action", context.correlationId()));
             });
     }
@@ -212,7 +212,7 @@ public final class PhrNotificationRoutes {
 
     private boolean isActionable(String notificationType) {
         return switch (notificationType) {
-            case "APPOINTMENT_REMINDER_SCHEDULED", 
+            case "APPOINTMENT_REMINDER_SCHEDULED",
                  "EMERGENCY_ACCESS_REVIEW_REQUIRED",
                  "TELEMEDICINE_SESSION_SCHEDULED" -> true;
             default -> false;
@@ -233,7 +233,7 @@ public final class PhrNotificationRoutes {
                 "principalId", context.principalId(),
                 "preferences", preferences
             ), context.correlationId()))
-            .whenException(ex -> PhrRouteSupport.errorResponse(500, "PREFERENCES_FETCH_ERROR", 
+            .whenException(ex -> PhrRouteSupport.errorResponse(500, "PREFERENCES_FETCH_ERROR",
                 "Failed to fetch notification preferences", context.correlationId()));
     }
 
@@ -251,27 +251,27 @@ public final class PhrNotificationRoutes {
                 try {
                     String json = body.getString(java.nio.charset.StandardCharsets.UTF_8);
                     var node = PhrRouteSupport.JSON.readTree(json);
-                    
+
                     boolean emailEnabled = node.path("emailEnabled").asBoolean(true);
                     boolean smsEnabled = node.path("smsEnabled").asBoolean(false);
                     boolean inAppEnabled = node.path("inAppEnabled").asBoolean(true);
-                    
+
                     Map<String, Object> preferences = Map.of(
                         "emailEnabled", emailEnabled,
                         "smsEnabled", smsEnabled,
                         "inAppEnabled", inAppEnabled
                     );
-                    
+
                     return notificationSender.updateNotificationPreferences(context.principalId(), preferences)
                         .then($ -> PhrRouteSupport.jsonResponse(200, Map.of(
                             "principalId", context.principalId(),
                             "preferences", preferences,
                             "updated", true
                         ), context.correlationId()))
-                        .whenException(ex -> PhrRouteSupport.errorResponse(500, "PREFERENCES_UPDATE_ERROR", 
+                        .whenException(ex -> PhrRouteSupport.errorResponse(500, "PREFERENCES_UPDATE_ERROR",
                             "Failed to update notification preferences", context.correlationId()));
                 } catch (Exception ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_PREFERENCES", 
+                    return PhrRouteSupport.errorResponse(400, "INVALID_PREFERENCES",
                         "Invalid preferences format", context.correlationId());
                 }
             });

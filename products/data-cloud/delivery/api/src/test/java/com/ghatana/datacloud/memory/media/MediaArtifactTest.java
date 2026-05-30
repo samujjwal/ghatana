@@ -171,4 +171,138 @@ class MediaArtifactTest {
             assertThat(deleted).isFalse(); 
         }
     }
+
+    // =========================================================================
+    // Integration Tests: Audio-Video Lifecycle
+    // =========================================================================
+
+    @Nested
+    @DisplayName("Audio-Video Integration")
+    class IntegrationTests {
+
+        private DataCloudMediaArtifactRepository repo;
+        private MediaArtifactEventEmitter eventEmitter;
+
+        @BeforeEach
+        void setUp() {
+            repo = new DataCloudMediaArtifactRepository();
+            eventEmitter = new MediaArtifactEventEmitter(null);
+        }
+
+        @Test
+        @DisplayName("register artifact with classification and consent")
+        void registerArtifactWithClassificationAndConsent() {
+            Map<String, String> metadata = Map.of(
+                "classification", "CONFIDENTIAL",
+                "consentStatus", "CONSENTED",
+                "retentionPolicy", "90-days",
+                "owner", "data-team"
+            );
+
+            MediaArtifactRecord record = MediaArtifactRecord.create(
+                "tenant-1", "transcription-agent", "audio/wav",
+                "gs://bucket/audio.wav", 5242880L, "sha256abc",
+                120000L, "av.speech-to-text", "corr-123", metadata);
+
+            MediaArtifactRecord saved = repo.save(record).getResult();
+            assertThat(saved.metadata()).containsEntry("classification", "CONFIDENTIAL");
+            assertThat(saved.metadata()).containsEntry("consentStatus", "CONSENTED");
+            assertThat(saved.metadata()).containsEntry("retentionPolicy", "90-days");
+        }
+
+        @Test
+        @DisplayName("audio artifact requires consent status")
+        void audioArtifactRequiresConsent() {
+            Map<String, String> metadata = Map.of("consentStatus", "CONSENTED");
+            MediaArtifactRecord record = MediaArtifactRecord.create(
+                "tenant-1", "agent-1", "audio/wav",
+                "uri", 100L, null, 0, null, null, metadata);
+
+            assertThat(record.metadata()).containsEntry("consentStatus", "CONSENTED");
+        }
+
+        @Test
+        @DisplayName("video artifact requires consent status")
+        void videoArtifactRequiresConsent() {
+            Map<String, String> metadata = Map.of("consentStatus", "PENDING");
+            MediaArtifactRecord record = MediaArtifactRecord.create(
+                "tenant-1", "agent-1", "video/mp4",
+                "uri", 100L, null, 0, null, null, metadata);
+
+            assertThat(record.metadata()).containsEntry("consentStatus", "PENDING");
+        }
+
+        @Test
+        @DisplayName("lineage tracks parent artifact IDs")
+        void lineageTracksParentArtifacts() {
+            Map<String, String> lineage = Map.of(
+                "parentArtifactId", "artifact-123",
+                "transformationChain", "upload->transcribe"
+            );
+
+            MediaArtifactRecord record = MediaArtifactRecord.create(
+                "tenant-1", "agent-1", "audio/wav",
+                "uri", 100L, null, 0, null, null, Map.of(), lineage);
+
+            assertThat(record.lineage()).containsEntry("parentArtifactId", "artifact-123");
+            assertThat(record.lineage()).containsEntry("transformationChain", "upload->transcribe");
+        }
+
+        @Test
+        @DisplayName("retention policy expiration tracked")
+        void retentionPolicyExpirationTracked() {
+            Map<String, String> metadata = Map.of(
+                "retentionPolicy", "30-days",
+                "retentionUntil", "2026-04-27T00:00:00Z"
+            );
+
+            MediaArtifactRecord record = MediaArtifactRecord.create(
+                "tenant-1", "agent-1", "audio/wav",
+                "uri", 100L, null, 0, null, null, metadata);
+
+            assertThat(record.metadata()).containsEntry("retentionPolicy", "30-days");
+            assertThat(record.metadata()).containsEntry("retentionUntil", "2026-04-27T00:00:00Z");
+        }
+
+        @Test
+        @DisplayName("originToolId tracks audio-video tool used")
+        void originToolIdTracksToolUsed() {
+            MediaArtifactRecord record = MediaArtifactRecord.create(
+                "tenant-1", "agent-1", "audio/wav",
+                "uri", 100L, null, 0, "av.speech-to-text", "corr-1", Map.of());
+
+            assertThat(record.originToolId()).isEqualTo("av.speech-to-text");
+        }
+
+        @Test
+        @DisplayName("tenant isolation prevents cross-tenant access")
+        void tenantIsolationPreventsCrossTenantAccess() {
+            MediaArtifactRecord tenantA = MediaArtifactRecord.create(
+                "tenant-A", "agent-1", "audio/wav",
+                "uri", 100L, null, 0, "av.speech-to-text", "corr-1", Map.of());
+            MediaArtifactRecord tenantB = MediaArtifactRecord.create(
+                "tenant-B", "agent-1", "audio/wav",
+                "uri", 100L, null, 0, "av.speech-to-text", "corr-2", Map.of());
+
+            repo.save(tenantA).getResult();
+            repo.save(tenantB).getResult();
+
+            assertThat(repo.findByAgent("agent-1", "tenant-A", 10).getResult())
+                .hasSize(1)
+                .allMatch(r -> r.tenantId().equals("tenant-A"));
+            assertThat(repo.findByAgent("agent-1", "tenant-B", 10).getResult())
+                .hasSize(1)
+                .allMatch(r -> r.tenantId().equals("tenant-B"));
+        }
+
+        @Test
+        @DisplayName("correlationId links to agent invocation trace")
+        void correlationIdLinksToAgentTrace() {
+            MediaArtifactRecord record = MediaArtifactRecord.create(
+                "tenant-1", "agent-1", "audio/wav",
+                "uri", 100L, null, 0, "av.speech-to-text", "trace-abc-123", Map.of());
+
+            assertThat(record.correlationId()).isEqualTo("trace-abc-123");
+        }
+    }
 }

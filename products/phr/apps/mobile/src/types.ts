@@ -46,9 +46,11 @@ export interface MobileEmergencyData {
 export interface MobileSession {
   principalId: string;
   tenantId: string;
-  role: 'patient' | 'caregiver' | 'fchv' | 'clinician' | 'admin';
+  role: "patient" | "caregiver" | "fchv" | "clinician" | "admin";
   name: string;
   expiresAt: string;
   persona?: string;
   tier?: string;
+  facilityId?: string;
+  correlationId?: string;
 }

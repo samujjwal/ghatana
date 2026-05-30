@@ -116,7 +116,10 @@ public final class OpenApiContractParser {
                     // Next lines should have url
                     for (int j = i + 1; j < Math.min(i + 5, lines.length); j++) {
                         if (lines[j].contains("url:")) {
-                            String url = lines[j].replaceAll(".*url:\\s*[\"']([^\"']+)[\"'].*", "$1").trim();
+                            String url = lines[j]
+                                .replaceFirst(".*url:\\s*", "")
+                                .trim()
+                                .replaceAll("^[\"']|[\"']$", "");
                             if (!url.isEmpty() && url.contains("/")) {
                                 return url;
                             }

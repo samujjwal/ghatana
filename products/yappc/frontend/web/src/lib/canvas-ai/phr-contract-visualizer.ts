@@ -280,6 +280,6 @@ export function createPhrContractVisualizer(): PhrContractVisualizer {
 /**
  * Visualizes PHR contract status from a contract object.
  */
-export function visualizePhrContract(contract: ProductRouteContract): PhrContractStatus {
+export function visualizePhrContract(contract: PhrRouteContract): PhrContractStatus {
   return createPhrContractVisualizer().visualize(contract);
 }

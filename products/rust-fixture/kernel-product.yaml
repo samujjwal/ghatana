@@ -4,6 +4,25 @@ version: "0.1.0"
 product: rust-fixture
 kind: business-product
 domain: kernel-fixtures
+executionEnabled: false
+
+readiness:
+  reasonCodes:
+    - polyglot-fixture-execution-proof
+    - opening-pilot-policy-exemption
+    - rust-adapter-native-tests-pass
+  requiredGates:
+    - cargo-adapter-conformance
+    - rust-native-fixture-tests
+    - polyglot-fixture-proof
+  nextRequiredWork:
+    - Keep rust-fixture planned until opening lifecycle pilot policy includes fixture execution products
+    - Run pnpm check:polyglot-product-fixture before changing CargoRustAdapter behavior
+  evidenceRefs:
+    - products/rust-fixture/kernel-product.yaml
+    - products/rust-fixture/Cargo.toml
+    - products/rust-fixture/tests/integration_test.rs
+    - scripts/check-polyglot-fixture-proof.mjs
 
 policies:
   actions:

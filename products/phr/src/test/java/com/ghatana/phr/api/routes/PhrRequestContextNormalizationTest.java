@@ -134,7 +134,7 @@ class PhrRequestContextNormalizationTest {
     @DisplayName("all context fields are normalized together")
     void allContextFieldsAreNormalized() {
         HttpRequest request = requestWithFullContext(
-            "  tenant-1  ", "  user-42  ", "  CLINICIAN  ", 
+            "  tenant-1  ", "  user-42  ", "  CLINICIAN  ",
             "  clinician  ", "  clinical  ", "  facility-123  ", "  corr-xyz  ");
         PhrRouteSupport.PhrRequestContext ctx = PhrRouteSupport.requireContext(request);
         assertThat(ctx.tenantId()).isEqualTo("tenant-1");
@@ -193,7 +193,7 @@ class PhrRequestContextNormalizationTest {
     }
 
     private static HttpRequest requestWithFullContext(
-            String tenantId, String principalId, String role, String persona, 
+            String tenantId, String principalId, String role, String persona,
             String tier, String facilityId, String correlationId) {
         HttpRequest request = mock(HttpRequest.class);
         when(request.getHeader(HttpHeaders.of("X-Tenant-ID"))).thenReturn(tenantId);

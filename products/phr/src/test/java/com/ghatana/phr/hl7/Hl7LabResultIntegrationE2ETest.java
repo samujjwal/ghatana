@@ -68,14 +68,14 @@ class Hl7LabResultIntegrationE2ETest extends EventloopTestBase {
 
         // When: Importing the HL7 message
         LabObservation observation = runPromise(() -> hl7Service.importObservationMessage(hl7Message));
-        
+
         assertNotNull(observation);
         assertEquals("PATIENT123", observation.patientId());
         assertEquals("ORD12345", observation.orderId());
         assertEquals("WBC", observation.loincCode());
         assertEquals(new BigDecimal("7.5"), observation.value());
         assertEquals(LabResultService.ObservationStatus.FINAL, observation.status());
-        
+
         verify(mockLabResultService, times(1)).recordObservation(any(LabObservation.class));
     }
 
@@ -108,7 +108,7 @@ class Hl7LabResultIntegrationE2ETest extends EventloopTestBase {
 
         // When: Importing the HL7 message
         LabObservation observation = runPromise(() -> hl7Service.importObservationMessage(hl7Message));
-        
+
         assertNotNull(observation);
         assertEquals(LabResultService.ObservationStatus.PRELIMINARY, observation.status());
         assertEquals("H", observation.interpretation());
@@ -143,7 +143,7 @@ class Hl7LabResultIntegrationE2ETest extends EventloopTestBase {
 
         // When: Importing the HL7 message
         LabObservation observation = runPromise(() -> hl7Service.importObservationMessage(hl7Message));
-        
+
         assertNotNull(observation);
         assertEquals(LabResultService.ObservationStatus.CANCELLED, observation.status());
     }
@@ -153,7 +153,7 @@ class Hl7LabResultIntegrationE2ETest extends EventloopTestBase {
     void shouldFailWhenServiceNotStarted() {
         // Given: Service is stopped
         runPromise(hl7Service::stop);
-        
+
         String hl7Message = "MSH|^~\\&|LAB|FACILITY|PHR|Ghatana|20240127120000||ORU^R01|MSG12348|P|2.5";
 
         // When: Attempting to import
@@ -189,7 +189,7 @@ class Hl7LabResultIntegrationE2ETest extends EventloopTestBase {
 
         // When: Importing the HL7 message
         LabObservation observation = runPromise(() -> hl7Service.importObservationMessage(hl7Message));
-        
+
         assertNotNull(observation);
         assertEquals(12.0, observation.referenceRangeLow());
     }

@@ -55,7 +55,7 @@ public class PhrReleaseReadinessProducer {
             String content = Files.readString(evidencePath);
             PhrReleaseEvidence evidence = objectMapper.readValue(content, PhrReleaseEvidence.class);
 
-            LOG.info("Read PHR release evidence: productId={}, status={}", 
+            LOG.info("Read PHR release evidence: productId={}, status={}",
                 evidence.productId(), evidence.status());
 
             return Promise.of(evidence);

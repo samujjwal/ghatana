@@ -1,21 +1,34 @@
-import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { t } from '../i18n/phrMobileI18n';
-import type { MobileRecord, MobileSession } from '../types';
-import { RecordDetailScreen } from './RecordDetailScreen';
+import React, { useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { t } from "../i18n/phrMobileI18n";
+import type { MobileRecord, MobileSession } from "../types";
+import { RecordDetailScreen } from "./RecordDetailScreen";
 
 function newCorrelationId(): string {
   return crypto.randomUUID();
 }
 
+interface RecordsScreenProps {
+  records?: MobileRecord[];
+  session?: MobileSession | null;
+}
 
-interface RecordsScreenProps {\n  records: MobileRecord[];\n  session: MobileSession | null;\n}
-
-export function RecordsScreen({ records, session }: RecordsScreenProps): React.ReactElement {
-  const [selectedRecord, setSelectedRecord] = useState<MobileRecord | null>(null);
+export function RecordsScreen({
+  records = [],
+  session = null,
+}: RecordsScreenProps): React.ReactElement {
+  const [selectedRecord, setSelectedRecord] = useState<MobileRecord | null>(
+    null,
+  );
 
   if (selectedRecord) {
-    return (\n      <RecordDetailScreen\n        record={selectedRecord}\n        onBack={() => setSelectedRecord(null)}\n        session={session}\n      />\n    );
+    return (
+      <RecordDetailScreen
+        record={selectedRecord}
+        onBack={() => setSelectedRecord(null)}
+        session={session}
+      />
+    );
   }
 
   return (
@@ -26,7 +39,7 @@ export function RecordsScreen({ records, session }: RecordsScreenProps): React.R
           style={styles.card}
           onPress={() => setSelectedRecord(record)}
           accessibilityRole="button"
-          accessibilityLabel={`${record.title}. ${t('common.tapToView')}`}
+          accessibilityLabel={`${record.title}. ${t("common.tapToView")}`}
         >
           <Text style={styles.title}>{record.title}</Text>
           <Text style={styles.summary}>{record.summary}</Text>
@@ -39,8 +52,14 @@ export function RecordsScreen({ records, session }: RecordsScreenProps): React.R
 
 const styles = StyleSheet.create({
   container: { gap: 12 },
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: 14, borderWidth: 1, borderColor: '#d5dded' },
-  title: { fontWeight: '700', fontSize: 16, color: '#102243' },
-  summary: { color: '#4b5c77', marginTop: 6 },
-  preview: { color: '#173b7a', marginTop: 10, fontFamily: 'Courier' },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#d5dded",
+  },
+  title: { fontWeight: "700", fontSize: 16, color: "#102243" },
+  summary: { color: "#4b5c77", marginTop: 6 },
+  preview: { color: "#173b7a", marginTop: 10, fontFamily: "Courier" },
 });

@@ -1501,6 +1501,74 @@ describe('ProductLifecyclePlanner', () => {
     expect(explicitSelectorPlan.surfaces.map((surface) => surface.surface)).toEqual(['backend-api']);
   });
 
+  it('should scope configured build artifacts to the selected surfaces', async () => {
+    const repoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'allowExperimentalAdapters: true',
+        'surfaces:',
+        '  backend-api:',
+        '    type: backend-api',
+        '    adapter: gradle-java-service',
+        '    path: products/shape-product/api',
+        '    implementationStatus: implemented',
+        '  web:',
+        '    type: web',
+        '    adapter: pnpm-vite-react',
+        '    path: products/shape-product/web',
+        '    implementationStatus: implemented',
+        'phases:',
+        '  build:',
+        '    defaultSurfaces: [backend-api, web]',
+        '    mode: sequential',
+        'artifacts:',
+        '  build:',
+        '    backend-api:',
+        '      type: jvm-service',
+        '      required: true',
+        '    web:',
+        '      type: static-web-bundle',
+        '      required: true',
+      ],
+      profiles: {
+        'shape-only-profile': {
+          defaultSurfaces: { build: ['backend-api', 'web'] },
+          requiredGates: {},
+          defaultAdapters: {},
+        },
+      },
+      adapters: {
+        'gradle-java-service': {
+          supportedSurfaceTypes: ['backend-api'],
+          supportedPhases: ['build'],
+          status: 'implemented',
+          safeForDefault: true,
+        },
+        'pnpm-vite-react': {
+          supportedSurfaceTypes: ['web'],
+          supportedPhases: ['build'],
+          status: 'implemented',
+          safeForDefault: true,
+        },
+      },
+    });
+    const planner = new ProductLifecyclePlanner(repoRoot);
+
+    const plan = await planner.plan('shape-product', 'build', {
+      surfaceSelector: ['backend-api'],
+    });
+
+    expect(plan.surfaces.map((surface) => surface.surface)).toEqual(['backend-api']);
+    expect(plan.expectedArtifacts).toEqual([
+      expect.objectContaining({
+        surface: 'backend-api',
+        type: 'jvm-service',
+        required: true,
+      }),
+    ]);
+  });
+
   it('should prepend executable interaction preflight steps and block disabled required providers', async () => {
     const repoRoot = await createPlannerFixtureRepo({
       registryEntries: {

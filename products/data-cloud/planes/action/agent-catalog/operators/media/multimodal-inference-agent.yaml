@@ -1,0 +1,75 @@
+id: multimodal-inference-agent
+namespace: aep.operators.media
+name: Multimodal Inference Agent
+version: 1.0.0
+status: active
+owners:
+  - team: data-cloud
+    contact: data-cloud-team@ghatana.com
+summary: Performs cross-modal inference combining audio transcriptions and visual frame analysis
+description: Runs cross-modal inference combining audio transcriptions and visual frame analysis to produce unified semantic understanding of video media
+
+metadata:
+  level: 3
+  domain: media-processing
+  tags: [multimodal, cross-modal, video, fusion, audio-vision]
+
+identity:
+  agentType: probabilistic
+  subtype: llm
+  determinismGuarantee: none
+  stateMutability: stateless
+  failureMode: retry
+  criticality: medium
+  autonomyLevel: semi-autonomous
+
+reasoningProfile:
+  primaryReasoner: service-call
+  reasonerPortfolio:
+    - type: service-call
+      role: multimodal-inference
+      description: Combine audio and visual analysis for unified understanding
+
+aep:
+  operatorType: TRANSFORMATION
+  inputEventTypes: ["video.uploaded"]
+  outputEventTypes: ["multimodal-analysis.completed", "multimodal-analysis.failed"]
+  backpressure:
+    bufferSize: 1000
+    overflowStrategy: DROP_OLDEST
+  reliability:
+    checkpointInterval: "60s"
+    maxRetries: 3
+
+capabilities:
+  - cross-modal-fusion
+  - semantic-understanding
+  - timeline-alignment
+
+tools:
+  - name: multimodalInference
+    type: PRODUCT_CAPABILITY
+    product: audio-video
+    capabilityId: av.multimodal-inference
+    contractRef: capabilities/multimodal-inference.yaml
+
+interfaces:
+  inputs:
+    - name: videoFile
+      schema: video.uploaded
+      required: true
+  outputs:
+    - name: analysisResult
+      schema: multimodal-analysis.completed
+    - name: error
+      schema: multimodal-analysis.failed
+
+memory:
+  type: NONE
+  scope: none
+  retention: none
+
+resources:
+  memory: "4GB"
+  cpu: "4"
+  timeout: "600s"

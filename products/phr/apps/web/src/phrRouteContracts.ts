@@ -1,12 +1,15 @@
-import { createRouteAccessEvaluator, type ProductRouteCapability } from '@ghatana/product-shell';
-import { 
-  type ProductRouteContract, 
+import {
+  createRouteAccessEvaluator,
+  type ProductRouteCapability,
+} from "@ghatana/product-shell";
+import {
+  type ProductRouteContract,
   type RouteStability,
-  parseProductRouteContract 
-} from '@ghatana/kernel-product-contracts';
-import routeContractJson from '../../../config/phr-route-contract.json';
+  parseProductRouteContract,
+} from "@ghatana/kernel-product-contracts/route";
+import routeContractJson from "../../../config/phr-route-contract.json";
 
-export type PhrRole = 'patient' | 'caregiver' | 'fchv' | 'clinician' | 'admin';
+export type PhrRole = "patient" | "caregiver" | "fchv" | "clinician" | "admin";
 export type PhrRouteStability = RouteStability;
 
 export interface PhrRouteContract extends ProductRouteCapability {
@@ -26,10 +29,10 @@ export interface PhrRouteContract extends ProductRouteCapability {
   readonly apiEndpoint?: string;
   readonly policyId?: string;
   readonly testId?: string;
-  readonly surface?: readonly ('web' | 'mobile' | 'backend' | 'hidden')[];
+  readonly surface?: readonly ("web" | "mobile" | "backend" | "hidden")[];
   readonly i18nKey?: string;
   readonly descriptionI18nKey?: string;
-  readonly routeType?: 'page' | 'detail' | 'action' | 'system';
+  readonly routeType?: "page" | "detail" | "action" | "system";
   readonly visibilityReason?: string;
 }
 
@@ -40,19 +43,24 @@ interface PhrRouteContractSource {
 
 // Validate route contract against kernel schema
 const _validatedContract = parseProductRouteContract(routeContractJson);
-const canonicalRouteContract = routeContractJson as unknown as PhrRouteContractSource;
+const canonicalRouteContract =
+  routeContractJson as unknown as PhrRouteContractSource;
 
-export const PHR_ROLE_ORDER: Readonly<Record<PhrRole, number>> = canonicalRouteContract.roleOrder;
+export const PHR_ROLE_ORDER: Readonly<Record<PhrRole, number>> =
+  canonicalRouteContract.roleOrder;
 
 export const phrRouteAccess = createRouteAccessEvaluator(PHR_ROLE_ORDER);
 
-export function isRouteAllowedForRole(route: Pick<PhrRouteContract, 'minimumRole'>, role: PhrRole): boolean {
+export function isRouteAllowedForRole(
+  route: Pick<PhrRouteContract, "minimumRole">,
+  role: PhrRole,
+): boolean {
   return phrRouteAccess.isRouteAllowed(route, role);
 }
 
 export const phrRouteContracts = canonicalRouteContract.routes;
 
-export type PhrRoutePath = (typeof phrRouteContracts)[number]['path'];
+export type PhrRoutePath = (typeof phrRouteContracts)[number]["path"];
 
 /**
  * Get the i18n key for a route's label, falling back to the raw label if no i18n key exists.

@@ -69,6 +69,11 @@ public final class PhrCaregiverRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
+        if (!"caregiver".equals(context.role()) && !"admin".equals(context.role())) {
+            return PhrRouteSupport.errorResponse(403, "CAREGIVER_ROLE_REQUIRED",
+                "Caregiver dependent access requires caregiver or admin role", context.correlationId());
+        }
+
         // Use policy evaluator for PHI access decision (POL-001)
         return policyEvaluator.canAccessPhiResourceAsync(
                 context,
@@ -133,6 +138,11 @@ public final class PhrCaregiverRoutes {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+        }
+
+        if (!"caregiver".equals(context.role()) && !"admin".equals(context.role())) {
+            return PhrRouteSupport.errorResponse(403, "CAREGIVER_ROLE_REQUIRED",
+                "Caregiver dependent access requires caregiver or admin role", context.correlationId());
         }
 
         // Use policy evaluator for PHI access decision (POL-001)

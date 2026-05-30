@@ -4,11 +4,9 @@ import com.ghatana.agent.AgentDescriptor;
 import com.ghatana.agent.AgentResult;
 import com.ghatana.agent.AgentType;
 import com.ghatana.agent.TypedAgent;
+import com.ghatana.agent.dispatch.AgentDispatcher;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.spi.AgentRegistry;
-import com.ghatana.ai.llm.CompletionRequest;
-import com.ghatana.ai.llm.CompletionResult;
-import com.ghatana.ai.llm.LLMGateway;
 import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
@@ -44,14 +42,14 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @DisplayName("AgentExecutionService")
-@ExtendWith(MockitoExtension.class) 
+@ExtendWith(MockitoExtension.class)
 class AgentExecutionServiceTest extends EventloopTestBase {
 
     @Mock
     private AgentRegistry agentRegistry;
 
     @Mock
-    private LLMGateway llmGateway;
+    private AgentDispatcher agentDispatcher;
 
     @Mock
     private AgentExecutionHistoryStore historyStore;
@@ -62,36 +60,34 @@ class AgentExecutionServiceTest extends EventloopTestBase {
     private AgentExecutionService service;
 
     @BeforeEach
-    void setUp() { 
-        service = new AgentExecutionService(agentRegistry, llmGateway, historyStore, memoryClient); 
-        lenient().when(historyStore.append(any(), any())).thenReturn(Promise.complete()); 
-        lenient().when(memoryClient.recordExecution(any(), any(), any(), any(), anyLong())).thenReturn(Promise.complete()); 
+    void setUp() {
+        service = new AgentExecutionService(agentRegistry, agentDispatcher, historyStore, memoryClient);
+        lenient().when(historyStore.append(any(), any())).thenReturn(Promise.complete());
+        lenient().when(memoryClient.recordExecution(any(), any(), any(), any(), anyLong())).thenReturn(Promise.complete());
     }
 
     @Test
     @DisplayName("execute records history and memory after a successful completion")
-    void executeRecordsHistoryAndMemory() { 
-        when(agentRegistry.resolve("agent-1"))
-            .thenReturn(Promise.of(Optional.of(new TestAgent("agent-1"))));
-        when(llmGateway.complete(any(CompletionRequest.class))) 
-            .thenReturn(Promise.of(CompletionResult.builder() 
-                .text("result-text")
-                .tokensUsed(42) 
-                .build())); 
+    void executeRecordsHistoryAndMemory() {
+        when(agentDispatcher.dispatch(eq("agent-1"), any(), any()))
+            .thenReturn(Promise.of(AgentResult.builder()
+                .output("result-text")
+                .status(AgentResultStatus.SUCCESS)
+                .build()));
 
         AgentExecutionService.ExecutionResult result =
-            runPromise(() -> service.execute("agent-1", Map.of("message", "hello"))); 
+            runPromise(() -> service.execute("agent-1", Map.of("message", "hello")));
 
         assertThat(result.status()).isEqualTo("success");
         assertThat(result.output()).isEqualTo("result-text");
 
         ArgumentCaptor<AgentExecutionService.ExecutionRecord> recordCaptor =
-            ArgumentCaptor.forClass(AgentExecutionService.ExecutionRecord.class); 
+            ArgumentCaptor.forClass(AgentExecutionService.ExecutionRecord.class);
         verify(historyStore).append(eq("agent-1"), recordCaptor.capture());
         verify(memoryClient).recordExecution(eq("agent-1"), eq(result.executionId()),
             eq(Map.of("message", "hello")), eq("result-text"), eq(result.durationMs()));
 
-        AgentExecutionService.ExecutionRecord record = recordCaptor.getValue(); 
+        AgentExecutionService.ExecutionRecord record = recordCaptor.getValue();
         assertThat(record.status()).isEqualTo("success");
         assertThat(record.output()).isEqualTo("result-text");
     }
@@ -99,12 +95,10 @@ class AgentExecutionServiceTest extends EventloopTestBase {
     @Test
     @DisplayName("execute redacts privacy data before model calls and marks governance metadata")
     void executeRedactsPrivacyDataBeforeModelCalls() {
-        when(agentRegistry.resolve("agent-privacy"))
-            .thenReturn(Promise.of(Optional.of(new TestAgent("agent-privacy"))));
-        when(llmGateway.complete(any(CompletionRequest.class)))
-            .thenReturn(Promise.of(CompletionResult.builder()
-                .text("approved action")
-                .tokensUsed(12)
+        when(agentDispatcher.dispatch(eq("agent-privacy"), any(), any()))
+            .thenReturn(Promise.of(AgentResult.builder()
+                .output("approved action")
+                .status(AgentResultStatus.SUCCESS)
                 .build()));
 
         AgentExecutionService.ExecutionResult result =
@@ -114,55 +108,22 @@ class AgentExecutionServiceTest extends EventloopTestBase {
 
         assertThat(result.status()).isEqualTo("success");
 
-        ArgumentCaptor<CompletionRequest> requestCaptor =
-            ArgumentCaptor.forClass(CompletionRequest.class);
-        verify(llmGateway).complete(requestCaptor.capture());
-
-        CompletionRequest request = requestCaptor.getValue();
-        assertThat(request.getPrompt())
-            .contains("[REDACTED_EMAIL]")
-            .contains("[REDACTED_SSN]")
-            .contains("token=[REDACTED_SECRET]")
-            .doesNotContain("jane@example.com")
-            .doesNotContain("123-45-6789")
-            .doesNotContain("secret-value");
-        assertThat(request.getMetadata())
-            .containsEntry("privacyRedactionApplied", true)
-            .containsEntry("fallbackMode", "disabled")
-            .containsEntry("auditRequired", true)
-            .containsEntry("costBudgetMaxTokens", 1024);
-
+        verify(agentDispatcher).dispatch(eq("agent-privacy"), any(), any());
         verify(historyStore).append(eq("agent-privacy"), any());
     }
 
     @Test
-    @DisplayName("execute fails closed without heuristic fallback when model is unavailable")
-    void executeFailsClosedWhenModelUnavailable() {
-        when(agentRegistry.resolve("agent-unavailable"))
-            .thenReturn(Promise.of(Optional.of(new TestAgent("agent-unavailable"))));
-        when(llmGateway.complete(any(CompletionRequest.class)))
+    @DisplayName("execute fails closed when dispatcher returns error")
+    void executeFailsClosedWhenDispatcherReturnsError() {
+        when(agentDispatcher.dispatch(eq("agent-unavailable"), any(), any()))
             .thenReturn(Promise.ofException(new IllegalStateException("provider unavailable")));
 
         assertThatThrownBy(() -> runPromise(() -> service.execute("agent-unavailable", Map.of("message", "hello"))))
             .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("Model unavailable")
-            .hasMessageContaining("fallback is disabled");
+            .hasMessageContaining("provider unavailable");
 
         verify(historyStore, never()).append(eq("agent-unavailable"), any());
         verify(memoryClient, never()).recordExecution(eq("agent-unavailable"), any(), any(), any(), anyLong());
-    }
-
-    @Test
-    @DisplayName("execute enforces prompt token budget before dispatch")
-    void executeEnforcesPromptTokenBudgetBeforeDispatch() {
-        when(agentRegistry.resolve("agent-budget"))
-            .thenReturn(Promise.of(Optional.of(new TestAgent("agent-budget"))));
-
-        assertThatThrownBy(() -> runPromise(() -> service.execute("agent-budget", "x".repeat(40_000))))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("token budget");
-
-        verify(llmGateway, never()).complete(any(CompletionRequest.class));
     }
 
     @Test

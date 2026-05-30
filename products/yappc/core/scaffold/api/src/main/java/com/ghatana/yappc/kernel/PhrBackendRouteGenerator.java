@@ -8,12 +8,13 @@
 package com.ghatana.yappc.kernel;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
  * Configuration for generating a backend route skeleton.
  */
-public record BackendRouteConfig(
+record BackendRouteConfig(
     String routePath,
     String routeLabel,
     String apiEndpoint,
@@ -26,7 +27,7 @@ public record BackendRouteConfig(
 /**
  * Generated backend route skeleton with file path and code.
  */
-public record GeneratedBackendRoute(
+record GeneratedBackendRoute(
     String filePath,
     String className,
     String code
@@ -119,9 +120,9 @@ public class PhrBackendRouteGenerator {
      * Converts API endpoint to class name.
      */
     private String endpointToClassName(String apiEndpoint) {
-        String[] segments = apiEndpoint
-            .split("/")
-            .filter(segment -> segment.length() > 0 && !segment.equals("api") && !segment.equals("v1"));
+        String[] segments = Arrays.stream(apiEndpoint.split("/"))
+            .filter(segment -> segment.length() > 0 && !segment.equals("api") && !segment.equals("v1"))
+            .toArray(String[]::new);
         
         StringBuilder className = new StringBuilder();
         for (String segment : segments) {

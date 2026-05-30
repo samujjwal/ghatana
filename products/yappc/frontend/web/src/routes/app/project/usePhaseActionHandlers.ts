@@ -237,14 +237,19 @@ function resolveRunContext(
     return actionMutation.isPending;
   }, [actionMutation.isPending, generateReviewMutation.isPending, runPostActionMutation.isPending]);
 
+  const disabledActionFeedback = useCallback((action: PhaseAction): string => {
+    const reviewMessage = t('phaseCockpit.feedback.reviewingAction', {
+      label: actionText(action.label) ?? action.actionId,
+    });
+    return action.disabledReason ? `${reviewMessage}: ${action.disabledReason}` : reviewMessage;
+  }, [actionText, t]);
+
   const executePacketAction = useCallback((action: PhaseAction) => {
     setActionResult(null);
     setActionError(null);
 
     if (!action.enabled) {
-      // FE-04: Use backend disabled reason as user guidance
-      const disabledReason = action.disabledReason || t('phaseCockpit.feedback.reviewingAction', { label: actionText(action.label) ?? action.actionId });
-      setFeedback(disabledReason);
+      setFeedback(disabledActionFeedback(action));
       scrollToSupportingSurface();
       return;
     }
@@ -291,7 +296,7 @@ function resolveRunContext(
       actorId: currentUser?.id,
       preview: null, // FE-03: Backend will build authoritative lifecycle preview
     });
-  }, [actionMutation, actionText, currentUser?.id, currentUser?.tenantId, executeServerOperation, navigate, packet, phase, projectId, resolveNavigationPath, scrollToSupportingSurface, t]);
+  }, [actionMutation, currentUser?.id, currentUser?.tenantId, disabledActionFeedback, executeServerOperation, navigate, packet, phase, projectId, resolveNavigationPath, scrollToSupportingSurface, t]);
 
   const handlePrimaryAction = useCallback(() => {
     const primaryAction = packet?.availableActions.find(
@@ -319,11 +324,9 @@ function resolveRunContext(
       return;
     }
 
-    // FE-04: Use backend disabled reason as user guidance
-    const disabledReason = action.disabledReason || t('phaseCockpit.feedback.reviewingAction', { label: actionText(action.label) ?? action.actionId });
-    setFeedback(disabledReason);
+    setFeedback(disabledActionFeedback(action));
     scrollToSupportingSurface();
-  }, [actionText, executePacketAction, scrollToSupportingSurface, t]);
+  }, [disabledActionFeedback, executePacketAction, scrollToSupportingSurface]);
 
   return {
     feedback,

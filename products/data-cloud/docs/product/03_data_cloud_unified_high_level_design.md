@@ -828,7 +828,7 @@ MergedProductBoundaryTest:
   Ensures Data Cloud core does not import AEP implementation modules.
 
 MergedPathReferenceTest or script:
-  Ensures no active legacy products/aep or old AEP product-boundary paths after merge.
+  Ensures Action Plane modules remain permanently co-located under products/data-cloud/planes/action/* as per the accepted architectural decision.
 
 SurfaceRegistryCompositionTest:
   Ensures Data Cloud and Action Plane surfaces appear in unified Runtime Truth Registry.

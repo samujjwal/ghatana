@@ -50,21 +50,21 @@ public final class PhrApiContractConformanceTest extends ApiContractConformanceT
         assertThat(Files.exists(openApiPath))
             .as("OpenAPI spec file should exist at " + getOpenApiSpecPath())
             .isTrue();
-        
+
         String content = Files.readString(openApiPath);
         assertThat(content)
             .as("OpenAPI spec should not be empty")
             .isNotEmpty();
-        
+
         // Validate required OpenAPI fields
         assertThat(content)
             .as("OpenAPI spec should contain openapi version field")
             .contains("openapi:");
-        
+
         assertThat(content)
             .as("OpenAPI spec should contain info section")
             .contains("info:");
-        
+
         assertThat(content)
             .as("OpenAPI spec should contain paths section")
             .contains("paths:");
@@ -75,16 +75,16 @@ public final class PhrApiContractConformanceTest extends ApiContractConformanceT
     void testOpenApiSpecContainsPhrPaths() throws Exception {
         Path openApiPath = Paths.get(getOpenApiSpecPath());
         String content = Files.readString(openApiPath);
-        
+
         // Verify PHR-specific endpoints are documented
         assertThat(content)
             .as("OpenAPI spec should document patient endpoints")
             .contains("/patients");
-        
+
         assertThat(content)
             .as("OpenAPI spec should document consent endpoints")
             .contains("/consent");
-        
+
         assertThat(content)
             .as("OpenAPI spec should document FHIR endpoints")
             .contains("/fhir");
@@ -95,12 +95,12 @@ public final class PhrApiContractConformanceTest extends ApiContractConformanceT
     void testOpenApiSpecVersioning() throws Exception {
         Path openApiPath = Paths.get(getOpenApiSpecPath());
         String content = Files.readString(openApiPath);
-        
+
         // Should use OpenAPI 3.x
         assertThat(content)
             .as("OpenAPI spec should use version 3.x")
             .containsPattern("openapi:\\s*3\\.");
-        
+
         // Should have API version in info
         assertThat(content)
             .as("OpenAPI spec should have version in info section")
@@ -129,12 +129,12 @@ public final class PhrApiContractConformanceTest extends ApiContractConformanceT
     void testOpenApiSecuritySchemes() throws Exception {
         Path openApiPath = Paths.get(getOpenApiSpecPath());
         String content = Files.readString(openApiPath);
-        
+
         // PHR requires authentication for healthcare data
         assertThat(content)
             .as("OpenAPI spec should define security schemes")
             .contains("securitySchemes:");
-        
+
         assertThat(content)
             .as("OpenAPI spec should require authentication")
             .contains("security:");
@@ -145,7 +145,7 @@ public final class PhrApiContractConformanceTest extends ApiContractConformanceT
     void testOpenApiPiiClassification() throws Exception {
         Path openApiPath = Paths.get(getOpenApiSpecPath());
         String content = Files.readString(openApiPath);
-        
+
         // PHR endpoints should document PII handling
         assertThat(content)
             .as("OpenAPI spec should document healthcare data sensitivity")
@@ -166,16 +166,16 @@ public final class PhrApiContractConformanceTest extends ApiContractConformanceT
     void testNoBreakingChanges() throws Exception {
         Path openApiPath = Paths.get(getOpenApiSpecPath());
         String content = Files.readString(openApiPath);
-        
+
         // Validate that required fields are present
         assertThat(content)
             .as("OpenAPI spec should have all required paths")
             .contains("/phr/billing/encounters");
-        
+
         assertThat(content)
             .as("OpenAPI spec should have all required schemas")
             .contains("CreateEncounterRequest");
-        
+
         // This is a deterministic baseline check
         // In production, this would compare against a stored baseline
         assertThat(content)
@@ -187,19 +187,19 @@ public final class PhrApiContractConformanceTest extends ApiContractConformanceT
     @DisplayName("OpenAPI spec should validate against schema")
     void testOpenApiSchemaValidation() throws Exception {
         Path openApiPath = Paths.get(getOpenApiSpecPath());
-        
+
         // Use swagger-parser for production-grade OpenAPI validation
         OpenAPIV3Parser parser = new OpenAPIV3Parser();
         ParseOptions options = new ParseOptions();
         options.setResolve(true);
-        
+
         SwaggerParseResult result = parser.readLocation(openApiPath.toString(), null, options);
-        
+
         // Validate parsing succeeded
         assertThat(result)
             .as("OpenAPI spec should parse successfully")
             .isNotNull();
-        
+
         // Check for parsing errors
         List<String> messages = result.getMessages();
         if (messages != null && !messages.isEmpty()) {
@@ -207,35 +207,35 @@ public final class PhrApiContractConformanceTest extends ApiContractConformanceT
             List<String> errors = messages.stream()
                 .filter(msg -> msg.toLowerCase().contains("error") || msg.toLowerCase().contains("invalid"))
                 .toList();
-            
+
             assertThat(errors)
                 .as("OpenAPI spec should have no validation errors. Warnings: " + messages)
                 .isEmpty();
         }
-        
+
         // Validate OpenAPI version
         assertThat(result.getOpenAPI())
             .as("OpenAPI spec should have valid OpenAPI object")
             .isNotNull();
-        
+
         assertThat(result.getOpenAPI().getOpenapi())
             .as("OpenAPI spec should be version 3.0.3")
             .isEqualTo("3.0.3");
-        
+
         // Validate required components
         assertThat(result.getOpenAPI().getComponents())
             .as("OpenAPI spec should have components section")
             .isNotNull();
-        
+
         assertThat(result.getOpenAPI().getComponents().getSchemas())
             .as("OpenAPI spec should have schemas in components")
             .isNotNull();
-        
+
         // Validate paths exist
         assertThat(result.getOpenAPI().getPaths())
             .as("OpenAPI spec should have paths")
             .isNotNull();
-        
+
         assertThat(result.getOpenAPI().getPaths())
             .as("OpenAPI spec should have at least one path")
             .isNotEmpty();

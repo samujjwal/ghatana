@@ -10,6 +10,7 @@ dependencies {
     api(project(":platform:java:domain"))
     api(project(":platform:java:observability"))
     api(project(":platform:java:agent-core"))
+    api(project(":platform:java:audit"))
     api(project(":platform:contracts"))
 
     implementation(libs.activej.promise)

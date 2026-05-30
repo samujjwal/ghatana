@@ -14,6 +14,7 @@ import com.ghatana.agent.framework.tools.ToolExecutionEnvelope;
 import com.ghatana.agent.framework.tools.ToolExecutionStatus;
 import com.ghatana.agent.framework.tools.ToolContract;
 import com.ghatana.agent.framework.tools.ToolContractBuilder;
+import com.ghatana.platform.toolruntime.ToolExecutor;
 import com.ghatana.audio.video.tools.MultimodalInferenceToolHandler;
 import com.ghatana.audio.video.tools.SpeechToTextToolHandler;
 import com.ghatana.audio.video.tools.VisionAnalysisToolHandler;
@@ -50,25 +51,11 @@ public final class MultimodalAnalysisAgent
     public static final String AGENT_ID = "av.multimodal-analysis";
     private static final String VERSION = "1.0.0";
 
-    private final VisionAnalysisToolHandler visionHandler;
-    private final MultimodalInferenceToolHandler inferenceHandler;
-    private final SpeechToTextToolHandler sttHandler;
+    private final ToolExecutor toolExecutor;
 
-    /** Creates an agent with default tool handler instances. */
-    public MultimodalAnalysisAgent() {
-        this(new VisionAnalysisToolHandler(),
-             new MultimodalInferenceToolHandler(),
-             new SpeechToTextToolHandler());
-    }
-
-    /** Creates an agent with injected handlers (for testing). */
-    public MultimodalAnalysisAgent(
-            VisionAnalysisToolHandler visionHandler,
-            MultimodalInferenceToolHandler inferenceHandler,
-            SpeechToTextToolHandler sttHandler) {
-        this.visionHandler  = Objects.requireNonNull(visionHandler,   "visionHandler must not be null");
-        this.inferenceHandler = Objects.requireNonNull(inferenceHandler, "inferenceHandler must not be null");
-        this.sttHandler     = Objects.requireNonNull(sttHandler,      "sttHandler must not be null");
+    /** Creates an agent with governed tool executor. */
+    public MultimodalAnalysisAgent(ToolExecutor toolExecutor) {
+        this.toolExecutor = Objects.requireNonNull(toolExecutor, "toolExecutor must not be null");
     }
 
     @Override
@@ -125,7 +112,7 @@ public final class MultimodalAnalysisAgent
                 VisionAnalysisToolHandler.TOOL_ID, "1.0", AGENT_ID, VERSION,
                 tenantId, ActionClass.CALL_EXTERNAL, "1.0", visionInput);
 
-        return visionHandler.handle(envelope, visionContract()).map(res -> {
+        return toolExecutor.execute(envelope, visionContract()).map(res -> {
             if (res.status() == ToolExecutionStatus.SUCCESS) {
                 return (Map<String, Object>) res.output();
             }
@@ -146,7 +133,7 @@ public final class MultimodalAnalysisAgent
                 MultimodalInferenceToolHandler.TOOL_ID, "1.0", AGENT_ID, VERSION,
                 tenantId, ActionClass.CALL_EXTERNAL, "1.0", inferenceInput);
 
-        return inferenceHandler.handle(envelope, inferenceContract()).map(res -> {
+        return toolExecutor.execute(envelope, inferenceContract()).map(res -> {
             if (res.status() == ToolExecutionStatus.SUCCESS) {
                 return (Map<String, Object>) res.output();
             }
@@ -167,7 +154,7 @@ public final class MultimodalAnalysisAgent
                 SpeechToTextToolHandler.TOOL_ID, "1.0", AGENT_ID, VERSION,
                 tenantId, ActionClass.CALL_EXTERNAL, "1.0", sttRequest.toToolInput());
 
-        return sttHandler.handle(envelope, sttContract()).map(res -> {
+        return toolExecutor.execute(envelope, sttContract()).map(res -> {
             if (res.status() == ToolExecutionStatus.SUCCESS) {
                 @SuppressWarnings("unchecked")
                 var output = (Map<String, Object>) res.output();
