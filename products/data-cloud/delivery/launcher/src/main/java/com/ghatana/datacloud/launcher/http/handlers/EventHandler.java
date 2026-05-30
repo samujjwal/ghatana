@@ -102,6 +102,13 @@ public class EventHandler {
                 "Event append idempotency must be durable across restarts.");
         }
 
+        // Group 8 / DC-SEC-008: Quota enforcement is fail-closed in production.
+        if (tenantQuotaService == null) {
+            throw new IllegalStateException(
+                "DC-SEC-008: TenantQuotaService is required in production/staging/sovereign profiles. " +
+                "Event-append quota enforcement must not be silently bypassed at runtime.");
+        }
+
         log.info("[EventHandler] Production requirements validated successfully for profile '{}'", deploymentProfile);
     }
 

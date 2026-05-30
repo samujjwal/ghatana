@@ -58,8 +58,8 @@ const workflowMatrix = {
   phr: [
     {
       id: 'patient-profile',
-      source: ['products/phr/src/main/java/com/ghatana/phr/api/PatientController.java'],
-      tests: ['products/phr/src/test/java/com/ghatana/phr/api/PatientControllerTest.java'],
+      source: ['products/phr/src/main/java/com/ghatana/phr/api/routes/PhrPatientProfileRoutes.java'],
+      tests: ['products/phr/src/test/java/com/ghatana/phr/api/routes/PhrPatientProfileRoutesTest.java'],
     },
     {
       id: 'health-summary',

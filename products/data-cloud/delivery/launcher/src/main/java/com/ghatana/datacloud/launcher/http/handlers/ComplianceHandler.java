@@ -139,9 +139,9 @@ public final class ComplianceHandler {
                 }
                 return IdempotencyHelper.checkIdempotency(idempotencyStore, tenantId, scope, idempotencyKey, principalId)
                     .then(cached -> {
-                        if (cached.isPresent()) {
+                        if (cached instanceof HttpResponse cachedResponse) {
                             log.info("[compliance] Returning cached response for tenant={}, scope={}, key={}", tenantId, scope, idempotencyKey);
-                            return Promise.of(IdempotencyHelper.addIdempotencyHeaders((HttpResponse) cached.get(), "replay"));
+                            return Promise.of(IdempotencyHelper.addIdempotencyHeaders(cachedResponse, "replay"));
                         }
                         return Promise.of(null);
                     });

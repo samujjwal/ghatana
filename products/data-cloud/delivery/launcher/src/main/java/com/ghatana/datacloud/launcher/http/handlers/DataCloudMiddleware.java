@@ -1,6 +1,7 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.ghatana.datacloud.api.idempotency.IdempotencyService;
+import com.ghatana.datacloud.api.idempotency.IdempotencyService.IdempotencyRecord;
 import com.ghatana.datacloud.api.idempotency.InMemoryIdempotencyService;
 import com.ghatana.platform.http.security.filter.TenantExtractor;
 import io.activej.http.*;
@@ -417,12 +418,7 @@ public final class DataCloudMiddleware {
                                 .whenException(e -> log.warn("[idempotency] Failed to store response key={}: {}", 
                                     idempotencyKey, e.getMessage()));
                             
-                            // Add idempotency headers to response
-                            return Promise.of(response
-                                .withHeader(HttpHeaders.of(IDEMPOTENCY_KEY_HEADER), 
-                                    HttpHeaderValue.of(idempotencyKey))
-                                .withHeader(HttpHeaders.of("X-Idempotency-Replayed"), 
-                                    HttpHeaderValue.of("false")));
+                            return Promise.of(response);
                         });
                 });
         };

@@ -29,7 +29,11 @@
       "apiEndpoint": "/api/v1/dashboard",
       "policyId": "phr.dashboard.view",
       "testId": "phr-dashboard-view-001",
-      "surface": ["web", "mobile", "backend"],
+      "surface": [
+        "web",
+        "mobile",
+        "backend"
+      ],
       "i18nKey": "phr.routes.dashboard.label",
       "descriptionI18nKey": "phr.routes.dashboard.description",
       "routeType": "page"
@@ -60,7 +64,11 @@
       "apiEndpoint": "/api/v1/records",
       "policyId": "phr.records.view",
       "testId": "phr-records-view-001",
-      "surface": ["web", "mobile", "backend"],
+      "surface": [
+        "web",
+        "mobile",
+        "backend"
+      ],
       "i18nKey": "phr.routes.records.label",
       "descriptionI18nKey": "phr.routes.records.description",
       "routeType": "page"
@@ -91,7 +99,11 @@
       "apiEndpoint": "/api/v1/consents",
       "policyId": "phr.consents.access",
       "testId": "phr-consents-001",
-      "surface": ["web", "mobile", "backend"],
+      "surface": [
+        "web",
+        "mobile",
+        "backend"
+      ],
       "i18nKey": "phr.routes.consents.label",
       "descriptionI18nKey": "phr.routes.consents.description",
       "routeType": "page"
@@ -121,7 +133,10 @@
       "apiEndpoint": "/api/v1/appointments",
       "policyId": "phr.appointments.access",
       "testId": "phr-appointments-001",
-      "surface": ["web", "mobile", "backend"],
+      "surface": [
+        "web",
+        "backend"
+      ],
       "i18nKey": "phr.routes.appointments.label",
       "descriptionI18nKey": "phr.routes.appointments.description",
       "routeType": "page"
@@ -152,7 +167,11 @@
       "apiEndpoint": "/api/v1/profile/settings",
       "policyId": "phr.settings.access",
       "testId": "phr-settings-001",
-      "surface": ["web", "mobile", "backend"],
+      "surface": [
+        "web",
+        "mobile",
+        "backend"
+      ],
       "i18nKey": "phr.routes.settings.label",
       "descriptionI18nKey": "phr.routes.settings.description",
       "routeType": "page"
@@ -181,7 +200,10 @@
       "apiEndpoint": "/api/v1/clinical/labs",
       "policyId": "phr.labs.access",
       "testId": "phr-labs-001",
-      "surface": ["web", "mobile", "backend"],
+      "surface": [
+        "web",
+        "backend"
+      ],
       "i18nKey": "phr.routes.labs.label",
       "descriptionI18nKey": "phr.routes.labs.description",
       "routeType": "page"
@@ -210,7 +232,10 @@
       "apiEndpoint": "/api/v1/clinical/medications",
       "policyId": "phr.medications.access",
       "testId": "phr-medications-001",
-      "surface": ["web", "mobile", "backend"],
+      "surface": [
+        "web",
+        "backend"
+      ],
       "i18nKey": "phr.routes.medications.label",
       "descriptionI18nKey": "phr.routes.medications.description",
       "routeType": "page"
@@ -239,7 +264,10 @@
       "apiEndpoint": "/api/v1/clinical/medications/prescriptions/:medicationId",
       "policyId": "phr.medications.access",
       "testId": "phr-medications-detail-001",
-      "surface": ["web", "mobile", "backend"],
+      "surface": [
+        "web",
+        "backend"
+      ],
       "i18nKey": "phr.routes.medications.detail.label",
       "descriptionI18nKey": "phr.routes.medications.detail.description",
       "routeType": "detail"
@@ -269,7 +297,10 @@
       "apiEndpoint": "/api/v1/clinical/conditions",
       "policyId": "phr.conditions.access",
       "testId": "phr-conditions-001",
-      "surface": ["web", "mobile", "backend"],
+      "surface": [
+        "web",
+        "backend"
+      ],
       "i18nKey": "phr.routes.conditions.label",
       "descriptionI18nKey": "phr.routes.conditions.description",
       "routeType": "page"
@@ -298,7 +329,10 @@
       "apiEndpoint": "/api/v1/clinical/observations",
       "policyId": "phr.observations.access",
       "testId": "phr-observations-001",
-      "surface": ["web", "mobile", "backend"],
+      "surface": [
+        "web",
+        "backend"
+      ],
       "i18nKey": "phr.routes.observations.label",
       "descriptionI18nKey": "phr.routes.observations.description",
       "routeType": "page"
@@ -328,7 +362,10 @@
       "apiEndpoint": "/api/v1/clinical/immunizations",
       "policyId": "phr.immunizations.access",
       "testId": "phr-immunizations-001",
-      "surface": ["web", "mobile", "backend"],
+      "surface": [
+        "web",
+        "backend"
+      ],
       "i18nKey": "phr.routes.immunizations.label",
       "descriptionI18nKey": "phr.routes.immunizations.description",
       "routeType": "page"
@@ -359,7 +396,10 @@
       "apiEndpoint": "/api/v1/records/documents",
       "policyId": "phr.documents.access",
       "testId": "phr-documents-001",
-      "surface": ["web", "mobile", "backend"],
+      "surface": [
+        "web",
+        "backend"
+      ],
       "i18nKey": "phr.routes.documents.label",
       "descriptionI18nKey": "phr.routes.documents.description",
       "routeType": "page"
@@ -387,7 +427,10 @@
       "apiEndpoint": "/api/v1/records/documents",
       "policyId": "phr.documents.upload.access",
       "testId": "phr-documents-upload-001",
-      "surface": ["web", "mobile", "backend"],
+      "surface": [
+        "web",
+        "backend"
+      ],
       "i18nKey": "phr.routes.documents.upload.label",
       "descriptionI18nKey": "phr.routes.documents.upload.description",
       "routeType": "action"
@@ -415,7 +458,10 @@
       "apiEndpoint": "/api/v1/records/documents/:docId/ocr",
       "policyId": "phr.documents.doc-id.ocr.access",
       "testId": "phr-documents-doc-id-ocr-001",
-      "surface": ["web", "mobile", "backend"],
+      "surface": [
+        "web",
+        "backend"
+      ],
       "i18nKey": "phr.routes.documents.ocr.label",
       "descriptionI18nKey": "phr.routes.documents.ocr.description",
       "routeType": "action"
@@ -445,7 +491,10 @@
       "apiEndpoint": "/api/v1/records/timeline",
       "policyId": "phr.timeline.access",
       "testId": "phr-timeline-001",
-      "surface": ["web", "mobile", "backend"],
+      "surface": [
+        "web",
+        "backend"
+      ],
       "i18nKey": "phr.routes.timeline.label",
       "descriptionI18nKey": "phr.routes.timeline.description",
       "routeType": "page"
@@ -476,7 +525,10 @@
       "apiEndpoint": "/api/v1/profile",
       "policyId": "phr.profile.access",
       "testId": "phr-profile-001",
-      "surface": ["web", "mobile", "backend"],
+      "surface": [
+        "web",
+        "backend"
+      ],
       "i18nKey": "phr.routes.profile.label",
       "descriptionI18nKey": "phr.routes.profile.description",
       "routeType": "page"
@@ -504,7 +556,11 @@
       "apiEndpoint": "/api/v1/records/:recordId",
       "policyId": "phr.records.record-id.access",
       "testId": "phr-records-record-id-001",
-      "surface": ["web", "mobile", "backend"],
+      "surface": [
+        "web",
+        "mobile",
+        "backend"
+      ],
       "i18nKey": "phr.routes.records.detail.label",
       "descriptionI18nKey": "phr.routes.records.detail.description",
       "routeType": "detail"
@@ -534,7 +590,11 @@
       "apiEndpoint": "/api/v1/notifications",
       "policyId": "phr.notifications.access",
       "testId": "phr-notifications-001",
-      "surface": ["web", "mobile", "backend"],
+      "surface": [
+        "web",
+        "mobile",
+        "backend"
+      ],
       "i18nKey": "phr.routes.notifications.label",
       "descriptionI18nKey": "phr.routes.notifications.description",
       "routeType": "page"
@@ -560,7 +620,9 @@
       "apiEndpoint": "/api/v1/route-entitlements",
       "policyId": "phr.forbidden.access",
       "testId": "phr-forbidden-001",
-      "surface": ["web", "mobile"],
+      "surface": [
+        "web"
+      ],
       "i18nKey": "phr.routes.forbidden.label",
       "descriptionI18nKey": "phr.routes.forbidden.description",
       "routeType": "system"
@@ -586,7 +648,9 @@
       "apiEndpoint": "/api/v1/route-entitlements",
       "policyId": "phr.not.found.access",
       "testId": "phr-not-found-001",
-      "surface": ["web", "mobile"],
+      "surface": [
+        "web"
+      ],
       "i18nKey": "phr.routes.notFound.label",
       "descriptionI18nKey": "phr.routes.notFound.description",
       "routeType": "system"
@@ -615,7 +679,11 @@
       "policyId": "phr.emergency.break-glass",
       "testId": "phr-emergency-break-glass-001",
       "emergencyAction": true,
-      "surface": ["web", "mobile", "backend"],
+      "surface": [
+        "web",
+        "mobile",
+        "backend"
+      ],
       "i18nKey": "phr.routes.emergency.label",
       "descriptionI18nKey": "phr.routes.emergency.description",
       "routeType": "action"
@@ -643,7 +711,10 @@
       "apiEndpoint": "/api/v1/emergency/reviews",
       "policyId": "phr.emergency.review",
       "testId": "phr-emergency-review-001",
-      "surface": ["web", "backend"],
+      "surface": [
+        "web",
+        "backend"
+      ],
       "i18nKey": "phr.routes.emergency.reviews.label",
       "descriptionI18nKey": "phr.routes.emergency.reviews.description",
       "routeType": "page"
@@ -673,7 +744,10 @@
       "apiEndpoint": "/api/v1/release-readiness",
       "policyId": "phr.release.readiness.access",
       "testId": "phr-release-readiness-001",
-      "surface": ["web", "backend"],
+      "surface": [
+        "web",
+        "backend"
+      ],
       "i18nKey": "phr.routes.releaseReadiness.label",
       "descriptionI18nKey": "phr.routes.releaseReadiness.description",
       "routeType": "page"
@@ -700,7 +774,10 @@
       "apiEndpoint": "/api/v1/audit/events",
       "policyId": "phr.audit.access",
       "testId": "phr-audit-001",
-      "surface": ["web", "backend"],
+      "surface": [
+        "web",
+        "backend"
+      ],
       "i18nKey": "phr.routes.audit.label",
       "descriptionI18nKey": "phr.routes.audit.description",
       "routeType": "page"
@@ -728,7 +805,10 @@
       "apiEndpoint": "/api/v1/provider/dashboard",
       "policyId": "phr.provider.dashboard.view",
       "testId": "phr-provider-dashboard-001",
-      "surface": ["web", "backend"],
+      "surface": [
+        "web",
+        "backend"
+      ],
       "i18nKey": "phr.routes.provider.dashboard.label",
       "descriptionI18nKey": "phr.routes.provider.dashboard.description",
       "routeType": "page"
@@ -756,7 +836,10 @@
       "apiEndpoint": "/api/v1/provider/patients",
       "policyId": "phr.provider.patients.view",
       "testId": "phr-provider-patients-001",
-      "surface": ["web", "backend"],
+      "surface": [
+        "web",
+        "backend"
+      ],
       "i18nKey": "phr.routes.provider.patients.label",
       "descriptionI18nKey": "phr.routes.provider.patients.description",
       "routeType": "page"
@@ -784,7 +867,10 @@
       "apiEndpoint": "/api/v1/caregiver/dependents",
       "policyId": "phr.caregiver.dependents.view",
       "testId": "phr-caregiver-dependents-001",
-      "surface": ["web", "backend"],
+      "surface": [
+        "web",
+        "backend"
+      ],
       "i18nKey": "phr.routes.caregiver.dependents.label",
       "descriptionI18nKey": "phr.routes.caregiver.dependents.description",
       "routeType": "page"
@@ -812,7 +898,10 @@
       "apiEndpoint": "/api/v1/fchv/dashboard",
       "policyId": "phr.fchv.dashboard.view",
       "testId": "phr-fchv-dashboard-001",
-      "surface": ["web", "backend"],
+      "surface": [
+        "web",
+        "backend"
+      ],
       "i18nKey": "phr.routes.fchv.dashboard.label",
       "descriptionI18nKey": "phr.routes.fchv.dashboard.description",
       "routeType": "page"

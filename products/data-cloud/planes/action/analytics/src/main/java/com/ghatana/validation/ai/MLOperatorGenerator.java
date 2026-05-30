@@ -4,6 +4,8 @@
  */
 package com.ghatana.validation.ai;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.ai.llm.ChatMessage;
 import com.ghatana.ai.llm.LLMGateway;
 import com.ghatana.ai.llm.CompletionRequest;
@@ -13,10 +15,13 @@ import com.ghatana.platform.observability.Metrics;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -35,6 +40,13 @@ import java.util.stream.Collectors;
 public class MLOperatorGenerator {
 
     private static final Logger log = LoggerFactory.getLogger(MLOperatorGenerator.class);
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    private static final Set<String> ALLOWED_OPERATOR_TYPES = Set.of(
+        "SEQ", "AND", "OR", "NOT", "WITHIN", "REPEAT", "WINDOW", "UNTIL", "SELECT", "FILTER",
+        "MAP", "AGGREGATE", "JOIN", "CORRELATE"
+    );
 
     private final LLMGateway llmGateway;
     private final Metrics metrics;
@@ -84,16 +96,31 @@ public class MLOperatorGenerator {
             .maxTokens(config.maxTokens())
             .build();
 
+        // Group 9 / DC-OBS-009: capture the caller MDC so correlationId and traceId flow into
+        // the LLM callback regardless of which thread the Promise is resolved on.
+        final Map<String, String> callerMdc = MDC.getCopyOfContextMap() != null
+            ? new HashMap<>(MDC.getCopyOfContextMap())
+            : Map.of();
+
         return llmGateway.complete(request)
             .map(result -> {
-                List<OperatorSpec> operators = parseOperatorSpecs(result.getText());
+                if (!callerMdc.isEmpty()) {
+                    MDC.setContextMap(callerMdc);
+                }
+                try {
+                    List<OperatorSpec> operators = parseOperatorSpecs(result.getText());
 
-                metrics.timer("ml.operator.generation.duration")
-                    .record(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS);
-                metrics.counter("ml.operator.generation.success").increment();
+                    metrics.timer("ml.operator.generation.duration")
+                        .record(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS);
+                    metrics.counter("ml.operator.generation.success").increment();
 
-                log.info("Generated {} operators from {} events", operators.size(), events.size());
-                return operators;
+                    log.info("Generated {} operators from {} events", operators.size(), events.size());
+                    return operators;
+                } finally {
+                    if (!callerMdc.isEmpty()) {
+                        MDC.clear();
+                    }
+                }
             })
             .whenException(exception -> {
                 metrics.timer("ml.operator.generation.duration")
@@ -177,58 +204,81 @@ public class MLOperatorGenerator {
     }
 
     /**
-     * Parses operator specs from LLM response.
+     * Parses operator specs from LLM response using Jackson.
      *
-     * @param response the LLM response text
-     * @return list of parsed operator specs
+     * <p>Strips optional markdown code fences, then deserialises the JSON array into
+     * {@link OperatorSpec} objects. Each parsed spec is validated for a known operator
+     * type and a non-blank ID before being added to the result list. Malformed entries
+     * are skipped with a warning so that a single bad operator does not discard the
+     * entire LLM response.
+     *
+     * @param response the raw LLM response text
+     * @return list of valid parsed operator specs (may be empty, never null)
      */
     private List<OperatorSpec> parseOperatorSpecs(String response) {
-        // Extract JSON from response (handle markdown code blocks)
-        if (response.contains("```json")) {
-            int start = response.indexOf("```json") + 7;
-            int end = response.indexOf("```", start);
-            if (end > start) {
-                response = response.substring(start, end).trim();
-            }
-        } else if (response.contains("```")) {
-            int start = response.indexOf("```") + 3;
-            int end = response.indexOf("```", start);
-            if (end > start) {
-                response = response.substring(start, end).trim();
+        if (response == null || response.isBlank()) {
+            log.warn("[MLOperatorGenerator] LLM returned empty response");
+            metrics.counter("ml.operator.generation.parse.empty").increment();
+            return List.of();
+        }
+
+        String cleaned = response.trim();
+        if (cleaned.startsWith("```json")) {
+            int start = cleaned.indexOf('\n') + 1;
+            int end   = cleaned.lastIndexOf("```");
+            cleaned   = (end > start) ? cleaned.substring(start, end).trim() : cleaned;
+        } else if (cleaned.startsWith("```")) {
+            int start = cleaned.indexOf('\n') + 1;
+            int end   = cleaned.lastIndexOf("```");
+            cleaned   = (end > start) ? cleaned.substring(start, end).trim() : cleaned;
+        }
+
+        if (!cleaned.startsWith("[")) {
+            int arrayStart = cleaned.indexOf('[');
+            if (arrayStart >= 0) {
+                cleaned = cleaned.substring(arrayStart);
+            } else {
+                log.warn("[MLOperatorGenerator] LLM response does not contain a JSON array: {}",
+                    cleaned.length() > 200 ? cleaned.substring(0, 200) + "..." : cleaned);
+                metrics.counter("ml.operator.generation.parse.invalid").increment();
+                return List.of();
             }
         }
 
-        // Parse JSON (simplified - in production use proper JSON parser)
-        List<OperatorSpec> operators = new ArrayList<>();
-        
-        // For now, return a simple pattern based on common sequences
-        // In production, this would use Jackson or similar to parse the JSON
-        operators.add(createSampleOperator());
-        
-        return operators;
-    }
-
-    /**
-     * Creates a sample operator for testing.
-     *
-     * @return a sample SEQ operator
-     */
-    private OperatorSpec createSampleOperator() {
-        return OperatorSpec.builder()
-            .type("SEQ")
-            .id("ml-generated-sequence")
-            .parameter("within", "PT5M")
-            .operand(OperatorSpec.builder()
-                .type("SELECT")
-                .id("event-1")
-                .parameter("eventType", "user.login")
-                .build())
-            .operand(OperatorSpec.builder()
-                .type("SELECT")
-                .id("event-2")
-                .parameter("eventType", "order.created")
-                .build())
-            .build();
+        try {
+            List<OperatorSpec> raw = MAPPER.readValue(cleaned, new TypeReference<List<OperatorSpec>>() {});
+            List<OperatorSpec> valid = new ArrayList<>();
+            for (int i = 0; i < raw.size(); i++) {
+                OperatorSpec spec = raw.get(i);
+                if (spec == null) {
+                    log.warn("[MLOperatorGenerator] Null operator at index {}, skipping", i);
+                    continue;
+                }
+                if (spec.getType() == null || spec.getType().isBlank()) {
+                    log.warn("[MLOperatorGenerator] Operator at index {} has no type, skipping", i);
+                    continue;
+                }
+                if (!ALLOWED_OPERATOR_TYPES.contains(spec.getType().toUpperCase())) {
+                    log.warn("[MLOperatorGenerator] Unknown operator type '{}' at index {}, skipping",
+                        spec.getType(), i);
+                    continue;
+                }
+                if (spec.getId() == null || spec.getId().isBlank()) {
+                    log.warn("[MLOperatorGenerator] Operator of type '{}' at index {} has no id, skipping",
+                        spec.getType(), i);
+                    continue;
+                }
+                valid.add(spec);
+            }
+            metrics.counter("ml.operator.generation.parse.success").increment();
+            log.debug("[MLOperatorGenerator] Parsed {}/{} valid operators from LLM response",
+                valid.size(), raw.size());
+            return List.copyOf(valid);
+        } catch (Exception e) {
+            log.warn("[MLOperatorGenerator] Failed to parse LLM JSON response: {}", e.getMessage());
+            metrics.counter("ml.operator.generation.parse.invalid").increment();
+            return List.of();
+        }
     }
 
     /**

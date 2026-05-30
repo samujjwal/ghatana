@@ -440,7 +440,7 @@ public class PhrKernelModule implements KernelModule {
             userRepository,
             appointments,
             new MedicationServiceExtensions(medications),
-            new PatientRecordServiceExtensions(patientRecords),
+            new PatientRecordServiceExtensions(patientRecords, labResults),
             new DocumentServiceExtensions(documents),
             new ConsentManagementServiceExtensions(consent),
             new EmergencyAccessLogServiceExtensions(emergencyAccess)

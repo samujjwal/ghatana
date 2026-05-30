@@ -27,6 +27,7 @@ dependencies {
     implementation(project(":products:data-cloud:delivery:api"))
     implementation(project(":products:data-cloud:extensions:agent-registry"))
     implementation(project(":products:data-cloud:extensions:plugins"))
+    implementation(project(":products:data-cloud:planes:action:operator-contracts"))
 
     // Core platform dependencies
     implementation(project(":platform:java:observability"))

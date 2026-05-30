@@ -6,6 +6,8 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.governance.QuotaCheckResult;
+import com.ghatana.datacloud.governance.TenantQuotaService;
 import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.datacloud.infrastructure.storage.OpenSearchConnector;
 import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
@@ -94,6 +96,9 @@ class EntityCrudHandlerDurabilityTest extends EventloopTestBase {
     @Mock
     private AuditService auditService;
 
+    @Mock
+    private TenantQuotaService tenantQuotaService;
+
     private EntityCrudHandler handler;
 
     @BeforeEach
@@ -104,6 +109,7 @@ class EntityCrudHandlerDurabilityTest extends EventloopTestBase {
             .withTransactionManager(transactionManager)
             .withOutboxProcessor(outboxProcessor)
             .withIdempotencyStore(idempotencyStore)
+            .withTenantQuotaService(tenantQuotaService)
             .withDeploymentProfile("production");
 
         lenient().when(http.errorResponse(anyInt(), anyString())).thenReturn(errorResponse);
@@ -113,6 +119,8 @@ class EntityCrudHandlerDurabilityTest extends EventloopTestBase {
         lenient().when(http.requireTenantIdWithError(request))
             .thenReturn(HttpHandlerSupport.TenantResolutionResult.success("tenant-1", null));
         lenient().when(request.getPathParameter("collection")).thenReturn("test-collection");
+        lenient().when(tenantQuotaService.checkQuota(anyString(), anyString(), anyInt()))
+            .thenReturn(QuotaCheckResult.permit());
     }
 
     // ==================== DC-P1-05: Idempotency Tests ====================
@@ -385,6 +393,7 @@ class EntityCrudHandlerDurabilityTest extends EventloopTestBase {
             .withTransactionManager(transactionManager)
             .withIdempotencyStore(idempotencyStore)
             .withAuditService(auditService)
+            .withTenantQuotaService(tenantQuotaService)
             .withDeploymentProfile("production");
 
         assertThatThrownBy(handlerWithoutOutbox::validateProductionRequirements)
@@ -402,6 +411,37 @@ class EntityCrudHandlerDurabilityTest extends EventloopTestBase {
             .withDeploymentProfile("local");
 
         // Should not throw exception in local profile
+        localHandler.validateProductionRequirements();
+    }
+
+    @Test
+    @DisplayName("DC-SEC-008: Production profile requires TenantQuotaService (fail-closed)")
+    void productionProfileRequiresTenantQuotaService() {
+        // All other production dependencies present; quota service intentionally absent.
+        EntityCrudHandler handlerWithoutQuota = new EntityCrudHandler(client, http, wsBroadcaster)
+            .withTraceSupport(TraceSpanSupport.disabled())
+            .withOpenSearchConnector(openSearchConnector)
+            .withIdempotencyStore(idempotencyStore)
+            .withTransactionManager(transactionManager)
+            .withAuditService(auditService)
+            .withOutboxProcessor(outboxProcessor)
+            .withDeploymentProfile("production");
+
+        assertThatThrownBy(handlerWithoutQuota::validateProductionRequirements)
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("DC-SEC-008")
+            .hasMessageContaining("TenantQuotaService is required");
+    }
+
+    @Test
+    @DisplayName("DC-SEC-008: Local profile does not require TenantQuotaService")
+    void localProfileDoesNotRequireTenantQuotaService() {
+        EntityCrudHandler localHandler = new EntityCrudHandler(client, http, wsBroadcaster)
+            .withTraceSupport(TraceSpanSupport.disabled())
+            .withOpenSearchConnector(openSearchConnector)
+            .withDeploymentProfile("local");
+
+        // Must not throw — quota is optional in local/dev profiles
         localHandler.validateProductionRequirements();
     }
 

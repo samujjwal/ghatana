@@ -85,6 +85,16 @@ public class DataCloudLearningBridge implements AutoCloseable {
         });
     }
 
+    /**
+     * Creates a learning bridge without durable pattern lifecycle transitions.
+     *
+     * @param brain the brain facade; must not be {@code null}
+     * @param auditBridge the audit bridge for logging learning events; may be {@code null}
+     */
+    public DataCloudLearningBridge(DataCloudBrain brain, AgentLearningAuditBridge auditBridge) {
+        this(brain, auditBridge, null);
+    }
+
     // ═══════════════════════════════════════════════════════════════════════════
     // Lifecycle
     // ═══════════════════════════════════════════════════════════════════════════
@@ -269,7 +279,7 @@ public class DataCloudLearningBridge implements AutoCloseable {
                             tenantId,
                             PatternLifecycleState.CANDIDATE,
                             PatternLifecycleState.VALIDATED,
-                            PatternLifecycleEventType.PROMOTION,
+                            PatternLifecycleEventType.PATTERN_VALIDATED,
                             userId,
                             Map.of("reviewId", reviewId, "source", "learning-review", "traceId", java.util.UUID.randomUUID().toString())
                         );
@@ -314,7 +324,7 @@ public class DataCloudLearningBridge implements AutoCloseable {
                             tenantId,
                             PatternLifecycleState.CANDIDATE,
                             PatternLifecycleState.RETIRED,
-                            PatternLifecycleEventType.DEMOTION,
+                            PatternLifecycleEventType.PATTERN_RETIRED,
                             userId,
                             Map.of("reviewId", reviewId, "source", "learning-review", "reason", reason, "traceId", java.util.UUID.randomUUID().toString())
                         );

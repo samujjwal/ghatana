@@ -24,6 +24,8 @@ dependencies {
     implementation(project(":products:data-cloud:planes:action:engine"))
     // Agent runtime for dispatch classes (AgentDispatcher, LlmProvider, etc.)
     implementation(project(":products:data-cloud:planes:action:agent-runtime"))
+    implementation(project(":products:data-cloud:planes:data:entity"))
+    implementation(project(":products:data-cloud:extensions:agent-registry"))
     api(project(":platform:java:messaging"))  // Unified messaging (merged connectors)
     api(project(":products:data-cloud:planes:action:registry"))
 

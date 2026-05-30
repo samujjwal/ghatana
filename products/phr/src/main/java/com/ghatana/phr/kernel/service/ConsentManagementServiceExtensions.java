@@ -2,6 +2,9 @@ package com.ghatana.phr.kernel.service;
 
 import io.activej.promise.Promise;
 
+import java.time.Duration;
+import java.time.Instant;
+
 /**
  * Extension methods for ConsentManagementService for dashboard and route family completion.
  *
@@ -14,6 +17,8 @@ import io.activej.promise.Promise;
  * @doc.pattern Service Extension
  */
 public final class ConsentManagementServiceExtensions {
+
+    private static final Duration EXPIRING_SOON_WINDOW = Duration.ofDays(30);
 
     private final ConsentManagementService consentService;
 
@@ -28,8 +33,14 @@ public final class ConsentManagementServiceExtensions {
      * @return Promise containing the count of expiring consents
      */
     public Promise<Integer> getExpiringConsents(String patientId) {
-        // TODO: Implement using data cloud query
-        // For now, return 0 as placeholder
-        return Promise.of(0);
+        Instant now = Instant.now();
+        Instant windowEnd = now.plus(EXPIRING_SOON_WINDOW);
+        return consentService.getPatientGrants(patientId)
+            .map(grants -> Math.toIntExact(grants.stream()
+                .filter(grant -> "ACTIVE".equals(grant.getStatus()))
+                .filter(grant -> grant.getExpiresAt() != null)
+                .filter(grant -> !grant.getExpiresAt().isBefore(now))
+                .filter(grant -> !grant.getExpiresAt().isAfter(windowEnd))
+                .count()));
     }
 }

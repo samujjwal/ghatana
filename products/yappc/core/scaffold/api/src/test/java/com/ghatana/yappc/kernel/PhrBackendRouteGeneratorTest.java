@@ -34,7 +34,6 @@ class PhrBackendRouteGeneratorTest {
                     "Patient dashboard",
                     "care",
                     "patient",
-                    List.of("web"),
                     List.of("patient"),
                     List.of("core"),
                     List.of("view"),
@@ -54,13 +53,15 @@ class PhrBackendRouteGeneratorTest {
 
         PhrProductContractImporter.ImportedPhrProduct imported = new PhrProductContractImporter.ImportedPhrProduct(
             "phr",
+            contract.version(),
             contract.routes(),
             List.of(),
-            List.of()
+            List.of(),
+            productUnitIntentRequest()
         );
 
         PhrBackendRouteGenerator generator = new PhrBackendRouteGenerator();
-        List<PhrBackendRouteGenerator.GeneratedBackendRoute> routes = generator.generateRouteSkeletons(imported);
+        List<GeneratedBackendRoute> routes = generator.generateRouteSkeletons(imported);
 
         assertThat(routes).hasSize(1);
         assertThat(routes.get(0).className()).isEqualTo("DashboardRoutes");
@@ -68,6 +69,12 @@ class PhrBackendRouteGeneratorTest {
         assertThat(routes.get(0).code()).contains("class DashboardRoutes");
         assertThat(routes.get(0).code()).contains("PhrRouteSupport");
         assertThat(routes.get(0).code()).contains("PhrPolicyEvaluator");
+        assertThat(routes.get(0).code()).contains("Objects.requireNonNull(policyEvaluator");
+        assertThat(routes.get(0).code()).contains("policyEvaluator.canAccessPhiResourceAsync");
+        assertThat(routes.get(0).code()).contains("PhrRouteSupport.policyDenialResponse");
+        assertThat(routes.get(0).code()).contains("ROUTE_NOT_IMPLEMENTED");
+        assertThat(routes.get(0).code()).doesNotContain("TODO");
+        assertThat(routes.get(0).code()).doesNotContain("new Object()");
     }
 
     @Test
@@ -83,7 +90,6 @@ class PhrBackendRouteGeneratorTest {
                     "User settings",
                     "profile",
                     "patient",
-                    List.of("web"),
                     List.of("patient"),
                     List.of("core"),
                     List.of("view"),
@@ -103,13 +109,15 @@ class PhrBackendRouteGeneratorTest {
 
         PhrProductContractImporter.ImportedPhrProduct imported = new PhrProductContractImporter.ImportedPhrProduct(
             "phr",
+            contract.version(),
             contract.routes(),
             List.of(),
-            List.of()
+            List.of(),
+            productUnitIntentRequest()
         );
 
         PhrBackendRouteGenerator generator = new PhrBackendRouteGenerator();
-        List<PhrBackendRouteGenerator.GeneratedBackendRoute> routes = generator.generateRouteSkeletons(imported);
+        List<GeneratedBackendRoute> routes = generator.generateRouteSkeletons(imported);
 
         assertThat(routes).isEmpty();
     }
@@ -127,7 +135,6 @@ class PhrBackendRouteGeneratorTest {
                     "Create patient record",
                     "care",
                     "clinician",
-                    List.of("web"),
                     List.of("clinician"),
                     List.of("core"),
                     List.of("create"),
@@ -147,13 +154,15 @@ class PhrBackendRouteGeneratorTest {
 
         PhrProductContractImporter.ImportedPhrProduct imported = new PhrProductContractImporter.ImportedPhrProduct(
             "phr",
+            contract.version(),
             contract.routes(),
             List.of(),
-            List.of()
+            List.of(),
+            productUnitIntentRequest()
         );
 
         PhrBackendRouteGenerator generator = new PhrBackendRouteGenerator();
-        List<PhrBackendRouteGenerator.GeneratedBackendRoute> routes = generator.generateRouteSkeletons(imported);
+        List<GeneratedBackendRoute> routes = generator.generateRouteSkeletons(imported);
 
         assertThat(routes.get(0).code()).contains("Method: POST");
     }
@@ -171,7 +180,6 @@ class PhrBackendRouteGeneratorTest {
                     "Patient documents",
                     "care",
                     "patient",
-                    List.of("web"),
                     List.of("patient"),
                     List.of("core"),
                     List.of("view"),
@@ -194,16 +202,34 @@ class PhrBackendRouteGeneratorTest {
 
         PhrProductContractImporter.ImportedPhrProduct imported = new PhrProductContractImporter.ImportedPhrProduct(
             "phr",
+            contract.version(),
             contract.routes(),
             List.of(),
-            List.of()
+            List.of(),
+            productUnitIntentRequest()
         );
 
         PhrBackendRouteGenerator generator = new PhrBackendRouteGenerator();
-        List<PhrBackendRouteGenerator.GeneratedBackendRoute> routes = generator.generateRouteSkeletons(imported);
+        List<GeneratedBackendRoute> routes = generator.generateRouteSkeletons(imported);
 
         assertThat(routes).hasSize(1);
         assertThat(routes.get(0).code()).contains("/api/v1/documents");
         assertThat(routes.get(0).code()).contains("phr.documents.view");
+    }
+
+    private static ProductUnitIntentExporter.Request productUnitIntentRequest() {
+        return ProductUnitIntentExporter.Request.builder()
+                .projectId("phr")
+                .projectName("Personal Health Record")
+                .targetType("kernel-product-unit")
+                .surfaces(List.of("backend-api", "web"))
+                .runtimeProvider("ghatana-file-registry")
+                .sourceProvider("ghatana-file-registry")
+                .lifecycleProfile("mobile-plus-api-product")
+                .tenantId("phr-contract-import")
+                .workspaceId("yappc-phr-roundtrip")
+                .sourcePhase("contract-import")
+                .metadata(Map.of("sourceProduct", "phr"))
+                .build();
     }
 }

@@ -21,13 +21,19 @@ import java.util.Set;
  *   <li>User principal and roles</li>
  *   <li>Request correlation and trace IDs</li>
  *   <li>Audit context for the request lifecycle</li>
+ *   <li>Unified observability identifiers for runtime truth tracking</li>
  * </ul>
  *
  * <p>Handlers should receive this context rather than parsing tenant/scope from HTTP requests directly.
  * This prevents spoofing attacks and ensures consistent authorization enforcement.
  *
+ * <p><b>Observability Integration:</b><br>
+ * This context provides unified correlation identifiers that should be passed to
+ * {@link com.ghatana.datacloud.observability.ObservabilityService} for consistent
+ * runtime truth tracking across all async/AI workflows.
+ *
  * @doc.type class
- * @doc.purpose Canonical authenticated request context for tenant-scoped operations
+ * @doc.purpose Canonical authenticated request context for tenant-scoped operations with unified observability
  * @doc.layer product
  * @doc.pattern Value Object, Security Context
  */
@@ -47,6 +53,14 @@ public final class RequestContext {
     private final boolean supportAccess;
     private final String supportReason;
 
+    // Unified observability identifiers for runtime truth tracking
+    private final String surface;
+    private final String runId;
+    private final String jobId;
+    private final String agentId;
+    private final String pipelineId;
+    private final String artifactId;
+
     private RequestContext(Builder builder) {
         this.tenantId = Objects.requireNonNull(builder.tenantId, "tenantId is required");
         this.workspaceId = builder.workspaceId;
@@ -61,6 +75,13 @@ public final class RequestContext {
         this.metadata = builder.metadata != null ? Map.copyOf(builder.metadata) : Map.of();
         this.supportAccess = builder.supportAccess;
         this.supportReason = builder.supportReason;
+        // Unified observability identifiers
+        this.surface = builder.surface;
+        this.runId = builder.runId;
+        this.jobId = builder.jobId;
+        this.agentId = builder.agentId;
+        this.pipelineId = builder.pipelineId;
+        this.artifactId = builder.artifactId;
     }
 
     /**
@@ -173,6 +194,48 @@ public final class RequestContext {
     }
 
     /**
+     * Returns the surface identifier for observability (e.g., "api", "agent", "workflow").
+     */
+    public Optional<String> surface() {
+        return Optional.ofNullable(surface);
+    }
+
+    /**
+     * Returns the run ID for observability tracking.
+     */
+    public Optional<String> runId() {
+        return Optional.ofNullable(runId);
+    }
+
+    /**
+     * Returns the job ID for observability tracking.
+     */
+    public Optional<String> jobId() {
+        return Optional.ofNullable(jobId);
+    }
+
+    /**
+     * Returns the agent ID for observability tracking.
+     */
+    public Optional<String> agentId() {
+        return Optional.ofNullable(agentId);
+    }
+
+    /**
+     * Returns the pipeline ID for observability tracking.
+     */
+    public Optional<String> pipelineId() {
+        return Optional.ofNullable(pipelineId);
+    }
+
+    /**
+     * Returns the artifact ID for observability tracking.
+     */
+    public Optional<String> artifactId() {
+        return Optional.ofNullable(artifactId);
+    }
+
+    /**
      * Returns a new context with the specified workspace ID.
      */
     public RequestContext withWorkspace(String workspaceId) {
@@ -250,6 +313,14 @@ public final class RequestContext {
         private boolean supportAccess;
         private String supportReason;
 
+        // Unified observability identifiers
+        private String surface;
+        private String runId;
+        private String jobId;
+        private String agentId;
+        private String pipelineId;
+        private String artifactId;
+
         private Builder() {}
 
         private Builder(RequestContext context) {
@@ -266,6 +337,13 @@ public final class RequestContext {
             this.metadata = new HashMap<>(context.metadata);
             this.supportAccess = context.supportAccess;
             this.supportReason = context.supportReason;
+            // Unified observability identifiers
+            this.surface = context.surface;
+            this.runId = context.runId;
+            this.jobId = context.jobId;
+            this.agentId = context.agentId;
+            this.pipelineId = context.pipelineId;
+            this.artifactId = context.artifactId;
         }
 
         public Builder withTenantId(String tenantId) {
@@ -326,6 +404,36 @@ public final class RequestContext {
         public Builder withSupportAccess(boolean supportAccess, String reason) {
             this.supportAccess = supportAccess;
             this.supportReason = reason;
+            return this;
+        }
+
+        public Builder withSurface(String surface) {
+            this.surface = surface;
+            return this;
+        }
+
+        public Builder withRunId(String runId) {
+            this.runId = runId;
+            return this;
+        }
+
+        public Builder withJobId(String jobId) {
+            this.jobId = jobId;
+            return this;
+        }
+
+        public Builder withAgentId(String agentId) {
+            this.agentId = agentId;
+            return this;
+        }
+
+        public Builder withPipelineId(String pipelineId) {
+            this.pipelineId = pipelineId;
+            return this;
+        }
+
+        public Builder withArtifactId(String artifactId) {
+            this.artifactId = artifactId;
             return this;
         }
 

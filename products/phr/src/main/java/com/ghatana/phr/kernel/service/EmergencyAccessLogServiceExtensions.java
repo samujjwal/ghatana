@@ -28,8 +28,8 @@ public final class EmergencyAccessLogServiceExtensions {
      * @return Promise containing true if there is pending emergency access
      */
     public Promise<Boolean> hasPendingEmergencyAccess(String patientId) {
-        // TODO: Implement using data cloud query
-        // For now, return false as placeholder
-        return Promise.of(false);
+        return emergencyAccessLogService.getPatientEmergencyLog(patientId)
+            .map(events -> events.stream()
+                .anyMatch(event -> event.reviewStatus() == EmergencyAccessLogService.ReviewStatus.PENDING_REVIEW));
     }
 }

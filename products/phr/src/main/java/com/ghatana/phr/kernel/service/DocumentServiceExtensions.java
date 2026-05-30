@@ -28,8 +28,7 @@ public final class DocumentServiceExtensions {
      * @return Promise containing the document count
      */
     public Promise<Integer> getDocumentCount(String patientId) {
-        // TODO: Implement using data cloud query
-        // For now, return 0 as placeholder
-        return Promise.of(0);
+        return documentService.getPatientDocuments(patientId, patientId)
+            .map(documents -> documents.size());
     }
 }

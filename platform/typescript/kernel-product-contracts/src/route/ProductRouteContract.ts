@@ -121,7 +121,7 @@ export const ProductRouteSchema = z
 
 export const ProductRouteContractSchema = z
   .object({
-    version: z.string().trim().min(1),
+    version: z.string().trim().min(1).optional(),
     schemaVersion: z.string().trim().min(1).optional(),
     product: z.string().trim().min(1).optional(),
     roleOrder: z.record(z.string().trim().min(1), z.number().int().nonnegative()),
@@ -129,6 +129,14 @@ export const ProductRouteContractSchema = z
   })
   .strict()
   .superRefine((contract, context) => {
+    if (!contract.version && !contract.schemaVersion) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["version"],
+        message: "Route contract must declare version or schemaVersion",
+      });
+    }
+
     const seenPaths = new Set<string>();
 
     contract.routes.forEach((route, index) => {
@@ -149,7 +157,11 @@ export const ProductRouteContractSchema = z
         });
       }
     });
-  });
+  })
+  .transform(contract => ({
+    ...contract,
+    version: contract.version ?? contract.schemaVersion ?? '',
+  }));
 
 export type RouteAction = z.infer<typeof RouteActionSchema>;
 export type RouteCard = z.infer<typeof RouteCardSchema>;

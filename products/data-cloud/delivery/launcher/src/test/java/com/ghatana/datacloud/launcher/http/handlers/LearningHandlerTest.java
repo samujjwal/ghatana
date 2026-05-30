@@ -3,8 +3,10 @@ import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
 import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
+import com.ghatana.platform.observability.idempotency.IdempotencyEntry;
 import com.ghatana.platform.observability.idempotency.IdempotencyStore;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +20,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
@@ -89,14 +92,15 @@ class LearningHandlerTest extends EventloopTestBase {
         when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.success("tenant-1", null));
         when(http.resolvePrincipalId(request)).thenReturn("user-1");
         when(http.resolveCorrelationId(request)).thenReturn("corr-1");
-        when(request.getHeader("Idempotency-Key")).thenReturn("key-123");
-        when(http.computePayloadHash(request)).thenReturn("hash-123");
+        when(request.getHeader(HttpHeaders.of("X-Idempotency-Key"))).thenReturn("key-123");
         
         Map<String, Object> cachedResponse = Map.of("status", "COMPLETED", "patternsDiscovered", 5);
-        when(idempotencyStore.checkIdempotency("tenant-1", "learning:trigger", "key-123", "user-1"))
-            .thenReturn(io.activej.promise.Promise.of(cachedResponse));
+        when(idempotencyStore.hasConflict("tenant-1", "learning:trigger", "key-123", "user-1", ""))
+            .thenReturn(io.activej.promise.Promise.of(false));
+        when(idempotencyStore.get("tenant-1", "learning:trigger", "key-123", "user-1"))
+            .thenReturn(io.activej.promise.Promise.of(new IdempotencyEntry("key-123", "", cachedResponse)));
         
-        HttpResponse httpResponse = io.activej.http.HttpResponse.ok(200).withBody("{\"data\":\"cached\"}".getBytes());
+        HttpResponse httpResponse = io.activej.http.HttpResponse.ofCode(200).build();
         when(http.jsonResponse(cachedResponse)).thenReturn(httpResponse);
 
         HttpResponse response = runPromise(() -> handler.handleLearningTrigger(request));
@@ -110,10 +114,9 @@ class LearningHandlerTest extends EventloopTestBase {
     void idempotencyConflictingPayloadReturns409() {
         when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.success("tenant-1", null));
         when(http.resolvePrincipalId(request)).thenReturn("user-1");
-        when(request.getHeader("Idempotency-Key")).thenReturn("key-123");
-        when(http.computePayloadHash(request)).thenReturn("hash-new");
+        when(request.getHeader(HttpHeaders.of("X-Idempotency-Key"))).thenReturn("key-123");
         
-        when(idempotencyStore.checkConflict("tenant-1", "learning:trigger", "key-123", "user-1", "hash-new"))
+        when(idempotencyStore.hasConflict("tenant-1", "learning:trigger", "key-123", "user-1", ""))
             .thenReturn(io.activej.promise.Promise.of(true));
         when(http.errorResponse(409, "Idempotency key conflict: same key used with different payload"))
             .thenReturn(errorResponse);

@@ -31,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 
+import java.util.Optional;
 import java.util.List;
 
 /**
@@ -79,8 +80,6 @@ class PhrDashboardRoutesTest extends EventloopTestBase {
         userRepository.save(new PHRUser("dr-1", "Doctor One", "doctor@example.test"));
         userRepository.save(new PHRUser("admin-1", "Admin One", "admin@example.test"));
 
-        // Create extension instances with mocked services
-        // Their default implementations return empty data, which is sufficient for testing
         MedicationServiceExtensions medicationExtensions = new MedicationServiceExtensions(medicationService);
         PatientRecordServiceExtensions patientRecordExtensions = new PatientRecordServiceExtensions(patientRecordService);
         DocumentServiceExtensions documentExtensions = new DocumentServiceExtensions(documentService);
@@ -105,6 +104,20 @@ class PhrDashboardRoutesTest extends EventloopTestBase {
         );
         lenient().when(appointmentService.getNextAppointment(anyString())).thenReturn(Promise.of(mockAppointment));
         lenient().when(medicationService.getActivePrescriptions(anyString())).thenReturn(Promise.of(List.of()));
+        lenient().when(patientRecordService.getPatient(anyString())).thenReturn(Promise.of(Optional.of(
+            PatientRecordService.Patient.builder()
+                .id("patient-1")
+                .medicalHistory(new PatientRecordService.MedicalHistory(
+                    List.of("Type 2 diabetes mellitus"),
+                    List.of(),
+                    List.of(),
+                    "O+"
+                ))
+                .build()
+        )));
+        lenient().when(documentService.getPatientDocuments(anyString(), anyString())).thenReturn(Promise.of(List.of()));
+        lenient().when(consentService.getPatientGrants(anyString())).thenReturn(Promise.of(List.of()));
+        lenient().when(emergencyAccessLogService.getPatientEmergencyLog(anyString())).thenReturn(Promise.of(List.of()));
 
         servlet = new PhrDashboardRoutes(
             eventloop(),

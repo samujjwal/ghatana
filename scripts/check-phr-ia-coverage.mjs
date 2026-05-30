@@ -83,15 +83,95 @@ if (!Array.isArray(routeContract.routes)) {
 
 const contractRoutes = routeContract.routes;
 const contractPaths = new Set(contractRoutes.map(route => route.path));
+const useCases = Array.isArray(baseline.usecases) ? baseline.usecases : [];
+const useCasesByIaRoute = new Map();
+for (const useCase of useCases) {
+  if (!useCase.iaRoute || useCase.iaRoute === 'null') {
+    continue;
+  }
+  for (const rawRoute of useCase.iaRoute.split(',').map((route) => route.trim())) {
+    if (rawRoute && !rawRoute.startsWith('/mobile/')) {
+      useCasesByIaRoute.set(rawRoute.replace(/\{([^}]+)\}/g, ':$1'), useCase);
+    }
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Validate
 // ---------------------------------------------------------------------------
 const missing = [];
+const metadataViolations = [];
+const evidenceViolations = [];
+const mobileSurfaceViolations = [];
 
 for (const iaRoute of IA_DECLARED_ROUTES) {
   if (!contractPaths.has(iaRoute)) {
     missing.push(iaRoute);
+  }
+}
+
+for (const useCase of useCases) {
+  for (const field of ['ownerLayer', 'verificationCommand']) {
+    if (typeof useCase[field] !== 'string' || useCase[field].trim() === '') {
+      metadataViolations.push(`${useCase.id} is missing ${field}`);
+    }
+  }
+  if (typeof useCase.legacyDeleteRequired !== 'boolean') {
+    metadataViolations.push(`${useCase.id} is missing boolean legacyDeleteRequired`);
+  }
+  if (!Array.isArray(useCase.implementationEvidence)) {
+    metadataViolations.push(`${useCase.id} is missing implementationEvidence array`);
+    continue;
+  }
+  if (['implemented', 'partial', 'backend_only', 'ui_only'].includes(useCase.status) && useCase.implementationEvidence.length === 0) {
+    evidenceViolations.push(`${useCase.id} has status ${useCase.status} but no implementationEvidence`);
+  }
+  for (const evidence of useCase.implementationEvidence) {
+    if (typeof evidence?.kind !== 'string' || evidence.kind.trim() === '') {
+      evidenceViolations.push(`${useCase.id} has evidence without a kind`);
+    }
+    if (typeof evidence?.file !== 'string' || evidence.file.trim() === '') {
+      evidenceViolations.push(`${useCase.id} has evidence without a file`);
+      continue;
+    }
+    if (!existsSync(resolve(__dirname, '..', evidence.file))) {
+      evidenceViolations.push(`${useCase.id} evidence file does not exist: ${evidence.file}`);
+    }
+  }
+}
+
+const MOBILE_SCREEN_FILE_BY_NAME = new Map([
+  ['dashboard', 'DashboardScreen.tsx'],
+  ['records', 'RecordsScreen.tsx'],
+  ['record-detail', 'RecordDetailScreen.tsx'],
+  ['consents', 'ConsentScreen.tsx'],
+  ['notifications', 'NotificationsScreen.tsx'],
+  ['emergency', 'EmergencyAccessScreen.tsx'],
+  ['settings', 'SettingsScreen.tsx'],
+]);
+
+for (const useCase of useCases) {
+  if (!useCase.mobileScreen) {
+    continue;
+  }
+  const mobileFile = MOBILE_SCREEN_FILE_BY_NAME.get(useCase.mobileScreen);
+  if (!mobileFile) {
+    mobileSurfaceViolations.push(`${useCase.id} declares unknown mobileScreen '${useCase.mobileScreen}'`);
+    continue;
+  }
+  const mobilePath = resolve(__dirname, '..', 'products/phr/apps/mobile/src/screens', mobileFile);
+  if (!existsSync(mobilePath)) {
+    mobileSurfaceViolations.push(`${useCase.id} mobileScreen '${useCase.mobileScreen}' does not resolve to ${mobileFile}`);
+  }
+}
+
+for (const route of contractRoutes) {
+  if (!Array.isArray(route.surface) || !route.surface.includes('mobile')) {
+    continue;
+  }
+  const useCase = useCasesByIaRoute.get(route.path);
+  if (!useCase?.mobileScreen) {
+    mobileSurfaceViolations.push(`route ${route.path} declares mobile surface but no baseline use case owns a mobileScreen`);
   }
 }
 
@@ -106,9 +186,32 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
+if (metadataViolations.length > 0 || evidenceViolations.length > 0 || mobileSurfaceViolations.length > 0) {
+  if (metadataViolations.length > 0) {
+    console.error('\n[phr-ia-coverage] FAIL: Baseline metadata violations:\n');
+    for (const violation of metadataViolations) {
+      console.error(`  \u2717  ${violation}`);
+    }
+  }
+  if (evidenceViolations.length > 0) {
+    console.error('\n[phr-ia-coverage] FAIL: Baseline evidence violations:\n');
+    for (const violation of evidenceViolations) {
+      console.error(`  \u2717  ${violation}`);
+    }
+  }
+  if (mobileSurfaceViolations.length > 0) {
+    console.error('\n[phr-ia-coverage] FAIL: Mobile surface parity violations:\n');
+    for (const violation of mobileSurfaceViolations) {
+      console.error(`  \u2717  ${violation}`);
+    }
+  }
+  process.exit(1);
+}
+
 console.log(
   `[phr-ia-coverage] PASS: All ${IA_DECLARED_ROUTES.length} IA-declared routes are present in the canonical route contract.`,
 );
+console.log('[phr-ia-coverage] PASS: Use-case baseline metadata, evidence files, and mobile surfaces are truthful.');
 
 // ---------------------------------------------------------------------------
 // Phase 2: verify stable routes have registered page components

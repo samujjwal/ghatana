@@ -3,12 +3,14 @@ package com.ghatana.aep.engine.registry;
 import com.ghatana.agent.spi.AgentRegistry;
 import com.ghatana.agent.dispatch.AgentDispatcher;
 import com.ghatana.agent.framework.api.AgentContext;
+import com.ghatana.platform.observability.CorrelationContext;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -23,8 +25,13 @@ import java.util.UUID;
  * This service enforces the governed path by requiring a governed dispatcher
  * and removing any direct LLM gateway access.
  *
+ * <p><b>Observability:</b> Integrates with {@link CorrelationContext} to provide
+ * unified correlation tracking across all agent executions, ensuring consistent
+ * observability for runtime truth with correlationId, tenantId, surface, runId,
+ * agentId, and other context identifiers.
+ *
  * @doc.type class
- * @doc.purpose Executes agents via governed dispatcher with safety pipeline
+ * @doc.purpose Executes agents via governed dispatcher with safety pipeline and unified observability
  * @doc.layer product
  * @doc.pattern Service
  */
@@ -72,16 +79,23 @@ public class AgentExecutionService {
      *
      * <p>All executions go through the governed {@link AgentDispatcher} with
      * safety pipeline, policy checks, and evidence collection. No bypass path exists.
+     *
+     * <p>Uses {@link CorrelationContext} to track execution with unified correlation
+     * identifiers including correlationId, tenantId, surface, runId, agentId.
      */
     public Promise<ExecutionResult> execute(String agentId, Object input) {
         Objects.requireNonNull(agentId, "agentId");
 
         long startMs = System.currentTimeMillis();
         String executionId = UUID.randomUUID().toString();
+        String correlationId = UUID.randomUUID().toString();
 
-        log.debug("[execution] Using governed AgentDispatcher: agentId={} executionId={}", agentId, executionId);
+        log.debug("[execution] Using governed AgentDispatcher: agentId={} executionId={} correlationId={}",
+            agentId, executionId, correlationId);
 
-        // Use empty context and derive a child context for this execution
+        CorrelationContext.initialize(correlationId, agentId, null, executionId);
+
+        // Use empty context and derive a child context for this execution.
         AgentContext baseCtx = AgentContext.empty();
         AgentContext ctx = baseCtx.toBuilder()
             .agentId(agentId)
@@ -89,25 +103,29 @@ public class AgentExecutionService {
             .build();
 
         return agentDispatcher.dispatch(agentId, input, ctx).then(result -> {
-            long durationMs = System.currentTimeMillis() - startMs;
-            log.info("[execution] Completed via governed dispatcher: agentId={} executionId={} durationMs={}",
-                agentId, executionId, durationMs);
+                long durationMs = System.currentTimeMillis() - startMs;
 
-            ExecutionRecord record = new ExecutionRecord(
-                executionId,
-                "success",
-                input,
-                result.getOutput(),
-                durationMs,
-                Instant.now().toString());
+                log.info("[execution] Completed via governed dispatcher: agentId={} executionId={} correlationId={} durationMs={}",
+                    agentId, executionId, correlationId, durationMs);
 
-            return historyStore.append(agentId, record)
-                .then(ignored -> memoryClient.recordExecution(agentId, executionId, input, result.getOutput(), durationMs))
-                .map(ignored -> new ExecutionResult(executionId, "success", result.getOutput(), durationMs));
-        }).mapException(e -> {
-            log.error("[execution] Failed via governed dispatcher: agentId={} executionId={}", agentId, executionId, e);
-            return e;
-        });
+                ExecutionRecord record = new ExecutionRecord(
+                    executionId,
+                    "success",
+                    input,
+                    result.getOutput(),
+                    durationMs,
+                    Instant.now().toString());
+
+                return historyStore.append(agentId, record)
+                    .then(ignored -> memoryClient.recordExecution(agentId, executionId, input, result.getOutput(), durationMs))
+                    .map(ignored -> new ExecutionResult(executionId, "success", result.getOutput(), durationMs));
+            }).mapException(e -> {
+                long durationMs = System.currentTimeMillis() - startMs;
+
+                log.error("[execution] Failed via governed dispatcher: agentId={} executionId={} correlationId={}",
+                    agentId, executionId, correlationId, e);
+                return e;
+            });
     }
 
     /**

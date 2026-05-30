@@ -13,6 +13,7 @@ import com.ghatana.aep.registry.store.PatternLifecycleStateEntity;
 import io.activej.promise.Promise;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
+import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,6 +112,7 @@ public class DataCloudPatternLifecycleRepository implements PatternLifecycleRepo
                 entityManager.getTransaction().begin();
                 
                 PatternLifecycleEventEntity entity = new PatternLifecycleEventEntity(
+                    event.eventId(),
                     event.tenantId(),
                     event.patternId(),
                     event.from().name(),
@@ -188,17 +190,15 @@ public class DataCloudPatternLifecycleRepository implements PatternLifecycleRepo
                 entityManager.getTransaction().begin();
                 
                 // Delete events first (foreign key dependency)
-                TypedQuery<PatternLifecycleEventEntity> eventQuery = entityManager.createQuery(
-                    "DELETE FROM PatternLifecycleEventEntity e WHERE e.tenantId = :tenantId AND e.patternId = :patternId",
-                    PatternLifecycleEventEntity.class);
+                Query eventQuery = entityManager.createQuery(
+                    "DELETE FROM PatternLifecycleEventEntity e WHERE e.tenantId = :tenantId AND e.patternId = :patternId");
                 eventQuery.setParameter("tenantId", tenantId);
                 eventQuery.setParameter("patternId", patternId);
                 eventQuery.executeUpdate();
                 
                 // Delete state
-                TypedQuery<PatternLifecycleStateEntity> stateQuery = entityManager.createQuery(
-                    "DELETE FROM PatternLifecycleStateEntity s WHERE s.tenantId = :tenantId AND s.patternId = :patternId",
-                    PatternLifecycleStateEntity.class);
+                Query stateQuery = entityManager.createQuery(
+                    "DELETE FROM PatternLifecycleStateEntity s WHERE s.tenantId = :tenantId AND s.patternId = :patternId");
                 stateQuery.setParameter("tenantId", tenantId);
                 stateQuery.setParameter("patternId", patternId);
                 stateQuery.executeUpdate();

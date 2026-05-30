@@ -208,6 +208,7 @@ public class AnalyticsHandler {
                     return Promise.of(http.errorResponse(400, "Failed to read request body"));
                 }
             );
+        });
     }
 
     public Promise<HttpResponse> handleAnalyticsGetResult(HttpRequest request) {
@@ -388,6 +389,7 @@ public class AnalyticsHandler {
                     return Promise.of(http.errorResponse(400, "Failed to read request body"));
                 }
             );
+        });
     }
 
     // ==================== Report Endpoints (DC-10) ====================
@@ -463,6 +465,7 @@ public class AnalyticsHandler {
                 return Promise.of(http.errorResponse(400, "Invalid request body"));
             }
         });
+        });
     }
 
     @SuppressWarnings("unchecked")
@@ -535,6 +538,7 @@ public class AnalyticsHandler {
                 log.error("[DC-10] report body load error traceId={}: {}", traceId, e.getMessage(), e);
                 return Promise.of(http.errorResponse(400, "Failed to read request body"));
             });
+        });
     }
 
     public Promise<HttpResponse> handleListReports(HttpRequest request) {
@@ -644,16 +648,18 @@ public class AnalyticsHandler {
                             log.warn("[DC-9] cancel query failed queryId={} tenantId={} traceId={} reason={}",
                                 queryId, tenantId, traceId, result.message());
                             if (result.message().contains("unauthorized")) {
-                        return Promise.of(http.errorResponse(403, result.message()));
-                    }
-                    return Promise.of(http.errorResponse(404, result.message()));
-                }
-            })
-            .whenException(exception -> {
-                log.error("[DC-9] cancel query error queryId={} tenantId={} traceId={}",
-                    queryId, tenantId, traceId, exception);
-            })
-            .then(result -> Promise.of(result), exception -> Promise.of(http.errorResponse(500, "Internal error during query cancellation")));
+                                return Promise.of(http.errorResponse(403, result.message()));
+                            }
+                            return Promise.of(http.errorResponse(404, result.message()));
+                        }
+                    })
+                    .whenException(exception -> {
+                        log.error("[DC-9] cancel query error queryId={} tenantId={} traceId={}",
+                            queryId, tenantId, traceId, exception);
+                    })
+                    .then(result -> Promise.of(result),
+                        exception -> Promise.of(http.errorResponse(500, "Internal error during query cancellation")));
+            });
     }
 
     private ReportExecutionCapability reportExecutor() {
@@ -700,9 +706,9 @@ public class AnalyticsHandler {
                 }
                 return IdempotencyHelper.checkIdempotency(idempotencyStore, tenantId, scope, idempotencyKey, principalId)
                     .then(cached -> {
-                        if (cached.isPresent()) {
+                        if (cached instanceof HttpResponse cachedResponse) {
                             log.info("[analytics] Returning cached response for tenant={}, scope={}, key={}", tenantId, scope, idempotencyKey);
-                            return Promise.of(IdempotencyHelper.addIdempotencyHeaders((HttpResponse) cached.get(), "replay"));
+                            return Promise.of(IdempotencyHelper.addIdempotencyHeaders(cachedResponse, "replay"));
                         }
                         return Promise.of(null);
                     });

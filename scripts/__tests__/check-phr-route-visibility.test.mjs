@@ -2,118 +2,167 @@
  * Tests for PHR route visibility check script
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { readFileSync, writeFileSync, unlinkSync, existsSync } from 'fs';
-import { resolve } from 'path';
-import { execSync } from 'child_process';
+import assert from 'node:assert/strict';
+import { afterEach, describe, it } from 'node:test';
+import { mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { join, resolve } from 'path';
+import { execFileSync } from 'child_process';
 
 const SCRIPT_PATH = resolve(process.cwd(), 'scripts/check-phr-route-visibility.mjs');
-const TEMP_ROUTE_CONTRACT = resolve(process.cwd(), 'temp-route-contract.json');
-const TEMP_ROUTE_MAP = resolve(process.cwd(), 'temp-routes.tsx');
 
 describe('check-phr-route-visibility', () => {
-  let originalRouteContract;
-  let originalRouteMap;
-
-  beforeEach(() => {
-    // Load original files for restoration
-    const contractPath = resolve(process.cwd(), 'products/phr/config/phr-route-contract.json');
-    const mapPath = resolve(process.cwd(), 'products/phr/apps/web/src/routes.tsx');
-    
-    if (existsSync(contractPath)) {
-      originalRouteContract = readFileSync(contractPath, 'utf-8');
-    }
-    if (existsSync(mapPath)) {
-      originalRouteMap = readFileSync(mapPath, 'utf-8');
-    }
-  });
+  let tempDir;
 
   afterEach(() => {
-    // Cleanup temp files
-    if (existsSync(TEMP_ROUTE_CONTRACT)) {
-      unlinkSync(TEMP_ROUTE_CONTRACT);
-    }
-    if (existsSync(TEMP_ROUTE_MAP)) {
-      unlinkSync(TEMP_ROUTE_MAP);
+    if (tempDir) {
+      rmSync(tempDir, { recursive: true, force: true });
+      tempDir = undefined;
     }
   });
 
-  it('should pass when hidden routes are not in route map', () => {
-    const testContract = {
-      schemaVersion: '1.0.0',
-      product: 'phr',
-      routes: [
-        { path: '/dashboard', stability: 'stable' },
-        { path: '/records', stability: 'stable' },
-        { path: '/hidden-route', stability: 'hidden' }
-      ]
+  function writeFixture({ contract, routes, elements }) {
+    tempDir = mkdtempSync(join(tmpdir(), 'phr-route-visibility-'));
+    const contractPath = join(tempDir, 'phr-route-contract.json');
+    const routeMapPath = join(tempDir, 'routes.tsx');
+    const routeElementsPath = join(tempDir, 'phrRouteElements.tsx');
+    writeFileSync(contractPath, JSON.stringify(contract, null, 2));
+    writeFileSync(routeMapPath, routes);
+    writeFileSync(routeElementsPath, elements);
+
+    return {
+      PHR_ROUTE_CONTRACT_PATH: contractPath,
+      PHR_ROUTE_MAP_PATH: routeMapPath,
+      PHR_ROUTE_ELEMENTS_PATH: routeElementsPath,
     };
+  }
 
-    const testRouteMap = `
-      <Route path="/dashboard" element={<DashboardPage />} />
-      <Route path="/records" element={<RecordsPage />} />
-    `;
+  function runCheck(env) {
+    return execFileSync(process.execPath, [SCRIPT_PATH], {
+      cwd: process.cwd(),
+      env: { ...process.env, ...env },
+      encoding: 'utf-8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  }
 
-    writeFileSync(TEMP_ROUTE_CONTRACT, JSON.stringify(testContract));
-    writeFileSync(TEMP_ROUTE_MAP, testRouteMap);
+  it('passes when canonical route projection, hidden NotFound mapping, and stable page mappings are present', () => {
+    const env = writeFixture({
+      contract: {
+        schemaVersion: '1.0.0',
+        product: 'phr',
+        routes: [
+          { path: '/dashboard', stability: 'stable' },
+          { path: '/forbidden', stability: 'stable' },
+          { path: '/not-found', stability: 'stable' },
+          { path: '/hidden-route', stability: 'hidden' },
+        ],
+      },
+      routes: `
+        const phrRouteManifest = phrRouteContracts.map(attachPhrRouteElement);
+        const protectedRoutes = [
+          ...phrRouteManifest.map(protectedRoute)
+        ];
+        function ProtectedPhrRoute({ route, role }) {
+          if (route.stability === 'hidden') {
+            return <Navigate to="/not-found" replace />;
+          }
+          if (route.stability === 'blocked') {
+            return <Navigate to="/forbidden" replace />;
+          }
+          if (!isRouteAllowedForRole(route, role)) {
+            return <Navigate to="/forbidden" replace />;
+          }
+          return route.element;
+        }
+      `,
+      elements: `
+        export const routeElements = {
+          '/dashboard': <DashboardPage />,
+          '/forbidden': <ForbiddenPage />,
+          '/not-found': <NotFoundPage />,
+          '/hidden-route': <NotFoundPage />,
+        };
+      `,
+    });
 
-    // This would require modifying the script to accept paths as arguments
-    // For now, we'll just test the logic
-    expect(testContract.routes.filter(r => r.stability === 'hidden').length).toBe(1);
-    expect(testContract.routes.filter(r => r.stability === 'stable').length).toBe(2);
+    const output = runCheck(env);
+    assert.match(output, /Route visibility check passed/);
   });
 
-  it('should detect hidden routes in route map', () => {
-    const testContract = {
-      schemaVersion: '1.0.0',
-      product: 'phr',
-      routes: [
-        { path: '/dashboard', stability: 'stable' },
-        { path: '/hidden-route', stability: 'hidden' }
-      ]
-    };
+  it('fails when a hidden route is exposed as a static navigation target', () => {
+    const env = writeFixture({
+      contract: {
+        schemaVersion: '1.0.0',
+        product: 'phr',
+        routes: [
+          { path: '/dashboard', stability: 'stable' },
+          { path: '/hidden-route', stability: 'hidden' },
+        ],
+      },
+      routes: `
+        const phrRouteManifest = phrRouteContracts.map(attachPhrRouteElement);
+        const protectedRoutes = [
+          ...phrRouteManifest.map(protectedRoute)
+        ];
+        function ProtectedPhrRoute({ route, role }) {
+          if (route.stability === 'hidden') {
+            return <Navigate to="/not-found" replace />;
+          }
+          if (route.stability === 'blocked') {
+            return <Navigate to="/forbidden" replace />;
+          }
+          if (!isRouteAllowedForRole(route, role)) {
+            return <Navigate to="/forbidden" replace />;
+          }
+          return <a href="/hidden-route">Hidden</a>;
+        }
+      `,
+      elements: `
+        export const routeElements = {
+          '/dashboard': <DashboardPage />,
+          '/hidden-route': <NotFoundPage />,
+        };
+      `,
+    });
 
-    const testRouteMap = `
-      <Route path="/dashboard" element={<DashboardPage />} />
-      <Route path="/hidden-route" element={<HiddenPage />} />
-    `;
-
-    const hiddenRoutes = testContract.routes.filter(r => r.stability === 'hidden').map(r => r.path);
-    const hiddenInMap = hiddenRoutes.filter(path => testRouteMap.includes(path));
-
-    expect(hiddenInMap.length).toBeGreaterThan(0);
-    expect(hiddenInMap).toContain('/hidden-route');
+    assert.throws(() => runCheck(env), /Hidden routes found as static navigation targets/);
   });
 
-  it('should detect routes missing stability field', () => {
-    const testContract = {
+  it('fails when a stable product route maps to NotFoundPage instead of a page element', () => {
+    const env = writeFixture({
+      contract: {
       schemaVersion: '1.0.0',
       product: 'phr',
       routes: [
         { path: '/dashboard', stability: 'stable' },
-        { path: '/invalid-route' } // Missing stability
-      ]
-    };
+      ],
+      },
+      routes: `
+        const phrRouteManifest = phrRouteContracts.map(attachPhrRouteElement);
+        const protectedRoutes = [
+          ...phrRouteManifest.map(protectedRoute)
+        ];
+        function ProtectedPhrRoute({ route, role }) {
+          if (route.stability === 'hidden') {
+            return <Navigate to="/not-found" replace />;
+          }
+          if (route.stability === 'blocked') {
+            return <Navigate to="/forbidden" replace />;
+          }
+          if (!isRouteAllowedForRole(route, role)) {
+            return <Navigate to="/forbidden" replace />;
+          }
+          return route.element;
+        }
+      `,
+      elements: `
+        export const routeElements = {
+          '/dashboard': <NotFoundPage />,
+        };
+      `,
+    });
 
-    const routesWithoutStability = testContract.routes.filter(r => !r.stability);
-    expect(routesWithoutStability.length).toBe(1);
-    expect(routesWithoutStability[0].path).toBe('/invalid-route');
-  });
-
-  it('should detect invalid stability values', () => {
-    const testContract = {
-      schemaVersion: '1.0.0',
-      product: 'phr',
-      routes: [
-        { path: '/dashboard', stability: 'stable' },
-        { path: '/invalid-route', stability: 'invalid-value' }
-      ]
-    };
-
-    const validStabilities = ['stable', 'hidden', 'preview', 'blocked'];
-    const routesWithInvalidStability = testContract.routes.filter(r => !validStabilities.includes(r.stability));
-    
-    expect(routesWithInvalidStability.length).toBe(1);
-    expect(routesWithInvalidStability[0].path).toBe('/invalid-route');
+    assert.throws(() => runCheck(env), /Stable routes missing concrete page element mappings/);
   });
 });

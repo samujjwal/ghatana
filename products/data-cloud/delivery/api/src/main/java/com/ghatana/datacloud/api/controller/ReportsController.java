@@ -4,6 +4,9 @@
  */
 package com.ghatana.datacloud.api.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.analytics.Report;
 import com.ghatana.datacloud.analytics.ReportCacheService;
 import com.ghatana.datacloud.analytics.ReportService;
@@ -41,10 +44,12 @@ public class ReportsController implements AsyncServlet {
 
     private final ReportService reportService;
     private final ReportCacheService cacheService;
+    private final ObjectMapper objectMapper;
 
     public ReportsController(ReportService reportService, ReportCacheService cacheService) {
         this.reportService = reportService;
         this.cacheService = cacheService;
+        this.objectMapper = new ObjectMapper();
     }
 
     @Override
@@ -182,8 +187,7 @@ public class ReportsController implements AsyncServlet {
         return TenantExtractor.fromHttpOrThrow(request);
     }
 
-    private GenerateReportRequest parseRequest(String json) {
-        // Simple JSON parsing - in production use Jackson
+    private GenerateReportRequest parseRequest(String json) throws JsonProcessingException {
         Map<String, Object> map = parseJson(json);
         return new GenerateReportRequest(
             (String) map.get("name"),
@@ -193,14 +197,16 @@ public class ReportsController implements AsyncServlet {
         );
     }
 
-    private Map<String, Object> parseJson(String json) {
-        // Simplified - in production use Jackson
-        return Map.of();
+    private Map<String, Object> parseJson(String json) throws JsonProcessingException {
+        return objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
     }
 
     private String toJson(Object obj) {
-        // Simplified - in production use Jackson
-        return "{}";
+        try {
+            return objectMapper.writeValueAsString(obj);
+        } catch (JsonProcessingException e) {
+            return "{\"error\":\"Failed to serialize response\"}";
+        }
     }
 
     private Promise<HttpResponse> okJson(Object payload) {

@@ -18,6 +18,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Comprehensive pipeline configuration validator.
@@ -39,6 +40,29 @@ public class PipelineValidator {
     private static final int MAX_PIPELINE_NAME_LENGTH = 255;
     private static final int MAX_DESCRIPTION_LENGTH = 1000;
     private static final int MAX_CONFIG_SIZE = 1_000_000; // 1MB
+
+    // Group 4 / DC-AP-004: Canonical typed node/operator vocabulary for Action Plane pipelines.
+    // Any stage that declares a 'type' must use one of these values.
+    private static final Set<String> ALLOWED_STAGE_TYPES = Set.of(
+        // Flow control
+        "SEQUENTIAL", "PARALLEL", "CONDITIONAL", "LOOP", "WAIT",
+        // Agent execution
+        "AGENT", "TOOL", "HUMAN_REVIEW",
+        // Data operations
+        "TRANSFORM", "FILTER", "AGGREGATE", "JOIN", "SPLIT", "MERGE",
+        // Connectors / I-O
+        "SOURCE", "SINK", "HTTP_CALL", "EVENT_EMIT", "EVENT_WAIT",
+        // Governance
+        "APPROVAL", "POLICY_CHECK", "AUDIT_CHECKPOINT",
+        // Pattern operators (AEP)
+        "SEQ", "AND", "OR", "NOT", "WITHIN", "REPEAT", "WINDOW", "UNTIL",
+        "SELECT", "MAP", "CORRELATE"
+    );
+
+    // Types that produce a single output and may not fan-out to multiple successors.
+    private static final Set<String> SINGLE_OUTPUT_TYPES = Set.of(
+        "SINK", "AUDIT_CHECKPOINT", "EVENT_EMIT"
+    );
 
     private final AgentRegistryClient agentRegistryClient;
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
@@ -101,7 +125,11 @@ public class PipelineValidator {
     }
 
     /**
-     * Validates the pipeline configuration structure.
+     * Validates the pipeline configuration structure including typed node/operator constraints.
+     *
+     * <p>Group 4 / DC-AP-004: Each stage must have a name. If a 'type' field is present it must
+     * be in {@link #ALLOWED_STAGE_TYPES}. Single-output types must not fan-out to more than one
+     * successor stage, and no stage may have a blank/missing name.
      */
     private void validatePipelineConfig(String config, List<String> errors) {
         try {
@@ -109,18 +137,75 @@ public class PipelineValidator {
 
             if (!root.has("stages")) {
                 errors.add("PipelineRegistration configuration must contain 'stages' section");
-            } else {
-                JsonNode stages = root.get("stages");
-                if (!stages.isArray()) {
-                    errors.add("'stages' must be a list");
-                } else {
-                    if (stages.size() == 0) {
-                        errors.add("PipelineRegistration must have at least one stage");
+                return;
+            }
+
+            JsonNode stages = root.get("stages");
+            if (!stages.isArray()) {
+                errors.add("'stages' must be a list");
+                return;
+            }
+            if (stages.size() == 0) {
+                errors.add("PipelineRegistration must have at least one stage");
+                return;
+            }
+
+            // Collect stage names for edge-arity check
+            Map<String, String> stageTypeByName = new HashMap<>();
+            for (JsonNode stage : stages) {
+                if (!stage.has("name") || stage.get("name").asText().isBlank()) {
+                    errors.add("Each stage must have a non-blank 'name'");
+                    continue;
+                }
+                String stageName = stage.get("name").asText();
+
+                // Group 4: Typed node validation - 'type' is optional but if present must be canonical
+                if (stage.has("type")) {
+                    String stageType = stage.get("type").asText().toUpperCase(java.util.Locale.ROOT);
+                    if (!ALLOWED_STAGE_TYPES.contains(stageType)) {
+                        errors.add(String.format(
+                            "Stage '%s' has unknown type '%s'. Allowed types: %s",
+                            stageName, stage.get("type").asText(),
+                            ALLOWED_STAGE_TYPES.stream().sorted().collect(Collectors.joining(", "))));
+                    } else {
+                        stageTypeByName.put(stageName, stageType);
                     }
-                    // Validate each stage
-                    for (JsonNode stage : stages) {
-                        if (!stage.has("name")) {
-                            errors.add("Each stage must have a 'name'");
+                }
+            }
+
+            // Group 4: Edge arity constraint - single-output node types may not have multiple successors
+            if (!stageTypeByName.isEmpty()) {
+                // Build successor count per stage from dependsOn declarations
+                Map<String, Integer> successorCount = new HashMap<>();
+                for (JsonNode stage : stages) {
+                    if (!stage.has("name")) continue;
+                    // Each stage that declares a dependsOn increments the predecessor's successor count
+                    if (stage.has("dependsOn") && stage.get("dependsOn").isArray()) {
+                        for (JsonNode dep : stage.get("dependsOn")) {
+                            String depName = dep.asText();
+                            successorCount.merge(depName, 1, Integer::sum);
+                        }
+                    }
+                    if (stage.has("after")) {
+                        JsonNode after = stage.get("after");
+                        if (after.isArray()) {
+                            for (JsonNode dep : after) {
+                                successorCount.merge(dep.asText(), 1, Integer::sum);
+                            }
+                        } else if (after.isTextual()) {
+                            successorCount.merge(after.asText(), 1, Integer::sum);
+                        }
+                    }
+                }
+                for (Map.Entry<String, String> entry : stageTypeByName.entrySet()) {
+                    String name = entry.getKey();
+                    String type = entry.getValue();
+                    if (SINGLE_OUTPUT_TYPES.contains(type)) {
+                        int count = successorCount.getOrDefault(name, 0);
+                        if (count > 1) {
+                            errors.add(String.format(
+                                "Stage '%s' (type=%s) is a terminal/single-output node and may not fan-out to %d successors",
+                                name, type, count));
                         }
                     }
                 }

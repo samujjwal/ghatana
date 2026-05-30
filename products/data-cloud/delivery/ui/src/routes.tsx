@@ -46,6 +46,9 @@ const IntelligentHub = React.lazy(() =>
 const DataExplorer = React.lazy(() =>
   import("./pages/DataExplorer").then((m) => ({ default: m.DataExplorer })),
 );
+const DataPage = React.lazy(() =>
+  import("./pages/DataPage").then((m) => ({ default: m.default })),
+);
 const SmartWorkflowBuilder = React.lazy(() =>
   import("./pages/SmartWorkflowBuilder").then((m) => ({
     default: m.SmartWorkflowBuilder,
@@ -374,31 +377,27 @@ export const routes: RouteObject[] = [
         element: withSuspense(IntelligentHub),
       },
 
-      // Data - Unified Data Explorer
+      // Data - Unified Data Surface (Collections, Entities, Context, Fabric)
       {
         path: "data",
-        children: [
-          {
-            index: true,
-            element: withSuspense(DataExplorer),
-          },
-          {
-            path: "new",
-            element: withSuspense(CreateCollectionPage),
-          },
-          {
-            path: ":id",
-            element: withSuspense(DataExplorer),
-          },
-          {
-            path: ":id/edit",
-            element: withSuspense(EditCollectionPage),
-          },
-          {
-            path: ":id/:view",
-            element: withSuspense(DataExplorer),
-          },
-        ],
+        element: withSuspense(DataPage),
+      },
+      // Data sub-routes for collection management (kept for deep-link compatibility)
+      {
+        path: "data/new",
+        element: withSuspense(CreateCollectionPage),
+      },
+      {
+        path: "data/:id",
+        element: withSuspense(DataExplorer),
+      },
+      {
+        path: "data/:id/edit",
+        element: withSuspense(EditCollectionPage),
+      },
+      {
+        path: "data/:id/:view",
+        element: withSuspense(DataExplorer),
       },
 
       // Pipelines - Workflow Management
@@ -578,71 +577,20 @@ export const routes: RouteObject[] = [
           "The Memory Plane surface provides persistent memory and context management for AI agent workloads.",
         ),
       },
-      // Entity Browser — restored as canonical route
+      // Entity Browser — redirect to unified Data surface with entities tab
       {
         path: "entities",
-        element: featureGatedRoute(
-          isEntityBrowserSurfaceEnabled(),
-          <RoleProtectedRoute routePath="/entities">
-            <RuntimeCapabilityRouteGate
-              aliases={["entity-browser", "entities"]}
-              fallback={withSuspense(() => (
-                <DisabledSurfacePage
-                  surfaceName="Entity Browser"
-                  surfaceDescription="The Entity Browser surface provides structured entity management and inspection for your data domains."
-                />
-              ))}
-            >
-              {withSuspense(EntityBrowserPage)}
-            </RuntimeCapabilityRouteGate>
-          </RoleProtectedRoute>,
-          "Entity Browser",
-          "The Entity Browser surface provides structured entity management and inspection for your data domains.",
-        ),
+        element: <Navigate to="/data?tab=entities" replace />,
       },
-      // Context Explorer — restored as canonical route
+      // Context Explorer — redirect to unified Data surface with context tab
       {
         path: "context",
-        element: featureGatedRoute(
-          isContextSurfaceEnabled(),
-          <RoleProtectedRoute routePath="/context">
-            <RuntimeCapabilityRouteGate
-              aliases={["context-explorer", "context"]}
-              fallback={withSuspense(() => (
-                <DisabledSurfacePage
-                  surfaceName="Context Explorer"
-                  surfaceDescription="The Context Explorer surface provides contextual insight and lineage tracing across your data assets."
-                />
-              ))}
-            >
-              {withSuspense(ContextExplorerPage)}
-            </RuntimeCapabilityRouteGate>
-          </RoleProtectedRoute>,
-          "Context Explorer",
-          "The Context Explorer surface provides contextual insight and lineage tracing across your data assets.",
-        ),
+        element: <Navigate to="/data?tab=context" replace />,
       },
-      // Data Fabric — restored as canonical operator-facing route
+      // Data Fabric — redirect to unified Data surface with fabric tab
       {
         path: "fabric",
-        element: featureGatedRoute(
-          isFabricSurfaceEnabled(),
-          <RoleProtectedRoute routePath="/fabric">
-            <RuntimeCapabilityRouteGate
-              aliases={["data-fabric", "fabric"]}
-              fallback={withSuspense(() => (
-                <DisabledSurfacePage
-                  surfaceName="Data Fabric"
-                  surfaceDescription="The Data Fabric surface provides unified data connectivity, storage profiling, and connector management."
-                />
-              ))}
-            >
-              {withSuspense(DataFabricPage)}
-            </RuntimeCapabilityRouteGate>
-          </RoleProtectedRoute>,
-          "Data Fabric",
-          "The Data Fabric surface provides unified data connectivity, storage profiling, and connector management.",
-        ),
+        element: <Navigate to="/data?tab=fabric" replace />,
       },
       // Agent Catalog — restored as canonical operator-facing route
       {

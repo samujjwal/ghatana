@@ -144,7 +144,6 @@ public class PhrBackendRouteGenerator {
     private String generateRouteCode(BackendRouteConfig config) {
         String method = config.httpMethod();
         String endpoint = config.apiEndpoint();
-        boolean hasBody = method.equals("POST") || method.equals("PUT");
 
         return String.format("""
 package %s;
@@ -156,6 +155,8 @@ import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 
+import java.util.Objects;
+
 /**
  * %s Route Handler
  *
@@ -165,7 +166,7 @@ import io.activej.promise.Promise;
  * Method: %s
  *
  * Auto-generated from PHR route contract.
- * Do not edit manually - regenerate from contract.
+ * Generated routes fail closed until product-owned business logic is added.
  *
  * @doc.type class
  * @doc.purpose Route handler for %s
@@ -177,7 +178,7 @@ public final class %s {
     private final PhrPolicyEvaluator policyEvaluator;
 
     public %s(PhrPolicyEvaluator policyEvaluator) {
-        this.policyEvaluator = policyEvaluator;
+        this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 
     /**
@@ -187,21 +188,36 @@ public final class %s {
      * @return Promise containing the HTTP response
      */
     public Promise<HttpResponse> handle%s(HttpRequest request) {
+        PhrRequestContext context;
         try {
-            // Extract and validate request context
-            PhrRequestContext context = PhrRouteSupport.requireContext(request);
-            
-            // TODO: Implement policy evaluation using policyEvaluator
-            // TODO: Implement business logic for %s
-            
-            return PhrRouteSupport.jsonResponse(200, new Object());
+            context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException e) {
             return PhrRouteSupport.errorResponse(400, "INVALID_REQUEST", e.getMessage());
-        } catch (Exception e) {
-            return PhrRouteSupport.errorResponse(500, "INTERNAL_ERROR", "An unexpected error occurred");
         }
+
+        return policyEvaluator.canAccessPhiResourceAsync(
+                context,
+                context.principalId(),
+                "%s",
+                "%s",
+                context.tenantId(),
+                context.facilityId())
+            .then(decision -> {
+                if (!decision.isAllowed()) {
+                    return PhrRouteSupport.policyDenialResponse(
+                        403,
+                        context.correlationId(),
+                        decision.getReasonCode());
+                }
+
+                return PhrRouteSupport.errorResponse(
+                    501,
+                    "ROUTE_NOT_IMPLEMENTED",
+                    "Generated route skeleton requires product-owned implementation",
+                    context.correlationId());
+            });
     }
 }
-""", config.packageName(), config.routeLabel(), config.routePath(), endpoint, config.policyId(), method, config.routeLabel(), config.className(), config.className(), method, config.routeLabel(), method, config.routeLabel());
+""", config.packageName(), config.routeLabel(), config.routePath(), endpoint, config.policyId(), method, config.routeLabel(), config.className(), config.className(), method, config.routeLabel(), method, config.routeLabel(), config.policyId(), method);
     }
 }

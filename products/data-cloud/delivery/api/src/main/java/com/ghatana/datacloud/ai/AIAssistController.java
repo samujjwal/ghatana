@@ -4,6 +4,9 @@
  */
 package com.ghatana.datacloud.ai;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.http.security.filter.TenantExtractor;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -27,10 +30,12 @@ public class AIAssistController implements AsyncServlet {
 
     private final AIAssistService aiAssistService;
     private final PromptTemplateManager templateManager;
+    private final ObjectMapper objectMapper;
 
     public AIAssistController(AIAssistService aiAssistService, PromptTemplateManager templateManager) {
         this.aiAssistService = aiAssistService;
         this.templateManager = templateManager;
+        this.objectMapper = new ObjectMapper();
     }
 
     @Override
@@ -242,12 +247,16 @@ public class AIAssistController implements AsyncServlet {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> parseJson(String json) {
-        return Map.of();
+    private Map<String, Object> parseJson(String json) throws JsonProcessingException {
+        return objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
     }
 
     private String toJson(Object obj) {
-        return "{}";
+        try {
+            return objectMapper.writeValueAsString(obj);
+        } catch (JsonProcessingException e) {
+            return "{\"error\":\"Failed to serialize response\"}";
+        }
     }
 
     private Promise<HttpResponse> okJson(Object payload) {

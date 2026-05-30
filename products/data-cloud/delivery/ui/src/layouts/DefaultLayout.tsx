@@ -128,10 +128,10 @@ function getRouteIcon(iconName?: string): React.ReactNode {
 export function buildNavFromRegistry(shellRole: ShellRole): NavSection[] {
     const discoverable = getDiscoverableRouteSurfaces(shellRole);
 
-    const corePaths = new Set(['/', '/data', '/pipelines', '/query', '/trust', '/events']);
-    const advancedPaths = new Set(['/connectors', '/insights', '/plugins']);
-    const previewPaths = new Set(['/alerts', '/memory', '/entities', '/context', '/fabric', '/agents']);
+    const corePaths = new Set(['/', '/data', '/events', '/pipelines', '/query', '/trust']);
     const managePaths = new Set(['/operations']);
+    // Note: /entities, /context, /fabric are now consolidated under /data via tab navigation
+    const hiddenPaths = new Set(['/connectors', '/insights', '/plugins']);
 
     const coreItems: NavItem[] = discoverable
         .filter((r) => corePaths.has(r.path))
@@ -141,24 +141,6 @@ export function buildNavFromRegistry(shellRole: ShellRole): NavSection[] {
             labelKey: r.labelKey,
             icon: getRouteIcon(r.iconName),
             exact: r.path === '/',
-            minimumShellRole: r.minimumShellRole as ShellRole,
-        }));
-
-    const advancedItems: NavItem[] = discoverable
-        .filter((r) => advancedPaths.has(r.path))
-        .map((r) => ({
-            to: r.path,
-            label: r.label,
-            icon: getRouteIcon(r.iconName),
-            minimumShellRole: r.minimumShellRole as ShellRole,
-        }));
-
-    const previewItems: NavItem[] = discoverable
-        .filter((r) => previewPaths.has(r.path))
-        .map((r) => ({
-            to: r.path,
-            label: r.label,
-            icon: getRouteIcon(r.iconName),
             minimumShellRole: r.minimumShellRole as ShellRole,
         }));
 
@@ -174,8 +156,6 @@ export function buildNavFromRegistry(shellRole: ShellRole): NavSection[] {
 
     return [
         ...(coreItems.length > 0 ? [{ title: 'layout.sectionCore', items: coreItems }] : []),
-        ...(advancedItems.length > 0 ? [{ title: 'layout.sectionAdvanced', items: advancedItems }] : []),
-        ...(previewItems.length > 0 ? [{ title: 'layout.sectionPreview', items: previewItems }] : []),
         ...(manageItems.length > 0 ? [{ title: 'layout.sectionManage', items: manageItems }] : []),
     ];
 }
@@ -451,32 +431,48 @@ function Header({
                                         );
                                     })}
 
-                                    <div className="my-1 h-px bg-gray-200 dark:bg-gray-700" />
-
-                                    {SHELL_ROLES.map((role) => {
-                                        const isSelected = role === shellRole;
-                                        return (
-                                            <button
-                                                key={role}
-                                                type="button"
-                                                onClick={() => {
-                                                    onShellRoleChange(role);
-                                                    setIsRoleMenuOpen(false);
-                                                }}
-                                                className={cn(
-                                                    'w-full rounded-lg px-3 py-2 text-left text-sm transition-colors',
-                                                    isSelected
-                                                        ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
-                                                        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700'
-                                                )}
-                                            >
-                                                <div className="font-medium">{SHELL_ROLE_LABELS[role]}</div>
-                                                <div className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                                                    {SHELL_ROLE_DESCRIPTIONS[role]}
-                                                </div>
-                                            </button>
-                                        );
-                                    })}
+                                    {/* Raw shell-role switcher is a developer aid only.
+                                        In production, view-mode presets above already map to the
+                                        correct shell role — surfacing the raw role list creates
+                                        cognitive load for real users and blurs the authorization model.
+                                        Group 10 / DC-UX-010: hidden in production builds. */}
+                                    {import.meta.env.DEV && (
+                                        <>
+                                            <div className="my-1 h-px bg-gray-200 dark:bg-gray-700" />
+                                            <div className="px-2 pb-1 pt-2">
+                                                <p className="text-xs font-semibold uppercase tracking-wide text-yellow-600 dark:text-yellow-400">
+                                                    {t('layout.devRoleSwitcherTitle')}
+                                                </p>
+                                                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                    {t('layout.devRoleSwitcherNote')}
+                                                </p>
+                                            </div>
+                                            {SHELL_ROLES.map((role) => {
+                                                const isSelected = role === shellRole;
+                                                return (
+                                                    <button
+                                                        key={role}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            onShellRoleChange(role);
+                                                            setIsRoleMenuOpen(false);
+                                                        }}
+                                                        className={cn(
+                                                            'w-full rounded-lg px-3 py-2 text-left text-sm transition-colors',
+                                                            isSelected
+                                                                ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
+                                                                : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700'
+                                                        )}
+                                                    >
+                                                        <div className="font-medium">{SHELL_ROLE_LABELS[role]}</div>
+                                                        <div className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                                                            {SHELL_ROLE_DESCRIPTIONS[role]}
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         )}

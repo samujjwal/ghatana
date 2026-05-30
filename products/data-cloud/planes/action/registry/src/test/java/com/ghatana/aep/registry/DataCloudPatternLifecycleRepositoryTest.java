@@ -96,7 +96,7 @@ class DataCloudPatternLifecycleRepositoryTest extends EventloopTestBase {
             "tenant-1",
             PatternLifecycleState.DRAFT,
             PatternLifecycleState.VALIDATED,
-            PatternLifecycleEventType.PROMOTION,
+            PatternLifecycleEventType.PATTERN_VALIDATED,
             "user-1",
             Instant.now(),
             Map.of("traceId", "trace-123", "policyDecision", "approved", "confidence", 0.95)
@@ -121,17 +121,17 @@ class DataCloudPatternLifecycleRepositoryTest extends EventloopTestBase {
         PatternLifecycleEvent event1 = new PatternLifecycleEvent(
             "event-1", "pattern-1", "tenant-1",
             PatternLifecycleState.DRAFT, PatternLifecycleState.VALIDATED,
-            PatternLifecycleEventType.PROMOTION, "user-1", now.minusSeconds(2), Map.of()
+            PatternLifecycleEventType.PATTERN_VALIDATED, "user-1", now.minusSeconds(2), Map.of()
         );
         PatternLifecycleEvent event2 = new PatternLifecycleEvent(
             "event-2", "pattern-1", "tenant-1",
             PatternLifecycleState.VALIDATED, PatternLifecycleState.ACTIVE,
-            PatternLifecycleEventType.PROMOTION, "user-1", now.minusSeconds(1), Map.of()
+            PatternLifecycleEventType.PATTERN_VALIDATED, "user-1", now.minusSeconds(1), Map.of()
         );
         PatternLifecycleEvent event3 = new PatternLifecycleEvent(
             "event-3", "pattern-1", "tenant-1",
             PatternLifecycleState.ACTIVE, PatternLifecycleState.RETIRED,
-            PatternLifecycleEventType.DEMOTION, "user-1", now, Map.of()
+            PatternLifecycleEventType.PATTERN_RETIRED, "user-1", now, Map.of()
         );
 
         // WHEN
@@ -155,7 +155,7 @@ class DataCloudPatternLifecycleRepositoryTest extends EventloopTestBase {
         PatternLifecycleEvent event = new PatternLifecycleEvent(
             "event-1", "pattern-1", "tenant-1",
             PatternLifecycleState.DRAFT, PatternLifecycleState.VALIDATED,
-            PatternLifecycleEventType.PROMOTION, "user-1", Instant.now(), Map.of()
+            PatternLifecycleEventType.PATTERN_VALIDATED, "user-1", Instant.now(), Map.of()
         );
         runPromise(() -> repository.saveEvent(event));
 

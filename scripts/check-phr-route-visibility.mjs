@@ -15,8 +15,15 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-const ROUTE_CONTRACT_PATH = resolve(process.cwd(), 'products/phr/config/phr-route-contract.json');
-const ROUTE_MAP_PATH = resolve(process.cwd(), 'products/phr/apps/web/src/routes.tsx');
+const ROUTE_CONTRACT_PATH = process.env.PHR_ROUTE_CONTRACT_PATH
+  ? resolve(process.cwd(), process.env.PHR_ROUTE_CONTRACT_PATH)
+  : resolve(process.cwd(), 'products/phr/config/phr-route-contract.json');
+const ROUTE_MAP_PATH = process.env.PHR_ROUTE_MAP_PATH
+  ? resolve(process.cwd(), process.env.PHR_ROUTE_MAP_PATH)
+  : resolve(process.cwd(), 'products/phr/apps/web/src/routes.tsx');
+const ROUTE_ELEMENTS_PATH = process.env.PHR_ROUTE_ELEMENTS_PATH
+  ? resolve(process.cwd(), process.env.PHR_ROUTE_ELEMENTS_PATH)
+  : resolve(process.cwd(), 'products/phr/apps/web/src/phrRouteElements.tsx');
 
 let exitCode = 0;
 
@@ -41,41 +48,92 @@ function checkRouteVisibility() {
   console.log(`   - Stable routes: ${stableRoutes.length}`);
   console.log(`   - Hidden routes: ${hiddenRoutes.length}\n`);
 
-  // Check that hidden routes are not in the route map
+  // The router intentionally projects every canonical contract route through
+  // ProtectedPhrRoute so direct links can be denied consistently. Keep this
+  // check aligned to that contract-driven pattern rather than searching for
+  // static path literals in the route array.
   let routeMapContent;
   try {
     routeMapContent = readFileSync(ROUTE_MAP_PATH, 'utf-8');
   } catch (error) {
-    console.warn(`⚠️  Could not read route map at ${ROUTE_MAP_PATH} - skipping route map check`);
-    routeMapContent = '';
+    console.error(`❌ Could not read route map at ${ROUTE_MAP_PATH}: ${error.message}`);
+    process.exit(1);
   }
 
-  const hiddenInRouteMap = hiddenRoutes.filter(path => {
-    return routeMapContent.includes(`path="${path}"`) || 
-           routeMapContent.includes(`path: '${path}'`) ||
-           routeMapContent.includes(`path: "${path}"`);
-  });
+  const requiredRouterTokens = [
+    'phrRouteContracts.map(attachPhrRouteElement)',
+    '...phrRouteManifest.map(protectedRoute)',
+    "route.stability === 'hidden'",
+    '<Navigate to="/not-found" replace />',
+    "route.stability === 'blocked'",
+    '<Navigate to="/forbidden" replace />',
+    'isRouteAllowedForRole(route, role)',
+  ];
 
-  if (hiddenInRouteMap.length > 0) {
-    console.error('❌ Hidden routes found in route map:');
-    hiddenInRouteMap.forEach(path => console.error(`   - ${path}`));
+  const missingRouterTokens = requiredRouterTokens.filter(token => !routeMapContent.includes(token));
+  if (missingRouterTokens.length > 0) {
+    console.error('❌ Route map is missing canonical visibility enforcement tokens:');
+    missingRouterTokens.forEach(token => console.error(`   - ${token}`));
     exitCode = 1;
   } else {
-    console.log('✅ No hidden routes in route map');
+    console.log('✅ Route map projects canonical contract routes through visibility guards');
   }
 
-  // Check that stable routes are in the route map
-  const stableNotInRouteMap = stableRoutes.filter(path => {
-    return !routeMapContent.includes(`path="${path}"`) && 
-           !routeMapContent.includes(`path: '${path}'`) &&
-           !routeMapContent.includes(`path: "${path}"`);
+  // Route elements may map hidden direct links to NotFoundPage, but must never
+  // make them appear as product navigation destinations.
+  let routeElementsContent;
+  try {
+    routeElementsContent = readFileSync(
+      ROUTE_ELEMENTS_PATH,
+      'utf-8',
+    );
+  } catch (error) {
+    console.error(`❌ Could not read route elements: ${error.message}`);
+    process.exit(1);
+  }
+
+  const hiddenMappedToNotFound = hiddenRoutes.filter(path => {
+    return !routeElementsContent.includes(`'${path}': <NotFoundPage />`);
   });
 
-  if (stableNotInRouteMap.length > 0) {
-    console.warn('⚠️  Stable routes not found in route map (may be intentional):');
-    stableNotInRouteMap.forEach(path => console.warn(`   - ${path}`));
+  if (hiddenMappedToNotFound.length > 0) {
+    console.error('❌ Hidden routes are not mapped to NotFoundPage:');
+    hiddenMappedToNotFound.forEach(path => console.error(`   - ${path}`));
+    exitCode = 1;
   } else {
-    console.log('✅ All stable routes are in route map');
+    console.log('✅ Hidden route direct-link elements resolve to NotFoundPage');
+  }
+
+  const stableMappedRoutes = stableRoutes.filter(path => {
+    const escapedPath = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (path === '/forbidden' || path === '/not-found') {
+      const systemRoutePattern = new RegExp(`'${escapedPath}'\\s*:\\s*<(?:ForbiddenPage|NotFoundPage)\\s*/>`);
+      return systemRoutePattern.test(routeElementsContent);
+    }
+    const routeElementPattern = new RegExp(`'${escapedPath}'\\s*:\\s*<(?!(?:NotFoundPage|ForbiddenPage)\\b)[A-Za-z0-9]+Page\\s*/>`);
+    return routeElementPattern.test(routeElementsContent);
+  });
+
+  const stableNotMappedRoutes = stableRoutes.filter(path => !stableMappedRoutes.includes(path));
+  if (stableNotMappedRoutes.length > 0) {
+    console.error('❌ Stable routes missing concrete page element mappings:');
+    stableNotMappedRoutes.forEach(path => console.error(`   - ${path}`));
+    exitCode = 1;
+  } else {
+    console.log('✅ All stable routes map to concrete page elements');
+  }
+
+  const hiddenInNavigation = hiddenRoutes.filter(path => {
+    const navPattern = new RegExp(`href=["']${path}["']|to=["']${path}["']`);
+    return navPattern.test(routeMapContent) || navPattern.test(routeElementsContent);
+  });
+
+  if (hiddenInNavigation.length > 0) {
+    console.error('❌ Hidden routes found as static navigation targets:');
+    hiddenInNavigation.forEach(path => console.error(`   - ${path}`));
+    exitCode = 1;
+  } else {
+    console.log('✅ Hidden routes are not static navigation targets');
   }
 
   // Check that all routes have stability field

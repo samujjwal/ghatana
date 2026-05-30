@@ -1,6 +1,7 @@
 package com.ghatana.datacloud.application;
 
 import com.ghatana.datacloud.entity.*;
+import com.ghatana.datacloud.observability.ObservabilityService;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -15,12 +16,19 @@ import java.util.*;
  * Provides business logic for workflow CRUD operations, validation, and execution management.
  * All operations are tenant-scoped and return ActiveJ Promises for non-blocking execution.
  *
+ * <p><b>Observability</b><br>
+ * Integrates with {@link ObservabilityService} to provide unified correlation tracking
+ * across all workflow operations, ensuring consistent observability for runtime truth
+ * with correlationId, tenantId, surface, runId, pipelineId, and other context identifiers.
+ *
  * <p><b>Usage</b><br>
  * <pre>{@code
  * WorkflowService service = new WorkflowService(
  *     workflowRepository,
  *     collectionRepository,
- *     metrics
+ *     executionRepository,
+ *     metrics,
+ *     observabilityService
  * );
  *
  * // Create workflow
@@ -42,6 +50,7 @@ import java.util.*;
  * - Service in application layer (hexagonal architecture)
  * - Uses WorkflowRepository (domain port)
  * - Uses MetricsCollector (core/observability)
+ * - Uses ObservabilityService (unified correlation tracking)
  * - Enforces multi-tenancy and workflow validation
  *
  * <p><b>Thread Safety</b><br>
@@ -51,8 +60,9 @@ import java.util.*;
  * @see WorkflowNode
  * @see WorkflowEdge
  * @see MetricsCollector
+ * @see ObservabilityService
  * @doc.type class
- * @doc.purpose Service for workflow management and execution
+ * @doc.purpose Service for workflow management and execution with unified observability
  * @doc.layer product
  * @doc.pattern Service (Application Layer)
  */
@@ -64,6 +74,7 @@ public class WorkflowService {
     private final CollectionRepository collectionRepository;
     private final WorkflowExecutionRepository executionRepository;
     private final MetricsCollector metrics;
+    private final ObservabilityService observabilityService;
 
     /**
      * Creates a new workflow service.
@@ -72,17 +83,20 @@ public class WorkflowService {
      * @param collectionRepository the collection repository (required)
      * @param executionRepository  the workflow execution repository (required)
      * @param metrics              the metrics collector (required)
+     * @param observabilityService observability service for unified correlation tracking (required)
      * @throws NullPointerException if any parameter is null
      */
     public WorkflowService(
             WorkflowRepository workflowRepository,
             CollectionRepository collectionRepository,
             WorkflowExecutionRepository executionRepository,
-            MetricsCollector metrics) {
+            MetricsCollector metrics,
+            ObservabilityService observabilityService) {
         this.workflowRepository = Objects.requireNonNull(workflowRepository, "WorkflowRepository must not be null");
         this.collectionRepository = Objects.requireNonNull(collectionRepository, "CollectionRepository must not be null");
         this.executionRepository = Objects.requireNonNull(executionRepository, "WorkflowExecutionRepository must not be null");
         this.metrics = Objects.requireNonNull(metrics, "MetricsCollector must not be null");
+        this.observabilityService = Objects.requireNonNull(observabilityService, "ObservabilityService must not be null");
     }
 
     /**
@@ -333,6 +347,10 @@ public class WorkflowService {
      * Creates a PENDING execution, persists it, and asynchronously transitions to RUNNING.
      * The caller may poll {@code getExecution()} or subscribe via WebSocket to track progress.
      *
+     * <p><b>Observability</b><br>
+     * Uses {@link ObservabilityService} to track execution with unified correlation
+     * identifiers including correlationId, tenantId, surface, runId, pipelineId.
+     *
      * @param tenantId       the tenant identifier (required)
      * @param workflowId     the workflow to execute (required)
      * @param userId         the user triggering execution (for audit)
@@ -349,51 +367,94 @@ public class WorkflowService {
         Objects.requireNonNull(workflowId, "Workflow ID must not be null");
         Objects.requireNonNull(userId, "User ID must not be null");
 
-        return workflowRepository.findById(tenantId, workflowId)
-            .then(workflowOpt -> {
-                if (workflowOpt.isEmpty()) {
-                    metrics.incrementCounter("workflow.execute.not_found",
-                        "tenant", tenantId);
-                    return Promise.ofException(
-                        new IllegalArgumentException("Workflow not found: " + workflowId)
-                    );
-                }
+        // Create observability context with unified correlation tracking
+        String correlationId = UUID.randomUUID().toString();
+        try (ObservabilityService.ObservabilityContext obsContext =
+                observabilityService.createContext(
+                    correlationId,
+                    tenantId,
+                    "workflow",
+                    null,  // runId - will be set after execution ID is generated
+                    null   // jobId - not applicable for direct workflow execution
+                )) {
 
-                Workflow workflow = workflowOpt.get();
-                String status = workflow.getStatus();
-                if (!"ACTIVE".equalsIgnoreCase(status) && !"DRAFT".equalsIgnoreCase(status)) {
-                    metrics.incrementCounter("workflow.execute.not_executable",
-                        "tenant", tenantId);
-                    return Promise.ofException(
-                        new IllegalStateException(
-                            "Workflow " + workflowId + " cannot be executed in status: " + status)
-                    );
-                }
+            obsContext.addMetadata("operation", "executeWorkflow");
+            obsContext.addMetadata("workflowId", workflowId.toString());
+            obsContext.addMetadata("userId", userId);
+            obsContext.addMetadata("pipelineId", workflowId.toString());
 
-                WorkflowExecution execution = WorkflowExecution.builder()
-                    .tenantId(tenantId)
-                    .workflowId(workflowId)
-                    .status(WorkflowExecution.Status.PENDING)
-                    .startedBy(userId)
-                    .inputVariables(inputVariables != null ? inputVariables : Map.of())
-                    .build();
+            return workflowRepository.findById(tenantId, workflowId)
+                .then(workflowOpt -> {
+                    if (workflowOpt.isEmpty()) {
+                        obsContext.recordEvent("workflow_not_found", Map.of(
+                            "tenantId", tenantId,
+                            "workflowId", workflowId.toString()
+                        ));
+                        metrics.incrementCounter("workflow.execute.not_found",
+                            "tenant", tenantId);
+                        return Promise.ofException(
+                            new IllegalArgumentException("Workflow not found: " + workflowId)
+                        );
+                    }
 
-                return executionRepository.save(tenantId, execution);
-            })
-            .whenComplete((execution, ex) -> {
-                if (ex == null) {
-                    metrics.incrementCounter("workflow.execute.created",
-                        "tenant", tenantId);
-                    log.info("Workflow execution created: tenantId={}, workflowId={}, executionId={}, triggeredBy={}",
-                        tenantId, workflowId, execution.getId(), userId);
-                } else {
-                    metrics.incrementCounter("workflow.execute.error",
-                        "tenant", tenantId,
-                        "error", ex.getClass().getSimpleName());
-                    log.error("Failed to create workflow execution: tenantId={}, workflowId={}",
-                        tenantId, workflowId, ex);
-                }
-            });
+                    Workflow workflow = workflowOpt.get();
+                    String status = workflow.getStatus();
+                    if (!"ACTIVE".equalsIgnoreCase(status) && !"DRAFT".equalsIgnoreCase(status)) {
+                        obsContext.recordEvent("workflow_not_executable", Map.of(
+                            "tenantId", tenantId,
+                            "workflowId", workflowId.toString(),
+                            "status", status
+                        ));
+                        metrics.incrementCounter("workflow.execute.not_executable",
+                            "tenant", tenantId);
+                        return Promise.ofException(
+                            new IllegalStateException(
+                                "Workflow " + workflowId + " cannot be executed in status: " + status)
+                        );
+                    }
+
+                    WorkflowExecution execution = WorkflowExecution.builder()
+                        .tenantId(tenantId)
+                        .workflowId(workflowId)
+                        .status(WorkflowExecution.Status.PENDING)
+                        .startedBy(userId)
+                        .inputVariables(inputVariables != null ? inputVariables : Map.of())
+                        .build();
+
+                    // Update runId with execution ID after creation
+                    obsContext.set(ObservabilityService.RUN_ID, execution.getId().toString());
+
+                    return executionRepository.save(tenantId, execution)
+                        .then(savedExecution -> {
+                            obsContext.recordEvent("workflow_execution_created", Map.of(
+                                "tenantId", tenantId,
+                                "workflowId", workflowId.toString(),
+                                "executionId", savedExecution.getId().toString(),
+                                "triggeredBy", userId
+                            ));
+                            return Promise.of(savedExecution);
+                        });
+                })
+                .whenComplete((execution, ex) -> {
+                    if (ex == null) {
+                        metrics.incrementCounter("workflow.execute.created",
+                            "tenant", tenantId);
+                        log.info("Workflow execution created: tenantId={}, workflowId={}, executionId={}, correlationId={}, triggeredBy={}",
+                            tenantId, workflowId, execution.getId(), correlationId, userId);
+                    } else {
+                        obsContext.recordEvent("workflow_execution_failed", Map.of(
+                            "tenantId", tenantId,
+                            "workflowId", workflowId.toString(),
+                            "error", ex.getMessage()
+                        ));
+                        metrics.incrementCounter("workflow.execute.error",
+                            "tenant", tenantId,
+                            "error", ex.getClass().getSimpleName());
+                        log.error("Failed to create workflow execution: tenantId={}, workflowId={}, correlationId={}",
+                            tenantId, workflowId, correlationId, ex);
+                    }
+                });
+        }
     }
 
     /**

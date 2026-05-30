@@ -250,6 +250,15 @@ public class EntityCrudHandler {
                 "Audit events must be emitted in the transaction/outbox lifecycle.");
         }
 
+        // Group 8 / DC-SEC-008: Quota enforcement is fail-closed in production.
+        // A missing TenantQuotaService means quota is never enforced, which constitutes a
+        // silent security bypass for resource-exhaustion and billing correctness.
+        if (tenantQuotaService == null) {
+            throw new IllegalStateException(
+                "DC-SEC-008: TenantQuotaService is required in production/staging/sovereign profiles. " +
+                "Quota enforcement must not be silently bypassed at runtime.");
+        }
+
         // DC-P1-05: Outbox processor is required for durable side-effect processing in production
         if (outboxProcessor == null) {
             throw new IllegalStateException(

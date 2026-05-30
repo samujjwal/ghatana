@@ -1,16 +1,16 @@
 {
   "checkId": "YAPPC-010 PHR import and generation roundtrip",
-  "generatedAt": "2026-05-30T06:24:12.986Z",
-  "pass": false,
+  "generatedAt": "2026-05-30T14:02:24.015Z",
+  "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/check-yappc-phr-roundtrip.mjs",
     "command": "node scripts/check-yappc-phr-roundtrip.mjs",
-    "commit": "bdfa732ddbbb53228ab5a21a6704877c4f3ba8dc"
+    "commit": "72f02d6d70c60c2efd32870d29537d1d23cc6b3a"
   },
   "summary": {
     "checkCount": 17,
-    "passedChecks": 16,
-    "violationCount": 1
+    "passedChecks": 17,
+    "violationCount": 0
   },
   "checks": [
     {
@@ -91,9 +91,8 @@
     },
     {
       "name": "YAPPC PHR importer and template pack tests",
-      "pass": false,
-      "command": "./gradlew :products:yappc:core:scaffold:api:test --tests com.ghatana.yappc.kernel.PhrProductContractImporterTest --tests com.ghatana.yappc.kernel.PhrProductUnitTemplatePackTest --no-daemon",
-      "message": "Command failed: ./gradlew :products:yappc:core:scaffold:api:test --tests com.ghatana.yappc.kernel.PhrProductContractImporterTest --tests com.ghatana.yappc.kernel.PhrProductUnitTemplatePackTest --no-daemon"
+      "pass": true,
+      "command": "./gradlew :products:yappc:core:scaffold:api:test --tests com.ghatana.yappc.kernel.PhrProductContractImporterTest --tests com.ghatana.yappc.kernel.PhrProductUnitTemplatePackTest --no-daemon"
     },
     {
       "name": "YAPPC PHR canvas overlay and degraded AI tests",
@@ -106,9 +105,7 @@
       "command": "pnpm --dir products/yappc/frontend/web typecheck"
     }
   ],
-  "violations": [
-    "YAPPC PHR importer and template pack tests: Command failed: ./gradlew :products:yappc:core:scaffold:api:test --tests com.ghatana.yappc.kernel.PhrProductContractImporterTest --tests com.ghatana.yappc.kernel.PhrProductUnitTemplatePackTest --no-daemon"
-  ],
+  "violations": [],
   "routeSummary": {
     "routes": 28,
     "stableRoutes": 24,

@@ -72,6 +72,7 @@ public class PatternLifecycleEventEntity {
     }
 
     public PatternLifecycleEventEntity(
+            String eventId,
             String tenantId,
             String patternId,
             String fromState,
@@ -79,7 +80,7 @@ public class PatternLifecycleEventEntity {
             PatternLifecycleEventType eventType,
             String actor,
             Instant occurredAt) {
-        this.id = UUID.randomUUID().toString();
+        this.id = eventId != null && !eventId.isBlank() ? eventId : UUID.randomUUID().toString();
         this.tenantId = tenantId;
         this.patternId = patternId;
         this.fromState = fromState;

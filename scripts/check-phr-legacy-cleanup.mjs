@@ -19,6 +19,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const PHR_DIR = join(__dirname, '..', 'products', 'phr');
+const SCRIPTS_DIR = join(__dirname, '..', 'scripts');
 
 // Patterns that indicate a file is likely orphan/unused
 const ORPHAN_PATTERNS = [
@@ -95,6 +96,15 @@ if (existsSync(mobileScreensDir)) {
   }
 }
 
+// Check one-off mutation scripts. PHR repair scripts must be converted into
+// deterministic checks or removed after the production path is fixed.
+const orphanMutationScripts = [];
+for (const file of readdirSync(SCRIPTS_DIR)) {
+  if (/^fix-(phr|mobile|web|consent).*\.mjs$/.test(file)) {
+    orphanMutationScripts.push(file);
+  }
+}
+
 // Report findings
 let hasOrphans = false;
 
@@ -126,6 +136,14 @@ if (orphanMobileScreens.length > 0) {
   console.log('[phr-legacy-cleanup] Orphan mobile screens found:');
   for (const screen of orphanMobileScreens) {
     console.log(`  - ${screen}`);
+  }
+  hasOrphans = true;
+}
+
+if (orphanMutationScripts.length > 0) {
+  console.log('[phr-legacy-cleanup] One-off mutation scripts found:');
+  for (const script of orphanMutationScripts) {
+    console.log(`  - ${script}`);
   }
   hasOrphans = true;
 }

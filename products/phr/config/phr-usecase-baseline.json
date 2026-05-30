@@ -3,8 +3,22 @@
   "version": "2.0.0",
   "lastUpdated": "2026-05-26",
   "description": "Canonical PHR use-case baseline: maps personas, IA routes/screens, backend APIs, and implementation status.",
-  "statusValues": ["implemented", "partial", "backend_only", "ui_only", "missing", "deferred", "removed"],
-  "phaseValues": ["mvp-current", "mvp-next", "phase-2", "deferred", "removed"],
+  "statusValues": [
+    "implemented",
+    "partial",
+    "backend_only",
+    "ui_only",
+    "missing",
+    "deferred",
+    "removed"
+  ],
+  "phaseValues": [
+    "mvp-current",
+    "mvp-next",
+    "phase-2",
+    "deferred",
+    "removed"
+  ],
   "usecases": [
     {
       "id": "uc-patient-dashboard",
@@ -24,7 +38,32 @@
       "offlineSupport": true,
       "status": "implemented",
       "phase": "mvp-current",
-      "notes": "Web and mobile both serve dashboard data. Mobile uses encrypted offline cache with AES-256-GCM."
+      "notes": "Web and mobile both serve dashboard data. Mobile uses encrypted offline cache with AES-256-GCM.",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/DashboardPage.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/DashboardPage.test.tsx"
+        },
+        {
+          "kind": "mobile-screen",
+          "file": "products/phr/apps/mobile/src/screens/DashboardScreen.tsx"
+        },
+        {
+          "kind": "mobile-test",
+          "file": "products/phr/apps/mobile/src/screens/__tests__/DashboardScreen.test.tsx"
+        },
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrMobileRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-apps-build && pnpm check:phr-mobile-dto-contract",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-patient-records",
@@ -41,7 +80,32 @@
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
       "status": "implemented",
-      "phase": "mvp-current"
+      "phase": "mvp-current",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/RecordsPage.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/RecordsPage.test.tsx"
+        },
+        {
+          "kind": "mobile-screen",
+          "file": "products/phr/apps/mobile/src/screens/RecordsScreen.tsx"
+        },
+        {
+          "kind": "mobile-test",
+          "file": "products/phr/apps/mobile/src/screens/__tests__/RecordsScreen.test.tsx"
+        },
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrPatientRecordRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-apps-build && pnpm check:phr-mobile-dto-contract",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-patient-record-detail",
@@ -57,7 +121,32 @@
       "offlineSupport": false,
       "status": "partial",
       "phase": "mvp-next",
-      "notes": "Web route exists, mobile screen needs implementation"
+      "notes": "Web route exists, mobile screen needs implementation",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/RecordDetailPage.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/RecordDetailPage.test.tsx"
+        },
+        {
+          "kind": "mobile-screen",
+          "file": "products/phr/apps/mobile/src/screens/RecordDetailScreen.tsx"
+        },
+        {
+          "kind": "mobile-test",
+          "file": "products/phr/apps/mobile/src/screens/__tests__/RecordDetailScreen.test.tsx"
+        },
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrPatientRecordRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-apps-build && pnpm check:phr-mobile-dto-contract",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-patient-profile",
@@ -65,7 +154,7 @@
       "screen": "ProfilePage",
       "iaRoute": "/profile",
       "webRoute": "/profile",
-      "mobileScreen": "profile",
+      "mobileScreen": null,
       "backendApis": [
         "GET /patients/:patientId",
         "PUT /patients/:patientId"
@@ -73,7 +162,24 @@
       "kernelCapability": "patient-profile-manage",
       "offlineSupport": false,
       "status": "implemented",
-      "phase": "mvp-current"
+      "phase": "mvp-current",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/ProfilePage.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/ProfilePage.test.tsx"
+        },
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrPatientProfileRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-apps-build && pnpm check:phr-backend-build",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-patient-timeline",
@@ -81,14 +187,31 @@
       "screen": "TimelinePage",
       "iaRoute": "/timeline",
       "webRoute": "/timeline",
-      "mobileScreen": "timeline",
+      "mobileScreen": null,
       "backendApis": [
         "GET /clinical/timeline?patientId=:id"
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
       "status": "implemented",
-      "phase": "mvp-current"
+      "phase": "mvp-current",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/TimelinePage.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/TimelinePage.test.tsx"
+        },
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrTimelineRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-apps-build && pnpm check:phr-backend-build",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-patient-conditions",
@@ -96,14 +219,31 @@
       "screen": "ConditionsPage",
       "iaRoute": "/conditions",
       "webRoute": "/conditions",
-      "mobileScreen": "conditions",
+      "mobileScreen": null,
       "backendApis": [
         "GET /clinical/conditions?patientId=:id"
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
       "status": "implemented",
-      "phase": "mvp-current"
+      "phase": "mvp-current",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/ConditionsPage.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/ConditionsPage.test.tsx"
+        },
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrConditionRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-apps-build && pnpm check:phr-backend-build",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-patient-observations",
@@ -111,14 +251,31 @@
       "screen": "ObservationsPage",
       "iaRoute": "/observations",
       "webRoute": "/observations",
-      "mobileScreen": "observations",
+      "mobileScreen": null,
       "backendApis": [
         "GET /clinical/observations?patientId=:id"
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
       "status": "implemented",
-      "phase": "mvp-current"
+      "phase": "mvp-current",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/ObservationsPage.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/ObservationsPage.test.tsx"
+        },
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrClinicalRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-apps-build && pnpm check:phr-backend-build",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-patient-immunizations",
@@ -126,14 +283,31 @@
       "screen": "ImmunizationsPage",
       "iaRoute": "/immunizations",
       "webRoute": "/immunizations",
-      "mobileScreen": "immunizations",
+      "mobileScreen": null,
       "backendApis": [
         "GET /clinical/immunizations?patientId=:id"
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
       "status": "implemented",
-      "phase": "mvp-current"
+      "phase": "mvp-current",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/ImmunizationsPage.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/ImmunizationsPage.test.tsx"
+        },
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrClinicalRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-apps-build && pnpm check:phr-backend-build",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-patient-consent-management",
@@ -152,7 +326,32 @@
       "offlineSupport": false,
       "status": "implemented",
       "phase": "mvp-current",
-      "notes": "Payload uses recipientId + scope.resourceTypes (aligned with backend). Mobile endpoint aligned to /consents/grants/:grantId/revoke pattern."
+      "notes": "Payload uses recipientId + scope.resourceTypes (aligned with backend). Mobile endpoint aligned to /consents/grants/:grantId/revoke pattern.",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/ConsentPage.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/ConsentPage.test.tsx"
+        },
+        {
+          "kind": "mobile-screen",
+          "file": "products/phr/apps/mobile/src/screens/ConsentScreen.tsx"
+        },
+        {
+          "kind": "mobile-test",
+          "file": "products/phr/apps/mobile/src/screens/__tests__/ConsentScreen.test.tsx"
+        },
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrConsentRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-apps-build && pnpm check:phr-mobile-dto-contract",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-patient-appointments",
@@ -160,7 +359,7 @@
       "screen": "AppointmentsPage",
       "iaRoute": "/appointments",
       "webRoute": "/appointments",
-      "mobileScreen": "appointments",
+      "mobileScreen": null,
       "backendApis": [
         "GET /appointments?patientId=:id",
         "POST /appointments",
@@ -170,7 +369,24 @@
       "offlineSupport": false,
       "status": "partial",
       "phase": "mvp-next",
-      "notes": "Request workflow exists, full booking workflow needs implementation"
+      "notes": "Request workflow exists, full booking workflow needs implementation",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/AppointmentsPage.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/AppointmentsPage.test.tsx"
+        },
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrAppointmentRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-apps-build && pnpm check:phr-backend-build",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-patient-labs",
@@ -178,14 +394,31 @@
       "screen": "LabsPage",
       "iaRoute": "/labs",
       "webRoute": "/labs",
-      "mobileScreen": "labs",
+      "mobileScreen": null,
       "backendApis": [
         "GET /clinical/labs?patientId=:id"
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
       "status": "implemented",
-      "phase": "mvp-current"
+      "phase": "mvp-current",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/LabsPage.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/LabsPage.test.tsx"
+        },
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrClinicalRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-apps-build && pnpm check:phr-backend-build",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-patient-medications",
@@ -193,14 +426,31 @@
       "screen": "MedicationsPage",
       "iaRoute": "/medications",
       "webRoute": "/medications",
-      "mobileScreen": "medications",
+      "mobileScreen": null,
       "backendApis": [
         "GET /clinical/medications?patientId=:id"
       ],
       "kernelCapability": "patient-record-read",
       "offlineSupport": false,
       "status": "implemented",
-      "phase": "mvp-current"
+      "phase": "mvp-current",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/MedicationsPage.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/MedicationsPage.test.tsx"
+        },
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrClinicalRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-apps-build && pnpm check:phr-backend-build",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-patient-documents",
@@ -208,7 +458,7 @@
       "screen": "DocumentsPage",
       "iaRoute": "/documents",
       "webRoute": "/documents",
-      "mobileScreen": "documents",
+      "mobileScreen": null,
       "backendApis": [
         "GET /documents?patientId=:id",
         "POST /documents/upload"
@@ -216,7 +466,24 @@
       "kernelCapability": "document-manage",
       "offlineSupport": false,
       "status": "implemented",
-      "phase": "mvp-current"
+      "phase": "mvp-current",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/DocumentsPage.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/DocumentsPage.test.tsx"
+        },
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrDocumentImagingRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-apps-build && pnpm check:phr-backend-build",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-patient-document-upload",
@@ -224,14 +491,31 @@
       "screen": "DocumentUploadPage",
       "iaRoute": "/documents/upload",
       "webRoute": "/documents/upload",
-      "mobileScreen": "document-upload",
+      "mobileScreen": null,
       "backendApis": [
         "POST /documents/upload"
       ],
       "kernelCapability": "document-manage",
       "offlineSupport": false,
       "status": "implemented",
-      "phase": "mvp-current"
+      "phase": "mvp-current",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/DocumentUploadPage.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/DocumentUploadPage.test.tsx"
+        },
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrDocumentImagingRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-apps-build && pnpm check:phr-backend-build",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-patient-ocr-review",
@@ -239,7 +523,7 @@
       "screen": "OcrReviewPage",
       "iaRoute": "/documents/:docId/ocr",
       "webRoute": "/documents/:docId/ocr",
-      "mobileScreen": "ocr-review",
+      "mobileScreen": null,
       "backendApis": [
         "POST /documents/:docId/ocr",
         "POST /documents/:docId/ocr/accept",
@@ -248,7 +532,24 @@
       "kernelCapability": "document-manage",
       "offlineSupport": false,
       "status": "implemented",
-      "phase": "mvp-current"
+      "phase": "mvp-current",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/OcrReviewPage.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/OcrReviewPage.test.tsx"
+        },
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrDocumentImagingRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-apps-build && pnpm check:phr-backend-build",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-patient-notifications",
@@ -263,7 +564,32 @@
       "kernelCapability": "notification-read",
       "offlineSupport": false,
       "status": "implemented",
-      "phase": "mvp-current"
+      "phase": "mvp-current",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/NotificationsPage.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/NotificationsPage.test.tsx"
+        },
+        {
+          "kind": "mobile-screen",
+          "file": "products/phr/apps/mobile/src/screens/NotificationsScreen.tsx"
+        },
+        {
+          "kind": "mobile-test",
+          "file": "products/phr/apps/mobile/src/screens/__tests__/NotificationsScreen.test.tsx"
+        },
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrNotificationRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-apps-build && pnpm check:phr-mobile-dto-contract",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-patient-settings",
@@ -280,7 +606,32 @@
       "kernelCapability": "patient-profile-manage",
       "offlineSupport": false,
       "status": "implemented",
-      "phase": "mvp-current"
+      "phase": "mvp-current",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/SettingsPage.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/SettingsPage.test.tsx"
+        },
+        {
+          "kind": "mobile-screen",
+          "file": "products/phr/apps/mobile/src/screens/SettingsScreen.tsx"
+        },
+        {
+          "kind": "mobile-test",
+          "file": "products/phr/apps/mobile/src/screens/__tests__/SettingsScreen.test.tsx"
+        },
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrAuthRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-apps-build && pnpm check:phr-mobile-dto-contract",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-patient-emergency-access",
@@ -298,7 +649,32 @@
       "offlineSupport": false,
       "status": "implemented",
       "phase": "mvp-current",
-      "notes": "Mobile requires documented reason + biometric gate before PHI is shown. Server policy gate needs hardening."
+      "notes": "Mobile requires documented reason + biometric gate before PHI is shown. Server policy gate needs hardening.",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/EmergencyAccessPage.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/EmergencyAccessPage.test.tsx"
+        },
+        {
+          "kind": "mobile-screen",
+          "file": "products/phr/apps/mobile/src/screens/EmergencyAccessScreen.tsx"
+        },
+        {
+          "kind": "mobile-test",
+          "file": "products/phr/apps/mobile/src/screens/__tests__/EmergencyAccessScreen.test.tsx"
+        },
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrEmergencyRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-apps-build && pnpm check:phr-mobile-dto-contract",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-provider-dashboard",
@@ -314,7 +690,16 @@
       "offlineSupport": false,
       "status": "deferred",
       "phase": "phase-2",
-      "notes": "Route exists in the canonical contract as hidden until production-ready."
+      "notes": "Route exists in the canonical contract as hidden until production-ready.",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrProviderRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-route-contract-drift",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-provider-patients",
@@ -331,7 +716,16 @@
       "offlineSupport": false,
       "status": "deferred",
       "phase": "phase-2",
-      "notes": "Route exists in the canonical contract as hidden until backend consent/treatment relationship policy is complete."
+      "notes": "Route exists in the canonical contract as hidden until backend consent/treatment relationship policy is complete.",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrProviderRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-route-contract-drift",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-caregiver-dependents",
@@ -339,7 +733,7 @@
       "screen": "CaregiverDependentsPage",
       "iaRoute": "/caregiver/dependents",
       "webRoute": "/caregiver/dependents",
-      "mobileScreen": "caregiver-dependents",
+      "mobileScreen": null,
       "backendApis": [
         "GET /caregiver/dependents",
         "GET /caregiver/dependents/:dependentId"
@@ -348,7 +742,16 @@
       "offlineSupport": false,
       "status": "deferred",
       "phase": "phase-2",
-      "notes": "Route exists in the canonical contract as hidden until full implementation is promoted."
+      "notes": "Route exists in the canonical contract as hidden until full implementation is promoted.",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrCaregiverRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-route-contract-drift",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-fchv-dashboard",
@@ -356,7 +759,7 @@
       "screen": "FchvDashboardPage",
       "iaRoute": "/fchv/dashboard",
       "webRoute": "/fchv/dashboard",
-      "mobileScreen": "fchv-dashboard",
+      "mobileScreen": null,
       "backendApis": [
         "GET /fchv/dashboard",
         "POST /fchv/patients/register",
@@ -366,7 +769,16 @@
       "offlineSupport": false,
       "status": "deferred",
       "phase": "deferred",
-      "notes": "Route exists in the canonical contract as hidden and may be deferred from MVP depending on Nepal healthcare priorities."
+      "notes": "Route exists in the canonical contract as hidden and may be deferred from MVP depending on Nepal healthcare priorities.",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrFchvRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-route-contract-drift",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-admin-audit",
@@ -383,7 +795,24 @@
       "kernelCapability": "audit-read",
       "offlineSupport": false,
       "status": "implemented",
-      "phase": "mvp-current"
+      "phase": "mvp-current",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/AuditPage.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/AuditPage.test.tsx"
+        },
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrAuditRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-apps-build && pnpm check:phr-backend-build",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-admin-release-readiness",
@@ -399,7 +828,24 @@
       "offlineSupport": false,
       "status": "implemented",
       "phase": "mvp-current",
-      "notes": "Currently parses evidence files directly. Should migrate to Kernel runtime API."
+      "notes": "Currently parses evidence files directly. Should migrate to Kernel runtime API.",
+      "ownerLayer": "Kernel",
+      "implementationEvidence": [
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/ReleaseCockpitPage.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/ReleaseCockpitPage.test.tsx"
+        },
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrReleaseReadinessRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-apps-build && pnpm check:phr-backend-build",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-admin-emergency-review",
@@ -416,7 +862,20 @@
       "kernelCapability": "emergency-review",
       "offlineSupport": false,
       "status": "implemented",
-      "phase": "mvp-current"
+      "phase": "mvp-current",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/EmergencyReviewsPage.tsx"
+        },
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrEmergencyRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-apps-build && pnpm check:phr-backend-build",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-mobile-dashboard",
@@ -432,7 +891,24 @@
       "offlineSupport": true,
       "status": "implemented",
       "phase": "mvp-current",
-      "notes": "Dedicated mobile endpoint with session-header auth (X-Tenant-Id, X-Principal-Id, X-Role). Backend route needs verification."
+      "notes": "Dedicated mobile endpoint with session-header auth (X-Tenant-Id, X-Principal-Id, X-Role). Backend route needs verification.",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "mobile-screen",
+          "file": "products/phr/apps/mobile/src/screens/DashboardScreen.tsx"
+        },
+        {
+          "kind": "mobile-test",
+          "file": "products/phr/apps/mobile/src/screens/__tests__/DashboardScreen.test.tsx"
+        },
+        {
+          "kind": "backend-route",
+          "file": "products/phr/src/main/java/com/ghatana/phr/api/routes/PhrMobileRoutes.java"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-mobile-dto-contract && pnpm check:phr-mobile-phi-storage",
+      "legacyDeleteRequired": false
     },
     {
       "id": "uc-error-pages",
@@ -440,12 +916,37 @@
       "screen": "ForbiddenPage / NotFoundPage",
       "iaRoute": "/forbidden, /not-found",
       "webRoute": "/forbidden, /not-found",
-      "mobileScreen": "forbidden, not-found",
+      "mobileScreen": null,
       "backendApis": [],
       "kernelCapability": null,
       "offlineSupport": false,
       "status": "implemented",
-      "phase": "mvp-current"
+      "phase": "mvp-current",
+      "ownerLayer": "PHR",
+      "implementationEvidence": [
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/ForbiddenPage.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/ForbiddenPage.test.tsx"
+        },
+        {
+          "kind": "web-page",
+          "file": "products/phr/apps/web/src/pages/NotFoundPage.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/ForbiddenPage.test.tsx"
+        },
+        {
+          "kind": "web-test",
+          "file": "products/phr/apps/web/src/pages/__tests__/NotFoundPage.test.tsx"
+        }
+      ],
+      "verificationCommand": "pnpm check:phr-route-contract-drift",
+      "legacyDeleteRequired": false
     }
   ]
 }

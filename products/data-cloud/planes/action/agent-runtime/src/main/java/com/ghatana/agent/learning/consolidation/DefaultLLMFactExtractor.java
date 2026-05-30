@@ -14,11 +14,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
@@ -61,13 +65,19 @@ public class DefaultLLMFactExtractor implements LLMFactExtractor {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final LLMGateway llmGateway;
-    /** P2-16: Metrics collector for token count tracking. */
+    /** P2-16: Metrics collector for token count tracking and learning quality observability. */
     private final MetricsCollector metricsCollector;
+
+    private static final String METRIC_LLM_TIMEOUT = "llm.fact_extractor.timeout";
+    private static final String METRIC_LLM_FAILURE = "llm.fact_extractor.failure";
+    private static final String METRIC_PARSE_FAILURE = "llm.fact_extractor.parse_failure";
+    private static final String METRIC_EMPTY_RESPONSE = "llm.fact_extractor.empty_response";
+    private static final String METRIC_FACTS_EXTRACTED = "llm.fact_extractor.facts_extracted";
 
     private static final String SYSTEM_PROMPT = """
         You are a knowledge-extraction engine. Given an agent interaction (input and output),
         extract a list of factual statements as subject-predicate-object (SPO) triples.
-        Respond ONLY with valid JSON in this exact format — no markdown fences, no extra text:
+        Respond ONLY with valid JSON in this exact format - no markdown fences, no extra text:
         {
           "facts": [
             { "subject": "...", "predicate": "...", "object": "...", "confidence": 0.0-1.0 }
@@ -118,11 +128,25 @@ public class DefaultLLMFactExtractor implements LLMFactExtractor {
             .temperature(0.2)
             .build();
 
-        // Chain: (1) LLM call on eventloop → (2) JSON parsing on virtual thread
+        // Capture the MDC context from the event-loop thread so that correlationId and traceId
+        // (set by RequestObservationFilter) are propagated into the virtual-thread pool.
+        // Group 9 / DC-OBS-009: unified trace propagation across async LLM workflows.
+        final Map<String, String> callerMdc = MDC.getCopyOfContextMap() != null
+            ? new HashMap<>(MDC.getCopyOfContextMap())
+            : Map.of();
+
+        Promise<? extends com.ghatana.ai.llm.CompletionResult> completionPromise;
+        try {
+            completionPromise = llmGateway.complete(request);
+        } catch (Exception e) {
+            return recoverExtractionFailure(e, episode);
+        }
+
+        // Chain: (1) LLM call on eventloop -> (2) JSON parsing on virtual thread
         // Any failure in either step is caught by the error-recovery branch.
         // P1-8: Add timeout to prevent indefinite blocking on LLM calls
         // P2-16: Add token count logging and metrics
-        return Promise.ofFuture(llmGateway.complete(request)
+        return Promise.ofFuture(completionPromise
             .toCompletableFuture()
             .orTimeout(LLM_TIMEOUT.toMillis(), java.util.concurrent.TimeUnit.MILLISECONDS))
             .then(
@@ -142,19 +166,20 @@ public class DefaultLLMFactExtractor implements LLMFactExtractor {
                         metricsCollector.increment("llm.fact_extractor.tokens.completion",
                             response.getCompletionTokens(), java.util.Map.of());
                     }
-                    
-                    return Promise.ofBlocking(EXECUTOR, () -> parseFacts(response.getText(), episode));
+
+                    // Restore caller MDC on the blocking thread so trace context is preserved.
+                    return Promise.ofBlocking(EXECUTOR, () -> {
+                        if (!callerMdc.isEmpty()) {
+                            MDC.setContextMap(callerMdc);
+                        }
+                        try {
+                            return parseFacts(response.getText(), episode);
+                        } finally {
+                            MDC.clear();
+                        }
+                    });
                 },
-                e -> {
-                    if (e instanceof TimeoutException) {
-                        log.warn("[LLMFactExtractor] extraction timed out after {}ms for agentId={} turnId={}",
-                            LLM_TIMEOUT.toMillis(), episode.getAgentId(), episode.getTurnId());
-                    } else {
-                        log.warn("[LLMFactExtractor] extraction failed for agentId={} turnId={}: {}",
-                            episode.getAgentId(), episode.getTurnId(), e.getMessage());
-                    }
-                    return Promise.of(List.of());
-                }
+                e -> recoverExtractionFailure(e, episode)
             );
     }
 
@@ -211,15 +236,67 @@ public class DefaultLLMFactExtractor implements LLMFactExtractor {
                     .build());
             }
 
+            if (facts.isEmpty()) {
+                log.warn("[LLMFactExtractor] LLM returned 0 usable facts for agentId={} turnId={} "
+                         + "- response may contain malformed triples",
+                    episode.getAgentId(), episode.getTurnId());
+                if (metricsCollector != null) {
+                    metricsCollector.increment(METRIC_EMPTY_RESPONSE, 1,
+                        metricTags(episode));
+                }
+            } else {
+                if (metricsCollector != null) {
+                    metricsCollector.increment(METRIC_FACTS_EXTRACTED, facts.size(),
+                        metricTags(episode));
+                }
+            }
             log.debug("[LLMFactExtractor] extracted {} facts for agentId={} turnId={}",
                 facts.size(), episode.getAgentId(), episode.getTurnId());
             return List.copyOf(facts);
 
         } catch (Exception e) {
-            log.warn("[LLMFactExtractor] JSON parse failed for agentId={}: {}",
-                episode.getAgentId(), e.getMessage());
+            log.error("[LLMFactExtractor] JSON parse failed for agentId={} turnId={}: {} "
+                      + "- learning quality degraded",
+                episode.getAgentId(), episode.getTurnId(), e.getMessage());
+            if (metricsCollector != null) {
+                metricsCollector.increment(METRIC_PARSE_FAILURE, 1,
+                    metricTags(episode));
+            }
             return List.of();
         }
+    }
+
+    private Promise<List<EnhancedFact>> recoverExtractionFailure(Throwable throwable, EnhancedEpisode episode) {
+        Throwable failure = throwable instanceof CompletionException && throwable.getCause() != null
+            ? throwable.getCause()
+            : throwable;
+        if (failure instanceof TimeoutException) {
+            log.error("[LLMFactExtractor] extraction timed out after {}ms for agentId={} turnId={} "
+                      + "- learning quality degraded, no facts will be consolidated for this episode",
+                LLM_TIMEOUT.toMillis(), episode.getAgentId(), episode.getTurnId());
+            if (metricsCollector != null) {
+                metricsCollector.increment(METRIC_LLM_TIMEOUT, 1, metricTags(episode));
+            }
+        } else {
+            log.error("[LLMFactExtractor] extraction failed for agentId={} turnId={}: {} "
+                      + "- learning quality degraded, no facts will be consolidated for this episode",
+                episode.getAgentId(), episode.getTurnId(), failure.getMessage());
+            if (metricsCollector != null) {
+                metricsCollector.increment(METRIC_LLM_FAILURE, 1, metricTags(episode));
+            }
+        }
+        return Promise.of(List.of());
+    }
+
+    private static Map<String, String> metricTags(EnhancedEpisode episode) {
+        return Map.of(
+            "agentId", safeMetricTag(episode.getAgentId()),
+            "tenantId", safeMetricTag(episode.getTenantId())
+        );
+    }
+
+    private static String safeMetricTag(String value) {
+        return value == null || value.isBlank() ? "unknown" : value;
     }
 
     private static String textOf(JsonNode node, String field) {

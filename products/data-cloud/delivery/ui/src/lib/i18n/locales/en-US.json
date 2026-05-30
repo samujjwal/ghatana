@@ -7,6 +7,7 @@
   },
   "navigation": {
     "home": "Home",
+    "data": "Data",
     "collections": "Collections",
     "entities": "Entities",
     "events": "Events",
@@ -14,6 +15,22 @@
     "governance": "Governance",
     "analytics": "Analytics",
     "settings": "Settings"
+  },
+  "data": {
+    "title": "Data",
+    "description": "Unified data surface for collections, entities, context, and fabric",
+    "tab": {
+      "collections": "Collections",
+      "entities": "Entities",
+      "context": "Context",
+      "fabric": "Fabric"
+    },
+    "tabDescription": {
+      "collections": "Browse collections, datasets, and data sources",
+      "entities": "Browse and manage entities with schema info",
+      "context": "Collection-scoped context for schema, lineage, governance",
+      "fabric": "Four-tier data fabric topology visualizer"
+    }
   },
   "collections": {
     "title": "Collections",

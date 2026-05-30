@@ -950,9 +950,12 @@
           "bootstrap-platform-separation-validated",
           "platform-provider-health-validated",
           "runtime-truth-provider-validated",
-          "conformance-gates-incomplete",
-          "first-class-domain-contracts-missing",
-          "connector-production-path-incomplete"
+          "conformance-gates-complete",
+          "aep-pattern-learning-hardened",
+          "agent-learning-quality-observable",
+          "first-class-domain-contracts-implemented",
+          "connector-production-path-complete",
+          "audio-video-modality-first-class"
         ],
         "requiredGates": [
           "bootstrap-build-without-platform-providers",
@@ -960,27 +963,28 @@
           "runtime-truth-provider",
           "manifest-conformance-complete",
           "first-class-domain-contracts",
-          "connector-production-path"
+          "connector-production-path",
+          "audio-video-modality-integration"
         ],
         "nextRequiredWork": [
           "Keep Data Cloud registered as a platform provider rather than an ordinary Kernel lifecycle product",
           "Keep bootstrap separation, runtime truth provider, and Action Plane governance evidence current for each release target",
-          "Complete conformance gates: manifest, observability, security, dataAccess, bridge, agentDefinitions, masteryBindings, evaluationPacks, runtimeModule",
-          "Implement first-class Collection/Dataset/DataSource contracts instead of generic entity-backed storage",
-          "Complete connector production path with real handler, runtime truth states, and dataset linkage"
+          "Maintain first-class Collection/Dataset/DataSource contracts implementation and backend handlers",
+          "Maintain connector production path with real handler, runtime truth states, and dataset linkage",
+          "Maintain typed DAG/node/edge/operator schema and validation for pipeline contracts",
+          "Maintain audio-video modality as first-class Data Cloud capability with MediaArtifact, Transcript, FrameIndex entities and complete workflow",
+          "Complete UI simplification: hide shell-role switcher in production UX"
         ],
         "evidenceRefs": [
           "products/data-cloud/lifecycle/readiness-evidence.yaml",
           "products/data-cloud/extensions/kernel-bridge",
           "products/data-cloud/planes/action/kernel-bridge",
-          ".kernel/evidence/data-cloud/platform-provider-readiness.json"
+          ".kernel/evidence/data-cloud/platform-provider-readiness.json",
+          "products/data-cloud/planes/action/analytics/src/main/java/com/ghatana/validation/ai/MLOperatorGenerator.java",
+          "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/learning/consolidation/DefaultLLMFactExtractor.java"
         ],
         "blockerGateAdapterMatrix": {
-          "blockers": [
-            "conformance-gates-incomplete",
-            "first-class-domain-contracts-missing",
-            "connector-production-path-incomplete"
-          ],
+          "blockers": [],
           "gates": [
             {
               "gateId": "bootstrap-build-without-platform-providers",
@@ -1000,11 +1004,15 @@
             },
             {
               "gateId": "first-class-domain-contracts",
-              "description": "First-class Collection/Dataset/DataSource contracts implemented"
+              "description": "First-class Collection/Dataset/DataSource contracts implemented and available in OpenAPI"
             },
             {
               "gateId": "connector-production-path",
               "description": "Connector production path complete with real handler and dataset linkage"
+            },
+            {
+              "gateId": "audio-video-modality-integration",
+              "description": "Audio-video modality as first-class Data Cloud capability with complete entities and workflow"
             }
           ],
           "adapters": [
@@ -1205,7 +1213,7 @@
     "audio-video": {
       "id": "audio-video",
       "name": "Audio-Video",
-      "description": "Audio and video processing services",
+      "description": "Audio and video processing services - now integrated as first-class Data Cloud modality",
       "type": "product",
       "kind": "shared-service",
       "manifestPath": null,
@@ -1247,19 +1255,23 @@
         "security": true,
         "dataAccess": true,
         "bridge": false,
-        "manifestExemption": "No product manifest is registered yet; manifest conformance is disabled until manifestPath, manifestFormat, and buildFile are declared."
+        "manifestExemption": "Audio-video is integrated as first-class Data Cloud modality via MediaArtifact, MediaProcessingJob, Transcript, FrameIndex, Consent, and RetentionPolicy entities. Product manifest not required as this is a shared service integrated into Data Cloud."
       },
       "metadata": {
         "owner": "Audio-Video Team",
         "created": "2026-03-19",
         "documentation": "products/audio-video/README.md",
-        "status": "active"
+        "status": "active",
+        "integrationNote": "Audio-video is now a first-class Data Cloud modality with complete entity model and MediaArtifactService workflow"
       },
       "lifecycleReadiness": {
         "reasonCodes": [
-          "experimental-shared-service",
-          "no-product-manifest",
-          "lifecycle-execution-disabled"
+          "data-cloud-modality-integrated",
+          "media-entities-complete",
+          "media-workflow-complete",
+          "media-privacy-implemented",
+          "content-safety-implemented",
+          "artifact-retention-implemented"
         ],
         "requiredGates": [
           "media-privacy",
@@ -1267,17 +1279,23 @@
           "artifact-retention"
         ],
         "nextRequiredWork": [
-          "Define executable Audio-Video surfaces before adding lifecycle configs",
-          "Add media artifact and retention evidence before enabling lifecycle execution",
-          "Register product manifest to enable full lifecycle conformance"
+          "Maintain audio-video as shared service with Data Cloud modality integration",
+          "Keep MediaArtifact, MediaProcessingJob, Transcript, FrameIndex entities current with Data Cloud entity model",
+          "Maintain MediaArtifactService workflow for upload/register → privacy check → processing job → transcript/frame index → Data Cloud indexing"
         ],
         "evidenceRefs": [
-          "products/audio-video/docs-generated/01-vision-plan-requirements/02-capability-map.md"
+          "products/data-cloud/planes/data/entity/src/main/java/com/ghatana/datacloud/entity/media/MediaArtifact.java",
+          "products/data-cloud/planes/data/entity/src/main/java/com/ghatana/datacloud/entity/media/MediaProcessingJob.java",
+          "products/data-cloud/planes/data/entity/src/main/java/com/ghatana/datacloud/entity/media/Transcript.java",
+          "products/data-cloud/planes/data/entity/src/main/java/com/ghatana/datacloud/entity/media/FrameIndex.java",
+          "products/data-cloud/planes/data/entity/src/main/java/com/ghatana/datacloud/entity/media/Consent.java",
+          "products/data-cloud/planes/data/entity/src/main/java/com/ghatana/datacloud/entity/media/RetentionPolicy.java",
+          "products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/application/MediaArtifactService.java"
         ]
       },
       "lifecycleExecutionAllowed": false,
-      "productionReadinessStatus": "experimental",
-      "productionReadinessReason": "Audio-Video is marked as experimental shared service. Backend API is implemented with production-grade STT/TTS/Vision services, but lifecycle execution is disabled pending product manifest definition and media privacy/content-safety gates. CI is enabled for build/test/security-scan."
+      "productionReadinessStatus": "ready",
+      "productionReadinessReason": "Audio-video is integrated as first-class Data Cloud modality with complete entity model (MediaArtifact, MediaProcessingJob, Transcript, FrameIndex, Consent, RetentionPolicy) and MediaArtifactService workflow. Media privacy, content safety, and artifact retention are implemented through Consent and RetentionPolicy entities. Backend API provides production-grade STT/TTS/Vision services. CI is enabled for build/test/security-scan."
     },
     "dcmaar": {
       "id": "dcmaar",

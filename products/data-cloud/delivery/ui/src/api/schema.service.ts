@@ -54,9 +54,38 @@ class SchemaService {
     return typeof payload === 'object' && payload !== null && 'id' in payload && 'name' in payload;
   }
 
+  private parseMetaField(payload: unknown, index: number, collectionId: string): MetaField {
+    if (typeof payload !== 'object' || payload === null) {
+      throw new Error(`Collection '${collectionId}' schema field at index ${index} must be an object`);
+    }
+    const field = payload as Record<string, unknown>;
+    if (typeof field.id !== 'string' || field.id.trim() === '') {
+      throw new Error(`Collection '${collectionId}' schema field at index ${index} is missing id`);
+    }
+    if (typeof field.name !== 'string' || field.name.trim() === '') {
+      throw new Error(`Collection '${collectionId}' schema field '${field.id}' is missing name`);
+    }
+    if (typeof field.type !== 'string' || field.type.trim() === '') {
+      throw new Error(`Collection '${collectionId}' schema field '${field.id}' is missing type`);
+    }
+
+    return {
+      id: field.id,
+      name: field.name,
+      type: field.type,
+      required: typeof field.required === 'boolean' ? field.required : undefined,
+      description: typeof field.description === 'string' ? field.description : undefined,
+      collectionId: typeof field.collectionId === 'string' ? field.collectionId : undefined,
+      defaultValue: field.defaultValue,
+      validations: typeof field.validations === 'object' && field.validations !== null
+        ? (field.validations as Record<string, unknown>)
+        : undefined,
+    };
+  }
+
   private mapEntityToSchema(tenantId: string, entity: BackendCollectionEntity): MetaCollection {
     const fields = Array.isArray(entity.data.schema?.fields)
-      ? (entity.data.schema.fields as MetaField[])
+      ? entity.data.schema.fields.map((field, index) => this.parseMetaField(field, index, entity.id))
       : [];
 
     return {

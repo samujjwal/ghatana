@@ -61,6 +61,8 @@ const enTranslations: TranslationTree = {
     sectionPreview: 'Preview',
     viewModePresetTitle: 'View mode preset',
     viewModePresetDescription: 'View mode presets tune UI focus only. Backend permissions are always enforced independently.',
+    devRoleSwitcherTitle: 'Dev: Shell role override',
+    devRoleSwitcherNote: 'Dev-only. Not visible in production.',
     footerProduct: 'Data Cloud • Ghatana Platform',
   },
   // Media Artifacts
