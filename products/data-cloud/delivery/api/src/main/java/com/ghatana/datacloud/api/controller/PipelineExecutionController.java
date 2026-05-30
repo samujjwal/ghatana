@@ -112,17 +112,18 @@ public class PipelineExecutionController {
         HttpMethod method = request.getMethod();
 
         try {
-                if (method == HttpMethod.POST && (path.matches("/api/v1/pipelines/[a-f0-9-]+/execute")
-                    || path.matches("/api/v1/action/pipelines/[a-f0-9-]+/execute"))) {
+                if (method == HttpMethod.POST && (path.matches("/api/v1/action/pipelines/[a-f0-9-]+/execute")
+                    || path.matches("/api/v1/pipelines/[a-f0-9-]+/execute"))) {
                 UUID workflowId = extractWorkflowIdFromExecutePath(path);
-                return triggerExecution(request, tenantId, workflowId);
-                } else if (method == HttpMethod.GET && (path.matches("/api/v1/pipelines/[a-f0-9-]+/executions")
-                    || path.matches("/api/v1/action/pipelines/[a-f0-9-]+/executions"))) {
+                return triggerExecution(request, tenantId, workflowId, path);
+                } else if (method == HttpMethod.GET && (path.matches("/api/v1/action/pipelines/[a-f0-9-]+/executions")
+                    || path.matches("/api/v1/pipelines/[a-f0-9-]+/executions"))) {
                 UUID workflowId = extractWorkflowIdFromExecutionsPath(path);
-                return listExecutions(request, tenantId, workflowId);
-            } else if (method == HttpMethod.GET && path.matches("/api/v1/pipelines/executions/[a-f0-9-]+")) {
+                return listExecutions(request, tenantId, workflowId, path);
+            } else if (method == HttpMethod.GET && (path.matches("/api/v1/action/pipelines/executions/[a-f0-9-]+")
+                || path.matches("/api/v1/pipelines/executions/[a-f0-9-]+"))) {
                 UUID executionId = extractExecutionIdFromPath(path);
-                return getExecution(tenantId, executionId);
+                return getExecution(tenantId, executionId, path);
             } else {
                 metrics.incrementCounter("controller.pipeline_execution.error",
                         "error_type", "NOT_FOUND");
@@ -170,7 +171,8 @@ public class PipelineExecutionController {
     private Promise<HttpResponse> triggerExecution(
             HttpRequest request,
             String tenantId,
-            UUID workflowId) {
+            UUID workflowId,
+            String requestPath) {
 
         String userId = extractUserId(request);
         if (userId == null || userId.isBlank()) {
@@ -214,6 +216,8 @@ public class PipelineExecutionController {
                     .json(body)
                     .build());
                 })
+                .map(response -> maybeAddLegacyDeprecationHeaders(response, requestPath,
+                    "/api/v1/action/pipelines/" + workflowId + "/execute"))
                 .whenException(ex -> {
                 if (ex instanceof IllegalArgumentException) {
                     metrics.incrementCounter("controller.pipeline_execution.trigger.not_found",
@@ -245,7 +249,8 @@ public class PipelineExecutionController {
     private Promise<HttpResponse> listExecutions(
             HttpRequest request,
             String tenantId,
-            UUID workflowId) {
+            UUID workflowId,
+            String requestPath) {
 
         int limit = parseIntParam(request, "limit", DEFAULT_PAGE_SIZE, 1, MAX_PAGE_SIZE);
         int offset = parseIntParam(request, "offset", 0, 0, Integer.MAX_VALUE);
@@ -270,6 +275,8 @@ public class PipelineExecutionController {
                             .json(body)
                             .build());
                 })
+                .map(response -> maybeAddLegacyDeprecationHeaders(response, requestPath,
+                    "/api/v1/action/pipelines/" + workflowId + "/executions"))
                 .whenException(ex -> {
                     metrics.incrementCounter("controller.pipeline_execution.list.error",
                             "tenant", tenantId,
@@ -288,7 +295,7 @@ public class PipelineExecutionController {
      * @param executionId execution to retrieve
      * @return 200 OK with execution detail, or 404 if not found
      */
-    private Promise<HttpResponse> getExecution(String tenantId, UUID executionId) {
+    private Promise<HttpResponse> getExecution(String tenantId, UUID executionId, String requestPath) {
         metrics.incrementCounter("controller.pipeline_execution.get.attempt",
                 "tenant", tenantId);
 
@@ -308,6 +315,8 @@ public class PipelineExecutionController {
                             .json(toDetailMap(executionOpt.get()))
                             .build());
                 })
+                .map(response -> maybeAddLegacyDeprecationHeaders(response, requestPath,
+                    "/api/v1/action/pipelines/executions/" + executionId))
                 .whenException(ex -> {
                     metrics.incrementCounter("controller.pipeline_execution.get.error",
                             "tenant", tenantId,
@@ -427,8 +436,32 @@ public class PipelineExecutionController {
     }
 
     private UUID extractExecutionIdFromPath(String path) {
-        // Pattern: /api/v1/pipelines/executions/{executionId}
+        // Patterns:
+        // - /api/v1/pipelines/executions/{executionId}
+        // - /api/v1/action/pipelines/executions/{executionId}
         String[] segments = path.split("/");
-        return UUID.fromString(segments[5]);
+        int executionIdIndex = "action".equals(segments[3]) ? 6 : 5;
+        return UUID.fromString(segments[executionIdIndex]);
+    }
+
+    private HttpResponse maybeAddLegacyDeprecationHeaders(HttpResponse response, String requestPath, String successorPath) {
+        if (!requestPath.startsWith("/api/v1/pipelines/")) {
+            return response;
+        }
+
+        HttpResponse.Builder builder = HttpResponse.ofCode(response.getCode())
+            .withBody(response.getBody());
+        copyHeaderIfPresent(response, builder, HttpHeaders.CONTENT_TYPE);
+        builder.withHeader(HttpHeaders.of("Deprecation"), "true");
+        builder.withHeader(HttpHeaders.of("Sunset"), "Thu, 31 Dec 2026 00:00:00 GMT");
+        builder.withHeader(HttpHeaders.of("Link"), "<" + successorPath + ">; rel=\"successor-version\"");
+        return builder.build();
+    }
+
+    private void copyHeaderIfPresent(HttpResponse response, HttpResponse.Builder builder, io.activej.http.HttpHeader header) {
+        String value = response.getHeader(header);
+        if (value != null && !value.isBlank()) {
+            builder.withHeader(header, value);
+        }
     }
 }

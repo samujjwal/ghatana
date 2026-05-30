@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-30T04:11:35.161Z",
+  "generatedAt": "2026-05-30T04:22:57.139Z",
   "status": "passed",
   "summary": {
     "requiredTaskCount": 63,
@@ -13,7 +13,7 @@
     "violationCount": 0
   },
   "incrementalRoadmap": {
-    "generatedAt": "2026-05-30T04:11:35.162Z",
+    "generatedAt": "2026-05-30T04:22:57.140Z",
     "targetMaturityDepth": 5,
     "remainingTaskCount": 16,
     "deferredTaskIds": [],
@@ -310,8 +310,11 @@
       "title": "Group 1: Canonical Action Plane namespace in AEP server",
       "whereRefs": [
         "/api/v1/action/*",
+        "/api/v1/*",
         "./gradlew :products:data-cloud:planes:action:server:compileJava",
-        "./gradlew :products:data-cloud:planes:action:server:test --tests \"com.ghatana.aep.server.http.AepHttpServerBuilderTest\""
+        "./gradlew :products:data-cloud:planes:action:server:test --tests \"com.ghatana.aep.server.http.AepHttpServerBuilderTest\"",
+        "./gradlew :products:data-cloud:planes:action:server:test --tests \"com.ghatana.aep.server.http.controllers.AgentControllerTest\"",
+        "./gradlew :products:data-cloud:planes:action:server:test --tests \"com.ghatana.aep.server.http.controllers.PatternControllerTest\""
       ]
     },
     {
@@ -400,7 +403,7 @@
       "whereRefs": [
         "PipelineExecutionController",
         "/api/v1/action/pipelines/...",
-        "./gradlew :products:data-cloud:delivery:api:compileJava"
+        "./gradlew :products:data-cloud:delivery:api:test --tests \"com.ghatana.datacloud.api.controller.PipelineExecutionControllerTest\""
       ]
     },
     {
@@ -443,8 +446,6 @@
       "id": 11,
       "title": "Group 2: Route-level pipeline write authorization in Action Plane",
       "whereRefs": [
-        "PipelineController",
-        "POST/PUT/DELETE",
         "./gradlew :products:data-cloud:planes:action:server:test --tests \"com.ghatana.aep.server.http.controllers.PipelineControllerTest\""
       ]
     },
@@ -472,7 +473,6 @@
       "id": 13,
       "title": "Group 3: Durable runtime fail-closed expansion",
       "whereRefs": [
-        "AEP_ALLOW_IN_MEMORY_SESSION",
         "session-store",
         "./gradlew :products:data-cloud:planes:action:server:test --tests \"com.ghatana.aep.server.http.AepHttpServerBuilderTest\""
       ]
@@ -487,10 +487,6 @@
       "id": 14,
       "title": "Group 7: Media modality API baseline in delivery API",
       "whereRefs": [
-        "withMediaArtifactRoutes(...)",
-        "MediaArtifactController",
-        "DataCloudHttpServer",
-        "consentStatus",
         "./gradlew :products:data-cloud:delivery:launcher:compileJava",
         "./gradlew :products:data-cloud:delivery:api:test --tests \"com.ghatana.datacloud.api.controller.MediaArtifactControllerTest\"",
         "node products/data-cloud/scripts/generate-route-manifest.mjs --check"
@@ -520,14 +516,6 @@
       "id": 16,
       "title": "Group 6 (adaptive lifecycle)",
       "whereRefs": [
-        "PatternController",
-        "/patterns/:patternId/lifecycle/:action",
-        "/patterns/:patternId/feedback",
-        "AgentController",
-        "/agents/:agentId/lifecycle/:action",
-        "/agents/:agentId/review",
-        "/api/v1/action/*",
-        "AepHttpServer",
         "./gradlew :products:data-cloud:planes:action:server:test --tests \"com.ghatana.aep.server.http.controllers.PatternControllerTest\"",
         "./gradlew :products:data-cloud:planes:action:server:test --tests \"com.ghatana.aep.server.http.controllers.AgentControllerTest\"",
         "./gradlew :products:data-cloud:planes:action:server:test --tests \"com.ghatana.aep.server.http.AepHttpServerBuilderTest\""

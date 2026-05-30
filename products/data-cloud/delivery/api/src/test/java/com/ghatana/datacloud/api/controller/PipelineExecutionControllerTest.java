@@ -91,6 +91,37 @@ class PipelineExecutionControllerTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("returns deprecation headers for legacy pipeline execute route")
+    void returnsDeprecationHeadersForLegacyPipelineExecuteRoute() {
+        UUID workflowId = UUID.randomUUID();
+        WorkflowExecution execution = WorkflowExecution.builder()
+            .id(UUID.randomUUID())
+            .tenantId("tenant-a")
+            .workflowId(workflowId)
+            .status(WorkflowExecution.Status.RUNNING)
+            .startedBy("user-a")
+            .startedAt(Instant.now())
+            .build();
+
+        when(workflowService.executeWorkflow(eq("tenant-a"), eq(workflowId), eq("user-a"), anyMap()))
+            .thenReturn(Promise.of(execution));
+
+        HttpRequest request = mockExecuteRequest(
+            "/api/v1/pipelines/" + workflowId + "/execute",
+            "tenant-a",
+            "user-a",
+            "{}"
+        );
+
+        HttpResponse response = runPromise(() -> controller.handle(request));
+
+        assertThat(response.getCode()).isEqualTo(202);
+        assertThat(response.getHeader(HttpHeaders.of("Deprecation"))).isEqualTo("true");
+        assertThat(response.getHeader(HttpHeaders.of("Link")))
+            .contains("/api/v1/action/pipelines/" + workflowId + "/execute");
+    }
+
+    @Test
     @DisplayName("returns 401 when X-User-ID header is missing")
     void returnsUnauthorizedWhenUserHeaderMissing() {
         UUID workflowId = UUID.randomUUID();

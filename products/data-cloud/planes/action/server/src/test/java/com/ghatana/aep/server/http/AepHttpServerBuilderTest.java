@@ -261,6 +261,84 @@ class AepHttpServerBuilderTest {
     }
 
     @Test
+    void shouldFailClosedInProductionWhenInMemoryGovernanceFallbackIsUsed() {
+        AepEngine mockEngine = mock(AepEngine.class);
+        EventCloud mockEventCloud = mock(EventCloud.class);
+        when(mockEngine.eventCloud()).thenReturn(mockEventCloud);
+
+        String previousProfile = System.getProperty(AEP_PROFILE);
+        String previousRunHistory = System.getProperty(ALLOW_IN_MEMORY_RUN_HISTORY);
+        String previousConsent = System.getProperty(ALLOW_IN_MEMORY_CONSENT);
+        String previousGovernance = System.getProperty(ALLOW_IN_MEMORY_GOVERNANCE);
+        String previousIdempotency = System.getProperty(ALLOW_IN_MEMORY_IDEMPOTENCY);
+        String previousSession = System.getProperty(ALLOW_IN_MEMORY_SESSION);
+
+        try {
+            System.setProperty(AEP_PROFILE, "production");
+            System.setProperty(ALLOW_IN_MEMORY_RUN_HISTORY, "true");
+            System.setProperty(ALLOW_IN_MEMORY_CONSENT, "true");
+            System.clearProperty(ALLOW_IN_MEMORY_GOVERNANCE);
+            System.setProperty(ALLOW_IN_MEMORY_IDEMPOTENCY, "true");
+            System.setProperty(ALLOW_IN_MEMORY_SESSION, "true");
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+                AepHttpServer.builder()
+                    .engine(mockEngine)
+                    .port(8080)
+                    .build()
+            );
+
+            assertTrue(exception.getMessage().contains("Kill-switch"));
+        } finally {
+            restoreSystemProperty(AEP_PROFILE, previousProfile);
+            restoreSystemProperty(ALLOW_IN_MEMORY_RUN_HISTORY, previousRunHistory);
+            restoreSystemProperty(ALLOW_IN_MEMORY_CONSENT, previousConsent);
+            restoreSystemProperty(ALLOW_IN_MEMORY_GOVERNANCE, previousGovernance);
+            restoreSystemProperty(ALLOW_IN_MEMORY_IDEMPOTENCY, previousIdempotency);
+            restoreSystemProperty(ALLOW_IN_MEMORY_SESSION, previousSession);
+        }
+    }
+
+    @Test
+    void shouldFailClosedInProductionWhenInMemoryIdempotencyFallbackIsUsed() {
+        AepEngine mockEngine = mock(AepEngine.class);
+        EventCloud mockEventCloud = mock(EventCloud.class);
+        when(mockEngine.eventCloud()).thenReturn(mockEventCloud);
+
+        String previousProfile = System.getProperty(AEP_PROFILE);
+        String previousRunHistory = System.getProperty(ALLOW_IN_MEMORY_RUN_HISTORY);
+        String previousConsent = System.getProperty(ALLOW_IN_MEMORY_CONSENT);
+        String previousGovernance = System.getProperty(ALLOW_IN_MEMORY_GOVERNANCE);
+        String previousIdempotency = System.getProperty(ALLOW_IN_MEMORY_IDEMPOTENCY);
+        String previousSession = System.getProperty(ALLOW_IN_MEMORY_SESSION);
+
+        try {
+            System.setProperty(AEP_PROFILE, "production");
+            System.setProperty(ALLOW_IN_MEMORY_RUN_HISTORY, "true");
+            System.setProperty(ALLOW_IN_MEMORY_CONSENT, "true");
+            System.setProperty(ALLOW_IN_MEMORY_GOVERNANCE, "true");
+            System.clearProperty(ALLOW_IN_MEMORY_IDEMPOTENCY);
+            System.setProperty(ALLOW_IN_MEMORY_SESSION, "true");
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+                AepHttpServer.builder()
+                    .engine(mockEngine)
+                    .port(8080)
+                    .build()
+            );
+
+            assertTrue(exception.getMessage().contains("idempotency"));
+        } finally {
+            restoreSystemProperty(AEP_PROFILE, previousProfile);
+            restoreSystemProperty(ALLOW_IN_MEMORY_RUN_HISTORY, previousRunHistory);
+            restoreSystemProperty(ALLOW_IN_MEMORY_CONSENT, previousConsent);
+            restoreSystemProperty(ALLOW_IN_MEMORY_GOVERNANCE, previousGovernance);
+            restoreSystemProperty(ALLOW_IN_MEMORY_IDEMPOTENCY, previousIdempotency);
+            restoreSystemProperty(ALLOW_IN_MEMORY_SESSION, previousSession);
+        }
+    }
+
+    @Test
     void shouldHaveImmutableBuilderState() { 
         // Arrange
         AepHttpServer.Builder builder = AepHttpServer.builder() 
