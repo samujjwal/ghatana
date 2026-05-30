@@ -22,6 +22,8 @@ vi.mock('../../api/authApi', () => ({
 
 vi.mock('../../i18n/phrI18n', () => ({
   t: (key: string) => key,
+  resolvePhrLocale: () => 'en' as const,
+  setPhrLocale: vi.fn(),
 }));
 
 const mockClearSession = vi.fn();

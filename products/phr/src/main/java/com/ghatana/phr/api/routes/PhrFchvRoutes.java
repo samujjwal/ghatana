@@ -57,7 +57,7 @@ public final class PhrFchvRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         // Use policy evaluator for PHI access decision (POL-001)
@@ -92,7 +92,7 @@ public final class PhrFchvRoutes {
                         "pendingVitals", false
                     )
                 )).then(patients -> PhrRouteSupport.jsonResponse(200, Map.of(
-                        "fchvId", context.principalId(, correlationId),
+                        "fchvId", context.principalId(),
                         "tenantId", context.tenantId(),
                         "communityAssignment", Map.of(
                             "village", "Sindhuli",
@@ -123,7 +123,7 @@ public final class PhrFchvRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         // Use policy evaluator for PHI access decision (POL-001)
@@ -155,7 +155,7 @@ public final class PhrFchvRoutes {
                         "lastContact", "2026-05-22"
                     )
                 )).then(patients -> PhrRouteSupport.jsonResponse(200, Map.of(
-                        "fchvId", context.principalId(, correlationId),
+                        "fchvId", context.principalId(),
                         "tenantId", context.tenantId(),
                         "items", patients,
                         "count", patients.size()
@@ -170,7 +170,7 @@ public final class PhrFchvRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         // Use policy evaluator for PHI access decision (POL-001)
@@ -196,7 +196,7 @@ public final class PhrFchvRoutes {
 
                             return PhrRouteSupport.jsonResponse(201, Map.of(
                                 "patientId", patientId,
-                                "registeredBy", context.principalId(, correlationId),
+                                "registeredBy", context.principalId(),
                                 "tenantId", context.tenantId(),
                                 "status", "REGISTERED",
                                 "registeredAt", java.time.Instant.now().toString()
@@ -215,7 +215,7 @@ public final class PhrFchvRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         String patientId = request.getPathParameter("patientId");
@@ -249,7 +249,7 @@ public final class PhrFchvRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         String patientId = request.getPathParameter("patientId");
@@ -282,7 +282,7 @@ public final class PhrFchvRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         // Use policy evaluator for PHI access decision (POL-001)
@@ -299,7 +299,7 @@ public final class PhrFchvRoutes {
                 }
 
                 return PhrRouteSupport.jsonResponse(200, Map.of(
-                    "fchvId", context.principalId(, correlationId),
+                    "fchvId", context.principalId(),
                     "tenantId", context.tenantId(),
                     "syncStatus", "SYNCED",
                     "pendingOperations", 0,
@@ -315,7 +315,7 @@ public final class PhrFchvRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         return policyEvaluator.canAccessPhiResourceAsync(
@@ -337,7 +337,7 @@ public final class PhrFchvRoutes {
                             var node = PhrRouteSupport.JSON.readTree(json);
 
                             return PhrRouteSupport.jsonResponse(200, Map.of(
-                                "fchvId", context.principalId(, correlationId),
+                                "fchvId", context.principalId(),
                                 "tenantId", context.tenantId(),
                                 "syncStatus", "COMPLETED",
                                 "operationsProcessed", 0,

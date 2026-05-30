@@ -21,9 +21,11 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 
@@ -51,6 +53,7 @@ public class AgentController {
     private static final String REGISTRY_STORAGE_UNCONFIGURED = "unconfigured";
     private static final String MEMORY_PERSISTENCE_DATACLOUD = "datacloud";
     private static final String MEMORY_PERSISTENCE_UNAVAILABLE = "unavailable";
+    private static final Set<String> TERMINAL_AGENT_STATUSES = Set.of("REJECTED", "RETIRED", "DELETED", "BLOCKED");
 
     // P1-9: Security scan patterns for detecting suspicious agent definitions
     private static final Pattern SUSPICIOUS_CODE_PATTERN = Pattern.compile(
@@ -169,15 +172,15 @@ public class AgentController {
                 "Agent registry not available — DataCloudClient not configured"));
         }
 
+        String requestTenantId = HttpHelper.resolveTenantId(request);
+
         return request.loadBody().then(buf -> {
             try {
                 String bodyStr = buf.getString(StandardCharsets.UTF_8);
                 Map<String, Object> reqBody = bodyStr.isBlank()
                     ? Map.of()
                     : HttpHelper.mapper().readValue(bodyStr, Map.class);
-                String tenantId = reqBody.containsKey("tenantId")
-                    ? (String) reqBody.get("tenantId")
-                    : HttpHelper.resolveTenantId(request);
+                String tenantId = resolveBoundTenantId(requestTenantId, reqBody.get("tenantId"));
 
                 // P1-9: Perform security scan before registration
                 List<String> securityIssues = performSecurityScan(reqBody);
@@ -217,6 +220,9 @@ public class AgentController {
                         return Promise.of(HttpHelper.errorResponse(500,
                             "Failed to register agent: " + e.getMessage()));
                     });
+            } catch (SecurityException e) {
+                return Promise.of(HttpHelper.errorResponse(403,
+                    "Forbidden: " + e.getMessage()));
             } catch (Exception e) {
                 return Promise.of(HttpHelper.errorResponse(400,
                     "Invalid request: " + e.getMessage()));
@@ -287,15 +293,18 @@ public class AgentController {
             return Promise.of(HttpHelper.errorResponse(400,
                 "agentId path parameter is required"));
         }
+        if (agentStore == null) {
+            return Promise.of(HttpHelper.errorResponse(503,
+                "Agent execution requires DataCloud-backed registry"));
+        }
+        String requestTenantId = HttpHelper.resolveTenantId(request);
         return request.loadBody().then(buf -> {
             try {
                 String bodyStr = buf.getString(StandardCharsets.UTF_8);
                 Map<String, Object> reqBody = bodyStr.isBlank()
                     ? Map.of()
                     : HttpHelper.mapper().readValue(bodyStr, Map.class);
-                String tenantId = reqBody.containsKey("tenantId")
-                    ? (String) reqBody.get("tenantId")
-                    : HttpHelper.resolveTenantId(request);
+                String tenantId = resolveBoundTenantId(requestTenantId, reqBody.get("tenantId"));
                 Object rawInput = reqBody.get("input");
                 if (rawInput != null && !(rawInput instanceof Map<?, ?>)) {
                     recordAgentExecutionFailure(
@@ -320,33 +329,103 @@ public class AgentController {
                     ? (Map<String, Object>) rawInput
                     : Map.of();
 
-                Map<String, Object> payload = new java.util.HashMap<>(input);
-                payload.put("agentId", agentId);
-                payload.put("tenantId", tenantId);
-
-                AepEngine.Event event = new AepEngine.Event(
-                    "agent.invocation",
-                    Map.copyOf(payload),
-                    Map.of("agentId", agentId),
-                    Instant.now()
-                );
-                return engine.process(tenantId, event)
-                    .map(result -> {
-                        recordAgentExecutionSuccess(tenantId, agentId, startedAt);
-                        return HttpHelper.jsonResponse(Map.of(
-                            "agentId", agentId,
-                            "tenantId", tenantId,
-                            "eventId", result.eventId(),
-                            "success", result.success(),
-                            "detections", result.detections().size(),
-                            "timestamp", Instant.now().toString()
+                return agentStore.findById(tenantId, agentId).then(agentOpt -> {
+                    if (agentOpt.isEmpty()) {
+                        recordAgentExecutionFailure(
+                            tenantId,
+                            agentId,
+                            "AGENT_NOT_REGISTERED",
+                            "permanent",
+                            false,
+                            startedAt);
+                        return Promise.of(HttpHelper.errorResponse(
+                            404,
+                            "Agent not found: " + agentId,
+                            Map.of(
+                                "errorCode", "AGENT_NOT_REGISTERED",
+                                "category", "permanent",
+                                "retryable", false
+                            )
                         ));
-                    })
-                    .then(Promise::of, e -> {
-                        log.error("[agents] execute failed for agentId={}: {}",
-                            agentId, e.getMessage(), e);
-                        return Promise.of(toAgentExecutionErrorResponse(e, agentId, tenantId, startedAt));
-                    });
+                    }
+
+                    Map<String, Object> agent = agentOpt.get().data();
+                    if (!isExecutable(agent)) {
+                        recordAgentExecutionFailure(
+                            tenantId,
+                            agentId,
+                            "AGENT_NOT_EXECUTABLE",
+                            "permanent",
+                            false,
+                            startedAt);
+                        return Promise.of(HttpHelper.errorResponse(
+                            409,
+                            "Agent is not executable: " + agentId,
+                            Map.of(
+                                "errorCode", "AGENT_NOT_EXECUTABLE",
+                                "category", "permanent",
+                                "retryable", false
+                            )
+                        ));
+                    }
+
+                    if (!isApprovedForExecution(agent)) {
+                        recordAgentExecutionFailure(
+                            tenantId,
+                            agentId,
+                            "AGENT_NOT_APPROVED",
+                            "permanent",
+                            false,
+                            startedAt);
+                        return Promise.of(HttpHelper.errorResponse(
+                            403,
+                            "Agent is not approved for execution: " + agentId,
+                            Map.of(
+                                "errorCode", "AGENT_NOT_APPROVED",
+                                "category", "permanent",
+                                "retryable", false
+                            )
+                        ));
+                    }
+
+                    Map<String, Object> payload = new java.util.HashMap<>(input);
+                    payload.put("agentId", agentId);
+                    payload.put("tenantId", tenantId);
+
+                    AepEngine.Event event = new AepEngine.Event(
+                        "agent.invocation",
+                        Map.copyOf(payload),
+                        Map.of("agentId", agentId),
+                        Instant.now()
+                    );
+                    return engine.process(tenantId, event)
+                        .map(result -> {
+                            recordAgentExecutionSuccess(tenantId, agentId, startedAt);
+                            return HttpHelper.jsonResponse(Map.of(
+                                "agentId", agentId,
+                                "tenantId", tenantId,
+                                "eventId", result.eventId(),
+                                "success", result.success(),
+                                "detections", result.detections().size(),
+                                "timestamp", Instant.now().toString()
+                            ));
+                        })
+                        .then(Promise::of, e -> {
+                            log.error("[agents] execute failed for agentId={}: {}",
+                                agentId, e.getMessage(), e);
+                            return Promise.of(toAgentExecutionErrorResponse(e, agentId, tenantId, startedAt));
+                        });
+                });
+            } catch (SecurityException e) {
+                recordAgentExecutionFailure(
+                    requestTenantId,
+                    agentId,
+                    "TENANT_OVERRIDE_FORBIDDEN",
+                    "permanent",
+                    false,
+                    startedAt);
+                return Promise.of(HttpHelper.errorResponse(403,
+                    "Forbidden: " + e.getMessage()));
             } catch (Exception e) {
                 recordAgentExecutionFailure(
                     "unknown",
@@ -477,6 +556,41 @@ public class AgentController {
             return throwable.getClass().getSimpleName();
         }
         return message;
+    }
+
+    private static String resolveBoundTenantId(String requestTenantId, @Nullable Object bodyTenantRaw) {
+        String resolvedRequestTenant = requestTenantId == null ? "" : requestTenantId.trim();
+        String bodyTenant = String.valueOf(bodyTenantRaw).trim();
+        if ("default".equalsIgnoreCase(resolvedRequestTenant) && !bodyTenant.isBlank()
+            && !"null".equalsIgnoreCase(bodyTenant)) {
+            return bodyTenant;
+        }
+        if (resolvedRequestTenant.isBlank()) {
+            if (!bodyTenant.isBlank() && !"null".equalsIgnoreCase(bodyTenant)) {
+                return bodyTenant;
+            }
+            throw new IllegalArgumentException("Tenant context is required");
+        }
+        if (bodyTenantRaw == null || bodyTenant.isBlank() || "null".equalsIgnoreCase(bodyTenant)) {
+            return resolvedRequestTenant;
+        }
+        if (!resolvedRequestTenant.equals(bodyTenant)) {
+            throw new SecurityException("tenantId in request body cannot override authenticated tenant context");
+        }
+        return resolvedRequestTenant;
+    }
+
+    private static boolean isApprovedForExecution(Map<String, Object> agentData) {
+        Object approved = agentData.get("approved");
+        if (approved instanceof Boolean approvedFlag && !approvedFlag) {
+            return false;
+        }
+        Object status = agentData.get("status");
+        if (!(status instanceof String statusValue)) {
+            return true;
+        }
+        String normalized = statusValue.trim().toUpperCase(Locale.ROOT);
+        return !List.of("PENDING", "REJECTED", "BLOCKED", "DRAFT").contains(normalized);
     }
 
     public Promise<HttpResponse> handleGetAgentMemory(HttpRequest request) {
@@ -695,6 +809,157 @@ public class AgentController {
             });
     }
 
+    @SuppressWarnings("unchecked")
+    public Promise<HttpResponse> handleLifecycleTransition(HttpRequest request) {
+        String agentId = request.getPathParameter("agentId");
+        if (agentId == null || agentId.isBlank()) {
+            return Promise.of(HttpHelper.errorResponse(400,
+                "agentId path parameter is required"));
+        }
+        if (agentStore == null) {
+            return Promise.of(HttpHelper.errorResponse(503,
+                "Agent registry not available — DataCloudClient not configured"));
+        }
+
+        String tenantId = HttpHelper.resolveTenantId(request);
+        String action = request.getPathParameter("action");
+        if (action == null || action.isBlank()) {
+            action = request.getQueryParameter("action");
+        }
+        if (action == null || action.isBlank()) {
+            return Promise.of(HttpHelper.errorResponse(400, "Lifecycle action is required"));
+        }
+        String normalizedAction = action.trim().toLowerCase(Locale.ROOT);
+
+        String targetStatus = mapLifecycleActionToStatus(normalizedAction);
+        if (targetStatus == null && !isAgentSimulationAction(normalizedAction)) {
+            return Promise.of(HttpHelper.errorResponse(400,
+                "Unsupported agent lifecycle action: " + action));
+        }
+
+        return agentStore.findById(tenantId, agentId)
+            .then(opt -> {
+                if (opt.isEmpty()) {
+                    return Promise.of(HttpHelper.errorResponse(404,
+                        "Agent not found: " + agentId));
+                }
+
+                Map<String, Object> current = opt.get().data();
+                String currentStatus = normalizeStatus(current.get("status"));
+                if (!isTransitionAllowed(currentStatus, normalizedAction, targetStatus)) {
+                    return Promise.of(HttpHelper.errorResponse(409,
+                        "Invalid lifecycle transition for agent status: " + currentStatus,
+                        Map.of(
+                            "agentId", agentId,
+                            "currentStatus", currentStatus,
+                            "action", normalizedAction
+                        )));
+                }
+
+                Promise<AepEngine.ProcessingResult> provenancePromise = emitAgentLifecycleEvent(
+                    tenantId,
+                    agentId,
+                    normalizedAction,
+                    currentStatus,
+                    targetStatus
+                );
+
+                if (isAgentSimulationAction(normalizedAction)) {
+                    return provenancePromise.map(result -> HttpHelper.jsonResponse(Map.of(
+                        "agentId", agentId,
+                        "tenantId", tenantId,
+                        "action", normalizedAction,
+                        "simulationRequested", true,
+                        "eventId", result.eventId(),
+                        "timestamp", Instant.now().toString()
+                    )));
+                }
+
+                Map<String, Object> updated = new HashMap<>(current);
+                updated.put("status", targetStatus);
+                updated.put("lastLifecycleAction", normalizedAction);
+                updated.put("updatedAt", Instant.now().toString());
+                if ("approve".equals(normalizedAction) || "install".equals(normalizedAction)) {
+                    updated.put("approved", true);
+                }
+
+                return agentStore.save(tenantId, agentId, updated)
+                    .then(ignored -> provenancePromise)
+                    .map(result -> HttpHelper.jsonResponse(Map.of(
+                        "agentId", agentId,
+                        "tenantId", tenantId,
+                        "action", normalizedAction,
+                        "previousStatus", currentStatus,
+                        "status", targetStatus,
+                        "transitioned", true,
+                        "eventId", result.eventId(),
+                        "timestamp", Instant.now().toString()
+                    )));
+            })
+            .then(Promise::of, e -> {
+                log.error("[agents] lifecycle transition failed for agentId={}: {}",
+                    agentId, e.getMessage(), e);
+                return Promise.of(HttpHelper.errorResponse(500,
+                    "Failed lifecycle transition: " + e.getMessage()));
+            });
+    }
+
+    @SuppressWarnings("unchecked")
+    public Promise<HttpResponse> handleRecordAgentReview(HttpRequest request) {
+        String agentId = request.getPathParameter("agentId");
+        if (agentId == null || agentId.isBlank()) {
+            return Promise.of(HttpHelper.errorResponse(400,
+                "agentId path parameter is required"));
+        }
+        if (agentStore == null) {
+            return Promise.of(HttpHelper.errorResponse(503,
+                "Agent registry not available — DataCloudClient not configured"));
+        }
+
+        String tenantId = HttpHelper.resolveTenantId(request);
+        return request.loadBody().then(buf -> {
+            try {
+                String bodyStr = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> payload = bodyStr.isBlank()
+                    ? Map.of()
+                    : HttpHelper.mapper().readValue(bodyStr, Map.class);
+
+                String outcome = asNonBlankString(payload.get("outcome"));
+                if (outcome == null) {
+                    return Promise.of(HttpHelper.errorResponse(400,
+                        "Review outcome is required"));
+                }
+
+                Map<String, Object> reviewPayload = new HashMap<>();
+                reviewPayload.put("outcome", outcome);
+                String reviewer = asNonBlankString(payload.get("reviewer"));
+                if (reviewer != null) {
+                    reviewPayload.put("reviewer", reviewer);
+                }
+                String rationale = asNonBlankString(payload.get("rationale"));
+                if (rationale != null) {
+                    reviewPayload.put("rationale", rationale);
+                }
+                Object score = payload.get("score");
+                if (score instanceof Number number) {
+                    reviewPayload.put("score", number.doubleValue());
+                }
+
+                return emitAgentReviewEvent(tenantId, agentId, reviewPayload)
+                    .map(result -> HttpHelper.jsonResponse(Map.of(
+                        "agentId", agentId,
+                        "tenantId", tenantId,
+                        "recorded", true,
+                        "eventId", result.eventId(),
+                        "timestamp", Instant.now().toString()
+                    )));
+            } catch (Exception e) {
+                return Promise.of(HttpHelper.errorResponse(400,
+                    "Invalid review payload: " + e.getMessage()));
+            }
+        }, e -> Promise.of(HttpHelper.errorResponse(400, "Failed to read request body")));
+    }
+
     private Map<String, Object> summarizeAgentEntity(String tenantId, EntityStore.Entity entity) {
         Map<String, Object> data = entity.data();
         Map<String, Object> response = new java.util.LinkedHashMap<>();
@@ -774,5 +1039,110 @@ public class AgentController {
             return executableFlag;
         }
         return !REGISTRATION_MODE_MANIFEST_ONLY.equals(normalizeRegistrationMode(data.get("registrationMode")));
+    }
+
+    private Promise<AepEngine.ProcessingResult> emitAgentLifecycleEvent(
+            String tenantId,
+            String agentId,
+            String action,
+            String previousStatus,
+            @Nullable String targetStatus) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("agentId", agentId);
+        payload.put("action", action);
+        payload.put("previousStatus", previousStatus);
+        if (targetStatus != null) {
+            payload.put("targetStatus", targetStatus);
+        }
+        payload.put("requestedAt", Instant.now().toString());
+
+        AepEngine.Event event = new AepEngine.Event(
+            "agent.lifecycle.transition",
+            Map.copyOf(payload),
+            Map.of("agentId", agentId),
+            Instant.now()
+        );
+        return engine.process(tenantId, event);
+    }
+
+    private Promise<AepEngine.ProcessingResult> emitAgentReviewEvent(
+            String tenantId,
+            String agentId,
+            Map<String, Object> reviewPayload) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("agentId", agentId);
+        payload.put("review", Map.copyOf(reviewPayload));
+        payload.put("recordedAt", Instant.now().toString());
+
+        AepEngine.Event event = new AepEngine.Event(
+            "agent.review.recorded",
+            Map.copyOf(payload),
+            Map.of("agentId", agentId),
+            Instant.now()
+        );
+        return engine.process(tenantId, event);
+    }
+
+    @Nullable
+    private static String mapLifecycleActionToStatus(String action) {
+        return switch (action) {
+            case "scan" -> "SCANNED";
+            case "approve" -> "APPROVED";
+            case "install" -> "INSTALLED";
+            case "configure" -> "CONFIGURED";
+            case "execute" -> "ACTIVE";
+            case "review" -> "REVIEWED";
+            case "learn" -> "LEARNING";
+            case "retire" -> "RETIRED";
+            case "block" -> "BLOCKED";
+            case "reject" -> "REJECTED";
+            default -> null;
+        };
+    }
+
+    private static boolean isAgentSimulationAction(String action) {
+        return "simulate".equals(action) || "replay".equals(action);
+    }
+
+    private static boolean isTransitionAllowed(String currentStatus, String action, @Nullable String targetStatus) {
+        if (isAgentSimulationAction(action)) {
+            return true;
+        }
+        if (TERMINAL_AGENT_STATUSES.contains(currentStatus) && !"retire".equals(action)) {
+            return false;
+        }
+        if ("approve".equals(action) && !Set.of("SCANNED", "PENDING", "DRAFT", "ACTIVE").contains(currentStatus)) {
+            return false;
+        }
+        if ("install".equals(action) && !Set.of("APPROVED", "SCANNED", "ACTIVE").contains(currentStatus)) {
+            return false;
+        }
+        if ("configure".equals(action) && !Set.of("INSTALLED", "APPROVED", "ACTIVE", "CONFIGURED").contains(currentStatus)) {
+            return false;
+        }
+        if ("execute".equals(action) && !Set.of("CONFIGURED", "INSTALLED", "APPROVED", "ACTIVE", "REVIEWED", "LEARNING").contains(currentStatus)) {
+            return false;
+        }
+        if (targetStatus == null) {
+            return false;
+        }
+        return true;
+    }
+
+    private static String normalizeStatus(@Nullable Object status) {
+        if (status == null) {
+            return "ACTIVE";
+        }
+        String normalized = String.valueOf(status).trim().toUpperCase(Locale.ROOT);
+        return normalized.isEmpty() ? "ACTIVE" : normalized;
+    }
+
+    @Nullable
+    private static String asNonBlankString(@Nullable Object value) {
+        if (value == null) {
+            return null;
+        }
+        String normalized = String.valueOf(value).trim();
+        return normalized.isEmpty() ? null : normalized;
     }
 }

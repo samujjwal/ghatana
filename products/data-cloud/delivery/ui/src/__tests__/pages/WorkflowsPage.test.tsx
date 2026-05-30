@@ -41,6 +41,9 @@ vi.mock('../../api/surfaces.service', () => ({
 import { WorkflowsPage } from '../../pages/WorkflowsPage';
 
 describe('WorkflowsPage', () => {
+  const i18nLabel = (translated: string, key: string) => new RegExp(`^(${translated}|${key})$`, 'i');
+  const i18nText = (translated: string, key: string) => new RegExp(`(${translated}|${key})`, 'i');
+
   beforeEach(() => {
     // Guard against timer mode leaking from other test files in the same worker.
     vi.useRealTimers();
@@ -109,9 +112,9 @@ describe('WorkflowsPage', () => {
 
     expect(await screen.findByText('Nightly Order Sync')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Nightly Order Sync'));
-    fireEvent.click(screen.getByText(/Show pipeline details/i));
+    fireEvent.click(screen.getByText(i18nText('Show pipeline details', 'workflows.showPipelineDetails')));
 
-    expect(await screen.findByText(WORKFLOW_HINTS_UNAVAILABLE_TITLE)).toBeInTheDocument();
+    expect(await screen.findByText(i18nText(WORKFLOW_HINTS_UNAVAILABLE_TITLE, 'workflows.aiUnavailable'))).toBeInTheDocument();
     expect(mockAi.getPipelineOptimisationHints).not.toHaveBeenCalled();
   }, 15000);
 
@@ -119,10 +122,10 @@ describe('WorkflowsPage', () => {
     render(<WorkflowsPage />, { wrapper: TestWrapper });
 
     expect(await screen.findByText('Nightly Order Sync')).toBeInTheDocument();
-    expect(screen.getByText(/Keep the list about outcomes, not pipeline internals/i)).toBeInTheDocument();
-    expect(screen.getByText(/Check the latest outcome/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Review pipeline/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Advanced editor/i })).toBeInTheDocument();
+    expect(screen.getByText(i18nText('Keep the list about outcomes, not pipeline internals', 'workflows.outcomeFirstHeading'))).toBeInTheDocument();
+    expect(screen.getAllByText(i18nText('Check the latest outcome', 'workflows.checkLatestOutcome')).length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: i18nText('Review pipeline', 'workflows.reviewPipeline') })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: i18nText('Advanced editor', 'workflows.advancedEditor') })).toBeInTheDocument();
   }, 15000);
 
   it('keeps advanced pipeline details behind progressive disclosure in the review modal', async () => {
@@ -130,13 +133,13 @@ describe('WorkflowsPage', () => {
 
     fireEvent.click(await screen.findByText('Nightly Order Sync'));
 
-    expect(screen.getByText(/Show pipeline details/i)).toBeInTheDocument();
-    expect(screen.queryByText(/Inline AI Recommendations/i)).not.toBeInTheDocument();
+    expect(screen.getByText(i18nText('Show pipeline details', 'workflows.showPipelineDetails'))).toBeInTheDocument();
+    expect(screen.queryByText(i18nText('Inline AI Recommendations', 'workflows.inlineAIRecommendations'))).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByText(/Show pipeline details/i));
+    fireEvent.click(screen.getByText(i18nText('Show pipeline details', 'workflows.showPipelineDetails')));
 
-    expect(screen.getAllByText(/Flow size/i).length).toBeGreaterThan(1);
-    expect(screen.getAllByText(/Owner/i).length).toBeGreaterThan(1);
+    expect(screen.getAllByText(i18nText('Flow size', 'workflows.flowSize')).length).toBeGreaterThan(1);
+    expect(screen.getAllByText(i18nText('Owner', 'workflows.owner')).length).toBeGreaterThan(1);
   }, 15000);
 
   it('shows a degraded warning for AI hints when ai assist is degraded', async () => {
@@ -162,10 +165,17 @@ describe('WorkflowsPage', () => {
 
     expect(await screen.findByText('Nightly Order Sync')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Nightly Order Sync'));
-    fireEvent.click(screen.getByText(/Show pipeline details/i));
+    fireEvent.click(screen.getByText(i18nText('Show pipeline details', 'workflows.showPipelineDetails')));
 
-    expect(await screen.findByText(WORKFLOW_HINTS_DEGRADED_TITLE)).toBeInTheDocument();
-    expect(screen.getByText(WORKFLOW_HINTS_DEGRADED_DETAIL)).toBeInTheDocument();
+    expect(await screen.findByText(i18nText(WORKFLOW_HINTS_DEGRADED_TITLE, 'workflows.aiDegraded'))).toBeInTheDocument();
+    expect(
+      screen.getAllByText(
+        i18nText(
+          'degraded',
+          'workflows.aiDegradedDesc',
+        ),
+      ).length,
+    ).toBeGreaterThan(0);
   }, 15000);
 
     it('paginates the workflow list when there are more than 20 items', async () => {
@@ -200,8 +210,8 @@ describe('WorkflowsPage', () => {
       expect(screen.queryByText('Pipeline 21')).not.toBeInTheDocument();
 
       // Pagination controls present
-      const nextButton = screen.getByRole('button', { name: /^next$/i });
-      const prevButton = screen.getByRole('button', { name: /^previous$/i });
+      const nextButton = screen.getByRole('button', { name: i18nLabel('Next', 'workflows.next') });
+      const prevButton = screen.getByRole('button', { name: i18nLabel('Previous', 'workflows.previous') });
       expect(prevButton).toBeDisabled();
       expect(nextButton).not.toBeDisabled();
 
@@ -214,11 +224,11 @@ describe('WorkflowsPage', () => {
       expect(screen.queryByText('Pipeline 1')).not.toBeInTheDocument();
 
       // Previous button re-enabled; next disabled on final page
-      expect(screen.getByRole('button', { name: /^previous$/i })).not.toBeDisabled();
-      expect(screen.getByRole('button', { name: /^next$/i })).toBeDisabled();
+      expect(screen.getByRole('button', { name: i18nLabel('Previous', 'workflows.previous') })).not.toBeDisabled();
+      expect(screen.getByRole('button', { name: i18nLabel('Next', 'workflows.next') })).toBeDisabled();
 
       // Navigate back to page 1
-      fireEvent.click(screen.getByRole('button', { name: /^previous$/i }));
+      fireEvent.click(screen.getByRole('button', { name: i18nLabel('Previous', 'workflows.previous') }));
 
       expect(await screen.findByText('Pipeline 1')).toBeInTheDocument();
       expect(screen.queryByText('Pipeline 21')).not.toBeInTheDocument();

@@ -3,6 +3,7 @@
  */
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 import { DocumentsPage } from '../DocumentsPage';
 
@@ -42,13 +43,13 @@ describe('DocumentsPage', () => {
 
   it('shows loading indicator while fetching', () => {
     mockFetch.mockReturnValue(new Promise(() => {}));
-    render(<DocumentsPage />);
+    render(<MemoryRouter><DocumentsPage /></MemoryRouter>);
     expect(screen.getByText('documents.loading')).toBeTruthy();
   });
 
   it('shows error message when fetch fails', async () => {
     mockFetch.mockRejectedValue(new Error('server error'));
-    render(<DocumentsPage />);
+    render(<MemoryRouter><DocumentsPage /></MemoryRouter>);
     await waitFor(() =>
       expect(screen.getByText(/documents\.error/)).toBeTruthy()
     );
@@ -56,7 +57,7 @@ describe('DocumentsPage', () => {
 
   it('shows empty message when no documents', async () => {
     mockFetch.mockResolvedValue([]);
-    render(<DocumentsPage />);
+    render(<MemoryRouter><DocumentsPage /></MemoryRouter>);
     await waitFor(() =>
       expect(screen.getByText('documents.empty')).toBeTruthy()
     );
@@ -64,7 +65,7 @@ describe('DocumentsPage', () => {
 
   it('displays first document title', async () => {
     mockFetch.mockResolvedValue(documents);
-    render(<DocumentsPage />);
+    render(<MemoryRouter><DocumentsPage /></MemoryRouter>);
     await waitFor(() =>
       expect(screen.getByText('Discharge Summary 2026')).toBeTruthy()
     );
@@ -72,7 +73,7 @@ describe('DocumentsPage', () => {
 
   it('displays second document title', async () => {
     mockFetch.mockResolvedValue(documents);
-    render(<DocumentsPage />);
+    render(<MemoryRouter><DocumentsPage /></MemoryRouter>);
     await waitFor(() =>
       expect(screen.getByText('Lab Report March')).toBeTruthy()
     );
@@ -80,7 +81,7 @@ describe('DocumentsPage', () => {
 
   it('calls fetchDocuments with the session principalId', async () => {
     mockFetch.mockResolvedValue([]);
-    render(<DocumentsPage />);
+    render(<MemoryRouter><DocumentsPage /></MemoryRouter>);
     await waitFor(() => expect(mockFetch).toHaveBeenCalledWith('patient-42', expect.any(Object)));
   });
 
@@ -90,7 +91,7 @@ describe('DocumentsPage', () => {
       downloadUrl: 'https://download.local/documents/d1?token=secure',
       expiresAt: '2026-05-28T02:00:00Z',
     });
-    render(<DocumentsPage />);
+    render(<MemoryRouter><DocumentsPage /></MemoryRouter>);
 
     fireEvent.click(await screen.findByRole('button', { name: 'documents.download Discharge Summary 2026' }));
 
@@ -108,7 +109,7 @@ describe('DocumentsPage', () => {
       downloadUrl: 'https://download.local/documents/d1?token=preview',
       expiresAt: '2026-05-28T02:00:00Z',
     });
-    render(<DocumentsPage />);
+    render(<MemoryRouter><DocumentsPage /></MemoryRouter>);
 
     fireEvent.click(await screen.findByRole('button', { name: 'documents.preview Discharge Summary 2026' }));
 

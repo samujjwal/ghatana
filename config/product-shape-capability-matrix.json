@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-05-27T05:40:21.429Z",
+  "generated": "2026-05-30T03:19:10.989Z",
   "source": "config/canonical-product-registry.json",
   "matrix": [
     {
@@ -131,7 +131,10 @@
       "requiredKernelCapabilities": [
         "gate:a11y",
         "gate:bootstrap-build-without-platform-providers",
+        "gate:connector-production-path",
+        "gate:first-class-domain-contracts",
         "gate:i18n",
+        "gate:manifest-conformance-complete",
         "gate:platform-provider-health",
         "gate:privacy",
         "gate:runtime-truth-provider",
@@ -176,14 +179,20 @@
         "manifest:lifecycle-result"
       ],
       "blockers": [
+        "gate:conformance-gates-incomplete",
         "missing-manifest:artifact-manifest",
         "missing-manifest:deployment-manifest",
         "missing-manifest:lifecycle-plan",
-        "missing-manifest:lifecycle-result"
+        "missing-manifest:lifecycle-result",
+        "product-owner:connector-production-path-incomplete",
+        "product-owner:first-class-domain-contracts-missing"
       ],
       "nextActions": [
         "Keep Data Cloud registered as a platform provider rather than an ordinary Kernel lifecycle product",
         "Keep bootstrap separation, runtime truth provider, and Action Plane governance evidence current for each release target",
+        "Complete conformance gates: manifest, observability, security, dataAccess, bridge, agentDefinitions, masteryBindings, evaluationPacks, runtimeModule",
+        "Implement first-class Collection/Dataset/DataSource contracts instead of generic entity-backed storage",
+        "Complete connector production path with real handler, runtime truth states, and dataset linkage",
         "Wire platform-mode provider bridge before enabling lifecycle execution"
       ],
       "validationCommands": [

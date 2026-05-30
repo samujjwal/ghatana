@@ -63,7 +63,7 @@ public final class PhrHieRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         // Extract patientId from request body or use context principalId
@@ -73,18 +73,18 @@ public final class PhrHieRoutes {
             .then(result -> {
                 if (result.accepted()) {
                     return PhrRouteSupport.jsonResponse(202, Map.of(
-                        "requestId", result.messageControlId(, correlationId),
+                        "requestId", result.messageControlId(),
                         "status", "ACCEPTED",
                         "message", "HIE export request accepted for processing",
                         "patientId", patientId,
                         "correlationId", context.correlationId()
                     ), context.correlationId());
                 } else {
-                    return PhrRouteSupport.errorResponse(502, "HIE_EXPORT_FAILED", "HIE service rejected the export request: " + result.message(, correlationId), 
+                    return PhrRouteSupport.errorResponse(502, "HIE_EXPORT_FAILED", "HIE service rejected the export request: " + result.message(), 
                         context.correlationId());
                 }
             })
-            .whenException(ex -> PhrRouteSupport.errorResponse(500, "HIE_EXPORT_ERROR", "Failed to submit HIE export request: " + ex.getMessage(, correlationId), 
+            .whenException(ex -> PhrRouteSupport.errorResponse(500, "HIE_EXPORT_ERROR", "Failed to submit HIE export request: " + ex.getMessage(), 
                 context.correlationId()));
     }
 
@@ -101,7 +101,7 @@ public final class PhrHieRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         String patientId = context.principalId();
@@ -110,18 +110,18 @@ public final class PhrHieRoutes {
             .then(result -> {
                 if (result.accepted()) {
                     return PhrRouteSupport.jsonResponse(202, Map.of(
-                        "requestId", result.messageControlId(, correlationId),
+                        "requestId", result.messageControlId(),
                         "status", "ACCEPTED",
                         "message", "HIE import request accepted for processing",
                         "patientId", patientId,
                         "correlationId", context.correlationId()
                     ), context.correlationId());
                 } else {
-                    return PhrRouteSupport.errorResponse(502, "HIE_IMPORT_FAILED", "HIE service rejected the import request: " + result.message(, correlationId), 
+                    return PhrRouteSupport.errorResponse(502, "HIE_IMPORT_FAILED", "HIE service rejected the import request: " + result.message(), 
                         context.correlationId());
                 }
             })
-            .whenException(ex -> PhrRouteSupport.errorResponse(500, "HIE_IMPORT_ERROR", "Failed to submit HIE import request: " + ex.getMessage(, correlationId), 
+            .whenException(ex -> PhrRouteSupport.errorResponse(500, "HIE_IMPORT_ERROR", "Failed to submit HIE import request: " + ex.getMessage(), 
                 context.correlationId()));
     }
 
@@ -136,7 +136,7 @@ public final class PhrHieRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         String requestId = request.getPathParameter("requestId");

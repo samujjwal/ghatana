@@ -1,5 +1,6 @@
 package com.ghatana.phr.api.routes;
 
+import com.ghatana.phr.kernel.service.PatientRecordService;
 import com.ghatana.phr.model.PHRUser;
 import com.ghatana.phr.repository.UserRepository;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -8,11 +9,20 @@ import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
+import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.Instant;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 
 /**
  * Enforcement matrix tests for {@link PhrPatientProfileRoutes}.
@@ -29,18 +39,39 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Test
  */
 @DisplayName("PhrPatientProfileRoutes — enforcement matrix")
+@ExtendWith(MockitoExtension.class)
 class PhrPatientProfileRoutesTest extends EventloopTestBase {
 
     private AsyncServlet servlet;
-    private UserRepository userRepository;
+
+    @Mock
+    private PatientRecordService patientRecordService;
 
     @BeforeEach
     void setUp() {
-        userRepository = new UserRepository();
-        saveUser("patient-1", "Patient One", "patient@example.com", "patient");
-        saveUser("dr-1", "Clinician One", "clinician@example.com", "clinician");
-        saveUser("admin-1", "Admin One", "admin@example.com", "admin");
-        servlet = new PhrPatientProfileRoutes(eventloop(), userRepository).getServlet();
+        // Create mock patient data
+        PatientRecordService.Demographics demographics = new PatientRecordService.Demographics(
+            "Patient",
+            "One",
+            "1990-01-01",
+            "male",
+            new PatientRecordService.Address("Ward 1", "Lalitpur", "Lalitpur", "Bagmati", "44700"),
+            new PatientRecordService.Contact("977-1234567890", "patient@example.com", "", "")
+        );
+        
+        PatientRecordService.Patient mockPatient = new PatientRecordService.Patient(
+            "patient-1",
+            "NP-123456",
+            demographics,
+            null,
+            Instant.now(),
+            Instant.now(),
+            false
+        );
+
+        lenient().when(patientRecordService.getPatient(anyString())).thenReturn(Promise.of(Optional.of(mockPatient)));
+        
+        servlet = new PhrPatientProfileRoutes(eventloop(), patientRecordService).getServlet();
     }
 
     @Test
@@ -93,13 +124,5 @@ class PhrPatientProfileRoutesTest extends EventloopTestBase {
             .withHeader(HttpHeaders.of("X-Role"), role)
             .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
             .build();
-    }
-
-    private void saveUser(String userId, String username, String email, String role) {
-        PHRUser user = new PHRUser(userId, username, email);
-        user.setTenantId("t1");
-        user.addRole(role);
-        user.setAccessLevel(role);
-        userRepository.save(user);
     }
 }

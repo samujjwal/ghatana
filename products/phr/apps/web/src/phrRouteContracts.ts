@@ -1,9 +1,13 @@
 import { createRouteAccessEvaluator, type ProductRouteCapability } from '@ghatana/product-shell';
+import { 
+  type ProductRouteContract, 
+  type RouteStability,
+  parseProductRouteContract 
+} from '@ghatana/kernel-product-contracts';
 import routeContractJson from '../../../config/phr-route-contract.json';
 
 export type PhrRole = 'patient' | 'caregiver' | 'fchv' | 'clinician' | 'admin';
-// Define route stability locally - will migrate to kernel-product-contracts in Pass 10
-export type PhrRouteStability = 'stable' | 'hidden' | 'blocked';
+export type PhrRouteStability = RouteStability;
 
 export interface PhrRouteContract extends ProductRouteCapability {
   readonly path: string;
@@ -34,6 +38,8 @@ interface PhrRouteContractSource {
   readonly routes: readonly PhrRouteContract[];
 }
 
+// Validate route contract against kernel schema
+const _validatedContract = parseProductRouteContract(routeContractJson);
 const canonicalRouteContract = routeContractJson as unknown as PhrRouteContractSource;
 
 export const PHR_ROLE_ORDER: Readonly<Record<PhrRole, number>> = canonicalRouteContract.roleOrder;

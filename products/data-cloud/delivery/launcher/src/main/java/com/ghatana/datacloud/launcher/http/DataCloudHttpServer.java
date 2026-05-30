@@ -15,6 +15,7 @@ import com.ghatana.datacloud.analytics.AnalyticsQueryEngine;
 import com.ghatana.datacloud.application.DataCloudProductReleaseReadinessRepository;
 import com.ghatana.datacloud.application.ProductReleaseReadinessService;
 import com.ghatana.datacloud.api.controller.MasteryController;
+import com.ghatana.datacloud.api.controller.MediaArtifactController;
 import com.ghatana.datacloud.agent.learning.delta.DataCloudLearningDeltaRepository;
 import com.ghatana.datacloud.agent.mastery.DataCloudMasteryEvidenceRepository;
 import com.ghatana.datacloud.agent.mastery.DataCloudMasteryRegistry;
@@ -122,6 +123,8 @@ import com.ghatana.datacloud.launcher.http.handlers.SovereignProfileHandler;
 import com.ghatana.datacloud.launcher.http.handlers.UserActivityHandler;
 import com.ghatana.datacloud.launcher.settings.InMemorySettingsStore;
 import com.ghatana.datacloud.launcher.settings.SettingsStore;
+import com.ghatana.datacloud.memory.media.DataCloudMediaArtifactRepository;
+import com.ghatana.datacloud.memory.media.MediaArtifactRepository;
 import com.ghatana.datacloud.launcher.http.plugins.DataCloudRuntimePluginManager;
 import com.ghatana.datacloud.launcher.http.plugins.ReportExecutionCapability;
 import com.ghatana.datacloud.launcher.http.plugins.WorkflowExecutionCapability;
@@ -1717,6 +1720,8 @@ public class DataCloudHttpServer {
         log.info("[DC-SURFACE] Runtime surface summary {}", buildSurfaceSummaryLog());
 
         MasteryController masteryController = buildMasteryController();
+        MediaArtifactRepository mediaArtifactRepository = new DataCloudMediaArtifactRepository();
+        MediaArtifactController mediaArtifactController = new MediaArtifactController(mediaArtifactRepository, objectMapper);
 
         RoutingServlet router = new DataCloudRouterBuilder(eventloop)
             .withHealthRoutes(healthHandler)
@@ -1727,6 +1732,7 @@ public class DataCloudHttpServer {
             .withCheckpointRoutes(pipelineCheckpointHandler)
             .withAlertRoutes(alertingHandler, sseHandler)
             .withMemoryRoutes(memoryHandler)
+            .withMediaArtifactRoutes(mediaArtifactController)
             .withBrainRoutes(brainHandler, sseHandler)
             .withLearningRoutes(learningHandler)
             .withMasteryRoutes(masteryController)

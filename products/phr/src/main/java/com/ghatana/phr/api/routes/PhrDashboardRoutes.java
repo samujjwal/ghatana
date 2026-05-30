@@ -64,16 +64,6 @@ public final class PhrDashboardRoutes {
         this.emergencyAccessLogServiceExtensions = Objects.requireNonNull(emergencyAccessLogServiceExtensions, "emergencyAccessLogServiceExtensions must not be null");
     }
 
-    public PhrDashboardRoutes(Eventloop eventloop, UserRepository userRepository) {
-        this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
-        this.userRepository = Objects.requireNonNull(userRepository, "userRepository must not be null");
-        this.appointmentService = null;
-        this.medicationServiceExtensions = null;
-        this.patientRecordServiceExtensions = null;
-        this.documentServiceExtensions = null;
-        this.consentServiceExtensions = null;
-        this.emergencyAccessLogServiceExtensions = null;
-    }
 
     /**
      * Returns the routing servlet for dashboard endpoints.
@@ -92,7 +82,7 @@ public final class PhrDashboardRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         // Fetch patient profile
@@ -119,22 +109,6 @@ public final class PhrDashboardRoutes {
         dashboard.put("profileSummary", profileSummary);
 
         // Fetch next appointment
-        if (appointmentService == null
-                || medicationServiceExtensions == null
-                || patientRecordServiceExtensions == null
-                || documentServiceExtensions == null
-                || consentServiceExtensions == null
-                || emergencyAccessLogServiceExtensions == null) {
-            dashboard.put("nextAppointment", null);
-            dashboard.put("medications", Map.of("activeCount", 0, "adherenceAlert", false));
-            dashboard.put("recentObservations", Map.of("count", 0, "hasCritical", false));
-            dashboard.put("activeConditions", Map.of("count", 0, "hasChronic", false));
-            dashboard.put("documents", Map.of("totalCount", 0, "pendingOcr", 0));
-            dashboard.put("accessAlerts", Map.of("expiringConsents", 0, "emergencyAccessPending", false));
-            dashboard.put("generatedAt", Instant.now().toString());
-            return PhrRouteSupport.jsonResponseWithCorrelation(200, dashboard, context.correlationId());
-        }
-
         return appointmentService.getNextAppointment(context.principalId())
             .then(nextAppointment -> {
                 Map<String, Object> nextAppointmentSummary = null;

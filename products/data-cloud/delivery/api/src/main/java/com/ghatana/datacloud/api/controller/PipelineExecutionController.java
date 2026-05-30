@@ -112,10 +112,12 @@ public class PipelineExecutionController {
         HttpMethod method = request.getMethod();
 
         try {
-            if (method == HttpMethod.POST && path.matches("/api/v1/pipelines/[a-f0-9-]+/execute")) {
+                if (method == HttpMethod.POST && (path.matches("/api/v1/pipelines/[a-f0-9-]+/execute")
+                    || path.matches("/api/v1/action/pipelines/[a-f0-9-]+/execute"))) {
                 UUID workflowId = extractWorkflowIdFromExecutePath(path);
                 return triggerExecution(request, tenantId, workflowId);
-            } else if (method == HttpMethod.GET && path.matches("/api/v1/pipelines/[a-f0-9-]+/executions")) {
+                } else if (method == HttpMethod.GET && (path.matches("/api/v1/pipelines/[a-f0-9-]+/executions")
+                    || path.matches("/api/v1/action/pipelines/[a-f0-9-]+/executions"))) {
                 UUID workflowId = extractWorkflowIdFromExecutionsPath(path);
                 return listExecutions(request, tenantId, workflowId);
             } else if (method == HttpMethod.GET && path.matches("/api/v1/pipelines/executions/[a-f0-9-]+")) {
@@ -172,47 +174,62 @@ public class PipelineExecutionController {
 
         String userId = extractUserId(request);
         if (userId == null || userId.isBlank()) {
-            userId = "system";
+            metrics.incrementCounter("controller.pipeline_execution.error",
+                "error_type", "MISSING_USER_ID");
+            return Promise.of(ResponseBuilder.unauthorized()
+                .json(Collections.singletonMap("error", "X-User-ID header is required"))
+                .build());
         }
 
-        Map<String, Object> inputVariables = parseInputVariables(request);
-        final String triggeredBy = userId;
+        return request.loadBody().then(bodyBuf -> {
+            final Map<String, Object> inputVariables;
+            try {
+            inputVariables = parseInputVariables(bodyBuf != null ? bodyBuf.asArray() : null);
+            } catch (IllegalArgumentException e) {
+            metrics.incrementCounter("controller.pipeline_execution.error",
+                "error_type", "INVALID_INPUT_VARIABLES");
+            return Promise.of(ResponseBuilder.badRequest()
+                .json(Collections.singletonMap("error", e.getMessage()))
+                .build());
+            }
 
-        metrics.incrementCounter("controller.pipeline_execution.trigger.attempt",
+            final String triggeredBy = userId;
+            metrics.incrementCounter("controller.pipeline_execution.trigger.attempt",
                 "tenant", tenantId);
 
-        return workflowService.executeWorkflow(tenantId, workflowId, triggeredBy, inputVariables)
+            return workflowService.executeWorkflow(tenantId, workflowId, triggeredBy, inputVariables)
                 .then(execution -> {
-                    metrics.incrementCounter("controller.pipeline_execution.trigger.success",
-                            "tenant", tenantId);
-                    log.info("Pipeline execution triggered: tenantId={}, workflowId={}, executionId={}, triggeredBy={}",
-                            tenantId, workflowId, execution.getId(), triggeredBy);
-                    Map<String, Object> body = Map.of(
-                            "executionId", execution.getId().toString(),
-                            "workflowId", execution.getWorkflowId().toString(),
-                            "status", execution.getStatus().name(),
-                            "startedAt", execution.getStartedAt().toString(),
-                            "triggeredBy", execution.getStartedBy()
-                    );
-                    return Promise.of(ResponseBuilder.accepted()
-                            .json(body)
-                            .build());
+                metrics.incrementCounter("controller.pipeline_execution.trigger.success",
+                    "tenant", tenantId);
+                log.info("Pipeline execution triggered: tenantId={}, workflowId={}, executionId={}, triggeredBy={}",
+                    tenantId, workflowId, execution.getId(), triggeredBy);
+                Map<String, Object> body = Map.of(
+                    "executionId", execution.getId().toString(),
+                    "workflowId", execution.getWorkflowId().toString(),
+                    "status", execution.getStatus().name(),
+                    "startedAt", execution.getStartedAt().toString(),
+                    "triggeredBy", execution.getStartedBy()
+                );
+                return Promise.of(ResponseBuilder.accepted()
+                    .json(body)
+                    .build());
                 })
                 .whenException(ex -> {
-                    if (ex instanceof IllegalArgumentException) {
-                        metrics.incrementCounter("controller.pipeline_execution.trigger.not_found",
-                                "tenant", tenantId);
-                    } else if (ex instanceof IllegalStateException) {
-                        metrics.incrementCounter("controller.pipeline_execution.trigger.not_executable",
-                                "tenant", tenantId);
-                    } else {
-                        metrics.incrementCounter("controller.pipeline_execution.trigger.error",
-                                "tenant", tenantId,
-                                "error", ex.getClass().getSimpleName());
-                        log.error("Failed to trigger pipeline execution: tenantId={}, workflowId={}",
-                                tenantId, workflowId, ex);
-                    }
+                if (ex instanceof IllegalArgumentException) {
+                    metrics.incrementCounter("controller.pipeline_execution.trigger.not_found",
+                        "tenant", tenantId);
+                } else if (ex instanceof IllegalStateException) {
+                    metrics.incrementCounter("controller.pipeline_execution.trigger.not_executable",
+                        "tenant", tenantId);
+                } else {
+                    metrics.incrementCounter("controller.pipeline_execution.trigger.error",
+                        "tenant", tenantId,
+                        "error", ex.getClass().getSimpleName());
+                    log.error("Failed to trigger pipeline execution: tenantId={}, workflowId={}",
+                        tenantId, workflowId, ex);
+                }
                 });
+        });
     }
 
     /**
@@ -353,14 +370,16 @@ public class PipelineExecutionController {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> parseInputVariables(HttpRequest request) {
+    private Map<String, Object> parseInputVariables(byte[] body) {
+        if (body == null || body.length == 0) {
+            return Map.of();
+        }
         try {
-            byte[] body = request.loadBody().getResult().asArray();
-            if (body == null || body.length == 0) {
-                return Map.of();
-            }
             Map<String, Object> parsed = mapper.readValue(body, Map.class);
             Object variables = parsed.get("inputVariables");
+            if (variables == null) {
+                return Map.of();
+            }
             if (variables instanceof Map<?, ?> varMap) {
                 Map<String, Object> result = new HashMap<>();
                 varMap.forEach((k, v) -> {
@@ -370,10 +389,9 @@ public class PipelineExecutionController {
                 });
                 return Collections.unmodifiableMap(result);
             }
-            return Map.of();
+            throw new IllegalArgumentException("inputVariables must be a JSON object when provided");
         } catch (Exception e) {
-            log.debug("No input variables in request body: {}", e.getMessage());
-            return Map.of();
+            throw new IllegalArgumentException("Invalid request body JSON");
         }
     }
 
@@ -391,15 +409,21 @@ public class PipelineExecutionController {
     }
 
     private UUID extractWorkflowIdFromExecutePath(String path) {
-        // Pattern: /api/v1/pipelines/{workflowId}/execute
+        // Patterns:
+        // - /api/v1/pipelines/{workflowId}/execute
+        // - /api/v1/action/pipelines/{workflowId}/execute
         String[] segments = path.split("/");
-        return UUID.fromString(segments[4]);
+        int workflowIdIndex = "action".equals(segments[3]) ? 5 : 4;
+        return UUID.fromString(segments[workflowIdIndex]);
     }
 
     private UUID extractWorkflowIdFromExecutionsPath(String path) {
-        // Pattern: /api/v1/pipelines/{workflowId}/executions
+        // Patterns:
+        // - /api/v1/pipelines/{workflowId}/executions
+        // - /api/v1/action/pipelines/{workflowId}/executions
         String[] segments = path.split("/");
-        return UUID.fromString(segments[4]);
+        int workflowIdIndex = "action".equals(segments[3]) ? 5 : 4;
+        return UUID.fromString(segments[workflowIdIndex]);
     }
 
     private UUID extractExecutionIdFromPath(String path) {

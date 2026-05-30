@@ -1,6 +1,6 @@
 # Data Cloud Release Maturity Summary
 
-- Generated at: 2026-05-30T00:38:28.088Z
+- Generated at: 2026-05-30T03:53:36.201Z
 - Environment: staging
 - Overall pass: yes
 
@@ -9,7 +9,7 @@
 | Smoke E2E | true | true | fail=0, warn=0 |
 | Backup drill | true | true | fail=0 |
 | Runtime profile | true | true | checks=9 |
-| Atomic workflow posture | true | true | critical routes=55 |
+| Atomic workflow posture | true | true | critical routes=56 |
 | Implementation plan coverage | true | true | covered=47, uncovered=0, wave1=true |
 | Wave 2 product quality scorecard | true | n/a | products=6, avgScore=1 |
 | Product SLO budgets | true | true | violations=0 |

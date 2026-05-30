@@ -58,6 +58,7 @@ public final class PhrHttpServerTestFactory {
             noopPatientRecordRoutes(eventloop),
             noopConsentRoutes(eventloop),
             noopClinicalRoutes(eventloop),
+            noopConditionRoutes(eventloop),
             noopEmergencyRoutes(eventloop),
             noopAdministrativeRoutes(eventloop),
             noopDocumentImagingRoutes(eventloop),
@@ -97,6 +98,7 @@ public final class PhrHttpServerTestFactory {
                 allRoutes.patientRecordRoutes,
                 allRoutes.consentRoutes,
                 allRoutes.clinicalRoutes,
+                allRoutes.conditionRoutes,
                 allRoutes.emergencyRoutes,
                 allRoutes.administrativeRoutes,
                 allRoutes.documentImagingRoutes,
@@ -140,6 +142,7 @@ public final class PhrHttpServerTestFactory {
         public final PhrMobileRoutes mobileRoutes;
         public final PhrNotificationRoutes notificationRoutes;
         public final PhrPatientProfileRoutes patientProfileRoutes;
+        public final PhrConditionRoutes conditionRoutes;
 
         public AllPhrRoutes(
                 PhrFhirRoutes fhirRoutes,
@@ -147,6 +150,7 @@ public final class PhrHttpServerTestFactory {
                 PhrPatientRecordRoutes patientRecordRoutes,
                 PhrConsentRoutes consentRoutes,
                 PhrClinicalRoutes clinicalRoutes,
+                PhrConditionRoutes conditionRoutes,
                 PhrEmergencyRoutes emergencyRoutes,
                 PhrAdministrativeRoutes administrativeRoutes,
                 PhrDocumentImagingRoutes documentImagingRoutes,
@@ -166,6 +170,7 @@ public final class PhrHttpServerTestFactory {
             this.patientRecordRoutes = patientRecordRoutes;
             this.consentRoutes = consentRoutes;
             this.clinicalRoutes = clinicalRoutes;
+            this.conditionRoutes = conditionRoutes;
             this.emergencyRoutes = emergencyRoutes;
             this.administrativeRoutes = administrativeRoutes;
             this.documentImagingRoutes = documentImagingRoutes;
@@ -188,11 +193,20 @@ public final class PhrHttpServerTestFactory {
     // -------------------------------------------------------------------------
 
     private static PhrDashboardRoutes noopDashboardRoutes(Eventloop eventloop) {
-        return new PhrDashboardRoutes(eventloop, null);
+        return new PhrDashboardRoutes(
+            eventloop,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+        );
     }
 
     private static PhrPatientRecordRoutes noopPatientRecordRoutes(Eventloop eventloop) {
-        return new PhrPatientRecordRoutes(eventloop, null, null);
+        return new PhrPatientRecordRoutes(eventloop, null, null, null);
     }
 
     private static PhrConsentRoutes noopConsentRoutes(Eventloop eventloop) {
@@ -253,6 +267,10 @@ public final class PhrHttpServerTestFactory {
 
     private static PhrPatientProfileRoutes noopPatientProfileRoutes(Eventloop eventloop) {
         return new PhrPatientProfileRoutes(eventloop, null);
+    }
+
+    private static PhrConditionRoutes noopConditionRoutes(Eventloop eventloop) {
+        return new PhrConditionRoutes(eventloop, null, null);
     }
 
     private static PhrFhirRoutes noopFhirRoutes(Eventloop eventloop) {

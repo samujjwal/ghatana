@@ -1,0 +1,168 @@
+{
+  "version": "1.0.0",
+  "description": "PHR policy registry - canonical source of truth for all valid policy IDs used in route contracts and policy evaluation",
+  "policies": {
+    "phr.dashboard.view": {
+      "category": "ui",
+      "description": "Dashboard access",
+      "requiresPatientId": false,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.records.view": {
+      "category": "phi",
+      "description": "Patient records access",
+      "requiresPatientId": true,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.consents.access": {
+      "category": "phi",
+      "description": "Consent management access",
+      "requiresPatientId": true,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.appointments.access": {
+      "category": "phi",
+      "description": "Appointment access",
+      "requiresPatientId": true,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.settings.access": {
+      "category": "ui",
+      "description": "Settings access",
+      "requiresPatientId": false,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.labs.access": {
+      "category": "phi",
+      "description": "Lab results access",
+      "requiresPatientId": true,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.medications.access": {
+      "category": "phi",
+      "description": "Medication access",
+      "requiresPatientId": true,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.conditions.access": {
+      "category": "phi",
+      "description": "Conditions access",
+      "requiresPatientId": true,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.observations.access": {
+      "category": "phi",
+      "description": "Observations access",
+      "requiresPatientId": true,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.immunizations.access": {
+      "category": "phi",
+      "description": "Immunization access",
+      "requiresPatientId": true,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.documents.access": {
+      "category": "phi",
+      "description": "Document access",
+      "requiresPatientId": true,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.documents.upload.access": {
+      "category": "phi",
+      "description": "Document upload access",
+      "requiresPatientId": true,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.documents.doc-id.ocr.access": {
+      "category": "phi",
+      "description": "Document OCR access",
+      "requiresPatientId": true,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.timeline.access": {
+      "category": "phi",
+      "description": "Timeline access",
+      "requiresPatientId": true,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.profile.access": {
+      "category": "phi",
+      "description": "Profile access",
+      "requiresPatientId": true,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.records.record-id.access": {
+      "category": "phi",
+      "description": "Record detail access",
+      "requiresPatientId": true,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.notifications.access": {
+      "category": "ui",
+      "description": "Notifications access",
+      "requiresPatientId": false,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.forbidden.access": {
+      "category": "system",
+      "description": "Forbidden page access",
+      "requiresPatientId": false,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.not.found.access": {
+      "category": "system",
+      "description": "Not found page access",
+      "requiresPatientId": false,
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.emergency.break-glass": {
+      "category": "emergency",
+      "description": "Emergency break-glass access",
+      "requiresPatientId": true,
+      "roles": ["clinician", "admin"],
+      "requiresJustification": true,
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.emergency.review": {
+      "category": "admin",
+      "description": "Emergency review access",
+      "requiresPatientId": false,
+      "roles": ["admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.release.readiness.access": {
+      "category": "admin",
+      "description": "Release readiness access",
+      "requiresPatientId": false,
+      "roles": ["admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.audit.access": {
+      "category": "admin",
+      "description": "Audit trail access",
+      "requiresPatientId": false,
+      "roles": ["admin"],
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    }
+  }
+}

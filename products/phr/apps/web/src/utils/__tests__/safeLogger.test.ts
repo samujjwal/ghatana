@@ -33,7 +33,8 @@ describe('SafeLogger - G11-T10 Log Redaction', () => {
   });
 
   it('should emit telemetry counters without PHI', () => {
-    const telemetrySpy = vi.spyOn(telemetry, 'incrementCounter');
+    const instanceTelemetry = logger.getTelemetry();
+    const telemetrySpy = vi.spyOn(instanceTelemetry, 'incrementCounter');
     
     logger.info('Test message', 'corr-456', { someData: 'value' });
     

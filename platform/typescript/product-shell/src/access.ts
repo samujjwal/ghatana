@@ -65,6 +65,13 @@ export function isRouteDirectLinkAllowed(
   role: string,
   roleOrder: Readonly<Record<string, number>>,
 ): boolean {
+  // Blocked routes are completely inaccessible, even via direct link
+  if (isRouteBlocked(route)) {
+    return false;
+  }
+
+  // Hidden routes are accessible via direct link but not discoverable
+  // Other routes follow normal role-based access
   return isRouteAllowed(route, role, roleOrder);
 }
 
@@ -92,12 +99,35 @@ function hasRouteMinimumRole(
 }
 
 function isRouteSuppressed(route: RouteAccessInput): boolean {
+  // Explicit hidden/blocked flags take precedence
   if (route.hidden === true || route.blocked === true) {
     return true;
   }
 
+  // Check stability/lifecycle state for canonical semantics
   const state = route.stability ?? route.lifecycle;
+  
+  // Hidden routes are not discoverable but may be accessible via direct link
+  // Blocked routes are completely inaccessible
+  // Preview routes are discoverable but marked as preview
+  // Stable routes are fully accessible
+  // Boundary and deprecated are suppressed for safety
   return state === 'hidden' || state === 'blocked' || state === 'boundary' || state === 'deprecated';
+}
+
+/**
+ * Checks if a route is completely blocked (inaccessible even via direct link).
+ * This is the canonical semantics for KER-T06.
+ */
+function isRouteBlocked(route: RouteAccessInput): boolean {
+  // Explicit blocked flag
+  if (route.blocked === true) {
+    return true;
+  }
+
+  // Blocked stability state
+  const state = route.stability ?? route.lifecycle;
+  return state === 'blocked';
 }
 
 export function filterDiscoverableRoutes(
@@ -129,7 +159,7 @@ export function createRouteAccessEvaluator<Role extends string>(
       return isRouteAllowed(route, role, hierarchy);
     },
     isRouteDirectLinkAllowed(route: RouteAccessInput, role: Role): boolean {
-      return isRouteAllowed(route, role, hierarchy);
+      return isRouteDirectLinkAllowed(route, role, hierarchy);
     },
     filterDiscoverableRoutes(
       routes: readonly ProductRouteCapability[],

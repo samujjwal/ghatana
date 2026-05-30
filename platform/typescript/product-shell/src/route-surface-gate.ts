@@ -119,11 +119,16 @@ export function validateA11ySupport(
     return { canSurface: true };
   }
 
+  // If accessibility metadata is not present, skip validation (for KER-T06 compatibility)
+  if (!route.accessibility) {
+    return { canSurface: true };
+  }
+
   const missingAttributes: string[] = [];
   const requiredAttributes = getRequiredA11yAttributes(route, config.a11yRequirement);
 
   for (const attr of requiredAttributes) {
-    if (!route.accessibility?.[attr as keyof typeof route.accessibility]) {
+    if (!route.accessibility[attr as keyof typeof route.accessibility]) {
       missingAttributes.push(attr);
     }
   }

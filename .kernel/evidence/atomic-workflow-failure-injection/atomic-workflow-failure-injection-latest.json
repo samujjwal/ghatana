@@ -1,11 +1,35 @@
 {
-  "timestamp": "commit:1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3",
+  "timestamp": "commit:fb0a50e69ef9bf3554105221d582421c887c543a",
   "productScope": [
+    "phr",
+    "digital-marketing",
     "data-cloud"
   ],
   "violations": [],
   "warnings": [],
   "evidence": [
+    "Personal Health Records: Executed real atomic workflow failure scenarios",
+    "Personal Health Records: Executable test run validated business write/event append failure",
+    "Personal Health Records: Executable test run validated event append/audit write failure",
+    "Personal Health Records: Executable test run validated audit/outbox failure",
+    "Personal Health Records: Executable test run validated idempotency write failure",
+    "Personal Health Records: Executable test run validated retry after partial failure",
+    "Personal Health Records: Executable test run validated rollback after partial failure",
+    "Personal Health Records: Executable test run validated replay after crash",
+    "Personal Health Records: Executable test run validated side effect rollback",
+    "Personal Health Records: Executable test run validated rollback verification",
+    "Personal Health Records: Executable test run validated cleanup after failure",
+    "Digital Marketing Operating System: Executed real atomic workflow failure scenarios",
+    "Digital Marketing Operating System: Executable test run validated business write/event append failure",
+    "Digital Marketing Operating System: Executable test run validated event append/audit write failure",
+    "Digital Marketing Operating System: Executable test run validated audit/outbox failure",
+    "Digital Marketing Operating System: Executable test run validated idempotency write failure",
+    "Digital Marketing Operating System: Executable test run validated retry after partial failure",
+    "Digital Marketing Operating System: Executable test run validated rollback after partial failure",
+    "Digital Marketing Operating System: Executable test run validated replay after crash",
+    "Digital Marketing Operating System: Executable test run validated side effect rollback",
+    "Digital Marketing Operating System: Executable test run validated rollback verification",
+    "Digital Marketing Operating System: Executable test run validated cleanup after failure",
     "Data Cloud: Executed real atomic workflow failure scenarios",
     "Data Cloud: Executable test run validated business write/event append failure",
     "Data Cloud: Executable test run validated event append/audit write failure",
@@ -31,9 +55,9 @@
   "summary": {
     "totalViolations": 0,
     "totalWarnings": 0,
-    "totalEvidence": 11,
+    "totalEvidence": 33,
     "missingScenarioCount": 0,
-    "executedTestProductCount": 1,
-    "expectedProductCount": 1
+    "executedTestProductCount": 3,
+    "expectedProductCount": 3
   }
 }

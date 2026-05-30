@@ -43,9 +43,8 @@ export function MedicationsPage(): React.ReactElement {
     setRefillingId(medicationId);
     try {
       logInfo('Medication refill requested', undefined, { medicationId, principalId: session.principalId });
-      // TODO: Call actual refill API when available
-      // await refillMedication(medicationId, session.principalId, { tenantId: session.tenantId, principalId: session.principalId, role: session.role });
-      alert('Refill request submitted (placeholder - backend API needed)');
+      // Refill API not yet implemented in backend - disable button until available
+      setError('Medication refill API not yet available');
     } catch (err: unknown) {
       logError('Failed to request medication refill', undefined, { medicationId, error: err });
       setError('Failed to request refill');
@@ -60,10 +59,8 @@ export function MedicationsPage(): React.ReactElement {
     setDiscontinuingId(medicationId);
     try {
       logInfo('Medication discontinuation requested', undefined, { medicationId, principalId: session.principalId });
-      // TODO: Call actual discontinue API when available
-      // await discontinueMedication(medicationId, session.principalId, { tenantId: session.tenantId, principalId: session.principalId, role: session.role });
-      const updated = medications.map(m => m.id === medicationId ? { ...m, status: 'stopped' as const } : m);
-      setMedications(updated);
+      // Discontinue API not yet implemented in backend - disable button until available
+      setError('Medication discontinue API not yet available');
     } catch (err: unknown) {
       logError('Failed to discontinue medication', undefined, { medicationId, error: err });
       setError('Failed to discontinue medication');

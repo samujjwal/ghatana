@@ -106,7 +106,7 @@ public final class PhrMobileRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         if (policyEvaluator == null) {
@@ -134,7 +134,7 @@ public final class PhrMobileRoutes {
                 return patientRecordService.getPatient(context.principalId())
                     .then(opt -> {
                         if (opt.isEmpty()) {
-                            return PhrRouteSupport.errorResponse(404, "PATIENT_NOT_FOUND", "Patient not found: " + context.principalId(, correlationId),
+                            return PhrRouteSupport.errorResponse(404, "PATIENT_NOT_FOUND", "Patient not found: " + context.principalId(),
                                 context.correlationId());
                         }
 
@@ -193,7 +193,7 @@ public final class PhrMobileRoutes {
                                                     "records", records,
                                                     "consents", consents,
                                                     "notifications", notificationList
-                                                , correlationId), context.correlationId());
+                                                ), context.correlationId());
                                             });
                                     });
                             });

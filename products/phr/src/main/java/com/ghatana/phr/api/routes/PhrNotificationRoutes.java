@@ -58,7 +58,7 @@ public final class PhrNotificationRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         int limit = 50;
@@ -102,7 +102,7 @@ public final class PhrNotificationRoutes {
 
                 return PhrRouteSupport.jsonResponse(200, Map.of(
                     "items", notifications,
-                    "count", notifications.size(, correlationId),
+                    "count", notifications.size(),
                     "principalId", context.principalId()
                 ), context.correlationId());
             })
@@ -116,7 +116,7 @@ public final class PhrNotificationRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         String notificationId = request.getPathParameter("notificationId");
@@ -129,7 +129,7 @@ public final class PhrNotificationRoutes {
             .then($ -> PhrRouteSupport.jsonResponse(200, Map.of(
                 "notificationId", notificationId,
                 "read", true
-            , correlationId), context.correlationId()))
+            ), context.correlationId()))
             .whenException(ex -> PhrRouteSupport.errorResponse(500, "MARK_READ_ERROR", 
                 "Failed to mark notification as read", context.correlationId()));
     }
@@ -140,7 +140,7 @@ public final class PhrNotificationRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         String notificationId = request.getPathParameter("notificationId");
@@ -162,7 +162,7 @@ public final class PhrNotificationRoutes {
                         "notificationId", notificationId,
                         "action", action,
                         "result", result
-                    , correlationId), context.correlationId()))
+                    ), context.correlationId()))
                     .whenException(ex -> PhrRouteSupport.errorResponse(500, "ACTION_ERROR", 
                         "Failed to handle notification action", context.correlationId()));
             });
@@ -225,12 +225,12 @@ public final class PhrNotificationRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         return notificationSender.getNotificationPreferences(context.principalId())
             .then(preferences -> PhrRouteSupport.jsonResponse(200, Map.of(
-                "principalId", context.principalId(, correlationId),
+                "principalId", context.principalId(),
                 "preferences", preferences
             ), context.correlationId()))
             .whenException(ex -> PhrRouteSupport.errorResponse(500, "PREFERENCES_FETCH_ERROR", 
@@ -243,7 +243,7 @@ public final class PhrNotificationRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         return request.loadBody()
@@ -264,7 +264,7 @@ public final class PhrNotificationRoutes {
                     
                     return notificationSender.updateNotificationPreferences(context.principalId(), preferences)
                         .then($ -> PhrRouteSupport.jsonResponse(200, Map.of(
-                            "principalId", context.principalId(, correlationId),
+                            "principalId", context.principalId(),
                             "preferences", preferences,
                             "updated", true
                         ), context.correlationId()))

@@ -205,7 +205,7 @@ export function ConsentPage(): React.ReactElement {
                 <Badge tone={consentBadgeTone[consent.status]}>{consent.status}</Badge>
                 {consent.status !== 'revoked' && (
                   <Button
-                    className="danger-button"
+                    variant="destructive"
                     onClick={() => void handleRevoke(consent)}
                     aria-label={`${t('consents.revoke')} ${consent.recipient}`}
                   >
@@ -220,7 +220,7 @@ export function ConsentPage(): React.ReactElement {
         <div className="mt-6">
           {!state.showGrantForm ? (
             <Button
-              className="primary-cta"
+              variant="primary"
               onClick={() => dispatch({ type: 'open_grant_form' })}
             >
               {t('consents.grantNew')}
@@ -293,12 +293,12 @@ export function ConsentPage(): React.ReactElement {
                 required
               />
               <div className="row gap-sm">
-                <Button type="submit" className="primary-cta" disabled={state.submitting}>
+                <Button type="submit" variant="primary" disabled={state.submitting}>
                   {state.submitting ? t('appointments.submitting') : t('consents.grant.submit')}
                 </Button>
                 <Button
                   type="button"
-                  className="secondary-button"
+                  variant="secondary"
                   onClick={() => dispatch({ type: 'close_grant_form' })}
                 >
                   {t('consents.grant.cancel')}

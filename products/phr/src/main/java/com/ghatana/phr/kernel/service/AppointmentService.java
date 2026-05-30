@@ -355,6 +355,49 @@ public class AppointmentService extends PhrServiceBase {
     }
 
     /**
+     * Reschedules an existing appointment to a new date/time.
+     *
+     * @param appointmentId the appointment identifier
+     * @param newDateTime the new appointment date/time (ISO-8601 format)
+     * @return Promise containing the updated appointment
+     */
+    public Promise<Appointment> rescheduleAppointment(String appointmentId, String newDateTime) {
+        if (!running) {
+            return Promise.ofException(new IllegalStateException("Service not running"));
+        }
+
+        String sanitizedAppointmentId = PhrInputSanitizationUtils.requireSafeIdentifier(appointmentId, "appointmentId");
+        Instant parsedDateTime;
+        try {
+            parsedDateTime = Instant.parse(newDateTime);
+        } catch (Exception ex) {
+            return Promise.ofException(new IllegalArgumentException("Invalid newDateTime format: " + newDateTime));
+        }
+
+        return getAppointment(sanitizedAppointmentId)
+            .then(opt -> {
+                if (opt.isEmpty()) {
+                    return Promise.ofException(new IllegalStateException("Appointment not found"));
+                }
+
+                Appointment appointment = opt.get();
+                if (!"SCHEDULED".equals(appointment.getStatus())) {
+                    return Promise.ofException(
+                        new IllegalStateException("Cannot reschedule " + appointment.getStatus() + " appointment"));
+                }
+
+                Appointment rescheduled = appointment.withScheduledTime(parsedDateTime).withUpdatedAt(Instant.now());
+
+                return updateAppointment(rescheduled)
+                    .then($ -> scheduleReminders(rescheduled))
+                    .then($ -> audit("APPOINTMENT_RESCHEDULE", appointment.getPatientId(), 
+                        "Rescheduled to " + newDateTime))
+                    .map($ -> rescheduled);
+            });
+    }
+
+
+    /**
      * Gets available slots for a provider.
      *
      * @param providerId the provider identifier
@@ -520,6 +563,13 @@ public class AppointmentService extends PhrServiceBase {
         ));
     }
 
+    private Promise<Void> scheduleReminders(Appointment appointment) {
+        return createReminderPlan(
+            appointment,
+            PhrTraceContext.newCorrelationId("phr_appointment_reminder_reschedule")
+        );
+    }
+
     @Override
     protected Promise<Void> audit(String action, String entityId, String details) {
         return super.audit(action, entityId, details);
@@ -590,6 +640,11 @@ public class AppointmentService extends PhrServiceBase {
         public Appointment withUpdatedAt(Instant newUpdatedAt) {
             return new Appointment(id, patientId, providerId, slotId, scheduledTime,
                 durationMinutes, reason, status, appointmentType, createdAt, newUpdatedAt, version);
+        }
+
+        public Appointment withScheduledTime(Instant newScheduledTime) {
+            return new Appointment(id, patientId, providerId, slotId, newScheduledTime,
+                durationMinutes, reason, status, appointmentType, createdAt, updatedAt, version);
         }
     }
 

@@ -49,9 +49,7 @@ import { aiOperationsService } from '../api/ai-operations.service';
 import { UnsupportedRuntimeBoundaryError } from '../lib/runtime-boundaries';
 import {
     WORKFLOW_HINTS_DEGRADED_DETAIL,
-    WORKFLOW_HINTS_DEGRADED_TITLE,
     WORKFLOW_HINTS_UNAVAILABLE_DETAIL,
-    WORKFLOW_HINTS_UNAVAILABLE_TITLE,
 } from '../lib/runtime-boundaries';
 import { cn } from '../lib/theme';
 import { workflowsApi, type Workflow } from '../lib/api/workflows';
@@ -83,9 +81,54 @@ const getStatusColor = (status: Workflow['status']) => {
     }
 };
 
-function formatRunTime(timestamp?: string): string {
+function getWorkflowStatusLabel(status: Workflow['status'], t: (key: string) => string): string {
+    const translate = (key: string, fallback: string) => {
+        const value = t(key);
+        return value === key ? fallback : value;
+    };
+
+    switch (status) {
+        case 'active':
+            return translate('workflows.statusActive', 'Active');
+        case 'paused':
+            return translate('workflows.statusPaused', 'Paused');
+        case 'draft':
+            return translate('workflows.statusDraft', 'Draft');
+        case 'archived':
+            return translate('workflows.statusArchived', 'Archived');
+        default:
+            return status;
+    }
+}
+
+function getExecutionStatusLabel(
+    status: Workflow['lastExecutionStatus'],
+    t: (key: string) => string,
+): string {
+    const translate = (key: string, fallback: string) => {
+        const value = t(key);
+        return value === key ? fallback : value;
+    };
+
+    switch (status) {
+        case 'completed':
+            return translate('workflows.executionCompleted', 'Completed');
+        case 'failed':
+            return translate('workflows.executionFailed', 'Failed');
+        case 'running':
+            return translate('workflows.executionRunning', 'Running');
+        case 'cancelled':
+            return translate('workflows.executionCancelled', 'Cancelled');
+        case 'pending':
+            return translate('workflows.executionPending', 'Pending');
+        default:
+            return String(status ?? '');
+    }
+}
+
+function formatRunTime(timestamp: string | undefined, t: (key: string) => string): string {
     if (!timestamp) {
-        return 'No runs yet';
+        return t('workflows.noRunsYet');
     }
 
     return new Date(timestamp).toLocaleString();
@@ -176,6 +219,7 @@ function HintTypeIcon({ type }: { type: PipelineOptimisationHint['type'] }) {
  * DC-E5-S1 — AI Journey #4.
  */
 function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
+    const { t } = useTranslation();
     const { data: surfaceRegistry } = useSurfaceRegistry();
     const aiAssistCapability = getSurfaceSignal(surfaceRegistry?.surfaces, ['ai.assist', 'ai_assist', 'assist']);
     const { data, isLoading, isError } = useQuery({
@@ -205,10 +249,10 @@ function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
             <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
                 <div className="flex items-center gap-2 font-medium">
                     <AlertTriangle className="h-4 w-4" />
-                    {WORKFLOW_HINTS_UNAVAILABLE_TITLE}
+                    {t('workflows.aiUnavailable')}
                 </div>
                 <p className="mt-1">
-                    {WORKFLOW_HINTS_UNAVAILABLE_DETAIL}
+                    {WORKFLOW_HINTS_UNAVAILABLE_DETAIL || t('workflows.aiUnavailableDesc')}
                 </p>
             </div>
         );
@@ -219,10 +263,10 @@ function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
             <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
                 <div className="flex items-center gap-2 font-medium">
                     <AlertTriangle className="h-4 w-4" />
-                    {WORKFLOW_HINTS_DEGRADED_TITLE}
+                    {t('workflows.aiDegraded')}
                 </div>
                 <p className="mt-1">
-                    {aiAssistCapability.detail ?? WORKFLOW_HINTS_DEGRADED_DETAIL}
+                    {aiAssistCapability.detail ?? WORKFLOW_HINTS_DEGRADED_DETAIL ?? t('workflows.aiDegradedDesc')}
                 </p>
             </div>
         );
@@ -233,7 +277,7 @@ function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
             <div className="rounded-lg bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 p-3">
                 <div className="flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Analysing pipeline with AI…
+                    {t('workflows.analyzingPipeline')}
                 </div>
             </div>
         );
@@ -248,7 +292,7 @@ function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
         <div className="mt-3">
             <h3 className="flex items-center gap-1.5 text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">
                 <Zap className="h-4 w-4" />
-                Operational Advisories
+                {t('workflows.operationalAdvisories')}
             </h3>
             <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 divide-y divide-blue-100 dark:divide-blue-900">
                 {advisories.slice(0, 3).map((advisory) => (
@@ -260,14 +304,20 @@ function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
                                     advisory.priority === 'high' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' :
                                         'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
                             )}>
-                                {advisory.priority}
+                                {advisory.priority === 'critical'
+                                    ? t('workflows.priorityCritical')
+                                    : advisory.priority === 'high'
+                                        ? t('workflows.priorityHigh')
+                                        : advisory.priority === 'medium'
+                                            ? t('workflows.priorityMedium')
+                                            : t('workflows.priorityLow')}
                             </span>
                             <div className="min-w-0 flex-1">
                                 <p className="text-sm font-medium text-gray-900 dark:text-white">{advisory.title}</p>
                                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{advisory.description}</p>
                             </div>
                             <span className="shrink-0 text-xs text-gray-400">
-                                {Math.round(advisory.confidence * 100)}%
+                                {t('workflows.confidencePercent', { value: Math.round(advisory.confidence * 100) })}
                             </span>
                         </div>
                     </div>
@@ -280,10 +330,10 @@ function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
         <div>
             <h3 className="flex items-center gap-1.5 text-sm font-medium text-purple-700 dark:text-purple-300 mb-2">
                 <Sparkles className="h-4 w-4" />
-                Inline AI Recommendations
+                {t('workflows.inlineAIRecommendations')}
                 {data?.data?.hints.some(h => h.fallback) && (
                     <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 px-1.5 py-0.5 rounded ml-1">
-                        estimated
+                        {t('workflows.estimated')}
                     </span>
                 )}
             </h3>
@@ -305,10 +355,14 @@ function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
                                             hint.impact === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' :
                                                 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
                                     )}>
-                                        {hint.impact} impact
+                                        {hint.impact === 'high'
+                                            ? t('workflows.highImpact')
+                                            : hint.impact === 'medium'
+                                                ? t('workflows.mediumImpact')
+                                                : t('workflows.lowImpact')}
                                     </span>
                                     <span className="text-xs text-gray-400">
-                                        {Math.round(hint.confidence * 100)}% confidence
+                                        {t('workflows.confidencePercent', { value: Math.round(hint.confidence * 100) })}
                                     </span>
                                 </div>
                                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
@@ -330,6 +384,7 @@ function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
  * All actions are wired to real pipeline API calls.
  */
 function WorkflowActions({ workflow }: { workflow: Workflow }) {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [menuOpen, setMenuOpen] = useState(false);
@@ -352,7 +407,7 @@ function WorkflowActions({ workflow }: { workflow: Workflow }) {
 
     const handleDelete = () => {
         setMenuOpen(false);
-        if (window.confirm(`Delete workflow "${workflow.name}"? This action cannot be undone.`)) {
+        if (window.confirm(t('workflows.deleteWorkflowConfirm', { name: workflow.name }))) {
             deleteMutation.mutate();
         }
     };
@@ -363,7 +418,7 @@ function WorkflowActions({ workflow }: { workflow: Workflow }) {
                 variant="ghost"
                 tone="neutral"
                 icon={<MoreVertical className="h-4 w-4" />}
-                label="Workflow actions"
+                label={t('workflows.workflowActions')}
                 onClick={() => setMenuOpen((prev) => !prev)}
             />
             {menuOpen && (
@@ -379,7 +434,7 @@ function WorkflowActions({ workflow }: { workflow: Workflow }) {
                         className="flex w-full items-center gap-2 rounded-t-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300 dark:hover:bg-gray-700"
                     >
                         <Play className="h-3.5 w-3.5 text-green-500" />
-                        Run Now
+                        {t('workflows.runNow')}
                     </button>
                     <button
                         type="button"
@@ -388,7 +443,7 @@ function WorkflowActions({ workflow }: { workflow: Workflow }) {
                         className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
                     >
                         <Pencil className="h-3.5 w-3.5" />
-                        Edit
+                        {t('workflows.edit')}
                     </button>
                     <button
                         type="button"
@@ -397,7 +452,7 @@ function WorkflowActions({ workflow }: { workflow: Workflow }) {
                         className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
                     >
                         <BarChart2 className="h-3.5 w-3.5" />
-                        View Logs
+                        {t('workflows.viewLogs')}
                     </button>
                     <button
                         type="button"
@@ -407,7 +462,7 @@ function WorkflowActions({ workflow }: { workflow: Workflow }) {
                         className="flex w-full items-center gap-2 rounded-b-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-950/30"
                     >
                         <Trash2 className="h-3.5 w-3.5" />
-                        Delete
+                        {t('workflows.delete')}
                     </button>
                 </div>
             )}
@@ -420,6 +475,10 @@ function WorkflowActions({ workflow }: { workflow: Workflow }) {
  */
 export function WorkflowsPage() {
     const { t } = useTranslation();
+    const translateOrFallback = (key: string, fallback: string) => {
+        const value = t(key);
+        return value === key ? fallback : value;
+    };
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -457,23 +516,23 @@ export function WorkflowsPage() {
     }), [workflows, workflowsPage]);
 
     const statusOptions = [
-        { value: 'all', label: 'All Workflows' },
-        { value: 'active', label: 'Active' },
-        { value: 'paused', label: 'Paused' },
-        { value: 'draft', label: 'Draft' },
-        { value: 'archived', label: 'Archived' },
+        { value: 'all', label: t('workflows.statusAll') },
+        { value: 'active', label: t('workflows.statusActive') },
+        { value: 'paused', label: t('workflows.statusPaused') },
+        { value: 'draft', label: t('workflows.statusDraft') },
+        { value: 'archived', label: t('workflows.statusArchived') },
     ];
 
     return (
-        <section className="p-6" data-testid="workflows-page" aria-label="Workflows">
+        <section className="p-6" data-testid="workflows-page" aria-label={translateOrFallback('workflows.title', 'Workflows')}>
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                        Workflows
+                        {t('workflows.title')}
                     </h1>
                     <p className="text-gray-600 dark:text-gray-400">
-                        Data-local plugin execution surface: focus on what needs a run, what is stalled, and what should happen next.
+                        {t('workflows.subtitle')}
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -481,7 +540,7 @@ export function WorkflowsPage() {
                         variant="ghost"
                         tone="neutral"
                         icon={<RefreshCw className="h-4 w-4" />}
-                        label="Refresh workflows"
+                        label={t('workflows.refreshWorkflows')}
                         onClick={() => void refetch()}
                     />
                     {/* DC-UX-020: single creation entry point — SmartWorkflowBuilder at /workflows/new */}
@@ -491,7 +550,7 @@ export function WorkflowsPage() {
                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
                         <Plus className="h-4 w-4" />
-                        New Pipeline
+                        {t('workflows.newPipeline')}
                     </Link>
                 </div>
             </div>
@@ -499,10 +558,10 @@ export function WorkflowsPage() {
             <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950/30" data-testid="workflow-outcome-banner">
                 <div className="flex items-start justify-between gap-4">
                     <div>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">Outcome-First View</p>
-                        <h2 className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">Keep the list about outcomes, not pipeline internals</h2>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">{t('workflows.outcomeFirstView')}</p>
+                        <h2 className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{t('workflows.outcomeFirstHeading')}</h2>
                         <p className="mt-1 text-sm text-blue-900/80 dark:text-blue-100/80">
-                            Review the most important next action for each workflow here, then open the advanced editor only when the flow itself needs deeper changes.
+                            {t('workflows.outcomeFirstDescription')}
                         </p>
                     </div>
                     <Button
@@ -511,7 +570,7 @@ export function WorkflowsPage() {
                         onClick={() => navigate('/workflows/new')}
                         leadingIcon={<ArrowRight className="h-4 w-4" />}
                     >
-                        Start a new pipeline
+                        {t('workflows.startNewPipeline')}
                     </Button>
                 </div>
             </div>
@@ -524,7 +583,7 @@ export function WorkflowsPage() {
                             <WorkflowIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Total</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{t('workflows.statsTotal')}</p>
                             <p className="text-xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
                         </div>
                     </div>
@@ -535,7 +594,7 @@ export function WorkflowsPage() {
                             <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Needs Attention</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{t('workflows.statsNeedsAttention')}</p>
                             <p className="text-xl font-bold text-gray-900 dark:text-white">{workflowsNeedingAttention}</p>
                         </div>
                     </div>
@@ -546,7 +605,7 @@ export function WorkflowsPage() {
                             <Play className="h-5 w-5 text-green-600 dark:text-green-400" />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Recently Run</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{t('workflows.statsRecentlyRun')}</p>
                             <p className="text-xl font-bold text-gray-900 dark:text-white">{workflowsRecentlyRun}</p>
                         </div>
                     </div>
@@ -557,7 +616,7 @@ export function WorkflowsPage() {
                             <Pause className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Scheduled</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{t('workflows.statsScheduled')}</p>
                             <p className="text-xl font-bold text-gray-900 dark:text-white">{workflowsScheduled}</p>
                         </div>
                     </div>
@@ -568,7 +627,7 @@ export function WorkflowsPage() {
                             <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Draft / Archived</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{t('workflows.statsDraftArchived')}</p>
                             <p className="text-xl font-bold text-gray-900 dark:text-white">{stats.draft + stats.archived}</p>
                         </div>
                     </div>
@@ -580,11 +639,11 @@ export function WorkflowsPage() {
                 <SearchFilterBar
                     searchQuery={searchQuery}
                     onSearchChange={setSearchQuery}
-                    searchPlaceholder="Search workflows by outcome, schedule, or owner..."
+                    searchPlaceholder={t('workflows.searchPlaceholder')}
                     filters={[
                         {
                             id: 'workflow-status-filter',
-                            label: 'Status',
+                            label: t('workflows.statusFilter'),
                             value: statusFilter,
                             options: statusOptions,
                             onChange: setStatusFilter,
@@ -639,12 +698,12 @@ export function WorkflowsPage() {
                                                 <div className="min-w-0">
                                                     <div className="flex flex-wrap items-center gap-2">
                                                         <h3 className="text-base font-semibold text-gray-900 dark:text-white">{workflow.name}</h3>
-                                                        <span className={cn('px-2 py-1 rounded-full text-xs font-medium capitalize', getStatusColor(workflow.status))}>
-                                                            {workflow.status}
+                                                        <span className={cn('px-2 py-1 rounded-full text-xs font-medium', getStatusColor(workflow.status))}>
+                                                            {getWorkflowStatusLabel(workflow.status, t)}
                                                         </span>
                                                     </div>
                                                     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
-                                                        {workflow.description || 'No pipeline summary provided yet.'}
+                                                        {workflow.description || t('workflows.noSummaryYet')}
                                                     </p>
                                                 </div>
                                             </div>
@@ -666,19 +725,19 @@ export function WorkflowsPage() {
                                         <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/40">
                                             <div className="grid grid-cols-2 gap-3 text-sm">
                                                 <div>
-                                                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Last run</p>
-                                                    <p className="mt-1 font-medium text-gray-900 dark:text-white">{formatRunTime(workflow.lastExecutedAt)}</p>
+                                                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('workflows.lastRun')}</p>
+                                                    <p className="mt-1 font-medium text-gray-900 dark:text-white">{formatRunTime(workflow.lastExecutedAt, t)}</p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Schedule</p>
-                                                    <p className="mt-1 font-medium text-gray-900 dark:text-white">{workflow.schedule ?? 'Manual'}</p>
+                                                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('workflows.schedule')}</p>
+                                                    <p className="mt-1 font-medium text-gray-900 dark:text-white">{workflow.schedule ?? t('workflows.manual')}</p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Flow size</p>
-                                                    <p className="mt-1 font-medium text-gray-900 dark:text-white">{workflow.nodes.length} steps / {workflow.edges.length} links</p>
+                                                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('workflows.flowSize')}</p>
+                                                    <p className="mt-1 font-medium text-gray-900 dark:text-white">{t('workflows.stepsLinks', { steps: workflow.nodes.length, links: workflow.edges.length })}</p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Owner</p>
+                                                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('workflows.owner')}</p>
                                                     <p className="mt-1 font-medium text-gray-900 dark:text-white">{workflow.createdBy}</p>
                                                 </div>
                                             </div>
@@ -693,7 +752,7 @@ export function WorkflowsPage() {
                                                 </span>
                                             ))}
                                             {workflow.tags.length === 0 && (
-                                                <span className="text-xs text-gray-400">No tags yet</span>
+                                                <span className="text-xs text-gray-400">{t('workflows.noTagsYet')}</span>
                                             )}
                                         </div>
                                         <div className="flex items-center gap-2">
@@ -705,7 +764,7 @@ export function WorkflowsPage() {
                                                 data-testid={`advanced-editor-${workflow.id}`}
                                                 onClick={() => navigate(`/pipelines/${workflow.id}`)}
                                             >
-                                                Advanced editor
+                                                {translateOrFallback('workflows.advancedEditor', 'Advanced editor')}
                                             </Button>
                                             <Button
                                                 type="button"
@@ -717,7 +776,7 @@ export function WorkflowsPage() {
                                                     setShowAdvancedDetails(false);
                                                 }}
                                             >
-                                                Review pipeline
+                                                {t('workflows.reviewPipeline')}
                                             </Button>
                                         </div>
                                     </div>
@@ -732,7 +791,11 @@ export function WorkflowsPage() {
             {workflows.length > PAGE_SIZE && (
                 <div className="mt-4 flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
                     <span>
-                        Showing {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, workflows.length)} of {workflows.length} workflows
+                        {t('workflows.showingPagination', {
+                            start: ((currentPage - 1) * PAGE_SIZE) + 1,
+                            end: Math.min(currentPage * PAGE_SIZE, workflows.length),
+                            count: workflows.length,
+                        })}
                     </span>
                     <div className="flex items-center gap-2">
                         <Button
@@ -741,16 +804,16 @@ export function WorkflowsPage() {
                             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                             disabled={currentPage === 1}
                         >
-                            Previous
+                            {t('workflows.previous')}
                         </Button>
-                        <span className="px-2">Page {currentPage} of {totalPages}</span>
+                        <span className="px-2">{t('workflows.pageOf', { page: currentPage, total: totalPages })}</span>
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                             disabled={currentPage === totalPages}
                         >
-                            Next
+                            {t('workflows.next')}
                         </Button>
                     </div>
                 </div>
@@ -768,7 +831,7 @@ export function WorkflowsPage() {
                                 variant="ghost"
                                 tone="neutral"
                                 icon={<XCircle className="h-5 w-5" />}
-                                label="Close workflow detail"
+                                label={t('workflows.closeWorkflowDetail')}
                                 onClick={() => setSelectedWorkflow(null)}
                             />
                         </div>
@@ -786,7 +849,7 @@ export function WorkflowsPage() {
 
                             {selectedWorkflow.description && (
                                 <div>
-                                    <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Outcome summary</h3>
+                                    <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{t('workflows.outcomeSummary')}</h3>
                                     <p className="text-gray-900 dark:text-white">{selectedWorkflow.description}</p>
                                 </div>
                             )}
@@ -795,21 +858,21 @@ export function WorkflowsPage() {
                             <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 p-3 flex items-center gap-3 flex-wrap" data-testid="pipeline-trust-signals">
                                 <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                                     <Shield className="h-4 w-4 text-blue-500" />
-                                    <span className="font-medium">Policy impact:</span>
+                                    <span className="font-medium">{t('workflows.policyImpact')}</span>
                                 </div>
-                                <TrustBadge status="compliant" label="Tenant-scoped data movement" />
+                                <TrustBadge status="compliant" label={t('workflows.trustTenantScopedMovement')} />
                                 {selectedWorkflow.nodes.some((n: Workflow['nodes'][number]) => n.type === 'sink') && (
-                                    <TrustBadge status="pending-review" label="External sink detected — review required" />
+                                    <TrustBadge status="pending-review" label={t('workflows.trustExternalSink')} />
                                 )}
                                 {selectedWorkflow.nodes.length > 5 && (
-                                    <TrustBadge status="warning" label={`Complex flow (${selectedWorkflow.nodes.length} steps) — approval recommended`} />
+                                    <TrustBadge status="warning" label={t('workflows.trustComplexFlow', { steps: selectedWorkflow.nodes.length })} />
                                 )}
                             </div>
 
                             {/* DC-UX-019: Execution visibility — show outcome + duration next to timestamp */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Status</h3>
+                                    <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{t('workflows.statusFilter')}</h3>
                                     <div className="flex items-center gap-2">
                                         {getStatusIcon(selectedWorkflow.status)}
                                         <span className={cn('px-2 py-1 rounded-full text-xs font-medium capitalize', getStatusColor(selectedWorkflow.status))}>
@@ -818,8 +881,8 @@ export function WorkflowsPage() {
                                     </div>
                                 </div>
                                 <div>
-                                    <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Latest run</h3>
-                                    <p className="text-gray-900 dark:text-white text-sm">{formatRunTime(selectedWorkflow.lastExecutedAt)}</p>
+                                    <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{t('workflows.latestRun')}</h3>
+                                    <p className="text-gray-900 dark:text-white text-sm">{formatRunTime(selectedWorkflow.lastExecutedAt, t)}</p>
                                     {selectedWorkflow.lastExecutionStatus && (
                                         <p className={cn(
                                             'mt-1 text-xs font-medium capitalize',
@@ -829,12 +892,12 @@ export function WorkflowsPage() {
                                             selectedWorkflow.lastExecutionStatus === 'cancelled' && 'text-gray-500',
                                             selectedWorkflow.lastExecutionStatus === 'pending' && 'text-amber-600 dark:text-amber-400',
                                         )}>
-                                            {selectedWorkflow.lastExecutionStatus}
+                                            {getExecutionStatusLabel(selectedWorkflow.lastExecutionStatus, t)}
                                             {selectedWorkflow.lastExecutionDuration != null && ` · ${(selectedWorkflow.lastExecutionDuration / 1000).toFixed(1)}s`}
                                         </p>
                                     )}
                                     {!selectedWorkflow.lastExecutionStatus && selectedWorkflow.lastExecutedAt && (
-                                        <p className="mt-1 text-xs text-gray-400">Outcome not available</p>
+                                        <p className="mt-1 text-xs text-gray-400">{t('workflows.outcomeNotAvailable')}</p>
                                     )}
                                 </div>
                             </div>
@@ -846,35 +909,35 @@ export function WorkflowsPage() {
                                 leadingIcon={showAdvancedDetails ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                                 onClick={() => setShowAdvancedDetails((current) => !current)}
                             >
-                                {showAdvancedDetails ? 'Hide pipeline details' : 'Show pipeline details'}
+                                {showAdvancedDetails ? t('workflows.hidePipelineDetails') : t('workflows.showPipelineDetails')}
                             </Button>
 
                             {showAdvancedDetails && (
                                 <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/40">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Schedule</h3>
-                                            <p className="text-gray-900 dark:text-white text-sm">{selectedWorkflow.schedule ?? 'Manual'}</p>
+                                            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{t('workflows.schedule')}</h3>
+                                            <p className="text-gray-900 dark:text-white text-sm">{selectedWorkflow.schedule ?? t('workflows.manual')}</p>
                                         </div>
                                         <div>
-                                            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Created</h3>
+                                            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{t('workflows.created')}</h3>
                                             <p className="text-gray-900 dark:text-white text-sm">
                                                 {new Date(selectedWorkflow.createdAt).toLocaleDateString()}
                                             </p>
                                         </div>
                                         <div>
-                                            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Flow size</h3>
-                                            <p className="text-gray-900 dark:text-white text-sm">{selectedWorkflow.nodes.length} steps / {selectedWorkflow.edges.length} links</p>
+                                            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{t('workflows.flowSize')}</h3>
+                                            <p className="text-gray-900 dark:text-white text-sm">{t('workflows.stepsLinks', { steps: selectedWorkflow.nodes.length, links: selectedWorkflow.edges.length })}</p>
                                         </div>
                                         <div>
-                                            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Owner</h3>
+                                            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{t('workflows.owner')}</h3>
                                             <p className="text-gray-900 dark:text-white text-sm">{selectedWorkflow.createdBy}</p>
                                         </div>
                                     </div>
 
                                     {selectedWorkflow.tags && selectedWorkflow.tags.length > 0 && (
                                         <div className="mt-4">
-                                            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Tags</h3>
+                                            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{t('workflows.tags')}</h3>
                                             <div className="flex gap-2 flex-wrap">
                                                 {selectedWorkflow.tags.map((tag: string) => (
                                                     <span key={tag} className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full text-sm">
@@ -896,7 +959,7 @@ export function WorkflowsPage() {
                                     variant="outline"
                                     onClick={() => navigate(`/pipelines/${selectedWorkflow.id}`)}
                                 >
-                                    Advanced editor
+                                    {translateOrFallback('workflows.advancedEditor', 'Advanced editor')}
                                 </Button>
                             </div>
                         </div>

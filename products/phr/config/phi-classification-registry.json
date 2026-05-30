@@ -1,0 +1,62 @@
+{
+  "version": "1.0.0",
+  "description": "PHI classification registry for PHR product. Defines which data fields contain PHI and their sensitivity levels.",
+  "classifications": {
+    "patient": {
+      "patientId": "high",
+      "nationalId": "high",
+      "name": "high",
+      "dateOfBirth": "high",
+      "address": "high",
+      "phoneNumber": "medium",
+      "email": "medium",
+      "emergencyContact": "high"
+    },
+    "medical": {
+      "diagnosis": "high",
+      "condition": "high",
+      "medication": "high",
+      "prescription": "high",
+      "labResults": "high",
+      "observations": "high",
+      "immunizations": "medium",
+      "allergies": "high",
+      "procedures": "high"
+    },
+    "documents": {
+      "documentContent": "high",
+      "documentMetadata": "medium",
+      "ocrText": "high",
+      "documentTitle": "low"
+    },
+    "appointments": {
+      "appointmentReason": "medium",
+      "appointmentNotes": "high",
+      "appointmentType": "low"
+    },
+    "consent": {
+      "consentDecision": "high",
+      "consentScope": "high",
+      "consentRevocationReason": "medium"
+    },
+    "emergency": {
+      "emergencyAccessReason": "high",
+      "emergencyAccessNotes": "high",
+      "breakGlassReason": "high"
+    }
+  },
+  "sensitivityLevels": {
+    "high": {
+      "description": "Direct identifiers and sensitive medical information",
+      "requirements": ["encryption", "audit", "accessControl", "retentionPolicy"]
+    },
+    "medium": {
+      "description": "Indirect identifiers and contextual information",
+      "requirements": ["encryption", "accessControl"]
+    },
+    "low": {
+      "description": "Non-identifying metadata",
+      "requirements": ["accessControl"]
+    }
+  }
+}

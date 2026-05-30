@@ -65,7 +65,7 @@ public final class PhrAppointmentRoutes {
             context = PhrRouteSupport.requireContext(request);
             idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         return request.loadBody()
@@ -74,7 +74,7 @@ public final class PhrAppointmentRoutes {
                 try {
                     appointmentRequest = parseAppointmentRequest(body.getString(StandardCharsets.UTF_8));
                 } catch (IllegalArgumentException ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_APPOINTMENT_REQUEST", ex.getMessage(, correlationId));
+                    return PhrRouteSupport.errorResponse(400, "INVALID_APPOINTMENT_REQUEST", ex.getMessage());
                 }
                 
                 return requireAccess(context, appointmentRequest.getPatientId(), "appointments", "WRITE")
@@ -96,7 +96,7 @@ public final class PhrAppointmentRoutes {
             context = PhrRouteSupport.requireContext(request);
             appointmentId = request.getPathParameter("appointmentId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         return request.loadBody()
@@ -109,7 +109,7 @@ public final class PhrAppointmentRoutes {
                         throw new IllegalArgumentException("scheduledTime is required");
                     }
                 } catch (Exception ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_RESCHEDULE", ex.getMessage(, correlationId));
+                    return PhrRouteSupport.errorResponse(400, "INVALID_RESCHEDULE", ex.getMessage());
                 }
                 
                 // For rescheduling, we need to get the appointment first to check patient access
@@ -129,7 +129,7 @@ public final class PhrAppointmentRoutes {
                             "appointmentId", appointmentId,
                             "scheduledTime", newScheduledTime,
                             "status", "RESCHEDULED"
-                        , correlationId));
+                        ), correlationId);
                     });
             });
     }
@@ -144,7 +144,7 @@ public final class PhrAppointmentRoutes {
             appointmentId = request.getPathParameter("appointmentId");
             reason = request.getQueryParameter("reason");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         return appointmentService.getPatientAppointments(context.principalId(), null)
@@ -163,7 +163,7 @@ public final class PhrAppointmentRoutes {
                     .then($ -> PhrRouteSupport.jsonResponse(200, Map.of(
                         "appointmentId", appointmentId,
                         "status", "CANCELLED"
-                    , correlationId)));
+                    ), correlationId));
             });
     }
 
@@ -177,13 +177,13 @@ public final class PhrAppointmentRoutes {
             providerId = PhrRouteSupport.requiredQuery(request, "providerId");
             date = request.getQueryParameter("date");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_SLOT_QUERY", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "INVALID_SLOT_QUERY", ex.getMessage());
         }
 
         return appointmentService.getAvailableSlots(providerId, date != null ? date : java.time.LocalDate.now().toString())
             .then(slots -> PhrRouteSupport.jsonResponse(200, Map.of(
                 "providerId", providerId,
-                "date", date != null ? date : java.time.LocalDate.now(, correlationId).toString(),
+                "date", date != null ? date : java.time.LocalDate.now().toString(),
                 "items", slots,
                 "count", slots.size()
             )));
@@ -197,7 +197,7 @@ public final class PhrAppointmentRoutes {
             context = PhrRouteSupport.requireContext(request);
             appointmentId = request.getPathParameter("appointmentId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         return appointmentService.getPatientAppointments(context.principalId(), null)
@@ -211,7 +211,7 @@ public final class PhrAppointmentRoutes {
                         "Appointment not found or not accessible", context.correlationId());
                 }
                 
-                return PhrRouteSupport.jsonResponse(200, appointment.get(, correlationId));
+                return PhrRouteSupport.jsonResponse(200, appointment.get());
             });
     }
 
@@ -223,12 +223,12 @@ public final class PhrAppointmentRoutes {
             context = PhrRouteSupport.requireContext(request);
             status = request.getQueryParameter("status");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         return appointmentService.getPatientAppointments(context.principalId(), status)
             .then(appointments -> PhrRouteSupport.jsonResponse(200, Map.of(
-                "patientId", context.principalId(, correlationId),
+                "patientId", context.principalId(),
                 "items", appointments,
                 "count", appointments.size()
             )));

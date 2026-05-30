@@ -79,7 +79,7 @@ public final class PhrProviderRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         // Use policy evaluator for PHI access decision (POL-001)
@@ -119,7 +119,7 @@ public final class PhrProviderRoutes {
                     appointments.put("nextAppointment", null);
 
                     return PhrRouteSupport.jsonResponse(200, Map.of(
-                        "providerId", context.principalId(, correlationId),
+                        "providerId", context.principalId(),
                         "tenantId", context.tenantId(),
                         "workQueue", Map.of(
                             "pendingReviews", 0,
@@ -145,7 +145,7 @@ public final class PhrProviderRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         // Use policy evaluator for PHI access decision (POL-001)
@@ -183,7 +183,7 @@ public final class PhrProviderRoutes {
                         .toList();
                     return PhrRouteSupport.jsonResponse(200, Map.of(
                         "items", patientSummaries,
-                        "count", patientSummaries.size(, correlationId)
+                        "count", patientSummaries.size()
                     ), context.correlationId());
                 });
             });
@@ -195,7 +195,7 @@ public final class PhrProviderRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         String patientId = request.getPathParameter("patientId");
@@ -221,7 +221,7 @@ public final class PhrProviderRoutes {
                     var patient = opt.get();
                     return PhrRouteSupport.jsonResponse(200, Map.of(
                         "patientId", patientId,
-                        "tenantId", context.tenantId(, correlationId),
+                        "tenantId", context.tenantId(),
                         "clinicianId", context.principalId(),
                         "name", patient.getDemographics().getFullName(),
                         "age", patient.getDemographics().getAge(),
@@ -238,7 +238,7 @@ public final class PhrProviderRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         String patientId = request.getPathParameter("patientId");
@@ -267,7 +267,7 @@ public final class PhrProviderRoutes {
                     
                     return PhrRouteSupport.jsonResponse(200, Map.of(
                         "patientId", patientId,
-                        "tenantId", context.tenantId(, correlationId),
+                        "tenantId", context.tenantId(),
                         "clinicianId", context.principalId(),
                         "demographics", Map.of(
                             "fullName", demographics.getFullName(),
@@ -299,7 +299,7 @@ public final class PhrProviderRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         String patientId = request.getPathParameter("patientId");
@@ -341,7 +341,7 @@ public final class PhrProviderRoutes {
                         
                         return clinicalService.createEncounter(ctx, createRequest)
                             .then(encounter -> PhrRouteSupport.jsonResponse(201, Map.of(
-                                "encounterId", encounter.encounterId(, correlationId),
+                                "encounterId", encounter.encounterId(),
                                 "patientId", encounter.patientId(),
                                 "encounterType", encounter.encounterType(),
                                 "participant", encounter.participant(),
@@ -363,7 +363,7 @@ public final class PhrProviderRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         String patientId = request.getPathParameter("patientId");
@@ -397,7 +397,7 @@ public final class PhrProviderRoutes {
                     }
                     var encounter = opt.get();
                     return PhrRouteSupport.jsonResponse(200, Map.of(
-                        "encounterId", encounter.encounterId(, correlationId),
+                        "encounterId", encounter.encounterId(),
                         "patientId", encounter.patientId(),
                         "encounterType", encounter.encounterType(),
                         "participant", encounter.participant(),
@@ -416,7 +416,7 @@ public final class PhrProviderRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         String patientId = request.getPathParameter("patientId");
@@ -458,7 +458,7 @@ public final class PhrProviderRoutes {
                         
                         return clinicalService.updateEncounter(ctx, encounterId, updateRequest)
                             .then(encounter -> PhrRouteSupport.jsonResponse(200, Map.of(
-                                "encounterId", encounter.encounterId(, correlationId),
+                                "encounterId", encounter.encounterId(),
                                 "patientId", encounter.patientId(),
                                 "encounterType", encounter.encounterType(),
                                 "participant", encounter.participant(),
@@ -481,7 +481,7 @@ public final class PhrProviderRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         String patientId = request.getPathParameter("patientId");
@@ -508,7 +508,7 @@ public final class PhrProviderRoutes {
             
             return clinicalService.completeEncounter(ctx, encounterId)
                 .then(encounter -> PhrRouteSupport.jsonResponse(200, Map.of(
-                    "encounterId", encounter.encounterId(, correlationId),
+                    "encounterId", encounter.encounterId(),
                     "patientId", encounter.patientId(),
                     "encounterType", encounter.encounterType(),
                     "participant", encounter.participant(),
@@ -526,7 +526,7 @@ public final class PhrProviderRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         String patientId = request.getPathParameter("patientId");
@@ -571,7 +571,7 @@ public final class PhrProviderRoutes {
                         
                         return clinicalService.prescribeMedication(ctx, prescribeRequest)
                             .then(medication -> PhrRouteSupport.jsonResponse(201, Map.of(
-                                "medicationId", medication.medicationId(, correlationId),
+                                "medicationId", medication.medicationId(),
                                 "patientId", medication.patientId(),
                                 "medicationName", medication.medicationName(),
                                 "dosage", medication.dosage(),
@@ -594,7 +594,7 @@ public final class PhrProviderRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         return policyEvaluator.canAccessPhiResourceAsync(
@@ -613,7 +613,7 @@ public final class PhrProviderRoutes {
                 String endDateParam = request.getQueryParameter("endDate");
 
                 return PhrRouteSupport.jsonResponse(200, Map.of(
-                    "providerId", context.principalId(, correlationId),
+                    "providerId", context.principalId(),
                     "tenantId", context.tenantId(),
                     "startDate", startDateParam != null ? startDateParam : "",
                     "endDate", endDateParam != null ? endDateParam : "",

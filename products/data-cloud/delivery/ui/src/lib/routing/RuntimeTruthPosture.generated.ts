@@ -4,7 +4,7 @@
  * Generated from canonical route manifest by generate-route-manifest.mjs
  * To regenerate, run: npm run generate:route-manifest
  *
- * Generated at: 2026-05-28T17:25:53.331Z
+ * Generated at: 2026-05-30T02:28:16.230Z
  * Source: DataCloudRouterBuilder.java + RouteSecurityRegistry.java
  *
  * DC-P0-03: Runtime truth for UI feature gating and route visibility
@@ -605,7 +605,7 @@ export const RUNTIME_TRUTH_POSTURED: RuntimeRoute[] = [
     runtimeTruthSurface: 'VISIBLE',
     requiresAuth: true,
     requiresTenant: true,
-    requiresPolicy: false,
+    requiresPolicy: true,
     requiresBlockingAudit: false,
     requiredAccess: 'OPERATOR',
     legacyStatus: 'active',
@@ -866,6 +866,21 @@ export const RUNTIME_TRUTH_POSTURED: RuntimeRoute[] = [
     legacyStatus: 'active',
     idempotent: true,
     description: 'DELETE /api/v1/governance/policies/{id}'
+  },
+  {
+    method: 'DELETE',
+    path: '/api/v1/media/artifacts/{artifactId}',
+    operationId: 'deleteApiV1MediaArtifacts{artifactId',
+    sensitivity: 'CRITICAL',
+    runtimeTruthSurface: 'VISIBLE',
+    requiresAuth: true,
+    requiresTenant: true,
+    requiresPolicy: true,
+    requiresBlockingAudit: true,
+    requiredAccess: 'ADMIN',
+    legacyStatus: 'active',
+    idempotent: true,
+    description: 'DELETE /api/v1/media/artifacts/{artifactId}'
   },
   {
     method: 'DELETE',
@@ -1889,6 +1904,36 @@ export const RUNTIME_TRUTH_POSTURED: RuntimeRoute[] = [
   },
   {
     method: 'GET',
+    path: '/api/v1/media/artifacts',
+    operationId: 'getApiV1MediaArtifacts',
+    sensitivity: 'INTERNAL',
+    runtimeTruthSurface: 'VISIBLE',
+    requiresAuth: true,
+    requiresTenant: true,
+    requiresPolicy: false,
+    requiresBlockingAudit: false,
+    requiredAccess: 'VIEWER',
+    legacyStatus: 'active',
+    idempotent: true,
+    description: 'GET /api/v1/media/artifacts'
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/media/artifacts/{artifactId}',
+    operationId: 'getApiV1MediaArtifacts{artifactId',
+    sensitivity: 'INTERNAL',
+    runtimeTruthSurface: 'VISIBLE',
+    requiresAuth: true,
+    requiresTenant: true,
+    requiresPolicy: false,
+    requiresBlockingAudit: false,
+    requiredAccess: 'VIEWER',
+    legacyStatus: 'active',
+    idempotent: true,
+    description: 'GET /api/v1/media/artifacts/{artifactId}'
+  },
+  {
+    method: 'GET',
     path: '/api/v1/models',
     operationId: 'getApiV1Models',
     sensitivity: 'INTERNAL',
@@ -2885,7 +2930,7 @@ export const RUNTIME_TRUTH_POSTURED: RuntimeRoute[] = [
     runtimeTruthSurface: 'VISIBLE',
     requiresAuth: true,
     requiresTenant: true,
-    requiresPolicy: false,
+    requiresPolicy: true,
     requiresBlockingAudit: false,
     requiredAccess: 'OPERATOR',
     legacyStatus: 'active',
@@ -3065,7 +3110,7 @@ export const RUNTIME_TRUTH_POSTURED: RuntimeRoute[] = [
     runtimeTruthSurface: 'VISIBLE',
     requiresAuth: true,
     requiresTenant: true,
-    requiresPolicy: false,
+    requiresPolicy: true,
     requiresBlockingAudit: false,
     requiredAccess: 'OPERATOR',
     legacyStatus: 'active',
@@ -3359,6 +3404,21 @@ export const RUNTIME_TRUTH_POSTURED: RuntimeRoute[] = [
   },
   {
     method: 'POST',
+    path: '/api/v1/media/artifacts',
+    operationId: 'postApiV1MediaArtifacts',
+    sensitivity: 'SENSITIVE',
+    runtimeTruthSurface: 'VISIBLE',
+    requiresAuth: true,
+    requiresTenant: true,
+    requiresPolicy: false,
+    requiresBlockingAudit: false,
+    requiredAccess: 'OPERATOR',
+    legacyStatus: 'active',
+    idempotent: false,
+    description: 'POST /api/v1/media/artifacts'
+  },
+  {
+    method: 'POST',
     path: '/api/v1/models',
     operationId: 'postApiV1Models',
     sensitivity: 'SENSITIVE',
@@ -3455,7 +3515,7 @@ export const RUNTIME_TRUTH_POSTURED: RuntimeRoute[] = [
     runtimeTruthSurface: 'VISIBLE',
     requiresAuth: true,
     requiresTenant: true,
-    requiresPolicy: false,
+    requiresPolicy: true,
     requiresBlockingAudit: false,
     requiredAccess: 'OPERATOR',
     legacyStatus: 'compatibility-only',
@@ -3470,7 +3530,7 @@ export const RUNTIME_TRUTH_POSTURED: RuntimeRoute[] = [
     runtimeTruthSurface: 'VISIBLE',
     requiresAuth: true,
     requiresTenant: true,
-    requiresPolicy: false,
+    requiresPolicy: true,
     requiresBlockingAudit: false,
     requiredAccess: 'OPERATOR',
     legacyStatus: 'compatibility-only',
@@ -3485,7 +3545,7 @@ export const RUNTIME_TRUTH_POSTURED: RuntimeRoute[] = [
     runtimeTruthSurface: 'VISIBLE',
     requiresAuth: true,
     requiresTenant: true,
-    requiresPolicy: false,
+    requiresPolicy: true,
     requiresBlockingAudit: false,
     requiredAccess: 'OPERATOR',
     legacyStatus: 'compatibility-only',
@@ -3500,7 +3560,7 @@ export const RUNTIME_TRUTH_POSTURED: RuntimeRoute[] = [
     runtimeTruthSurface: 'VISIBLE',
     requiresAuth: true,
     requiresTenant: true,
-    requiresPolicy: false,
+    requiresPolicy: true,
     requiresBlockingAudit: false,
     requiredAccess: 'OPERATOR',
     legacyStatus: 'compatibility-only',
@@ -3515,7 +3575,7 @@ export const RUNTIME_TRUTH_POSTURED: RuntimeRoute[] = [
     runtimeTruthSurface: 'VISIBLE',
     requiresAuth: true,
     requiresTenant: true,
-    requiresPolicy: false,
+    requiresPolicy: true,
     requiresBlockingAudit: false,
     requiredAccess: 'OPERATOR',
     legacyStatus: 'compatibility-only',
@@ -3830,9 +3890,9 @@ export const RUNTIME_TRUTH_POSTURED: RuntimeRoute[] = [
     runtimeTruthSurface: 'VISIBLE',
     requiresAuth: true,
     requiresTenant: true,
-    requiresPolicy: false,
+    requiresPolicy: true,
     requiresBlockingAudit: false,
-    requiredAccess: 'VIEWER',
+    requiredAccess: 'OPERATOR',
     legacyStatus: 'active',
     idempotent: false,
     description: 'POST /mcp/v1/tools'

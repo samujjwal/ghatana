@@ -26,6 +26,10 @@ class AepHttpServerBuilderTest {
 
     private static final String AEP_PROFILE = "AEP_PROFILE";
     private static final String ALLOW_IN_MEMORY_RUN_HISTORY = "AEP_ALLOW_IN_MEMORY_RUN_HISTORY";
+    private static final String ALLOW_IN_MEMORY_CONSENT = "AEP_ALLOW_IN_MEMORY_CONSENT";
+    private static final String ALLOW_IN_MEMORY_GOVERNANCE = "AEP_ALLOW_IN_MEMORY_GOVERNANCE";
+    private static final String ALLOW_IN_MEMORY_IDEMPOTENCY = "AEP_ALLOW_IN_MEMORY_IDEMPOTENCY";
+    private static final String ALLOW_IN_MEMORY_SESSION = "AEP_ALLOW_IN_MEMORY_SESSION";
 
     @Test
     void shouldBuildServerWithRequiredParameters() { 
@@ -149,10 +153,18 @@ class AepHttpServerBuilderTest {
 
         String previousProfile = System.getProperty(AEP_PROFILE); 
         String previousAllowInMemory = System.getProperty(ALLOW_IN_MEMORY_RUN_HISTORY); 
+        String previousConsent = System.getProperty(ALLOW_IN_MEMORY_CONSENT);
+        String previousGovernance = System.getProperty(ALLOW_IN_MEMORY_GOVERNANCE);
+        String previousIdempotency = System.getProperty(ALLOW_IN_MEMORY_IDEMPOTENCY);
+        String previousSession = System.getProperty(ALLOW_IN_MEMORY_SESSION);
 
         try {
             System.setProperty(AEP_PROFILE, "production"); 
             System.setProperty(ALLOW_IN_MEMORY_RUN_HISTORY, "true"); 
+            System.setProperty(ALLOW_IN_MEMORY_CONSENT, "true");
+            System.setProperty(ALLOW_IN_MEMORY_GOVERNANCE, "true");
+            System.setProperty(ALLOW_IN_MEMORY_IDEMPOTENCY, "true");
+            System.setProperty(ALLOW_IN_MEMORY_SESSION, "true");
 
             AepHttpServer server = AepHttpServer.builder() 
                 .engine(mockEngine) 
@@ -163,6 +175,88 @@ class AepHttpServerBuilderTest {
         } finally {
             restoreSystemProperty(AEP_PROFILE, previousProfile); 
             restoreSystemProperty(ALLOW_IN_MEMORY_RUN_HISTORY, previousAllowInMemory); 
+            restoreSystemProperty(ALLOW_IN_MEMORY_CONSENT, previousConsent);
+            restoreSystemProperty(ALLOW_IN_MEMORY_GOVERNANCE, previousGovernance);
+            restoreSystemProperty(ALLOW_IN_MEMORY_IDEMPOTENCY, previousIdempotency);
+            restoreSystemProperty(ALLOW_IN_MEMORY_SESSION, previousSession);
+        }
+    }
+
+    @Test
+    void shouldFailClosedInProductionWhenInMemoryConsentFallbackIsUsed() {
+        AepEngine mockEngine = mock(AepEngine.class);
+        EventCloud mockEventCloud = mock(EventCloud.class);
+        when(mockEngine.eventCloud()).thenReturn(mockEventCloud);
+
+        String previousProfile = System.getProperty(AEP_PROFILE);
+        String previousRunHistory = System.getProperty(ALLOW_IN_MEMORY_RUN_HISTORY);
+        String previousConsent = System.getProperty(ALLOW_IN_MEMORY_CONSENT);
+        String previousGovernance = System.getProperty(ALLOW_IN_MEMORY_GOVERNANCE);
+        String previousIdempotency = System.getProperty(ALLOW_IN_MEMORY_IDEMPOTENCY);
+        String previousSession = System.getProperty(ALLOW_IN_MEMORY_SESSION);
+
+        try {
+            System.setProperty(AEP_PROFILE, "production");
+            System.setProperty(ALLOW_IN_MEMORY_RUN_HISTORY, "true");
+            System.setProperty(ALLOW_IN_MEMORY_GOVERNANCE, "true");
+            System.setProperty(ALLOW_IN_MEMORY_IDEMPOTENCY, "true");
+            System.setProperty(ALLOW_IN_MEMORY_SESSION, "true");
+            System.clearProperty(ALLOW_IN_MEMORY_CONSENT);
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+                AepHttpServer.builder()
+                    .engine(mockEngine)
+                    .port(8080)
+                    .build()
+            );
+
+            assertTrue(exception.getMessage().contains("consent"));
+        } finally {
+            restoreSystemProperty(AEP_PROFILE, previousProfile);
+            restoreSystemProperty(ALLOW_IN_MEMORY_RUN_HISTORY, previousRunHistory);
+            restoreSystemProperty(ALLOW_IN_MEMORY_CONSENT, previousConsent);
+            restoreSystemProperty(ALLOW_IN_MEMORY_GOVERNANCE, previousGovernance);
+            restoreSystemProperty(ALLOW_IN_MEMORY_IDEMPOTENCY, previousIdempotency);
+            restoreSystemProperty(ALLOW_IN_MEMORY_SESSION, previousSession);
+        }
+    }
+
+    @Test
+    void shouldFailClosedInProductionWhenInMemorySessionFallbackIsUsed() {
+        AepEngine mockEngine = mock(AepEngine.class);
+        EventCloud mockEventCloud = mock(EventCloud.class);
+        when(mockEngine.eventCloud()).thenReturn(mockEventCloud);
+
+        String previousProfile = System.getProperty(AEP_PROFILE);
+        String previousRunHistory = System.getProperty(ALLOW_IN_MEMORY_RUN_HISTORY);
+        String previousConsent = System.getProperty(ALLOW_IN_MEMORY_CONSENT);
+        String previousGovernance = System.getProperty(ALLOW_IN_MEMORY_GOVERNANCE);
+        String previousIdempotency = System.getProperty(ALLOW_IN_MEMORY_IDEMPOTENCY);
+        String previousSession = System.getProperty(ALLOW_IN_MEMORY_SESSION);
+
+        try {
+            System.setProperty(AEP_PROFILE, "production");
+            System.setProperty(ALLOW_IN_MEMORY_RUN_HISTORY, "true");
+            System.setProperty(ALLOW_IN_MEMORY_CONSENT, "true");
+            System.setProperty(ALLOW_IN_MEMORY_GOVERNANCE, "true");
+            System.setProperty(ALLOW_IN_MEMORY_IDEMPOTENCY, "true");
+            System.clearProperty(ALLOW_IN_MEMORY_SESSION);
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+                AepHttpServer.builder()
+                    .engine(mockEngine)
+                    .port(8080)
+                    .build()
+            );
+
+            assertTrue(exception.getMessage().contains("session"));
+        } finally {
+            restoreSystemProperty(AEP_PROFILE, previousProfile);
+            restoreSystemProperty(ALLOW_IN_MEMORY_RUN_HISTORY, previousRunHistory);
+            restoreSystemProperty(ALLOW_IN_MEMORY_CONSENT, previousConsent);
+            restoreSystemProperty(ALLOW_IN_MEMORY_GOVERNANCE, previousGovernance);
+            restoreSystemProperty(ALLOW_IN_MEMORY_IDEMPOTENCY, previousIdempotency);
+            restoreSystemProperty(ALLOW_IN_MEMORY_SESSION, previousSession);
         }
     }
 

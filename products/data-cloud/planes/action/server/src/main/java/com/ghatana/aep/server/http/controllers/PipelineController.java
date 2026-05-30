@@ -4,6 +4,7 @@
  */
 package com.ghatana.aep.server.http.controllers;
 
+import com.ghatana.aep.security.AepAuthFilter;
 import com.ghatana.aep.security.AepInputValidator;
 import com.ghatana.aep.server.http.HttpHelper;
 import com.ghatana.core.pipeline.NaturalLanguagePipelineService;
@@ -75,15 +76,42 @@ public class PipelineController implements AepController {
         HttpMethod method = request.getMethod();
         if (HttpMethod.GET.equals(method)) return handleGet(request, path, tenantId);
         if (HttpMethod.POST.equals(method)) {
+            HttpResponse authorizationFailure = authorizePipelineWrite(request);
+            if (authorizationFailure != null) {
+                return Promise.of(authorizationFailure);
+            }
             // P3-19: Check if this is an NLQ-based creation (primary mode)
             if (path.equals("/nlq") || path.equals("/nlq/")) {
                 return handleNLQCreate(request, tenantId);
             }
             return handlePost(request, tenantId);
         }
-        if (HttpMethod.PUT.equals(method)) return handlePut(request, path, tenantId);
-        if (HttpMethod.DELETE.equals(method)) return handleDelete(request, path, tenantId);
+        if (HttpMethod.PUT.equals(method)) {
+            HttpResponse authorizationFailure = authorizePipelineWrite(request);
+            if (authorizationFailure != null) {
+                return Promise.of(authorizationFailure);
+            }
+            return handlePut(request, path, tenantId);
+        }
+        if (HttpMethod.DELETE.equals(method)) {
+            HttpResponse authorizationFailure = authorizePipelineWrite(request);
+            if (authorizationFailure != null) {
+                return Promise.of(authorizationFailure);
+            }
+            return handleDelete(request, path, tenantId);
+        }
         return Promise.of(HttpHelper.errorResponse(405, "Method not allowed"));
+    }
+
+    private HttpResponse authorizePipelineWrite(HttpRequest request) {
+        AepAuthFilter.JwtPayload jwtPayload = request.getAttachment(AepAuthFilter.JWT_PAYLOAD_ATTACHMENT);
+        if (jwtPayload == null) {
+            return HttpHelper.errorResponse(403, "Pipeline write operations require an authenticated principal");
+        }
+        if (!jwtPayload.canManagePipelines()) {
+            return HttpHelper.errorResponse(403, "Pipeline write operations require pipeline management permission");
+        }
+        return null;
     }
 
     private Promise<HttpResponse> handleGet(HttpRequest request, String path, String tenantId) {

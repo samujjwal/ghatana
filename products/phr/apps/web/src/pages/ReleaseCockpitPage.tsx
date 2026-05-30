@@ -64,7 +64,7 @@ export function ReleaseCockpitPage(): React.ReactElement {
             {environments.map((item) => (
               <Button
                 key={item}
-                className={item === environment ? 'primary-cta' : 'secondary-button'}
+                variant={item === environment ? 'primary' : 'secondary'}
                 onClick={() => setEnvironment(item)}
               >
                 {environmentLabel(item)}
@@ -75,7 +75,7 @@ export function ReleaseCockpitPage(): React.ReactElement {
       </section>
 
       {loading ? <div className="loading">{t('release.loading')}</div> : null}
-      {error ? <SafeError title={t('release.errorPrefix')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} /> : null}
+      {error ? <SafeError title={t('release.errorPrefix')} message={error} correlationId={tenantId + '-' + principalId} /> : null}
       {!loading && !error && readiness ? <ReadinessSummary readiness={readiness} /> : null}
     </div>
   );

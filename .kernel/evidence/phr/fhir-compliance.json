@@ -1,7 +1,7 @@
 {
   "productId": "phr",
   "evidenceType": "fhir-compliance",
-  "generatedAt": "2026-05-30T00:36:29.361Z",
+  "generatedAt": "2026-05-30T03:51:22.006Z",
   "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
   "fhirVersion": "R4",
   "validationEnabled": true,
@@ -25,9 +25,9 @@
     "generatedBy": "scripts/check-phr-fhir-validation.mjs",
     "command": "node scripts/check-phr-fhir-validation.mjs",
     "source": "scripts/check-phr-fhir-validation.mjs",
-    "commit": "de196a31b8ad143f55e5f9cd3edad1d27e3c0d68",
-    "sourceCommitSha": "de196a31b8ad143f55e5f9cd3edad1d27e3c0d68",
-    "targetCommitSha": "de196a31b8ad143f55e5f9cd3edad1d27e3c0d68",
+    "commit": "fb0a50e69ef9bf3554105221d582421c887c543a",
+    "sourceCommitSha": "fb0a50e69ef9bf3554105221d582421c887c543a",
+    "targetCommitSha": "fb0a50e69ef9bf3554105221d582421c887c543a",
     "targetEnvironment": "staging"
   }
 }

@@ -80,7 +80,7 @@ export function LoginPage(): React.ReactElement {
               autoComplete="current-password"
               required
             />
-            <Button type="submit" className="primary-cta" disabled={signingIn}>
+            <Button type="submit" variant="primary" disabled={signingIn}>
               {signingIn ? t('login.signingIn') : t('login.signIn')}
             </Button>
           </form>

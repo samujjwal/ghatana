@@ -98,7 +98,7 @@ export function SettingsPage(): React.ReactElement {
         <CardContent>
           <div className="stack gap-md">
             <Button 
-              className="primary-cta" 
+              variant="primary" 
               onClick={() => void onSync()}
               disabled={exporting}
               aria-busy={exporting}

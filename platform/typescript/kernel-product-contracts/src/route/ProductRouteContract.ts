@@ -14,6 +14,11 @@ export const RouteGroupValues = [
   "administrative",
   "profile",
   "dashboard",
+  "system",
+  "emergency",
+  "provider",
+  "caregiver",
+  "fchv",
 ] as const;
 
 export const RouteHttpMethodValues = ["GET", "POST", "PUT", "DELETE", "PATCH"] as const;
@@ -48,6 +53,10 @@ export const RouteActionSchema = z
   })
   .strict();
 
+// Allow string references for actions/cards (product-specific action IDs)
+export const RouteActionRefSchema = z.string().trim().min(1);
+export const RouteCardRefSchema = z.string().trim().min(1);
+
 export const RouteCardSchema = z
   .object({
     id: z.string().trim().min(1),
@@ -67,11 +76,22 @@ export const ProductRouteSchema = z
     minimumRole: z.string().trim().min(1),
     personas: z.array(z.string().trim().min(1)).optional(),
     tiers: z.array(z.string().trim().min(1)).optional(),
-    actions: z.array(RouteActionSchema).optional(),
-    cards: z.array(RouteCardSchema).optional(),
+    actions: z.array(z.union([RouteActionSchema, RouteActionRefSchema])).optional(),
+    cards: z.array(z.union([RouteCardSchema, RouteCardRefSchema])).optional(),
     stability: RouteStabilitySchema,
     featureFlag: z.boolean().optional(),
     metadata: RouteMetadataSchema.optional(),
+    // Product-specific extensions
+    surface: z.array(z.enum(["web", "mobile", "backend", "hidden"])).optional(),
+    i18nKey: z.string().trim().min(1).optional(),
+    descriptionI18nKey: z.string().trim().min(1).optional(),
+    routeType: z.enum(["page", "detail", "action", "system"]).optional(),
+    visibilityReason: z.string().trim().min(1).optional(),
+    emergencyAction: z.boolean().optional(),
+    // Allow direct placement of metadata fields for backward compatibility
+    apiEndpoint: z.string().trim().min(1).optional(),
+    policyId: z.string().trim().min(1).optional(),
+    testId: z.string().trim().min(1).optional(),
   })
   .strict()
   .superRefine((route, context) => {
@@ -79,11 +99,15 @@ export const ProductRouteSchema = z
       return;
     }
 
-    const metadata = route.metadata;
+    // Check metadata object first, then direct fields
+    const apiEndpoint = route.metadata?.apiEndpoint ?? route.apiEndpoint;
+    const policyId = route.metadata?.policyId ?? route.policyId;
+    const testId = route.metadata?.testId ?? route.testId;
+
     const missingMetadata = [
-      metadata?.apiEndpoint ? undefined : "apiEndpoint",
-      metadata?.policyId ? undefined : "policyId",
-      metadata?.testId ? undefined : "testId",
+      apiEndpoint ? undefined : "apiEndpoint",
+      policyId ? undefined : "policyId",
+      testId ? undefined : "testId",
     ].filter((value): value is string => value !== undefined);
 
     if (missingMetadata.length > 0) {
@@ -98,6 +122,8 @@ export const ProductRouteSchema = z
 export const ProductRouteContractSchema = z
   .object({
     version: z.string().trim().min(1),
+    schemaVersion: z.string().trim().min(1).optional(),
+    product: z.string().trim().min(1).optional(),
     roleOrder: z.record(z.string().trim().min(1), z.number().int().nonnegative()),
     routes: z.array(ProductRouteSchema).min(1),
   })

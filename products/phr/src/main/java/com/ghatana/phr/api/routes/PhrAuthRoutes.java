@@ -90,7 +90,7 @@ public final class PhrAuthRoutes {
                     nationalId = requireTextField(node, "nationalId");
                     password = requireTextField(node, "password");
                 } catch (IllegalArgumentException ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_LOGIN_REQUEST", ex.getMessage(, correlationId));
+                    return PhrRouteSupport.errorResponse(400, "INVALID_LOGIN_REQUEST", ex.getMessage());
                 } catch (Exception ex) {
                     return PhrRouteSupport.errorResponse(400, "INVALID_LOGIN_REQUEST", "Request body must be valid JSON");
                 }
@@ -162,7 +162,7 @@ public final class PhrAuthRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(401, "INVALID_SESSION_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(401, "INVALID_SESSION_CONTEXT", ex.getMessage());
         }
 
         if (userRepository.findByUserId(context.principalId()).isEmpty()) {
@@ -191,7 +191,7 @@ public final class PhrAuthRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(401, "INVALID_SESSION_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(401, "INVALID_SESSION_CONTEXT", ex.getMessage());
         }
 
         // Fetch user to validate session and return current actor info

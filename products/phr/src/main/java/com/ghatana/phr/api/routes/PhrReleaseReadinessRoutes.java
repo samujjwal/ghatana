@@ -60,7 +60,7 @@ public final class PhrReleaseReadinessRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
         if (!"admin".equals(context.role())) {
             return PhrRouteSupport.errorResponse(403, "PHR_RELEASE_READINESS_FORBIDDEN",
@@ -69,8 +69,7 @@ public final class PhrReleaseReadinessRoutes {
 
         String environment = normalizeEnvironment(request.getQueryParameter("environment"));
         return releaseReadinessService.getReleaseReadiness("phr", environment)
-            .then(evidence -> PhrRouteSupport.jsonResponse(200, buildResponse(context, environment, evidence, correlationId)))
-            .whenException(ex -> PhrRouteSupport.errorResponse(503, "PHR_RELEASE_READINESS_UNAVAILABLE", ex.getMessage(, correlationId)));
+            .then(evidence -> PhrRouteSupport.jsonResponse(200, buildResponse(context, environment, evidence), correlationId));
     }
 
     private Promise<HttpResponse> handleSectionDrillDown(HttpRequest request) {
@@ -79,7 +78,7 @@ public final class PhrReleaseReadinessRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
         if (!"admin".equals(context.role())) {
             return PhrRouteSupport.errorResponse(403, "PHR_RELEASE_READINESS_FORBIDDEN",
@@ -105,7 +104,7 @@ public final class PhrReleaseReadinessRoutes {
                 
                 return PhrRouteSupport.jsonResponse(200, response);
             })
-            .whenException(ex -> PhrRouteSupport.errorResponse(503, "PHR_RELEASE_READINESS_UNAVAILABLE", ex.getMessage(, correlationId)));
+            .whenException(ex -> PhrRouteSupport.errorResponse(503, "PHR_RELEASE_READINESS_UNAVAILABLE", ex.getMessage()));
     }
 
     private Map<String, Object> buildResponse(

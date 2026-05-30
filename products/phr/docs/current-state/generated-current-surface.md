@@ -10,8 +10,8 @@ including web routes, mobile screens, backend APIs, and their implementation sta
 ## Summary
 
 - **Total Use Cases:** 27
-- **Fully Implemented:** 21 (78%)
-- **Partial Implementation:** 2 (7%)
+- **Fully Implemented:** 23 (85%)
+- **Partial Implementation:** 0 (0%)
 - **Deferred:** 4 (15%)
 - **Web Routes:** 27
 - **Hidden Web Routes:** 4
@@ -27,7 +27,7 @@ The following routes are currently implemented in the PHR web application:
 | /dashboard | Dashboard | patient | stable | implemented |
 | /records | Records | patient | stable | implemented |
 | /consents | Consents | patient | stable | implemented |
-| /appointments | Appointments | patient | stable | partial |
+| /appointments | Appointments | patient | stable | implemented |
 | /settings | Settings | patient | stable | implemented |
 | /labs | Labs | caregiver | stable | implemented |
 | /medications | Medications | caregiver | stable | implemented |
@@ -39,7 +39,7 @@ The following routes are currently implemented in the PHR web application:
 | /documents/:docId/ocr | OCR Review | patient | stable | implemented |
 | /timeline | Timeline | patient | stable | implemented |
 | /profile | Profile | patient | stable | implemented |
-| /records/:recordId | Record Detail | patient | stable | partial |
+| /records/:recordId | Record Detail | patient | stable | implemented |
 | /notifications | Notifications | patient | stable | implemented |
 | /forbidden | Forbidden | patient | stable | unknown |
 | /not-found | Not Found | patient | stable | unknown |
@@ -93,7 +93,7 @@ The following backend API endpoints are currently implemented:
 ### Patient
 
 - **Total Use Cases:** 20
-- **Implemented:** 18 (90%)
+- **Implemented:** 20 (100%)
 
 ### Clinician
 

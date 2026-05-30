@@ -75,7 +75,7 @@ public final class PhrEmergencyRoutes {
             context = PhrRouteSupport.requireContext(request);
             idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         return request.loadBody()
@@ -84,7 +84,7 @@ public final class PhrEmergencyRoutes {
                 try {
                     event = parseAccessEvent(body.getString(StandardCharsets.UTF_8), context);
                 } catch (IllegalArgumentException ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_EMERGENCY_ACCESS", ex.getMessage(, correlationId));
+                    return PhrRouteSupport.errorResponse(400, "INVALID_EMERGENCY_ACCESS", ex.getMessage());
                 }
                 
                 // Policy gate: validate justification is provided and non-empty
@@ -137,7 +137,7 @@ public final class PhrEmergencyRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         return emergencyAccessLogService.getEvent(request.getPathParameter("eventId"))
@@ -148,7 +148,7 @@ public final class PhrEmergencyRoutes {
                 if (!canReadEvent(context, event.get())) {
                     return PhrRouteSupport.errorResponse(403, "EMERGENCY_EVENT_DENIED", "Emergency access event is not visible to this principal");
                 }
-                return PhrRouteSupport.jsonResponse(200, event.get(, correlationId));
+                return PhrRouteSupport.jsonResponse(200, event.get());
             });
     }
 
@@ -160,7 +160,7 @@ public final class PhrEmergencyRoutes {
             context = PhrRouteSupport.requireContext(request);
             patientId = request.getPathParameter("patientId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
         if (!context.principalId().equals(patientId)) {
             return policyEvaluator.canAccessEmergency(context, patientId, "view emergency log")
@@ -169,7 +169,7 @@ public final class PhrEmergencyRoutes {
                         .then(events -> PhrRouteSupport.jsonResponse(200, Map.of(
                             "patientId", patientId,
                             "items", events,
-                            "count", events.size(, correlationId)
+                            "count", events.size()
                         )))
                     : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
         }
@@ -177,7 +177,7 @@ public final class PhrEmergencyRoutes {
             .then(events -> PhrRouteSupport.jsonResponse(200, Map.of(
                 "patientId", patientId,
                 "items", events,
-                "count", events.size(, correlationId)
+                "count", events.size()
             )));
     }
 
@@ -189,13 +189,13 @@ public final class PhrEmergencyRoutes {
             context = PhrRouteSupport.requireContext(request);
             limit = PhrRouteSupport.intQuery(request, "limit", 100, 1000);
         } catch (RuntimeException ex) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_PENDING_REVIEW_QUERY", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "INVALID_PENDING_REVIEW_QUERY", ex.getMessage());
         }
         if (!"admin".equals(context.role())) {
             return PhrRouteSupport.errorResponse(403, "REVIEWER_REQUIRED", "Only administrators can list emergency reviews");
         }
         return emergencyAccessLogService.getPendingReviews(limit)
-            .then(events -> PhrRouteSupport.jsonResponse(200, Map.of("items", events, "count", events.size(, correlationId))));
+            .then(events -> PhrRouteSupport.jsonResponse(200, Map.of("items", events, "count", events.size())));
     }
 
     private Promise<HttpResponse> handleOverdueReviews(HttpRequest request) {
@@ -206,13 +206,13 @@ public final class PhrEmergencyRoutes {
             context = PhrRouteSupport.requireContext(request);
             limit = PhrRouteSupport.intQuery(request, "limit", 100, 1000);
         } catch (RuntimeException ex) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_OVERDUE_REVIEW_QUERY", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "INVALID_OVERDUE_REVIEW_QUERY", ex.getMessage());
         }
         if (!"admin".equals(context.role())) {
             return PhrRouteSupport.errorResponse(403, "REVIEWER_REQUIRED", "Only administrators can list overdue emergency reviews");
         }
         return emergencyAccessLogService.getOverdueReviews(limit)
-            .then(events -> PhrRouteSupport.jsonResponse(200, Map.of("items", events, "count", events.size(, correlationId))));
+            .then(events -> PhrRouteSupport.jsonResponse(200, Map.of("items", events, "count", events.size())));
     }
 
     private Promise<HttpResponse> handleReview(HttpRequest request) {
@@ -223,7 +223,7 @@ public final class PhrEmergencyRoutes {
             context = PhrRouteSupport.requireContext(request);
             idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         // Policy gate: only administrators can review emergency access
@@ -237,7 +237,7 @@ public final class PhrEmergencyRoutes {
                 try {
                     payload = parseReview(body.getString(StandardCharsets.UTF_8));
                 } catch (IllegalArgumentException ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_EMERGENCY_REVIEW", ex.getMessage(, correlationId));
+                    return PhrRouteSupport.errorResponse(400, "INVALID_EMERGENCY_REVIEW", ex.getMessage());
                 }
                 
                 // Policy gate: require notes for escalated reviews

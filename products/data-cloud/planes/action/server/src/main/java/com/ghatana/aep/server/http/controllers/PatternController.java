@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -202,6 +203,140 @@ public class PatternController {
             )));
     }
 
+    @SuppressWarnings("unchecked")
+    public Promise<HttpResponse> handleLifecycleTransition(HttpRequest request) {
+        if (patternStore == null) {
+            return Promise.of(HttpHelper.errorResponse(503,
+                "Pattern lifecycle operations require DataCloud-backed pattern storage"));
+        }
+
+        String tenantId = request.getQueryParameter("tenantId");
+        if (tenantId == null || tenantId.isBlank()) {
+            tenantId = "default";
+        }
+
+        String patternId = request.getPathParameter("patternId");
+        String action = request.getPathParameter("action");
+        if (action == null || action.isBlank()) {
+            action = request.getQueryParameter("action");
+        }
+        if (action == null || action.isBlank()) {
+            return Promise.of(HttpHelper.errorResponse(400, "Lifecycle action is required"));
+        }
+
+        UUID id;
+        try {
+            id = UUID.fromString(patternId);
+        } catch (IllegalArgumentException e) {
+            return Promise.of(HttpHelper.errorResponse(400, "Invalid pattern ID: " + patternId));
+        }
+
+        String normalizedAction = action.trim().toLowerCase();
+        PatternStatus targetStatus = mapLifecycleActionToStatus(normalizedAction);
+
+        if (targetStatus == null && !isSimulationAction(normalizedAction)) {
+            return Promise.of(HttpHelper.errorResponse(400, "Unsupported lifecycle action: " + action));
+        }
+
+        Promise<AepEngine.ProcessingResult> provenancePromise = emitLifecycleEvent(
+            tenantId,
+            id,
+            normalizedAction,
+            targetStatus
+        );
+
+        if (isSimulationAction(normalizedAction)) {
+            return provenancePromise.map(result -> HttpHelper.jsonResponse(Map.of(
+                "patternId", id.toString(),
+                "action", normalizedAction,
+                "simulationRequested", true,
+                "eventId", result.eventId(),
+                "timestamp", Instant.now().toString()
+            )));
+        }
+
+        return patternStore.updateStatus(id, targetStatus)
+            .then(v -> provenancePromise)
+            .map(result -> HttpHelper.jsonResponse(Map.of(
+                "patternId", id.toString(),
+                "action", normalizedAction,
+                "status", targetStatus.name(),
+                "transitioned", true,
+                "eventId", result.eventId(),
+                "timestamp", Instant.now().toString()
+            )))
+            .then(
+                Promise::of,
+                error -> {
+                    log.error("Failed lifecycle transition for pattern {} action {}", id, normalizedAction, error);
+                    return Promise.of(HttpHelper.errorResponse(500,
+                        "Lifecycle transition failed: " + error.getMessage()));
+                }
+            );
+    }
+
+    @SuppressWarnings("unchecked")
+    public Promise<HttpResponse> handleRecordPatternFeedback(HttpRequest request) {
+        if (patternStore == null) {
+            return Promise.of(HttpHelper.errorResponse(503,
+                "Pattern feedback operations require DataCloud-backed pattern storage"));
+        }
+
+        String tenantId = request.getQueryParameter("tenantId");
+        if (tenantId == null || tenantId.isBlank()) {
+            tenantId = "default";
+        }
+
+        String patternId = request.getPathParameter("patternId");
+        UUID id;
+        try {
+            id = UUID.fromString(patternId);
+        } catch (IllegalArgumentException e) {
+            return Promise.of(HttpHelper.errorResponse(400, "Invalid pattern ID: " + patternId));
+        }
+
+        String resolvedTenantId = tenantId;
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> payload = body.isBlank()
+                    ? Map.of()
+                    : HttpHelper.mapper().readValue(body, Map.class);
+
+                String signal = stringValue(payload.get("signal"));
+                if (signal == null) {
+                    return Promise.of(HttpHelper.errorResponse(400, "Feedback signal is required"));
+                }
+
+                Map<String, Object> feedback = new HashMap<>();
+                feedback.put("signal", signal);
+                String source = stringValue(payload.get("source"));
+                if (source != null) {
+                    feedback.put("source", source);
+                }
+                Object score = payload.get("score");
+                if (score instanceof Number number) {
+                    feedback.put("score", number.doubleValue());
+                }
+                String note = stringValue(payload.get("note"));
+                if (note != null) {
+                    feedback.put("note", note);
+                }
+
+                return emitFeedbackEvent(resolvedTenantId, id, feedback)
+                    .map(result -> HttpHelper.jsonResponse(Map.of(
+                        "patternId", id.toString(),
+                        "recorded", true,
+                        "eventId", result.eventId(),
+                        "timestamp", Instant.now().toString()
+                    )));
+            } catch (Exception e) {
+                return Promise.of(HttpHelper.errorResponse(400,
+                    "Invalid feedback payload: " + e.getMessage()));
+            }
+        }, e -> Promise.of(HttpHelper.errorResponse(400, "Failed to read request body")));
+    }
+
     private HttpResponse patternResponse(String id, String name, String type) {
         return HttpHelper.jsonResponse(Map.of(
             "pattern", Map.of(
@@ -211,6 +346,72 @@ public class PatternController {
             ),
             "timestamp", Instant.now().toString()
         ));
+    }
+
+    private Promise<AepEngine.ProcessingResult> emitLifecycleEvent(
+            String tenantId,
+            UUID patternId,
+            String action,
+            PatternStatus targetStatus) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("patternId", patternId.toString());
+        payload.put("action", action);
+        payload.put("requestedAt", Instant.now().toString());
+        if (targetStatus != null) {
+            payload.put("targetStatus", targetStatus.name());
+        }
+
+        AepEngine.Event event = new AepEngine.Event(
+            "pattern.lifecycle.transition",
+            Map.copyOf(payload),
+            Map.of("patternId", patternId.toString()),
+            Instant.now()
+        );
+        return engine.process(tenantId, event);
+    }
+
+    private Promise<AepEngine.ProcessingResult> emitFeedbackEvent(
+            String tenantId,
+            UUID patternId,
+            Map<String, Object> feedback) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("patternId", patternId.toString());
+        payload.put("feedback", Map.copyOf(feedback));
+        payload.put("recordedAt", Instant.now().toString());
+
+        AepEngine.Event event = new AepEngine.Event(
+            "pattern.feedback.recorded",
+            Map.copyOf(payload),
+            Map.of("patternId", patternId.toString()),
+            Instant.now()
+        );
+        return engine.process(tenantId, event);
+    }
+
+    private PatternStatus mapLifecycleActionToStatus(String action) {
+        return switch (action) {
+            case "draft", "revise" -> PatternStatus.DRAFT;
+            case "validate", "compile" -> PatternStatus.COMPILED;
+            case "approve" -> PatternStatus.CANDIDATE;
+            case "activate", "monitor" -> PatternStatus.ACTIVE;
+            case "deactivate" -> PatternStatus.INACTIVE;
+            case "retire", "deprecate" -> PatternStatus.DEPRECATED;
+            case "suspend" -> PatternStatus.SUSPENDED;
+            case "archive" -> PatternStatus.ARCHIVED;
+            default -> null;
+        };
+    }
+
+    private boolean isSimulationAction(String action) {
+        return "simulate".equals(action) || "replay".equals(action);
+    }
+
+    private String stringValue(Object value) {
+        if (value == null) {
+            return null;
+        }
+        String text = String.valueOf(value).trim();
+        return text.isEmpty() ? null : text;
     }
 
     private PatternSpecification buildSpecification(

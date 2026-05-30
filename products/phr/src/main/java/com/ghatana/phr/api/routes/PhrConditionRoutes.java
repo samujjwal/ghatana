@@ -43,12 +43,6 @@ public final class PhrConditionRoutes {
         this.patientRecordServiceExtensions = Objects.requireNonNull(patientRecordServiceExtensions, "patientRecordServiceExtensions must not be null");
     }
 
-    public PhrConditionRoutes(Eventloop eventloop, PhrPolicyEvaluator policyEvaluator) {
-        this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
-        this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
-        this.patientRecordServiceExtensions = null;
-    }
-
     /**
      * Returns the routing servlet for condition endpoints.
      *
@@ -66,24 +60,13 @@ public final class PhrConditionRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         String patientId = request.getPathParameter("patientId");
         return policyEvaluator.canAccessPatientRecordAsync(context, patientId).then(decision -> {
             if (!decision.isAllowed()) {
                 return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
-            }
-
-            if (patientRecordServiceExtensions == null) {
-                Map<String, Object> condition = new LinkedHashMap<>();
-                condition.put("id", "cond-1");
-                condition.put("code", "E11");
-                condition.put("display", "Type 2 diabetes mellitus");
-                condition.put("status", "active");
-                condition.put("onsetDate", "2024-01-01");
-                condition.put("chronicity", "chronic");
-                return PhrRouteSupport.jsonResponseWithCorrelation(200, Map.of("items", List.of(condition)), context.correlationId());
             }
 
             return patientRecordServiceExtensions.getActiveConditions(patientId)

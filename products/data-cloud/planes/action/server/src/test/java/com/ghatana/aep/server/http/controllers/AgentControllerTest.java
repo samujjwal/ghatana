@@ -34,7 +34,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -66,7 +69,22 @@ class AgentControllerTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() { 
-        controller = new AgentController(engine, null, sloMetrics); 
+        when(dataCloudClient.entityStore()).thenReturn(entityStore);
+        lenient().when(entityStore.findByRef(any(), any())).thenReturn(Promise.of(Optional.of(
+            new EntityStore.Entity(
+                EntityStore.EntityId.of("agent-1"),
+                "aep_agents",
+                Map.of(
+                    "id", "agent-1",
+                    "tenantId", "tenant-a",
+                    "status", "ACTIVE",
+                    "executable", true,
+                    "approved", true
+                ),
+                EntityStore.EntityMetadata.empty()
+            )
+        )));
+        controller = new AgentController(engine, dataCloudClient, sloMetrics); 
     }
 
     @Test
@@ -356,6 +374,150 @@ class AgentControllerTest extends EventloopTestBase {
         assertThat(tenantBAgent).containsEntry("tenantId", "tenant-b");
     }
 
+    @Test
+    @DisplayName("AR-LC-1: lifecycle approve transitions status and emits provenance")
+    void lifecycleApproveTransitionsStatusAndEmitsProvenance() throws Exception {
+        HttpRequest request = mockLifecycleRequest("agent-1", "approve", "tenant-a");
+
+        when(entityStore.findByRef(any(), any())).thenReturn(Promise.of(Optional.of(
+            new EntityStore.Entity(
+                EntityStore.EntityId.of("agent-1"),
+                "aep_agents",
+                Map.of(
+                    "id", "agent-1",
+                    "tenantId", "tenant-a",
+                    "status", "SCANNED",
+                    "approved", false,
+                    "executable", true
+                ),
+                EntityStore.EntityMetadata.empty()
+            )
+        )));
+        when(entityStore.save(any(), any())).thenReturn(Promise.of(
+            new EntityStore.Entity(
+                EntityStore.EntityId.of("agent-1"),
+                "aep_agents",
+                Map.of("id", "agent-1", "tenantId", "tenant-a", "status", "APPROVED"),
+                EntityStore.EntityMetadata.empty()
+            )
+        ));
+        when(engine.process(eq("tenant-a"), any()))
+            .thenReturn(Promise.of(new AepEngine.ProcessingResult(
+                "evt-agent-lifecycle", true, List.of(), Map.of()
+            )));
+
+        HttpResponse response = runPromise(() -> controller.handleLifecycleTransition(request));
+        Map<String, Object> body = parseBody(response);
+
+        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(body).containsEntry("agentId", "agent-1");
+        assertThat(body).containsEntry("status", "APPROVED");
+        assertThat(body).containsEntry("transitioned", true);
+        assertThat(body).containsEntry("eventId", "evt-agent-lifecycle");
+    }
+
+    @Test
+    @DisplayName("AR-LC-2: lifecycle simulate emits provenance without persistence update")
+    void lifecycleSimulateEmitsProvenanceWithoutPersistenceUpdate() throws Exception {
+        HttpRequest request = mockLifecycleRequest("agent-1", "simulate", "tenant-a");
+
+        when(entityStore.findByRef(any(), any())).thenReturn(Promise.of(Optional.of(
+            new EntityStore.Entity(
+                EntityStore.EntityId.of("agent-1"),
+                "aep_agents",
+                Map.of(
+                    "id", "agent-1",
+                    "tenantId", "tenant-a",
+                    "status", "ACTIVE"
+                ),
+                EntityStore.EntityMetadata.empty()
+            )
+        )));
+        when(engine.process(eq("tenant-a"), any()))
+            .thenReturn(Promise.of(new AepEngine.ProcessingResult(
+                "evt-agent-sim", true, List.of(), Map.of()
+            )));
+
+        HttpResponse response = runPromise(() -> controller.handleLifecycleTransition(request));
+        Map<String, Object> body = parseBody(response);
+
+        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(body).containsEntry("action", "simulate");
+        assertThat(body).containsEntry("simulationRequested", true);
+        assertThat(body).containsEntry("eventId", "evt-agent-sim");
+
+        verify(entityStore, never()).save(any(), any());
+    }
+
+    @Test
+    @DisplayName("AR-LC-3: lifecycle rejects invalid transitions")
+    void lifecycleRejectsInvalidTransitions() throws Exception {
+        HttpRequest request = mockLifecycleRequest("agent-1", "install", "tenant-a");
+
+        when(entityStore.findByRef(any(), any())).thenReturn(Promise.of(Optional.of(
+            new EntityStore.Entity(
+                EntityStore.EntityId.of("agent-1"),
+                "aep_agents",
+                Map.of(
+                    "id", "agent-1",
+                    "tenantId", "tenant-a",
+                    "status", "DRAFT",
+                    "approved", false,
+                    "executable", true
+                ),
+                EntityStore.EntityMetadata.empty()
+            )
+        )));
+
+        HttpResponse response = runPromise(() -> controller.handleLifecycleTransition(request));
+        Map<String, Object> body = parseBody(response);
+
+        assertThat(response.getCode()).isEqualTo(409);
+        assertThat(String.valueOf(body.get("message"))).contains("Invalid lifecycle transition");
+        verify(entityStore, never()).save(any(), any());
+        verify(engine, never()).process(anyString(), any());
+    }
+
+    @Test
+    @DisplayName("AR-RV-1: review endpoint emits provenance when outcome exists")
+    void reviewEndpointEmitsProvenance() throws Exception {
+        HttpRequest request = mockReviewRequest(
+            "agent-1",
+            "tenant-a",
+            "{\"outcome\":\"accepted\",\"reviewer\":\"qa\",\"score\":0.87}"
+        );
+
+        when(engine.process(eq("tenant-a"), any()))
+            .thenReturn(Promise.of(new AepEngine.ProcessingResult(
+                "evt-agent-review", true, List.of(), Map.of()
+            )));
+
+        HttpResponse response = runPromise(() -> controller.handleRecordAgentReview(request));
+        Map<String, Object> body = parseBody(response);
+
+        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(body).containsEntry("agentId", "agent-1");
+        assertThat(body).containsEntry("recorded", true);
+        assertThat(body).containsEntry("eventId", "evt-agent-review");
+    }
+
+    @Test
+    @DisplayName("AR-RV-2: review endpoint rejects missing outcome")
+    void reviewEndpointRejectsMissingOutcome() throws Exception {
+        HttpRequest request = mockReviewRequest(
+            "agent-1",
+            "tenant-a",
+            "{\"reviewer\":\"qa\"}"
+        );
+
+        HttpResponse response = runPromise(() -> controller.handleRecordAgentReview(request));
+        Map<String, Object> body = parseBody(response);
+
+        assertThat(response.getCode()).isEqualTo(400);
+        assertThat(String.valueOf(body.get("message"))).contains("Review outcome is required");
+        verify(engine, never()).process(anyString(), any());
+    }
+
     private Map<String, Object> parseBody(HttpResponse response) throws Exception { 
         String json = response.getBody().getString(StandardCharsets.UTF_8); 
         return MAPPER.readValue(json, new TypeReference<>() {}); 
@@ -393,6 +555,22 @@ class AgentControllerTest extends EventloopTestBase {
         when(request.getQueryParameter("tenantId")).thenReturn(null);
         when(request.getHeader(any())).thenReturn(null); 
         when(request.loadBody()).thenReturn(Promise.of(ByteBuf.wrapForReading(bodyJson.getBytes(StandardCharsets.UTF_8)))); 
+        return request;
+    }
+
+    private HttpRequest mockLifecycleRequest(String agentId, String action, String tenantId) {
+        HttpRequest request = mock(HttpRequest.class);
+        when(request.getPathParameter("agentId")).thenReturn(agentId);
+        when(request.getPathParameter("action")).thenReturn(action);
+        when(request.getQueryParameter("tenantId")).thenReturn(tenantId);
+        return request;
+    }
+
+    private HttpRequest mockReviewRequest(String agentId, String tenantId, String bodyJson) {
+        HttpRequest request = mock(HttpRequest.class);
+        when(request.getPathParameter("agentId")).thenReturn(agentId);
+        when(request.getQueryParameter("tenantId")).thenReturn(tenantId);
+        when(request.loadBody()).thenReturn(Promise.of(ByteBuf.wrapForReading(bodyJson.getBytes(StandardCharsets.UTF_8))));
         return request;
     }
 
@@ -456,11 +634,12 @@ class AgentControllerTest extends EventloopTestBase {
     @Test
     @DisplayName("AR-SEC-4: agent registration returns 503 when agentStore is not configured")
     void registrationReturns503WhenStoreNotConfigured() throws Exception {
+        AgentController unconfiguredController = new AgentController(engine, null, sloMetrics);
         HttpRequest request = mockRegisterRequest(
             "{\"tenantId\":\"tenant-a\",\"name\":\"Agent\"}"
         );
 
-        HttpResponse response = runPromise(() -> controller.handleRegisterAgent(request));
+        HttpResponse response = runPromise(() -> unconfiguredController.handleRegisterAgent(request));
         assertThat(response.getCode()).isEqualTo(503);
     }
 

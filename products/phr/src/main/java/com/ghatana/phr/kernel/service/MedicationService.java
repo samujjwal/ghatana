@@ -130,6 +130,25 @@ public class MedicationService extends PhrServiceBase {
             .filter(p -> p.status() == PrescriptionStatus.ACTIVE && !p.isExpired())
             .toList());
     }
+    /**
+     * Lists all prescriptions (active, completed, discontinued, expired) for a patient.
+     *
+     * @param patientId the patient identifier
+     * @return Promise containing the list of all prescriptions
+     */
+    public Promise<List<Prescription>> getPrescriptionHistory(String patientId) {
+        ensureRunning();
+
+        return queryRecords(
+            MEDICATION_DATASET,
+            "patientId = :patientId",
+            Map.of("patientId", patientId),
+            500,
+            0,
+            Prescription.class
+        );
+    }
+
 
     /**
      * Discontinues an active prescription.
@@ -430,3 +449,4 @@ public class MedicationService extends PhrServiceBase {
             String details
     ) {}
 }
+

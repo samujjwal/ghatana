@@ -349,6 +349,17 @@ public final class AepAuthFilter implements AsyncServlet {
                 || hasPermission("deployment:update")
                 || hasPermission("deployment:delete");
         }
+
+        public boolean canManagePipelines() {
+            return hasRole("admin")
+                || hasRole("operator")
+                || hasRole("deployer")
+                || hasPermission("pipeline:create")
+                || hasPermission("pipeline:update")
+                || hasPermission("pipeline:delete")
+                || hasPermission("pipelines:write")
+                || hasPermission("action:pipelines:write");
+        }
     }
 
     public static class JwtValidationException extends Exception {

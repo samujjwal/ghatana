@@ -1,6 +1,8 @@
 package com.ghatana.phr.api.routes;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.ghatana.phr.application.patient.PatientOperationContext;
+import com.ghatana.phr.application.record.RecordService;
 import com.ghatana.phr.kernel.service.PatientRecordService;
 import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.eventloop.Eventloop;
@@ -31,14 +33,17 @@ public final class PhrPatientRecordRoutes {
 
     private final Eventloop eventloop;
     private final PatientRecordService patientRecordService;
+    private final RecordService recordService;
     private final PhrPolicyEvaluator policyEvaluator;
 
     public PhrPatientRecordRoutes(
             Eventloop eventloop,
             PatientRecordService patientRecordService,
+            RecordService recordService,
             PhrPolicyEvaluator policyEvaluator) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.patientRecordService = Objects.requireNonNull(patientRecordService, "patientRecordService must not be null");
+        this.recordService = Objects.requireNonNull(recordService, "recordService must not be null");
         this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 
@@ -65,7 +70,7 @@ public final class PhrPatientRecordRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         return request.loadBody()
@@ -74,15 +79,15 @@ public final class PhrPatientRecordRoutes {
                 try {
                     patient = parsePatient(body.getString(StandardCharsets.UTF_8), null);
                 } catch (IllegalArgumentException ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT", ex.getMessage(, correlationId));
+                    return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT", ex.getMessage());
                 }
                 String patientId = patient.getId();
                 if (patientId == null) {
-                    return createPatient(patient);
+                    return createPatient(patient, correlationId);
                 }
                 return mayAccessPatient(context, patientId, RESOURCE_TYPE, "WRITE")
                     .then(decision -> decision.isAllowed()
-                        ? createPatient(patient)
+                        ? createPatient(patient, correlationId)
                         : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
             });
     }
@@ -95,7 +100,7 @@ public final class PhrPatientRecordRoutes {
             context = PhrRouteSupport.requireContext(request);
             patientId = request.getPathParameter("patientId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         return requireSelfOrConsent(context, patientId, RESOURCE_TYPE, "READ")
@@ -118,7 +123,7 @@ public final class PhrPatientRecordRoutes {
             context = PhrRouteSupport.requireContext(request);
             patientId = request.getPathParameter("patientId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         return requireSelfOrConsent(context, patientId, RESOURCE_TYPE, "WRITE")
@@ -132,7 +137,7 @@ public final class PhrPatientRecordRoutes {
                         try {
                             patient = parsePatient(body.getString(StandardCharsets.UTF_8), patientId);
                         } catch (IllegalArgumentException ex) {
-                            return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT", ex.getMessage(, correlationId));
+                            return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT", ex.getMessage());
                         }
                         return patientRecordService.updatePatient(patient)
                             .then(updated -> PhrRouteSupport.jsonResponse(200, updated, correlationId));
@@ -155,7 +160,7 @@ public final class PhrPatientRecordRoutes {
             limit = PhrRouteSupport.intQuery(request, "limit", 50, 1000);
             offset = PhrRouteSupport.intQuery(request, "offset", 0, 10_000);
         } catch (RuntimeException ex) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_SEARCH", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "INVALID_SEARCH", ex.getMessage());
         }
 
         return requireSelfOrConsent(context, patientId, RESOURCE_TYPE, "SEARCH")
@@ -170,7 +175,7 @@ public final class PhrPatientRecordRoutes {
                         offset)
                     .then(records -> PhrRouteSupport.jsonResponse(200, Map.of(
                         "items", records,
-                        "count", records.size(, correlationId),
+                        "count", records.size(),
                         "limit", limit,
                         "offset", offset
                     )));
@@ -185,7 +190,7 @@ public final class PhrPatientRecordRoutes {
             context = PhrRouteSupport.requireContext(request);
             patientId = request.getPathParameter("patientId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         return requireSelfOrConsent(context, patientId, "patient-record-history", "READ")
@@ -222,7 +227,7 @@ public final class PhrPatientRecordRoutes {
             limit = PhrRouteSupport.intQuery(request, "limit", 50, 100);
             offset = PhrRouteSupport.intQuery(request, "offset", 0, 10_000);
         } catch (RuntimeException ex) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_RECORD_LIST", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "INVALID_RECORD_LIST", ex.getMessage());
         }
 
         String category = request.getQueryParameter("category");
@@ -235,44 +240,56 @@ public final class PhrPatientRecordRoutes {
                 if (!decision.isAllowed()) {
                     return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
                 }
-                return patientRecordService.getPatient(patientId)
-                    .then(patient -> patient
-                        .<Promise<HttpResponse>>map(value -> {
-                            Map<String, Object> item = recordSummary(value, context);
-                            boolean matchesCategory = category == null || category.isBlank() || category.equals(item.get("category"));
-                            boolean matchesResource = resourceType == null || resourceType.isBlank() || resourceType.equals(item.get("resourceType"));
-                            boolean matchesFrom = dateFrom == null || dateFrom.isBlank() || item.get("updatedAt").toString().compareTo(dateFrom) >= 0;
-                            boolean matchesTo = dateTo == null || dateTo.isBlank() || item.get("updatedAt").toString().compareTo(dateTo) <= 0;
-                            List<Map<String, Object>> items = matchesCategory && matchesResource && matchesFrom && matchesTo
-                                ? List.of(item)
-                                : List.of();
-                            return PhrRouteSupport.jsonResponse(200, Map.of(
-                                "items", items,
-                                "count", items.size(, correlationId),
-                                "limit", limit,
-                                "offset", offset,
-                                "patientId", patientId,
-                                "generatedAt", Instant.now().toString()
-                            ));
-                        })
-                        .orElseGet(() -> PhrRouteSupport.errorResponse(404, "PATIENT_NOT_FOUND", "Patient record not found", correlationId)));
-            });
-    }
 
-    private Map<String, Object> recordSummary(PatientRecordService.Patient patient, PhrRouteSupport.PhrRequestContext context) {
-        Map<String, Object> item = new java.util.LinkedHashMap<>();
-        item.put("id", patient.getId());
-        item.put("title", "Patient profile");
-        item.put("category", "administrative");
-        item.put("updatedAt", patient.getUpdatedAt() != null ? patient.getUpdatedAt().toString() : Instant.now().toString());
-        item.put("resourceType", "Patient");
-        item.put("redacted", false);
-        item.put("provenance", Map.of(
-            "source", "phr-patient-record-service",
-            "accessedBy", context.principalId(),
-            "tenantId", context.tenantId()
-        ));
-        return item;
+                PatientOperationContext opCtx = new PatientOperationContext(
+                    context.tenantId(),
+                    "default",
+                    context.principalId(),
+                    patientId,
+                    context.correlationId()
+                );
+
+                return recordService.getRecordTimeline(opCtx, patientId)
+                    .then(timeline -> {
+                        List<Map<String, Object>> items = timeline.entries().stream()
+                            .map(entry -> {
+                                Map<String, Object> item = new java.util.LinkedHashMap<>();
+                                item.put("id", entry.entryId());
+                                item.put("title", entry.type());
+                                item.put("category", entry.category());
+                                item.put("resourceType", entry.category());
+                                item.put("updatedAt", entry.timestamp());
+                                item.put("redacted", false);
+                                item.put("provenance", Map.of(
+                                    "source", "phr-record-service",
+                                    "accessedBy", context.principalId(),
+                                    "tenantId", context.tenantId()
+                                ));
+                                item.put("description", entry.description());
+                                item.put("details", entry.details());
+                                return item;
+                            })
+                            .filter(item -> {
+                                boolean matchesCategory = category == null || category.isBlank() || category.equals(item.get("category"));
+                                boolean matchesResource = resourceType == null || resourceType.isBlank() || resourceType.equals(item.get("resourceType"));
+                                boolean matchesFrom = dateFrom == null || dateFrom.isBlank() || item.get("updatedAt").toString().compareTo(dateFrom) >= 0;
+                                boolean matchesTo = dateTo == null || dateTo.isBlank() || item.get("updatedAt").toString().compareTo(dateTo) <= 0;
+                                return matchesCategory && matchesResource && matchesFrom && matchesTo;
+                            })
+                            .skip(offset)
+                            .limit(limit)
+                            .toList();
+
+                        return PhrRouteSupport.jsonResponse(200, Map.of(
+                            "items", items,
+                            "count", items.size(),
+                            "limit", limit,
+                            "offset", offset,
+                            "patientId", patientId,
+                            "generatedAt", timeline.generatedAt()
+                        ));
+                    });
+            });
     }
 
     private Promise<HttpResponse> handleGetRecordDetail(HttpRequest request) {
@@ -285,7 +302,7 @@ public final class PhrPatientRecordRoutes {
             patientId = request.getPathParameter("patientId");
             recordId = request.getPathParameter("recordId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
 
@@ -392,7 +409,7 @@ public final class PhrPatientRecordRoutes {
         return resource;
     }
 
-    private Promise<HttpResponse> createPatient(PatientRecordService.Patient patient) {
+    private Promise<HttpResponse> createPatient(PatientRecordService.Patient patient, String correlationId) {
         return patientRecordService.createPatient(patient)
             .then(created -> PhrRouteSupport.jsonResponse(201, created, correlationId));
     }

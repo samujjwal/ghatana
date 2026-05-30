@@ -1,5 +1,6 @@
 package com.ghatana.phr.api.routes;
 
+import com.ghatana.phr.kernel.service.PatientRecordServiceExtensions;
 import com.ghatana.phr.security.PhrPolicyEvaluator;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.AsyncServlet;
@@ -42,13 +43,16 @@ class PhrConditionRoutesTest extends EventloopTestBase {
     @Mock
     private PhrPolicyEvaluator policyEvaluator;
 
+    @Mock
+    private PatientRecordServiceExtensions patientRecordServiceExtensions;
+
     private AsyncServlet servlet;
 
     @BeforeEach
     void setUp() {
         lenient().when(policyEvaluator.canAccessPatientRecordAsync(any(), anyString()))
             .thenReturn(Promise.of(PhrPolicyEvaluator.PolicyDecision.allowed("TEST_ALLOWED", "allowed")));
-        servlet = new PhrConditionRoutes(eventloop(), policyEvaluator).getServlet();
+        servlet = new PhrConditionRoutes(eventloop(), policyEvaluator, patientRecordServiceExtensions).getServlet();
     }
 
     @Test

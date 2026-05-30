@@ -44,7 +44,7 @@ export function ErrorState({ title, message, correlationId, onRetry }: ErrorStat
           <p className="text-xs text-gray-400 mb-4">ID: {correlationId}</p>
         )}
         {onRetry && (
-          <Button onClick={onRetry} className="primary-cta">
+          <Button onClick={onRetry} variant="primary">
             {t('state.retry')}
           </Button>
         )}

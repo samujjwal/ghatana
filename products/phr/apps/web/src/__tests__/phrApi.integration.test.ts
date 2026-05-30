@@ -21,7 +21,7 @@ describe('PHR API integration mapping', () => {
       'fetch',
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = new URL(String(input));
-        if (url.pathname !== '/dashboard') {
+        if (url.pathname !== '/api/v1/dashboard') {
           return new Response('Not found', { status: 404 });
         }
         const headers = new Headers(init?.headers);
@@ -80,10 +80,11 @@ describe('PHR API integration mapping', () => {
       name: 'Aarati Shrestha',
       location: 'tenant-health-1',
     });
-    expect(dashboard.medications).toHaveLength(2);
+    expect(dashboard.medications).toEqual([]);
     expect(dashboard.records).toEqual([]);
     expect(dashboard.consents).toEqual([]);
     expect(dashboard.appointments).toEqual([]);
+    expect(dashboard.labs).toEqual([]);
   });
 
   it('adds an idempotency key to mutation requests by default', async () => {
@@ -208,7 +209,7 @@ describe('PHR API integration mapping', () => {
             headers: { 'Content-Type': 'text/plain' },
           });
         }
-        if (url.pathname === '/auth/logout') {
+        if (url.pathname === '/api/v1/auth/logout') {
           return new Response(null, { status: 204 });
         }
         return new Response('Not found', { status: 404 });
@@ -308,7 +309,7 @@ describe('PHR API integration mapping', () => {
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
         const url = new URL(String(input));
-        if (url.pathname === '/clinical/medications') {
+        if (url.pathname === '/api/v1/clinical/medications') {
           return new Response(JSON.stringify({
             patientId: 'patient-001',
             items: [{
@@ -325,7 +326,7 @@ describe('PHR API integration mapping', () => {
             headers: { 'Content-Type': 'application/json' },
           });
         }
-        if (url.pathname === '/clinical/medications/prescriptions/rx-1') {
+        if (url.pathname === '/api/v1/clinical/medications/prescriptions/rx-1') {
           return new Response(JSON.stringify({
             id: 'rx-1',
             medicationName: 'Metformin',

@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
  */
 public final class RouteSecurityRegistry {
 
-    // GENERATED_ROUTER_CHECKSUM: b0e361ad1d1e37148e6f8aa364ca3e7e025ab06c32d08eee99d44d67fbc5b8d1
+    // GENERATED_ROUTER_CHECKSUM: a485b59eeadb5034b56796c9f473eef3376bf6fa4d76e35428017fb16775b9f5
 
     private static final Map<String, RouteSecurityMetadata> METADATA_BY_ROUTE;
     private static final Map<String, Pattern> MATCHERS_BY_ROUTE;
@@ -246,6 +246,10 @@ public final class RouteSecurityRegistry {
         route(map, "POST", "/api/v1/mastery/obsolescence-events/process", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/mastery/obsolescence-events/process");
         route(map, "GET", "/api/v1/mastery/preview/decision", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/mastery/preview/decision");
         route(map, "GET", "/api/v1/mastery/preview/retrieval", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/mastery/preview/retrieval");
+        route(map, "GET", "/api/v1/media/artifacts", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/media/artifacts");
+        route(map, "POST", "/api/v1/media/artifacts", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/media/artifacts");
+        route(map, "DELETE", "/api/v1/media/artifacts/{artifactId}", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "DELETE /api/v1/media/artifacts/{artifactId}");
+        route(map, "GET", "/api/v1/media/artifacts/{artifactId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/media/artifacts/{artifactId}");
         route(map, "GET", "/api/v1/models", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/models");
         route(map, "POST", "/api/v1/models", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/models");
         route(map, "GET", "/api/v1/models/{modelName}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/models/{modelName}");

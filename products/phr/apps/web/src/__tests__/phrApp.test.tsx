@@ -293,7 +293,7 @@ describe('PHR web app', () => {
     renderDashboardPage();
 
     await waitFor(() => {
-      expect(screen.getByText('Error: Upstream consent service unavailable')).toBeInTheDocument();
+      expect(screen.getByText('Upstream consent service unavailable')).toBeInTheDocument();
     });
   });
 

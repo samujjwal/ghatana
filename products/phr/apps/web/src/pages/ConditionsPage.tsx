@@ -40,7 +40,7 @@ export function ConditionsPage(): React.ReactElement {
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('conditions.loading')}</div>;
   if (error) {
     const message = isForbiddenError(error) ? t('conditions.denied') : error;
-    return <SafeError title={t('dashboard.errorPrefix')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
+    return <SafeError title={t('dashboard.errorPrefix')} message={message} correlationId={session?.tenantId + '-' + session?.principalId} />;
   }
 
   const filteredConditions = filter === 'all' ? conditions : conditions.filter((condition) => condition.status === filter);

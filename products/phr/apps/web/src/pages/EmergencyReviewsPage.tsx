@@ -96,7 +96,7 @@ export function EmergencyReviewsPage(): React.ReactElement {
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setReviewNote(e.target.value)}
               required
             />
-            <Button type="submit" className="secondary-button" disabled={reviewing}>
+            <Button type="submit" variant="secondary" disabled={reviewing}>
               {reviewing ? t('emergency.review.submitting') : t('emergency.review.submit')}
             </Button>
           </form>

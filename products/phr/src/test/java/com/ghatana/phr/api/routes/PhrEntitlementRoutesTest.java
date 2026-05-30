@@ -103,15 +103,19 @@ class PhrEntitlementRoutesTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("hidden routes are not included in backend entitlement evaluation")
-    void hiddenRoutesAreNotEntitled() throws Exception {
+    @DisplayName("preview routes are included in backend entitlement evaluation")
+    void previewRoutesAreEntitled() throws Exception {
         HttpRequest request = contextRequest("t1", "admin-1", "admin");
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         assertThat(response.getCode()).isEqualTo(200);
         verify(routeEntitlementEvaluator).filterByRole(
-            argThat(routes -> routes.stream().noneMatch(route -> route.path().equals("/provider/dashboard"))),
+            argThat(routes -> routes.stream().anyMatch(route -> 
+                route.path().equals("/provider/dashboard") || 
+                route.path().equals("/provider/patients") ||
+                route.path().equals("/caregiver/dependents") ||
+                route.path().equals("/fchv/dashboard"))),
             eq("admin"),
             any()
         );

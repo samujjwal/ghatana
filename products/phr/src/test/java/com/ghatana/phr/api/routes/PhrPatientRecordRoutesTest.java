@@ -1,6 +1,7 @@
 package com.ghatana.phr.api.routes;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.ghatana.phr.application.record.RecordServiceImpl;
 import com.ghatana.phr.kernel.service.PatientRecordService;
 import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.http.AsyncServlet;
@@ -79,7 +80,7 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        servlet = new PhrPatientRecordRoutes(eventloop(), patientRecordService, policyEvaluator).getServlet();
+        servlet = new PhrPatientRecordRoutes(eventloop(), patientRecordService, new RecordServiceImpl(), policyEvaluator).getServlet();
 
         PatientRecordService.Patient patient = PatientRecordService.Patient.builder()
             .id("patient-1")

@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-05-30T00:38:35.119Z",
+  "generatedAt": "2026-05-30T03:35:28.843Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/check-action-plane-module-inventory.mjs",
     "source": "scripts/check-action-plane-module-inventory.mjs",
     "command": "pnpm check:action-plane-module-inventory",
-    "commit": "de196a31b8ad143f55e5f9cd3edad1d27e3c0d68"
+    "commit": "fb0a50e69ef9bf3554105221d582421c887c543a"
   },
   "source": {
     "inventory": "products/data-cloud/docs/architecture/ACTION_PLANE_MODULE_INVENTORY.md",

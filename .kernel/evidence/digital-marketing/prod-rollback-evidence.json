@@ -1,9 +1,9 @@
 {
   "productId": "digital-marketing",
   "evidenceType": "prod-rollback-evidence",
-  "generatedAt": "2026-05-30T00:32:11.047Z",
-  "sourceCommitSha": "de196a31b8ad143f55e5f9cd3edad1d27e3c0d68",
-  "targetCommitSha": "de196a31b8ad143f55e5f9cd3edad1d27e3c0d68",
+  "generatedAt": "2026-05-30T03:47:40.025Z",
+  "sourceCommitSha": "fb0a50e69ef9bf3554105221d582421c887c543a",
+  "targetCommitSha": "fb0a50e69ef9bf3554105221d582421c887c543a",
   "targetEnvironment": "staging",
   "validationStatus": "validated",
   "pass": true,

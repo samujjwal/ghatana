@@ -80,10 +80,7 @@ a {
   margin-top: auto;
 }
 
-.sidebar-button,
-.primary-cta,
-.secondary-button,
-.danger-button {
+.sidebar-button {
   width: 100%;
 }
 

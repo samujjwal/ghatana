@@ -87,6 +87,9 @@ public final class PhrClinicalRoutes {
             .with(HttpMethod.GET, "/prescriptions/:prescriptionId", this::handleGetPrescription)
             .with(HttpMethod.POST, "/prescriptions/:prescriptionId/discontinue", this::handleDiscontinuePrescription)
             .with(HttpMethod.POST, "/prescriptions/:prescriptionId/refill", this::handleRefillPrescription)
+            .with(HttpMethod.GET, "/prescriptions", this::handleListPrescriptionHistory)
+            .with(HttpMethod.GET, "/prescriptions/:prescriptionId/interactions", this::handleGetDrugInteractions)
+            .with(HttpMethod.GET, "/prescriptions/:prescriptionId/allergy-check", this::handleGetAllergyInteractions)
             .with(HttpMethod.GET, "/", this::handleListActivePrescriptions)
             .build();
     }
@@ -112,7 +115,7 @@ public final class PhrClinicalRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
         String observationId = request.getPathParameter("observationId");
         return labResultService.getObservation(observationId)
@@ -122,7 +125,7 @@ public final class PhrClinicalRoutes {
                 }
                 return requireAccess(context, observation.get().patientId(), "lab-results", "READ")
                     .then(decision -> decision.isAllowed()
-                        ? PhrRouteSupport.jsonResponse(200, observation.get(, correlationId))
+                        ? PhrRouteSupport.jsonResponse(200, observation.get())
                         : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
             });
     }
@@ -130,7 +133,7 @@ public final class PhrClinicalRoutes {
     private Promise<HttpResponse> handleListLabObservations(HttpRequest request) {
         String correlationId = PhrRouteSupport.extractCorrelationId(request);
         return withPatientAccess(request, "lab-results", "READ", patientId -> labResultService.getPatientObservations(patientId)
-            .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size(, correlationId)))));
+            .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size()), correlationId)));
     }
 
     private Promise<HttpResponse> handleGetLabTrend(HttpRequest request) {
@@ -139,10 +142,17 @@ public final class PhrClinicalRoutes {
         try {
             loincCode = PhrRouteSupport.requiredQuery(request, "loincCode");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_TREND", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "INVALID_TREND", ex.getMessage());
         }
         return withPatientAccess(request, "lab-results", "READ", patientId -> labResultService.getTrend(patientId, loincCode)
-            .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "loincCode", loincCode, "items", items, "count", items.size(, correlationId)))));
+            .then(items -> {
+                Map<String, Object> response = new java.util.HashMap<>();
+                response.put("patientId", patientId);
+                response.put("loincCode", loincCode);
+                response.put("items", items);
+                response.put("count", items.size());
+                return PhrRouteSupport.jsonResponse(200, response, correlationId);
+            }));
     }
 
     private Promise<HttpResponse> handlePrescribeMedication(HttpRequest request) {
@@ -158,7 +168,7 @@ public final class PhrClinicalRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
         String prescriptionId = request.getPathParameter("prescriptionId");
         return medicationService.getPrescription(prescriptionId)
@@ -168,7 +178,7 @@ public final class PhrClinicalRoutes {
                 }
                 return requireAccess(context, prescription.get().patientId(), "medications", "READ")
                     .then(decision -> decision.isAllowed()
-                        ? PhrRouteSupport.jsonResponse(200, prescription.get(, correlationId))
+                        ? PhrRouteSupport.jsonResponse(200, prescription.get())
                         : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
             });
     }
@@ -176,7 +186,7 @@ public final class PhrClinicalRoutes {
     private Promise<HttpResponse> handleListActivePrescriptions(HttpRequest request) {
         String correlationId = PhrRouteSupport.extractCorrelationId(request);
         return withPatientAccess(request, "medications", "READ", patientId -> medicationService.getActivePrescriptions(patientId)
-            .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size(, correlationId)))));
+            .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size()), correlationId)));
     }
 
     private Promise<HttpResponse> handleDiscontinuePrescription(HttpRequest request) {
@@ -202,6 +212,40 @@ public final class PhrClinicalRoutes {
             .then(updated -> PhrRouteSupport.jsonResponse(200, updated, correlationId)));
     }
 
+    private Promise<HttpResponse> handleListPrescriptionHistory(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
+        String patientId = request.getQueryParameter("patientId");
+        if (patientId == null || patientId.isBlank()) {
+            return PhrRouteSupport.errorResponse(400, "INVALID_HISTORY", "patientId query parameter is required");
+        }
+        return withPatientAccess(request, "medications", "READ", ignored -> medicationService.getPrescriptionHistory(patientId)
+            .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size()), correlationId)));
+    }
+
+    private Promise<HttpResponse> handleGetDrugInteractions(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
+        String patientId = request.getQueryParameter("patientId");
+        if (patientId == null || patientId.isBlank()) {
+            return PhrRouteSupport.errorResponse(400, "INVALID_INTERACTION_CHECK", "patientId query parameter is required");
+        }
+        return withPatientAccess(request, "medications", "READ", ignored -> medicationService.checkDrugInteractions(patientId)
+            .then(warnings -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "warnings", warnings, "count", warnings.size()), correlationId)));
+    }
+
+    private Promise<HttpResponse> handleGetAllergyInteractions(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
+        String patientId = request.getQueryParameter("patientId");
+        String medicationCode = request.getQueryParameter("medicationCode");
+        if (patientId == null || patientId.isBlank()) {
+            return PhrRouteSupport.errorResponse(400, "INVALID_ALLERGY_CHECK", "patientId query parameter is required");
+        }
+        if (medicationCode == null || medicationCode.isBlank()) {
+            return PhrRouteSupport.errorResponse(400, "INVALID_ALLERGY_CHECK", "medicationCode query parameter is required");
+        }
+        return withPatientAccess(request, "medications", "READ", ignored -> medicationService.checkAllergyInteractions(patientId, medicationCode)
+            .then(warnings -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "medicationCode", medicationCode, "warnings", warnings, "count", warnings.size()), correlationId)));
+    }
+
     private Promise<HttpResponse> handleRecordImmunization(HttpRequest request) {
         String correlationId = PhrRouteSupport.extractCorrelationId(request);
         return withBodyAndConsent(request, "immunizations", "WRITE", ImmunizationService.ImmunizationRecord.class,
@@ -215,7 +259,7 @@ public final class PhrClinicalRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
         String immunizationId = request.getPathParameter("immunizationId");
         return immunizationService.getImmunization(immunizationId)
@@ -225,7 +269,7 @@ public final class PhrClinicalRoutes {
                 }
                 return requireAccess(context, immunization.get().patientId(), "immunizations", "READ")
                     .then(decision -> decision.isAllowed()
-                        ? PhrRouteSupport.jsonResponse(200, immunization.get(, correlationId))
+                        ? PhrRouteSupport.jsonResponse(200, immunization.get())
                         : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
             });
     }
@@ -233,7 +277,7 @@ public final class PhrClinicalRoutes {
     private Promise<HttpResponse> handleListImmunizations(HttpRequest request) {
         String correlationId = PhrRouteSupport.extractCorrelationId(request);
         return withPatientAccess(request, "immunizations", "READ", patientId -> immunizationService.getImmunizationHistory(patientId)
-            .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size(, correlationId)))));
+            .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size()), correlationId)));
     }
 
     private <T> Promise<HttpResponse> withBodyAndConsent(
@@ -246,7 +290,7 @@ public final class PhrClinicalRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
         PhrRouteSupport.PhrRequestContext finalContext = context;
         return request.loadBody()
@@ -278,7 +322,7 @@ public final class PhrClinicalRoutes {
             context = PhrRouteSupport.requireContext(request);
             patientId = PhrRouteSupport.requiredQuery(request, "patientId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT_SCOPE", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT_SCOPE", ex.getMessage());
         }
         return requireAccess(context, patientId, resourceType, action)
             .then(decision -> decision.isAllowed()

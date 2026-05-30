@@ -1,5 +1,16 @@
 package com.ghatana.phr.api.routes;
 
+import com.ghatana.phr.kernel.service.AppointmentService;
+import com.ghatana.phr.kernel.service.ConsentManagementService;
+import com.ghatana.phr.kernel.service.ConsentManagementServiceExtensions;
+import com.ghatana.phr.kernel.service.DocumentService;
+import com.ghatana.phr.kernel.service.DocumentServiceExtensions;
+import com.ghatana.phr.kernel.service.EmergencyAccessLogService;
+import com.ghatana.phr.kernel.service.EmergencyAccessLogServiceExtensions;
+import com.ghatana.phr.kernel.service.MedicationService;
+import com.ghatana.phr.kernel.service.MedicationServiceExtensions;
+import com.ghatana.phr.kernel.service.PatientRecordService;
+import com.ghatana.phr.kernel.service.PatientRecordServiceExtensions;
 import com.ghatana.phr.repository.UserRepository;
 import com.ghatana.phr.model.PHRUser;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -8,11 +19,21 @@ import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
+import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
 
 /**
  * Enforcement matrix tests for {@link PhrDashboardRoutes}.
@@ -29,10 +50,29 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Test
  */
 @DisplayName("PhrDashboardRoutes — enforcement matrix")
+@ExtendWith(MockitoExtension.class)
 class PhrDashboardRoutesTest extends EventloopTestBase {
 
     private AsyncServlet servlet;
     private UserRepository userRepository;
+
+    @Mock
+    private AppointmentService appointmentService;
+
+    @Mock
+    private MedicationService medicationService;
+
+    @Mock
+    private PatientRecordService patientRecordService;
+
+    @Mock
+    private DocumentService documentService;
+
+    @Mock
+    private ConsentManagementService consentService;
+
+    @Mock
+    private EmergencyAccessLogService emergencyAccessLogService;
 
     @BeforeEach
     void setUp() {
@@ -40,7 +80,44 @@ class PhrDashboardRoutesTest extends EventloopTestBase {
         userRepository.save(new PHRUser("patient-1", "Patient One", "patient@example.test"));
         userRepository.save(new PHRUser("dr-1", "Doctor One", "doctor@example.test"));
         userRepository.save(new PHRUser("admin-1", "Admin One", "admin@example.test"));
-        servlet = new PhrDashboardRoutes(eventloop(), userRepository).getServlet();
+        
+        // Create extension instances with mocked services
+        // Their default implementations return empty data, which is sufficient for testing
+        MedicationServiceExtensions medicationExtensions = new MedicationServiceExtensions(medicationService);
+        PatientRecordServiceExtensions patientRecordExtensions = new PatientRecordServiceExtensions(patientRecordService);
+        DocumentServiceExtensions documentExtensions = new DocumentServiceExtensions(documentService);
+        ConsentManagementServiceExtensions consentExtensions = new ConsentManagementServiceExtensions(consentService);
+        EmergencyAccessLogServiceExtensions emergencyExtensions = new EmergencyAccessLogServiceExtensions(emergencyAccessLogService);
+        
+        // Mock service methods that extensions call
+        // Create a mock appointment with necessary fields
+        AppointmentService.Appointment mockAppointment = new AppointmentService.Appointment(
+            "apt-1",
+            "patient-1",
+            "provider-1",
+            "slot-1",
+            java.time.Instant.now(),
+            30,
+            "checkup",
+            "scheduled",
+            "IN_PERSON",
+            java.time.Instant.now(),
+            java.time.Instant.now(),
+            1
+        );
+        lenient().when(appointmentService.getNextAppointment(anyString())).thenReturn(Promise.of(mockAppointment));
+        lenient().when(medicationService.getActivePrescriptions(anyString())).thenReturn(Promise.of(List.of()));
+        
+        servlet = new PhrDashboardRoutes(
+            eventloop(),
+            userRepository,
+            appointmentService,
+            medicationExtensions,
+            patientRecordExtensions,
+            documentExtensions,
+            consentExtensions,
+            emergencyExtensions
+        ).getServlet();
     }
 
     @Test

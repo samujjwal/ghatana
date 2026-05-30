@@ -131,13 +131,30 @@ public final class PhrProductContractImporter {
     }
 
     private static void requireStableMetadata(PhrRoute route) {
-        if (isBlank(route.apiEndpoint())) {
+        // Check metadata.apiEndpoint first, then fallback to direct apiEndpoint field
+        String apiEndpoint = route.apiEndpoint();
+        if (apiEndpoint == null && route.metadata() != null) {
+            apiEndpoint = (String) route.metadata().get("apiEndpoint");
+        }
+        if (isBlank(apiEndpoint)) {
             throw new IllegalArgumentException("Stable PHR route missing apiEndpoint: " + route.path());
         }
-        if (isBlank(route.policyId())) {
+
+        // Check metadata.policyId first, then fallback to direct policyId field
+        String policyId = route.policyId();
+        if (policyId == null && route.metadata() != null) {
+            policyId = (String) route.metadata().get("policyId");
+        }
+        if (isBlank(policyId)) {
             throw new IllegalArgumentException("Stable PHR route missing policyId: " + route.path());
         }
-        if (isBlank(route.testId())) {
+
+        // Check metadata.testId first, then fallback to direct testId field
+        String testId = route.testId();
+        if (testId == null && route.metadata() != null) {
+            testId = (String) route.metadata().get("testId");
+        }
+        if (isBlank(testId)) {
             throw new IllegalArgumentException("Stable PHR route missing testId: " + route.path());
         }
     }
@@ -179,21 +196,39 @@ public final class PhrProductContractImporter {
     private static List<GeneratedArtifact> generateArtifacts(List<PhrRoute> routes, List<PhrUseCase> useCases) {
         List<GeneratedArtifact> artifacts = new ArrayList<>();
         for (PhrRoute route : routes) {
-            if (!isBlank(route.apiEndpoint())) {
+            // Check metadata.apiEndpoint first, then fallback to direct apiEndpoint field
+            String apiEndpoint = route.apiEndpoint();
+            if (apiEndpoint == null && route.metadata() != null) {
+                apiEndpoint = (String) route.metadata().get("apiEndpoint");
+            }
+            
+            // Check metadata.policyId first, then fallback to direct policyId field
+            String policyId = route.policyId();
+            if (policyId == null && route.metadata() != null) {
+                policyId = (String) route.metadata().get("policyId");
+            }
+            
+            // Check metadata.testId first, then fallback to direct testId field
+            String testId = route.testId();
+            if (testId == null && route.metadata() != null) {
+                testId = (String) route.metadata().get("testId");
+            }
+
+            if (!isBlank(apiEndpoint)) {
                 artifacts.add(new GeneratedArtifact(
-                        route.testId() + "-backend-contract",
+                        testId + "-backend-contract",
                         "backend-api",
                         "java-route-contract-test",
-                        route.apiEndpoint(),
-                        route.policyId()));
+                        apiEndpoint,
+                        policyId));
             }
             if (!route.path().startsWith("/mobile/")) {
                 artifacts.add(new GeneratedArtifact(
-                        route.testId() + "-web-route",
+                        testId + "-web-route",
                         "web",
                         "react-route",
                         route.path(),
-                        route.policyId()));
+                        policyId));
             }
         }
         for (PhrUseCase useCase : useCases) {
@@ -251,7 +286,12 @@ public final class PhrProductContractImporter {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record PhrRouteContract(String product, String version, List<PhrRoute> routes) {
+    record PhrRouteContract(
+            String schemaVersion,
+            String product,
+            String version,
+            List<PhrRoute> routes
+    ) {
         PhrRouteContract {
             routes = routes == null ? List.of() : List.copyOf(routes);
         }
@@ -261,11 +301,31 @@ public final class PhrProductContractImporter {
     public record PhrRoute(
             String path,
             String label,
+            String description,
+            String group,
+            String minimumRole,
+            List<String> personas,
+            List<String> tiers,
+            List<String> actions,
+            List<String> cards,
+            String stability,
             String apiEndpoint,
             String policyId,
             String testId,
-            String stability
+            List<String> surface,
+            String i18nKey,
+            String descriptionI18nKey,
+            String routeType,
+            Map<String, Object> metadata
     ) {
+        public PhrRoute {
+            personas = personas == null ? List.of() : List.copyOf(personas);
+            tiers = tiers == null ? List.of() : List.copyOf(tiers);
+            actions = actions == null ? List.of() : List.copyOf(actions);
+            cards = cards == null ? List.of() : List.copyOf(cards);
+            surface = surface == null ? List.of() : List.copyOf(surface);
+            metadata = metadata == null ? Map.of() : Map.copyOf(metadata);
+        }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

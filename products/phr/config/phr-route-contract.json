@@ -1,4 +1,5 @@
 {
+  "version": "1.0.0",
   "schemaVersion": "1.0.0",
   "product": "phr",
   "routes": [
@@ -725,8 +726,10 @@
         "provider-panel"
       ],
       "stability": "hidden",
-      "visibilityReason": "Provider implementation not yet complete - pending real work queue, appointments, and recent patients features",
-      "surface": ["hidden"],
+      "apiEndpoint": "/api/v1/provider/dashboard",
+      "policyId": "phr.provider.dashboard.view",
+      "testId": "phr-provider-dashboard-001",
+      "surface": ["web", "backend"],
       "i18nKey": "phr.routes.provider.dashboard.label",
       "descriptionI18nKey": "phr.routes.provider.dashboard.description",
       "routeType": "page"
@@ -751,8 +754,10 @@
         "patient-roster"
       ],
       "stability": "hidden",
-      "visibilityReason": "Provider implementation not yet complete - pending patient search/list/summary with consent/treatment policy",
-      "surface": ["hidden"],
+      "apiEndpoint": "/api/v1/provider/patients",
+      "policyId": "phr.provider.patients.view",
+      "testId": "phr-provider-patients-001",
+      "surface": ["web", "backend"],
       "i18nKey": "phr.routes.provider.patients.label",
       "descriptionI18nKey": "phr.routes.provider.patients.description",
       "routeType": "page"
@@ -777,8 +782,10 @@
         "dependent-summaries"
       ],
       "stability": "hidden",
-      "visibilityReason": "Caregiver implementation not yet complete - pending grant-scoped dependents list/detail",
-      "surface": ["hidden"],
+      "apiEndpoint": "/api/v1/caregiver/dependents",
+      "policyId": "phr.caregiver.dependents.view",
+      "testId": "phr-caregiver-dependents-001",
+      "surface": ["web", "backend"],
       "i18nKey": "phr.routes.caregiver.dependents.label",
       "descriptionI18nKey": "phr.routes.caregiver.dependents.description",
       "routeType": "page"
@@ -803,8 +810,10 @@
         "community-health-summary"
       ],
       "stability": "hidden",
-      "visibilityReason": "FCHV implementation not yet complete - pending assignment-scoped dashboard and community health actions",
-      "surface": ["hidden"],
+      "apiEndpoint": "/api/v1/fchv/dashboard",
+      "policyId": "phr.fchv.dashboard.view",
+      "testId": "phr-fchv-dashboard-001",
+      "surface": ["web", "backend"],
       "i18nKey": "phr.routes.fchv.dashboard.label",
       "descriptionI18nKey": "phr.routes.fchv.dashboard.description",
       "routeType": "page"

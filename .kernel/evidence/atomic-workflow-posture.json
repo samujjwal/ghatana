@@ -1,8 +1,8 @@
 {
   "generatedAt": "generated-on-demand",
   "summary": {
-    "mutatingRouteCount": 157,
-    "criticalMutatingRouteCount": 55,
+    "mutatingRouteCount": 159,
+    "criticalMutatingRouteCount": 56,
     "hasRollbackRoute": true,
     "hasRetryRoute": true,
     "violationCount": 0
@@ -205,6 +205,11 @@
     },
     {
       "operation": "POST /api/v1/governance/retention/purge",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "DELETE /api/v1/media/artifacts/{artifactId}",
       "requiresPolicy": true,
       "requiresBlockingAudit": true
     },

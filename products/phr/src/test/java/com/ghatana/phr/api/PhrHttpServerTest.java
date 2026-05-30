@@ -7,9 +7,14 @@ import com.ghatana.kernel.release.ReleaseReadinessRuntimeService;
 import com.ghatana.kernel.security.KernelSecurityManager;
 import com.ghatana.phr.application.clinical.ClinicalService;
 import com.ghatana.phr.application.clinical.ClinicalServiceImpl;
+import com.ghatana.phr.application.record.RecordServiceImpl;
 import com.ghatana.phr.fhir.server.PhrFhirR4Server;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
+import com.ghatana.phr.kernel.service.ConsentManagementServiceExtensions;
+import com.ghatana.phr.kernel.service.DocumentService;
+import com.ghatana.phr.kernel.service.DocumentServiceExtensions;
 import com.ghatana.phr.kernel.service.EmergencyAccessLogService;
+import com.ghatana.phr.kernel.service.EmergencyAccessLogServiceExtensions;
 import com.ghatana.phr.kernel.service.EmergencyAccessNotificationSender;
 import com.ghatana.phr.kernel.service.EmergencyAccessReviewAuditLogger;
 import com.ghatana.phr.kernel.service.EmergencyAccessReviewCase;
@@ -19,11 +24,12 @@ import com.ghatana.phr.kernel.service.DurablePhrNotificationSender;
 import com.ghatana.phr.kernel.service.ImmunizationService;
 import com.ghatana.phr.kernel.service.LabResultService;
 import com.ghatana.phr.kernel.service.MedicationService;
+import com.ghatana.phr.kernel.service.MedicationServiceExtensions;
 import com.ghatana.phr.kernel.service.AppointmentService;
 import com.ghatana.phr.kernel.service.BillingService;
-import com.ghatana.phr.kernel.service.DocumentService;
 import com.ghatana.phr.kernel.service.ImagingService;
 import com.ghatana.phr.kernel.service.PatientRecordService;
+import com.ghatana.phr.kernel.service.PatientRecordServiceExtensions;
 import com.ghatana.phr.kernel.service.PhrTestInfrastructure;
 import com.ghatana.phr.kernel.service.PhrNotificationSender;
 import com.ghatana.phr.kernel.service.ReferralService;
@@ -40,6 +46,7 @@ import com.ghatana.phr.api.routes.PhrAuditRoutes;
 import com.ghatana.phr.api.routes.PhrAuthRoutes;
 import com.ghatana.phr.api.routes.PhrCaregiverRoutes;
 import com.ghatana.phr.api.routes.PhrClinicalRoutes;
+import com.ghatana.phr.api.routes.PhrConditionRoutes;
 import com.ghatana.phr.api.routes.PhrConsentRoutes;
 import com.ghatana.phr.api.routes.PhrDashboardRoutes;
 import com.ghatana.phr.api.routes.PhrDocumentImagingRoutes;
@@ -186,9 +193,18 @@ class PhrHttpServerTest extends EventloopTestBase {
 
         // Create route objects with eventloop
         PhrFhirRoutes fhirRoutes = new PhrFhirRoutes(eventloop(), controller);
-        PhrDashboardRoutes dashboardRoutes = new PhrDashboardRoutes(eventloop(), userRepository);
+        PhrDashboardRoutes dashboardRoutes = new PhrDashboardRoutes(
+            eventloop(),
+            userRepository,
+            appointmentService,
+            new MedicationServiceExtensions(medicationService),
+            new PatientRecordServiceExtensions(patientRecordService),
+            new DocumentServiceExtensions(documentService),
+            new ConsentManagementServiceExtensions(consentService),
+            new EmergencyAccessLogServiceExtensions(emergencyAccessLogService)
+        );
         PhrPatientRecordRoutes patientRecordRoutes =
-            new PhrPatientRecordRoutes(eventloop(), patientRecordService, policyEvaluator);
+            new PhrPatientRecordRoutes(eventloop(), patientRecordService, new RecordServiceImpl(), policyEvaluator);
         PhrConsentRoutes consentRoutes = new PhrConsentRoutes(eventloop(), consentService, policyEvaluator);
         PhrClinicalRoutes clinicalRoutes = new PhrClinicalRoutes(
             eventloop(),
@@ -252,7 +268,8 @@ class PhrHttpServerTest extends EventloopTestBase {
             durableNotificationSender
         );
         PhrNotificationRoutes notificationRoutes = new PhrNotificationRoutes(eventloop(), durableNotificationSender);
-        PhrPatientProfileRoutes patientProfileRoutes = new PhrPatientProfileRoutes(eventloop(), userRepository);
+        PhrPatientProfileRoutes patientProfileRoutes = new PhrPatientProfileRoutes(eventloop(), patientRecordService);
+        PhrConditionRoutes conditionRoutes = new PhrConditionRoutes(eventloop(), policyEvaluator, new PatientRecordServiceExtensions(patientRecordService));
 
         server = new PhrHttpServer(
             eventloop(),
@@ -261,6 +278,7 @@ class PhrHttpServerTest extends EventloopTestBase {
             patientRecordRoutes,
             consentRoutes,
             clinicalRoutes,
+            conditionRoutes,
             emergencyRoutes,
             administrativeRoutes,
             documentImagingRoutes,
@@ -710,12 +728,13 @@ class PhrHttpServerTest extends EventloopTestBase {
             assertThat(history.getCode()).isEqualTo(200);
             assertThat(JSON.readTree(bodyString(history)).path("history").isArray()).isTrue();
 
-            HttpResponse records = dispatch(HttpMethod.GET, "/patients/patient-1/records?category=administrative", null, headers);
+            HttpResponse records = dispatch(HttpMethod.GET, "/patients/patient-1/records", null, headers);
             assertThat(records.getCode()).isEqualTo(200);
             JsonNode recordsBody = JSON.readTree(bodyString(records));
-            assertThat(recordsBody.path("items").get(0).path("resourceType").asText()).isEqualTo("Patient");
+            assertThat(recordsBody.path("items").isArray()).isTrue();
+            assertThat(recordsBody.path("items").isEmpty()).isFalse();
             assertThat(recordsBody.path("items").get(0).path("provenance").path("source").asText())
-                .isEqualTo("phr-patient-record-service");
+                .isEqualTo("phr-record-service");
         }
 
         @Test

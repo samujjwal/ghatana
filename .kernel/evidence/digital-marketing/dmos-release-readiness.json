@@ -1,21 +1,21 @@
 {
   "productId": "digital-marketing",
   "evidenceType": "dmos-release-readiness",
-  "generatedAt": "2026-05-30T00:32:11.047Z",
-  "sourceCommitSha": "de196a31b8ad143f55e5f9cd3edad1d27e3c0d68",
-  "targetCommitSha": "de196a31b8ad143f55e5f9cd3edad1d27e3c0d68",
+  "generatedAt": "2026-05-30T03:57:04.904Z",
+  "sourceCommitSha": "fb0a50e69ef9bf3554105221d582421c887c543a",
+  "targetCommitSha": "fb0a50e69ef9bf3554105221d582421c887c543a",
   "targetEnvironment": "staging",
   "validationStatus": "validated",
-  "reviewDueAt": "2026-05-31T00:32:11.047Z",
-  "expiresAt": "2026-06-01T00:32:11.047Z",
+  "reviewDueAt": "2026-05-31T03:47:40.025Z",
+  "expiresAt": "2026-06-01T03:47:40.025Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/check-product-family-asset-registry.mjs",
     "command": "node scripts/check-product-family-asset-registry.mjs",
     "source": "scripts/check-product-family-asset-registry.mjs",
-    "commit": "de196a31b8ad143f55e5f9cd3edad1d27e3c0d68",
-    "sourceCommitSha": "de196a31b8ad143f55e5f9cd3edad1d27e3c0d68",
-    "targetCommitSha": "de196a31b8ad143f55e5f9cd3edad1d27e3c0d68",
+    "commit": "fb0a50e69ef9bf3554105221d582421c887c543a",
+    "sourceCommitSha": "fb0a50e69ef9bf3554105221d582421c887c543a",
+    "targetCommitSha": "fb0a50e69ef9bf3554105221d582421c887c543a",
     "targetEnvironment": "staging"
   },
   "releaseReadiness": {
@@ -25,7 +25,7 @@
     "blockingIssues": []
   },
   "nextRequiredWork": [],
-  "checkedAt": "2026-05-30T00:32:11.047Z",
+  "checkedAt": "2026-05-30T03:57:04.904Z",
   "environments": {
     "local": {
       "status": "ready",

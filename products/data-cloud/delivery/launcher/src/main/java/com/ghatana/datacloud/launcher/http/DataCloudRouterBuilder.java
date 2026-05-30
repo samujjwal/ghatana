@@ -5,6 +5,7 @@
 package com.ghatana.datacloud.launcher.http;
 
 import com.ghatana.datacloud.api.controller.MasteryController;
+import com.ghatana.datacloud.api.controller.MediaArtifactController;
 import com.ghatana.datacloud.launcher.http.handlers.*;
 import com.ghatana.datacloud.feature.DataCloudFeature;
 import com.ghatana.datacloud.feature.DataCloudFeatureFlags;
@@ -38,6 +39,7 @@ import org.slf4j.LoggerFactory;
  *     .withCheckpointRoutes(pipelineCheckpointHandler)
  *     .withAlertRoutes(alertingHandler, sseHandler)
  *     .withMemoryRoutes(memoryHandler)
+ *     .withMediaArtifactRoutes(mediaArtifactController)
  *     .withBrainRoutes(brainHandler, sseHandler)
  *     .withLearningRoutes(learningHandler)
  *     .withAnalyticsRoutes(analyticsHandler, workflowExecutionHandler)
@@ -236,6 +238,22 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.POST, "/api/v1/action/memory/:agentId/search", memoryHandler::handleSearchAgentMemory)
             .with(HttpMethod.DELETE, "/api/v1/action/memory/:agentId/:memoryId", memoryHandler::handleDeleteMemory)
             .with(HttpMethod.PUT, "/api/v1/action/memory/:agentId/:memoryId/retain", memoryHandler::handleRetainMemory);
+        return this;
+    }
+
+    /**
+     * Adds media artifact metadata routes.
+     */
+    public DataCloudRouterBuilder withMediaArtifactRoutes(MediaArtifactController mediaArtifactController) {
+        if (mediaArtifactController == null) {
+            return this;
+        }
+
+        builder
+            .with(HttpMethod.POST, "/api/v1/media/artifacts", mediaArtifactController::handle)
+            .with(HttpMethod.GET, "/api/v1/media/artifacts", mediaArtifactController::handle)
+            .with(HttpMethod.GET, "/api/v1/media/artifacts/:artifactId", mediaArtifactController::handle)
+            .with(HttpMethod.DELETE, "/api/v1/media/artifacts/:artifactId", mediaArtifactController::handle);
         return this;
     }
 

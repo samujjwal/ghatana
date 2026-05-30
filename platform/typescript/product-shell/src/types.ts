@@ -66,6 +66,8 @@ export interface ProductRouteCapability {
   readonly actions?: readonly string[];
   /** Optional route-level cards or panels returned by backend entitlement APIs. */
   readonly cards?: readonly string[];
+  /** Optional accessibility attributes for a11y compliance checks. */
+  readonly accessibility?: Record<string, boolean>;
 }
 
 /**

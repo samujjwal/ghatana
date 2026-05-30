@@ -84,6 +84,7 @@ public final class PhrConsentRoutes {
             HttpRequest request,
             PhrRouteSupport.PhrRequestContext context,
             String idempotencyKey) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         return request.loadBody()
             .then(body -> {
                 ConsentManagementService.ConsentGrant grant;
@@ -120,7 +121,7 @@ public final class PhrConsentRoutes {
             .then($ -> PhrRouteSupport.jsonResponse(200, Map.of(
                 "grantId", grantId,
                 "status", "REVOKED"
-            , correlationId)));
+            ), correlationId));
     }
 
     private Promise<HttpResponse> handleCheckConsent(HttpRequest request) {
@@ -179,7 +180,7 @@ public final class PhrConsentRoutes {
             .then(grants -> PhrRouteSupport.jsonResponse(200, Map.of(
                 "patientId", patientId,
                 "items", grants,
-                "count", grants.size(, correlationId)
+                "count", grants.size()
             )));
     }
 

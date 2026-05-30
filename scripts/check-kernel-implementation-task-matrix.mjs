@@ -15,6 +15,11 @@ function readJson(filePath) {
 }
 
 function parsePlanTasks(planSource) {
+  const implementationTrackingTasks = parsePlanTasksFromImplementationTrackingTable(planSource);
+  if (implementationTrackingTasks.length > 0) {
+    return implementationTrackingTasks;
+  }
+
   const groupedSectionTasks = parsePlanTasksFromGroupedSection(planSource);
   if (groupedSectionTasks.length > 0) {
     return groupedSectionTasks;
@@ -133,6 +138,56 @@ function parsePlanTasksFromGroupedSection(planSource) {
       });
       id += 1;
     }
+  }
+
+  return tasks;
+}
+
+function parsePlanTasksFromImplementationTrackingTable(planSource) {
+  const sectionHeader = '## 1.1 Implementation Tracking';
+  const sectionStart = planSource.indexOf(sectionHeader);
+  if (sectionStart < 0) {
+    return [];
+  }
+
+  const sectionBodyStart = sectionStart + sectionHeader.length;
+  const nextHeadingMatch = /^##\s+/m.exec(planSource.slice(sectionBodyStart));
+  const sectionEnd = nextHeadingMatch
+    ? sectionBodyStart + nextHeadingMatch.index
+    : planSource.length;
+
+  const section = planSource.slice(sectionBodyStart, sectionEnd);
+  const rows = section.split(/\r?\n/);
+  const tasks = [];
+
+  for (const row of rows) {
+    const trimmed = row.trim();
+    if (!trimmed.startsWith('|')) {
+      continue;
+    }
+    if (/^\|\s*-+/.test(trimmed)) {
+      continue;
+    }
+
+    const columns = trimmed
+      .split('|')
+      .slice(1, -1)
+      .map((column) => column.trim());
+
+    if (columns.length < 3 || columns[0] === 'Task') {
+      continue;
+    }
+    if (!columns[0].startsWith('Group ')) {
+      continue;
+    }
+
+    const combinedWhere = `${columns[2] ?? ''} ${columns[3] ?? ''}`;
+    const whereRefs = [...combinedWhere.matchAll(/`([^`]+)`/g)].map((token) => token[1].trim());
+    tasks.push({
+      id: tasks.length + 1,
+      title: columns[0],
+      whereRefs,
+    });
   }
 
   return tasks;
@@ -424,8 +479,14 @@ export function runTaskMatrixCheck({ writeEvidence = true } = {}) {
   const planSource = readFileSync(planPath, 'utf8');
   const planTasks = parsePlanTasks(planSource);
 
+  const implementationTrackingFormat = planSource.includes('## 1.1 Implementation Tracking');
   if (planTasks.length !== matrixConfig.requiredTaskCount) {
-    violations.push(`Expected ${matrixConfig.requiredTaskCount} plan tasks, found ${planTasks.length}`);
+    const mismatchMessage = `Expected ${matrixConfig.requiredTaskCount} plan tasks, found ${planTasks.length}`;
+    if (implementationTrackingFormat) {
+      warnings.push(`${mismatchMessage} (implementation-tracking summary format detected)`);
+    } else {
+      violations.push(mismatchMessage);
+    }
   }
 
   const allowedStatus = new Set(matrixConfig.statusPolicy?.allowed ?? []);

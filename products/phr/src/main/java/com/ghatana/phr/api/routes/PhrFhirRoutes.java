@@ -56,7 +56,7 @@ public final class PhrFhirRoutes {
         try {
             PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage());
         }
         String resourceType = request.getPathParameter("resourceType");
         return request.loadBody()
@@ -75,7 +75,7 @@ public final class PhrFhirRoutes {
         try {
             PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage());
         }
         String resourceType = request.getPathParameter("resourceType");
         String id = request.getPathParameter("id");
@@ -91,7 +91,7 @@ public final class PhrFhirRoutes {
         try {
             PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage());
         }
         String resourceType = request.getPathParameter("resourceType");
         var params = request.getQueryParameters();

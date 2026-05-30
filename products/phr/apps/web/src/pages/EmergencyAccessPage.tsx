@@ -95,7 +95,7 @@ export function EmergencyAccessPage(): React.ReactElement {
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setReason(e.target.value)}
               required
             />
-            <Button type="submit" className="danger-button" disabled={requesting} aria-busy={requesting}>
+            <Button type="submit" variant="destructive" disabled={requesting} aria-busy={requesting}>
               {requesting ? t('emergency.requesting') : t('emergency.request')}
             </Button>
           </form>

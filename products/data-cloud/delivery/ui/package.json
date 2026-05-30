@@ -32,6 +32,10 @@
     "check:route-manifest": "node ../../scripts/generate-route-manifest.mjs --check",
     "generate:api-types": "tsx scripts/generate-api-types.ts",
     "check:api-types": "tsx scripts/check-api-types.ts",
+    "check:deps:boundaries": "node ../../../../scripts/check-dependency-boundaries.mjs ../../..",
+    "check:deps:circular": "node ../../../../scripts/check-circular-deps.mjs",
+    "check:deps:cross-workspace": "node ../../../../scripts/check-cross-workspace-deps.mjs",
+    "check:deps:governance": "pnpm run check:deps:boundaries && pnpm run check:deps:circular && pnpm run check:deps:cross-workspace",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },

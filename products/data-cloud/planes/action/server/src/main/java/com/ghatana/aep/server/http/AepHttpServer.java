@@ -126,7 +126,7 @@ import javax.sql.DataSource;
 import org.slf4j.MDC;
 
 /**
- * HTTP Server for AEP Standalone deployment.
+ * HTTP Server for the Data Cloud Action Plane runtime.
  * Provides REST API endpoints for event processing, pattern management,
  * anomaly detection, and forecasting.
  *
@@ -259,6 +259,10 @@ public class AepHttpServer {
     private static final String ALLOW_DEFAULT_TENANT_ENV = "AEP_ALLOW_DEFAULT_TENANT";
 
     private static final String ALLOW_IN_MEMORY_RUN_HISTORY_ENV = "AEP_ALLOW_IN_MEMORY_RUN_HISTORY";
+    private static final String ALLOW_IN_MEMORY_CONSENT_ENV = "AEP_ALLOW_IN_MEMORY_CONSENT";
+    private static final String ALLOW_IN_MEMORY_GOVERNANCE_ENV = "AEP_ALLOW_IN_MEMORY_GOVERNANCE";
+    private static final String ALLOW_IN_MEMORY_IDEMPOTENCY_ENV = "AEP_ALLOW_IN_MEMORY_IDEMPOTENCY";
+    private static final String ALLOW_IN_MEMORY_SESSION_ENV = "AEP_ALLOW_IN_MEMORY_SESSION";
 
     /** T-05: Short-lived SSE tokens: token → (expiryEpochMs, tenantId). 60 s TTL. Max 10 000 entries. */
     private final java.util.concurrent.ConcurrentHashMap<String, long[]> sseTokens =
@@ -696,6 +700,12 @@ public class AepHttpServer {
                 : (this.agentDataCloud.entityStore() != null ? "ok" : "misconfigured"));
         this.healthController.addDeepDependencyCheck("execution-history",
             () -> this.agentDataCloud != null && this.agentDataCloud.eventLogStore() != null ? "ok" : "disabled");
+        this.healthController.addDeepDependencyCheck("consent-store",
+            () -> this.agentDataCloud != null ? "durable" : "in-memory");
+        this.healthController.addDeepDependencyCheck("idempotency-store",
+            () -> this.jedisPool != null ? "durable" : "in-memory");
+        this.healthController.addDeepDependencyCheck("session-store",
+            () -> this.jedisPool != null ? "durable" : "in-memory");
         this.healthController.addAsyncDeepDependencyCheck("data-cloud.connectivity", this::dataCloudConnectivityStatus);
         this.healthController.addAsyncDeepDependencyCheck("kafka.connectivity", this::kafkaConnectivityStatus);
         this.healthController.setDeepResponseMetadataSupplier(this::runtimeDurabilityMetadata);
@@ -736,6 +746,33 @@ public class AepHttpServer {
         this.auditController = new AuditController(this.agentDataCloud);
         // F-008: Initialize auth controller with in-memory session token manager
         this.authController = new AuthController(new AuthController.InMemorySessionTokenManager());
+
+        if (isExplicitProductionProfile() && this.agentDataCloud == null && !isBooleanSettingEnabled(ALLOW_IN_MEMORY_CONSENT_ENV)) {
+            throw new IllegalStateException(
+                "Data Cloud client is required for durable consent decision storage in production. "
+                    + "Set " + ALLOW_IN_MEMORY_CONSENT_ENV + "=true only for explicit embedded/test deployments.");
+        }
+
+        if (isExplicitProductionProfile()
+            && (killSwitchService == null || degradationManager == null || policyEngine == null)
+            && !isBooleanSettingEnabled(ALLOW_IN_MEMORY_GOVERNANCE_ENV)) {
+            throw new IllegalStateException(
+                "Kill-switch, degradation manager, and policy engine must be configured in production. "
+                    + "Set " + ALLOW_IN_MEMORY_GOVERNANCE_ENV + "=true only for explicit embedded/test deployments.");
+        }
+
+        if (isExplicitProductionProfile() && jedisPool == null && !isBooleanSettingEnabled(ALLOW_IN_MEMORY_SESSION_ENV)) {
+            throw new IllegalStateException(
+                "Redis-backed session storage is required in production. "
+                    + "Set " + ALLOW_IN_MEMORY_SESSION_ENV + "=true only for explicit embedded/test deployments.");
+        }
+
+        if (isExplicitProductionProfile() && jedisPool == null && !isBooleanSettingEnabled(ALLOW_IN_MEMORY_IDEMPOTENCY_ENV)) {
+            throw new IllegalStateException(
+                "Redis-backed idempotency storage is required in production. "
+                    + "Set " + ALLOW_IN_MEMORY_IDEMPOTENCY_ENV + "=true only for explicit embedded/test deployments.");
+        }
+
         // T-23: Use DataCloud-backed consent store in production, in-memory in dev.
         ConsentDecisionStore consentDecisionStore = (agentDataCloud != null)
             ? new DataCloudConsentDecisionStore(agentDataCloud)
@@ -945,12 +982,23 @@ public class AepHttpServer {
             .with(HttpMethod.POST, "/api/v1/deployments", deploymentController::handleCreateDeployment)
             .with(HttpMethod.PUT, "/api/v1/deployments/:deploymentId", deploymentController::handleUpdateDeployment)
             .with(HttpMethod.DELETE, "/api/v1/deployments/:deploymentId", deploymentController::handleDeleteDeployment)
+            .with(HttpMethod.POST, "/api/v1/action/deployments", deploymentController::handleCreateDeployment)
+            .with(HttpMethod.PUT, "/api/v1/action/deployments/:deploymentId", deploymentController::handleUpdateDeployment)
+            .with(HttpMethod.DELETE, "/api/v1/action/deployments/:deploymentId", deploymentController::handleDeleteDeployment)
 
             // Pattern management endpoints (delegated to PatternController)
             .with(HttpMethod.GET, "/api/v1/patterns", patternController::handleListPatterns)
             .with(HttpMethod.POST, "/api/v1/patterns", patternController::handleRegisterPattern)
             .with(HttpMethod.GET, "/api/v1/patterns/:patternId", patternController::handleGetPattern)
             .with(HttpMethod.DELETE, "/api/v1/patterns/:patternId", patternController::handleDeletePattern)
+            .with(HttpMethod.POST, "/api/v1/patterns/:patternId/lifecycle/:action", patternController::handleLifecycleTransition)
+            .with(HttpMethod.POST, "/api/v1/patterns/:patternId/feedback", patternController::handleRecordPatternFeedback)
+            .with(HttpMethod.GET, "/api/v1/action/patterns", patternController::handleListPatterns)
+            .with(HttpMethod.POST, "/api/v1/action/patterns", patternController::handleRegisterPattern)
+            .with(HttpMethod.GET, "/api/v1/action/patterns/:patternId", patternController::handleGetPattern)
+            .with(HttpMethod.DELETE, "/api/v1/action/patterns/:patternId", patternController::handleDeletePattern)
+            .with(HttpMethod.POST, "/api/v1/action/patterns/:patternId/lifecycle/:action", patternController::handleLifecycleTransition)
+            .with(HttpMethod.POST, "/api/v1/action/patterns/:patternId/feedback", patternController::handleRecordPatternFeedback)
 
             // Pipeline management endpoints (UI integration)
             .with(HttpMethod.GET, "/api/v1/pipelines", this::handleListPipelines)
@@ -965,6 +1013,16 @@ public class AepHttpServer {
             .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/publish", this::handlePublishPipeline)
             .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/dry-run", this::handlePipelineDryRun)
             .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/rollback", this::handleRollbackPipeline)
+            .with(HttpMethod.GET, "/api/v1/action/pipelines", this::handleListPipelines)
+            .with(HttpMethod.POST, "/api/v1/action/pipelines", this::handleCreatePipeline)
+            .with(HttpMethod.POST, "/api/v1/action/pipelines/validate", this::handleValidatePipeline)
+            .with(HttpMethod.GET, "/api/v1/action/pipelines/:pipelineId", this::handleGetPipeline)
+            .with(HttpMethod.PUT, "/api/v1/action/pipelines/:pipelineId", this::handleUpdatePipeline)
+            .with(HttpMethod.DELETE, "/api/v1/action/pipelines/:pipelineId", this::handleDeletePipeline)
+            .with(HttpMethod.GET, "/api/v1/action/pipelines/:pipelineId/versions", this::handleGetPipelineVersions)
+            .with(HttpMethod.POST, "/api/v1/action/pipelines/:pipelineId/publish", this::handlePublishPipeline)
+            .with(HttpMethod.POST, "/api/v1/action/pipelines/:pipelineId/dry-run", this::handlePipelineDryRun)
+            .with(HttpMethod.POST, "/api/v1/action/pipelines/:pipelineId/rollback", this::handleRollbackPipeline)
 
             // Capability endpoints (delegated to CapabilitiesController – P7-2c)
             .with(HttpMethod.GET, "/admin/capabilities/schemas", capabilitiesController::handleSchemaCapabilities)
@@ -984,17 +1042,31 @@ public class AepHttpServer {
             .with(HttpMethod.POST, "/api/v1/analytics/query", analyticsController::handleAnalyticsQuery)
             .with(HttpMethod.POST, "/api/v1/analytics/aggregate", analyticsController::handleAnalyticsAggregate)
             .with(HttpMethod.POST, "/api/v1/reports", analyticsController::handleCreateReport)
+            .with(HttpMethod.POST, "/api/v1/action/reports", analyticsController::handleCreateReport)
 
             // Agent management endpoints (delegated to AgentController)
             .with(HttpMethod.POST, "/api/v1/agents", agentController::handleRegisterAgent)
             .with(HttpMethod.GET, "/api/v1/agents", agentController::handleListAgents)
             .with(HttpMethod.GET, "/api/v1/agents/:agentId", agentController::handleGetAgent)
             .with(HttpMethod.POST, "/api/v1/agents/:agentId/execute", agentController::handleExecuteAgent)
+            .with(HttpMethod.POST, "/api/v1/agents/:agentId/lifecycle/:action", agentController::handleLifecycleTransition)
+            .with(HttpMethod.POST, "/api/v1/agents/:agentId/review", agentController::handleRecordAgentReview)
             .with(HttpMethod.GET, "/api/v1/agents/:agentId/memory", agentController::handleGetAgentMemory)
             .with(HttpMethod.GET, "/api/v1/agents/:agentId/memory/episodes", agentController::handleGetAgentEpisodes)
             .with(HttpMethod.GET, "/api/v1/agents/:agentId/memory/facts", agentController::handleGetAgentFacts)
             .with(HttpMethod.GET, "/api/v1/agents/:agentId/memory/policies", agentController::handleGetAgentPolicies)
             .with(HttpMethod.DELETE, "/api/v1/agents/:agentId", agentController::handleDeregisterAgent)
+            .with(HttpMethod.POST, "/api/v1/action/agents", agentController::handleRegisterAgent)
+            .with(HttpMethod.GET, "/api/v1/action/agents", agentController::handleListAgents)
+            .with(HttpMethod.GET, "/api/v1/action/agents/:agentId", agentController::handleGetAgent)
+            .with(HttpMethod.POST, "/api/v1/action/agents/:agentId/execute", agentController::handleExecuteAgent)
+            .with(HttpMethod.POST, "/api/v1/action/agents/:agentId/lifecycle/:action", agentController::handleLifecycleTransition)
+            .with(HttpMethod.POST, "/api/v1/action/agents/:agentId/review", agentController::handleRecordAgentReview)
+            .with(HttpMethod.GET, "/api/v1/action/agents/:agentId/memory", agentController::handleGetAgentMemory)
+            .with(HttpMethod.GET, "/api/v1/action/agents/:agentId/memory/episodes", agentController::handleGetAgentEpisodes)
+            .with(HttpMethod.GET, "/api/v1/action/agents/:agentId/memory/facts", agentController::handleGetAgentFacts)
+            .with(HttpMethod.GET, "/api/v1/action/agents/:agentId/memory/policies", agentController::handleGetAgentPolicies)
+            .with(HttpMethod.DELETE, "/api/v1/action/agents/:agentId", agentController::handleDeregisterAgent)
 
             // Marketplace endpoints (Phase 3 foundation)
             .with(HttpMethod.GET, "/api/v1/catalog/marketplace/agents", marketplaceController::handleListAgents)
@@ -1009,6 +1081,9 @@ public class AepHttpServer {
             .with(HttpMethod.GET, "/api/v1/runs", this::handleListPipelineRuns)
             .with(HttpMethod.GET, "/api/v1/runs/:runId", this::handleGetRunDetail)
             .with(HttpMethod.POST, "/api/v1/runs/:runId/cancel", this::handleCancelRun)
+            .with(HttpMethod.GET, "/api/v1/action/runs", this::handleListPipelineRuns)
+            .with(HttpMethod.GET, "/api/v1/action/runs/:runId", this::handleGetRunDetail)
+            .with(HttpMethod.POST, "/api/v1/action/runs/:runId/cancel", this::handleCancelRun)
             .with(HttpMethod.GET, "/api/v1/metrics/pipelines", this::handleGetPipelineMetrics)
             .with(HttpMethod.GET, "/api/v1/costs/summary", costController::handleGetCostSummary)
 
@@ -1017,6 +1092,10 @@ public class AepHttpServer {
             .with(HttpMethod.POST, "/api/v1/hitl/:reviewId/approve", hitlController::handleApprove)
             .with(HttpMethod.POST, "/api/v1/hitl/:reviewId/reject", hitlController::handleReject)
             .with(HttpMethod.POST, "/api/v1/hitl/:reviewId/escalate", hitlController::handleEscalate)
+            .with(HttpMethod.GET, "/api/v1/action/hitl/pending", hitlController::handleListPending)
+            .with(HttpMethod.POST, "/api/v1/action/hitl/:reviewId/approve", hitlController::handleApprove)
+            .with(HttpMethod.POST, "/api/v1/action/hitl/:reviewId/reject", hitlController::handleReject)
+            .with(HttpMethod.POST, "/api/v1/action/hitl/:reviewId/escalate", hitlController::handleEscalate)
 
             // Learning system endpoints (delegated to LearningController)
             .with(HttpMethod.GET, "/api/v1/learning/episodes", learningController::handleListEpisodes)
@@ -1024,6 +1103,11 @@ public class AepHttpServer {
             .with(HttpMethod.POST, "/api/v1/learning/policies/:policyId/approve", learningController::handleApprovePolicy)
             .with(HttpMethod.POST, "/api/v1/learning/policies/:policyId/reject", learningController::handleRejectPolicy)
             .with(HttpMethod.POST, "/api/v1/learning/reflect", learningController::handleTriggerReflection)
+            .with(HttpMethod.GET, "/api/v1/action/learning/episodes", learningController::handleListEpisodes)
+            .with(HttpMethod.GET, "/api/v1/action/learning/policies", learningController::handleListPolicies)
+            .with(HttpMethod.POST, "/api/v1/action/learning/policies/:policyId/approve", learningController::handleApprovePolicy)
+            .with(HttpMethod.POST, "/api/v1/action/learning/policies/:policyId/reject", learningController::handleRejectPolicy)
+            .with(HttpMethod.POST, "/api/v1/action/learning/reflect", learningController::handleTriggerReflection)
 
             // AI suggestions endpoint (delegated to AiSuggestionsController)
             .with(HttpMethod.GET, "/api/v1/ai/suggestions", aiSuggestionsController::handleGetSuggestions)
@@ -1036,6 +1120,7 @@ public class AepHttpServer {
 
             // NLQ (Natural Language Query) endpoint (delegated to NlpController)
             .with(HttpMethod.POST, "/api/v1/nlp/parse", nlpController::handleParseQuery)
+            .with(HttpMethod.POST, "/api/v1/action/nlp/parse", nlpController::handleParseQuery)
 
             // Server-Sent Events endpoints (delegated to SseController)
             .with(HttpMethod.GET, "/events/stream", sseController::handleSseStream)
@@ -1046,26 +1131,41 @@ public class AepHttpServer {
             .with(HttpMethod.POST, "/api/v1/compliance/gdpr/portability", complianceController::handleGdprPortability)
             .with(HttpMethod.POST, "/api/v1/compliance/ccpa/opt-out", complianceController::handleCcpaOptOut)
             .with(HttpMethod.GET,  "/api/v1/compliance/soc2/report", complianceController::handleSoc2Report)
+            .with(HttpMethod.POST, "/api/v1/action/compliance/gdpr/access", complianceController::handleGdprAccess)
+            .with(HttpMethod.POST, "/api/v1/action/compliance/gdpr/erasure", complianceController::handleGdprErasure)
+            .with(HttpMethod.POST, "/api/v1/action/compliance/gdpr/portability", complianceController::handleGdprPortability)
+            .with(HttpMethod.POST, "/api/v1/action/compliance/ccpa/opt-out", complianceController::handleCcpaOptOut)
+            .with(HttpMethod.GET,  "/api/v1/action/compliance/soc2/report", complianceController::handleSoc2Report)
 
             // T-05: Short-lived SSE auth token (browser EventSource cannot send Authorization header)
             .with(HttpMethod.POST, "/api/v1/auth/sse-token", this::handleMintSseToken)
+            .with(HttpMethod.POST, "/api/v1/action/auth/sse-token", this::handleMintSseToken)
 
             // F-008: Platform session bootstrap (SSO configuration gated)
             .with(HttpMethod.GET, "/api/v1/auth/platform-session", 
+                req -> authController.handle(req, "platform-session"))
+            .with(HttpMethod.GET, "/api/v1/action/auth/platform-session",
                 req -> authController.handle(req, "platform-session"))
 
             // F-032: User roles for RBAC in UI
             .with(HttpMethod.GET, "/api/v1/auth/roles",
                 req -> authController.handle(req, "roles"))
+            .with(HttpMethod.GET, "/api/v1/action/auth/roles",
+                req -> authController.handle(req, "roles"))
 
             // T-06: Audit log endpoints (delegated to AuditController)
             .with(HttpMethod.POST, "/api/v1/audit/log",   auditController::handleLog)
             .with(HttpMethod.GET,  "/api/v1/audit/query", auditController::handleQuery)
+            .with(HttpMethod.POST, "/api/v1/action/audit/log",   auditController::handleLog)
+            .with(HttpMethod.GET,  "/api/v1/action/audit/query", auditController::handleQuery)
 
             // T-23: Server-side consent decision endpoints
             .with(HttpMethod.POST, "/api/v1/consent/record",    consentController::handleRecordConsent)
             .with(HttpMethod.GET,  "/api/v1/consent",           consentController::handleListConsent)
             .with(HttpMethod.GET,  "/api/v1/consent/:userId",   req -> consentController.handleGetConsent(req, req.getPathParameter("userId")))
+            .with(HttpMethod.POST, "/api/v1/action/consent/record",    consentController::handleRecordConsent)
+            .with(HttpMethod.GET,  "/api/v1/action/consent",           consentController::handleListConsent)
+            .with(HttpMethod.GET,  "/api/v1/action/consent/:userId",   req -> consentController.handleGetConsent(req, req.getPathParameter("userId")))
 
             // Governance endpoints — canonical /api/v1 namespace
             .with(HttpMethod.GET, "/api/v1/governance/kill-switch", governanceController::handleKillSwitchStatus)
@@ -1079,6 +1179,17 @@ public class AepHttpServer {
             .with(HttpMethod.GET, "/api/v1/governance/security/egress", governanceController::handleEgressStats)
             .with(HttpMethod.POST, "/api/v1/governance/security/scan", governanceController::handleInjectionScan)
             .with(HttpMethod.GET, "/api/v1/governance/ops/summary", this::handleGovernanceOpsSummary)
+            .with(HttpMethod.GET, "/api/v1/action/governance/kill-switch", governanceController::handleKillSwitchStatus)
+            .with(HttpMethod.POST, "/api/v1/action/governance/kill-switch/activate", governanceController::handleActivateKillSwitch)
+            .with(HttpMethod.POST, "/api/v1/action/governance/kill-switch/deactivate", governanceController::handleDeactivateKillSwitch)
+            .with(HttpMethod.GET, "/api/v1/action/governance/degradation", governanceController::handleDegradationStatus)
+            .with(HttpMethod.POST, "/api/v1/action/governance/degradation", governanceController::handleSetDegradation)
+            .with(HttpMethod.GET, "/api/v1/action/governance/compliance/summary", governanceController::handleComplianceSummary)
+            .with(HttpMethod.GET, "/api/v1/action/governance/audit/summary", this::handleGovernanceAuditSummary)
+            .with(HttpMethod.POST, "/api/v1/action/governance/policy/evaluate", governanceController::handlePolicyEvaluate)
+            .with(HttpMethod.GET, "/api/v1/action/governance/security/egress", governanceController::handleEgressStats)
+            .with(HttpMethod.POST, "/api/v1/action/governance/security/scan", governanceController::handleInjectionScan)
+            .with(HttpMethod.GET, "/api/v1/action/governance/ops/summary", this::handleGovernanceOpsSummary)
 
             // Governance endpoints — legacy compatibility surface with deprecation headers
             .with(HttpMethod.GET, "/governance/kill-switch",
@@ -1237,57 +1348,64 @@ public class AepHttpServer {
 
     /**
      * T-24: GET /api/v1/surfaces
-     * DC-P1.12: Migrated from /api/v1/capabilities to canonical /api/v1/surfaces endpoint.
-     *
-     * <p>Returns a server-driven capability manifest that the UI uses to gate
-     * features and prevent dead actions. The manifest reflects actual server-side
-     * configuration — features are only reported as enabled when their backing
-     * infrastructure is wired and operational.
-     *
-     * <p>The response is tenant-aware: the {@code tenantId} from the request
-     * context is included for client-side correlation.
+     * DC-P1.12: Canonical Runtime Truth endpoint returning typed surface records.
      */
     private Promise<HttpResponse> handleCapabilityManifest(HttpRequest request) {
         String tenantId = resolveTenantId(request);
-        java.util.LinkedHashMap<String, Object> capabilities = new java.util.LinkedHashMap<>();
+        Instant now = Instant.now();
+        List<Map<String, Object>> surfaces = new ArrayList<>();
+        surfaces.add(surfaceRecord("dataCloud", agentDataCloud != null ? "LIVE" : "MISCONFIGURED", now));
+        surfaces.add(surfaceRecord("redis", jedisPool != null ? "LIVE" : "DEGRADED", now));
+        surfaces.add(surfaceRecord("analyticsStore", analyticsStore != null ? "LIVE" : "DEGRADED", now));
+        surfaces.add(surfaceRecord("aiSuggestions", "LIVE", now));
+        surfaces.add(surfaceRecord("nlpParse", "LIVE", now));
+        surfaces.add(surfaceRecord("gdprCompliance", complianceService != null ? "LIVE" : "DEGRADED", now));
+        surfaces.add(surfaceRecord("soc2Compliance", complianceService != null ? "LIVE" : "DEGRADED", now));
+        surfaces.add(surfaceRecord(
+            "piiEnforcement",
+            PIIScanner.PiiEnforcementPolicy.resolve() != PIIScanner.PiiEnforcementPolicy.LOG ? "LIVE" : "DEGRADED",
+            now));
+        surfaces.add(surfaceRecord("killSwitch", "LIVE", now));
+        surfaces.add(surfaceRecord("gracefulDegradation", "LIVE", now));
+        surfaces.add(surfaceRecord("policyEngine", "LIVE", now));
+        surfaces.add(surfaceRecord("episodeLearning", learningScheduler != null ? "LIVE" : "DEGRADED", now));
+        surfaces.add(surfaceRecord("humanInTheLoop", "LIVE", now));
+        surfaces.add(surfaceRecord("serverSideConsent", "LIVE", now));
+        surfaces.add(surfaceRecord("durableSessions", jedisPool != null ? "LIVE" : "DEGRADED", now));
+        surfaces.add(surfaceRecord("sseStreaming", "LIVE", now));
 
-        // Data persistence
-        capabilities.put("dataCloud",          agentDataCloud != null);
-        capabilities.put("redis",              jedisPool != null);
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("surfaces", surfaces);
+        data.put("count", surfaces.size());
+        data.put("generatedAt", now.toString());
 
-        // Analytics and AI
-        capabilities.put("analyticsStore",     analyticsStore != null);
-        capabilities.put("aiSuggestions",      true);
-        capabilities.put("nlpParse",           true);
+        Map<String, Object> meta = new LinkedHashMap<>();
+        meta.put("requestId", UUID.randomUUID().toString());
+        meta.put("tenantId", tenantId);
+        meta.put("timestamp", now.toString());
+        meta.put("apiVersion", "v1");
 
-        // Compliance
-        capabilities.put("gdprCompliance",     complianceService != null);
-        capabilities.put("soc2Compliance",     complianceService != null);
-        capabilities.put("piiEnforcement",     PIIScanner.PiiEnforcementPolicy.resolve() != PIIScanner.PiiEnforcementPolicy.LOG);
+        Map<String, Object> envelope = new LinkedHashMap<>();
+        envelope.put("data", data);
+        envelope.put("meta", meta);
+        return Promise.of(jsonResponse(envelope));
+    }
 
-        // Governance
-        capabilities.put("killSwitch",         true);
-        capabilities.put("gracefulDegradation", true);
-        capabilities.put("policyEngine",       true);
-
-        // Learning and evaluation
-        capabilities.put("episodeLearning",    learningScheduler != null);
-        capabilities.put("humanInTheLoop",     true);
-
-        // Consent (T-23)
-        capabilities.put("serverSideConsent",  true);
-
-        // Session (T-20)
-        capabilities.put("durableSessions",    jedisPool != null);
-
-        // Realtime
-        capabilities.put("sseStreaming",       true);
-
-        return Promise.of(jsonResponse(Map.of(
-                "tenantId",     tenantId,
-                "capabilities", capabilities,
-                "generatedAt",  Instant.now().toString()
-        )));
+    private Map<String, Object> surfaceRecord(String surfaceId, String status, Instant checkedAt) {
+        Map<String, Object> record = new LinkedHashMap<>();
+        record.put("surfaceId", surfaceId);
+        record.put("state", status);
+        record.put("status", status);
+        record.put("ownerPlane", "action");
+        record.put("requiredDependencies", List.of());
+        record.put("dependencyProbes", List.of());
+        record.put("tenantScope", "tenant");
+        record.put("runtimeProfile", AepRuntimeProfile.resolve(runtimeSettings()));
+        record.put("lastCheckedAt", checkedAt.toString());
+        record.put("evidence", Map.of());
+        record.put("limitations", "");
+        record.put("actionsAllowed", List.of());
+        return record;
     }
 
     private Promise<HttpResponse> handleMetrics(HttpRequest request) {
@@ -1299,7 +1417,15 @@ public class AepHttpServer {
                 .withBody(scrape.getBytes(StandardCharsets.UTF_8))
                 .build());
         }
-        // Fallback when no Prometheus registry is configured (e.g. tests / embedded mode)
+        // Fail closed in production when Prometheus is not configured.
+        if (AepRuntimeProfile.isProduction(runtimeSettings()) || isExplicitProductionProfile()) {
+            return Promise.of(errorResponse(
+                503,
+                "Metrics endpoint unavailable: Prometheus registry is required in production profile"
+            ));
+        }
+
+        // Non-production fallback when no Prometheus registry is configured (e.g. tests / embedded mode)
         return Promise.of(jsonResponse(Map.of(
             "service", "aep",
             "uptime_seconds", System.currentTimeMillis() / 1000,

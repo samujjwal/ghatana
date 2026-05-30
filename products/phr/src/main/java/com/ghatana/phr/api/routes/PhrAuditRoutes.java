@@ -74,7 +74,7 @@ public final class PhrAuditRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         String patientIdParam = request.getQueryParameter("patientId");
@@ -145,7 +145,7 @@ public final class PhrAuditRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         String eventId = request.getPathParameter("eventId");
@@ -175,7 +175,7 @@ public final class PhrAuditRoutes {
                 return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), detailDecision.getReasonCode());
             }
 
-            return PhrRouteSupport.jsonResponse(200, toEventDto(event, correlationId));
+            return PhrRouteSupport.jsonResponse(200, toEventDto(event), correlationId);
         } catch (Exception ex) {
             return PhrRouteSupport.errorResponse(500, "AUDIT_DETAIL_FAILED", "Failed to fetch event detail");
         }
@@ -187,7 +187,7 @@ public final class PhrAuditRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         PhrPolicyEvaluator.PolicyDecision exportDecision = policyEvaluator.canViewAuditTrail(context);
@@ -230,7 +230,7 @@ public final class PhrAuditRoutes {
                     .toList();
                 return PhrRouteSupport.jsonResponse(200, Map.of(
                     "events", eventDtos,
-                    "total", eventDtos.size(, correlationId),
+                    "total", eventDtos.size(),
                     "exportedAt", Instant.now().toString()
                 ));
             }

@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Read the route contract JSON file
-const routeContractPath = join(__dirname, '../../../../config/phr-route-contract.json');
+const routeContractPath = join(__dirname, '../../../../../config/phr-route-contract.json');
 const routeContract = JSON.parse(readFileSync(routeContractPath, 'utf-8'));
 
 interface RouteContract {
@@ -48,22 +48,22 @@ describe('API Contract Paths', () => {
   });
 
   it('should match API paths in phrApiCore to route contract endpoints', () => {
-    // Extract API paths from the route contract
+    // Extract API paths from the route contract (stable routes only)
     const contractEndpoints = new Set<string>(
       stableRoutes
         .map((r: Route) => r.apiEndpoint)
         .filter((e: string | undefined): e is string => e !== undefined)
     );
 
-    // Known API paths used in phrApiCore (extracted from the implementation)
-    const apiCorePaths = new Set([
+    // API paths from phrApiCore that are backed by stable route contract entries.
+    // Auth (/api/v1/auth/*) and FHIR export paths are infrastructure endpoints
+    // that do not correspond to UI routes and are intentionally excluded.
+    const contractBackedPaths = new Set([
       '/api/v1/dashboard',
-      '/api/v1/consents/grants',
+      '/api/v1/consents',
       '/api/v1/appointments',
       '/api/v1/emergency/access',
       '/api/v1/emergency/reviews',
-      '/api/v1/auth/login',
-      '/api/v1/auth/logout',
       '/api/v1/profile',
       '/api/v1/records/timeline',
       '/api/v1/clinical/conditions',
@@ -75,43 +75,52 @@ describe('API Contract Paths', () => {
       '/api/v1/notifications',
       '/api/v1/release-readiness',
       '/api/v1/audit/events',
-      '/fhir/Patient/current/$export',
+      '/api/v1/records',
+      '/api/v1/route-entitlements',
     ]);
 
-    // Check that all API core paths are in the contract
-    const missingFromContract = [...apiCorePaths].filter(path => !isPathInContract(path, contractEndpoints));
+    // All contract-backed API paths must appear in the route contract
+    const missingFromContract = [...contractBackedPaths].filter(path => !isPathInContract(path, contractEndpoints));
     expect(missingFromContract).toHaveLength(0);
   });
 
   it('should have all stable contract endpoints covered by API client', () => {
-    // Extract API paths from the route contract
-    const contractEndpoints = stableRoutes
-      .map((r: Route) => r.apiEndpoint)
-      .filter((e: string | undefined): e is string => e !== undefined);
+    // Extract unique API paths from stable route contract entries
+    const contractEndpoints = Array.from(
+      new Set(
+        stableRoutes
+          .map((r: Route) => r.apiEndpoint)
+          .filter((e: string | undefined): e is string => e !== undefined)
+      )
+    );
 
-    // Known API paths used in phrApiCore
+    // All API paths covered by the phrApiCore implementation
     const apiCorePaths = [
       '/api/v1/dashboard',
-      '/api/v1/consents/grants',
+      '/api/v1/consents',
       '/api/v1/appointments',
       '/api/v1/emergency/access',
       '/api/v1/emergency/reviews',
-      '/api/v1/auth/login',
-      '/api/v1/auth/logout',
       '/api/v1/profile',
+      '/api/v1/profile/settings',
       '/api/v1/records/timeline',
       '/api/v1/clinical/conditions',
       '/api/v1/clinical/observations',
       '/api/v1/clinical/labs',
       '/api/v1/clinical/immunizations',
       '/api/v1/clinical/medications',
+      '/api/v1/clinical/medications/prescriptions/:medicationId',
       '/api/v1/records/documents',
+      '/api/v1/records/documents/:docId/ocr',
       '/api/v1/notifications',
       '/api/v1/release-readiness',
       '/api/v1/audit/events',
+      '/api/v1/records',
+      '/api/v1/records/:recordId',
+      '/api/v1/route-entitlements',
     ];
 
-    // Check that all contract endpoints are covered (allowing for parameterized paths)
+    // All stable contract endpoints must be covered by the API client
     const uncovered = contractEndpoints.filter((endpoint: string) => {
       return !apiCorePaths.some(apiPath => pathsMatch(apiPath, endpoint));
     });

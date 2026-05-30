@@ -20,6 +20,7 @@
   "dependencies": {
     "@ghatana/charts": "workspace:*",
     "@ghatana/design-system": "workspace:*",
+    "@ghatana/kernel-product-contracts": "workspace:*",
     "@ghatana/product-shell": "workspace:*",
     "@ghatana/platform-utils": "workspace:*",
     "@ghatana/theme": "workspace:*",

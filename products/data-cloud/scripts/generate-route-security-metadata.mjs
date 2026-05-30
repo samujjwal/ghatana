@@ -64,10 +64,39 @@ function parseCompatibilityRegistry() {
   let currentSection = null;
   let currentRoute = null;
   
+  const readYamlScalar = (text) => {
+    const idx = text.indexOf(':');
+    if (idx < 0) {
+      return '';
+    }
+    const raw = text.slice(idx + 1).trim();
+    if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) {
+      return raw.slice(1, -1);
+    }
+    return raw;
+  };
+
+  const readYamlInlineList = (text) => {
+    const value = readYamlScalar(text);
+    const match = value.match(/^\[([^\]]*)\]$/);
+    if (!match) {
+      return [];
+    }
+    return match[1]
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .map((item) => {
+        if ((item.startsWith('"') && item.endsWith('"')) || (item.startsWith("'") && item.endsWith("'"))) {
+          return item.slice(1, -1);
+        }
+        return item;
+      });
+  };
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const trimmed = line.trim();
-    const indent = line.search(/\S|$/);
     
     if (trimmed === 'legacy_routes:') {
       currentSection = 'legacy';
@@ -80,7 +109,7 @@ function parseCompatibilityRegistry() {
     }
     
     if (trimmed.startsWith('- path:')) {
-      const path = trimmed.split(':')[1].trim();
+      const path = readYamlScalar(trimmed);
       currentRoute = { path };
       if (currentSection === 'canonical') {
         canonicalRoutes.push(currentRoute);
@@ -91,23 +120,37 @@ function parseCompatibilityRegistry() {
     }
     
     if (currentRoute && trimmed.startsWith('methods:')) {
-      const methodsStr = trimmed.split(':')[1].trim();
-      currentRoute.methods = methodsStr.match(/\[([^\]]+)\]/)[1].split(',').map(m => m.trim());
+      currentRoute.methods = readYamlInlineList(trimmed);
       continue;
     }
     
     if (currentRoute && trimmed.startsWith('canonical:')) {
-      currentRoute.canonical = trimmed.split(':')[1].trim();
+      currentRoute.canonical = readYamlScalar(trimmed);
       continue;
     }
     
     if (currentRoute && trimmed.startsWith('owner:')) {
-      currentRoute.owner = trimmed.split(':')[1].trim();
+      currentRoute.owner = readYamlScalar(trimmed);
       continue;
     }
     
     if (currentRoute && trimmed.startsWith('purpose:')) {
-      currentRoute.purpose = trimmed.split(':')[1].trim();
+      currentRoute.purpose = readYamlScalar(trimmed);
+      continue;
+    }
+
+    if (currentRoute && trimmed.startsWith('deprecated_since:')) {
+      currentRoute.deprecated_since = readYamlScalar(trimmed);
+      continue;
+    }
+
+    if (currentRoute && trimmed.startsWith('retirement_target:')) {
+      currentRoute.retirement_target = readYamlScalar(trimmed);
+      continue;
+    }
+
+    if (currentRoute && trimmed.startsWith('feature_flag:')) {
+      currentRoute.feature_flag = readYamlScalar(trimmed);
       continue;
     }
   }
@@ -505,11 +548,19 @@ function generateLegacyCompatibilityMetadata(legacyRoutes) {
     'export const legacyRouteMappings: LegacyRouteMapping[] = [',
   ];
   
+  const seen = new Set();
   for (const route of legacyRoutes) {
+    const methods = Array.isArray(route.methods) ? route.methods : [];
+    const routeKey = `${route.path}|${route.canonical}|${methods.slice().sort().join(',')}`;
+    if (seen.has(routeKey)) {
+      continue;
+    }
+    seen.add(routeKey);
+
     lines.push('  {');
     lines.push(`    path: '${route.path}',`);
     lines.push(`    canonical: '${route.canonical}',`);
-    lines.push(`    methods: [${route.methods.map(m => `'${m}'`).join(', ')}],`);
+    lines.push(`    methods: [${methods.map(m => `'${m}'`).join(', ')}],`);
     lines.push(`    deprecatedSince: '${route.deprecated_since || '2026-03-27'}',`);
     lines.push(`    retirementTarget: '${route.retirement_target || '2026-12-31'}',`);
     lines.push(`    featureFlag: '${route.feature_flag || 'DataCloudFeature.LEGACY_ACTION_ROUTES'}',`);

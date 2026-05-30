@@ -163,6 +163,11 @@ export async function phrFetch<T>(
         throw error;
       }
 
+      // Don't retry on schema validation errors — malformed data won't improve on retry
+      if (error instanceof Error && error.name === 'ZodError') {
+        throw error;
+      }
+
       // If this was the last attempt, throw the error
       if (attempt === maxRetries) {
         throw error;

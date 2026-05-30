@@ -6,7 +6,6 @@ import com.ghatana.kernel.context.KernelTenantContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
 import com.ghatana.phr.api.FhirController;
-import com.ghatana.phr.api.NepalHieController;
 import com.ghatana.phr.fhir.server.PhrFhirR4Server;
 import com.ghatana.phr.hie.NepalHieIntegrationService;
 import com.ghatana.phr.hl7.Hl7LabResultIntegrationService;
@@ -111,7 +110,6 @@ class PhrKernelModuleTest extends EventloopTestBase {
         assertTrue(mockContext.getOptionalDependency(PhrFhirR4Server.class).isPresent());
         assertTrue(mockContext.getOptionalDependency(FhirController.class).isPresent());
         assertTrue(mockContext.getOptionalDependency(NepalHieIntegrationService.class).isPresent());
-        assertTrue(mockContext.getOptionalDependency(NepalHieController.class).isPresent());
         assertTrue(mockContext.getOptionalDependency(Hl7LabResultIntegrationService.class).isPresent());
 
         // Second initialization should throw

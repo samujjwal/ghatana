@@ -10,6 +10,7 @@ import com.ghatana.phr.api.routes.PhrAuditRoutes;
 import com.ghatana.phr.api.routes.PhrAuthRoutes;
 import com.ghatana.phr.api.routes.PhrCaregiverRoutes;
 import com.ghatana.phr.api.routes.PhrClinicalRoutes;
+import com.ghatana.phr.api.routes.PhrConditionRoutes;
 import com.ghatana.phr.api.routes.PhrConsentRoutes;
 import com.ghatana.phr.api.routes.PhrDashboardRoutes;
 import com.ghatana.phr.api.routes.PhrDocumentImagingRoutes;
@@ -115,6 +116,7 @@ public final class PhrHttpServer implements KernelLifecycleAware {
     private final PhrPatientRecordRoutes patientRecordRoutes;
     private final PhrConsentRoutes consentRoutes;
     private final PhrClinicalRoutes clinicalRoutes;
+    private final PhrConditionRoutes conditionRoutes;
     private final PhrEmergencyRoutes emergencyRoutes;
     private final PhrAdministrativeRoutes administrativeRoutes;
     private final PhrDocumentImagingRoutes documentImagingRoutes;
@@ -144,6 +146,7 @@ public final class PhrHttpServer implements KernelLifecycleAware {
             PhrPatientRecordRoutes patientRecordRoutes,
             PhrConsentRoutes consentRoutes,
             PhrClinicalRoutes clinicalRoutes,
+            PhrConditionRoutes conditionRoutes,
             PhrEmergencyRoutes emergencyRoutes,
             PhrAdministrativeRoutes administrativeRoutes,
             PhrDocumentImagingRoutes documentImagingRoutes,
@@ -164,6 +167,7 @@ public final class PhrHttpServer implements KernelLifecycleAware {
         this.patientRecordRoutes = Objects.requireNonNull(patientRecordRoutes, "patientRecordRoutes cannot be null");
         this.consentRoutes = Objects.requireNonNull(consentRoutes, "consentRoutes cannot be null");
         this.clinicalRoutes = Objects.requireNonNull(clinicalRoutes, "clinicalRoutes cannot be null");
+        this.conditionRoutes = Objects.requireNonNull(conditionRoutes, "conditionRoutes cannot be null");
         this.emergencyRoutes = Objects.requireNonNull(emergencyRoutes, "emergencyRoutes cannot be null");
         this.administrativeRoutes = Objects.requireNonNull(administrativeRoutes, "administrativeRoutes cannot be null");
         this.documentImagingRoutes = Objects.requireNonNull(documentImagingRoutes, "documentImagingRoutes cannot be null");

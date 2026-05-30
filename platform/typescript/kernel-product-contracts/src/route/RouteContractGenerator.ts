@@ -26,7 +26,7 @@ export interface GeneratedTSManifest {
     minimumRole: string;
     personas?: string[];
     tiers?: string[];
-    actions?: Array<{
+    actions?: Array<string | {
       id: string;
       label: string;
       endpoint: string;
@@ -34,7 +34,7 @@ export interface GeneratedTSManifest {
       policyId?: string;
       idempotent?: boolean;
     }>;
-    cards?: Array<{
+    cards?: Array<string | {
       id: string;
       title: string;
       description: string;
@@ -58,8 +58,8 @@ export interface GeneratedBackendEntitlement {
     minimumRole: string;
     personas?: string[];
     tiers?: string[];
-    actions?: string[];
-    cards?: string[];
+    actions?: (string | { id: string })[];
+    cards?: (string | { id: string })[];
     stability: string;
     featureFlag?: boolean;
     apiEndpoint?: string;
@@ -88,6 +88,22 @@ export interface GeneratedRouteCapabilityContract {
   version: string;
   roleOrder: Record<string, number>;
   capabilities: ProductRouteCapability[];
+}
+
+export interface GeneratedJavaRouteConstants {
+  packageName: string;
+  className: string;
+  version: string;
+  routes: {
+    path: string;
+    constantName: string;
+    label: string;
+    minimumRole: string;
+    stability: string;
+    apiEndpoint?: string;
+    policyId?: string;
+    testId?: string;
+  }[];
 }
 
 const GeneratedTSManifestRouteSchema = z
@@ -168,9 +184,13 @@ export const GeneratedRouteCapabilityContractSchema = z
 
 export class RouteContractGenerator {
   private readonly contract: ProductRouteContract;
+  private readonly packageName: string;
+  private readonly className: string;
 
-  constructor(contract: ProductRouteContract) {
+  constructor(contract: ProductRouteContract, packageName = 'com.ghatana.product.routes', className = 'ProductRoutes') {
     this.contract = parseProductRouteContract(contract);
+    this.packageName = packageName;
+    this.className = className;
   }
 
   generateTSManifest(): GeneratedTSManifest {
@@ -187,21 +207,31 @@ export class RouteContractGenerator {
         if (route.personas) result.personas = route.personas;
         if (route.tiers) result.tiers = route.tiers;
         if (route.actions) {
-          result.actions = route.actions.map(action => ({
-            id: action.id,
-            label: action.label,
-            endpoint: action.endpoint,
-            method: action.method,
-            ...(action.policyId !== undefined && { policyId: action.policyId }),
-            ...(action.idempotent !== undefined && { idempotent: action.idempotent }),
-          }));
+          result.actions = route.actions.map(action => {
+            if (typeof action === 'string') {
+              return action as string | { id: string; label: string; endpoint: string; method: string; policyId?: string; idempotent?: boolean };
+            }
+            return {
+              id: action.id,
+              label: action.label,
+              endpoint: action.endpoint,
+              method: action.method,
+              ...(action.policyId !== undefined && { policyId: action.policyId }),
+              ...(action.idempotent !== undefined && { idempotent: action.idempotent }),
+            } as { id: string; label: string; endpoint: string; method: string; policyId?: string; idempotent?: boolean };
+          }) as Array<string | { id: string; label: string; endpoint: string; method: string; policyId?: string; idempotent?: boolean }>;
         }
         if (route.cards) {
-          result.cards = route.cards.map(card => ({
-            id: card.id,
-            title: card.title,
-            description: card.description,
-          }));
+          result.cards = route.cards.map(card => {
+            if (typeof card === 'string') {
+              return card as string | { id: string; title: string; description: string };
+            }
+            return {
+              id: card.id,
+              title: card.title,
+              description: card.description,
+            } as { id: string; title: string; description: string };
+          }) as Array<string | { id: string; title: string; description: string }>;
         }
         if (route.featureFlag !== undefined) result.featureFlag = route.featureFlag;
         if (route.metadata) {
@@ -230,8 +260,8 @@ export class RouteContractGenerator {
         
         if (route.personas) result.personas = route.personas;
         if (route.tiers) result.tiers = route.tiers;
-        if (route.actions) result.actions = route.actions.map(a => a.id);
-        if (route.cards) result.cards = route.cards.map(c => c.id);
+        if (route.actions) result.actions = route.actions.map(a => typeof a === 'string' ? a : a.id);
+        if (route.cards) result.cards = route.cards.map(c => typeof c === 'string' ? c : c.id);
         if (route.featureFlag !== undefined) result.featureFlag = route.featureFlag;
         if (route.metadata?.apiEndpoint) result.apiEndpoint = route.metadata.apiEndpoint;
         if (route.metadata?.policyId) result.policyId = route.metadata.policyId;
@@ -290,18 +320,85 @@ export class RouteContractGenerator {
     };
   }
 
+  generateJavaRouteConstants(): GeneratedJavaRouteConstants {
+    return {
+      packageName: this.packageName,
+      className: this.className,
+      version: this.contract.version,
+      routes: this.contract.routes.map(route => {
+        const constantName = this.pathToConstantName(route.path);
+        const result: GeneratedJavaRouteConstants['routes'][0] = {
+          path: route.path,
+          constantName,
+          label: route.label,
+          minimumRole: route.minimumRole,
+          stability: route.stability,
+        };
+
+        if (route.metadata?.apiEndpoint) result.apiEndpoint = route.metadata.apiEndpoint;
+        if (route.metadata?.policyId) result.policyId = route.metadata.policyId;
+        if (route.metadata?.testId) result.testId = route.metadata.testId;
+
+        return result;
+      }),
+    };
+  }
+
+  private pathToConstantName(path: string): string {
+    return path
+      .replace(/[^a-zA-Z0-9/_-]/g, '_')
+      .split('/')
+      .filter(segment => segment.length > 0)
+      .map(segment => segment.toUpperCase().replace(/[^A-Z0-9]/g, '_'))
+      .join('_');
+  }
+
   generateAll(): {
     tsManifest: GeneratedTSManifest;
     backendEntitlement: GeneratedBackendEntitlement;
     routeDocs: GeneratedRouteDocs;
     routeCapabilities: GeneratedRouteCapabilityContract;
+    javaRouteConstants: GeneratedJavaRouteConstants;
   } {
     return {
       tsManifest: this.generateTSManifest(),
       backendEntitlement: this.generateBackendEntitlement(),
       routeDocs: this.generateRouteDocs(),
       routeCapabilities: this.generateRouteCapabilities(),
+      javaRouteConstants: this.generateJavaRouteConstants(),
     };
+  }
+
+  generateJavaSourceCode(): string {
+    const constants = this.generateJavaRouteConstants();
+    let code = `package ${constants.packageName};\n\n`;
+    code += `/**\n`;
+    code += ` * Auto-generated route constants for ${constants.className}.\n`;
+    code += ` * Version: ${constants.version}\n`;
+    code += ` * Generated from route contract. Do not edit manually.\n`;
+    code += ` */\n`;
+    code += `public final class ${constants.className} {\n\n`;
+    code += `    private ${constants.className}() {\n`;
+    code += `        // Utility class - prevent instantiation\n`;
+    code += `    }\n\n`;
+
+    for (const route of constants.routes) {
+      code += `    /**\n`;
+      code += `     * Route: ${route.path}\n`;
+      code += `     * Label: ${route.label}\n`;
+      code += `     * Minimum Role: ${route.minimumRole}\n`;
+      code += `     * Stability: ${route.stability}\n`;
+      if (route.apiEndpoint) code += `     * API Endpoint: ${route.apiEndpoint}\n`;
+      if (route.policyId) code += `     * Policy ID: ${route.policyId}\n`;
+      if (route.testId) code += `     * Test ID: ${route.testId}\n`;
+      code += `     */\n`;
+      code += `    public static final String ${route.constantName} = "${route.path}";\n\n`;
+    }
+
+    code += `    public static final String VERSION = "${constants.version}";\n`;
+    code += `}\n`;
+
+    return code;
   }
 }
 

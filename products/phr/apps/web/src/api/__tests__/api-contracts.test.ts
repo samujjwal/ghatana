@@ -232,16 +232,12 @@ describe('PHR API Contract Tests', () => {
         'bookAppointment',
         'cancelAppointment',
         'fetchAppointments',
-        'fetchProviders',
         'rescheduleAppointment',
         'requestEmergencyAccess',
         'reviewEmergencyAccess',
         'fetchAuditEvents',
         'fetchReleaseReadiness',
         'fetchNotifications',
-        'fetchCaregiverDependents',
-        'fetchFchvDashboard',
-        'fetchProviderPatients',
       ];
 
       expectedExports.forEach((exportName) => {

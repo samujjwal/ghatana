@@ -113,7 +113,7 @@ public final class PhrDocumentImagingRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
         return documentService.getDocument(request.getPathParameter("documentId"), context.principalId())
             .then(document -> document
@@ -127,16 +127,16 @@ public final class PhrDocumentImagingRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
         return documentService.getDocumentContent(request.getPathParameter("documentId"), context.principalId())
             .then(content -> content
                 .<Promise<HttpResponse>>map(value -> PhrRouteSupport.jsonResponse(200, Map.of(
-                    "documentId", value.getDocumentId(, correlationId),
+                    "documentId", value.getDocumentId(),
                     "contentType", value.getContentType(),
                     "contentHash", value.getContentHash(),
                     "content", Base64.getEncoder().encodeToString(value.getContent())
-                )))
+                ), correlationId))
                 .orElseGet(() -> PhrRouteSupport.errorResponse(404, "DOCUMENT_CONTENT_NOT_FOUND", "Document content not found or not visible", correlationId)));
     }
 
@@ -152,13 +152,13 @@ public final class PhrDocumentImagingRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
         String documentId = request.getPathParameter("documentId");
         return documentService.getOcrDocument(documentId, context.principalId())
             .then(ocrDoc -> ocrDoc
                 .<Promise<HttpResponse>>map(doc -> PhrRouteSupport.jsonResponse(200, Map.of(
-                    "documentId", doc.documentId(, correlationId),
+                    "documentId", doc.documentId(),
                     "title", doc.title(),
                     "extractedText", doc.extractedText(),
                     "confidence", doc.confidence(),
@@ -175,7 +175,7 @@ public final class PhrDocumentImagingRoutes {
             context = PhrRouteSupport.requireContext(request);
             idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         String documentId = request.getPathParameter("documentId");
@@ -206,22 +206,22 @@ public final class PhrDocumentImagingRoutes {
                                     JsonNode node = PhrRouteSupport.JSON.readTree(body.getString(StandardCharsets.UTF_8));
                                     correctedText = node.path("correctedText").asText(null);
                                 } catch (Exception ex) {
-                                    return PhrRouteSupport.errorResponse(400, "INVALID_OCR_CONFIRM", ex.getMessage(, correlationId));
+                                    return PhrRouteSupport.errorResponse(400, "INVALID_OCR_CONFIRM", ex.getMessage());
                                 }
 
                                 return documentService.confirmOcrDocument(documentId, context.principalId(), correctedText)
                                     .then(confirmed -> {
-                                        String correlationId = PhrTraceContext.newCorrelationId("phr_ocr_confirm");
-                                        auditOcrConfirmation(context, documentId, correctedText, correlationId);
+                                        String auditCorrelationId = PhrTraceContext.newCorrelationId("phr_ocr_confirm");
+                                        auditOcrConfirmation(context, documentId, correctedText, auditCorrelationId);
                                         return documentService.toFhirDocumentReference(documentId)
                                             .then(fhir -> PhrRouteSupport.jsonResponse(200, Map.of(
                                                 "documentId", documentId,
                                                 "confirmed", true,
                                                 "fhirResource", fhir,
                                                 "provenance", Map.of(
-                                                    "reviewerId", context.principalId(, correlationId),
+                                                    "reviewerId", context.principalId(),
                                                     "reviewedAt", java.time.Instant.now().toString(),
-                                                    "correlationId", correlationId
+                                                    "correlationId", auditCorrelationId
                                                 )
                                             )));
                                     });
@@ -239,18 +239,18 @@ public final class PhrDocumentImagingRoutes {
             context = PhrRouteSupport.requireContext(request);
             idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         String documentId = request.getPathParameter("documentId");
         return documentService.rejectOcrDocument(documentId, context.principalId())
             .then($ -> {
-                String correlationId = PhrTraceContext.newCorrelationId("phr_ocr_reject");
-                auditOcrRejection(context, documentId, correlationId);
+                String auditCorrelationId = PhrTraceContext.newCorrelationId("phr_ocr_reject");
+                auditOcrRejection(context, documentId, auditCorrelationId);
                 return PhrRouteSupport.jsonResponse(200, Map.of(
                     "documentId", documentId,
                     "rejected", true
-                , correlationId));
+                ), correlationId);
             });
     }
 
@@ -266,13 +266,13 @@ public final class PhrDocumentImagingRoutes {
                         throw new IllegalArgumentException("visibility is required");
                     }
                 } catch (Exception ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_DOCUMENT_CONSENT", ex.getMessage(, correlationId));
+                    return PhrRouteSupport.errorResponse(400, "INVALID_DOCUMENT_CONSENT", ex.getMessage());
                 }
                 return documentService.updateDocumentConsent(request.getPathParameter("documentId"), visibility, patientId)
                     .then($ -> PhrRouteSupport.jsonResponse(200, Map.of(
-                        "documentId", request.getPathParameter("documentId", correlationId),
+                        "documentId", request.getPathParameter("documentId"),
                         "visibility", visibility
-                    )));
+                    ), correlationId));
             }));
     }
 
@@ -282,9 +282,9 @@ public final class PhrDocumentImagingRoutes {
                 request.getPathParameter("documentId"),
                 patientId)
             .then($ -> PhrRouteSupport.jsonResponse(200, Map.of(
-                "documentId", request.getPathParameter("documentId", correlationId),
+                "documentId", request.getPathParameter("documentId"),
                 "deleted", true
-            ))));
+            ), correlationId)));
     }
 
     private Promise<HttpResponse> handleListDocuments(HttpRequest request) {
@@ -295,13 +295,13 @@ public final class PhrDocumentImagingRoutes {
             context = PhrRouteSupport.requireContext(request);
             patientId = PhrRouteSupport.requiredQuery(request, "patientId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_DOCUMENT_QUERY", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "INVALID_DOCUMENT_QUERY", ex.getMessage());
         }
         PhrRouteSupport.PhrRequestContext finalContext = context;
         return requireAccess(context, patientId, "documents", "READ")
             .then(decision -> decision.isAllowed()
                 ? documentService.getPatientDocuments(patientId, finalContext.principalId())
-                    .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size(, correlationId))))
+                    .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size()), correlationId))
                 : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), "POLICY_DENIED"));
     }
 
@@ -318,7 +318,7 @@ public final class PhrDocumentImagingRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
         return imagingService.getOrder(request.getPathParameter("orderId"))
             .then(order -> {
@@ -327,7 +327,7 @@ public final class PhrDocumentImagingRoutes {
                 }
                 return requireAccess(context, order.get().patientId(), "imaging", "READ")
                     .then(decision -> decision.isAllowed()
-                        ? PhrRouteSupport.jsonResponse(200, order.get(, correlationId))
+                        ? PhrRouteSupport.jsonResponse(200, order.get())
                         : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
             });
     }
@@ -349,13 +349,13 @@ public final class PhrDocumentImagingRoutes {
     private Promise<HttpResponse> handleListImagingOrders(HttpRequest request) {
         String correlationId = PhrRouteSupport.extractCorrelationId(request);
         return withPatientAccess(request, "imaging", "READ", patientId -> imagingService.getPatientOrders(patientId)
-            .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size(, correlationId)))));
+            .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size()), correlationId)));
     }
 
     private Promise<HttpResponse> handleListImagingStudies(HttpRequest request) {
         String correlationId = PhrRouteSupport.extractCorrelationId(request);
         return withPatientAccess(request, "imaging", "READ", patientId -> imagingService.getPatientStudies(patientId)
-            .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size(, correlationId)))));
+            .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size()), correlationId)));
     }
 
     /**
@@ -371,7 +371,7 @@ public final class PhrDocumentImagingRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         String studyId = request.getPathParameter("studyId");
@@ -396,16 +396,16 @@ public final class PhrDocumentImagingRoutes {
                             return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
                         }
 
-                        String correlationId = PhrTraceContext.newCorrelationId("phr_imaging_download");
-                        auditImagingAccessGranted(context, study.patientId(), studyId, "imaging-study", correlationId);
+                        String auditCorrelationId = PhrTraceContext.newCorrelationId("phr_imaging_download");
+                        auditImagingAccessGranted(context, study.patientId(), studyId, "imaging-study", auditCorrelationId);
 
                         return PhrRouteSupport.jsonResponse(200, Map.of(
-                            "studyId", study.id(, correlationId),
+                            "studyId", study.id(),
                             "patientId", study.patientId(),
                             "modality", study.modalityCode(),
                             "studyDate", study.studyDate(),
                             "accessAudited", true,
-                            "correlationId", correlationId,
+                            "correlationId", auditCorrelationId,
                             "downloadUrl", "/imaging/studies/" + studyId + "/content"
                         ), context.correlationId());
                     });
@@ -425,7 +425,7 @@ public final class PhrDocumentImagingRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
         String studyId = request.getPathParameter("studyId");
@@ -456,15 +456,15 @@ public final class PhrDocumentImagingRoutes {
                             return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
                         }
 
-                        String correlationId = PhrTraceContext.newCorrelationId("phr_imaging_series_download");
-                        auditImagingAccessGranted(context, study.patientId(), seriesId, "imaging-series", correlationId);
+                        String auditCorrelationId = PhrTraceContext.newCorrelationId("phr_imaging_series_download");
+                        auditImagingAccessGranted(context, study.patientId(), seriesId, "imaging-series", auditCorrelationId);
 
                         return PhrRouteSupport.jsonResponse(200, Map.of(
                             "studyId", studyId,
                             "seriesId", seriesId,
-                            "patientId", study.patientId(, correlationId),
+                            "patientId", study.patientId(),
                             "accessAudited", true,
-                            "correlationId", correlationId,
+                            "correlationId", auditCorrelationId,
                             "downloadUrl", "/imaging/studies/" + studyId + "/series/" + seriesId + "/content"
                         ), context.correlationId());
                     });
@@ -478,7 +478,7 @@ public final class PhrDocumentImagingRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
         PhrRouteSupport.PhrRequestContext finalContext = context;
         return request.loadBody()
@@ -487,18 +487,18 @@ public final class PhrDocumentImagingRoutes {
                 try {
                     value = parseUpload(body.getString(StandardCharsets.UTF_8));
                 } catch (Exception ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_DOCUMENT_UPLOAD", ex.getMessage(, correlationId));
+                    return PhrRouteSupport.errorResponse(400, "INVALID_DOCUMENT_UPLOAD", ex.getMessage());
                 }
                 return requireAccess(finalContext, value.getPatientId(), "documents", "WRITE")
                     .then(decision -> {
                         if (!decision.isAllowed()) {
                             return PhrRouteSupport.policyDenialResponse(403, finalContext.correlationId(), decision.getReasonCode());
                         }
-                        String correlationId = PhrTraceContext.newCorrelationId("phr_document_upload");
+                        String auditCorrelationId = PhrTraceContext.newCorrelationId("phr_document_upload");
                         return handler.apply(value)
                             .then(stored -> {
                                 auditDocumentUpload(finalContext, value.getPatientId(), stored.getDocumentId(), 
-                                    value.getDocumentType(), value.getContentType(), correlationId);
+                                    value.getDocumentType(), value.getContentType(), auditCorrelationId);
                                 return PhrRouteSupport.jsonResponse(201, stored);
                             });
                     });
@@ -515,7 +515,7 @@ public final class PhrDocumentImagingRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
         PhrRouteSupport.PhrRequestContext finalContext = context;
         return request.loadBody()
@@ -547,7 +547,7 @@ public final class PhrDocumentImagingRoutes {
             context = PhrRouteSupport.requireContext(request);
             patientId = PhrRouteSupport.requiredQuery(request, "patientId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT_SCOPE", ex.getMessage(, correlationId));
+            return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT_SCOPE", ex.getMessage());
         }
         return requireAccess(context, patientId, resourceType, action)
             .then(decision -> decision.isAllowed()
