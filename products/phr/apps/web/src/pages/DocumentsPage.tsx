@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { SafeError } from '../components/SafeError';
 import { Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { Link } from 'react-router-dom';
 import { fetchDocuments, downloadDocument } from '../api/documentsApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
@@ -89,7 +91,7 @@ export function DocumentsPage(): React.ReactElement {
   };
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('documents.loading')}</div>;
-  if (error) return <div className="error" role="alert">{t('documents.error')}: {error}</div>;
+  if (error) return <SafeError title={t('documents.error')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
 
   // Filter documents by content type (as a proxy for category)
   const filteredDocuments = categoryFilter
@@ -111,7 +113,15 @@ export function DocumentsPage(): React.ReactElement {
         />
       )}
       <Card>
-        <CardHeader title={t('documents.title')} subheader={t('documents.subheader')} />
+        <CardHeader 
+          title={t('documents.title')} 
+          subheader={t('documents.subheader')}
+          action={
+            <Link to="/documents/upload">
+              <Button variant="solid">Upload Document</Button>
+            </Link>
+          }
+        />
         <CardContent>
           {/* Category filter */}
           <div className="filter-bar">

@@ -52,10 +52,11 @@ public final class PhrFhirRoutes {
     }
 
     private Promise<HttpResponse> handleCreateFhirResource(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         try {
             PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage(, correlationId));
         }
         String resourceType = request.getPathParameter("resourceType");
         return request.loadBody()
@@ -70,10 +71,11 @@ public final class PhrFhirRoutes {
     }
 
     private Promise<HttpResponse> handleGetFhirResource(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         try {
             PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage(, correlationId));
         }
         String resourceType = request.getPathParameter("resourceType");
         String id = request.getPathParameter("id");
@@ -85,10 +87,11 @@ public final class PhrFhirRoutes {
     }
 
     private Promise<HttpResponse> handleSearchFhirResources(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         try {
             PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(401, "INVALID_FHIR_CONTEXT", ex.getMessage(, correlationId));
         }
         String resourceType = request.getPathParameter("resourceType");
         var params = request.getQueryParameters();

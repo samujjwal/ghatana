@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { SafeError } from '../components/SafeError';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { fetchDashboardData } from '../api/patientApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
@@ -28,7 +29,7 @@ export function DashboardPage(): React.ReactElement {
   }, [session]);
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('dashboard.loading')}</div>;
-  if (error) return <div className="error" role="alert">{t('dashboard.errorPrefix')}: {error}</div>;
+  if (error) return <SafeError title={t('dashboard.errorPrefix')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
   if (!data) return <div className="empty" role="status">{t('dashboard.empty')}</div>;
 
   const { patient, consents, appointments, labs, medications } = data;

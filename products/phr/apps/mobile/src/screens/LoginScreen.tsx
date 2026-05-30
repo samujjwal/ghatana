@@ -3,6 +3,11 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 
 import type { MobileSession } from '../types';
 import { t } from '../i18n/phrMobileI18n';
 
+function newCorrelationId(): string {
+  return crypto.randomUUID();
+}
+
+
 interface LoginScreenProps {
   onSuccess: (session: MobileSession) => void;
   onLoginError: (message: string) => void;

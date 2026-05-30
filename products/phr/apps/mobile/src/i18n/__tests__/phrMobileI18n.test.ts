@@ -83,4 +83,29 @@ describe('phrMobileI18n', () => {
     // Must differ from the English string
     expect(label).not.toBe('National ID');
   });
+
+  it('pseudo-locale expansion check for critical mobile UI strings', () => {
+    setLocale('en');
+    const criticalKeys = [
+      'tabs.home',
+      'tabs.records',
+      'tabs.consents',
+      'tabs.emergency',
+      'tabs.settings',
+      'dashboard.title',
+      'records.title',
+      'consents.title',
+      'emergency.title',
+      'settings.title',
+      'login.title',
+    ];
+
+    for (const key of criticalKeys) {
+      const result = t(key);
+      expect(typeof result).toBe('string');
+      expect(result.length).toBeGreaterThan(0);
+      // Verify the string is not the key itself (i.e., it was resolved)
+      expect(result).not.toBe(key);
+    }
+  });
 });

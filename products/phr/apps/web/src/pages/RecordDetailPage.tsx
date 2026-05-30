@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { SafeError } from '../components/SafeError';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { useParams } from 'react-router-dom';
 import { fetchRecordDetail } from '../api/recordsApi';
@@ -88,7 +89,7 @@ export function RecordDetailPage(): React.ReactElement {
       <Card>
         <CardHeader title={t('recordDetail.unavailable.title')} subheader={t('recordDetail.error.load')} />
         <CardContent>
-          <p className="error">{error}</p>
+          <SafeError message={error} correlationId={session?.tenantId + '-' + session?.principalId} />
           {fhirInvalid && (
             <div className="warning-banner">
               <strong>{t('recordDetail.invalidFhir.title')}</strong>

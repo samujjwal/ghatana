@@ -2,6 +2,7 @@ package com.ghatana.phr.api.routes;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.kernel.observability.KernelTelemetryManager;
 import com.ghatana.kernel.security.PolicyValidationHelper;
 import com.ghatana.phr.api.validation.PhrRequestValidator;
 import com.ghatana.platform.http.server.activej.ActiveJHttpExchangeSupport;
@@ -38,7 +39,20 @@ public final class PhrRouteSupport {
     /** Roles permitted to call PHR routes. */
     static final Set<String> ALLOWED_ROLES = Set.of("patient", "caregiver", "clinician", "admin", "fchv");
 
+    /** Static telemetry manager for metrics emission. */
+    private static volatile KernelTelemetryManager telemetryManager;
+
     private PhrRouteSupport() {}
+
+    /**
+     * Sets the telemetry manager for metrics emission.
+     * This should be called during application initialization.
+     *
+     * @param manager the telemetry manager (may be null to disable metrics)
+     */
+    public static void setTelemetryManager(KernelTelemetryManager manager) {
+        telemetryManager = manager;
+    }
 
     /**
      * Extracts and validates the request context from inbound security headers.
@@ -128,12 +142,15 @@ public final class PhrRouteSupport {
      * Returns a safe policy denial response with only safe information.
      * Internal details are logged but not exposed to the client.
      *
+     * <p>G11-T04: Emits policy denied metrics without PHI.</p>
+     *
      * @param statusCode the HTTP status code
      * @param correlationId the correlation ID for tracing
      * @param reasonCode the machine-readable reason code (safe to expose)
      * @return Promise containing the error response
      */
     static Promise<HttpResponse> policyDenialResponse(int statusCode, String correlationId, String reasonCode) {
+        emitPolicyDeniedMetric(reasonCode, correlationId);
         return errorResponse(statusCode, reasonCode != null ? reasonCode : "POLICY_DENIED", "Access denied by policy", correlationId);
     }
 
@@ -141,12 +158,66 @@ public final class PhrRouteSupport {
      * Returns a safe policy denial response with only safe information.
      * Internal details are logged but not exposed to the client.
      *
+     * <p>G11-T04: Emits policy denied metrics without PHI.</p>
+     *
      * @param statusCode the HTTP status code
      * @param correlationId the correlation ID for tracing
      * @return Promise containing the error response
      */
     static Promise<HttpResponse> policyDenialResponse(int statusCode, String correlationId) {
         return policyDenialResponse(statusCode, correlationId, "POLICY_DENIED");
+    }
+
+    /**
+     * Emits policy denied metric without PHI.
+     *
+     * <p>G11-T04: Add policy denied metrics without PHI.</p>
+     *
+     * @param reasonCode the machine-readable reason code
+     * @param correlationId the correlation ID for tracing
+     */
+    private static void emitPolicyDeniedMetric(String reasonCode, String correlationId) {
+        if (telemetryManager == null) {
+            return; // No telemetry configured
+        }
+
+        try {
+            telemetryManager.incrementCounter(
+                "phr.policy.denied",
+                1,
+                "reason_code", reasonCode != null ? reasonCode : "POLICY_DENIED"
+            );
+        } catch (Exception e) {
+            // Don't fail the request if metrics emission fails
+            // Log at debug level to avoid noise
+        }
+    }
+
+    /**
+     * Emits consent operation metric without PHI.
+     *
+     * <p>G11-T06: Add consent create/revoke/check metrics without PHI.</p>
+     *
+     * @param operation the consent operation (create, revoke, check)
+     * @param role the role performing the operation
+     * @param success whether the operation succeeded
+     */
+    public static void emitConsentMetric(String operation, String role, boolean success) {
+        if (telemetryManager == null) {
+            return; // No telemetry configured
+        }
+
+        try {
+            telemetryManager.incrementCounter(
+                "phr.consent.operation",
+                1,
+                "operation", operation,
+                "role", role != null ? role : "unknown",
+                "success", String.valueOf(success)
+            );
+        } catch (Exception e) {
+            // Don't fail the request if metrics emission fails
+        }
     }
 
     /**

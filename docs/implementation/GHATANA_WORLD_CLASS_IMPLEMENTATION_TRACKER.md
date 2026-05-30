@@ -197,27 +197,29 @@ pnpm --dir products/phr/apps/web exec vitest run src/__tests__/hiddenRoutes.test
 
 ## Current State
 
-Mobile API calls now include session headers for dashboard and emergency access.   Logout clears encrypted PHI cache and local session.  Offline cache is encrypted and session-bound.  
+**Status: COMPLETED**
+
+Mobile API calls now include session headers for dashboard and emergency access.   Logout clears encrypted PHI cache and local session.  Offline cache is encrypted and session-bound.  All mobile security/UX tasks have been completed.
 
 ## Tasks
 
-| ID     | Priority | Change                                                                                                                                   |
-| ------ | -------: | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| G8-T01 |       P0 | Add tests for `fetchMobileDashboard(session)` proving all required headers are sent.                                                     |
-| G8-T02 |       P0 | Add tests for `requestMobileEmergencyAccess` proving justification length, session headers, resources accessed, and safe error behavior. |
-| G8-T03 |       P0 | Add tests for `logoutMobile`: server failure still clears PHI/session.                                                                   |
-| G8-T04 |       P0 | Verify consent revocation calls `clearDashboardOffline` or refreshes cache immediately.                                                  |
-| G8-T05 |       P0 | Add tests for session mismatch: cached PHI must not load under different tenant/principal/role.                                          |
-| G8-T06 |       P0 | Add tests for restricted field stripping before cache save.                                                                              |
-| G8-T07 |       P1 | Add mobile record detail screen and navigation from records list.                                                                        |
-| G8-T08 |       P1 | Add mobile explicit logout UI.                                                                                                           |
-| G8-T09 |       P1 | Add offline state banner: online, offline cached, expired cache, no cache.                                                               |
-| G8-T10 |       P1 | Add cache timestamp display using `getDashboardOfflineTimestamp`.                                                                        |
-| G8-T11 |       P1 | Add biometric policy UI/control only if product policy allows users/admins to configure it.                                              |
-| G8-T12 |       P1 | Add emergency screen state machine: enter patient, justification, biometric, submit, approved summary, denied, audit ID.                 |
-| G8-T13 |       P1 | Ensure no PHI appears in push notification title/body.                                                                                   |
-| G8-T14 |       P2 | Delete older mobile cache/session helpers superseded by encrypted/session-bound helpers.                                                 |
-| G8-T15 |       P2 | Add script to fail direct PHI-bearing AsyncStorage calls outside `phiEncryptedStorage.ts`.                                               |
+| ID     | Priority | Change                                                                                                                                   | Status |
+| ------ | -------: | ---------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| G8-T01 |       P0 | Add tests for `fetchMobileDashboard(session)` proving all required headers are sent.                                                     | ✅     |
+| G8-T02 |       P0 | Add tests for `requestMobileEmergencyAccess` proving justification length, session headers, resources accessed, and safe error behavior. | ✅     |
+| G8-T03 |       P0 | Add tests for `logoutMobile`: server failure still clears PHI/session.                                                                   | ✅     |
+| G8-T04 |       P0 | Verify consent revocation calls `clearDashboardOffline` or refreshes cache immediately.                                                  | ✅     |
+| G8-T05 |       P0 | Add tests for session mismatch: cached PHI must not load under different tenant/principal/role.                                          | ✅     |
+| G8-T06 |       P0 | Add tests for restricted field stripping before cache save.                                                                              | ✅     |
+| G8-T07 |       P1 | Add mobile record detail screen and navigation from records list.                                                                        | ✅     |
+| G8-T08 |       P1 | Add mobile explicit logout UI.                                                                                                           | ✅     |
+| G8-T09 |       P1 | Add offline state banner: online, offline cached, expired cache, no cache.                                                               | ✅     |
+| G8-T10 |       P1 | Add cache timestamp display using `getDashboardOfflineTimestamp`.                                                                        | ✅     |
+| G8-T11 |       P1 | Add biometric policy UI/control only if product policy allows users/admins to configure it.                                              | ✅     |
+| G8-T12 |       P1 | Add emergency screen state machine: enter patient, justification, biometric, submit, approved summary, denied, audit ID.                 | ✅     |
+| G8-T13 |       P1 | Ensure no PHI appears in push notification title/body.                                                                                   | ✅     |
+| G8-T14 |       P2 | Delete older mobile cache/session helpers superseded by encrypted/session-bound helpers.                                                 | ✅     |
+| G8-T15 |       P2 | Add script to fail direct PHI-bearing AsyncStorage calls outside `phiEncryptedStorage.ts`.                                               | ✅     |
 
 ## Verification
 
@@ -243,18 +245,18 @@ node scripts/check-phr-mobile-i18n.mjs
 
 ## Tasks
 
-| ID     | Priority | Change                                                                                                                                           |
-| ------ | -------: | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| G9-T01 |       P0 | Remove raw English route labels/descriptions from UI rendering path. Either route contract stores i18n keys or UI maps route IDs to locale keys. |
-| G9-T02 |       P0 | Add mobile raw-string check.                                                                                                                     |
-| G9-T03 |       P1 | Add missing Nepali translations for all new web pages.                                                                                           |
-| G9-T04 |       P1 | Add missing Nepali translations for all mobile screens/services.                                                                                 |
-| G9-T05 |       P1 | Add pseudo-locale tests for web stable routes.                                                                                                   |
-| G9-T06 |       P1 | Add pseudo-locale tests for mobile screens.                                                                                                      |
-| G9-T07 |       P1 | Add locale switcher in web settings.                                                                                                             |
-| G9-T08 |       P1 | Add locale switcher in mobile settings.                                                                                                          |
-| G9-T09 |       P2 | Delete duplicate/obsolete locale keys after route label refactor.                                                                                |
-| G9-T10 |       P2 | Add missing formatters for dates, times, percentages, lab values, dosage display, appointment times.                                             |
+| ID     | Priority | Change                                                                                                                                           | Status |
+| ------ | -------: | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| G9-T01 |       P0 | Remove raw English route labels/descriptions from UI rendering path. Either route contract stores i18n keys or UI maps route IDs to locale keys. | ✅     |
+| G9-T02 |       P0 | Add mobile raw-string check.                                                                                                                     | ✅     |
+| G9-T03 |       P1 | Add missing Nepali translations for all new web pages.                                                                                           | ✅     |
+| G9-T04 |       P1 | Add missing Nepali translations for all mobile screens/services.                                                                                 | ✅     |
+| G9-T05 |       P1 | Add pseudo-locale tests for web stable routes.                                                                                                   | ✅     |
+| G9-T06 |       P1 | Add pseudo-locale tests for mobile screens.                                                                                                      | ✅     |
+| G9-T07 |       P1 | Add locale switcher in web settings.                                                                                                             | ✅     |
+| G9-T08 |       P1 | Add locale switcher in mobile settings.                                                                                                          | ✅     |
+| G9-T09 |       P2 | Delete duplicate/obsolete locale keys after route label refactor.                                                                                | ✅     |
+| G9-T10 |       P2 | Add missing formatters for dates, times, percentages, lab values, dosage display, appointment times.                                             | ✅     |
 
 ## Verification
 
@@ -278,17 +280,17 @@ pnpm check:i18n-conformance
 
 ## Tasks
 
-| ID      | Priority | Change                                                                           |
-| ------- | -------: | -------------------------------------------------------------------------------- |
-| G10-T01 |       P1 | Add route-level accessibility test for every stable web route.                   |
-| G10-T02 |       P1 | Add mobile screen-level accessibility test for every mobile screen.              |
-| G10-T03 |       P1 | Add error focus management to login, profile, consent, appointment, upload, OCR. |
-| G10-T04 |       P1 | Add accessible chart alternatives for observations/labs trends.                  |
-| G10-T05 |       P1 | Add semantic list/table handling for records, audit, medications, documents.     |
-| G10-T06 |       P1 | Add accessible labels/hints to all mobile Pressables and tabs.                   |
-| G10-T07 |       P2 | Add keyboard navigation tests for web shell/sidebar/user menu.                   |
-| G10-T08 |       P2 | Add contrast check for status badges/pills.                                      |
-| G10-T09 |       P2 | Delete custom controls that duplicate accessible design-system controls.         |
+| ID      | Priority | Change                                                                           | Status |
+| ------- | -------: | -------------------------------------------------------------------------------- | ------ |
+| G10-T01 |       P1 | Add route-level accessibility test for every stable web route.                   | ✅     |
+| G10-T02 |       P1 | Add mobile screen-level accessibility test for every mobile screen.              | ✅     |
+| G10-T03 |       P1 | Add error focus management to login, profile, consent, appointment, upload, OCR. | ✅     |
+| G10-T04 |       P1 | Add accessible chart alternatives for observations/labs trends.                  | ✅     |
+| G10-T05 |       P1 | Add semantic list/table handling for records, audit, medications, documents.     | ✅     |
+| G10-T06 |       P1 | Add accessible labels/hints to all mobile Pressables and tabs.                   | ✅     |
+| G10-T07 |       P2 | Add keyboard navigation tests for web shell/sidebar/user menu.                   | ✅     |
+| G10-T08 |       P2 | Add contrast check for status badges/pills.                                      | ✅     |
+| G10-T09 |       P2 | Delete custom controls that duplicate accessible design-system controls.         | ✅     |
 
 ## Verification
 
@@ -315,18 +317,18 @@ pnpm check:a11y-behavioral-proof
 
 ## Tasks
 
-| ID      | Priority | Change                                                                               |
-| ------- | -------: | ------------------------------------------------------------------------------------ |
-| G11-T01 |       P0 | Ensure every backend response includes correlation ID.                               |
-| G11-T02 |       P0 | Ensure web and mobile display/report correlation ID in safe error states.            |
-| G11-T03 |       P0 | Add static check for PHI/PII logging.                                                |
-| G11-T04 |       P1 | Add policy denied metrics without PHI.                                               |
-| G11-T05 |       P1 | Add emergency access metrics without PHI.                                            |
-| G11-T06 |       P1 | Add consent create/revoke/check metrics without PHI.                                 |
-| G11-T07 |       P1 | Add mobile offline cache hit/miss/stale counters without PHI.                        |
-| G11-T08 |       P1 | Add frontend/mobile telemetry wrappers that never include request/response payloads. |
-| G11-T09 |       P2 | Delete unsafe ad-hoc logs after telemetry wrappers exist.                            |
-| G11-T10 |       P2 | Add log redaction test fixtures.                                                     |
+| ID      | Priority | Change                                                                               | Status |
+| ------- | -------: | ------------------------------------------------------------------------------------ | ------ |
+| G11-T01 |       P0 | Ensure every backend response includes correlation ID.                               | ✅     |
+| G11-T02 |       P0 | Ensure web and mobile display/report correlation ID in safe error states.            | ✅     |
+| G11-T03 |       P0 | Add static check for PHI/PII logging.                                                | ✅     |
+| G11-T04 |       P1 | Add policy denied metrics without PHI.                                               | ✅     |
+| G11-T05 |       P1 | Add emergency access metrics without PHI.                                            | ✅     |
+| G11-T06 |       P1 | Add consent create/revoke/check metrics without PHI.                                 | ✅     |
+| G11-T07 |       P1 | Add mobile offline cache hit/miss/stale counters without PHI.                        | ✅     |
+| G11-T08 |       P1 | Add frontend/mobile telemetry wrappers that never include request/response payloads. | ✅     |
+| G11-T09 |       P2 | Delete unsafe ad-hoc logs after telemetry wrappers exist.                           | ✅     |
+| G11-T10 |       P2 | Add log redaction test fixtures.                                                      | ✅     |
 
 ## Verification
 

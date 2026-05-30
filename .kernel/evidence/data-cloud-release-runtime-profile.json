@@ -1,20 +1,20 @@
 {
-  "generatedAt": "2026-05-29T23:24:09.748Z",
+  "generatedAt": "2026-05-30T00:01:45.272Z",
   "evidenceRun": {
     "generatedBy": "scripts/check-data-cloud-release-runtime-profile.mjs",
     "command": "pnpm check:data-cloud-release-runtime-profile",
     "source": "scripts/check-data-cloud-release-runtime-profile.mjs",
-    "commit": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3",
-    "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
-    "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+    "commit": "de196a31b8ad143f55e5f9cd3edad1d27e3c0d68",
+    "sourceCommitSha": "de196a31b8ad143f55e5f9cd3edad1d27e3c0d68",
+    "targetCommitSha": "de196a31b8ad143f55e5f9cd3edad1d27e3c0d68",
     "targetEnvironment": "staging"
   },
-  "sourceCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
-  "targetCommitSha": "a25c5fe75cc35d3f15c550a5c79417bfeed4fdb8",
+  "sourceCommitSha": "de196a31b8ad143f55e5f9cd3edad1d27e3c0d68",
+  "targetCommitSha": "de196a31b8ad143f55e5f9cd3edad1d27e3c0d68",
   "targetEnvironment": "staging",
   "validationStatus": "validated",
-  "reviewDueAt": "2026-05-30T02:58:04.716Z",
-  "expiresAt": "2026-05-31T02:58:04.716Z",
+  "reviewDueAt": "2026-05-31T00:01:45.272Z",
+  "expiresAt": "2026-06-01T00:01:45.272Z",
   "checks": [
     {
       "check": "Runtime failure-injection posture",

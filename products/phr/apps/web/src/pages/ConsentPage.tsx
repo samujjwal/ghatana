@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
+import { SafeError } from '../components/SafeError';
 import { Badge, Button, Card, CardContent, CardHeader, Input } from '@ghatana/design-system';
 import { createConsentGrant, revokeConsentGrant } from '../api/consentApi';
 import { fetchDashboardData } from '../api/patientApi';
@@ -18,6 +19,9 @@ interface GrantFormState {
   recipientId: string;
   purpose: string;
   resourceTypes: string;
+  allDocuments: boolean;
+  specificDocumentIds: string;
+  actions: string;
   expiresAt: string;
 }
 
@@ -25,6 +29,9 @@ const EMPTY_GRANT_FORM: GrantFormState = {
   recipientId: '',
   purpose: '',
   resourceTypes: '',
+  allDocuments: false,
+  specificDocumentIds: '',
+  actions: '',
   expiresAt: '',
 };
 
@@ -32,6 +39,7 @@ type ConsentPageAction =
   | { type: 'open_grant_form' }
   | { type: 'close_grant_form' }
   | { type: 'set_field'; field: keyof GrantFormState; value: string }
+  | { type: 'set_boolean_field'; field: keyof GrantFormState; value: boolean }
   | { type: 'set_submitting'; value: boolean }
   | { type: 'set_error'; message: string | null }
   | { type: 'set_success'; message: string | null };
@@ -52,6 +60,8 @@ function consentPageReducer(state: ConsentPageState, action: ConsentPageAction):
       return { ...state, showGrantForm: false, formError: null };
     case 'set_field':
       return { ...state, form: { ...state.form, [action.field]: action.value } };
+    case 'set_boolean_field':
+      return { ...state, form: { ...state.form, [action.field]: action.value } };
     case 'set_submitting':
       return { ...state, submitting: action.value };
     case 'set_error':
@@ -59,6 +69,7 @@ function consentPageReducer(state: ConsentPageState, action: ConsentPageAction):
     case 'set_success':
       return { ...state, successMessage: action.message };
   }
+  return state;
 }
 
 const INITIAL_STATE: ConsentPageState = {
@@ -76,6 +87,22 @@ export function ConsentPage(): React.ReactElement {
   const [loading, setLoading] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [state, dispatch] = useReducer(consentPageReducer, INITIAL_STATE);
+  const formErrorRef = React.useRef<HTMLDivElement>(null);
+  const successMessageRef = React.useRef<HTMLDivElement>(null);
+
+  // Focus error message when error is set for accessibility
+  React.useEffect(() => {
+    if (state.formError && formErrorRef.current) {
+      formErrorRef.current.focus();
+    }
+  }, [state.formError]);
+
+  // Focus success message when set for accessibility
+  React.useEffect(() => {
+    if (state.successMessage && successMessageRef.current) {
+      successMessageRef.current.focus();
+    }
+  }, [state.successMessage]);
 
   const loadConsents = useCallback((): void => {
     setLoading(true);
@@ -106,6 +133,9 @@ export function ConsentPage(): React.ReactElement {
       purpose: purpose.trim(),
       scope: {
         resourceTypes: resourceTypes.split(',').map((s) => s.trim()).filter(Boolean),
+        allDocuments: state.form.allDocuments,
+        specificDocumentIds: state.form.specificDocumentIds ? state.form.specificDocumentIds.split(',').map((s) => s.trim()).filter(Boolean) : undefined,
+        actions: state.form.actions ? state.form.actions.split(',').map((s) => s.trim()).filter(Boolean) : undefined,
       },
       expiresAt: expiresAt.trim(),
     };
@@ -142,10 +172,24 @@ export function ConsentPage(): React.ReactElement {
       <CardHeader title={t('consents.title')} subheader={t('consents.subheader')} />
       <CardContent>
         {state.successMessage && (
-          <div role="status" className="success-message mb-4">{state.successMessage}</div>
+          <div 
+            ref={successMessageRef}
+            role="status" 
+            className="success-message mb-4"
+            tabIndex={-1}
+          >
+            {state.successMessage}
+          </div>
         )}
         {state.formError && (
-          <div role="alert" className="error mb-4">{state.formError}</div>
+          <div 
+            ref={formErrorRef}
+            role="alert" 
+            className="error mb-4"
+            tabIndex={-1}
+          >
+            {state.formError}
+          </div>
         )}
 
         <div className="stack gap-md">
@@ -210,6 +254,34 @@ export function ConsentPage(): React.ReactElement {
                   dispatch({ type: 'set_field', field: 'resourceTypes', value: e.target.value })
                 }
                 required
+              />
+              <label className="row gap-sm align-center">
+                <input
+                  type="checkbox"
+                  checked={state.form.allDocuments}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    dispatch({ type: 'set_boolean_field', field: 'allDocuments', value: e.target.checked })
+                  }
+                />
+                <span>Grant access to all documents</span>
+              </label>
+              {!state.form.allDocuments && (
+                <Input
+                  aria-label="Specific document IDs (comma-separated)"
+                  placeholder="Document IDs (comma-separated)"
+                  value={state.form.specificDocumentIds}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    dispatch({ type: 'set_field', field: 'specificDocumentIds', value: e.target.value })
+                  }
+                />
+              )}
+              <Input
+                aria-label="Allowed actions (comma-separated, e.g., read, download)"
+                placeholder="Actions (e.g., read, download)"
+                value={state.form.actions}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  dispatch({ type: 'set_field', field: 'actions', value: e.target.value })
+                }
               />
               <Input
                 aria-label={t('consents.grant.expiresAt')}

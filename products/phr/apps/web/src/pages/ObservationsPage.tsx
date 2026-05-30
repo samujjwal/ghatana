@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { SafeError } from '../components/SafeError';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { TimeSeriesChart } from '@ghatana/charts';
 import type { ChartDataPoint } from '@ghatana/charts';
@@ -100,7 +101,7 @@ export function ObservationsPage(): React.ReactElement {
   }, [session]);
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('observations.loading')}</div>;
-  if (error) return <div className="error" role="alert">{t('dashboard.errorPrefix')}: {error}</div>;
+  if (error) return <SafeError title={t('dashboard.errorPrefix')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
   if (!observations.length) return <div className="empty" role="status">{t('observations.empty')}</div>;
 
   const metricOptions = groupObservations(observations);
@@ -173,12 +174,16 @@ export function ObservationsPage(): React.ReactElement {
                     <div className="observation-trend">
                       <h4>{t('observations.trendHistory')}</h4>
                       {chartData.length > 1 && (
-                        <div className="trend-chart" aria-label={t('observations.chart.label', { metric: latest.name })}>
+                        <div className="trend-chart">
+                          <span className="visually-hidden" aria-hidden="false">
+                            Line chart showing {chartData.length} data points for {latest.name}
+                          </span>
                           <TimeSeriesChart
                             data={chartData}
                             series={[{ id: 'value', label: latest.name, color: '#3b82f6' }]}
                             height={200}
                             showLegend={false}
+                            aria-label={t('observations.chart.label', { metric: latest.name })}
                           />
                         </div>
                       )}

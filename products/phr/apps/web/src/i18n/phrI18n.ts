@@ -33,6 +33,14 @@ export function resolvePhrLocale(input?: string | null): PhrLocale {
   return 'en';
 }
 
+export function setPhrLocale(locale: PhrLocale): void {
+  if (isPhrLocale(locale)) {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('phr.locale', locale);
+    }
+  }
+}
+
 export function t(key: PhrMessageKey, values: MessageValues = {}, locale: PhrLocale = resolvePhrLocale()): string {
   const baseMessage = locale === 'en-XA'
     ? pseudoLocalize(localizedMessages.en[key])

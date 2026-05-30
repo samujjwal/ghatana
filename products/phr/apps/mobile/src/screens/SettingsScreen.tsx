@@ -5,6 +5,11 @@ import { phiClearAll, phiIsBiometricPolicyEnabled } from '../services/phiEncrypt
 import { clearDashboardOffline, getDashboardOfflineTimestamp } from '../services/offlineStore';
 import type { MobileSession } from '../types';
 
+function newCorrelationId(): string {
+  return crypto.randomUUID();
+}
+
+
 interface SettingsScreenProps {
   onSyncOffline: () => void;
   onLogout: () => void;

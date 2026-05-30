@@ -10,12 +10,12 @@
     "products/digital-marketing/dm-persistence/src/main/resources/db/migration/V33__tenant_isolation_for_campaigns_and_approvals.sql",
     "products/digital-marketing/dm-persistence/src/test/java/com/ghatana/digitalmarketing/persistence/PostgresCampaignRepositoryIT.java"
   ],
-  "generatedAt": "2026-05-29T23:09:58.459Z",
-  "sourceCommitSha": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3",
-  "targetCommitSha": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3",
-  "commitSha": "1d57ce05b7e60d146ad9c6a53afc61a0ba2f9bd3",
+  "generatedAt": "2026-05-30T00:30:03.135Z",
+  "sourceCommitSha": "de196a31b8ad143f55e5f9cd3edad1d27e3c0d68",
+  "targetCommitSha": "de196a31b8ad143f55e5f9cd3edad1d27e3c0d68",
+  "commitSha": "de196a31b8ad143f55e5f9cd3edad1d27e3c0d68",
   "executableProof": {
-    "validatedAt": "2026-05-29T23:09:58.459Z",
+    "validatedAt": "2026-05-30T00:30:03.135Z",
     "command": "node ./scripts/run-gradle-wrapper.mjs :products:digital-marketing:dm-persistence:test --rerun-tasks --tests com.ghatana.digitalmarketing.persistence.PostgresCampaignRepositoryIT",
     "tests": [
       "products/digital-marketing/dm-persistence/src/test/java/com/ghatana/digitalmarketing/persistence/PostgresCampaignRepositoryIT.java"

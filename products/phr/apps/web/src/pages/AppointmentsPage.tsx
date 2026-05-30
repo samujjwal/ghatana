@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { SafeError } from '../components/SafeError';
 import { Button, Card, CardContent, CardHeader, Input } from '@ghatana/design-system';
-import { fetchAppointments, fetchProviders, bookAppointment, cancelAppointment, rescheduleAppointment } from '../api/adminApi';
+import { fetchAppointments, bookAppointment, cancelAppointment, rescheduleAppointment } from '../api/adminApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import { logWarn } from '../utils/safeLogger';
@@ -12,19 +13,6 @@ export function AppointmentsPage(): React.ReactElement {
   const [loading, setLoading] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
-
-  // Booking form state
-  const [selectedSpecialty, setSelectedSpecialty] = useState<string>('');
-  const [selectedProvider, setSelectedProvider] = useState<string>('');
-  const [selectedSlot, setSelectedSlot] = useState<string>('');
-  const [notes, setNotes] = useState<string>('');
-  const [submitting, setSubmitting] = useState<boolean>(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [submitResult, setSubmitResult] = useState<string | null>(null);
-
-  // Provider and slot data
-  const [providers, setProviders] = useState<Array<{ id: string; name: string; specialty: string; availableSlots: string[] }>>([]);
-  const [loadingProviders, setLoadingProviders] = useState<boolean>(false);
 
   const loadAppointments = useCallback((): void => {
     if (!session) return;
@@ -40,59 +28,9 @@ export function AppointmentsPage(): React.ReactElement {
       .finally(() => setLoading(false));
   }, [session]);
 
-  const loadProviders = useCallback((): void => {
-    if (!session) return;
-    setLoadingProviders(true);
-    fetchProviders({
-      tenantId: session.tenantId,
-      principalId: session.principalId,
-      role: session.role,
-      })
-      .then(setProviders)
-      .catch(() => logWarn('Failed to load providers'))
-      .finally(() => setLoadingProviders(false));
-  }, [session]);
-
   useEffect(() => {
     loadAppointments();
-    loadProviders();
-  }, [loadAppointments, loadProviders]);
-
-  const handleBook = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
-    event.preventDefault();
-    setSubmitError(null);
-    setSubmitResult(null);
-
-    if (!session || !selectedProvider || !selectedSlot) {
-      setSubmitError('Please select a provider and time slot');
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const result = await bookAppointment(
-        session.principalId,
-        selectedProvider,
-        selectedSlot,
-        notes.trim() || undefined,
-        {
-          tenantId: session.tenantId,
-          principalId: session.principalId,
-          role: session.role,
-        },
-      );
-      setSubmitResult(`Appointment booked successfully: ${result.id}`);
-      setSelectedSpecialty('');
-      setSelectedProvider('');
-      setSelectedSlot('');
-      setNotes('');
-      loadAppointments();
-    } catch (err: unknown) {
-      setSubmitError(err instanceof Error ? err.message : 'Failed to book appointment');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  }, [loadAppointments]);
 
   const handleCancel = async (appointmentId: string): Promise<void> => {
     if (!session) return;
@@ -131,13 +69,6 @@ export function AppointmentsPage(): React.ReactElement {
 
   const displayedAppointments = activeTab === 'upcoming' ? upcoming : past;
 
-  // Filter providers by specialty
-  const filteredProviders = selectedSpecialty
-    ? providers.filter(p => p.specialty === selectedSpecialty)
-    : providers;
-
-  const selectedProviderData = providers.find(p => p.id === selectedProvider);
-
   return (
     <div className="stack gap-lg">
       <Card>
@@ -174,6 +105,10 @@ export function AppointmentsPage(): React.ReactElement {
                   </div>
                   {activeTab === 'upcoming' && appointment.status === 'confirmed' && (
                     <div className="row gap-sm">
+                      <Button size="small" variant="outline" onClick={() => {
+                        const newSlot = prompt('Enter new time slot (ISO format):');
+                        if (newSlot) handleReschedule(appointment.id, newSlot);
+                      }}>Reschedule</Button>
                       <Button size="small" onClick={() => handleCancel(appointment.id)}>Cancel</Button>
                     </div>
                   )}
@@ -181,80 +116,6 @@ export function AppointmentsPage(): React.ReactElement {
               ))
             )}
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader title={t('appointments.request.title')} subheader={t('appointments.request.subheader')} />
-        <CardContent>
-          {submitResult && (
-            <div role="status" className="success-message mb-4">{submitResult}</div>
-          )}
-          {submitError && (
-            <div role="alert" className="error mb-4">{submitError}</div>
-          )}
-          <form onSubmit={(e) => void handleBook(e)} className="stack gap-md" noValidate>
-            <div>
-              <label htmlFor="specialty">Specialty</label>
-              <select
-                id="specialty"
-                value={selectedSpecialty}
-                onChange={(e) => {
-                  setSelectedSpecialty(e.target.value);
-                  setSelectedProvider('');
-                  setSelectedSlot('');
-                }}
-              >
-                <option value="">Select specialty</option>
-                {Array.from(new Set(providers.map(p => p.specialty))).map(specialty => (
-                  <option key={specialty} value={specialty}>{specialty}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="provider">Provider</label>
-              <select
-                id="provider"
-                value={selectedProvider}
-                onChange={(e) => {
-                  setSelectedProvider(e.target.value);
-                  setSelectedSlot('');
-                }}
-                disabled={!selectedSpecialty}
-              >
-                <option value="">{t('appointments.provider.placeholder')}</option>
-                {filteredProviders.map(provider => (
-                  <option key={provider.id} value={provider.id}>{provider.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="slot">{t('appointments.slot.label')}</label>
-              <select
-                id="slot"
-                value={selectedSlot}
-                onChange={(e) => setSelectedSlot(e.target.value)}
-                disabled={!selectedProvider}
-              >
-                <option value="">{t('appointments.slot.placeholder')}</option>
-                {selectedProviderData?.availableSlots.map(slot => (
-                  <option key={slot} value={slot}>{new Date(slot).toLocaleString()}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="notes">{t('appointments.notes.label')}</label>
-              <Input
-                id="notes"
-                value={notes}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNotes(e.target.value)}
-                placeholder={t('appointments.notes.reasonPlaceholder')}
-              />
-            </div>
-            <Button type="submit" className="primary-cta" disabled={submitting || !selectedSlot}>
-              {submitting ? t('appointments.booking') : t('appointments.book')}
-            </Button>
-          </form>
         </CardContent>
       </Card>
     </div>

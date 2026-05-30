@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { SafeError } from '../components/SafeError';
 import { Badge, Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { Link } from 'react-router-dom';
 import { fetchConditions } from '../api/clinicalApi';
@@ -39,7 +40,7 @@ export function ConditionsPage(): React.ReactElement {
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('conditions.loading')}</div>;
   if (error) {
     const message = isForbiddenError(error) ? t('conditions.denied') : error;
-    return <div className="error" role="alert">{t('dashboard.errorPrefix')}: {message}</div>;
+    return <SafeError title={t('dashboard.errorPrefix')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
   }
 
   const filteredConditions = filter === 'all' ? conditions : conditions.filter((condition) => condition.status === filter);

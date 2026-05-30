@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { Button, Card, CardContent, CardHeader, Input } from '@ghatana/design-system';
+import { SafeError } from '../components/SafeError';
+import { Button, Card, CardContent, CardHeader, Input, Badge } from '@ghatana/design-system';
 import { reviewEmergencyAccess } from '../api/emergencyApi';
 import { usePhrAccess } from '../auth/PhrAccessContext';
 import { t } from '../i18n/phrI18n';
+import { formatPhrDate } from '../i18n/phrI18n';
 import type { EmergencyAccessEvent } from '../types';
 
 export function EmergencyReviewsPage(): React.ReactElement {
@@ -13,6 +15,7 @@ export function EmergencyReviewsPage(): React.ReactElement {
   const [reviewing, setReviewing] = useState<boolean>(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [reviewResult, setReviewResult] = useState<EmergencyAccessEvent | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<EmergencyAccessEvent | null>(null);
 
   const handleReview = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -46,12 +49,27 @@ export function EmergencyReviewsPage(): React.ReactElement {
         <CardHeader title={t('emergency.review.title')} subheader={t('emergency.review.subheader')} />
         <CardContent>
           <div className="stack gap-md">
-            <p>{t('emergency.review.subheader')}</p>
-            <ul className="stack gap-sm">
-              <li>{t('emergency.review.pending')}</li>
-              <li>{t('emergency.review.overdue')}</li>
-              <li>{t('emergency.review.auditTrail')}</li>
-            </ul>
+            <div className="row gap-sm">
+              <Badge variant="secondary">Pending: {selectedEvent ? 1 : 0}</Badge>
+              <Badge variant="destructive">Overdue: 0</Badge>
+            </div>
+            {selectedEvent && (
+              <div className="data-card">
+                <div>
+                  <strong>Event ID: {selectedEvent.id}</strong>
+                  <p className="muted">Patient: {selectedEvent.patientId} • Clinician: {selectedEvent.clinicianId}</p>
+                  <p className="muted">Accessed: {formatPhrDate(selectedEvent.accessedAt)}</p>
+                  <p><strong>Reason:</strong> {selectedEvent.reason}</p>
+                  {selectedEvent.reviewNote && (
+                    <p><strong>Review Note:</strong> {selectedEvent.reviewNote}</p>
+                  )}
+                  {selectedEvent.reviewedBy && (
+                    <p className="muted">Reviewed by: {selectedEvent.reviewedBy} at {selectedEvent.reviewedAt ? formatPhrDate(selectedEvent.reviewedAt) : 'N/A'}</p>
+                  )}
+                </div>
+                <Badge variant={selectedEvent.status === 'PENDING' ? 'secondary' : 'default'}>{selectedEvent.status}</Badge>
+              </div>
+            )}
           </div>
 
           {reviewResult && (

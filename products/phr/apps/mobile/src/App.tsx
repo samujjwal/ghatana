@@ -234,7 +234,7 @@ export default function App(): React.ReactElement {
 
   const onEnablePush = async (): Promise<void> => {
     const token = await registerForPushNotificationsAsync();
-    setSyncMessage(t('app.pushNotificationsReady', { token }));
+    setSyncMessage(t('app.pushNotificationsReady'));
   };
 
   const onAuthenticate = async (): Promise<boolean> => {

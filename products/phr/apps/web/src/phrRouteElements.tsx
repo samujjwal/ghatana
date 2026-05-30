@@ -2,7 +2,7 @@ import React from 'react';
 import type { PhrRouteContract, PhrRoutePath } from './phrRouteContracts';
 import { AppointmentsPage } from './pages/AppointmentsPage';
 import { AuditPage } from './pages/AuditPage';
-import { CaregiverDependentsPage } from './pages/CaregiverDependentsPage';
+// CaregiverDependentsPage not imported - route is hidden in contract
 import { ConditionsPage } from './pages/ConditionsPage';
 import { ConsentPage } from './pages/ConsentPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -10,7 +10,7 @@ import { DocumentsPage } from './pages/DocumentsPage';
 import { DocumentUploadPage } from './pages/DocumentUploadPage';
 import { EmergencyAccessPage } from './pages/EmergencyAccessPage';
 import { EmergencyReviewsPage } from './pages/EmergencyReviewsPage';
-import { FchvDashboardPage } from './pages/FchvDashboardPage';
+// FchvDashboardPage not imported - route is hidden in contract
 import { ForbiddenPage } from './pages/ForbiddenPage';
 import { ImmunizationsPage } from './pages/ImmunizationsPage';
 import { LabsPage } from './pages/LabsPage';
@@ -21,8 +21,7 @@ import { NotificationsPage } from './pages/NotificationsPage';
 import { ObservationsPage } from './pages/ObservationsPage';
 import { OcrReviewPage } from './pages/OcrReviewPage';
 import { ProfilePage } from './pages/ProfilePage';
-import { ProviderDashboardPage } from './pages/ProviderDashboardPage';
-import { ProviderPatientsPage } from './pages/ProviderPatientsPage';
+// ProviderDashboardPage, ProviderPatientsPage not imported - routes are hidden in contract
 import { RecordDetailPage } from './pages/RecordDetailPage';
 import { RecordsPage } from './pages/RecordsPage';
 import { ReleaseCockpitPage } from './pages/ReleaseCockpitPage';
@@ -58,10 +57,11 @@ const routeElements: Record<PhrRoutePath, React.ReactElement> = {
   '/notifications': <NotificationsPage />,
   '/forbidden': <ForbiddenPage />,
   '/not-found': <NotFoundPage />,
-  '/provider/dashboard': <ProviderDashboardPage />,
-  '/provider/patients': <ProviderPatientsPage />,
-  '/caregiver/dependents': <CaregiverDependentsPage />,
-  '/fchv/dashboard': <FchvDashboardPage />,
+  // Role-specific routes mapped to NotFoundPage since they are hidden in contract
+  '/provider/dashboard': <NotFoundPage />,
+  '/provider/patients': <NotFoundPage />,
+  '/caregiver/dependents': <NotFoundPage />,
+  '/fchv/dashboard': <NotFoundPage />,
 };
 
 export function attachPhrRouteElement(route: PhrRouteContract): PhrRouteManifestEntry {

@@ -5,6 +5,7 @@ import { fetchRecords } from '../api/recordsApi';
 import { formatPhrDateTime, t } from '../i18n/phrI18n';
 import type { PatientRecordSummary } from '../types';
 import { usePhrSession } from '../auth/PhrSessionContext';
+import { SafeError } from '../components/SafeError';
 
 export function RecordsPage(): React.ReactElement {
   const [records, setRecords] = useState<PatientRecordSummary[]>([]);
@@ -51,7 +52,7 @@ export function RecordsPage(): React.ReactElement {
   }, [session, categoryFilter, resourceTypeFilter, dateFromFilter, dateToFilter, limit, offset]);
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('records.loading')}</div>;
-  if (error) return <div className="error" role="alert">{t('dashboard.errorPrefix')}: {error}</div>;
+  if (error) return <SafeError title={t('dashboard.errorPrefix')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
 
   // Extract unique categories and resource types for filter options
   const categories = Array.from(new Set(records.map(r => r.category)));
@@ -121,26 +122,38 @@ export function RecordsPage(): React.ReactElement {
           ) : (
             <>
               <div className="pagination-info" role="status">
-                {t('records.pagination.showing' as any, { 
-                  start: offset + 1, 
-                  end: Math.min(offset + limit, totalCount), 
-                  total: totalCount 
+                {t('records.pagination.showing' as any, {
+                  start: offset + 1,
+                  end: Math.min(offset + limit, totalCount),
+                  total: totalCount
                 })}
               </div>
-              {records.map((record) => (
-                <Link key={record.id} className="data-card" to={`/records/${record.id}`}>
-                  <div>
-                    <strong>{record.title}</strong>
-                    <p className="muted">
-                      {t('records.updated', {
-                        resourceType: record.resourceType,
-                        date: formatPhrDateTime(record.updatedAt),
-                      })}
-                    </p>
-                  </div>
-                  <span className="pill">{record.category}</span>
-                </Link>
-              ))}
+              <ul className="record-list" role="list">
+                {records.map((record) => (
+                  <li key={record.id} className="record-item">
+                    <Link className="data-card" to={`/records/${record.id}`}>
+                      <div>
+                        <strong>{record.title}</strong>
+                        <p className="muted">
+                          {t('records.updated', {
+                            resourceType: record.resourceType,
+                            date: formatPhrDateTime(record.updatedAt),
+                          })}
+                        </p>
+                        {record.provenance && (
+                          <p className="muted" aria-label="Provenance information">
+                            Source: {String(record.provenance.source ?? t('common.unknown'))}
+                            {record.provenance.accessedAt as string && (
+                              <span> • Accessed: {formatPhrDateTime(record.provenance.accessedAt as string)}</span>
+                            )}
+                          </p>
+                        )}
+                      </div>
+                      <span className="pill">{record.category}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
               <div className="pagination-controls" role="navigation" aria-label={t('records.pagination.label' as any)}>
                 <button
                   onClick={() => setOffset(Math.max(0, offset - limit))}

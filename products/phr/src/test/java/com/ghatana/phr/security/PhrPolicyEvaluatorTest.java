@@ -631,10 +631,70 @@ class PhrPolicyEvaluatorTest extends EventloopTestBase {
 
         PhrPolicyEvaluator.PolicyDecision decision = runPromise(
             () -> harness.evaluator().canAccessPhiWithAdminJustification(
-                context, "patient-1", "Observation", "READ", "   "));
+                context, "patient-1", "Observation", "READ", ""));
 
         assertThat(decision.isAllowed()).isFalse();
         assertThat(decision.getReasonCode()).isEqualTo("MISSING_JUSTIFICATION");
+    }
+
+    @Test
+    @DisplayName("Fail-closed when consent service is unavailable")
+    void failsClosedWhenConsentServiceUnavailable() {
+        // Create evaluator with null consent service to simulate unavailability
+        PhrPolicyEvaluator evaluator = new PhrPolicyEvaluator(
+            null, // consent service unavailable
+            Mockito.mock(TreatmentRelationshipService.class),
+            Mockito.mock(FchvCommunityAssignmentService.class)
+        );
+
+        PhrRouteSupport.PhrRequestContext context = context("tenant-1", "caregiver-1", "caregiver", null);
+
+        PhrPolicyEvaluator.PolicyDecision decision = runPromise(
+            () -> evaluator.canAccessPhiResourceAsync(
+                context, "patient-1", "Observation", "READ", "tenant-1", null));
+
+        // Should fail closed (deny) when service is unavailable
+        assertThat(decision.isAllowed()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Fail-closed when treatment relationship service is unavailable")
+    void failsClosedWhenTreatmentRelationshipServiceUnavailable() {
+        // Create evaluator with null treatment service to simulate unavailability
+        PhrPolicyEvaluator evaluator = new PhrPolicyEvaluator(
+            Mockito.mock(ConsentManagementService.class),
+            null, // treatment service unavailable
+            Mockito.mock(FchvCommunityAssignmentService.class)
+        );
+
+        PhrRouteSupport.PhrRequestContext context = context("tenant-1", "clinician-1", "clinician", "facility-1");
+
+        PhrPolicyEvaluator.PolicyDecision decision = runPromise(
+            () -> evaluator.canAccessPhiResourceAsync(
+                context, "patient-1", "Observation", "READ", "tenant-1", "facility-1"));
+
+        // Should fail closed (deny) when service is unavailable
+        assertThat(decision.isAllowed()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Fail-closed when FCHV community assignment service is unavailable")
+    void failsClosedWhenFchvServiceUnavailable() {
+        // Create evaluator with null FCHV service to simulate unavailability
+        PhrPolicyEvaluator evaluator = new PhrPolicyEvaluator(
+            Mockito.mock(ConsentManagementService.class),
+            Mockito.mock(TreatmentRelationshipService.class),
+            null // FCHV service unavailable
+        );
+
+        PhrRouteSupport.PhrRequestContext context = context("tenant-1", "fchv-1", "fchv", "facility-1");
+
+        PhrPolicyEvaluator.PolicyDecision decision = runPromise(
+            () -> evaluator.canAccessPhiResourceAsync(
+                context, "patient-1", "Observation", "READ", "tenant-1", "facility-1"));
+
+        // Should fail closed (deny) when service is unavailable
+        assertThat(decision.isAllowed()).isFalse();
     }
 
     @Test

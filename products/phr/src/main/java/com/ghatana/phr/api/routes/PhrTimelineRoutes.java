@@ -53,13 +53,14 @@ public final class PhrTimelineRoutes {
     }
 
     private Promise<HttpResponse> handleGetTimeline(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String patientId;
         try {
             context = PhrRouteSupport.requireContext(request);
             patientId = request.getPathParameter("patientId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         Promise<Boolean> accessCheck = policyEvaluator.canAccessPatientRecordAsync(context, patientId)
@@ -105,6 +106,7 @@ public final class PhrTimelineRoutes {
     }
 
     private Promise<HttpResponse> handleGetTimelineByCategory(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String patientId;
         String category;
@@ -113,7 +115,7 @@ public final class PhrTimelineRoutes {
             patientId = request.getPathParameter("patientId");
             category = request.getPathParameter("category");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         PatientOperationContext opCtx = new PatientOperationContext(

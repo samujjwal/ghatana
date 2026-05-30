@@ -4,6 +4,11 @@ import { t } from '../i18n/phrMobileI18n';
 import { requestMobileEmergencyAccess } from '../services/phrMobileApi';
 import type { MobileEmergencyData, MobileSession } from '../types';
 
+function newCorrelationId(): string {
+  return crypto.randomUUID();
+}
+
+
 interface EmergencyAccessScreenProps {
   onAuthenticate: () => Promise<boolean>;
   session: MobileSession;
@@ -27,17 +32,7 @@ export function EmergencyAccessScreen({ onAuthenticate, session }: EmergencyAcce
     }
   };
 
-  const handleVerify = async (): Promise<void> => {
-    setState('verifying');
-    const granted = await onAuthenticate();
-    
-    if (granted) {
-      setState('server_approval');
-      await requestEmergencyAccess();
-    } else {
-      setState('denied');
-    }
-  };
+  const handleVerify = async (): Promise<void> => {\n    setState('verifying');\n    const granted = await onAuthenticate();\n    \n    if (granted) {\n      setState('server_approval');\n      await requestEmergencyAccess();\n    } else {\n      // Clear any data if biometric fails\n      setEmergencyData(null);\n      setState('denied');\n    }\n  };
 
   if (state === 'verifying' || state === 'server_approval') {
     return (

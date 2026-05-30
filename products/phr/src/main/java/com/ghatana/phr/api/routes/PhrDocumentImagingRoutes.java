@@ -103,125 +103,143 @@ public final class PhrDocumentImagingRoutes {
     }
 
     private Promise<HttpResponse> handleUploadDocument(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         return withDocumentBody(request, documentService::uploadDocument);
     }
 
     private Promise<HttpResponse> handleGetDocument(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
         return documentService.getDocument(request.getPathParameter("documentId"), context.principalId())
             .then(document -> document
-                .<Promise<HttpResponse>>map(value -> PhrRouteSupport.jsonResponse(200, value))
-                .orElseGet(() -> PhrRouteSupport.errorResponse(404, "DOCUMENT_NOT_FOUND", "Document not found or not visible")));
+                .<Promise<HttpResponse>>map(value -> PhrRouteSupport.jsonResponse(200, value, correlationId))
+                .orElseGet(() -> PhrRouteSupport.errorResponse(404, "DOCUMENT_NOT_FOUND", "Document not found or not visible", correlationId)));
     }
 
     private Promise<HttpResponse> handleGetDocumentContent(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
         return documentService.getDocumentContent(request.getPathParameter("documentId"), context.principalId())
             .then(content -> content
                 .<Promise<HttpResponse>>map(value -> PhrRouteSupport.jsonResponse(200, Map.of(
-                    "documentId", value.getDocumentId(),
+                    "documentId", value.getDocumentId(, correlationId),
                     "contentType", value.getContentType(),
                     "contentHash", value.getContentHash(),
                     "content", Base64.getEncoder().encodeToString(value.getContent())
                 )))
-                .orElseGet(() -> PhrRouteSupport.errorResponse(404, "DOCUMENT_CONTENT_NOT_FOUND", "Document content not found or not visible")));
+                .orElseGet(() -> PhrRouteSupport.errorResponse(404, "DOCUMENT_CONTENT_NOT_FOUND", "Document content not found or not visible", correlationId)));
     }
 
     private Promise<HttpResponse> handleDocumentFhir(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         return documentService.toFhirDocumentReference(request.getPathParameter("documentId"))
-            .then(fhir -> PhrRouteSupport.jsonResponse(200, fhir));
+            .then(fhir -> PhrRouteSupport.jsonResponse(200, fhir, correlationId));
     }
 
     private Promise<HttpResponse> handleGetOcrDocument(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
         String documentId = request.getPathParameter("documentId");
         return documentService.getOcrDocument(documentId, context.principalId())
             .then(ocrDoc -> ocrDoc
                 .<Promise<HttpResponse>>map(doc -> PhrRouteSupport.jsonResponse(200, Map.of(
-                    "documentId", doc.documentId(),
+                    "documentId", doc.documentId(, correlationId),
                     "title", doc.title(),
                     "extractedText", doc.extractedText(),
                     "confidence", doc.confidence(),
                     "status", doc.status()
                 )))
-                .orElseGet(() -> PhrRouteSupport.errorResponse(403, "OCR_ACCESS_DENIED", "OCR document is not visible to this principal")));
+                .orElseGet(() -> PhrRouteSupport.errorResponse(403, "OCR_ACCESS_DENIED", "OCR document is not visible to this principal", correlationId)));
     }
 
     private Promise<HttpResponse> handleConfirmOcrDocument(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String idempotencyKey;
         try {
             context = PhrRouteSupport.requireContext(request);
             idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         String documentId = request.getPathParameter("documentId");
-        if ("caregiver".equals(context.role()) || "fchv".equals(context.role())) {
-            return PhrRouteSupport.errorResponse(403, "OCR_REVIEWER_ROLE_REQUIRED",
-                "OCR confirmation requires patient, clinician, or admin reviewer identity",
-                context.correlationId());
-        }
-
-        return documentService.getOcrDocument(documentId, context.principalId())
-            .then(ocrDoc -> {
-                if (ocrDoc.isEmpty()) {
-                    return PhrRouteSupport.errorResponse(403, "OCR_ACCESS_DENIED",
-                        "OCR document is not visible to this principal",
-                        context.correlationId());
+        return policyEvaluator.canAccessPhiResourceAsync(
+                context,
+                "ocr-review-scope",
+                "ocr-document-review",
+                "WRITE",
+                context.tenantId(),
+                context.facilityId())
+            .then(decision -> {
+                if (!decision.isAllowed()) {
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
                 }
-                return request.loadBody().then(body -> {
-                    String correctedText;
-                    try {
-                        JsonNode node = PhrRouteSupport.JSON.readTree(body.getString(StandardCharsets.UTF_8));
-                        correctedText = node.path("correctedText").asText(null);
-                    } catch (Exception ex) {
-                        return PhrRouteSupport.errorResponse(400, "INVALID_OCR_CONFIRM", ex.getMessage());
-                    }
-                    return documentService.confirmOcrDocument(documentId, context.principalId(), correctedText)
-                        .then(confirmed -> {
-                            String correlationId = PhrTraceContext.newCorrelationId("phr_ocr_confirm");
-                            auditOcrConfirmation(context, documentId, correctedText, correlationId);
-                            return documentService.toFhirDocumentReference(documentId)
-                                .then(fhir -> PhrRouteSupport.jsonResponse(200, Map.of(
-                                    "documentId", documentId,
-                                    "confirmed", true,
-                                    "fhirResource", fhir,
-                                    "provenance", Map.of(
-                                        "reviewerId", context.principalId(),
-                                        "reviewedAt", java.time.Instant.now().toString(),
-                                        "correlationId", correlationId
-                                    )
-                                )));
-                        });
+
+                return documentService.getOcrDocument(documentId, context.principalId())
+                    .then(ocrDoc -> {
+                        if (ocrDoc.isEmpty()) {
+                            return PhrRouteSupport.errorResponse(403, "OCR_ACCESS_DENIED",
+                                "OCR document is not visible to this principal",
+                                context.correlationId());
+                        }
+
+                        return request.loadBody()
+                            .then(body -> {
+                                String correctedText;
+                                try {
+                                    JsonNode node = PhrRouteSupport.JSON.readTree(body.getString(StandardCharsets.UTF_8));
+                                    correctedText = node.path("correctedText").asText(null);
+                                } catch (Exception ex) {
+                                    return PhrRouteSupport.errorResponse(400, "INVALID_OCR_CONFIRM", ex.getMessage(, correlationId));
+                                }
+
+                                return documentService.confirmOcrDocument(documentId, context.principalId(), correctedText)
+                                    .then(confirmed -> {
+                                        String correlationId = PhrTraceContext.newCorrelationId("phr_ocr_confirm");
+                                        auditOcrConfirmation(context, documentId, correctedText, correlationId);
+                                        return documentService.toFhirDocumentReference(documentId)
+                                            .then(fhir -> PhrRouteSupport.jsonResponse(200, Map.of(
+                                                "documentId", documentId,
+                                                "confirmed", true,
+                                                "fhirResource", fhir,
+                                                "provenance", Map.of(
+                                                    "reviewerId", context.principalId(, correlationId),
+                                                    "reviewedAt", java.time.Instant.now().toString(),
+                                                    "correlationId", correlationId
+                                                )
+                                            )));
+                                    });
+                            });
                     });
             });
-    }
+
+            }
 
     private Promise<HttpResponse> handleRejectOcrDocument(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String idempotencyKey;
         try {
             context = PhrRouteSupport.requireContext(request);
             idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         String documentId = request.getPathParameter("documentId");
@@ -232,11 +250,12 @@ public final class PhrDocumentImagingRoutes {
                 return PhrRouteSupport.jsonResponse(200, Map.of(
                     "documentId", documentId,
                     "rejected", true
-                ));
+                , correlationId));
             });
     }
 
     private Promise<HttpResponse> handleUpdateDocumentConsent(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         return withPatientAccess(request, "documents", "WRITE", patientId -> request.loadBody()
             .then(body -> {
                 String visibility;
@@ -247,55 +266,59 @@ public final class PhrDocumentImagingRoutes {
                         throw new IllegalArgumentException("visibility is required");
                     }
                 } catch (Exception ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_DOCUMENT_CONSENT", ex.getMessage());
+                    return PhrRouteSupport.errorResponse(400, "INVALID_DOCUMENT_CONSENT", ex.getMessage(, correlationId));
                 }
                 return documentService.updateDocumentConsent(request.getPathParameter("documentId"), visibility, patientId)
                     .then($ -> PhrRouteSupport.jsonResponse(200, Map.of(
-                        "documentId", request.getPathParameter("documentId"),
+                        "documentId", request.getPathParameter("documentId", correlationId),
                         "visibility", visibility
                     )));
             }));
     }
 
     private Promise<HttpResponse> handleDeleteDocument(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         return withPatientAccess(request, "documents", "WRITE", patientId -> documentService.deleteDocument(
                 request.getPathParameter("documentId"),
                 patientId)
             .then($ -> PhrRouteSupport.jsonResponse(200, Map.of(
-                "documentId", request.getPathParameter("documentId"),
+                "documentId", request.getPathParameter("documentId", correlationId),
                 "deleted", true
             ))));
     }
 
     private Promise<HttpResponse> handleListDocuments(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String patientId;
         try {
             context = PhrRouteSupport.requireContext(request);
             patientId = PhrRouteSupport.requiredQuery(request, "patientId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_DOCUMENT_QUERY", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "INVALID_DOCUMENT_QUERY", ex.getMessage(, correlationId));
         }
         PhrRouteSupport.PhrRequestContext finalContext = context;
         return requireAccess(context, patientId, "documents", "READ")
             .then(decision -> decision.isAllowed()
                 ? documentService.getPatientDocuments(patientId, finalContext.principalId())
-                    .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size())))
-                : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
+                    .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size(, correlationId))))
+                : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), "POLICY_DENIED"));
     }
 
     private Promise<HttpResponse> handleCreateImagingOrder(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         return withBodyAndConsent(request, "imaging", "WRITE", ImagingService.ImagingOrder.class,
             order -> imagingService.createOrder(order)
-                .then(stored -> PhrRouteSupport.jsonResponse(201, stored)));
+                .then(stored -> PhrRouteSupport.jsonResponse(201, stored, correlationId)));
     }
 
     private Promise<HttpResponse> handleGetImagingOrder(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
         return imagingService.getOrder(request.getPathParameter("orderId"))
             .then(order -> {
@@ -304,31 +327,35 @@ public final class PhrDocumentImagingRoutes {
                 }
                 return requireAccess(context, order.get().patientId(), "imaging", "READ")
                     .then(decision -> decision.isAllowed()
-                        ? PhrRouteSupport.jsonResponse(200, order.get())
+                        ? PhrRouteSupport.jsonResponse(200, order.get(, correlationId))
                         : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
             });
     }
 
     private Promise<HttpResponse> handleRegisterImagingStudy(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         return withBodyAndConsent(request, "imaging", "WRITE", ImagingService.ImagingStudy.class,
             study -> imagingService.registerStudy(study)
-                .then(stored -> PhrRouteSupport.jsonResponse(201, stored)));
+                .then(stored -> PhrRouteSupport.jsonResponse(201, stored, correlationId)));
     }
 
     private Promise<HttpResponse> handleStoreRadiologyReport(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         return withBodyAndConsent(request, "imaging", "WRITE", ImagingService.RadiologyReport.class,
             report -> imagingService.storeReport(report)
-                .then(stored -> PhrRouteSupport.jsonResponse(201, stored)));
+                .then(stored -> PhrRouteSupport.jsonResponse(201, stored, correlationId)));
     }
 
     private Promise<HttpResponse> handleListImagingOrders(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         return withPatientAccess(request, "imaging", "READ", patientId -> imagingService.getPatientOrders(patientId)
-            .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size()))));
+            .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size(, correlationId)))));
     }
 
     private Promise<HttpResponse> handleListImagingStudies(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         return withPatientAccess(request, "imaging", "READ", patientId -> imagingService.getPatientStudies(patientId)
-            .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size()))));
+            .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size(, correlationId)))));
     }
 
     /**
@@ -339,11 +366,12 @@ public final class PhrDocumentImagingRoutes {
      * and purpose. This ensures compliance with healthcare data access regulations.</p>
      */
     private Promise<HttpResponse> handleSecureImagingDownload(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         String studyId = request.getPathParameter("studyId");
@@ -372,7 +400,7 @@ public final class PhrDocumentImagingRoutes {
                         auditImagingAccessGranted(context, study.patientId(), studyId, "imaging-study", correlationId);
 
                         return PhrRouteSupport.jsonResponse(200, Map.of(
-                            "studyId", study.id(),
+                            "studyId", study.id(, correlationId),
                             "patientId", study.patientId(),
                             "modality", study.modalityCode(),
                             "studyDate", study.studyDate(),
@@ -392,11 +420,12 @@ public final class PhrDocumentImagingRoutes {
      * timestamp, and purpose. This ensures compliance with healthcare data access regulations.</p>
      */
     private Promise<HttpResponse> handleSecureSeriesDownload(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         String studyId = request.getPathParameter("studyId");
@@ -433,7 +462,7 @@ public final class PhrDocumentImagingRoutes {
                         return PhrRouteSupport.jsonResponse(200, Map.of(
                             "studyId", studyId,
                             "seriesId", seriesId,
-                            "patientId", study.patientId(),
+                            "patientId", study.patientId(, correlationId),
                             "accessAudited", true,
                             "correlationId", correlationId,
                             "downloadUrl", "/imaging/studies/" + studyId + "/series/" + seriesId + "/content"
@@ -449,7 +478,7 @@ public final class PhrDocumentImagingRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
         PhrRouteSupport.PhrRequestContext finalContext = context;
         return request.loadBody()
@@ -458,7 +487,7 @@ public final class PhrDocumentImagingRoutes {
                 try {
                     value = parseUpload(body.getString(StandardCharsets.UTF_8));
                 } catch (Exception ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_DOCUMENT_UPLOAD", ex.getMessage());
+                    return PhrRouteSupport.errorResponse(400, "INVALID_DOCUMENT_UPLOAD", ex.getMessage(, correlationId));
                 }
                 return requireAccess(finalContext, value.getPatientId(), "documents", "WRITE")
                     .then(decision -> {
@@ -486,7 +515,7 @@ public final class PhrDocumentImagingRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
         PhrRouteSupport.PhrRequestContext finalContext = context;
         return request.loadBody()
@@ -518,12 +547,12 @@ public final class PhrDocumentImagingRoutes {
             context = PhrRouteSupport.requireContext(request);
             patientId = PhrRouteSupport.requiredQuery(request, "patientId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT_SCOPE", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT_SCOPE", ex.getMessage(, correlationId));
         }
         return requireAccess(context, patientId, resourceType, action)
             .then(decision -> decision.isAllowed()
                 ? handler.apply(patientId)
-                : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
+                : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), "POLICY_DENIED"));
     }
 
     private Promise<PhrPolicyEvaluator.PolicyDecision> requireAccess(

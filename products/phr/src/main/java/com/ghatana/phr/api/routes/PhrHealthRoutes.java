@@ -73,6 +73,7 @@ public final class PhrHealthRoutes {
      * Liveness probe — returns 200 when the server process is running.
      */
     private Promise<HttpResponse> handleHealth(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         boolean healthy = isHealthy();
         int code = healthy ? 200 : 503;
         HealthStatus evidenceHealth = evidenceHealthSupplier.get();
@@ -88,6 +89,7 @@ public final class PhrHealthRoutes {
      * Readiness probe — returns 200 only when started and the FHIR server is ready.
      */
     private Promise<HttpResponse> handleReady(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         HealthStatus evidenceHealth = evidenceHealthSupplier.get();
         boolean ready = started && fhirServer.isHealthy() && !evidenceHealth.isUnhealthy();
         int code = ready ? 200 : 503;

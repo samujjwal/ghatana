@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { SafeError } from '../components/SafeError';
 import { useParams } from 'react-router-dom';
 import { Badge, Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { fetchConditionDetail } from '../api/clinicalApi';
@@ -26,8 +27,8 @@ export function ConditionDetailPage(): React.ReactElement {
   }, [session, conditionId]);
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('conditionDetail.loading')}</div>;
-  if (error) return <div className="error" role="alert">{t('conditionDetail.error.load')}: {error}</div>;
-  if (!condition) return <div className="error" role="alert">{t('conditionDetail.error.load')}</div>;
+  if (error) return <SafeError title={t('conditionDetail.error.load')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
+  if (!condition) return <SafeError title={t('conditionDetail.error.load')} message={t('conditionDetail.error.load')} correlationId={session?.tenantId + '-' + session?.principalId} />;
 
   return (
     <div className="stack gap-lg">

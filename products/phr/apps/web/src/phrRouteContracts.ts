@@ -1,10 +1,9 @@
 import { createRouteAccessEvaluator, type ProductRouteCapability } from '@ghatana/product-shell';
-import type { RouteStability } from '@ghatana/kernel-product-contracts';
 import routeContractJson from '../../../config/phr-route-contract.json';
 
 export type PhrRole = 'patient' | 'caregiver' | 'fchv' | 'clinician' | 'admin';
-// Use platform contract stability values instead of duplicating
-export type PhrRouteStability = RouteStability;
+// Define route stability locally - will migrate to kernel-product-contracts in Pass 10
+export type PhrRouteStability = 'stable' | 'hidden' | 'blocked';
 
 export interface PhrRouteContract extends ProductRouteCapability {
   readonly path: string;
@@ -48,3 +47,18 @@ export function isRouteAllowedForRole(route: Pick<PhrRouteContract, 'minimumRole
 export const phrRouteContracts = canonicalRouteContract.routes;
 
 export type PhrRoutePath = (typeof phrRouteContracts)[number]['path'];
+
+/**
+ * Get the i18n key for a route's label, falling back to the raw label if no i18n key exists.
+ * This ensures UI rendering uses localized strings instead of raw English.
+ */
+export function getRouteLabelI18nKey(route: PhrRouteContract): string {
+  return route.i18nKey ?? route.label;
+}
+
+/**
+ * Get the i18n key for a route's description, falling back to the raw description if no i18n key exists.
+ */
+export function getRouteDescriptionI18nKey(route: PhrRouteContract): string {
+  return route.descriptionI18nKey ?? route.description;
+}

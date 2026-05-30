@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { SafeError } from '../components/SafeError';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { useParams } from 'react-router-dom';
 import { fetchObservations } from '../api/clinicalApi';
@@ -33,7 +34,7 @@ export function LabDetailPage(): React.ReactElement {
   }, [session, labId]);
 
   if (loading) return <div className="loading">{t('labDetail.loading')}</div>;
-  if (error) return <div className="error">{t('dashboard.errorPrefix')}: {error}</div>;
+  if (error) return <SafeError title={t('dashboard.errorPrefix')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
   if (!lab) return <div className="empty">{t('labDetail.notFound')}</div>;
 
   return (

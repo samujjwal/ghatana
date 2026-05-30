@@ -1,19 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { SafeError } from '../components/SafeError';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, CardContent, CardHeader, Select } from '@ghatana/design-system';
 import { logoutSession } from '../api/authApi';
 import { exportPatientBundle } from '../api/patientApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
-import { t } from '../i18n/phrI18n';
+import { t, resolvePhrLocale, setPhrLocale, type PhrLocale } from '../i18n/phrI18n';
 import { logError } from '../utils/safeLogger';
 
 export function SettingsPage(): React.ReactElement {
   const [syncStatus, setSyncStatus] = useState<string>(t('settings.sync.initial'));
   const [logoutPending, setLogoutPending] = useState<boolean>(false);
-  const [language, setLanguage] = useState<string>('en');
+  const [language, setLanguage] = useState<PhrLocale>(resolvePhrLocale());
   const [exporting, setExporting] = useState<boolean>(false);
   const { session, clearSession } = usePhrSession();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setLanguage(resolvePhrLocale());
+  }, []);
+
+  const handleLanguageChange = (newLocale: PhrLocale): void => {
+    setLanguage(newLocale);
+    setPhrLocale(newLocale);
+    // Reload to apply the new locale across the app
+    window.location.reload();
+  };
 
   const onSync = async (): Promise<void> => {
     if (!session) {
@@ -61,7 +73,7 @@ export function SettingsPage(): React.ReactElement {
               <Select
                 id="language-select"
                 value={language}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setLanguage(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleLanguageChange(e.target.value as 'en' | 'ne')}
                 aria-label={t('settings.profile.language')}
               >
                 <option value="en">English</option>

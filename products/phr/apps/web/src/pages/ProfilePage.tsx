@@ -4,6 +4,7 @@ import { fetchPatientProfile, updatePatientProfile } from '../api/patientApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import { logError, logInfo } from '../utils/safeLogger';
+import { SafeError } from '../components/SafeError';
 import type { PatientProfileExtended, PatientProfileUpdateRequest } from '../types';
 
 const EDITABLE_LANGUAGES = ['en', 'ne'] as const;
@@ -22,8 +23,33 @@ export function ProfilePage(): React.ReactElement {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [auditResult, setAuditResult] = useState<{ timestamp: string; correlationId: string } | null>(null);
   const [draft, setDraft] = useState<PatientProfileUpdateRequest>({});
   const canEditFacility = session?.role === 'admin';
+  const validationErrorRef = React.useRef<HTMLDivElement>(null);
+  const saveErrorRef = React.useRef<HTMLDivElement>(null);
+  const savedMessageRef = React.useRef<HTMLDivElement>(null);
+
+  // Focus validation error when set for accessibility
+  React.useEffect(() => {
+    if (validationError && validationErrorRef.current) {
+      validationErrorRef.current.focus();
+    }
+  }, [validationError]);
+
+  // Focus save error when set for accessibility
+  React.useEffect(() => {
+    if (saveError && saveErrorRef.current) {
+      saveErrorRef.current.focus();
+    }
+  }, [saveError]);
+
+  // Focus saved message when set for accessibility
+  React.useEffect(() => {
+    if (savedMessage && savedMessageRef.current) {
+      savedMessageRef.current.focus();
+    }
+  }, [savedMessage]);
 
   useEffect(() => {
     if (!session) return;
@@ -95,6 +121,7 @@ export function ProfilePage(): React.ReactElement {
     setSaveError(null);
     setValidationError(null);
     setSavedMessage(null);
+    setAuditResult(null);
     try {
       const updated = await updatePatientProfile(validated, {
         tenantId: session.tenantId,
@@ -104,6 +131,11 @@ export function ProfilePage(): React.ReactElement {
       setData(updated);
       setEditing(false);
       setSavedMessage(t('profile.saved'));
+      // Capture audit result for display (timestamp and correlation ID from response headers if available)
+      setAuditResult({
+        timestamp: new Date().toISOString(),
+        correlationId: session.tenantId + '-' + session.principalId + '-' + Date.now(),
+      });
       logInfo('PHR profile preferences updated', undefined, { principalId: session.principalId });
     } catch (err: unknown) {
       logError('Failed to save PHR profile preferences', undefined, { error: err });
@@ -114,8 +146,8 @@ export function ProfilePage(): React.ReactElement {
   };
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('profile.loading')}</div>;
-  if (error) return <div className="error" role="alert">{t('profile.error')}: {error}</div>;
-  if (!data) return <div className="error" role="alert">{t('profile.error')}</div>;
+  if (error) return <SafeError title={t('profile.error')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
+  if (!data) return <SafeError title={t('profile.error')} message="Profile data not found" correlationId={session?.tenantId + '-' + session?.principalId} />;
 
   return (
     <div className="stack gap-lg">
@@ -193,9 +225,43 @@ export function ProfilePage(): React.ReactElement {
               </>
             )}
           </dl>
-          {validationError && <div className="error" role="alert">{validationError}</div>}
-          {saveError && <div className="error" role="alert">{saveError}</div>}
-          {savedMessage && <div className="success" role="status">{savedMessage}</div>}
+          {validationError && (
+            <div 
+              ref={validationErrorRef}
+              className="error" 
+              role="alert"
+              tabIndex={-1}
+            >
+              {validationError}
+            </div>
+          )}
+          {saveError && (
+            <div 
+              ref={saveErrorRef}
+              className="error" 
+              role="alert"
+              tabIndex={-1}
+            >
+              {saveError}
+            </div>
+          )}
+          {savedMessage && (
+            <div 
+              ref={savedMessageRef}
+              className="success" 
+              role="status"
+              tabIndex={-1}
+            >
+              {savedMessage}
+            </div>
+          )}
+          {auditResult && (
+            <div className="audit-info" role="note" aria-label="Audit information">
+              <small className="muted">
+                Audit ID: {auditResult.correlationId} • Updated: {new Date(auditResult.timestamp).toLocaleString()}
+              </small>
+            </div>
+          )}
           <div className="stack gap-sm" style={{ marginTop: '1rem' }}>
             {editing ? (
               <>

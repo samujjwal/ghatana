@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { SafeError } from '../components/SafeError';
 import { useParams } from 'react-router-dom';
 import { Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { downloadDocument, fetchDocumentDetail } from '../api/documentsApi';
@@ -45,8 +46,8 @@ export function DocumentDetailPage(): React.ReactElement {
   };
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('documentDetail.loading')}</div>;
-  if (error) return <div className="error" role="alert">{t('documentDetail.error.load')}: {error}</div>;
-  if (!document) return <div className="error" role="alert">{t('documentDetail.error.load')}</div>;
+  if (error) return <SafeError title={t('documentDetail.error.load')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
+  if (!document) return <SafeError title={t('documentDetail.error.load')} message={t('documentDetail.error.load')} correlationId={session?.tenantId + '-' + session?.principalId} />;
 
   return (
     <div className="stack gap-lg">

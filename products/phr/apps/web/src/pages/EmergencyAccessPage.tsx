@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { SafeError } from '../components/SafeError';
 import { Button, Card, CardContent, CardHeader, Input } from '@ghatana/design-system';
 import { requestEmergencyAccess } from '../api/emergencyApi';
 import { usePhrAccess } from '../auth/PhrAccessContext';

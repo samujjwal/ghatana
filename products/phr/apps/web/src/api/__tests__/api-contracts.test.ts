@@ -161,10 +161,6 @@ describe('PHR API Contract Tests', () => {
       expect(typeof phrApi.fetchAppointments).toBe('function');
     });
 
-    it('exports fetchProviders function', () => {
-      expect(typeof phrApi.fetchProviders).toBe('function');
-    });
-
     it('exports rescheduleAppointment function', () => {
       expect(typeof phrApi.rescheduleAppointment).toBe('function');
     });
@@ -198,19 +194,7 @@ describe('PHR API Contract Tests', () => {
     });
   });
 
-  describe('roleApi exports', () => {
-    it('exports fetchCaregiverDependents function', () => {
-      expect(typeof phrApi.fetchCaregiverDependents).toBe('function');
-    });
-
-    it('exports fetchFchvDashboard function', () => {
-      expect(typeof phrApi.fetchFchvDashboard).toBe('function');
-    });
-
-    it('exports fetchProviderPatients function', () => {
-      expect(typeof phrApi.fetchProviderPatients).toBe('function');
-    });
-  });
+  // roleApi exports removed - routes are hidden in route contract (API-004, API-006)
 
   describe('API surface stability', () => {
     it('exports all expected API functions', () => {

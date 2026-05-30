@@ -58,11 +58,12 @@ public final class PhrHieRoutes {
      * valid consent for data sharing.</p>
      */
     private Promise<HttpResponse> handleExportToHie(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         // Extract patientId from request body or use context principalId
@@ -72,20 +73,18 @@ public final class PhrHieRoutes {
             .then(result -> {
                 if (result.accepted()) {
                     return PhrRouteSupport.jsonResponse(202, Map.of(
-                        "requestId", result.messageControlId(),
+                        "requestId", result.messageControlId(, correlationId),
                         "status", "ACCEPTED",
                         "message", "HIE export request accepted for processing",
                         "patientId", patientId,
                         "correlationId", context.correlationId()
                     ), context.correlationId());
                 } else {
-                    return PhrRouteSupport.errorResponse(502, "HIE_EXPORT_FAILED", 
-                        "HIE service rejected the export request: " + result.message(), 
+                    return PhrRouteSupport.errorResponse(502, "HIE_EXPORT_FAILED", "HIE service rejected the export request: " + result.message(, correlationId), 
                         context.correlationId());
                 }
             })
-            .whenException(ex -> PhrRouteSupport.errorResponse(500, "HIE_EXPORT_ERROR", 
-                "Failed to submit HIE export request: " + ex.getMessage(), 
+            .whenException(ex -> PhrRouteSupport.errorResponse(500, "HIE_EXPORT_ERROR", "Failed to submit HIE export request: " + ex.getMessage(, correlationId), 
                 context.correlationId()));
     }
 
@@ -97,11 +96,12 @@ public final class PhrHieRoutes {
      * valid consent for data retrieval.</p>
      */
     private Promise<HttpResponse> handleImportFromHie(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         String patientId = context.principalId();
@@ -110,20 +110,18 @@ public final class PhrHieRoutes {
             .then(result -> {
                 if (result.accepted()) {
                     return PhrRouteSupport.jsonResponse(202, Map.of(
-                        "requestId", result.messageControlId(),
+                        "requestId", result.messageControlId(, correlationId),
                         "status", "ACCEPTED",
                         "message", "HIE import request accepted for processing",
                         "patientId", patientId,
                         "correlationId", context.correlationId()
                     ), context.correlationId());
                 } else {
-                    return PhrRouteSupport.errorResponse(502, "HIE_IMPORT_FAILED", 
-                        "HIE service rejected the import request: " + result.message(), 
+                    return PhrRouteSupport.errorResponse(502, "HIE_IMPORT_FAILED", "HIE service rejected the import request: " + result.message(, correlationId), 
                         context.correlationId());
                 }
             })
-            .whenException(ex -> PhrRouteSupport.errorResponse(500, "HIE_IMPORT_ERROR", 
-                "Failed to submit HIE import request: " + ex.getMessage(), 
+            .whenException(ex -> PhrRouteSupport.errorResponse(500, "HIE_IMPORT_ERROR", "Failed to submit HIE import request: " + ex.getMessage(, correlationId), 
                 context.correlationId()));
     }
 
@@ -133,11 +131,12 @@ public final class PhrHieRoutes {
      * <p>Returns the current status of an asynchronous HIE operation.</p>
      */
     private Promise<HttpResponse> handleGetStatus(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         String requestId = request.getPathParameter("requestId");

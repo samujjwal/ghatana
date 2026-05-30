@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { SafeError } from '../components/SafeError';
 import { Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { Link } from 'react-router-dom';
 import { fetchMedications } from '../api/clinicalApi';
@@ -29,7 +30,7 @@ export function MedicationsPage(): React.ReactElement {
   }, [session]);
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('medications.loading')}</div>;
-  if (error) return <div className="error" role="alert">{t('dashboard.errorPrefix')}: {error}</div>;
+  if (error) return <SafeError title={t('dashboard.errorPrefix')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
 
   const visibleMedications = medications.filter((medication) => (
     activeTab === 'active'
@@ -100,45 +101,56 @@ export function MedicationsPage(): React.ReactElement {
             {visibleMedications.length === 0 ? (
               <p className="empty">{t('medications.empty')}</p>
             ) : (
-              visibleMedications.map((medication) => (
-                <div key={medication.id} className="data-card">
-                  <Link to={`/medications/${medication.id}`} className="medication-link">
-                    <div>
-                      <strong>{medication.medication} {medication.dosage}</strong>
-                      <p className="muted">{medication.schedule}</p>
+              <ul className="medication-list" role="list">
+                {visibleMedications.map((medication) => (
+                  <li key={medication.id} className="medication-item">
+                    <div className="data-card">
+                      <Link to={`/medications/${medication.id}`} className="medication-link">
+                        <div>
+                          <strong>{medication.medication} {medication.dosage}</strong>
+                          <p className="muted">{medication.schedule}</p>
+                          {medication.warnings && medication.warnings.length > 0 && (
+                            <p className="warning-text" aria-label="Medication warnings">
+                              {medication.warnings.map((warning, idx) => (
+                                <span key={idx} className="warning-badge">⚠️ {warning}</span>
+                              ))}
+                            </p>
+                          )}
+                        </div>
+                        <div className="row gap-sm align-center">
+                          <span className="pill">
+                            {t('medications.adherenceLabel')}: {medication.adherence}%
+                          </span>
+                          {medication.status && <span className={`badge badge--${medication.status}`}>{medication.status}</span>}
+                        </div>
+                      </Link>
+                      {activeTab === 'active' && medication.status !== 'stopped' && (
+                        <div className="row gap-sm mt-2">
+                          <Button
+                            size="small"
+                            variant="outline"
+                            onClick={() => void handleRefill(medication.id)}
+                            disabled={refillingId === medication.id}
+                            aria-busy={refillingId === medication.id}
+                          >
+                            {refillingId === medication.id ? 'Requesting...' : 'Refill'}
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="outline"
+                            tone="danger"
+                            onClick={() => void handleDiscontinue(medication.id)}
+                            disabled={discontinuingId === medication.id}
+                            aria-busy={discontinuingId === medication.id}
+                          >
+                            {discontinuingId === medication.id ? 'Discontinuing...' : 'Discontinue'}
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                    <div className="row gap-sm align-center">
-                      <span className="pill">
-                        {t('medications.adherenceLabel')}: {medication.adherence}%
-                      </span>
-                      {medication.status && <span className={`badge badge--${medication.status}`}>{medication.status}</span>}
-                    </div>
-                  </Link>
-                  {activeTab === 'active' && medication.status !== 'stopped' && (
-                    <div className="row gap-sm mt-2">
-                      <Button
-                        size="small"
-                        variant="outline"
-                        onClick={() => void handleRefill(medication.id)}
-                        disabled={refillingId === medication.id}
-                        aria-busy={refillingId === medication.id}
-                      >
-                        {refillingId === medication.id ? 'Requesting...' : 'Refill'}
-                      </Button>
-                      <Button
-                        size="small"
-                        variant="outline"
-                        tone="danger"
-                        onClick={() => void handleDiscontinue(medication.id)}
-                        disabled={discontinuingId === medication.id}
-                        aria-busy={discontinuingId === medication.id}
-                      >
-                        {discontinuingId === medication.id ? 'Discontinuing...' : 'Discontinue'}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ))
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         </CardContent>

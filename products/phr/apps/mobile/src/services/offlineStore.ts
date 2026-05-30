@@ -21,6 +21,19 @@
  */
 import { phiGet, phiRemove, phiSet } from './phiEncryptedStorage';
 import type { MobileDashboard } from '../types';
+/**
+ * G11-T07: Mobile offline cache telemetry without PHI.
+ * Emits cache hit/miss/stale counters without including any PHI.
+ */
+function emitCacheMetric(
+  operation: 'hit' | 'miss' | 'stale' | 'session_mismatch' | 'schema_mismatch' | 'corrupt',
+  sessionIdentity: SessionIdentity
+): void {
+  // In a real implementation, this would call a telemetry service.
+  // For now, we log at debug level without PHI.
+  console.debug(`[phr.cache] operation=${operation}, role=${sessionIdentity.role}, tenantId=${sessionIdentity.tenantId}`);
+}
+
 
 const DASHBOARD_KEY = 'phr-mobile-dashboard';
 const SCHEMA_VERSION = 1;
@@ -82,25 +95,31 @@ export async function loadDashboardOffline(
   sessionIdentity: SessionIdentity,
 ): Promise<MobileDashboard | null> {
   const raw = await phiGet(DASHBOARD_KEY);
-  if (!raw) return null;
+  if (!raw) {
+    emitCacheMetric('miss', sessionIdentity);
+    return null;
+  }
 
   let envelope: DashboardCacheEnvelope;
   try {
     envelope = JSON.parse(raw) as DashboardCacheEnvelope;
   } catch {
     // Corrupt payload; discard.
+    emitCacheMetric('corrupt', sessionIdentity);
     await clearDashboardOffline();
     return null;
   }
 
   if (envelope.schemaVersion !== SCHEMA_VERSION) {
     // Schema mismatch; discard so stale structure is not used.
+    emitCacheMetric('schema_mismatch', sessionIdentity);
     await clearDashboardOffline();
     return null;
   }
 
   // Check session binding - reject cache if session differs
   if (!sessionMatches(envelope, sessionIdentity)) {
+    emitCacheMetric('session_mismatch', sessionIdentity);
     await clearDashboardOffline();
     return null;
   }
@@ -108,11 +127,13 @@ export async function loadDashboardOffline(
   const ageMs = Date.now() - envelope.savedAt;
   if (ageMs > envelope.ttlMs) {
     // Cache expired; discard PHI proactively.
+    emitCacheMetric('stale', sessionIdentity);
     await clearDashboardOffline();
     return null;
   }
 
   try {
+    emitCacheMetric('hit', sessionIdentity);
     return parseMobileDashboard(envelope.data);
   } catch {
     await clearDashboardOffline();
@@ -134,7 +155,10 @@ export async function clearDashboardOffline(): Promise<void> {
  */
 export async function getDashboardOfflineTimestamp(): Promise<number | null> {
   const raw = await phiGet(DASHBOARD_KEY);
-  if (!raw) return null;
+  if (!raw) {
+    emitCacheMetric('miss', sessionIdentity);
+    return null;
+  }
 
   let envelope: DashboardCacheEnvelope;
   try {

@@ -53,7 +53,6 @@ export {
   bookAppointment,
   cancelAppointment,
   fetchAppointments,
-  fetchProviders,
   rescheduleAppointment,
 } from './adminApi';
 
@@ -74,8 +73,5 @@ export {
   fetchNotifications,
 } from './notificationsApi';
 
-export {
-  fetchCaregiverDependents,
-  fetchFchvDashboard,
-  fetchProviderPatients,
-} from './roleApi';
+// Role-specific functions removed - routes are hidden in route contract
+// See API-004 and API-006 in implementation tracker

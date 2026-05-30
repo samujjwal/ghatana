@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-29T23:18:27.500Z",
+  "generatedAt": "2026-05-30T00:38:47.058Z",
   "status": "failed",
   "mode": "execute",
   "includeHeavy": false,
@@ -38,72 +38,72 @@
     {
       "command": "pnpm:check:data-cloud-ui-a11y",
       "status": 0,
-      "durationMs": 820
+      "durationMs": 887
     },
     {
       "command": "pnpm:check:product-a11y-route-matrix",
       "status": 0,
-      "durationMs": 871
+      "durationMs": 906
     },
     {
       "command": "pnpm:check:i18n-conformance",
       "status": 0,
-      "durationMs": 915
+      "durationMs": 1138
     },
     {
       "command": "pnpm:check:product-slo-budgets",
       "status": 0,
-      "durationMs": 851
+      "durationMs": 949
     },
     {
       "command": "pnpm:check:product-cost-budgets",
       "status": 0,
-      "durationMs": 842
+      "durationMs": 866
     },
     {
       "command": "pnpm:check:product-domain-invariants",
       "status": 0,
-      "durationMs": 1477
+      "durationMs": 1472
     },
     {
       "command": "pnpm:check:openapi-release-quality",
       "status": 0,
-      "durationMs": 857
+      "durationMs": 890
     },
     {
       "command": "pnpm:check:openapi-breaking-changes",
       "status": 0,
-      "durationMs": 1450
+      "durationMs": 1741
     },
     {
       "command": "pnpm:check:data-cloud-runbook-smoke",
       "status": 0,
-      "durationMs": 2380
+      "durationMs": 2285
     },
     {
       "command": "pnpm:check:release-rollback-drill",
       "status": 0,
-      "durationMs": 1098
+      "durationMs": 1163
     },
     {
       "command": "pnpm:check:affected-product-strict-release-profile",
       "status": 0,
-      "durationMs": 876
+      "durationMs": 888
     },
     {
       "command": "pnpm:check:product-release-readiness",
       "status": 0,
-      "durationMs": 502196
+      "durationMs": 517777
     },
     {
       "command": "pnpm:check:validate-release-evidence",
       "status": 0,
-      "durationMs": 2541
+      "durationMs": 2089
     },
     {
       "command": "pnpm:check:data-cloud-release-gate",
       "status": 1,
-      "durationMs": 15653
+      "durationMs": 17881
     }
   ],
   "taskMatrixSummary": {
@@ -118,7 +118,7 @@
     "violationCount": 0
   },
   "incrementalRoadmap": {
-    "generatedAt": "2026-05-29T23:09:34.671Z",
+    "generatedAt": "2026-05-30T00:29:36.123Z",
     "targetMaturityDepth": 5,
     "remainingTaskCount": 63,
     "deferredTaskIds": [],

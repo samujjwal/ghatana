@@ -74,19 +74,15 @@ public final class PhrProviderRoutes {
     }
 
     private Promise<HttpResponse> handleGetProviderDashboard(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
-        if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
-            return PhrRouteSupport.errorResponse(403, "CLINICAL_ROLE_REQUIRED",
-                "Only clinician or admin principals may access provider dashboard",
-                context.correlationId());
-        }
-
+        // Use policy evaluator for PHI access decision (POL-001)
         // Provider dashboard with work queue, appointments, recent patients, and alerts
         // Use a generic patient ID for dashboard-level policy check (facility-scoped access)
         return policyEvaluator.canAccessPhiResourceAsync(
@@ -123,7 +119,7 @@ public final class PhrProviderRoutes {
                     appointments.put("nextAppointment", null);
 
                     return PhrRouteSupport.jsonResponse(200, Map.of(
-                        "providerId", context.principalId(),
+                        "providerId", context.principalId(, correlationId),
                         "tenantId", context.tenantId(),
                         "workQueue", Map.of(
                             "pendingReviews", 0,
@@ -144,19 +140,15 @@ public final class PhrProviderRoutes {
     }
 
     private Promise<HttpResponse> handleGetPatients(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
-        if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
-            return PhrRouteSupport.errorResponse(403, "CLINICAL_ROLE_REQUIRED",
-                "Only clinician or admin principals may access the patient roster",
-                context.correlationId());
-        }
-
+        // Use policy evaluator for PHI access decision (POL-001)
         String searchQuery = request.getQueryParameter("q");
         String limitParam = request.getQueryParameter("limit");
         int limit = limitParam != null ? Integer.parseInt(limitParam) : 50;
@@ -191,18 +183,19 @@ public final class PhrProviderRoutes {
                         .toList();
                     return PhrRouteSupport.jsonResponse(200, Map.of(
                         "items", patientSummaries,
-                        "count", patientSummaries.size()
+                        "count", patientSummaries.size(, correlationId)
                     ), context.correlationId());
                 });
             });
     }
 
     private Promise<HttpResponse> handleGetPatientSummary(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         String patientId = request.getPathParameter("patientId");
@@ -228,7 +221,7 @@ public final class PhrProviderRoutes {
                     var patient = opt.get();
                     return PhrRouteSupport.jsonResponse(200, Map.of(
                         "patientId", patientId,
-                        "tenantId", context.tenantId(),
+                        "tenantId", context.tenantId(, correlationId),
                         "clinicianId", context.principalId(),
                         "name", patient.getDemographics().getFullName(),
                         "age", patient.getDemographics().getAge(),
@@ -240,11 +233,12 @@ public final class PhrProviderRoutes {
     }
 
     private Promise<HttpResponse> handleGetPatientDetail(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         String patientId = request.getPathParameter("patientId");
@@ -273,7 +267,7 @@ public final class PhrProviderRoutes {
                     
                     return PhrRouteSupport.jsonResponse(200, Map.of(
                         "patientId", patientId,
-                        "tenantId", context.tenantId(),
+                        "tenantId", context.tenantId(, correlationId),
                         "clinicianId", context.principalId(),
                         "demographics", Map.of(
                             "fullName", demographics.getFullName(),
@@ -300,11 +294,12 @@ public final class PhrProviderRoutes {
     }
 
     private Promise<HttpResponse> handleCreateEncounter(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         String patientId = request.getPathParameter("patientId");
@@ -346,7 +341,7 @@ public final class PhrProviderRoutes {
                         
                         return clinicalService.createEncounter(ctx, createRequest)
                             .then(encounter -> PhrRouteSupport.jsonResponse(201, Map.of(
-                                "encounterId", encounter.encounterId(),
+                                "encounterId", encounter.encounterId(, correlationId),
                                 "patientId", encounter.patientId(),
                                 "encounterType", encounter.encounterType(),
                                 "participant", encounter.participant(),
@@ -363,11 +358,12 @@ public final class PhrProviderRoutes {
     }
 
     private Promise<HttpResponse> handleGetEncounter(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         String patientId = request.getPathParameter("patientId");
@@ -401,7 +397,7 @@ public final class PhrProviderRoutes {
                     }
                     var encounter = opt.get();
                     return PhrRouteSupport.jsonResponse(200, Map.of(
-                        "encounterId", encounter.encounterId(),
+                        "encounterId", encounter.encounterId(, correlationId),
                         "patientId", encounter.patientId(),
                         "encounterType", encounter.encounterType(),
                         "participant", encounter.participant(),
@@ -415,11 +411,12 @@ public final class PhrProviderRoutes {
     }
 
     private Promise<HttpResponse> handleUpdateEncounter(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         String patientId = request.getPathParameter("patientId");
@@ -461,7 +458,7 @@ public final class PhrProviderRoutes {
                         
                         return clinicalService.updateEncounter(ctx, encounterId, updateRequest)
                             .then(encounter -> PhrRouteSupport.jsonResponse(200, Map.of(
-                                "encounterId", encounter.encounterId(),
+                                "encounterId", encounter.encounterId(, correlationId),
                                 "patientId", encounter.patientId(),
                                 "encounterType", encounter.encounterType(),
                                 "participant", encounter.participant(),
@@ -479,11 +476,12 @@ public final class PhrProviderRoutes {
     }
 
     private Promise<HttpResponse> handleCompleteEncounter(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         String patientId = request.getPathParameter("patientId");
@@ -510,7 +508,7 @@ public final class PhrProviderRoutes {
             
             return clinicalService.completeEncounter(ctx, encounterId)
                 .then(encounter -> PhrRouteSupport.jsonResponse(200, Map.of(
-                    "encounterId", encounter.encounterId(),
+                    "encounterId", encounter.encounterId(, correlationId),
                     "patientId", encounter.patientId(),
                     "encounterType", encounter.encounterType(),
                     "participant", encounter.participant(),
@@ -523,11 +521,12 @@ public final class PhrProviderRoutes {
     }
 
     private Promise<HttpResponse> handlePrescribeMedication(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         String patientId = request.getPathParameter("patientId");
@@ -572,7 +571,7 @@ public final class PhrProviderRoutes {
                         
                         return clinicalService.prescribeMedication(ctx, prescribeRequest)
                             .then(medication -> PhrRouteSupport.jsonResponse(201, Map.of(
-                                "medicationId", medication.medicationId(),
+                                "medicationId", medication.medicationId(, correlationId),
                                 "patientId", medication.patientId(),
                                 "medicationName", medication.medicationName(),
                                 "dosage", medication.dosage(),
@@ -590,32 +589,40 @@ public final class PhrProviderRoutes {
     }
 
     private Promise<HttpResponse> handleGetProviderCalendar(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
-        if (!("clinician".equals(context.role()) || "admin".equals(context.role()))) {
-            return PhrRouteSupport.errorResponse(403, "CLINICAL_ROLE_REQUIRED",
-                "Only clinician or admin principals may view provider calendar",
-                context.correlationId());
-        }
+        return policyEvaluator.canAccessPhiResourceAsync(
+                context,
+                "calendar-scope",
+                "provider-calendar",
+                "READ",
+                context.tenantId(),
+                context.facilityId())
+            .then(decision -> {
+                if (!decision.isAllowed()) {
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
+                }
 
-        String startDateParam = request.getQueryParameter("startDate");
-        String endDateParam = request.getQueryParameter("endDate");
-        
-        return PhrRouteSupport.jsonResponse(200, Map.of(
-            "providerId", context.principalId(),
-            "tenantId", context.tenantId(),
-            "startDate", startDateParam != null ? startDateParam : "",
-            "endDate", endDateParam != null ? endDateParam : "",
-            "appointments", List.of(),
-            "encounters", List.of(),
-            "availability", Map.of(
-                "message", "Provider calendar feature - returns scheduled appointments and encounters for the specified date range"
-            )
-        ), context.correlationId());
+                String startDateParam = request.getQueryParameter("startDate");
+                String endDateParam = request.getQueryParameter("endDate");
+
+                return PhrRouteSupport.jsonResponse(200, Map.of(
+                    "providerId", context.principalId(, correlationId),
+                    "tenantId", context.tenantId(),
+                    "startDate", startDateParam != null ? startDateParam : "",
+                    "endDate", endDateParam != null ? endDateParam : "",
+                    "appointments", List.of(),
+                    "encounters", List.of(),
+                    "availability", Map.of(
+                        "message", "Provider calendar feature - returns scheduled appointments and encounters for the specified date range"
+                    )
+                ), context.correlationId());
+            });
     }
 }

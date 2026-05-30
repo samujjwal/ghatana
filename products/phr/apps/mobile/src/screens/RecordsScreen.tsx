@@ -1,23 +1,21 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { t } from '../i18n/phrMobileI18n';
-import type { MobileRecord } from '../types';
+import type { MobileRecord, MobileSession } from '../types';
 import { RecordDetailScreen } from './RecordDetailScreen';
 
-interface RecordsScreenProps {
-  records: MobileRecord[];
+function newCorrelationId(): string {
+  return crypto.randomUUID();
 }
 
-export function RecordsScreen({ records }: RecordsScreenProps): React.ReactElement {
+
+interface RecordsScreenProps {\n  records: MobileRecord[];\n  session: MobileSession | null;\n}
+
+export function RecordsScreen({ records, session }: RecordsScreenProps): React.ReactElement {
   const [selectedRecord, setSelectedRecord] = useState<MobileRecord | null>(null);
 
   if (selectedRecord) {
-    return (
-      <RecordDetailScreen
-        record={selectedRecord}
-        onBack={() => setSelectedRecord(null)}
-      />
-    );
+    return (\n      <RecordDetailScreen\n        record={selectedRecord}\n        onBack={() => setSelectedRecord(null)}\n        session={session}\n      />\n    );
   }
 
   return (

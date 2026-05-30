@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import enMessages from '../../locales/en/common.json';
 import neMessages from '../../locales/ne/common.json';
 import { formatPhrDate, pseudoLocalize, resolvePhrLocale, t, type PhrMessageKey } from '../phrI18n';
+import { phrRouteContracts } from '../../phrRouteContracts';
 
 describe('PHR i18n', () => {
   it('keeps Nepali locale keys aligned with the English source locale', () => {
@@ -45,5 +46,20 @@ describe('PHR i18n', () => {
 
     expect(t(key, {}, 'en-XA')).toBe(pseudoLocalize(enMessages[key]));
     expect(t(key, {}, 'en-XA')).toMatch(/^\[.+\]$/);
+  });
+
+  it('all stable route labels have i18n keys and work with pseudo-locale', () => {
+    const stableRoutes = phrRouteContracts.filter((r) => r.stability === 'stable');
+
+    for (const route of stableRoutes) {
+      if (route.i18nKey) {
+        const key = route.i18nKey as PhrMessageKey;
+        // Verify the key exists in English locale
+        expect(enMessages).toHaveProperty(key);
+        // Verify pseudo-localization works (for layout expansion testing)
+        const pseudoLocalized = t(key, {}, 'en-XA');
+        expect(pseudoLocalized).toMatch(/^\[.+\]$/);
+      }
+    }
   });
 });

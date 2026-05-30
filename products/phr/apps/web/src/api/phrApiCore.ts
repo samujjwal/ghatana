@@ -94,27 +94,24 @@ async function fhirGet(resourceType: string, id: string | undefined, context: Se
 
 export async function fetchDashboardData(context: SessionContext): Promise<DashboardData> {
   const dashboard = await phrFetch('/api/v1/dashboard', { context, expectedSchema: BackendDashboardSchema });
-  return dashboardSchema.parse({
+  
+  // Map backend dashboard contract to frontend DashboardData structure
+  // Backend provides summary counts and alerts; frontend renders these directly
+  return {
     patient: {
       id: dashboard.principalId,
       name: dashboard.profileSummary.name,
-      age: 0,
-      bloodType: t('common.unknown'),
+      age: 0, // Backend does not provide age in summary
+      bloodType: t('common.unknown'), // Backend does not provide blood type in summary
       location: dashboard.tenantId,
-      emergencyContact: t('common.unknown'),
+      emergencyContact: t('common.unknown'), // Backend does not provide emergency contact in summary
     },
-    records: [],
-    consents: [],
-    appointments: [],
-    labs: [],
-    medications: Array.from({ length: dashboard.medications.activeCount }, (_, index) => ({
-      id: `active-medication-${index + 1}`,
-      medication: t('dashboard.medications.active'),
-      dosage: '',
-      schedule: '',
-      adherence: dashboard.medications.adherenceAlert ? 0 : 100,
-    })),
-  });
+    records: [], // Backend summary does not include individual records
+    consents: [], // Backend summary does not include individual consents (only counts in accessAlerts)
+    appointments: [], // Backend provides nextAppointment as summary, not full list
+    labs: [], // Backend summary does not include individual labs (only counts in recentObservations)
+    medications: [], // Backend provides activeCount and adherenceAlert, not individual medications
+  };
 }
 
 export async function exportPatientBundle(context: SessionContext): Promise<string> {

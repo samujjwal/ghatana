@@ -60,11 +60,12 @@ public final class PhrPatientRecordRoutes {
     }
 
     private Promise<HttpResponse> handleCreatePatient(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         return request.loadBody()
@@ -73,7 +74,7 @@ public final class PhrPatientRecordRoutes {
                 try {
                     patient = parsePatient(body.getString(StandardCharsets.UTF_8), null);
                 } catch (IllegalArgumentException ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT", ex.getMessage());
+                    return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT", ex.getMessage(, correlationId));
                 }
                 String patientId = patient.getId();
                 if (patientId == null) {
@@ -87,35 +88,37 @@ public final class PhrPatientRecordRoutes {
     }
 
     private Promise<HttpResponse> handleGetPatient(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String patientId;
         try {
             context = PhrRouteSupport.requireContext(request);
             patientId = request.getPathParameter("patientId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         return requireSelfOrConsent(context, patientId, RESOURCE_TYPE, "READ")
             .then(decision -> {
                 if (!decision.isAllowed()) {
-                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), "POLICY_DENIED");
                 }
                 return patientRecordService.getPatient(patientId)
                     .then(patient -> patient
-                        .<Promise<HttpResponse>>map(value -> PhrRouteSupport.jsonResponse(200, value))
-                        .orElseGet(() -> PhrRouteSupport.errorResponse(404, "PATIENT_NOT_FOUND", "Patient record not found")));
+                        .<Promise<HttpResponse>>map(value -> PhrRouteSupport.jsonResponse(200, value, correlationId))
+                        .orElseGet(() -> PhrRouteSupport.errorResponse(404, "PATIENT_NOT_FOUND", "Patient record not found", correlationId)));
             });
     }
 
     private Promise<HttpResponse> handleUpdatePatient(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String patientId;
         try {
             context = PhrRouteSupport.requireContext(request);
             patientId = request.getPathParameter("patientId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         return requireSelfOrConsent(context, patientId, RESOURCE_TYPE, "WRITE")
@@ -129,15 +132,16 @@ public final class PhrPatientRecordRoutes {
                         try {
                             patient = parsePatient(body.getString(StandardCharsets.UTF_8), patientId);
                         } catch (IllegalArgumentException ex) {
-                            return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT", ex.getMessage());
+                            return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT", ex.getMessage(, correlationId));
                         }
                         return patientRecordService.updatePatient(patient)
-                            .then(updated -> PhrRouteSupport.jsonResponse(200, updated));
+                            .then(updated -> PhrRouteSupport.jsonResponse(200, updated, correlationId));
                     });
             });
     }
 
     private Promise<HttpResponse> handleSearchPatients(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String patientId;
         int limit;
@@ -151,7 +155,7 @@ public final class PhrPatientRecordRoutes {
             limit = PhrRouteSupport.intQuery(request, "limit", 50, 1000);
             offset = PhrRouteSupport.intQuery(request, "offset", 0, 10_000);
         } catch (RuntimeException ex) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_SEARCH", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "INVALID_SEARCH", ex.getMessage(, correlationId));
         }
 
         return requireSelfOrConsent(context, patientId, RESOURCE_TYPE, "SEARCH")
@@ -166,7 +170,7 @@ public final class PhrPatientRecordRoutes {
                         offset)
                     .then(records -> PhrRouteSupport.jsonResponse(200, Map.of(
                         "items", records,
-                        "count", records.size(),
+                        "count", records.size(, correlationId),
                         "limit", limit,
                         "offset", offset
                     )));
@@ -174,13 +178,14 @@ public final class PhrPatientRecordRoutes {
     }
 
     private Promise<HttpResponse> handlePatientHistory(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String patientId;
         try {
             context = PhrRouteSupport.requireContext(request);
             patientId = request.getPathParameter("patientId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         return requireSelfOrConsent(context, patientId, "patient-record-history", "READ")
@@ -201,11 +206,12 @@ public final class PhrPatientRecordRoutes {
                             response.put("history", List.of(historyEntry));
                             return PhrRouteSupport.jsonResponse(200, response);
                         })
-                        .orElseGet(() -> PhrRouteSupport.errorResponse(404, "PATIENT_NOT_FOUND", "Patient record not found")));
+                        .orElseGet(() -> PhrRouteSupport.errorResponse(404, "PATIENT_NOT_FOUND", "Patient record not found", correlationId)));
             });
     }
 
     private Promise<HttpResponse> handleListRecords(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String patientId;
         int limit;
@@ -216,7 +222,7 @@ public final class PhrPatientRecordRoutes {
             limit = PhrRouteSupport.intQuery(request, "limit", 50, 100);
             offset = PhrRouteSupport.intQuery(request, "offset", 0, 10_000);
         } catch (RuntimeException ex) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_RECORD_LIST", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "INVALID_RECORD_LIST", ex.getMessage(, correlationId));
         }
 
         String category = request.getQueryParameter("category");
@@ -242,14 +248,14 @@ public final class PhrPatientRecordRoutes {
                                 : List.of();
                             return PhrRouteSupport.jsonResponse(200, Map.of(
                                 "items", items,
-                                "count", items.size(),
+                                "count", items.size(, correlationId),
                                 "limit", limit,
                                 "offset", offset,
                                 "patientId", patientId,
                                 "generatedAt", Instant.now().toString()
                             ));
                         })
-                        .orElseGet(() -> PhrRouteSupport.errorResponse(404, "PATIENT_NOT_FOUND", "Patient record not found")));
+                        .orElseGet(() -> PhrRouteSupport.errorResponse(404, "PATIENT_NOT_FOUND", "Patient record not found", correlationId)));
             });
     }
 
@@ -270,6 +276,7 @@ public final class PhrPatientRecordRoutes {
     }
 
     private Promise<HttpResponse> handleGetRecordDetail(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String patientId;
         String recordId;
@@ -278,7 +285,7 @@ public final class PhrPatientRecordRoutes {
             patientId = request.getPathParameter("patientId");
             recordId = request.getPathParameter("recordId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
 
@@ -387,7 +394,7 @@ public final class PhrPatientRecordRoutes {
 
     private Promise<HttpResponse> createPatient(PatientRecordService.Patient patient) {
         return patientRecordService.createPatient(patient)
-            .then(created -> PhrRouteSupport.jsonResponse(201, created));
+            .then(created -> PhrRouteSupport.jsonResponse(201, created, correlationId));
     }
 
     private Promise<PhrPolicyEvaluator.PolicyDecision> requireSelfOrConsent(

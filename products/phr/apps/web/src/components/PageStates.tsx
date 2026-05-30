@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from '@ghatana/design-system';
 import { t } from '../i18n/phrI18n';
 
 /**
@@ -43,12 +44,9 @@ export function ErrorState({ title, message, correlationId, onRetry }: ErrorStat
           <p className="text-xs text-gray-400 mb-4">ID: {correlationId}</p>
         )}
         {onRetry && (
-          <button
-            onClick={onRetry}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
+          <Button onClick={onRetry} className="primary-cta">
             {t('state.retry')}
-          </button>
+          </Button>
         )}
       </div>
     </div>

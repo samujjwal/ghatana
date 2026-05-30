@@ -5,6 +5,13 @@ import App from '../App';
 import { fetchMobileDashboard } from '../services/phrMobileApi';
 import { loadMobileSession } from '../services/mobileSessionStore';
 import type { MobileDashboard, MobileSession } from '../types';
+import { DashboardScreen } from '../screens/DashboardScreen';
+import { RecordsScreen } from '../screens/RecordsScreen';
+import { ConsentScreen } from '../screens/ConsentScreen';
+import { EmergencyAccessScreen } from '../screens/EmergencyAccessScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
+import { NotificationsScreen } from '../screens/NotificationsScreen';
+import { LoginScreen } from '../screens/LoginScreen';
 
 jest.mock('@react-native-community/netinfo', () => ({
   addEventListener: jest.fn(() => jest.fn()),
@@ -137,5 +144,58 @@ describe('Mobile accessibility smoke', () => {
     await waitFor(() => expect(rendered.UNSAFE_getByProps({ accessibilityRole: 'alert' })).toBeTruthy());
     expect(rendered.getByLabelText('Retry')).toBeTruthy();
     expect(renderedText(rendered)).toContain('Dashboard failed');
+  });
+
+  // Screen-level accessibility tests
+  describe('individual screens have accessible structure', () => {
+    it('DashboardScreen has accessible landmarks', () => {
+      const rendered = render(<DashboardScreen dashboard={mockDashboard} />);
+      expect(rendered.UNSAFE_getByProps({ accessibilityLabel: `${mockDashboard.patient.name}` })).toBeTruthy();
+    });
+
+    it('RecordsScreen has accessible list structure', () => {
+      const rendered = render(<RecordsScreen />);
+      expect(rendered.UNSAFE_getByProps({ accessibilityLabel: 'Health Records' })).toBeTruthy();
+    });
+
+    it('ConsentScreen has accessible controls', () => {
+      const rendered = render(<ConsentScreen session={mockSession} consents={[]} onConsentRevoked={jest.fn()} />);
+      expect(rendered.UNSAFE_getByProps({ accessibilityLabel: 'My Consents' })).toBeTruthy();
+    });
+
+    it('EmergencyAccessScreen has accessible form inputs', () => {
+      const rendered = render(<EmergencyAccessScreen session={mockSession} onAuthenticate={jest.fn()} />);
+      expect(rendered.UNSAFE_getByProps({ accessibilityLabel: 'Emergency Access' })).toBeTruthy();
+    });
+
+    it('SettingsScreen has accessible controls', () => {
+      const rendered = render(
+        <SettingsScreen
+          session={mockSession}
+          onSyncOffline={jest.fn()}
+          onLogout={jest.fn()}
+          syncMessage="No sync requested yet."
+        />,
+      );
+      expect(rendered.UNSAFE_getByProps({ accessibilityLabel: 'Settings' })).toBeTruthy();
+    });
+
+    it('NotificationsScreen has accessible list', () => {
+      const rendered = render(<NotificationsScreen notifications={[]} onEnablePush={jest.fn()} />);
+      expect(rendered.UNSAFE_getByProps({ accessibilityLabel: 'Alerts' })).toBeTruthy();
+    });
+
+    it('LoginScreen has accessible form', () => {
+      const rendered = render(
+        <LoginScreen
+          onSuccess={jest.fn()}
+          onLoginError={jest.fn()}
+          loginFn={jest.fn()}
+        />,
+      );
+      expect(rendered.getByLabelText('National ID')).toBeTruthy();
+      expect(rendered.getByLabelText('Password')).toBeTruthy();
+      expect(rendered.getByLabelText('Sign In')).toBeTruthy();
+    });
   });
 });

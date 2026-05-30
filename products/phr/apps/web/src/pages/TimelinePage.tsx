@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { fetchTimeline } from '../api/patientApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { formatPhrDate, t } from '../i18n/phrI18n';
+import { SafeError } from '../components/SafeError';
 import type { TimelineEvent } from '../types';
 
 type TimelineFilter = TimelineEvent['type'] | 'all';
@@ -50,7 +51,7 @@ export function TimelinePage(): React.ReactElement {
   }, [session]);
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('timeline.loading')}</div>;
-  if (error) return <div className="error" role="alert">{t('timeline.error')}: {error}</div>;
+  if (error) return <SafeError title={t('timeline.error')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
   if (!events.length) return <div className="empty" role="status">{t('timeline.empty')}</div>;
 
   const categories = Array.from(new Set(events.map((event) => event.type))).sort();

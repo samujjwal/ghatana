@@ -1,4 +1,5 @@
 import React from 'react';
+import { SafeError } from '../components/SafeError';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { t } from '../i18n/phrI18n';

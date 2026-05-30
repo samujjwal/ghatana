@@ -3,6 +3,11 @@ import { StyleSheet, Text, View } from 'react-native';
 import { t } from '../i18n/phrMobileI18n';
 import type { MobileDashboard } from '../types';
 
+function newCorrelationId(): string {
+  return crypto.randomUUID();
+}
+
+
 interface DashboardScreenProps {
   dashboard: MobileDashboard;
 }

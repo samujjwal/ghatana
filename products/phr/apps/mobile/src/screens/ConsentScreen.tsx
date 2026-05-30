@@ -6,6 +6,11 @@ import { clearDashboardOffline } from '../services/offlineStore';
 import { t } from '../i18n/phrMobileI18n';
 import type { MobileConsent, MobileSession } from '../types';
 
+function newCorrelationId(): string {
+  return crypto.randomUUID();
+}
+
+
 interface ConsentScreenProps {
   consents: MobileConsent[];
   session: MobileSession;

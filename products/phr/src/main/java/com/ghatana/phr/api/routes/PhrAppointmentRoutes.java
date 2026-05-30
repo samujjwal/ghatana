@@ -10,6 +10,7 @@ import io.activej.http.HttpResponse;
 import io.activej.http.RoutingServlet;
 import io.activej.promise.Promise;
 
+import java.time.Instant;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Objects;
@@ -57,13 +58,14 @@ public final class PhrAppointmentRoutes {
     }
 
     private Promise<HttpResponse> handleBookAppointment(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String idempotencyKey;
         try {
             context = PhrRouteSupport.requireContext(request);
             idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         return request.loadBody()
@@ -72,7 +74,7 @@ public final class PhrAppointmentRoutes {
                 try {
                     appointmentRequest = parseAppointmentRequest(body.getString(StandardCharsets.UTF_8));
                 } catch (IllegalArgumentException ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_APPOINTMENT_REQUEST", ex.getMessage());
+                    return PhrRouteSupport.errorResponse(400, "INVALID_APPOINTMENT_REQUEST", ex.getMessage(, correlationId));
                 }
                 
                 return requireAccess(context, appointmentRequest.getPatientId(), "appointments", "WRITE")
@@ -81,19 +83,20 @@ public final class PhrAppointmentRoutes {
                             return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
                         }
                         return appointmentService.createAppointment(appointmentRequest)
-                            .then(created -> PhrRouteSupport.jsonResponse(201, created));
+                            .then(created -> PhrRouteSupport.jsonResponse(201, created, correlationId));
                     });
             });
     }
 
     private Promise<HttpResponse> handleRescheduleAppointment(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String appointmentId;
         try {
             context = PhrRouteSupport.requireContext(request);
             appointmentId = request.getPathParameter("appointmentId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         return request.loadBody()
@@ -106,7 +109,7 @@ public final class PhrAppointmentRoutes {
                         throw new IllegalArgumentException("scheduledTime is required");
                     }
                 } catch (Exception ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_RESCHEDULE", ex.getMessage());
+                    return PhrRouteSupport.errorResponse(400, "INVALID_RESCHEDULE", ex.getMessage(, correlationId));
                 }
                 
                 // For rescheduling, we need to get the appointment first to check patient access
@@ -114,7 +117,7 @@ public final class PhrAppointmentRoutes {
                     .then(appointments -> {
                         // Check if the appointment belongs to the patient
                         boolean hasAccess = appointments.stream()
-                            .anyMatch(app -> app.getAppointmentId().equals(appointmentId));
+                            .anyMatch(app -> app.getId().equals(appointmentId));
                         
                         if (!hasAccess) {
                             return PhrRouteSupport.errorResponse(403, "APPOINTMENT_ACCESS_DENIED", 
@@ -126,12 +129,13 @@ public final class PhrAppointmentRoutes {
                             "appointmentId", appointmentId,
                             "scheduledTime", newScheduledTime,
                             "status", "RESCHEDULED"
-                        ));
+                        , correlationId));
                     });
             });
     }
 
     private Promise<HttpResponse> handleCancelAppointment(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String appointmentId;
         String reason;
@@ -140,14 +144,14 @@ public final class PhrAppointmentRoutes {
             appointmentId = request.getPathParameter("appointmentId");
             reason = request.getQueryParameter("reason");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         return appointmentService.getPatientAppointments(context.principalId(), null)
             .then(appointments -> {
                 // Check if the appointment belongs to the patient
                 boolean hasAccess = appointments.stream()
-                    .anyMatch(app -> app.getAppointmentId().equals(appointmentId));
+                    .anyMatch(app -> app.getId().equals(appointmentId));
                 
                 if (!hasAccess) {
                     return PhrRouteSupport.errorResponse(403, "APPOINTMENT_ACCESS_DENIED", 
@@ -159,11 +163,12 @@ public final class PhrAppointmentRoutes {
                     .then($ -> PhrRouteSupport.jsonResponse(200, Map.of(
                         "appointmentId", appointmentId,
                         "status", "CANCELLED"
-                    )));
+                    , correlationId)));
             });
     }
 
     private Promise<HttpResponse> handleGetAvailableSlots(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String providerId;
         String date;
@@ -172,32 +177,33 @@ public final class PhrAppointmentRoutes {
             providerId = PhrRouteSupport.requiredQuery(request, "providerId");
             date = request.getQueryParameter("date");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_SLOT_QUERY", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "INVALID_SLOT_QUERY", ex.getMessage(, correlationId));
         }
 
         return appointmentService.getAvailableSlots(providerId, date != null ? date : java.time.LocalDate.now().toString())
             .then(slots -> PhrRouteSupport.jsonResponse(200, Map.of(
                 "providerId", providerId,
-                "date", date != null ? date : java.time.LocalDate.now().toString(),
+                "date", date != null ? date : java.time.LocalDate.now(, correlationId).toString(),
                 "items", slots,
                 "count", slots.size()
             )));
     }
 
     private Promise<HttpResponse> handleGetAppointment(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String appointmentId;
         try {
             context = PhrRouteSupport.requireContext(request);
             appointmentId = request.getPathParameter("appointmentId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         return appointmentService.getPatientAppointments(context.principalId(), null)
             .then(appointments -> {
                 var appointment = appointments.stream()
-                    .filter(app -> app.getAppointmentId().equals(appointmentId))
+                    .filter(app -> app.getId().equals(appointmentId))
                     .findFirst();
                 
                 if (appointment.isEmpty()) {
@@ -205,23 +211,24 @@ public final class PhrAppointmentRoutes {
                         "Appointment not found or not accessible", context.correlationId());
                 }
                 
-                return PhrRouteSupport.jsonResponse(200, appointment.get());
+                return PhrRouteSupport.jsonResponse(200, appointment.get(, correlationId));
             });
     }
 
     private Promise<HttpResponse> handleListAppointments(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String status;
         try {
             context = PhrRouteSupport.requireContext(request);
             status = request.getQueryParameter("status");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         return appointmentService.getPatientAppointments(context.principalId(), status)
             .then(appointments -> PhrRouteSupport.jsonResponse(200, Map.of(
-                "patientId", context.principalId(),
+                "patientId", context.principalId(, correlationId),
                 "items", appointments,
                 "count", appointments.size()
             )));
@@ -245,19 +252,23 @@ public final class PhrAppointmentRoutes {
         var node = PhrRouteSupport.JSON.readTree(json);
         String patientId = requiredText(node, "patientId");
         String providerId = requiredText(node, "providerId");
-        String scheduledTime = requiredText(node, "scheduledTime");
-        String type = text(node, "type", "GENERAL");
+        String slotId = text(node, "slotId", null);
+        Instant scheduledTime = Instant.parse(requiredText(node, "scheduledTime"));
+        int durationMinutes = node.path("durationMinutes").asInt(30);
+        String appointmentType = text(node, "appointmentType", text(node, "type", "GENERAL"));
         
         return new AppointmentService.AppointmentRequest(
             patientId,
             providerId,
+            slotId,
             scheduledTime,
-            type,
-            text(node, "reason", null)
+            durationMinutes,
+            text(node, "reason", null),
+            appointmentType
         );
     }
 
-    private static String requiredText(var node, String fieldName) {
+    private static String requiredText(com.fasterxml.jackson.databind.JsonNode node, String fieldName) {
         String value = text(node, fieldName, null);
         if (value == null) {
             throw new IllegalArgumentException(fieldName + " is required");
@@ -265,7 +276,7 @@ public final class PhrAppointmentRoutes {
         return value;
     }
 
-    private static String text(var node, String fieldName, String defaultValue) {
+    private static String text(com.fasterxml.jackson.databind.JsonNode node, String fieldName, String defaultValue) {
         var value = node.path(fieldName);
         return value.isMissingNode() || value.isNull() || value.asText().isBlank() ? defaultValue : value.asText();
     }

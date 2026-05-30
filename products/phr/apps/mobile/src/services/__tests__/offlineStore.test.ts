@@ -142,8 +142,5 @@ describe('offlineStore', () => {
     expect(mockRemove).not.toHaveBeenCalled();
   });
 
-  it('clearDashboardOffline removes the cache key', async () => {
-    await clearDashboardOffline();
-    expect(mockRemove).toHaveBeenCalledWith('phr-mobile-dashboard');
-  });
+  it('clearDashboardOffline removes the cache key', async () => {\n    await clearDashboardOffline();\n    expect(mockRemove).toHaveBeenCalledWith('phr-mobile-dashboard');\n  });\n\n  it('loadDashboardOffline returns null and clears on session mismatch', async () => {\n    const differentSession: SessionIdentity = {\n      tenantId: 'tenant-2',\n      principalId: 'p2',\n      role: 'clinician',\n    };\n    const savedAt = Date.now();\n    const envelope = { schemaVersion: 1, savedAt, ttlMs: 3_600_000, ...SESSION_IDENTITY, data: SAMPLE_DASHBOARD };\n    mockGet.mockResolvedValueOnce(JSON.stringify(envelope));\n\n    const result = await loadDashboardOffline(differentSession);\n\n    expect(result).toBeNull();\n    expect(mockRemove).toHaveBeenCalledWith('phr-mobile-dashboard');\n  });
 });

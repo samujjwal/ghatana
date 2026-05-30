@@ -52,144 +52,170 @@ public final class PhrFchvRoutes {
     }
 
     private Promise<HttpResponse> handleGetFchvDashboard(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
-        if (!"fchv".equals(context.role()) && !"admin".equals(context.role())) {
-            return PhrRouteSupport.errorResponse(403, "FCHV_ROLE_REQUIRED",
-                "Only FCHV or admin principals may access the FCHV dashboard",
-                context.correlationId());
-        }
+        // Use policy evaluator for PHI access decision (POL-001)
+        return policyEvaluator.canAccessPhiResourceAsync(
+                context,
+                "fchv-dashboard-scope",
+                "fchv-dashboard",
+                "READ",
+                context.tenantId(),
+                context.facilityId())
+            .then(decision -> {
+                if (!decision.isAllowed()) {
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
+                }
 
-        // FCHV dashboard with community assignment, scoped patient list, and vitals capture links
-        return Promise.of(List.of(
-            Map.of(
-                "id", "patient-001",
-                "name", "[REDACTED]",
-                "village", "Sindhuli-3",
-                "riskLevel", "high",
-                "lastContact", "2026-05-20",
-                "pendingVitals", true
-            ),
-            Map.of(
-                "id", "patient-002",
-                "name", "[REDACTED]",
-                "village", "Sindhuli-5",
-                "riskLevel", "low",
-                "lastContact", "2026-05-22",
-                "pendingVitals", false
-            )
-        )).then(patients -> PhrRouteSupport.jsonResponse(200,
-            Map.of(
-                "fchvId", context.principalId(),
-                "tenantId", context.tenantId(),
-                "communityAssignment", Map.of(
-                    "village", "Sindhuli",
-                    "ward", "3",
-                    "assignedHouseholds", 150,
-                    "activePatients", patients.size()
-                ),
-                "patients", patients,
-                "workQueue", Map.of(
-                    "pendingVitals", 1,
-                    "followUpVisits", 0,
-                    "urgentAlerts", 0
-                ),
-                "vitalsCapture", Map.of(
-                    "enabled", true,
-                    "offlineMode", true,
-                    "syncPending", false
-                ),
-                "generatedAt", java.time.Instant.now().toString()
-            ),
-            context.correlationId()));
+                // FCHV dashboard with community assignment, scoped patient list, and vitals capture links
+                return Promise.of(List.of(
+                    Map.of(
+                        "id", "patient-001",
+                        "name", "[REDACTED]",
+                        "village", "Sindhuli-3",
+                        "riskLevel", "high",
+                        "lastContact", "2026-05-20",
+                        "pendingVitals", true
+                    ),
+                    Map.of(
+                        "id", "patient-002",
+                        "name", "[REDACTED]",
+                        "village", "Sindhuli-5",
+                        "riskLevel", "low",
+                        "lastContact", "2026-05-22",
+                        "pendingVitals", false
+                    )
+                )).then(patients -> PhrRouteSupport.jsonResponse(200, Map.of(
+                        "fchvId", context.principalId(, correlationId),
+                        "tenantId", context.tenantId(),
+                        "communityAssignment", Map.of(
+                            "village", "Sindhuli",
+                            "ward", "3",
+                            "assignedHouseholds", 150,
+                            "activePatients", patients.size()
+                        ),
+                        "patients", patients,
+                        "workQueue", Map.of(
+                            "pendingVitals", 1,
+                            "followUpVisits", 0,
+                            "urgentAlerts", 0
+                        ),
+                        "vitalsCapture", Map.of(
+                            "enabled", true,
+                            "offlineMode", true,
+                            "syncPending", false
+                        ),
+                        "generatedAt", java.time.Instant.now().toString()
+                        ),
+                        context.correlationId()));
+                    });
     }
 
     private Promise<HttpResponse> handleListPatients(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
-        if (!"fchv".equals(context.role()) && !"admin".equals(context.role())) {
-            return PhrRouteSupport.errorResponse(403, "FCHV_ROLE_REQUIRED",
-                "Only FCHV or admin principals may list patients",
-                context.correlationId());
-        }
+        // Use policy evaluator for PHI access decision (POL-001)
+        return policyEvaluator.canAccessPhiResourceAsync(
+                context,
+                "fchv-patient-list-scope",
+                "fchv-patient-list",
+                "READ",
+                context.tenantId(),
+                context.facilityId())
+            .then(decision -> {
+                if (!decision.isAllowed()) {
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
+                }
 
-        return Promise.of(List.of(
-            Map.of(
-                "id", "patient-001",
-                "name", "[REDACTED]",
-                "village", "Sindhuli-3",
-                "riskLevel", "high",
-                "lastContact", "2026-05-20"
-            ),
-            Map.of(
-                "id", "patient-002",
-                "name", "[REDACTED]",
-                "village", "Sindhuli-5",
-                "riskLevel", "low",
-                "lastContact", "2026-05-22"
-            )
-        )).then(patients -> PhrRouteSupport.jsonResponse(200,
-            Map.of(
-                "fchvId", context.principalId(),
-                "tenantId", context.tenantId(),
-                "items", patients,
-                "count", patients.size()
-            ),
-            context.correlationId()));
+                return Promise.of(List.of(
+                    Map.of(
+                        "id", "patient-001",
+                        "name", "[REDACTED]",
+                        "village", "Sindhuli-3",
+                        "riskLevel", "high",
+                        "lastContact", "2026-05-20"
+                    ),
+                    Map.of(
+                        "id", "patient-002",
+                        "name", "[REDACTED]",
+                        "village", "Sindhuli-5",
+                        "riskLevel", "low",
+                        "lastContact", "2026-05-22"
+                    )
+                )).then(patients -> PhrRouteSupport.jsonResponse(200, Map.of(
+                        "fchvId", context.principalId(, correlationId),
+                        "tenantId", context.tenantId(),
+                        "items", patients,
+                        "count", patients.size()
+                    ),
+                    context.correlationId()));
+            });
     }
 
     private Promise<HttpResponse> handleRegisterPatient(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
-        if (!"fchv".equals(context.role()) && !"admin".equals(context.role())) {
-            return PhrRouteSupport.errorResponse(403, "FCHV_ROLE_REQUIRED",
-                "Only FCHV or admin principals may register patients",
-                context.correlationId());
-        }
-
-        return request.loadBody()
-            .then(body -> {
-                try {
-                    String json = body.getString(java.nio.charset.StandardCharsets.UTF_8);
-                    var node = PhrRouteSupport.JSON.readTree(json);
-                    
-                    String patientId = "PAT-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-                    
-                    return PhrRouteSupport.jsonResponse(201, Map.of(
-                        "patientId", patientId,
-                        "registeredBy", context.principalId(),
-                        "tenantId", context.tenantId(),
-                        "status", "REGISTERED",
-                        "registeredAt", java.time.Instant.now().toString()
-                    ), context.correlationId());
-                } catch (Exception ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_REQUEST",
-                        "Invalid patient registration format", context.correlationId());
+        // Use policy evaluator for PHI access decision (POL-001)
+        return policyEvaluator.canAccessPhiResourceAsync(
+                context,
+                "fchv-registration-scope",
+                "fchv-patient-registration",
+                "WRITE",
+                context.tenantId(),
+                context.facilityId())
+            .then(decision -> {
+                if (!decision.isAllowed()) {
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
                 }
+
+                return request.loadBody()
+                    .then(body -> {
+                        try {
+                            String json = body.getString(java.nio.charset.StandardCharsets.UTF_8);
+                            var node = PhrRouteSupport.JSON.readTree(json);
+
+                            String patientId = "PAT-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
+                            return PhrRouteSupport.jsonResponse(201, Map.of(
+                                "patientId", patientId,
+                                "registeredBy", context.principalId(, correlationId),
+                                "tenantId", context.tenantId(),
+                                "status", "REGISTERED",
+                                "registeredAt", java.time.Instant.now().toString()
+                            ), context.correlationId());
+                        } catch (Exception ex) {
+                            return PhrRouteSupport.errorResponse(400, "INVALID_REQUEST",
+                                "Invalid patient registration format", context.correlationId());
+                        }
+                    });
             });
     }
 
     private Promise<HttpResponse> handleGetFchvPatient(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         String patientId = request.getPathParameter("patientId");
@@ -218,11 +244,12 @@ public final class PhrFchvRoutes {
     }
 
     private Promise<HttpResponse> handleRecordVitals(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         String patientId = request.getPathParameter("patientId");
@@ -250,60 +277,77 @@ public final class PhrFchvRoutes {
     }
 
     private Promise<HttpResponse> handleGetSyncStatus(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
-        if (!"fchv".equals(context.role()) && !"admin".equals(context.role())) {
-            return PhrRouteSupport.errorResponse(403, "FCHV_ROLE_REQUIRED",
-                "Only FCHV or admin principals may check sync status",
-                context.correlationId());
-        }
+        // Use policy evaluator for PHI access decision (POL-001)
+        return policyEvaluator.canAccessPhiResourceAsync(
+                context,
+                "fchv-sync-scope",
+                "fchv-sync-status",
+                "READ",
+                context.tenantId(),
+                context.facilityId())
+            .then(decision -> {
+                if (!decision.isAllowed()) {
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
+                }
 
-        return PhrRouteSupport.jsonResponse(200, Map.of(
-            "fchvId", context.principalId(),
-            "tenantId", context.tenantId(),
-            "syncStatus", "SYNCED",
-            "pendingOperations", 0,
-            "lastSyncAt", java.time.Instant.now().toString(),
-            "queueSize", 0
-        ), context.correlationId());
+                return PhrRouteSupport.jsonResponse(200, Map.of(
+                    "fchvId", context.principalId(, correlationId),
+                    "tenantId", context.tenantId(),
+                    "syncStatus", "SYNCED",
+                    "pendingOperations", 0,
+                    "lastSyncAt", java.time.Instant.now().toString(),
+                    "queueSize", 0
+                ), context.correlationId());
+            });
     }
 
     private Promise<HttpResponse> handleSyncOperations(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
-        if (!"fchv".equals(context.role()) && !"admin".equals(context.role())) {
-            return PhrRouteSupport.errorResponse(403, "FCHV_ROLE_REQUIRED",
-                "Only FCHV or admin principals may trigger sync",
-                context.correlationId());
-        }
-
-        return request.loadBody()
-            .then(body -> {
-                try {
-                    String json = body.getString(java.nio.charset.StandardCharsets.UTF_8);
-                    var node = PhrRouteSupport.JSON.readTree(json);
-                    
-                    return PhrRouteSupport.jsonResponse(200, Map.of(
-                        "fchvId", context.principalId(),
-                        "tenantId", context.tenantId(),
-                        "syncStatus", "COMPLETED",
-                        "operationsProcessed", 0,
-                        "syncedAt", java.time.Instant.now().toString()
-                    ), context.correlationId());
-                } catch (Exception ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_REQUEST",
-                        "Invalid sync request format", context.correlationId());
+        return policyEvaluator.canAccessPhiResourceAsync(
+                context,
+                "fchv-sync-operations-scope",
+                "fchv-sync-operations",
+                "WRITE",
+                context.tenantId(),
+                context.facilityId())
+            .then(decision -> {
+                if (!decision.isAllowed()) {
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
                 }
+
+                return request.loadBody()
+                    .then(body -> {
+                        try {
+                            String json = body.getString(java.nio.charset.StandardCharsets.UTF_8);
+                            var node = PhrRouteSupport.JSON.readTree(json);
+
+                            return PhrRouteSupport.jsonResponse(200, Map.of(
+                                "fchvId", context.principalId(, correlationId),
+                                "tenantId", context.tenantId(),
+                                "syncStatus", "COMPLETED",
+                                "operationsProcessed", 0,
+                                "syncedAt", java.time.Instant.now().toString()
+                            ), context.correlationId());
+                        } catch (Exception ex) {
+                            return PhrRouteSupport.errorResponse(400, "INVALID_REQUEST",
+                                "Invalid sync request format", context.correlationId());
+                        }
+                    });
             });
     }
 }

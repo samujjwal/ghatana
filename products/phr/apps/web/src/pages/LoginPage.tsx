@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { SafeError } from '../components/SafeError';
 import { Button, Card, CardContent, CardHeader, Input } from '@ghatana/design-system';
 import { useNavigate } from 'react-router-dom';
 import { loginWithCredentials } from '../api/authApi';

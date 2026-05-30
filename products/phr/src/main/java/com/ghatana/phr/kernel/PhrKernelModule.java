@@ -32,6 +32,10 @@ import com.ghatana.phr.api.routes.PhrConsentRoutes;
 import com.ghatana.phr.api.routes.PhrDashboardRoutes;
 import com.ghatana.phr.api.routes.PhrDocumentImagingRoutes;
 import com.ghatana.phr.api.routes.PhrEntitlementRoutes;
+import com.ghatana.phr.kernel.service.ConsentManagementServiceExtensions;
+import com.ghatana.phr.kernel.service.DocumentServiceExtensions;
+import com.ghatana.phr.kernel.service.EmergencyAccessLogServiceExtensions;
+import com.ghatana.phr.kernel.service.MedicationServiceExtensions;
 import com.ghatana.phr.api.routes.PhrEmergencyRoutes;
 import com.ghatana.phr.api.routes.PhrFchvRoutes;
 import com.ghatana.phr.api.routes.PhrFhirRoutes;
@@ -61,6 +65,7 @@ import com.ghatana.phr.kernel.service.CaregiverService;
 import com.ghatana.phr.kernel.service.ClinicalDecisionSupportService;
 import com.ghatana.phr.kernel.service.ClinicalNoteService;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
+import com.ghatana.phr.kernel.service.PatientRecordServiceExtensions;
 import com.ghatana.phr.kernel.service.DocumentService;
 import com.ghatana.phr.kernel.service.DurablePhrNotificationSender;
 import com.ghatana.phr.kernel.service.EmergencyAccessLogService;
@@ -428,7 +433,16 @@ public class PhrKernelModule implements KernelModule {
         // Create route objects with eventloop
         Eventloop eventloop = context.getEventloop();
         PhrFhirRoutes fhirRoutes = new PhrFhirRoutes(eventloop, fhirController);
-        PhrDashboardRoutes dashboardRoutes = new PhrDashboardRoutes(eventloop, userRepository);
+        PhrDashboardRoutes dashboardRoutes = new PhrDashboardRoutes(
+            eventloop,
+            userRepository,
+            appointments,
+            new MedicationServiceExtensions(medications),
+            new PatientRecordServiceExtensions(patientRecords),
+            new DocumentServiceExtensions(documents),
+            new ConsentManagementServiceExtensions(consent),
+            new EmergencyAccessLogServiceExtensions(emergencyAccess)
+        );
         PhrPatientRecordRoutes patientRecordRoutes = new PhrPatientRecordRoutes(eventloop, patientRecords, policyEvaluator);
         PhrConsentRoutes consentRoutes = new PhrConsentRoutes(eventloop, consent, policyEvaluator);
         PhrClinicalRoutes clinicalRoutes = new PhrClinicalRoutes(

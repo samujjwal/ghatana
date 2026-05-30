@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { SafeError } from '../components/SafeError';
 import { Badge, Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { fetchImmunizations } from '../api/clinicalApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
@@ -40,7 +41,7 @@ export function ImmunizationsPage(): React.ReactElement {
   }, [session]);
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('immunizations.loading')}</div>;
-  if (error) return <div className="error" role="alert">{t('dashboard.errorPrefix')}: {error}</div>;
+  if (error) return <SafeError title={t('dashboard.errorPrefix')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
   if (!immunizations.length) return <div className="empty" role="status">{t('immunizations.empty')}</div>;
 
   const statuses: ImmunizationStatus[] = ['completed', 'not-done', 'entered-in-error', 'due'];

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { SafeError } from '../components/SafeError';
 import { Card, CardContent, CardHeader, Badge, Button } from '@ghatana/design-system';
 import { fetchNotifications, markNotificationRead } from '../api/notificationsApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
@@ -60,7 +61,7 @@ export function NotificationsPage(): React.ReactElement {
   }
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('notifications.loading')}</div>;
-  if (error) return <div className="error" role="alert">{t('notifications.error')}: {error}</div>;
+  if (error) return <SafeError title={t('notifications.error')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
 
   return (
     <Card>

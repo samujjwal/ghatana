@@ -301,7 +301,7 @@ async function getOrCreateDeviceInstallId(): Promise<string> {
   return installId;
 }
 
-// PHI key registry for reliable clearing
+* PHI key registry for reliable clearing
 
 const PHI_KEY_REGISTRY_KEY = 'phr-phi-key-registry';
 
@@ -468,7 +468,7 @@ export async function phiRemove(key: string): Promise<void> {
  * Clears all PHI-bearing values from encrypted storage.
  * Must be called on consent revocation, logout, session expiry, and role/persona change.
  * 
-// PHI key registry for reliable clearing
+* PHI key registry for reliable clearing
  * All PHI keys are registered when set, so we can clear them all reliably.
  */
 export async function phiClearAll(): Promise<void> {
@@ -488,12 +488,7 @@ export async function phiClearAll(): Promise<void> {
   // Clear the registry itself
   await SecureStore.deleteItemAsync('phr-phi-key-registry');
   
-  // Also clear any keys with the PHI prefix as a safety net
-  const allKeys = await AsyncStorage.getAllKeys() ?? [];
-  const prefixedKeys = allKeys.filter((k) => k.startsWith(CIPHERTEXT_STORAGE_PREFIX));
-  for (const key of prefixedKeys) {
-    await AsyncStorage.removeItem(key);
-  }
+
 }
 
 /**

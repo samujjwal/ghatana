@@ -10,6 +10,7 @@
  * @doc.layer frontend
  */
 import React, { useCallback, useEffect, useState } from 'react';
+import { SafeError } from '../components/SafeError';
 import { fetchAuditEvents } from '../api/auditApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { formatPhrDateTime, t } from '../i18n/phrI18n';
@@ -207,7 +208,7 @@ export function AuditPage(): React.ReactElement {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {Object.entries(event.details ?? {}).map(([key, value]) => (
                       <div key={key}>
-                        {key}: {value}
+                        {key}: {String(value)}
                       </div>
                     ))}
                   </td>

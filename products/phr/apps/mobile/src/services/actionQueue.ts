@@ -12,6 +12,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { MobileSession } from '../types';
+import { getTelemetry } from './mobileDiagnostics';
 
 const ACTION_QUEUE_KEY = 'phr_action_queue';
 const MAX_QUEUE_SIZE = 100;
@@ -55,7 +56,8 @@ export async function loadActionQueue(): Promise<QueuedAction[]> {
     if (!data) return [];
     return JSON.parse(data) as QueuedAction[];
   } catch (error) {
-    console.error('Failed to load action queue:', error);
+    // G11-T09: Use telemetry wrapper instead of console.error
+    getTelemetry().incrementCounter('phr.mobile.action_queue.load_failed');
     return [];
   }
 }
@@ -67,7 +69,8 @@ async function saveActionQueue(queue: QueuedAction[]): Promise<void> {
   try {
     await AsyncStorage.setItem(ACTION_QUEUE_KEY, JSON.stringify(queue));
   } catch (error) {
-    console.error('Failed to save action queue:', error);
+    // G11-T09: Use telemetry wrapper instead of console.error
+    getTelemetry().incrementCounter('phr.mobile.action_queue.save_failed');
     throw error;
   }
 }

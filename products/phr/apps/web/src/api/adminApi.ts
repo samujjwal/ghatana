@@ -1,14 +1,11 @@
+// Re-export appointment-related functions from phrApiCore
 export {
   bookAppointment,
   cancelAppointment,
   createAppointmentRequest,
   fetchAppointments,
-  fetchProviders,
   rescheduleAppointment,
 } from './phrApiCore';
 
-export {
-  fetchCaregiverDependents,
-  fetchFchvDashboard,
-  fetchProviderPatients,
-} from './roleApi';
+// Provider, Caregiver, FCHV functions removed - routes are hidden in route contract
+// and not yet implemented. See API-004 in implementation tracker.

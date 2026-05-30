@@ -1,6 +1,7 @@
 package com.ghatana.phr.security;
 
 import com.ghatana.kernel.observability.AuditTrailService;
+import com.ghatana.kernel.observability.KernelTelemetryManager;
 import com.ghatana.kernel.security.FieldClassificationRegistry;
 import com.ghatana.phr.api.routes.PhrRouteSupport.PhrRequestContext;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
@@ -47,6 +48,7 @@ public final class PhrPolicyEvaluator {
     private final TreatmentRelationshipService treatmentRelationshipService;
     private final FchvCommunityAssignmentService fchvAssignmentService;
     private final AuditTrailService auditTrailService;
+    private final KernelTelemetryManager telemetryManager;
 
     /**
      * Constructs a policy evaluator with required services.
@@ -55,13 +57,14 @@ public final class PhrPolicyEvaluator {
      * @param treatmentRelationshipService the treatment relationship service (must not be null)
      * @param fchvAssignmentService the FCHV community assignment service (must not be null)
      * @param auditTrailService the audit trail service for logging policy decisions (may be null)
+     * @param telemetryManager the telemetry manager for metrics (may be null)
      * @throws IllegalArgumentException if any required service is null
      */
     public PhrPolicyEvaluator(
             ConsentManagementService consentService,
             TreatmentRelationshipService treatmentRelationshipService,
             FchvCommunityAssignmentService fchvAssignmentService) {
-        this(consentService, treatmentRelationshipService, fchvAssignmentService, null);
+        this(consentService, treatmentRelationshipService, fchvAssignmentService, null, null);
     }
 
     /**
@@ -71,6 +74,7 @@ public final class PhrPolicyEvaluator {
      * @param treatmentRelationshipService the treatment relationship service (must not be null)
      * @param fchvAssignmentService the FCHV community assignment service (must not be null)
      * @param auditTrailService the audit trail service for logging policy decisions (may be null)
+     * @param telemetryManager the telemetry manager for metrics (may be null)
      * @throws IllegalArgumentException if any required service is null
      */
     public PhrPolicyEvaluator(
@@ -78,10 +82,30 @@ public final class PhrPolicyEvaluator {
             TreatmentRelationshipService treatmentRelationshipService,
             FchvCommunityAssignmentService fchvAssignmentService,
             AuditTrailService auditTrailService) {
+        this(consentService, treatmentRelationshipService, fchvAssignmentService, auditTrailService, null);
+    }
+
+    /**
+     * Constructs a policy evaluator with required services and optional audit/telemetry services.
+     *
+     * @param consentService the consent management service (must not be null)
+     * @param treatmentRelationshipService the treatment relationship service (must not be null)
+     * @param fchvAssignmentService the FCHV community assignment service (must not be null)
+     * @param auditTrailService the audit trail service for logging policy decisions (may be null)
+     * @param telemetryManager the telemetry manager for metrics (may be null)
+     * @throws IllegalArgumentException if any required service is null
+     */
+    public PhrPolicyEvaluator(
+            ConsentManagementService consentService,
+            TreatmentRelationshipService treatmentRelationshipService,
+            FchvCommunityAssignmentService fchvAssignmentService,
+            AuditTrailService auditTrailService,
+            KernelTelemetryManager telemetryManager) {
         this.consentService = requireNonNull(consentService, "consentService must not be null");
         this.treatmentRelationshipService = requireNonNull(treatmentRelationshipService, "treatmentRelationshipService must not be null");
         this.fchvAssignmentService = requireNonNull(fchvAssignmentService, "fchvAssignmentService must not be null");
         this.auditTrailService = auditTrailService; // Optional - null is allowed
+        this.telemetryManager = telemetryManager; // Optional - null is allowed
     }
 
     private static <T> T requireNonNull(T value, String message) {
@@ -139,7 +163,102 @@ public final class PhrPolicyEvaluator {
         } catch (Exception e) {
             LOG.error("Failed to emit audit event for policy decision. reasonCode={}, correlationId={}",
                 decision.getReasonCode(), context.correlationId(), e);
-            // Don't fail the request if audit logging fails
+        }
+    }
+
+    /**
+     * Emits policy denied metrics without PHI.
+     *
+     * <p>G11-T04: Add policy denied metrics without PHI.</p>
+     *
+     * @param decision the policy decision
+     * @param context the request context
+     * @param resourceType the resource type being accessed
+     */
+    private void emitPolicyDeniedMetrics(PolicyDecision decision, PhrRequestContext context, String resourceType) {
+        if (telemetryManager == null) {
+            return; // No telemetry service configured
+        }
+
+        try {
+            // Emit counter for policy denial without PHI
+            telemetryManager.incrementCounter(
+                "phr.policy.denied",
+                1,
+                "resource_type", resourceType != null ? resourceType : "unknown",
+                "role", context.role(),
+                "reason_code", decision.getReasonCode() != null ? decision.getReasonCode() : "POLICY_DENIED",
+                "tenant_id", context.tenantId()
+            );
+            LOG.debug("Policy denied metric emitted. resourceType={}, reasonCode={}, correlationId={}",
+                resourceType, decision.getReasonCode(), context.correlationId());
+        } catch (Exception e) {
+            LOG.error("Failed to emit policy denied metric. resourceType={}, correlationId={}",
+                resourceType, context.correlationId(), e);
+        }
+    }
+
+    /**
+     * Emits emergency access metrics without PHI.
+     *
+     * <p>G11-T05: Add emergency access metrics without PHI.</p>
+     *
+     * @param decision the policy decision
+     * @param context the request context
+     * @param patientId the target patient ID (used only for metric tag, not logged)
+     */
+    private void emitEmergencyAccessMetrics(PolicyDecision decision, PhrRequestContext context, String patientId) {
+        if (telemetryManager == null) {
+            return; // No telemetry service configured
+        }
+
+        try {
+            // Emit counter for emergency access request without PHI
+            telemetryManager.incrementCounter(
+                "phr.emergency.access",
+                1,
+                "role", context.role(),
+                "decision", decision.isAllowed() ? "allowed" : "denied",
+                "reason_code", decision.getReasonCode() != null ? decision.getReasonCode() : "UNKNOWN",
+                "tenant_id", context.tenantId()
+            );
+            LOG.debug("Emergency access metric emitted. decision={}, reasonCode={}, correlationId={}",
+                decision.isAllowed(), decision.getReasonCode(), context.correlationId());
+        } catch (Exception e) {
+            LOG.error("Failed to emit emergency access metric. correlationId={}",
+                context.correlationId(), e);
+        }
+    }
+
+    /**
+     * Emits consent operation metrics without PHI.
+     *
+     * <p>G11-T06: Add consent create/revoke/check metrics without PHI.</p>
+     *
+     * @param operation the consent operation (create, revoke, check)
+     * @param context the request context
+     * @param success whether the operation succeeded
+     */
+    private void emitConsentMetrics(String operation, PhrRequestContext context, boolean success) {
+        if (telemetryManager == null) {
+            return; // No telemetry service configured
+        }
+
+        try {
+            // Emit counter for consent operation without PHI
+            telemetryManager.incrementCounter(
+                "phr.consent.operation",
+                1,
+                "operation", operation,
+                "role", context.role(),
+                "success", String.valueOf(success),
+                "tenant_id", context.tenantId()
+            );
+            LOG.debug("Consent operation metric emitted. operation={}, success={}, correlationId={}",
+                operation, success, context.correlationId());
+        } catch (Exception e) {
+            LOG.error("Failed to emit consent operation metric. operation={}, correlationId={}",
+                operation, context.correlationId(), e);
         }
     }
 
@@ -390,6 +509,7 @@ public final class PhrPolicyEvaluator {
                             context.correlationId());
                     }
                     emitAuditEventIfNeeded(decision, context, "patient-record", "EMERGENCY_ACCESS", patientId);
+                    emitEmergencyAccessMetrics(decision, context, patientId);
                     return decision;
                 });
         }
@@ -400,6 +520,7 @@ public final class PhrPolicyEvaluator {
         PolicyDecision decision = PolicyDecision.emergencyOverride("ADMIN_EMERGENCY", 
             "Admin emergency access - requires post-hoc justification");
         emitAuditEventIfNeeded(decision, context, "patient-record", "EMERGENCY_ACCESS", patientId);
+        emitEmergencyAccessMetrics(decision, context, patientId);
         return Promise.of(decision);
     }
 

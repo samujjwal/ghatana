@@ -170,7 +170,7 @@ export const en = {
     restoringSession: 'Restoring session…',
     dashboardLoadError: 'Unable to load mobile dashboard.',
     initialSyncMessage: 'Offline cache has not been refreshed in this session.',
-    pushNotificationsReady: 'Push notifications ready: {{token}}',
+    pushNotificationsReady: 'Push notifications enabled',
     biometricSuccess: 'Biometric verification succeeded.',
     biometricUnavailable: 'Biometric verification unavailable on this device.',
     offlineCacheRefreshFailed: 'Offline cache refresh failed.',
@@ -198,6 +198,7 @@ export const en = {
     loginFailed: 'Login failed with status {{status}}.',
     consentRevokeFailed: 'Consent revocation failed with status {{status}}.',
     offlineCacheRefreshed: 'Offline cache refreshed',
+    sessionRequired: 'Valid session required to view this record',
   },
   biometric: {
     promptMessage: 'Authenticate to unlock your health record',

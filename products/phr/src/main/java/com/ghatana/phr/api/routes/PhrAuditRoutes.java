@@ -69,11 +69,12 @@ public final class PhrAuditRoutes {
     }
 
     private Promise<HttpResponse> handleQueryEvents(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         String patientIdParam = request.getQueryParameter("patientId");
@@ -86,8 +87,15 @@ public final class PhrAuditRoutes {
             return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), auditDecision.getReasonCode());
         }
 
+        // Use policy evaluator for audit access decision (POL-001)
+        PhrPolicyEvaluator.PolicyDecision entityScopeDecision = policyEvaluator.canQueryAuditEvents(context, patientIdParam);
+        if (!entityScopeDecision.isAllowed()) {
+            return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), entityScopeDecision.getReasonCode());
+        }
+
+        // Use policy evaluator to determine effective entity ID scope (POL-001)
         String effectiveEntityId;
-        if ("admin".equals(context.role()) || "clinician".equals(context.role())) {
+        if (entityScopeDecision.isAllowed() && ("admin".equals(context.role()) || "clinician".equals(context.role()))) {
             effectiveEntityId = patientIdParam;
         } else {
             effectiveEntityId = context.principalId();
@@ -132,11 +140,12 @@ public final class PhrAuditRoutes {
     }
 
     private Promise<HttpResponse> handleGetEventDetail(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         String eventId = request.getPathParameter("eventId");
@@ -166,18 +175,19 @@ public final class PhrAuditRoutes {
                 return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), detailDecision.getReasonCode());
             }
 
-            return PhrRouteSupport.jsonResponse(200, toEventDto(event));
+            return PhrRouteSupport.jsonResponse(200, toEventDto(event, correlationId));
         } catch (Exception ex) {
             return PhrRouteSupport.errorResponse(500, "AUDIT_DETAIL_FAILED", "Failed to fetch event detail");
         }
     }
 
     private Promise<HttpResponse> handleExportEvents(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         PhrPolicyEvaluator.PolicyDecision exportDecision = policyEvaluator.canViewAuditTrail(context);
@@ -220,7 +230,7 @@ public final class PhrAuditRoutes {
                     .toList();
                 return PhrRouteSupport.jsonResponse(200, Map.of(
                     "events", eventDtos,
-                    "total", eventDtos.size(),
+                    "total", eventDtos.size(, correlationId),
                     "exportedAt", Instant.now().toString()
                 ));
             }

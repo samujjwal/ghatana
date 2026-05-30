@@ -55,13 +55,14 @@ public final class PhrConsentRoutes {
     }
 
     private Promise<HttpResponse> handleCreateGrant(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String idempotencyKey;
         try {
             context = PhrRouteSupport.requireContext(request);
             idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         // If idempotency key is provided, check for existing grant
@@ -69,7 +70,7 @@ public final class PhrConsentRoutes {
             return consentService.getGrantByIdempotencyKey(idempotencyKey)
                 .then(existing -> {
                     if (existing.isPresent()) {
-                        return PhrRouteSupport.jsonResponse(200, existing.get());
+                        return PhrRouteSupport.jsonResponse(200, existing.get(), correlationId);
                     }
                     // Proceed with creation
                     return createConsentGrant(request, context, idempotencyKey);
@@ -89,25 +90,26 @@ public final class PhrConsentRoutes {
                 try {
                     grant = parseGrant(body.getString(StandardCharsets.UTF_8), idempotencyKey);
                 } catch (IllegalArgumentException ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_CONSENT_GRANT", ex.getMessage());
+                    return PhrRouteSupport.errorResponse(400, "INVALID_CONSENT_GRANT", ex.getMessage(), correlationId);
                 }
                 PhrPolicyEvaluator.PolicyDecision decision = policyEvaluator.canManageConsent(context, grant.getPatientId());
                 if (!decision.isAllowed()) {
                     return PhrRouteSupport.errorResponse(403, decision.getReasonCode(), decision.getReasonMessage());
                 }
                 return consentService.createGrant(grant)
-                    .then(created -> PhrRouteSupport.jsonResponse(201, created));
+                    .then(created -> PhrRouteSupport.jsonResponse(201, created, correlationId));
             });
     }
 
     private Promise<HttpResponse> handleRevokeGrant(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String patientId;
         try {
             context = PhrRouteSupport.requireContext(request);
             patientId = PhrRouteSupport.requiredQuery(request, "patientId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_REVOKE", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "INVALID_REVOKE", ex.getMessage(), correlationId);
         }
         PhrPolicyEvaluator.PolicyDecision decision = policyEvaluator.canManageConsent(context, patientId);
         if (!decision.isAllowed()) {
@@ -118,10 +120,11 @@ public final class PhrConsentRoutes {
             .then($ -> PhrRouteSupport.jsonResponse(200, Map.of(
                 "grantId", grantId,
                 "status", "REVOKED"
-            )));
+            , correlationId)));
     }
 
     private Promise<HttpResponse> handleCheckConsent(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String patientId;
         String accessorId;
@@ -140,7 +143,7 @@ public final class PhrConsentRoutes {
                 action = "READ";
             }
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_CONSENT_CHECK", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "INVALID_CONSENT_CHECK", ex.getMessage(), correlationId);
         }
         String requestedAction = action.toUpperCase();
         PhrPolicyEvaluator.PolicyDecision decision = policyEvaluator.canCheckConsent(context, patientId, accessorId);
@@ -159,13 +162,14 @@ public final class PhrConsentRoutes {
     }
 
     private Promise<HttpResponse> handleListGrants(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String patientId;
         try {
             context = PhrRouteSupport.requireContext(request);
             patientId = PhrRouteSupport.requiredQuery(request, "patientId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_LIST", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "INVALID_LIST", ex.getMessage(), correlationId);
         }
         PhrPolicyEvaluator.PolicyDecision decision = policyEvaluator.canManageConsent(context, patientId);
         if (!decision.isAllowed()) {
@@ -175,7 +179,7 @@ public final class PhrConsentRoutes {
             .then(grants -> PhrRouteSupport.jsonResponse(200, Map.of(
                 "patientId", patientId,
                 "items", grants,
-                "count", grants.size()
+                "count", grants.size(, correlationId)
             )));
     }
 

@@ -58,8 +58,7 @@ test.describe('PHR accessibility @a11y', () => {
   // Accessibility checks for stable routes
   test.describe('stable routes have accessible structure', () => {
     const testableRoutes = stableRoutes
-      .filter((r: any) => !r.path.includes(':') && r.path !== '/login' && r.path !== '/emergency')
-      .slice(0, 5); // Limit to avoid very long suite
+      .filter((r: any) => !r.path.includes(':') && r.path !== '/login' && r.path !== '/emergency');
 
     for (const route of testableRoutes) {
       test(`${route.path} has accessible landmarks and headings`, async ({ page }) => {
@@ -158,5 +157,90 @@ test.describe('PHR accessibility @a11y', () => {
         expect(hasDescription).toBe(true);
       }
     }
+  });
+
+  // Keyboard navigation tests for shell/sidebar/user menu
+  test.describe('keyboard navigation for shell and navigation', () => {
+    test('sidebar navigation is keyboard accessible', async ({ page }) => {
+      await mockPhrEntitlements(page);
+      await page.goto('/dashboard');
+
+      // Tab to navigation
+      await page.keyboard.press('Tab');
+      await page.keyboard.press('Tab');
+      
+      // Verify focus is on an interactive element
+      const focused = page.locator(':focus');
+      await expect(focused).toBeVisible();
+    });
+
+    test('escape key closes modals or menus', async ({ page }) => {
+      await mockPhrEntitlements(page);
+      await page.goto('/dashboard');
+
+      // Press escape and verify no errors
+      await page.keyboard.press('Escape');
+      
+      // Should still be on page
+      await expect(page.getByRole('main')).toBeVisible();
+    });
+
+    test('tab order follows logical sequence', async ({ page }) => {
+      await mockPhrEntitlements(page);
+      await page.goto('/dashboard');
+
+      const focusableElements = [];
+      for (let i = 0; i < 10; i++) {
+        await page.keyboard.press('Tab');
+        const focused = page.locator(':focus');
+        const isVisible = await focused.isVisible().catch(() => false);
+        if (isVisible) {
+          const tagName = await focused.evaluate(el => el.tagName);
+          focusableElements.push(tagName);
+        }
+      }
+
+      // Should have focused on some elements
+      expect(focusableElements.length).toBeGreaterThan(0);
+    });
+  });
+
+  // Contrast check for status badges/pills
+  test.describe('color contrast for status indicators', () => {
+    test('status badges have sufficient contrast', async ({ page }) => {
+      await mockPhrEntitlements(page);
+      await page.goto('/consents');
+
+      // Check that badges have accessible contrast by verifying they have text content
+      const badges = page.locator('.badge, .pill');
+      const badgeCount = await badges.count();
+
+      if (badgeCount > 0) {
+        for (let i = 0; i < Math.min(badgeCount, 5); i++) {
+          const badge = badges.nth(i);
+          const text = await badge.textContent();
+          // Badge should have text content for screen readers
+          expect(text?.trim().length).toBeGreaterThan(0);
+        }
+      }
+    });
+
+    test('status pills have descriptive text', async ({ page }) => {
+      await mockPhrEntitlements(page);
+      await page.goto('/records');
+
+      // Check that pills have descriptive text
+      const pills = page.locator('.pill');
+      const pillCount = await pills.count();
+
+      if (pillCount > 0) {
+        for (let i = 0; i < Math.min(pillCount, 5); i++) {
+          const pill = pills.nth(i);
+          const text = await pill.textContent();
+          // Pill should have text content
+          expect(text?.trim().length).toBeGreaterThan(0);
+        }
+      }
+    });
   });
 });

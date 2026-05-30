@@ -3,6 +3,11 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { t } from '../i18n/phrMobileI18n';
 import type { MobileNotificationItem } from '../types';
 
+function newCorrelationId(): string {
+  return crypto.randomUUID();
+}
+
+
 interface NotificationsScreenProps {
   notifications: MobileNotificationItem[];
   onEnablePush: () => void;

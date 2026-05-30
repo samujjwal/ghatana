@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { SafeError } from '../components/SafeError';
 import { Card, CardContent, CardHeader, Input, Button, Select, Progress, TextField } from '@ghatana/design-system';
 import { uploadDocument } from '../api/documentsApi';
 import { usePhrSession } from '../auth/PhrSessionContext';
@@ -31,6 +32,30 @@ export function DocumentUploadPage(): React.ReactElement {
   const [error, setError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [canRetry, setCanRetry] = useState<boolean>(false);
+  const validationErrorRef = useRef<HTMLParagraphElement>(null);
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  const resultRef = useRef<HTMLParagraphElement>(null);
+
+  // Focus validation error when set for accessibility
+  React.useEffect(() => {
+    if (validationError && validationErrorRef.current) {
+      validationErrorRef.current.focus();
+    }
+  }, [validationError]);
+
+  // Focus error when set for accessibility
+  React.useEffect(() => {
+    if (error && errorRef.current) {
+      errorRef.current.focus();
+    }
+  }, [error]);
+
+  // Focus result when set for accessibility
+  React.useEffect(() => {
+    if (result && resultRef.current) {
+      resultRef.current.focus();
+    }
+  }, [result]);
 
   function handleFileChange(evt: React.ChangeEvent<HTMLInputElement>): void {
     const file = evt.target.files?.[0] ?? null;
@@ -217,13 +242,35 @@ export function DocumentUploadPage(): React.ReactElement {
             )}
 
             {validationError != null && (
-              <p id="validation-error" role="alert" className="error">{validationError}</p>
+              <p 
+                ref={validationErrorRef}
+                id="validation-error" 
+                role="alert" 
+                className="error"
+                tabIndex={-1}
+              >
+                {validationError}
+              </p>
             )}
             {error != null && (
-              <p role="alert" className="error">{error}</p>
+              <p 
+                ref={errorRef}
+                role="alert" 
+                className="error"
+                tabIndex={-1}
+              >
+                {error}
+              </p>
             )}
             {result != null && (
-              <p role="status" className="success">{result}</p>
+              <p 
+                ref={resultRef}
+                role="status" 
+                className="success"
+                tabIndex={-1}
+              >
+                {result}
+              </p>
             )}
             
             <Button 

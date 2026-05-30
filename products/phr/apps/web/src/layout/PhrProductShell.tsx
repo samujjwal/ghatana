@@ -13,7 +13,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { usePhrAccess } from '../auth/PhrAccessContext';
 import { API_BASE_URL } from '../api/requestApi';
 import { t } from '../i18n/phrI18n';
-import { PHR_ROLE_ORDER, phrRouteContracts } from '../phrRouteContracts';
+import { PHR_ROLE_ORDER, phrRouteContracts, getRouteLabelI18nKey, getRouteDescriptionI18nKey, type PhrRouteContract } from '../phrRouteContracts';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
 
 const roleLabels = {
@@ -86,6 +86,15 @@ export function PhrProductShell(): React.ReactElement {
     fallbackRoutes: phrRouteContracts,
     requestInit: entitlementRequestInit,
   });
+
+  // Transform routes to use i18n keys instead of raw English labels
+  const localizedRoutes = React.useMemo(() => {
+    return entitlements.routes.map((route) => ({
+      ...route,
+      label: t(getRouteLabelI18nKey(route as PhrRouteContract) as any),
+      description: t(getRouteDescriptionI18nKey(route as PhrRouteContract) as any),
+    }));
+  }, [entitlements.routes]);
   const canReviewEmergencyAccess = entitlements.entitlement?.actions?.some(
     (action) => action.id === 'break-glass-review',
   ) ?? false;
@@ -105,7 +114,7 @@ export function PhrProductShell(): React.ReactElement {
     onRoleChange: (nextRole: string) => {
       setRole(nextRole as typeof role);
     },
-    routes: entitlements.routes,
+    routes: localizedRoutes,
     headerActions,
     sidebarFooter,
   });

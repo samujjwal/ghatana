@@ -11,6 +11,7 @@ import io.activej.http.RoutingServlet;
 import io.activej.promise.Promise;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -65,11 +66,12 @@ public final class PhrPatientProfileRoutes {
     }
 
     private Promise<HttpResponse> handleGetProfile(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         // Fetch user profile from repository
@@ -100,13 +102,14 @@ public final class PhrPatientProfileRoutes {
     }
 
     private Promise<HttpResponse> handleUpdateProfile(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String idempotencyKey;
         try {
             context = PhrRouteSupport.requireContext(request);
             idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(, correlationId));
         }
 
         // Validate role-based edit permissions
@@ -145,8 +148,7 @@ public final class PhrPatientProfileRoutes {
                     for (java.util.Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
                         String fieldName = it.next();
                         if (!allowedFields.contains(fieldName)) {
-                            return PhrRouteSupport.errorResponse(403, "FIELD_NOT_EDITABLE",
-                                "Field '" + fieldName + "' cannot be edited by role: " + context.role(),
+                            return PhrRouteSupport.errorResponse(403, "FIELD_NOT_EDITABLE", "Field '" + fieldName + "' cannot be edited by role: " + context.role(, correlationId),
                                 context.correlationId());
                         }
                     }
@@ -165,8 +167,7 @@ public final class PhrPatientProfileRoutes {
                     
                     return PhrRouteSupport.jsonResponseWithCorrelation(200, response, context.correlationId());
                 } catch (Exception ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_JSON", 
-                        "Request body must be valid JSON: " + ex.getMessage(), context.correlationId());
+                    return PhrRouteSupport.errorResponse(400, "INVALID_JSON", "Request body must be valid JSON: " + ex.getMessage(, correlationId), context.correlationId());
                 }
             });
     }

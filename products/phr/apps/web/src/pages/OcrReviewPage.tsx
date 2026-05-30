@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { SafeError } from '../components/SafeError';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, Button, TextArea, Badge } from '@ghatana/design-system';
 import { confirmOcrDocument, fetchOcrDocument, rejectOcrDocument } from '../api/documentsApi';
@@ -87,8 +88,8 @@ export function OcrReviewPage(): React.ReactElement {
   }
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('documents.ocr.loading')}</div>;
-  if (error) return <div className="error" role="alert">{t('documents.ocr.error')}: {error}</div>;
-  if (!doc) return <div className="error" role="alert">{t('documents.ocr.error')}</div>;
+  if (error) return <SafeError title={t('documents.ocr.error')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
+  if (!doc) return <SafeError title={t('documents.ocr.error')} message={t('documents.ocr.error')} correlationId={session?.tenantId + '-' + session?.principalId} />;
 
   return (
     <div className="stack gap-lg">
@@ -103,6 +104,14 @@ export function OcrReviewPage(): React.ReactElement {
             >
               {t('ocr.confidence', { percent: Math.round(doc.confidence * 100) })}
             </Badge>
+            {doc.provenance && (
+              <p className="muted" aria-label="Provenance information">
+                Source: {String(doc.provenance.source ?? 'Unknown')}
+                {doc.provenance.processedAt as string && (
+                  <span> • Processed: {new Date(doc.provenance.processedAt as string).toLocaleString()}</span>
+                )}
+              </p>
+            )}
           </div>
           <section aria-label={t('ocr.extracted')}>
             <h4>{t('ocr.extracted')}</h4>

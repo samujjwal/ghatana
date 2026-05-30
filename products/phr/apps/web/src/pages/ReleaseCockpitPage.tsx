@@ -1,4 +1,5 @@
 import React from 'react';
+import { SafeError } from '../components/SafeError';
 import { Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { fetchReleaseReadiness } from '../api/releaseApi';
 import { usePhrAccess } from '../auth/PhrAccessContext';
@@ -74,7 +75,7 @@ export function ReleaseCockpitPage(): React.ReactElement {
       </section>
 
       {loading ? <div className="loading">{t('release.loading')}</div> : null}
-      {error ? <div className="error">{t('release.errorPrefix')}: {error}</div> : null}
+      {error ? <SafeError title={t('release.errorPrefix')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} /> : null}
       {!loading && !error && readiness ? <ReadinessSummary readiness={readiness} /> : null}
     </div>
   );

@@ -1,17 +1,36 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { t } from '../i18n/phrMobileI18n';
-import type { MobileRecord } from '../types';
+import type { MobileRecord, MobileSession } from '../types';
+
+function newCorrelationId(): string {
+  return crypto.randomUUID();
+}
+
 
 interface RecordDetailScreenProps {
   record: MobileRecord;
   onBack: () => void;
+  session: MobileSession | null;
 }
 
 /**
  * Displays the full detail of a single health record.
+ * Requires a valid session to display PHI.
  */
-export function RecordDetailScreen({ record, onBack }: RecordDetailScreenProps): React.ReactElement {
+export function RecordDetailScreen({ record, onBack, session }: RecordDetailScreenProps): React.ReactElement {
+  // Session validation: cannot display PHI without valid session
+  if (!session) {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <TouchableOpacity onPress={onBack} style={styles.backButton} accessibilityLabel={t('common.back')}>
+          <Text style={styles.backText}>{'< '}{t('common.back')}</Text>
+        </TouchableOpacity>
+        <Text style={styles.error}>{t('api.sessionRequired')}</Text>
+      </ScrollView>
+    );
+  }
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <TouchableOpacity onPress={onBack} style={styles.backButton} accessibilityLabel={t('common.back')}>
@@ -56,4 +75,5 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 14, fontWeight: '700', color: '#4b5c77', textTransform: 'uppercase', letterSpacing: 0.5 },
   body: { color: '#0b1b35', lineHeight: 22 },
   code: { fontFamily: 'monospace', fontSize: 12, color: '#2d4060', backgroundColor: '#e8edf8', padding: 12, borderRadius: 8 },
+  error: { color: '#d32f2f', fontSize: 16, textAlign: 'center', marginTop: 20 },
 });

@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { SafeError } from '../components/SafeError';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, Badge } from '@ghatana/design-system';
 import { fetchObservationDetail } from '../api/clinicalApi';
@@ -32,8 +33,8 @@ export function ObservationDetailPage(): React.ReactElement {
   }, [session, observationId]);
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('observationDetail.loading')}</div>;
-  if (error) return <div className="error" role="alert">{t('observationDetail.error.load')}: {error}</div>;
-  if (!observation) return <div className="error" role="alert">{t('observationDetail.error.load')}</div>;
+  if (error) return <SafeError title={t('observationDetail.error.load')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
+  if (!observation) return <SafeError title={t('observationDetail.error.load')} message={t('observationDetail.error.load')} correlationId={session?.tenantId + '-' + session?.principalId} />;
 
   return (
     <div className="stack gap-lg">

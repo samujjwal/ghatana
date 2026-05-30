@@ -1,15 +1,92 @@
 // Re-export shared PHR DTO contracts from platform
-export {
-  PatientProfile,
-  PatientRecordSummary,
-  ConsentGrant,
-  AppointmentSummary,
-  LabResultSummary,
-  MedicationSummary,
-  DashboardData,
-  SessionContext,
-  AuditEvent,
-} from '@ghatana/phr-dto';
+// Note: Using local definitions due to workspace linking issues with @ghatana/phr-dto
+export interface PatientProfile {
+  id: string;
+  name: string;
+  age: number;
+  bloodType: string;
+  location: string;
+  emergencyContact: string;
+}
+
+export interface PatientRecordSummary {
+  id: string;
+  title: string;
+  category: string;
+  updatedAt: string;
+  resourceType: string;
+  fhirJson?: string;
+  redacted?: boolean;
+  provenance?: Record<string, unknown>;
+}
+
+export interface ConsentGrant {
+  id: string;
+  recipient: string;
+  purpose: string;
+  status: 'active' | 'expiring' | 'revoked';
+  expiresAt: string;
+}
+
+export interface AppointmentSummary {
+  id: string;
+  provider: string;
+  specialty: string;
+  startsAt: string;
+  location: string;
+  status?: 'requested' | 'confirmed' | 'completed' | 'cancelled';
+  reminderSent?: boolean;
+}
+
+export interface LabResultSummary {
+  id: string;
+  name: string;
+  status: 'normal' | 'attention';
+  value: string;
+  collectedAt: string;
+}
+
+export interface MedicationSummary {
+  id: string;
+  medication: string;
+  dosage: string;
+  schedule: string;
+  adherence: number;
+  status?: 'active' | 'history' | 'stopped';
+  warnings?: string[];
+}
+
+export interface DashboardData {
+  patient: PatientProfile;
+  records: PatientRecordSummary[];
+  consents: ConsentGrant[];
+  appointments: AppointmentSummary[];
+  labs: LabResultSummary[];
+  medications: MedicationSummary[];
+}
+
+export interface SessionContext {
+  tenantId: string;
+  principalId: string;
+  role: 'patient' | 'caregiver' | 'clinician' | 'admin' | 'fchv';
+  persona?: string;
+  tier?: string;
+  facilityId?: string;
+  correlationId?: string;
+  idempotencyKey?: string;
+}
+
+export interface AuditEvent {
+  id: string;
+  tenantId: string;
+  eventType: string;
+  principal: string;
+  resourceType: string;
+  resourceId: string | null;
+  timestamp: string;
+  success: boolean;
+  details?: Record<string, unknown>;
+}
 
 export interface PhrReleaseReadinessSection {
   label: string;
@@ -39,18 +116,6 @@ export interface PhrReleaseReadiness {
 }
 
 // ─── Audit ────────────────────────────────────────────────────────────────
-
-export interface AuditEvent {
-  id: string;
-  tenantId: string;
-  eventType: string;
-  principal: string;
-  resourceType: string;
-  resourceId: string | null;
-  timestamp: string;
-  success: boolean;
-  details: Record<string, string>;
-}
 
 export interface AuditEventsPage {
   events: AuditEvent[];
@@ -138,7 +203,13 @@ export interface PhrLoginRequest {
 
 // ─── Extended profile ─────────────────────────────────────────────────────────
 
-export interface PatientProfileExtended extends PatientProfile {
+export interface PatientProfileExtended {
+  id: string;
+  name: string;
+  age: number;
+  bloodType: string;
+  location: string;
+  emergencyContact: string;
   birthDate?: string;
   preferredLanguage?: string;
   facilityId?: string;
@@ -243,6 +314,7 @@ export interface OcrReviewDocument {
   correctedText?: string;
   confidence: number;
   status: 'pending_review' | 'confirmed' | 'rejected';
+  provenance?: Record<string, unknown>;
 }
 
 export interface DocumentDetail extends DocumentSummary {

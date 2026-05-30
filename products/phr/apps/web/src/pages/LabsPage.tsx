@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { SafeError } from '../components/SafeError';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { Link } from 'react-router-dom';
 import { fetchLabs } from '../api/clinicalApi';
@@ -35,7 +36,7 @@ export function LabsPage(): React.ReactElement {
   }, [session]);
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('labs.loading')}</div>;
-  if (error) return <div className="error" role="alert">{t('dashboard.errorPrefix')}: {error}</div>;
+  if (error) return <SafeError title={t('dashboard.errorPrefix')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
 
   const criticalCount = labs.filter((lab) => lab.status === 'critical').length;
   const attentionCount = labs.filter((lab) => lab.status === 'attention' || lab.status === 'abnormal').length;
@@ -47,7 +48,7 @@ export function LabsPage(): React.ReactElement {
         <CardContent>
           <div className="info-banner" role="note">
             <p className="muted">
-              {t('labs.trendsPrefix')} <Link to="/observations">{t('labs.trendsLink')}</Link>.
+              Labs are laboratory-focused clinical observations. {t('labs.trendsPrefix')} <Link to="/observations">{t('labs.trendsLink')}</Link>.
             </p>
           </div>
           <div className="row gap-sm wrap" aria-label={t('labs.severitySummary')}>
