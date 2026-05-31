@@ -13,8 +13,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
@@ -51,7 +55,7 @@ class AgentCatalogHandlerTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { 
         handler = new AgentCatalogHandler(http, metrics); 
-        when(http.errorResponse(anyInt(), anyString())).thenReturn(errorResponse); 
+        lenient().when(http.errorResponse(anyInt(), anyString())).thenReturn(errorResponse);
     }
 
     @Test
@@ -75,5 +79,40 @@ class AgentCatalogHandlerTest extends EventloopTestBase {
 
         assertThat(response).isSameAs(errorResponse); 
         verify(metrics, never()).incrementCounter("agent.catalog.get", "tenant", "default", "agentId", "agent-1"); 
+    }
+
+    @Test
+    @DisplayName("normalizes agent definitions with governed capability descriptors")
+    void normalizesAgentDefinitionsWithGovernedCapabilityDescriptors() {
+        Map<String, Object> normalized = handler.normalizeAgentDefinition(Map.of(
+            "id", "agent-1",
+            "name", "Agent One",
+            "capabilities", List.of("event.operator", "data.quality")));
+
+        assertThat(normalized).containsKeys(
+            "inputSchema",
+            "outputSchema",
+            "modelPolicy",
+            "toolPolicy",
+            "memoryPolicy",
+            "replayPolicy",
+            "guardrails",
+            "observability",
+            "uncertaintySemantics",
+            "capabilityDescriptors");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> descriptors = (List<Map<String, Object>>) normalized.get("capabilityDescriptors");
+        assertThat(descriptors).hasSize(2);
+        assertThat(descriptors)
+            .allSatisfy(descriptor -> assertThat(descriptor).containsKeys(
+                "inputSchema",
+                "outputSchema",
+                "modelPolicy",
+                "toolPolicy",
+                "memoryPolicy",
+                "replayPolicy",
+                "guardrails",
+                "observability",
+                "uncertaintySemantics"));
     }
 }

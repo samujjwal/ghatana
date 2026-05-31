@@ -66,6 +66,8 @@ test('rejects Action Plane Gradle dependencies from non-action Data Cloud planes
     const evidence = createActionPlaneBoundaryEvidence(root, new Date('2026-05-24T00:00:00.000Z'));
 
     assert.equal(evidence.pass, false);
+    assert.equal(evidence.scope.coLocatedActionRoot, 'products/data-cloud/planes/action');
+    assert.deepEqual(evidence.scope.excludedRoots, ['products/data-cloud/planes/action']);
     assert.ok(evidence.violations.some((violation) => violation.rule === 'action-plane-gradle-dependency'));
   } finally {
     rmSync(root, { recursive: true, force: true });

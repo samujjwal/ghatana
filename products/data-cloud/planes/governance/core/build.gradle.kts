@@ -5,7 +5,7 @@ plugins {
 group = "com.ghatana.datacloud"
 version = rootProject.version
 
-description = "Data Cloud Platform Governance — PII masking, field redaction, audit logging, and retention classification"
+description = "Data Cloud Platform Governance - PII masking, field redaction, audit logging, and retention classification"
 
 dependencies {
     api(project(":platform:java:core"))

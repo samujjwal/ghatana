@@ -5666,6 +5666,78 @@ paths:
               schema:
                 $ref: "#/components/schemas/FreeformObject"
 
+  /api/v1/operations/jobs:
+    get:
+      summary: List unified Data Cloud operation jobs
+      operationId: apiV1OperationsJobsGet
+      tags: [operations]
+      description: |
+        Returns tenant-scoped operation records for connector syncs, media processing,
+        pipeline executions, agent runs, pattern runs, and background tasks. Production
+        requests require authenticated tenant identity and operations job read permission.
+      x-ghatana-sensitivity: INTERNAL
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            minimum: 1
+            maximum: 500
+      responses:
+        "200":
+          description: Tenant operation timeline.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationTimeline"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/v1/operations/jobs/{operationId}:
+    get:
+      summary: Get a unified operation job
+      operationId: apiV1OperationsJobsOperationIdGet
+      tags: [operations]
+      x-ghatana-sensitivity: INTERNAL
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: operationId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Operation record.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationRecord"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/operations/jobs/{operationId}/cancel:
+    post:
+      summary: Cancel a unified operation job
+      operationId: apiV1OperationsJobsOperationIdCancelPost
+      tags: [operations]
+      x-ghatana-sensitivity: SENSITIVE
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: operationId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Cancelled operation record.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationRecord"
+        "409": { description: Operation is not cancellable. }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /api/v1/ai/next-action:
     post:
       summary: Next-best-action surface for operators (P2.5 UI)

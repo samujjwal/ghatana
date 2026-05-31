@@ -166,7 +166,7 @@ public final class AgentCatalogHandler {
                                 try (InputStream in = jar.getInputStream(entry)) {
                                     Map<String, Object> agent = yamlMapper.readValue(in, Map.class);
                                     if (agent.containsKey("id")) {
-                                        out.add(agent);
+                                        out.add(normalizeAgentDefinition(agent));
                                     }
                                 } catch (Exception ex) {
                                     log.warn("Failed to parse agent YAML from JAR entry {}: {}", entry.getName(), ex.getMessage());
@@ -195,12 +195,67 @@ public final class AgentCatalogHandler {
                 try (InputStream in = new java.io.FileInputStream(f)) {
                     Map<String, Object> agent = yamlMapper.readValue(in, Map.class);
                     if (agent.containsKey("id")) {
-                        out.add(agent);
+                        out.add(normalizeAgentDefinition(agent));
                     }
                 } catch (Exception e) {
                     log.warn("Failed to parse agent YAML {}: {}", f.getAbsolutePath(), e.getMessage());
                 }
             }
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> normalizeAgentDefinition(Map<String, Object> agent) {
+        Map<String, Object> normalized = new HashMap<>(agent);
+        normalized.putIfAbsent("inputSchema", Map.of(
+            "type", "object",
+            "additionalProperties", true));
+        normalized.putIfAbsent("outputSchema", Map.of(
+            "type", "object",
+            "additionalProperties", true));
+        normalized.putIfAbsent("modelPolicy", Map.of(
+            "provider", "runtime-configured",
+            "allowedModels", List.of(),
+            "requiresRuntimeTruth", true));
+        normalized.putIfAbsent("toolPolicy", Map.of(
+            "allowedTools", normalized.getOrDefault("tools", List.of()),
+            "requiresPolicyDecision", true,
+            "denyByDefault", true));
+        normalized.putIfAbsent("memoryPolicy", Map.of(
+            "scope", "tenant",
+            "retentionPolicy", "tenant-retention-policy",
+            "requiresConsent", true));
+        normalized.putIfAbsent("replayPolicy", Map.of(
+            "replaySafe", false,
+            "requiresIdempotencyKey", true,
+            "sideEffects", "declared"));
+        normalized.putIfAbsent("guardrails", Map.of(
+            "tenantIsolation", true,
+            "policyEnforced", true,
+            "humanReviewRequired", true));
+        normalized.putIfAbsent("observability", Map.of(
+            "metrics", true,
+            "logs", true,
+            "traces", true,
+            "correlationIdRequired", true));
+        normalized.putIfAbsent("uncertaintySemantics", Map.of(
+            "confidenceRequired", true,
+            "abstainOnUncertainty", true));
+        Object rawCapabilities = normalized.getOrDefault("capabilities", List.of());
+        List<Object> capabilities = rawCapabilities instanceof List<?> list ? List.copyOf(list) : List.of(rawCapabilities);
+        normalized.putIfAbsent("capabilityDescriptors", capabilities.stream()
+            .map(capability -> Map.of(
+                "id", String.valueOf(capability),
+                "inputSchema", normalized.get("inputSchema"),
+                "outputSchema", normalized.get("outputSchema"),
+                "modelPolicy", normalized.get("modelPolicy"),
+                "toolPolicy", normalized.get("toolPolicy"),
+                "memoryPolicy", normalized.get("memoryPolicy"),
+                "replayPolicy", normalized.get("replayPolicy"),
+                "guardrails", normalized.get("guardrails"),
+                "observability", normalized.get("observability"),
+                "uncertaintySemantics", normalized.get("uncertaintySemantics")))
+            .toList());
+        return Map.copyOf(normalized);
     }
 }

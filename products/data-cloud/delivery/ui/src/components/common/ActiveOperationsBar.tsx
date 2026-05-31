@@ -15,6 +15,10 @@ import { IconButton } from "@ghatana/design-system";
 import { CheckCircle2, Loader2, X, XCircle } from "lucide-react";
 import React from "react";
 import {
+  useOperationTimeline,
+  type OperationJob,
+} from "../../api/operations.service";
+import {
   useOperations,
   type BackgroundJob,
 } from "../../contexts/OperationsContext";
@@ -28,6 +32,23 @@ function JobStatusIcon({ status }: { status: BackgroundJob["status"] }) {
     return <XCircle className="h-4 w-4 text-red-500 shrink-0" />;
   }
   return <Loader2 className="h-4 w-4 text-blue-500 shrink-0 animate-spin" />;
+}
+
+function mapOperationStatus(status: OperationJob["status"]): BackgroundJob["status"] {
+  if (status === "SUCCEEDED" || status === "CANCELLED") return "success";
+  if (status === "FAILED" || status === "BLOCKED") return "failure";
+  return "pending";
+}
+
+function operationToJob(operation: OperationJob): BackgroundJob {
+  return {
+    id: operation.operationId,
+    name: operation.action,
+    status: mapOperationStatus(operation.status),
+    startedAt: operation.createdAt,
+    completedAt: operation.completedAt || undefined,
+    detail: operation.summary || operation.detail || operation.resourceId,
+  };
 }
 
 function JobRow({
@@ -79,12 +100,23 @@ function JobRow({
  */
 export function ActiveOperationsBar(): React.ReactElement | null {
   const { jobs, dismissJob, dismissAllCompleted } = useOperations();
+  const { data: operationTimeline } = useOperationTimeline(20);
+  const serverJobs = React.useMemo(
+    () => operationTimeline?.items.map(operationToJob) ?? [],
+    [operationTimeline],
+  );
+  const visibleJobs = React.useMemo(() => {
+    const byId = new Map<string, BackgroundJob>();
+    for (const job of serverJobs) byId.set(job.id, job);
+    for (const job of jobs) byId.set(job.id, job);
+    return Array.from(byId.values());
+  }, [jobs, serverJobs]);
 
-  if (jobs.length === 0) return null;
+  if (visibleJobs.length === 0) return null;
 
   const hasCompleted = jobs.some((j) => j.status !== "pending");
-  const pendingCount = jobs.filter((j) => j.status === "pending").length;
-  const failedCount = jobs.filter((j) => j.status === "failure").length;
+  const pendingCount = visibleJobs.filter((j) => j.status === "pending").length;
+  const failedCount = visibleJobs.filter((j) => j.status === "failure").length;
 
   return (
     <div
@@ -115,7 +147,7 @@ export function ActiveOperationsBar(): React.ReactElement | null {
           </button>
         )}
       </div>
-      {jobs.map((job) => (
+      {visibleJobs.map((job) => (
         <JobRow key={job.id} job={job} onDismiss={dismissJob} />
       ))}
     </div>

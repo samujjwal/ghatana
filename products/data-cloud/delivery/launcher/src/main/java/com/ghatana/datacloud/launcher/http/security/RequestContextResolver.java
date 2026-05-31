@@ -36,7 +36,7 @@ public final class RequestContextResolver {
     private static final Logger log = LoggerFactory.getLogger(RequestContextResolver.class);
 
     private static final Pattern TENANT_ID_PATTERN = Pattern.compile("^[A-Za-z0-9][A-Za-z0-9-]{1,62}[A-Za-z0-9]$");
-    private static final Pattern PERMISSION_PATTERN = Pattern.compile("^[a-z][a-z0-9_]*(?::[a-z][a-z0-9_]*)*$");
+    private static final Pattern PERMISSION_PATTERN = Pattern.compile("^[a-z][a-z0-9_-]*(?::[a-z][a-z0-9_-]*)*$");
     private static final Set<String> PRODUCTION_PROFILES = Set.of("production", "staging", "sovereign");
     private static final Set<String> SAFE_FALLBACK_PROFILES = Set.of("local", "test", "development", "preview");
     

@@ -373,6 +373,15 @@ public final class DataSourceRegistryHandler {
 
         // P0-09: Fail closed when connector runtime is unavailable in production/staging/sovereign profiles
         if (isConnectorRuntimeRequired() && fabric == null) {
+            recordConnectorOperation(
+                tenantId,
+                connectionId,
+                OperationKind.CONNECTOR_TEST,
+                OperationStatus.BLOCKED,
+                "Connector test",
+                "Connector runtime is required but unavailable",
+                request,
+                Map.of("deploymentProfile", deploymentProfile));
             return connectorRuntimeUnavailableResponse("connector test");
         }
 
@@ -380,23 +389,50 @@ public final class DataSourceRegistryHandler {
             // DC-P2-006: When no fabric connector is available, do NOT mutate the connection state.
             // Setting state to TESTING creates a phantom state that never resolves; return pending instead.
             // This path is only allowed in local/test profiles where connector runtime is optional.
+            OperationRecord operation = recordConnectorOperation(
+                tenantId,
+                connectionId,
+                OperationKind.CONNECTOR_TEST,
+                OperationStatus.BLOCKED,
+                "Connector test",
+                "Data fabric connector not available; test cannot be performed",
+                request,
+                Map.of("deploymentProfile", deploymentProfile));
             return Promise.of(http.jsonResponse(Map.of(
                 "tenantId", tenantId,
                 "connectionId", connectionId,
+                "operationId", operation == null ? "" : operation.operationId(),
                 "testStatus", "pending",
                 "message", "Data fabric connector not available; test cannot be performed",
                 "timestamp", Instant.now().toString()
             )));
         }
+        OperationRecord operation = recordConnectorOperation(
+            tenantId,
+            connectionId,
+            OperationKind.CONNECTOR_TEST,
+            OperationStatus.RUNNING,
+            "Connector test",
+            "Connector test requested",
+            request,
+            Map.of());
+        String operationId = operation == null ? "" : operation.operationId();
         return fabric.testConnection(connectionId)
             .map(result -> {
                 String healthStatus = result.success() ? "healthy" : "unhealthy";
                 String state = result.success() ? "ACTIVE" : "ERROR";
                 updateConnectionStateAsync(tenantId, connectionId, state, healthStatus);
                 emitConnectorAudit(tenantId, connectionId, "CONNECTOR_TESTED", result.success());
+                transitionOperation(
+                    tenantId,
+                    operationId,
+                    result.success() ? OperationStatus.SUCCEEDED : OperationStatus.FAILED,
+                    result.message(),
+                    Map.of("latencyMs", result.latencyMs(), "healthStatus", healthStatus));
                 return http.jsonResponse(Map.of(
                     "tenantId", tenantId,
                     "connectionId", connectionId,
+                    "operationId", operationId,
                     "testStatus", result.success() ? "passed" : "failed",
                     "message", result.message(),
                     "latencyMs", result.latencyMs(),
@@ -409,6 +445,7 @@ public final class DataSourceRegistryHandler {
                     log.error("[testConnection] tenant={} id={} failed: {}", tenantId, connectionId, e.getMessage(), e);
                     updateConnectionStateAsync(tenantId, connectionId, "ERROR", "unhealthy");
                     emitConnectorAudit(tenantId, connectionId, "CONNECTOR_TEST_FAILED", false);
+                    transitionOperation(tenantId, operationId, OperationStatus.FAILED, e.getMessage(), Map.of());
                     return Promise.of(http.errorResponse(502, "Test failed: " + e.getMessage()));
                 });
     }
@@ -617,6 +654,16 @@ public final class DataSourceRegistryHandler {
                         if (opt.isEmpty()) {
                             return Promise.of(http.errorResponse(404, "Connection not found: " + connectionId));
                         }
+                        OperationRecord operation = recordConnectorOperation(
+                            tenantId,
+                            connectionId,
+                            OperationKind.CONNECTOR_CREDENTIAL_ROTATION,
+                            OperationStatus.RUNNING,
+                            "Connector credential rotation",
+                            "Credential rotation requested",
+                            request,
+                            Map.of("secretRefProvided", payload.containsKey(SECRET_REFERENCE_KEY)));
+                        String operationId = operation == null ? "" : operation.operationId();
                         DataCloudClient.Entity existing = opt.get();
                         Map<String, Object> data = new LinkedHashMap<>(existing.data());
                         data.put("updatedAt", Instant.now().toString());
@@ -629,13 +676,26 @@ public final class DataSourceRegistryHandler {
                         return client.save(tenantId, DC_CONNECTIONS, data)
                             .map(saved -> {
                                 emitConnectorAudit(tenantId, connectionId, "CONNECTOR_CREDENTIALS_ROTATED", true);
+                                transitionOperation(
+                                    tenantId,
+                                    operationId,
+                                    OperationStatus.SUCCEEDED,
+                                    "Credential rotation metadata stored",
+                                    Map.of("credentialStatus", data.getOrDefault("credentialStatus", "unchanged")));
                                 return http.jsonResponse(Map.of(
                                     "tenantId", tenantId,
                                     "connectionId", connectionId,
+                                    "operationId", operationId,
                                     "rotated", true,
                                     "timestamp", Instant.now().toString()
                                 ));
-                            });
+                            })
+                            .then(
+                                r -> Promise.of(r),
+                                e -> {
+                                    transitionOperation(tenantId, operationId, OperationStatus.FAILED, e.getMessage(), Map.of());
+                                    return Promise.of(http.errorResponse(500, "Credential rotation failed: " + e.getMessage()));
+                                });
                     });
             } catch (Exception e) {
                 log.error("[rotateCredentials] tenant={} id={} failed: {}", tenantId, connectionId, e.getMessage(), e);
@@ -678,13 +738,30 @@ public final class DataSourceRegistryHandler {
                 String healthStatus = String.valueOf(data.getOrDefault("healthStatus", "unknown"));
 
                 if (fabric != null && "ACTIVE".equals(state)) {
+                    OperationRecord operation = recordConnectorOperation(
+                        tenantId,
+                        connectionId,
+                        OperationKind.CONNECTOR_HEALTH,
+                        OperationStatus.RUNNING,
+                        "Connector health",
+                        "Live connector health requested",
+                        request,
+                        Map.of("previousHealthStatus", healthStatus));
+                    String operationId = operation == null ? "" : operation.operationId();
                     return fabric.testConnection(connectionId)
                         .map(result -> {
                             String liveHealth = result.success() ? "healthy" : "degraded";
                             updateConnectionStateAsync(tenantId, connectionId, state, liveHealth);
+                            transitionOperation(
+                                tenantId,
+                                operationId,
+                                result.success() ? OperationStatus.SUCCEEDED : OperationStatus.FAILED,
+                                result.message(),
+                                Map.of("latencyMs", result.latencyMs(), "healthStatus", liveHealth));
                             return http.jsonResponse(Map.of(
                                 "tenantId", tenantId,
                                 "connectionId", connectionId,
+                                "operationId", operationId,
                                 "state", state,
                                 "healthStatus", liveHealth,
                                 "lastTestMessage", result.message(),
@@ -696,9 +773,11 @@ public final class DataSourceRegistryHandler {
                             r -> Promise.of(r),
                             e -> {
                                 updateConnectionStateAsync(tenantId, connectionId, "ERROR", "unhealthy");
+                                transitionOperation(tenantId, operationId, OperationStatus.FAILED, e.getMessage(), Map.of());
                                 return Promise.of(http.jsonResponse(Map.of(
                                     "tenantId", tenantId,
                                     "connectionId", connectionId,
+                                    "operationId", operationId,
                                     "state", "ERROR",
                                     "healthStatus", "unhealthy",
                                     "error", e.getMessage(),
@@ -706,9 +785,19 @@ public final class DataSourceRegistryHandler {
                                 )));
                             });
                 }
+                OperationRecord operation = recordConnectorOperation(
+                    tenantId,
+                    connectionId,
+                    OperationKind.CONNECTOR_HEALTH,
+                    OperationStatus.SUCCEEDED,
+                    "Connector health",
+                    "Cached connector health returned",
+                    request,
+                    Map.of("healthStatus", healthStatus, "liveCheck", false));
                 return Promise.of(http.jsonResponse(Map.of(
                     "tenantId", tenantId,
                     "connectionId", connectionId,
+                    "operationId", operation == null ? "" : operation.operationId(),
                     "state", state,
                     "healthStatus", healthStatus,
                     "timestamp", Instant.now().toString()
@@ -743,24 +832,57 @@ public final class DataSourceRegistryHandler {
 
         // P0-09: Fail closed when connector runtime is unavailable in production/staging/sovereign profiles
         if (isConnectorRuntimeRequired() && fabric == null) {
+            recordConnectorOperation(
+                tenantId,
+                connectionId,
+                OperationKind.CONNECTOR_SCHEMA,
+                OperationStatus.BLOCKED,
+                "Connector schema",
+                "Connector runtime is required but unavailable",
+                request,
+                Map.of("deploymentProfile", deploymentProfile));
             return connectorRuntimeUnavailableResponse("connector schema retrieval");
         }
 
         if (fabric == null) {
             // This path is only allowed in local/test profiles where connector runtime is optional.
+            recordConnectorOperation(
+                tenantId,
+                connectionId,
+                OperationKind.CONNECTOR_SCHEMA,
+                OperationStatus.BLOCKED,
+                "Connector schema",
+                "Data fabric connector not available",
+                request,
+                Map.of("deploymentProfile", deploymentProfile));
             return Promise.of(http.errorResponse(503, "Data fabric connector not available"));
         }
+        OperationRecord operation = recordConnectorOperation(
+            tenantId,
+            connectionId,
+            OperationKind.CONNECTOR_SCHEMA,
+            OperationStatus.RUNNING,
+            "Connector schema",
+            "Connector schema requested",
+            request,
+            Map.of());
+        String operationId = operation == null ? "" : operation.operationId();
         return fabric.getSchema(connectionId)
-            .map(schema -> http.jsonResponse(Map.of(
-                "tenantId", tenantId,
-                "connectionId", connectionId,
-                "schema", schema,
-                "timestamp", Instant.now().toString()
-            )))
+            .map(schema -> {
+                transitionOperation(tenantId, operationId, OperationStatus.SUCCEEDED, "Connector schema retrieved", Map.of());
+                return http.jsonResponse(Map.of(
+                    "tenantId", tenantId,
+                    "connectionId", connectionId,
+                    "operationId", operationId,
+                    "schema", schema,
+                    "timestamp", Instant.now().toString()
+                ));
+            })
             .then(
                 r -> Promise.of(r),
                 e -> {
                     log.error("[getSchema] tenant={} id={} failed: {}", tenantId, connectionId, e.getMessage(), e);
+                    transitionOperation(tenantId, operationId, OperationStatus.FAILED, e.getMessage(), Map.of());
                     return Promise.of(http.errorResponse(502, "Schema retrieval failed: " + e.getMessage()));
                 });
     }

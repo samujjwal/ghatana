@@ -54,7 +54,7 @@ public final class PhaseGovernanceService {
             if (!policyDecision.isAllowed()) {
                 for (String reason : policyDecision.deniedReasons()) {
                     records.add(new PhasePacket.GovernanceRecord(
-                            "POLICY_DENIAL",
+                            "POLICY_DENIAL:" + policyDecision.policyId() + ":" + phase,
                             "POLICY_DENIAL",
                             "DENIED",
                             "system",
@@ -63,6 +63,9 @@ public final class PhaseGovernanceService {
                                     "phase", phase,
                                     "projectId", projectId,
                                     "workspaceId", workspaceId,
+                                    "tenantId", tenantId,
+                                    "actionId", "phase.advance",
+                                    "policyId", policyDecision.policyId(),
                                     "reason", reason
                             ),
                             policyDecision.policyId()
@@ -70,7 +73,7 @@ public final class PhaseGovernanceService {
                 }
             } else {
                 records.add(new PhasePacket.GovernanceRecord(
-                        "POLICY_APPROVAL",
+                        "POLICY_APPROVAL:" + policyDecision.policyId() + ":" + phase,
                         "POLICY_APPROVAL",
                         "APPROVED",
                         "system",
@@ -78,7 +81,10 @@ public final class PhaseGovernanceService {
                         Map.of(
                                 "phase", phase,
                                 "projectId", projectId,
-                                "workspaceId", workspaceId
+                                "workspaceId", workspaceId,
+                                "tenantId", tenantId,
+                                "actionId", "phase.advance",
+                                "policyId", policyDecision.policyId()
                         ),
                         policyDecision.policyId()
                 ));

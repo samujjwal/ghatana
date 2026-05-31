@@ -12,6 +12,10 @@ import com.ghatana.datacloud.feature.DataCloudFeatureFlags;
 import com.ghatana.datacloud.launcher.http.ApiInputValidator;
 import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
 import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
+import com.ghatana.datacloud.operations.InMemoryOperationRecorder;
+import com.ghatana.datacloud.operations.OperationKind;
+import com.ghatana.datacloud.operations.OperationRecord;
+import com.ghatana.datacloud.operations.OperationStatus;
 import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.http.security.filter.TenantExtractor;
@@ -329,6 +333,7 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
     void registerConnectorSanitizesCredentials() {
         HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/connectors")
             .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
+            .withHeader(HttpHeaders.of("X-Permissions"), "connector:register")
             .withHeader(HttpHeaders.of("Content-Type"), "application/json")
             .withBody(ByteBufStrings.wrapUtf8("""
                 {
@@ -369,6 +374,8 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
             ByteBufStrings.wrapUtf8("""
                 { "credentials": { "password": "rotated" } }
                 """));
+        lenient().when(request.getHeader(HttpHeaders.of("X-Permissions")))
+            .thenReturn("connector:rotate-credentials");
 
         HttpResponse response = runPromise(() -> handler.handleRotateCredentials(request));
 
@@ -386,6 +393,8 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
             "conn-1",
             "/api/v1/connectors/conn-1/sync",
             ByteBufStrings.wrapUtf8("{}"));
+        lenient().when(request.getHeader(HttpHeaders.of("X-Permissions")))
+            .thenReturn("connector:trigger-sync");
 
         HttpResponse response = runPromise(() -> productionHandler.handleTriggerSync(request));
 
@@ -414,6 +423,67 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
         assertThat(response.getCode()).isEqualTo(503);
         Map<String, Object> body = parseJsonBody(response);
         assertThat(body.get("message")).asString().contains("DataFabricConnector");
+    }
+
+    @Test
+    @DisplayName("Connector lifecycle commands record operation timeline entries")
+    void connectorLifecycleCommandsRecordOperations() {
+        InMemoryOperationRecorder operationRecorder = new InMemoryOperationRecorder();
+        DataSourceRegistryHandler handlerWithOperations = new DataSourceRegistryHandler(
+            client, http, null, null)
+            .withOperationRecorder(operationRecorder);
+        DataCloudClient.Entity existingConnection = mockEntity("conn-1", Map.of(
+            "name", "orders-source",
+            "type", "POSTGRESQL",
+            "state", "INACTIVE",
+            "healthStatus", "unknown"));
+        lenient().when(client.findById(anyString(), anyString(), eq("conn-1")))
+            .thenReturn(io.activej.promise.Promise.of(java.util.Optional.of(existingConnection)));
+
+        HttpRequest testRequest = RequestContextTestHelper.createTestRequest(
+            "test-tenant",
+            "conn-1",
+            "/api/v1/connectors/conn-1/test");
+        HttpResponse testResponse = runPromise(() -> handlerWithOperations.handleTestConnection(testRequest));
+
+        HttpRequest healthRequest = RequestContextTestHelper.createTestRequest(
+            "test-tenant",
+            "conn-1",
+            "/api/v1/connectors/conn-1/health");
+        lenient().when(healthRequest.getMethod()).thenReturn(HttpMethod.GET);
+        lenient().when(healthRequest.getHeader(HttpHeaders.of("X-Permissions")))
+            .thenReturn("connector:read-health");
+        HttpResponse healthResponse = runPromise(() -> handlerWithOperations.handleGetHealth(healthRequest));
+
+        HttpRequest schemaRequest = RequestContextTestHelper.createTestRequest(
+            "test-tenant",
+            "conn-1",
+            "/api/v1/connectors/conn-1/schema");
+        lenient().when(schemaRequest.getMethod()).thenReturn(HttpMethod.GET);
+        lenient().when(schemaRequest.getHeader(HttpHeaders.of("X-Permissions")))
+            .thenReturn("connector:read-schema");
+        HttpResponse schemaResponse = runPromise(() -> handlerWithOperations.handleGetSchema(schemaRequest));
+
+        assertThat(testResponse.getCode()).isEqualTo(200);
+        assertThat(healthResponse.getCode()).isEqualTo(200);
+        assertThat(schemaResponse.getCode()).isEqualTo(503);
+
+        List<OperationRecord> operations = operationRecorder.listRecent("test-tenant", 10);
+        assertThat(operations)
+            .extracting(OperationRecord::kind)
+            .contains(OperationKind.CONNECTOR_TEST, OperationKind.CONNECTOR_HEALTH, OperationKind.CONNECTOR_SCHEMA);
+        assertThat(operations)
+            .filteredOn(record -> record.kind() == OperationKind.CONNECTOR_TEST)
+            .singleElement()
+            .satisfies(record -> assertThat(record.status()).isEqualTo(OperationStatus.BLOCKED));
+        assertThat(operations)
+            .filteredOn(record -> record.kind() == OperationKind.CONNECTOR_HEALTH)
+            .singleElement()
+            .satisfies(record -> assertThat(record.status()).isEqualTo(OperationStatus.SUCCEEDED));
+        assertThat(operations)
+            .filteredOn(record -> record.kind() == OperationKind.CONNECTOR_SCHEMA)
+            .singleElement()
+            .satisfies(record -> assertThat(record.status()).isEqualTo(OperationStatus.BLOCKED));
     }
 
     @Test
@@ -546,6 +616,8 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
         lenient().when(request.getPath()).thenReturn("/api/v1/connectors/conn-1/sync");
         lenient().when(request.getQueryParameter("tenantId")).thenReturn(null);
         lenient().when(request.getMethod()).thenReturn(io.activej.http.HttpMethod.POST);
+        lenient().when(request.getHeader(HttpHeaders.of("X-Permissions")))
+            .thenReturn("connector:trigger-sync");
         lenient().doReturn(TenantResolutionResult.success("test-tenant", null)).when(http).requireTenantIdWithError(any());
         lenient().when(request.getBody()).thenReturn(ByteBufStrings.wrapUtf8("{\"targetCollection\":\"col-1\"}"));
 
@@ -692,9 +764,11 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
         lenient().when(client.findById(anyString(), anyString(), eq("conn-1")))
             .thenReturn(io.activej.promise.Promise.of(java.util.Optional.of(entity)));
 
-        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/connectors/conn-1")
-            .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
-            .build();
+        HttpRequest request = RequestContextTestHelper.createTestRequest(
+            "test-tenant",
+            "conn-1",
+            "/api/v1/connectors/conn-1");
+        lenient().when(request.getMethod()).thenReturn(HttpMethod.GET);
 
         HttpResponse response = runPromise(() -> handler.handleGetConnection(request));
 

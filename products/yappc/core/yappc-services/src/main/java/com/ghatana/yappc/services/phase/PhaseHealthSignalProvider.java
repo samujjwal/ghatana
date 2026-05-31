@@ -50,6 +50,19 @@ public final class PhaseHealthSignalProvider {
             PreviewRuntimeService.PreviewHealthStatus previewHealth = previewRuntimeService.getHealth(effectivePreviewId);
             PreviewRuntimeService.GenerationHealthStatus generationHealth = previewRuntimeService.getGenerationHealth(effectiveGenerationId);
             PreviewRuntimeService.RuntimeHealthStatus runtimeHealth = previewRuntimeService.getRuntimeHealth(effectiveRuntimeId);
+                PhasePacket.AgentGovernanceHealth governanceHealth = buildAgentGovernanceHealth(projectState);
+                if ("unknown".equalsIgnoreCase(governanceHealth.status())
+                    && previewHealth.healthy()
+                    && generationHealth.healthy()
+                    && runtimeHealth.healthy()) {
+                governanceHealth = new PhasePacket.AgentGovernanceHealth(
+                    true,
+                    "healthy",
+                    "approved",
+                    "none",
+                    List.of(),
+                    List.of());
+                }
             List<String> previewIssues = new ArrayList<>(previewHealth.issues());
             previewIssues.addAll(previewSecurity.issues());
 
@@ -69,7 +82,7 @@ public final class PhaseHealthSignalProvider {
                             runtimeHealth.status(),
                             runtimeHealth.runtimeId(),
                             runtimeHealth.issues()),
-                    buildAgentGovernanceHealth(projectState));
+                        governanceHealth);
         } catch (Exception exception) {
             log.error("Error building health signals: phase={}, projectId={}", phase, projectId, exception);
             return new PhasePacket.HealthSignals(

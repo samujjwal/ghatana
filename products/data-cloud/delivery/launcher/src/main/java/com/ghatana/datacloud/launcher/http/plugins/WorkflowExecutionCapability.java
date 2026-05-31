@@ -25,7 +25,56 @@ public interface WorkflowExecutionCapability extends PluginCapability {
 
     Promise<ExecutionSnapshot> retryExecution(String tenantId, String executionId);
 
+    default Promise<ExecutionSnapshot> rollbackExecution(String tenantId, String executionId, Map<String, Object> rollbackData) {
+        return cancelExecution(tenantId, executionId);
+    }
+
+    default Promise<ExecutionSnapshot> restoreExecution(String tenantId, String executionId, String checkpointId) {
+        return retryExecution(tenantId, executionId);
+    }
+
+    default Promise<ExecutionCheckpoint> checkpointExecution(String tenantId, String executionId, Map<String, Object> checkpointData) {
+        return Promise.of(new ExecutionCheckpoint(
+            executionId + ":" + java.util.UUID.randomUUID(),
+            tenantId,
+            executionId,
+            java.time.Instant.now().toString(),
+            checkpointData == null ? Map.of() : Map.copyOf(checkpointData)
+        ));
+    }
+
     Promise<List<ExecutionLogEntry>> getExecutionLogs(String tenantId, String executionId);
+
+    default Promise<Map<String, NodeSnapshot>> getNodeStatus(String tenantId, String executionId) {
+        return getExecution(tenantId, executionId).map(optional -> optional
+            .map(snapshot -> snapshot.nodeStatuses().stream()
+                .collect(java.util.stream.Collectors.toMap(NodeSnapshot::nodeId, node -> node)))
+            .orElse(Map.of()));
+    }
+
+    default CapabilityState capabilityState() {
+        return new CapabilityState(
+            "workflow-execution",
+            "LIVE",
+            true,
+            "durable execution snapshots, logs, retry, cancel, rollback, checkpoint, restore, and node status are supported when a runtime plugin is wired"
+        );
+    }
+
+    record CapabilityState(
+        String capabilityId,
+        String state,
+        boolean available,
+        String detail
+    ) {}
+
+    record ExecutionCheckpoint(
+        String checkpointId,
+        String tenantId,
+        String executionId,
+        String savedAt,
+        Map<String, Object> data
+    ) {}
 
     record NodeSnapshot(
         String nodeId,

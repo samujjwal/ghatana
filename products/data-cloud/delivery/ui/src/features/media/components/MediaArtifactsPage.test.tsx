@@ -1,29 +1,23 @@
-/**
- * J11: Tests for MediaArtifactsPage component.
- *
- * Verifies that:
- * - Loading/empty/error/unauthorized/degraded states
- * - Register artifact
- * - Trigger processing
- * - View job status
- * - View result
- * - Permission-gated actions
- *
- * @doc.type test
- * @doc.purpose Test MediaArtifactsPage component
- * @doc.layer product
- * @doc.pattern Test
- */
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createStore, Provider as JotaiProvider } from "jotai";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { MediaArtifact } from "../types";
+import React from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mediaApi } from "../services/api";
+import type { MediaArtifact } from "../types";
 import { MediaArtifactsPage } from "./MediaArtifactsPage";
 
-// Mock the media API
+const { toastMock } = vi.hoisted(() => ({
+  toastMock: {
+    error: vi.fn(),
+    success: vi.fn(),
+  },
+}));
+
+vi.mock("sonner", () => ({
+  toast: toastMock,
+}));
+
 vi.mock("../services/api", () => ({
   mediaApi: {
     getAll: vi.fn(),
@@ -52,6 +46,7 @@ const createMockArtifact = (
 describe("MediaArtifactsPage", () => {
   let queryClient: QueryClient;
   let jotaiStore: ReturnType<typeof createStore>;
+  let confirmMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     queryClient = new QueryClient({
@@ -62,6 +57,8 @@ describe("MediaArtifactsPage", () => {
       },
     });
     jotaiStore = createStore();
+    confirmMock = vi.fn(() => true);
+    vi.stubGlobal("confirm", confirmMock);
     vi.clearAllMocks();
     vi.mocked(mediaApi.getAll).mockResolvedValue({
       items: [],
@@ -77,288 +74,251 @@ describe("MediaArtifactsPage", () => {
     });
   });
 
-  const renderWithProviders = (component: React.ReactNode) => {
-    return render(
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const renderWithProviders = (component: React.ReactNode) =>
+    render(
       <QueryClientProvider client={queryClient}>
         <JotaiProvider store={jotaiStore}>{component}</JotaiProvider>
       </QueryClientProvider>,
     );
-  };
 
-  describe("loading state", () => {
-    it("shows loading state when fetching artifacts", () => {
-      vi.mocked(mediaApi.getAll).mockImplementationOnce(
-        () =>
-          new Promise(() => {
-            // Keep the query pending so the loading state remains stable.
-          }),
-      );
+  it("shows loading state while fetching artifacts", () => {
+    vi.mocked(mediaApi.getAll).mockImplementationOnce(
+      () =>
+        new Promise(() => {
+          return undefined;
+        }),
+    );
 
-      // J11: Test loading state
-      renderWithProviders(
-        <MediaArtifactsPage
-          onRegisterClick={vi.fn()}
-          onDetailsClick={vi.fn()}
-        />,
-      );
+    renderWithProviders(
+      <MediaArtifactsPage onRegisterClick={vi.fn()} onDetailsClick={vi.fn()} />,
+    );
 
-      // Should show loading indicator
-      // The actual implementation depends on the LoadingState component
-    });
+    expect(
+      screen.getByRole("status", { name: "mediaArtifacts.loading" }),
+    ).toBeInTheDocument();
   });
 
-  describe("empty state", () => {
-    it("shows empty state when no artifacts exist", async () => {
-      vi.mocked(mediaApi.getAll).mockResolvedValue({
-        items: [],
-        count: 0,
-      });
+  it("shows empty state when no artifacts exist", async () => {
+    renderWithProviders(
+      <MediaArtifactsPage onRegisterClick={vi.fn()} onDetailsClick={vi.fn()} />,
+    );
 
-      renderWithProviders(
-        <MediaArtifactsPage
-          onRegisterClick={vi.fn()}
-          onDetailsClick={vi.fn()}
-        />,
-      );
-
-      await waitFor(() => {
-        // J11: Should show empty state with register prompt
-        expect(
-          screen.queryAllByText("mediaArtifacts.noArtifactsTitle").length,
-        ).toBeGreaterThan(0);
-      });
-    });
+    expect(
+      await screen.findByText("mediaArtifacts.noArtifactsTitle"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("mediaArtifacts.noArtifactsDescription")).toBeInTheDocument();
   });
 
-  describe("error state", () => {
-    it("shows error state when API fails", async () => {
-      vi.mocked(mediaApi.getAll).mockRejectedValue(new Error("API error"));
+  it("shows error state when the API fails", async () => {
+    vi.mocked(mediaApi.getAll).mockRejectedValue(new Error("API error"));
 
-      renderWithProviders(
-        <MediaArtifactsPage
-          onRegisterClick={vi.fn()}
-          onDetailsClick={vi.fn()}
-        />,
-      );
+    renderWithProviders(
+      <MediaArtifactsPage onRegisterClick={vi.fn()} onDetailsClick={vi.fn()} />,
+    );
 
-      await waitFor(() => {
-        // J11: Should show error message
-        expect(screen.queryAllByText(/error/i).length).toBeGreaterThan(0);
-      });
-    });
+    expect(await screen.findByText("mediaArtifacts.error")).toBeInTheDocument();
+    expect(screen.getByText("API error")).toBeInTheDocument();
   });
 
-  describe("unauthorized state", () => {
-    it("shows unauthorized state when permission denied", async () => {
-      vi.mocked(mediaApi.getAll).mockRejectedValue({
-        status: 403,
-        message: "Permission denied",
-      });
-
-      renderWithProviders(
-        <MediaArtifactsPage
-          onRegisterClick={vi.fn()}
-          onDetailsClick={vi.fn()}
-        />,
-      );
-
-      await waitFor(() => {
-        // J11: Should show unauthorized state
-        expect(screen.queryByText(/unauthorized/i)).toBeInTheDocument();
-      });
+  it("shows unauthorized state when permission is denied", async () => {
+    vi.mocked(mediaApi.getAll).mockRejectedValue({
+      status: 403,
+      message: "Permission denied",
     });
+
+    renderWithProviders(
+      <MediaArtifactsPage onRegisterClick={vi.fn()} onDetailsClick={vi.fn()} />,
+    );
+
+    expect(
+      await screen.findByText("mediaArtifacts.unauthorized"),
+    ).toBeInTheDocument();
   });
 
-  describe("degraded state", () => {
-    it("shows degraded state when service unavailable", async () => {
-      vi.mocked(mediaApi.getAll).mockRejectedValue({
-        status: 503,
-        surfaceDegraded: true,
-        message: "Service degraded",
-      });
-
-      renderWithProviders(
-        <MediaArtifactsPage
-          onRegisterClick={vi.fn()}
-          onDetailsClick={vi.fn()}
-        />,
-      );
-
-      await waitFor(() => {
-        // J11: Should show degraded/unavailable state
-        expect(screen.queryAllByText(/unavailable/i).length).toBeGreaterThan(
-          0,
-        );
-      });
+  it("shows unavailable state when the service is unavailable", async () => {
+    vi.mocked(mediaApi.getAll).mockRejectedValue({
+      status: 503,
+      surfaceUnavailable: true,
+      message: "Service unavailable",
     });
+
+    renderWithProviders(
+      <MediaArtifactsPage onRegisterClick={vi.fn()} onDetailsClick={vi.fn()} />,
+    );
+
+    expect(
+      await screen.findByText("mediaArtifacts.unavailable"),
+    ).toBeInTheDocument();
   });
 
-  describe("register artifact", () => {
-    it("calls onRegisterClick when register button clicked", async () => {
-      const onRegisterClick = vi.fn();
+  it("calls onRegisterClick when the primary register action is selected", async () => {
+    const onRegisterClick = vi.fn();
 
-      vi.mocked(mediaApi.getAll).mockResolvedValue({
-        items: [],
-        count: 0,
-      });
+    renderWithProviders(
+      <MediaArtifactsPage
+        onRegisterClick={onRegisterClick}
+        onDetailsClick={vi.fn()}
+      />,
+    );
 
-      renderWithProviders(
-        <MediaArtifactsPage
-          onRegisterClick={onRegisterClick}
-          onDetailsClick={vi.fn()}
-        />,
-      );
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "mediaArtifacts.registerArtifact",
+      }),
+    );
 
-      await waitFor(() => {
-        const registerButton = screen.getAllByRole("button", {
-          name: /register/i,
-        })[0];
-        fireEvent.click(registerButton);
-        expect(onRegisterClick).toHaveBeenCalled();
-      });
-    });
+    expect(onRegisterClick).toHaveBeenCalledTimes(1);
   });
 
-  describe("trigger processing", () => {
-    it("triggers transcription when transcribe button clicked", async () => {
-      const mockArtifact = createMockArtifact();
-
-      vi.mocked(mediaApi.getAll).mockResolvedValue({
-        items: [mockArtifact],
-        count: 1,
-      });
-
-      renderWithProviders(
-        <MediaArtifactsPage
-          onRegisterClick={vi.fn()}
-          onDetailsClick={vi.fn()}
-        />,
-      );
-
-      await waitFor(() => {
-        // J11: Should be able to trigger transcription
-        // Actual implementation depends on UI structure
-      });
+  it("opens artifact details when an artifact row is selected", async () => {
+    const onDetailsClick = vi.fn();
+    const artifact = createMockArtifact();
+    vi.mocked(mediaApi.getAll).mockResolvedValue({
+      items: [artifact],
+      count: 1,
     });
 
-    it("triggers analysis when analyze button clicked", async () => {
-      const mockArtifact = createMockArtifact({
-        mediaType: "image/jpeg",
-        storageUri: "s3://bucket/artifact.jpg",
-      });
+    renderWithProviders(
+      <MediaArtifactsPage
+        onRegisterClick={vi.fn()}
+        onDetailsClick={onDetailsClick}
+      />,
+    );
 
-      vi.mocked(mediaApi.getAll).mockResolvedValue({
-        items: [mockArtifact],
-        count: 1,
-      });
+    fireEvent.click(await screen.findByText(artifact.artifactId));
 
-      renderWithProviders(
-        <MediaArtifactsPage
-          onRegisterClick={vi.fn()}
-          onDetailsClick={vi.fn()}
-        />,
-      );
-
-      await waitFor(() => {
-        // J11: Should be able to trigger analysis
-        // Actual implementation depends on UI structure
-      });
-    });
+    expect(onDetailsClick).toHaveBeenCalledWith(artifact);
   });
 
-  describe("view job status", () => {
-    it("displays job status for processing artifacts", async () => {
-      const mockArtifact = createMockArtifact({
-        isProcessing: true,
-        processingJobId: "job-1",
-      });
-
-      vi.mocked(mediaApi.getAll).mockResolvedValue({
-        items: [mockArtifact],
-        count: 1,
-      });
-
-      renderWithProviders(
-        <MediaArtifactsPage
-          onRegisterClick={vi.fn()}
-          onDetailsClick={vi.fn()}
-        />,
-      );
-
-      await waitFor(() => {
-        // J11: Should display job status
-        // Actual implementation depends on UI structure
-      });
+  it("triggers transcription for audio artifacts", async () => {
+    const artifact = createMockArtifact();
+    vi.mocked(mediaApi.getAll).mockResolvedValue({
+      items: [artifact],
+      count: 1,
     });
+
+    renderWithProviders(
+      <MediaArtifactsPage onRegisterClick={vi.fn()} onDetailsClick={vi.fn()} />,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: `Transcribe artifact ${artifact.artifactId}`,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(mediaApi.transcribe).toHaveBeenCalledWith(artifact.artifactId);
+    });
+    expect(toastMock.success).toHaveBeenCalledWith(
+      "mediaArtifacts.transcribeSuccess (Job ID: job-1)",
+    );
   });
 
-  describe("view result", () => {
-    it("displays transcription result when available", async () => {
-      const mockArtifact = createMockArtifact({
-        isProcessing: false,
-        processingJobId: "job-1",
-      });
+  it("triggers analysis for image artifacts", async () => {
+    const artifact = createMockArtifact({
+      mediaType: "image/jpeg",
+      storageUri: "s3://bucket/artifact.jpg",
+    });
+    vi.mocked(mediaApi.getAll).mockResolvedValue({
+      items: [artifact],
+      count: 1,
+    });
 
-      vi.mocked(mediaApi.getAll).mockResolvedValue({
-        items: [mockArtifact],
-        count: 1,
-      });
+    renderWithProviders(
+      <MediaArtifactsPage onRegisterClick={vi.fn()} onDetailsClick={vi.fn()} />,
+    );
 
-      renderWithProviders(
-        <MediaArtifactsPage
-          onRegisterClick={vi.fn()}
-          onDetailsClick={vi.fn()}
-        />,
-      );
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: `Analyze artifact ${artifact.artifactId}`,
+      }),
+    );
 
-      await waitFor(() => {
-        // J11: Should display transcription result
-        // Actual implementation depends on UI structure
+    await waitFor(() => {
+      expect(mediaApi.analyze).toHaveBeenCalledWith(artifact.artifactId, {
+        analysisType: "object_detection",
       });
     });
+    expect(toastMock.success).toHaveBeenCalledWith(
+      "mediaArtifacts.analyzeSuccess (Job ID: job-1)",
+    );
   });
 
-  describe("permission-gated actions", () => {
-    it("disables delete action without permission", async () => {
-      const mockArtifact = createMockArtifact();
+  it("deletes an artifact after confirmation", async () => {
+    const artifact = createMockArtifact();
+    vi.mocked(mediaApi.getAll).mockResolvedValue({
+      items: [artifact],
+      count: 1,
+    });
+    vi.mocked(mediaApi.delete).mockResolvedValue(undefined);
 
-      vi.mocked(mediaApi.getAll).mockResolvedValue({
-        items: [mockArtifact],
-        count: 1,
-      });
+    renderWithProviders(
+      <MediaArtifactsPage onRegisterClick={vi.fn()} onDetailsClick={vi.fn()} />,
+    );
 
-      renderWithProviders(
-        <MediaArtifactsPage
-          onRegisterClick={vi.fn()}
-          onDetailsClick={vi.fn()}
-        />,
-      );
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: `Delete artifact ${artifact.artifactId}`,
+      }),
+    );
 
-      await waitFor(() => {
-        // J11: Should gate delete action based on permissions
-        // Actual implementation depends on permission system
-      });
+    await waitFor(() => {
+      expect(mediaApi.delete).toHaveBeenCalledWith(artifact.artifactId);
+    });
+    expect(confirmMock).toHaveBeenCalledWith("mediaArtifacts.deleteConfirm");
+    expect(toastMock.success).toHaveBeenCalledWith(
+      "mediaArtifacts.deleteSuccess",
+    );
+  });
+
+  it("shows transcription only for audio artifacts", async () => {
+    const artifact = createMockArtifact({
+      mediaType: "application/pdf",
+      storageUri: "s3://bucket/artifact.pdf",
+    });
+    vi.mocked(mediaApi.getAll).mockResolvedValue({
+      items: [artifact],
+      count: 1,
     });
 
-    it("disables transcribe action without permission", async () => {
-      const mockArtifact = createMockArtifact();
+    renderWithProviders(
+      <MediaArtifactsPage onRegisterClick={vi.fn()} onDetailsClick={vi.fn()} />,
+    );
 
-      vi.mocked(mediaApi.getAll).mockResolvedValue({
-        items: [mockArtifact],
-        count: 1,
-      });
+    await screen.findByText(artifact.artifactId);
 
-      renderWithProviders(
-        <MediaArtifactsPage
-          onRegisterClick={vi.fn()}
-          onDetailsClick={vi.fn()}
-        />,
-      );
+    expect(
+      screen.queryByRole("button", {
+        name: `Transcribe artifact ${artifact.artifactId}`,
+      }),
+    ).not.toBeInTheDocument();
+  });
 
-      await waitFor(() => {
-        // J11: Should gate transcribe action based on permissions
-        // Actual implementation depends on permission system
-      });
+  it("shows analysis only for image and video artifacts", async () => {
+    const artifact = createMockArtifact({
+      mediaType: "audio/wav",
+      storageUri: "s3://bucket/artifact.wav",
     });
+    vi.mocked(mediaApi.getAll).mockResolvedValue({
+      items: [artifact],
+      count: 1,
+    });
+
+    renderWithProviders(
+      <MediaArtifactsPage onRegisterClick={vi.fn()} onDetailsClick={vi.fn()} />,
+    );
+
+    await screen.findByText(artifact.artifactId);
+
+    expect(
+      screen.queryByRole("button", {
+        name: `Analyze artifact ${artifact.artifactId}`,
+      }),
+    ).not.toBeInTheDocument();
   });
 });

@@ -309,6 +309,66 @@ describe('usePhaseActionHandlers', () => {
       packet: packetFixture({
         phase: 'generate',
         lifecyclePhase: 'GENERATE',
+        platformRunStatus: {
+          runId: 'platform-run-123',
+          status: 'RUNNING',
+          platform: 'aep',
+          startedAt: new Date().toISOString(),
+          traceId: 'trace-123',
+          evidenceIds: ['evidence-1'],
+        },
+        availableActions: [primaryAction, reviewAction],
+        dashboardActions: {
+          ...packetFixture().dashboardActions,
+          primaryAction: 'generate-primary',
+        },
+      }),
+      currentUser: { id: 'user-1', tenantId: 'tenant-1', email: 'user-1@example.com' },
+      t: (key: string) => key,
+      navigate: vi.fn(),
+      refetch: vi.fn(async () => undefined),
+      scrollToSupportingSurface: vi.fn(),
+      scrollToBlockerPanel: vi.fn(),
+    }), { wrapper: wrapperFactory() });
+
+    await act(async () => {
+      result.current.handleSuggestionAction(reviewAction);
+    });
+
+    await waitFor(() => {
+      expect(phaseServiceMocks.executeGenerateReviewDecision).toHaveBeenCalled();
+      expect(phaseServiceMocks.executeGenerateReviewDecision.mock.calls[0]?.[0]).toEqual(expect.objectContaining({
+        runId: 'platform-run-123',
+        decision: 'apply',
+      }));
+    });
+  });
+
+  it('requires backend run context instead of actionResult.runId fallback', async () => {
+    const primaryAction = {
+      ...packetFixture().availableActions[0],
+      actionId: 'generate-primary',
+      targetType: 'server',
+      serverOperation: 'generate.start',
+      requiresPreview: false,
+    };
+
+    const reviewAction = {
+      ...packetFixture().availableActions[0],
+      actionId: 'generate.apply',
+      targetType: 'server',
+      serverOperation: 'generate.apply',
+      requiresPreview: false,
+      parameters: {},
+    };
+
+    const { result } = renderHook(() => usePhaseActionHandlers({
+      phase: 'generate',
+      projectId: 'proj-1',
+      packet: packetFixture({
+        phase: 'generate',
+        lifecyclePhase: 'GENERATE',
+        platformRunStatus: null,
         availableActions: [primaryAction, reviewAction],
         dashboardActions: {
           ...packetFixture().dashboardActions,
@@ -342,11 +402,8 @@ describe('usePhaseActionHandlers', () => {
     });
 
     await waitFor(() => {
-      expect(phaseServiceMocks.executeGenerateReviewDecision).toHaveBeenCalled();
-      expect(phaseServiceMocks.executeGenerateReviewDecision.mock.calls[0]?.[0]).toEqual(expect.objectContaining({
-        runId: 'run-1',
-        decision: 'apply',
-      }));
+      expect(result.current.actionError).toBe('phaseCockpit.errors.missingGenerationRunContext');
+      expect(phaseServiceMocks.executeGenerateReviewDecision).not.toHaveBeenCalled();
     });
   });
 
@@ -456,7 +513,19 @@ describe('usePhaseActionHandlers', () => {
     const { result } = renderHook(() => usePhaseActionHandlers({
       phase: 'run',
       projectId: 'proj-1',
-      packet: packetFixture({ phase: 'run', lifecyclePhase: 'RUN' }),
+      packet: packetFixture({
+        phase: 'run',
+        lifecyclePhase: 'RUN',
+        platformRunStatus: {
+          runId: 'platform-run-123',
+          status: 'FAILED',
+          platform: 'aep',
+          startedAt: new Date().toISOString(),
+          completedAt: new Date().toISOString(),
+          traceId: 'trace-run-123',
+          evidenceIds: ['evidence-123'],
+        },
+      }),
       currentUser: { id: 'user-1', tenantId: 'tenant-1' },
       t: (key: string) => key,
       navigate: vi.fn(),
@@ -464,19 +533,6 @@ describe('usePhaseActionHandlers', () => {
       scrollToSupportingSurface: vi.fn(),
       scrollToBlockerPanel: vi.fn(),
     }), { wrapper: wrapperFactory() });
-
-    await act(async () => {
-      phaseServiceMocks.executePhasePrimaryAction.mockResolvedValueOnce({
-        kind: 'run-workflow',
-        message: 'run started',
-        runId: 'run-1',
-      });
-      result.current.handlePrimaryAction();
-    });
-
-    await waitFor(() => {
-      expect(result.current.actionResult?.runId).toBe('run-1');
-    });
 
     await act(async () => {
       result.current.handleSuggestionAction(rollbackAction);
@@ -504,7 +560,19 @@ describe('usePhaseActionHandlers', () => {
     const { result } = renderHook(() => usePhaseActionHandlers({
       phase: 'run',
       projectId: 'proj-1',
-      packet: packetFixture({ phase: 'run', lifecyclePhase: 'RUN' }),
+      packet: packetFixture({
+        phase: 'run',
+        lifecyclePhase: 'RUN',
+        platformRunStatus: {
+          runId: 'platform-run-123',
+          status: 'FAILED',
+          platform: 'aep',
+          startedAt: new Date().toISOString(),
+          completedAt: new Date().toISOString(),
+          traceId: 'trace-run-123',
+          evidenceIds: ['evidence-123'],
+        },
+      }),
       currentUser: { id: 'user-1', tenantId: 'tenant-1' },
       t: (key: string) => key,
       navigate: vi.fn(),
@@ -512,19 +580,6 @@ describe('usePhaseActionHandlers', () => {
       scrollToSupportingSurface: vi.fn(),
       scrollToBlockerPanel: vi.fn(),
     }), { wrapper: wrapperFactory() });
-
-    await act(async () => {
-      phaseServiceMocks.executePhasePrimaryAction.mockResolvedValueOnce({
-        kind: 'run-workflow',
-        message: 'run started',
-        runId: 'run-1',
-      });
-      result.current.handlePrimaryAction();
-    });
-
-    await waitFor(() => {
-      expect(result.current.actionResult?.runId).toBe('run-1');
-    });
 
     await act(async () => {
       result.current.handleSuggestionAction(retryAction);
@@ -537,5 +592,35 @@ describe('usePhaseActionHandlers', () => {
         targetEnvironment: undefined,
       }));
     });
+  });
+
+  it('translates disabled reason keys that start with phaseAction', () => {
+    const action = {
+      ...packetFixture().availableActions[0],
+      actionId: 'run.retry',
+      enabled: false,
+      targetType: 'server',
+      serverOperation: 'run.retry',
+      requiresPreview: false,
+      disabledReason: 'phaseAction.disabled.policyDeniedTransition',
+    };
+
+    const { result } = renderHook(() => usePhaseActionHandlers({
+      phase: 'run',
+      projectId: 'proj-1',
+      packet: packetFixture({ phase: 'run', lifecyclePhase: 'RUN', availableActions: [action] }),
+      currentUser: { id: 'user-1', tenantId: 'tenant-1' },
+      t: (key: string) => `translated:${key}`,
+      navigate: vi.fn(),
+      refetch: vi.fn(async () => undefined),
+      scrollToSupportingSurface: vi.fn(),
+      scrollToBlockerPanel: vi.fn(),
+    }), { wrapper: wrapperFactory() });
+
+    act(() => {
+      result.current.handleSuggestionAction(action);
+    });
+
+    expect(result.current.feedback).toContain('translated:phaseAction.disabled.policyDeniedTransition');
   });
 });

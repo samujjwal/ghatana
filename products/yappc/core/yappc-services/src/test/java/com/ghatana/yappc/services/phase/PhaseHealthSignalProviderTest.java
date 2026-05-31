@@ -55,6 +55,9 @@ class PhaseHealthSignalProviderTest {
         assertThat(signals.preview().isHealthy()).isTrue();
         assertThat(signals.generation().isHealthy()).isTrue();
         assertThat(signals.runtime().isHealthy()).isTrue();
+        assertThat(signals.agentGovernance()).isNotNull();
+        assertThat(signals.agentGovernance().status()).isEqualTo("healthy");
+        assertThat(signals.agentGovernance().governanceState()).isEqualTo("approved");
         verify(previewRuntimeService).getHealth("project-1-generate");
     }
 

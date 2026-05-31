@@ -120,11 +120,11 @@ tasks.register<ValidateBoundaryRules>("validateBoundaryRules") {
     
     forbiddenDependencies.set(
         listOf(
-            "action:engine",
-            "action:orchestrator",
-            "action:agent-runtime",
-            "action:central-runtime",
-            "action:operator-contracts"
+            ":products:data-cloud:planes:action:engine",
+            ":products:data-cloud:planes:action:orchestrator",
+            ":products:data-cloud:planes:action:agent-runtime",
+            ":products:data-cloud:planes:action:central-runtime",
+            ":products:data-cloud:planes:action:operator-contracts"
         )
     )
     

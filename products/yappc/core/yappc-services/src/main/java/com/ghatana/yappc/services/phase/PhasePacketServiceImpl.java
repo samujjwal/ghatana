@@ -203,12 +203,13 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
 
         String tenantId = principal.getTenantId();
         // Query project state from DataCloud
-        return queryProjectState(phase, projectId, workspaceId, tenantId, effectiveCorrelationId)
-            .then(projectState -> {
+        return queryProjectSnapshot(phase, projectId, workspaceId, tenantId, effectiveCorrelationId)
+            .then(projectSnapshot -> {
+                Map<String, Object> projectState = new HashMap<>(projectSnapshot.state());
                 // Check if project is in degraded state
-                boolean isDegraded = Boolean.TRUE.equals(projectState.get("degraded"));
+                boolean isDegraded = projectSnapshot.degraded();
                 if (isDegraded) {
-                    String degradedReason = (String) projectState.get("degradedReason");
+                    String degradedReason = projectSnapshot.degradedReason();
                     log.warn(
                             "Project in degraded state: tenantId={}, workspaceId={}, projectId={}, phase={}, correlationId={}, reason={}",
                             tenantId,
@@ -241,8 +242,10 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                         degradedReason
                     ));
                 }
-                PhasePacket.TenantTier tier = determineTenantTier(projectState, principal);
-                Set<String> enabledFlags = phaseFeatureFlagProvider.determineEnabledFlags(projectState, tier);
+                PhasePacket.TenantTier tier = determineTenantTier(projectSnapshot, principal);
+                Set<String> enabledFlags = projectSnapshot.enabledPhaseFlags().isEmpty()
+                        ? phaseFeatureFlagProvider.determineEnabledFlags(projectState, tier)
+                        : projectSnapshot.enabledPhaseFlags();
                 List<PhasePacket.RequiredArtifact> requiredArtifacts =
                         requiredArtifactProvider.queryRequiredArtifacts(phase, projectId);
                 List<PhasePacket.PhaseEvidence> evidence =
@@ -321,10 +324,10 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                     runActionContext
                 );
                 PhasePacket.DashboardActionClassification dashboardActions = buildDashboardActionClassification(actions, blockers);
-                String projectName = extractProjectName(projectState);
-                String workspaceName = extractWorkspaceName(projectState, workspaceId);
+                        String projectName = extractProjectName(projectSnapshot, projectState);
+                        String workspaceName = extractWorkspaceName(projectSnapshot, projectState, workspaceId);
                 PhasePacket.ActorContext actor = buildActorContext(principal, projectState);
-                String lifecyclePhase = extractLifecyclePhase(phase, projectState);
+                        String lifecyclePhase = extractLifecyclePhase(projectSnapshot, phase, projectState);
                 String fallbackSourceEvent = activityFeed.isEmpty()
                     ? "No source event available"
                     : activityFeed.get(0).summary();
@@ -464,14 +467,14 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
     /**
      * Queries project state from DataCloud.
      */
-    private Promise<Map<String, Object>> queryProjectState(
+    private Promise<ProjectLifecycleSnapshot> queryProjectSnapshot(
             String phase,
             String projectId,
             String workspaceId,
             String tenantId,
             String correlationId
     ) {
-        return phaseProjectStateService.queryProjectState(phase, projectId, workspaceId, tenantId, correlationId);
+        return phaseProjectStateService.queryProjectSnapshot(phase, projectId, workspaceId, tenantId, correlationId);
     }
 
     /**
@@ -593,13 +596,13 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
      * Determines tenant tier from project state or principal.
      */
     private PhasePacket.TenantTier determineTenantTier(
-            Map<String, Object> projectState,
+            ProjectLifecycleSnapshot projectSnapshot,
             Principal principal
     ) {
         try {
-            Object tierValue = projectState.get("tier");
-            if (!(tierValue instanceof String tierStr) || tierStr.isBlank()) {
-                log.warn("Missing or invalid tenant tier value, failing closed to FREE: {}", tierValue);
+            String tierStr = projectSnapshot.tier();
+            if (tierStr == null || tierStr.isBlank()) {
+                log.warn("Missing or invalid tenant tier value, failing closed to FREE: {}", tierStr);
                 return PhasePacket.TenantTier.FREE;
             }
 
@@ -813,21 +816,30 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
     /**
      * Extracts project name from project state.
      */
-    private String extractProjectName(Map<String, Object> projectState) {
+    private String extractProjectName(ProjectLifecycleSnapshot projectSnapshot, Map<String, Object> projectState) {
+        if (projectSnapshot.projectName() != null && !projectSnapshot.projectName().isBlank()) {
+            return projectSnapshot.projectName();
+        }
         return (String) projectState.getOrDefault("name", "Unnamed Project");
     }
 
     /**
      * Extracts workspace name from project state.
      */
-    private String extractWorkspaceName(Map<String, Object> projectState, String workspaceId) {
+    private String extractWorkspaceName(ProjectLifecycleSnapshot projectSnapshot, Map<String, Object> projectState, String workspaceId) {
+        if (projectSnapshot.workspaceName() != null && !projectSnapshot.workspaceName().isBlank()) {
+            return projectSnapshot.workspaceName();
+        }
         return (String) projectState.getOrDefault("workspaceName", "Workspace-" + workspaceId);
     }
 
     /**
      * Extracts the canonical runtime lifecycle phase from project state.
      */
-    private String extractLifecyclePhase(String requestedPhase, Map<String, Object> projectState) {
+    private String extractLifecyclePhase(ProjectLifecycleSnapshot projectSnapshot, String requestedPhase, Map<String, Object> projectState) {
+        if (projectSnapshot.lifecyclePhase() != null && !projectSnapshot.lifecyclePhase().isBlank()) {
+            return projectSnapshot.lifecyclePhase();
+        }
         Object lifecyclePhase = projectState.get("lifecyclePhase");
         if (lifecyclePhase instanceof String value && !value.isBlank()) {
             return value;

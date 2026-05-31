@@ -196,7 +196,13 @@ public class WorkflowExecutionHandler {
                 }
 
                 if (executionCapability == null) {
-                    return Promise.of(http.errorResponse(503, "Workflow execution capability is not configured"));
+                    return executionCapabilityUnavailable(
+                        request,
+                        tenantId,
+                        pipelineId,
+                        OperationKind.PIPELINE_EXECUTION,
+                        "Pipeline execution",
+                        "Workflow execution capability is not configured");
                 }
 
                 String correlationId = http.resolveCorrelationId(request);
@@ -281,12 +287,13 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.jsonResponse(Map.of(
-                "pipelineId", pipelineId,
-                "tenantId", tenantId,
-                "executions", List.of(),
-                "count", 0
-            )));
+            return executionCapabilityUnavailable(
+                request,
+                tenantId,
+                pipelineId,
+                OperationKind.PIPELINE_EXECUTION,
+                "Pipeline execution list",
+                "Workflow execution capability is not available; execution history cannot be read");
         }
 
         return executionCapability.listExecutions(tenantId, pipelineId)
@@ -326,7 +333,13 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.errorResponse(501, "Workflow execution capability is not available in this deployment."));
+            return executionCapabilityUnavailable(
+                request,
+                tenantId,
+                executionId,
+                OperationKind.PIPELINE_EXECUTION,
+                "Pipeline execution detail",
+                "Workflow execution capability is not available in this deployment");
         }
 
         return executionCapability.getExecution(tenantId, executionId)
@@ -366,6 +379,16 @@ public class WorkflowExecutionHandler {
             return Promise.of(http.errorResponse(400, "pipelineId and executionId path parameters are required"));
         }
 
+        if (executionCapability == null) {
+            return executionCapabilityUnavailable(
+                request,
+                tenantId,
+                executionId,
+                OperationKind.PIPELINE_EXECUTION,
+                "Pipeline execution logs",
+                "Workflow execution capability is not available; execution logs cannot be read");
+        }
+
         // I4: Verify execution belongs to tenant before returning logs (cross-tenant leak prevention)
         return executionCapability.getExecution(tenantId, executionId)
             .then(opt -> {
@@ -373,16 +396,6 @@ public class WorkflowExecutionHandler {
                     log.warn("[tenant={} pipeline={} execution={}] Log access denied: execution not found or belongs to different tenant",
                         tenantId, pipelineId, executionId);
                     return Promise.of(http.errorResponse(404, "Execution not found: " + executionId));
-                }
-
-                if (executionCapability == null) {
-                    return Promise.of(http.jsonResponse(Map.of(
-                        "executionId", executionId,
-                        "tenantId", tenantId,
-                        "pipelineId", pipelineId,
-                        "logs", List.of(),
-                        "count", 0
-                    )));
                 }
 
                 return executionCapability.getExecutionLogs(tenantId, executionId)
@@ -430,7 +443,13 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.errorResponse(501, "Workflow execution capability is not available in this deployment."));
+            return executionCapabilityUnavailable(
+                request,
+                tenantId,
+                executionId,
+                OperationKind.PIPELINE_CANCEL,
+                "Pipeline execution cancel",
+                "Workflow execution capability is not available in this deployment");
         }
 
         String correlationId = http.resolveCorrelationId(request);
@@ -451,6 +470,7 @@ public class WorkflowExecutionHandler {
                         correlationId, tenantId, pipelineId, executionId, snapshot.status());
                 metrics.recordRequest(HANDLER_NAME, "cancelPipelineExecution", tenantId, 200);
                 metrics.recordLatency(HANDLER_NAME, "cancelPipelineExecution", latency);
+<<<<<<< Updated upstream
                 Map<String, Object> responseMap = new LinkedHashMap<>();
                 responseMap.put("requestId", correlationId != null ? correlationId : UUID.randomUUID().toString());
                 responseMap.put("operationId", operation == null ? "" : operation.operationId());
@@ -464,6 +484,27 @@ public class WorkflowExecutionHandler {
                 responseMap.put("failureReason", snapshot.error());
                 responseMap.put("retryable", isRetryable(snapshot));
                 return http.jsonResponse(responseMap);
+=======
+                Map<String, Object> response = new LinkedHashMap<>();
+                response.put("requestId", correlationId != null ? correlationId : UUID.randomUUID().toString());
+                response.put("operationId", operation == null ? "" : operation.operationId());
+                response.put("executionId", snapshot.id());
+                response.put("pipelineId", pipelineId);
+                response.put("tenantId", tenantId);
+                response.put("status", snapshot.status());
+                response.put("startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString());
+                response.put("completedAt", snapshot.completedAt());
+                response.put("nodeStatuses", snapshot.nodeStatuses() != null ? snapshot.nodeStatuses() : List.of());
+                response.put("failureReason", snapshot.error());
+                response.put("retryable", isRetryable(snapshot));
+                return http.jsonResponse(response);
+            })
+            .then(Promise::of, e -> {
+                log.error("[correlation={} tenant={} pipeline={} execution={}] Failed to cancel execution: {}",
+                        correlationId, tenantId, pipelineId, executionId, e.getMessage());
+                metrics.recordError(HANDLER_NAME, "cancelPipelineExecution", e);
+                return Promise.of(http.errorResponse(500, "Cancel execution failed"));
+>>>>>>> Stashed changes
             });
     }
 
@@ -491,7 +532,13 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.errorResponse(501, "Workflow execution capability is not available in this deployment."));
+            return executionCapabilityUnavailable(
+                request,
+                tenantId,
+                executionId,
+                OperationKind.PIPELINE_EXECUTION,
+                "Pipeline execution detail",
+                "Workflow execution capability is not available in this deployment");
         }
 
         return executionCapability.getExecution(tenantId, executionId)
@@ -528,7 +575,13 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.jsonResponse(Map.of("executionId", executionId, "tenantId", tenantId, "logs", List.of())));
+            return executionCapabilityUnavailable(
+                request,
+                tenantId,
+                executionId,
+                OperationKind.PIPELINE_EXECUTION,
+                "Pipeline execution logs",
+                "Workflow execution capability is not available in this deployment");
         }
 
         return executionCapability.getExecutionLogs(tenantId, executionId)
@@ -563,7 +616,13 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.errorResponse(501, "Workflow execution capability is not available in this deployment."));
+            return executionCapabilityUnavailable(
+                request,
+                tenantId,
+                executionId,
+                OperationKind.PIPELINE_CANCEL,
+                "Pipeline execution cancel",
+                "Workflow execution capability is not available in this deployment");
         }
 
         String correlationId = http.resolveCorrelationId(request);
@@ -629,7 +688,13 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.errorResponse(501, "Workflow execution capability is not available in this deployment."));
+            return executionCapabilityUnavailable(
+                request,
+                tenantId,
+                executionId,
+                OperationKind.PIPELINE_RETRY,
+                "Pipeline execution retry",
+                "Workflow execution capability is not available in this deployment");
         }
 
         String correlationId = http.resolveCorrelationId(request);
@@ -689,7 +754,13 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.errorResponse(501, "Workflow execution capability is not available in this deployment."));
+            return executionCapabilityUnavailable(
+                request,
+                tenantId,
+                executionId,
+                OperationKind.PIPELINE_ROLLBACK,
+                "Pipeline execution rollback",
+                "Workflow execution capability is not available in this deployment");
         }
 
         String correlationId = http.resolveCorrelationId(request);
@@ -875,7 +946,13 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.errorResponse(501, "Workflow execution capability is not available in this deployment."));
+            return executionCapabilityUnavailable(
+                request,
+                tenantId,
+                executionId,
+                OperationKind.PIPELINE_RESTORE,
+                "Pipeline execution restore",
+                "Workflow execution capability is not available in this deployment");
         }
 
         String correlationId = http.resolveCorrelationId(request);
@@ -1052,6 +1129,40 @@ public class WorkflowExecutionHandler {
 
     private static boolean isRetryable(WorkflowExecutionCapability.ExecutionSnapshot snapshot) {
         return "FAILED".equals(snapshot.status()) && snapshot.error() != null && !snapshot.error().isBlank();
+    }
+
+    private Promise<HttpResponse> executionCapabilityUnavailable(
+            HttpRequest request,
+            String tenantId,
+            String resourceId,
+            OperationKind operationKind,
+            String action,
+            String detail) {
+        OperationRecord operation = recordWorkflowOperation(
+            tenantId,
+            resourceId,
+            operationKind,
+            OperationStatus.BLOCKED,
+            action,
+            detail,
+            request,
+            Map.of("capabilityId", "workflow-execution", "runtimeState", "UNAVAILABLE"));
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("requestId", http.resolveCorrelationId(request));
+        body.put("tenantId", tenantId);
+        body.put("status", "unavailable");
+        body.put("capability", "workflow-execution");
+        body.put("runtimeState", "UNAVAILABLE");
+        body.put("runtimePosture", "degraded");
+        body.put("message", detail);
+        body.put("retryable", false);
+        if (resourceId != null && !resourceId.isBlank()) {
+            body.put("resourceId", resourceId);
+        }
+        if (operation != null) {
+            body.put("operationId", operation.operationId());
+        }
+        return Promise.of(http.jsonResponse(503, body));
     }
 
     private OperationRecord recordWorkflowOperation(

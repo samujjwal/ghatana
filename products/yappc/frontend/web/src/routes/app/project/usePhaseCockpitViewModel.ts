@@ -16,7 +16,7 @@ import type { PhaseAction, PhaseCockpitPacket } from '../../../types/phasePacket
 
 interface UsePhaseCockpitViewModelParams {
   readonly phase: MountedPhase;
-  readonly packet: PhaseCockpitPacket;
+  readonly packet: PhaseCockpitPacket | null;
   readonly actionText: (value: string | undefined) => string | undefined;
   readonly isActionPending: (action: PhaseAction) => boolean;
   readonly handleSuggestionAction: (action: PhaseAction) => void;
@@ -99,6 +99,23 @@ export function usePhaseCockpitViewModel({
   t,
 }: UsePhaseCockpitViewModelParams): UsePhaseCockpitViewModelResult {
   return useMemo(() => {
+    if (!packet) {
+      return {
+        blockers: [],
+        evidence: [],
+        governance: [],
+        suggestions: [],
+        activity: [],
+        primaryPacketAction: null,
+        isDependencyDegraded: false,
+        primaryNextActionLabel: t('phaseCockpit.contract.noSuggestedAction'),
+        governanceOutcome: t('phaseCockpit.contract.readyWithoutReview'),
+        isActionAvailable: false,
+        primaryActionDisabledReason: t('phaseCockpit.disabled.noBackendAction'),
+        actionSections: [],
+      };
+    }
+
     const blockers = mapPacketBlockers(packet);
     const evidence = mapPacketEvidence(packet);
     const governance = mapPacketGovernance(packet);

@@ -116,6 +116,7 @@ import com.ghatana.datacloud.launcher.http.handlers.ContextStore;
 import com.ghatana.datacloud.launcher.http.handlers.DataProductHandler;
 import com.ghatana.datacloud.launcher.http.handlers.InMemoryContextStore;
 import com.ghatana.datacloud.launcher.http.handlers.LineageHandler;
+import com.ghatana.datacloud.launcher.http.handlers.OperationsJobHandler;
 import com.ghatana.datacloud.launcher.http.handlers.ProviderConformanceHandler;
 import com.ghatana.datacloud.launcher.http.handlers.ProductReleaseReadinessHandler;
 import com.ghatana.datacloud.launcher.http.handlers.SemanticSearchHandler;
@@ -2459,14 +2460,16 @@ public class DataCloudHttpServer {
         // E4: Add Context Plane surface truth
         records.add(SurfaceRecord.builder("context.plane")
             .ownerPlane("context")
-            .state(contextLayerHandler != null ? RuntimeTruthStatus.LIVE : RuntimeTruthStatus.DISABLED)
+            .state(contextLayerHandler != null ? RuntimeTruthStatus.PREVIEW : RuntimeTruthStatus.DISABLED)
             .requiredDependencies(List.of("contextStore", "knowledgeGraphPlugin"))
             .probe(contextLayerHandler != null
-                ? DependencyProbeResult.pass("context-layer", "Context layer is configured")
+                ? DependencyProbeResult.pass("context-layer", "Context layer is configured for target-only preview access")
                 : DependencyProbeResult.fail("context-layer", "Context layer not configured"))
             .tenantScope("tenant")
             .runtimeProfile(deploymentMode)
-            .limitations(contextLayerHandler == null ? "Context plane unavailable" : null)
+            .limitations(contextLayerHandler == null
+                ? "Context plane unavailable"
+                : "Context Plane remains target-only; collection context APIs are preview and must not be treated as full production lineage/RAG memory.")
             .actionsAllowed(List.of("query-context", "update-context", "context-search"))
             .runtimePosture(runtimePosture)
             .build());

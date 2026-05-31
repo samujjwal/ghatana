@@ -112,4 +112,30 @@ class RouteActionAccessRegistryTest {
         assertThat(RouteActionAccessRegistry.requiredAccess("DELETE", "/api/v1/release-readiness/record-1"))
             .isEqualTo(DataCloudSecurityFilter.AccessLevel.ADMIN);
     }
+
+    @Test
+    @DisplayName("action execution lifecycle routes retain explicit access levels")
+    void shouldClassifyActionExecutionLifecycleRoutes() {
+        assertThat(RouteActionAccessRegistry.requiredAccess("POST", "/api/v1/action/executions/run-1/cancel"))
+            .isEqualTo(DataCloudSecurityFilter.AccessLevel.ADMIN);
+        assertThat(RouteActionAccessRegistry.requiredAccess("POST", "/api/v1/action/executions/run-1/retry"))
+            .isEqualTo(DataCloudSecurityFilter.AccessLevel.OPERATOR);
+        assertThat(RouteActionAccessRegistry.requiredAccess("POST", "/api/v1/action/executions/run-1/rollback"))
+            .isEqualTo(DataCloudSecurityFilter.AccessLevel.ADMIN);
+        assertThat(RouteActionAccessRegistry.requiredAccess("POST", "/api/v1/action/executions/run-1/restore"))
+            .isEqualTo(DataCloudSecurityFilter.AccessLevel.ADMIN);
+        assertThat(RouteActionAccessRegistry.requiredAccess("POST", "/api/v1/action/executions/run-1/checkpoint"))
+            .isEqualTo(DataCloudSecurityFilter.AccessLevel.OPERATOR);
+    }
+
+    @Test
+    @DisplayName("operations job routes retain explicit access levels")
+    void shouldClassifyOperationsJobRoutes() {
+        assertThat(RouteActionAccessRegistry.requiredAccess("GET", "/api/v1/operations/jobs"))
+            .isEqualTo(DataCloudSecurityFilter.AccessLevel.VIEWER);
+        assertThat(RouteActionAccessRegistry.requiredAccess("GET", "/api/v1/operations/jobs/op-1"))
+            .isEqualTo(DataCloudSecurityFilter.AccessLevel.VIEWER);
+        assertThat(RouteActionAccessRegistry.requiredAccess("POST", "/api/v1/operations/jobs/op-1/cancel"))
+            .isEqualTo(DataCloudSecurityFilter.AccessLevel.OPERATOR);
+    }
 }

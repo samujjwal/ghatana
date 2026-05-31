@@ -14,7 +14,12 @@ import { Button } from "@ghatana/design-system";
 import { CheckCircle2, Clock3, RefreshCw, XCircle } from "lucide-react";
 import React from "react";
 import { Link } from "react-router";
+import {
+  useOperationTimeline,
+  type OperationJob,
+} from "../api/operations.service";
 import { useOperations } from "../contexts/OperationsContext";
+import type { BackgroundJob } from "../contexts/OperationsContext";
 import { cardStyles, cn, textStyles } from "../lib/theme";
 
 function statusTone(status: "pending" | "success" | "failure"): string {
@@ -39,11 +44,46 @@ function StatusIcon({
   return <RefreshCw className="h-4 w-4 animate-spin text-blue-500" />;
 }
 
+function mapOperationStatus(status: OperationJob["status"]): BackgroundJob["status"] {
+  if (status === "SUCCEEDED" || status === "CANCELLED") return "success";
+  if (status === "FAILED" || status === "BLOCKED") return "failure";
+  return "pending";
+}
+
+function operationToJob(operation: OperationJob): BackgroundJob {
+  return {
+    id: operation.operationId,
+    name: operation.action,
+    status: mapOperationStatus(operation.status),
+    startedAt: operation.createdAt,
+    completedAt: operation.completedAt || undefined,
+    detail:
+      operation.summary ||
+      operation.detail ||
+      [operation.resourceType, operation.resourceId].filter(Boolean).join(":"),
+  };
+}
+
 export function OperationsJobCenterPage(): React.ReactElement {
   const { jobs, dismissJob, dismissAllCompleted } = useOperations();
+  const { data: operationTimeline, isLoading } = useOperationTimeline(100);
 
-  const pendingJobs = jobs.filter((job) => job.status === "pending");
-  const completedJobs = jobs.filter((job) => job.status !== "pending");
+  const unifiedJobs = React.useMemo(() => {
+    const byId = new Map<string, BackgroundJob>();
+    for (const operation of operationTimeline?.items ?? []) {
+      byId.set(operation.operationId, operationToJob(operation));
+    }
+    for (const job of jobs) {
+      byId.set(job.id, job);
+    }
+    return Array.from(byId.values()).sort(
+      (a, b) =>
+        new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
+    );
+  }, [jobs, operationTimeline]);
+
+  const pendingJobs = unifiedJobs.filter((job) => job.status === "pending");
+  const completedJobs = unifiedJobs.filter((job) => job.status !== "pending");
 
   return (
     <section
@@ -56,9 +96,14 @@ export function OperationsJobCenterPage(): React.ReactElement {
           <div>
             <h1 className={textStyles.h1}>Operations Job Center</h1>
             <p className={textStyles.muted}>
-              Session-scoped background jobs from governance, workflow, and
-              operations actions.
+              Connector syncs, media processing, pipeline executions, agent
+              runs, pattern runs, and background tasks.
             </p>
+            {operationTimeline ? (
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Operation storage: {operationTimeline.storageMode}
+              </p>
+            ) : null}
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -91,7 +136,7 @@ export function OperationsJobCenterPage(): React.ReactElement {
         <div className={cn(cardStyles.base, cardStyles.padded)}>
           <p className={textStyles.label}>Failures</p>
           <p className={textStyles.h2}>
-            {jobs.filter((job) => job.status === "failure").length}
+            {unifiedJobs.filter((job) => job.status === "failure").length}
           </p>
         </div>
       </div>
@@ -104,14 +149,19 @@ export function OperationsJobCenterPage(): React.ReactElement {
           </span>
         </div>
 
-        {jobs.length === 0 ? (
+        {isLoading ? (
+          <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+            <RefreshCw className="mx-auto mb-2 h-5 w-5 animate-spin" />
+            Loading operation timeline.
+          </div>
+        ) : unifiedJobs.length === 0 ? (
           <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
             <Clock3 className="mx-auto mb-2 h-5 w-5" />
-            No background jobs recorded in this session yet.
+            No operation jobs recorded yet.
           </div>
         ) : (
           <div className="space-y-2">
-            {jobs.map((job) => (
+            {unifiedJobs.map((job) => (
               <div
                 key={job.id}
                 className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 px-3 py-2 dark:border-gray-700"

@@ -73,6 +73,7 @@ class DataCloudHttpServerCapabilityTest {
         Map<String, Object> entityStoreCapability = surfacesById.get("data.entityStore");
         Map<String, Object> aiCompletionCapability = surfacesById.get("intelligence.aiCompletion");
         Map<String, Object> eventStoreCapability = surfacesById.get("event.store");
+        Map<String, Object> contextPlaneCapability = surfacesById.get("context.plane");
         Map<String, Object> runtimePosture = (Map<String, Object>) eventStoreCapability.get("runtimePosture");
         Map<String, Object> details = (Map<String, Object>) runtimePosture.get("details");
         Map<String, Object> eventTail = (Map<String, Object>) details.get("eventTail");
@@ -83,6 +84,8 @@ class DataCloudHttpServerCapabilityTest {
         assertThat(entityStoreCapability).containsEntry("status", "DEGRADED");
         assertThat(aiCompletionCapability).containsEntry("state", "DISABLED");
         assertThat(aiCompletionCapability).containsEntry("status", "NOT_CONFIGURED");
+        assertThat(contextPlaneCapability).containsEntry("state", "PREVIEW");
+        assertThat(String.valueOf(contextPlaneCapability.get("limitations"))).contains("target-only");
         assertThat(eventTail).containsEntry("available", false);
         assertThat(eventTail).containsEntry("configurable", false);
     }

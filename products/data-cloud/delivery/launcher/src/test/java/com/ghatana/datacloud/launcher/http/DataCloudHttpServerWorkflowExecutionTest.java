@@ -56,6 +56,16 @@ class DataCloudHttpServerWorkflowExecutionTest {
     private static final String TENANT_ID = "test-tenant";
     private static final String PIPELINE_ID = "pipe-abc";
     private static final String EXECUTION_ID = "exec-123";
+    private static final String TEST_PERMISSIONS = String.join(",",
+            "action:pipeline:execute",
+            "action:pipeline:read",
+            "action:pipeline:cancel",
+            "action:pipeline:retry",
+            "action:pipeline:rollback",
+            "action:pipeline:checkpoint",
+            "action:checkpoint:read",
+            "action:pipeline:restore",
+            "action:query:explain");
 
     private DataCloudClient mockClient;
     private WorkflowExecutionCapability mockCapability;
@@ -119,6 +129,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
                 .GET()
                 .uri(URI.create("http://127.0.0.1:" + port + path))
                 .header("X-Tenant-Id", tenantId)
+                .header("X-Permissions", TEST_PERMISSIONS)
                 .build();
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
     }
@@ -133,6 +144,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
                 .POST(HttpRequest.BodyPublishers.ofString(""))
                 .uri(URI.create("http://127.0.0.1:" + port + path))
                 .header("X-Tenant-Id", TENANT_ID)
+                .header("X-Permissions", TEST_PERMISSIONS)
                 .header("Content-Type", "application/json")
                 .build();
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
@@ -144,6 +156,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
                 .uri(URI.create("http://127.0.0.1:" + port + path))
                 .header("Content-Type", "application/json")
                 .header("X-Tenant-Id", tenantId)
+                .header("X-Permissions", TEST_PERMISSIONS)
                 .build();
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
     }
@@ -153,6 +166,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
                 .DELETE()
                 .uri(URI.create("http://127.0.0.1:" + port + path))
                 .header("X-Tenant-Id", TENANT_ID)
+                .header("X-Permissions", TEST_PERMISSIONS)
                 .build();
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
     }
@@ -217,6 +231,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
                     .POST(HttpRequest.BodyPublishers.ofString("{}"))
                     .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/action/pipelines/" + PIPELINE_ID + "/execute"))
                     .header("Content-Type", "application/json")
+                    .header("X-Permissions", TEST_PERMISSIONS)
                     .build();
             HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
 
@@ -250,16 +265,17 @@ class DataCloudHttpServerWorkflowExecutionTest {
         }
 
         @Test
-        @DisplayName("returns 200 with empty list when capability is absent")
-        void listExecutions_noCapability_returnsEmptyList() throws Exception {
+        @DisplayName("returns 503 with typed unavailable state when capability is absent")
+        void listExecutions_noCapability_returnsUnavailable() throws Exception {
             startServerWithoutCapability();
 
             HttpResponse<String> resp = get("/api/v1/action/pipelines/" + PIPELINE_ID + "/executions");
 
-            assertThat(resp.statusCode()).isEqualTo(200);
+            assertThat(resp.statusCode()).isEqualTo(503);
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
-            assertThat(((List<?>) body.get("executions"))).isEmpty();
-            assertThat(((Number) body.get("count")).intValue()).isEqualTo(0);
+            assertThat(body).containsEntry("status", "unavailable");
+            assertThat(body).containsEntry("capability", "workflow-execution");
+            assertThat(body).containsEntry("runtimeState", "UNAVAILABLE");
         }
     }
 
@@ -322,14 +338,14 @@ class DataCloudHttpServerWorkflowExecutionTest {
         }
 
         @Test
-        @DisplayName("returns 501 when capability not present")
-        void cancelExecution_noCapability_returns501() throws Exception {
+        @DisplayName("returns 503 when capability not present")
+        void cancelExecution_noCapability_returns503() throws Exception {
             startServerWithoutCapability();
 
             HttpResponse<String> resp = postEmpty(
                     "/api/v1/action/pipelines/" + PIPELINE_ID + "/executions/" + EXECUTION_ID + "/cancel");
 
-            assertThat(resp.statusCode()).isEqualTo(501);
+            assertThat(resp.statusCode()).isEqualTo(503);
         }
     }
 
@@ -378,13 +394,13 @@ class DataCloudHttpServerWorkflowExecutionTest {
         }
 
         @Test
-        @DisplayName("returns 501 when capability not present")
-        void retryExecution_noCapability_returns501() throws Exception {
+        @DisplayName("returns 503 when capability not present")
+        void retryExecution_noCapability_returns503() throws Exception {
             startServerWithoutCapability();
 
             HttpResponse<String> resp = postEmpty("/api/v1/action/executions/" + EXECUTION_ID + "/retry");
 
-            assertThat(resp.statusCode()).isEqualTo(501);
+            assertThat(resp.statusCode()).isEqualTo(503);
         }
     }
 
@@ -469,8 +485,8 @@ class DataCloudHttpServerWorkflowExecutionTest {
         }
 
         @Test
-        @DisplayName("returns 400 when tenant header is missing")
-        void createCheckpoint_noTenant_returns400() throws Exception {
+        @DisplayName("returns 403 when tenant header and permissions are missing")
+        void createCheckpoint_noTenant_returns403() throws Exception {
             startServer();
 
             HttpRequest req = HttpRequest.newBuilder()
@@ -481,7 +497,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
                     .build();
             HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
 
-            assertThat(resp.statusCode()).isEqualTo(400);
+            assertThat(resp.statusCode()).isEqualTo(403);
         }
     }
 
@@ -554,15 +570,15 @@ class DataCloudHttpServerWorkflowExecutionTest {
         }
 
         @Test
-        @DisplayName("returns 501 when capability not present")
-        void restoreExecution_noCapability_returns501() throws Exception {
+        @DisplayName("returns 503 when capability not present")
+        void restoreExecution_noCapability_returns503() throws Exception {
             startServerWithoutCapability();
 
             HttpResponse<String> resp = post(
                     "/api/v1/action/executions/" + EXECUTION_ID + "/restore",
                     Map.of("checkpointId", "cp-99"));
 
-            assertThat(resp.statusCode()).isEqualTo(501);
+            assertThat(resp.statusCode()).isEqualTo(503);
         }
     }
 
@@ -592,15 +608,17 @@ class DataCloudHttpServerWorkflowExecutionTest {
         }
 
         @Test
-        @DisplayName("returns 200 with empty logs when capability absent")
-        void getLogs_noCapability_returnsEmptyLogs() throws Exception {
+        @DisplayName("returns 503 with typed unavailable state when capability absent")
+        void getLogs_noCapability_returnsUnavailable() throws Exception {
             startServerWithoutCapability();
 
             HttpResponse<String> resp = get("/api/v1/action/executions/" + EXECUTION_ID + "/logs");
 
-            assertThat(resp.statusCode()).isEqualTo(200);
+            assertThat(resp.statusCode()).isEqualTo(503);
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
-            assertThat(((List<?>) body.get("logs"))).isEmpty();
+            assertThat(body).containsEntry("status", "unavailable");
+            assertThat(body).containsEntry("capability", "workflow-execution");
+            assertThat(body).containsEntry("runtimeState", "UNAVAILABLE");
         }
     }
 

@@ -22,9 +22,9 @@
     },
     {
       "id": "E2E-004",
-      "journey": "Intent capture",
-      "spec": "e2e/end-to-end-product-correctness.spec.ts",
-      "assertions": ["intent phase opens", "intent packet contains evidence", "intent phase participates in lifecycle smoke"]
+      "journey": "Intent to Shape",
+      "spec": "e2e/yappc-intent-to-shape.spec.ts",
+      "assertions": ["intent cockpit opens", "shape cockpit opens", "primary action cards are visible"]
     },
     {
       "id": "E2E-005",
@@ -34,9 +34,9 @@
     },
     {
       "id": "E2E-006",
-      "journey": "Validate blocked",
-      "spec": "e2e/end-to-end-product-correctness.spec.ts",
-      "assertions": ["validate blockers are rendered", "unsafe advance is disabled", "missing evidence remains visible"]
+      "journey": "Validate to Generate",
+      "spec": "e2e/yappc-validate-generate.spec.ts",
+      "assertions": ["validate blocked readiness is rendered", "generate cockpit loads", "generate primary action remains visible"]
     },
     {
       "id": "E2E-007",
@@ -59,8 +59,8 @@
     {
       "id": "E2E-010",
       "journey": "Kernel handoff",
-      "spec": "e2e/end-to-end-product-correctness.spec.ts",
-      "assertions": ["Kernel handoff route accepts intent", "run status is recorded", "evidence id is returned"]
+      "spec": "e2e/yappc-kernel-handoff.spec.ts",
+      "assertions": ["ProductUnitIntent handoff route is invoked", "run cockpit loads post-handoff", "observe cockpit loads with run context"]
     },
     {
       "id": "E2E-011",
@@ -70,21 +70,21 @@
     },
     {
       "id": "E2E-012",
-      "journey": "Run failure",
-      "spec": "e2e/phase-cockpit-and-palette.spec.ts",
-      "assertions": ["run failure fixture is visible", "blocked action state is rendered", "recommendation copy is present"]
+      "journey": "Run actions",
+      "spec": "e2e/yappc-run-actions.spec.ts",
+      "assertions": ["run cockpit opens", "failed/degraded runtime state is visible", "run action entrypoint remains visible"]
     },
     {
       "id": "E2E-013",
       "journey": "Observe Kernel health",
-      "spec": "e2e/end-to-end-product-correctness.spec.ts",
-      "assertions": ["observe phase opens", "Kernel health diagnostics are visible", "gate/artifact/deployment signals are present"]
+      "spec": "e2e/yappc-observe-learn-evolve.spec.ts",
+      "assertions": ["observe cockpit opens", "learn cockpit opens", "evolve cockpit opens"]
     },
     {
       "id": "E2E-014",
       "journey": "Learn from failure",
-      "spec": "e2e/end-to-end-product-correctness.spec.ts",
-      "assertions": ["learn phase opens", "learning evidence appears", "recommendation is traceable to failed run"]
+      "spec": "e2e/yappc-observe-learn-evolve.spec.ts",
+      "assertions": ["learn phase opens", "learning approval action is visible", "failed run observation remains traceable"]
     },
     {
       "id": "E2E-015",
@@ -95,32 +95,32 @@
     {
       "id": "E2E-016",
       "journey": "Evolve change",
-      "spec": "e2e/end-to-end-product-correctness.spec.ts",
-      "assertions": ["evolve phase opens", "proposal/diff/approval surfaces render", "revalidation handoff is visible"]
+      "spec": "e2e/yappc-observe-learn-evolve.spec.ts",
+      "assertions": ["evolve phase opens", "evolution approval action is visible", "observe→learn→evolve sequence is navigable"]
     },
     {
       "id": "E2E-017",
       "journey": "Unauthorized user",
-      "spec": "e2e/end-to-end-product-correctness.spec.ts",
-      "assertions": ["viewer mutation is disabled", "API bypass is denied", "admin-only action is not available"]
+      "spec": "e2e/yappc-access-degraded.spec.ts",
+      "assertions": ["phase access denied state is rendered", "mutation actions remain blocked", "cockpit content is withheld for unauthorized actor"]
     },
     {
       "id": "E2E-018",
       "journey": "Data Cloud degraded",
-      "spec": "e2e/end-to-end-product-correctness.spec.ts",
-      "assertions": ["Data Cloud degraded details render", "unsafe actions are disabled", "recovery action is visible"]
+      "spec": "e2e/yappc-access-degraded.spec.ts",
+      "assertions": ["degraded dependency label renders", "unsafe actions are disabled", "recovery action is visible"]
     },
     {
       "id": "E2E-019",
       "journey": "AEP degraded",
-      "spec": "e2e/end-to-end-product-correctness.spec.ts",
-      "assertions": ["AEP evidence failure renders as blocker", "empty evidence fallback is not accepted", "advance remains disabled"]
+      "spec": "e2e/yappc-access-degraded.spec.ts",
+      "assertions": ["AEP degraded dependency state is representable", "evidence fallback remains fail-closed", "advance stays disabled in degraded mode"]
     },
     {
       "id": "E2E-020",
       "journey": "Kernel degraded",
-      "spec": "e2e/end-to-end-product-correctness.spec.ts",
-      "assertions": ["Kernel degraded details render", "run controls are disabled", "recovery instruction is visible"]
+      "spec": "e2e/yappc-access-degraded.spec.ts",
+      "assertions": ["Kernel degraded dependency state is representable", "run controls remain blocked", "recovery instruction is visible"]
     },
     {
       "id": "E2E-021",

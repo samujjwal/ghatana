@@ -8,6 +8,7 @@ const SCRIPT_PATH = 'scripts/check-action-plane-boundaries.mjs';
 const EVIDENCE_PATH = '.kernel/evidence/action-plane-boundaries.json';
 const COMMAND = 'pnpm check:action-plane-boundaries';
 const DEFAULT_ROOTS = ['products/data-cloud/planes', 'products/data-cloud/delivery', 'products/data-cloud/extensions', 'products/data-cloud/contracts'];
+const ACTION_PLANE_ROOT = 'products/data-cloud/planes/action';
 const TEXT_EXTENSIONS = new Set(['.java', '.kt', '.kts', '.gradle', '.xml', '.md', '.yaml', '.yml', '.ts', '.tsx', '.js', '.mjs']);
 const EXCLUDED_DIRS = new Set(['build', '.gradle', '.idea', 'node_modules', 'dist', '.next']);
 
@@ -143,7 +144,7 @@ function walk(root, relativePath, files) {
     const child = path.join(relativePath, entry);
     const normalized = child.replaceAll(path.sep, '/');
     // Exclude Action Plane implementation directories from boundary checks
-    if (normalized === 'products/data-cloud/planes/action' || normalized.startsWith('products/data-cloud/planes/action/')) {
+    if (normalized === ACTION_PLANE_ROOT || normalized.startsWith(`${ACTION_PLANE_ROOT}/`)) {
       continue;
     }
     walk(root, child, files);
@@ -225,7 +226,8 @@ export function createActionPlaneBoundaryEvidence(root = process.cwd(), now = ne
     },
     scope: {
       scannedRoots: DEFAULT_ROOTS,
-      excludedRoots: ['products/data-cloud/planes/action'],
+      excludedRoots: [ACTION_PLANE_ROOT],
+      coLocatedActionRoot: ACTION_PLANE_ROOT,
       rule: 'Non-action Data Cloud planes, delivery, extensions, and contracts must not import AEP internals or depend on Action Plane modules.',
       semanticRule: 'Non-action Data Cloud planes, delivery, extensions, and contracts must not expose AEP-owned EventCloud, PatternSpec/EPL, EventOperator, EventOperatorCapability runtime, CEP, adaptive event runtime, pattern promotion, recommended/predictive pattern, or Pattern lifecycle semantics.',
       publicAepPackageAllowlist: [

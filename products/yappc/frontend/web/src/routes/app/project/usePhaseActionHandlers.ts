@@ -90,16 +90,12 @@ function resolveRunDecision(operation: string, category: string): RunPostDecisio
  * 1. action.parameters.runId (backend-provided run ID for this specific action)
  * 2. action.parameters.latestRunId (backend-provided latest run ID)
  * 3. packet.platformRunStatus?.runId (backend packet platform run status)
- * 4. actionResult?.runId (frontend action result fallback)
  *
- * This ensures that backend-provided run context is used when available,
- * allowing actions to work correctly after page refresh when the backend
- * packet contains the platform run status.
+ * This ensures durable actions are tied to refreshed backend packet state.
  */
 function resolveRunContext(
   action: PhaseAction,
   packet: PhaseCockpitPacket | null,
-  actionResult: PhaseActionResult | null,
 ): string | null {
   // Priority 1: Backend action parameter runId
   const actionRunId = action.parameters.runId as string | undefined;
@@ -117,14 +113,10 @@ function resolveRunContext(
   if (packet?.platformRunStatus?.runId) {
     return packet.platformRunStatus.runId;
   }
-
-  // Priority 4: Frontend action result fallback
-  if (actionResult?.runId) {
-    return actionResult.runId;
-  }
-
   return null;
-}export function usePhaseActionHandlers({
+}
+
+export function usePhaseActionHandlers({
   phase,
   projectId,
   packet,
@@ -217,7 +209,7 @@ function resolveRunContext(
     const operationCategory = resolveOperationCategory(phase, action);
     const generateDecision = resolveGenerateDecision(operation, operationCategory);
     if (generateDecision) {
-      if (!projectId || !resolveRunContext(action, packet, actionResult)) {
+      if (!projectId || !resolveRunContext(action, packet)) {
         setActionError(t('phaseCockpit.errors.missingGenerationRunContext'));
         return true;
       }
@@ -228,7 +220,7 @@ function resolveRunContext(
 
       generateReviewMutation.mutate({
         projectId,
-        runId: resolveRunContext(action, packet, actionResult) ?? '',
+        runId: resolveRunContext(action, packet) ?? '',
         decision: generateDecision,
         actorId: currentUser.id,
         reason: t('phaseCockpit.generateReview.reason', { reviewer: currentUser.email ?? currentUser.id }),
@@ -238,14 +230,14 @@ function resolveRunContext(
 
     const runDecision = resolveRunDecision(operation, operationCategory);
     if (runDecision) {
-      if (!projectId || !resolveRunContext(action, packet, actionResult)) {
+      if (!projectId || !resolveRunContext(action, packet)) {
         setActionError(t('phaseCockpit.errors.missingRunContext'));
         return true;
       }
 
       runPostActionMutation.mutate({
         projectId,
-        runId: resolveRunContext(action, packet, actionResult) ?? '',
+        runId: resolveRunContext(action, packet) ?? '',
         action: runDecision,
         targetVersion: action.parameters.targetVersion as string | undefined,
         targetEnvironment: action.parameters.targetEnvironment as string | undefined,
@@ -254,7 +246,7 @@ function resolveRunContext(
     }
 
     return false;
-  }, [actionResult, currentUser?.email, currentUser?.id, generateReviewMutation, packet, phase, projectId, runPostActionMutation, t]);
+  }, [currentUser?.email, currentUser?.id, generateReviewMutation, packet, phase, projectId, runPostActionMutation, t]);
 
   const isActionPending = useCallback((action: PhaseAction): boolean => {
     const operation = action.serverOperation ?? action.actionId;
@@ -272,7 +264,10 @@ function resolveRunContext(
     const reviewMessage = t('phaseCockpit.feedback.reviewingAction', {
       label: actionText(action.label) ?? action.actionId,
     });
-    return action.disabledReason ? `${reviewMessage}: ${action.disabledReason}` : reviewMessage;
+    const disabledReason = action.disabledReason?.startsWith('phaseAction.')
+      ? t(action.disabledReason)
+      : action.disabledReason;
+    return disabledReason ? `${reviewMessage}: ${disabledReason}` : reviewMessage;
   }, [actionText, t]);
 
   const executePacketAction = useCallback((action: PhaseAction) => {

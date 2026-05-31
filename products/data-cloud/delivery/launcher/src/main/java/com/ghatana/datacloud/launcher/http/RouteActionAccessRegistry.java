@@ -163,8 +163,8 @@ final class RouteActionAccessRegistry {
         Map.entry("GET /api/v1/mastery/preview/retrieval", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("GET /api/v1/models", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("GET /api/v1/models/:modelName", DataCloudSecurityFilter.AccessLevel.OPERATOR),
-        Map.entry("GET /api/v1/operations/jobs", DataCloudSecurityFilter.AccessLevel.OPERATOR),
-        Map.entry("GET /api/v1/operations/jobs/:operationId", DataCloudSecurityFilter.AccessLevel.OPERATOR),
+        Map.entry("GET /api/v1/operations/jobs", DataCloudSecurityFilter.AccessLevel.VIEWER),
+        Map.entry("GET /api/v1/operations/jobs/:operationId", DataCloudSecurityFilter.AccessLevel.VIEWER),
         Map.entry("GET /api/v1/patterns", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("GET /api/v1/patterns/:patternId", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("GET /api/v1/queries/estimate", DataCloudSecurityFilter.AccessLevel.OPERATOR),
@@ -224,11 +224,11 @@ final class RouteActionAccessRegistry {
         Map.entry("PATCH /api/v1/settings/preferences", DataCloudSecurityFilter.AccessLevel.ADMIN),
         Map.entry("PATCH /api/v1/settings/profile", DataCloudSecurityFilter.AccessLevel.ADMIN),
         Map.entry("POST /api/v1/action/autonomy/feedback-policy", DataCloudSecurityFilter.AccessLevel.ADMIN),
-        Map.entry("POST /api/v1/action/executions/:executionId/cancel", DataCloudSecurityFilter.AccessLevel.OPERATOR),
+        Map.entry("POST /api/v1/action/executions/:executionId/cancel", DataCloudSecurityFilter.AccessLevel.ADMIN),
         Map.entry("POST /api/v1/action/executions/:executionId/checkpoint", DataCloudSecurityFilter.AccessLevel.OPERATOR),
-        Map.entry("POST /api/v1/action/executions/:executionId/restore", DataCloudSecurityFilter.AccessLevel.OPERATOR),
+        Map.entry("POST /api/v1/action/executions/:executionId/restore", DataCloudSecurityFilter.AccessLevel.ADMIN),
         Map.entry("POST /api/v1/action/executions/:executionId/retry", DataCloudSecurityFilter.AccessLevel.OPERATOR),
-        Map.entry("POST /api/v1/action/executions/:executionId/rollback", DataCloudSecurityFilter.AccessLevel.OPERATOR),
+        Map.entry("POST /api/v1/action/executions/:executionId/rollback", DataCloudSecurityFilter.AccessLevel.ADMIN),
         Map.entry("POST /api/v1/action/learning/review/:reviewId/approve", DataCloudSecurityFilter.AccessLevel.ADMIN),
         Map.entry("POST /api/v1/action/learning/review/:reviewId/reject", DataCloudSecurityFilter.AccessLevel.ADMIN),
         Map.entry("POST /api/v1/action/learning/trigger", DataCloudSecurityFilter.AccessLevel.OPERATOR),
@@ -450,8 +450,8 @@ final class RouteActionAccessRegistry {
         normalized = normalized.replaceAll("/pipelines/[^/]+/executions/[^/]+/cancel$", "/pipelines/:pipelineId/executions/:executionId/cancel");
         normalized = normalized.replaceAll("/pipelines/[^/]+$", "/pipelines/:pipelineId");
         normalized = normalized.replaceAll("/action/pipelines/[^/]+$", "/action/pipelines/:pipelineId");
-        normalized = normalized.replaceAll("/executions/[^/]+/(cancel|retry|rollback|restore)$", "/executions/:executionId/$1");
-        normalized = normalized.replaceAll("/action/executions/[^/]+/(cancel|retry|rollback|restore)$", "/action/executions/:executionId/$1");
+        normalized = normalized.replaceAll("/executions/[^/]+/(cancel|retry|rollback|restore|checkpoint)$", "/executions/:executionId/$1");
+        normalized = normalized.replaceAll("/action/executions/[^/]+/(cancel|retry|rollback|restore|checkpoint)$", "/action/executions/:executionId/$1");
         normalized = normalized.replaceAll("/alerts/groups/[^/]+/resolve$", "/alerts/groups/:groupId/resolve");
         normalized = normalized.replaceAll("/alerts/suggestions/[^/]+/apply$", "/alerts/suggestions/:suggestionId/apply");
         normalized = normalized.replaceAll("/alerts/rules/[^/]+$", "/alerts/rules/:ruleId");

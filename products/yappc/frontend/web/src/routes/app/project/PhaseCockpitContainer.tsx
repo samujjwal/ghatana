@@ -171,6 +171,29 @@ export function PhaseCockpitContainer({ phase }: PhaseCockpitContainerProps): Re
   const phaseDetailLabel = t(phaseDetailCopy.labelKey);
   const phaseDetailDescription = t(phaseDetailCopy.descriptionKey);
 
+  const {
+    blockers,
+    evidence,
+    governance,
+    suggestions,
+    activity,
+    primaryPacketAction,
+    isDependencyDegraded,
+    primaryNextActionLabel,
+    governanceOutcome,
+    isActionAvailable,
+    primaryActionDisabledReason,
+    actionSections,
+  } = usePhaseCockpitViewModel({
+    phase,
+    packet,
+    actionText,
+    isActionPending,
+    handleSuggestionAction,
+    mutationPending: actionMutation.isPending,
+    t,
+  });
+
   if (!projectId) {
     return <MissingProjectState />;
   }
@@ -201,29 +224,6 @@ export function PhaseCockpitContainer({ phase }: PhaseCockpitContainerProps): Re
   }
 
   const projectName = packet.projectName ?? t('phaseCockpit.fallback.thisProject');
-
-  const {
-    blockers,
-    evidence,
-    governance,
-    suggestions,
-    activity,
-    primaryPacketAction,
-    isDependencyDegraded,
-    primaryNextActionLabel,
-    governanceOutcome,
-    isActionAvailable,
-    primaryActionDisabledReason,
-    actionSections,
-  } = usePhaseCockpitViewModel({
-    phase,
-    packet,
-    actionText,
-    isActionPending,
-    handleSuggestionAction,
-    mutationPending: actionMutation.isPending,
-    t,
-  });
 
   const statusPanels = (
     <PhaseStatusPanelsCanonical
