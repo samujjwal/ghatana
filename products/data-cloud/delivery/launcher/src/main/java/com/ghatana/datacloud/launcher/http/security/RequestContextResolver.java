@@ -46,10 +46,13 @@ public final class RequestContextResolver {
         "datacloud:admin", "datacloud:configure", "datacloud:audit"
     );
     private static final Set<String> OPERATOR_PERMISSIONS = Set.of(
-        "datacloud:read", "datacloud:write"
+        "datacloud:read", "datacloud:write",
+        "action:checkpoint:read", "action:checkpoint:create", "action:checkpoint:delete",
+        "context:read", "context:write", "context:delete"
     );
     private static final Set<String> VIEWER_PERMISSIONS = Set.of(
-        "datacloud:read"
+        "datacloud:read",
+        "surface:read"
     );
 
     private final String deploymentProfile;

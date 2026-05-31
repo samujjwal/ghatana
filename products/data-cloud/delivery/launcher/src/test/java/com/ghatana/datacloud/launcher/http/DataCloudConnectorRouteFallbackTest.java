@@ -19,6 +19,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -48,7 +49,7 @@ class DataCloudConnectorRouteFallbackTest extends EventloopTestBase {
         }
 
     @Test
-    @DisplayName("GET /api/v1/connectors returns 503 when connector handler is unavailable")
+    @DisplayName("GET /api/v1/connectors returns 503 with runtime truth when connector handler is unavailable")
     void connectorsListReturns503WhenHandlerUnavailable() {
         RoutingServlet router = new DataCloudRouterBuilder(Eventloop.create())
                                 .withConnectorRoutes(null, HTTP_SUPPORT)
@@ -61,11 +62,14 @@ class DataCloudConnectorRouteFallbackTest extends EventloopTestBase {
                 .asString(StandardCharsets.UTF_8);
 
         assertThat(response.getCode()).isEqualTo(503);
-        assertThat(body).contains("Connector registry not available");
+        // Response now returns runtime truth JSON instead of plain text error
+        assertThat(body).contains("featureAvailable");
+        assertThat(body).contains("DATA_CLOUD_CONNECTORS");
+        assertThat(body).contains("Handler not configured");
     }
 
     @Test
-    @DisplayName("GET /data-fabric/metrics returns 503 when connector handler is unavailable")
+    @DisplayName("GET /data-fabric/metrics returns 503 with runtime truth when connector handler is unavailable")
     void dataFabricMetricsReturns503WhenHandlerUnavailable() {
         RoutingServlet router = new DataCloudRouterBuilder(Eventloop.create())
                                 .withConnectorRoutes(null, HTTP_SUPPORT)
@@ -78,11 +82,14 @@ class DataCloudConnectorRouteFallbackTest extends EventloopTestBase {
                 .asString(StandardCharsets.UTF_8);
 
         assertThat(response.getCode()).isEqualTo(503);
-        assertThat(body).contains("Connector registry not available");
+        // Response now returns runtime truth JSON instead of plain text error
+        assertThat(body).contains("featureAvailable");
+        assertThat(body).contains("DATA_CLOUD_CONNECTORS");
+        assertThat(body).contains("Handler not configured");
     }
 
         @Test
-        @DisplayName("GET /api/v1/connectors returns 503 when connector feature is disabled")
+        @DisplayName("GET /api/v1/connectors returns 503 with runtime truth when connector feature is disabled")
         void connectorsListReturns503WhenFeatureDisabled() {
                 DataCloudFeatureFlags.override(DataCloudFeature.DATA_CLOUD_CONNECTORS, false);
                 DataSourceRegistryHandler handler = mock(DataSourceRegistryHandler.class);
@@ -98,6 +105,9 @@ class DataCloudConnectorRouteFallbackTest extends EventloopTestBase {
                                 .asString(StandardCharsets.UTF_8);
 
                 assertThat(response.getCode()).isEqualTo(503);
-                assertThat(body).contains("Connector registry not available");
+                // Response now returns runtime truth JSON instead of plain text error
+                assertThat(body).contains("featureAvailable");
+                assertThat(body).contains("DATA_CLOUD_CONNECTORS");
+                assertThat(body).contains("Feature disabled");
         }
 }

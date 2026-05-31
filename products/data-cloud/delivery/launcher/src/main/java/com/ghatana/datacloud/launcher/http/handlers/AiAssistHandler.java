@@ -1476,8 +1476,8 @@ public class AiAssistHandler {
         return switch (type) {
             case AiRecommendationMetrics.TYPE_ENTITY_SUGGEST -> "/api/v1/entities/:collection/suggest";
             case AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST -> "/api/v1/analytics/suggest";
-            case AiRecommendationMetrics.TYPE_PIPELINE_DRAFT -> "/api/v1/pipelines/draft";
-            case AiRecommendationMetrics.TYPE_PIPELINE_HINT -> "/api/v1/pipelines/:pipelineId/optimise-hint";
+            case AiRecommendationMetrics.TYPE_PIPELINE_DRAFT -> "/api/v1/action/pipelines/draft";
+            case AiRecommendationMetrics.TYPE_PIPELINE_HINT -> "/api/v1/action/pipelines/:pipelineId/optimise-hint";
             case AiRecommendationMetrics.TYPE_BRAIN_EXPLAIN -> "/api/v1/brain/explain";
             case AiRecommendationMetrics.TYPE_VOICE_INTENT -> "/api/v1/voice/intent";
             default -> "unknown";

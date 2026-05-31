@@ -51,16 +51,17 @@ class DataCloudHttpServerCapabilityTest {
     @Test
     @DisplayName("surfaces endpoint reports configured and degraded features")
     @SuppressWarnings("unchecked")
-    void surfacesEndpointReportsConfiguredAndDegradedFeatures() throws Exception { 
-        JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L); 
-        String token = provider.createToken("ui-user", List.of("viewer"), Map.of("tenant_id", "tenant-a"));
+    void surfacesEndpointReportsConfiguredAndDegradedFeatures() throws Exception {
+        JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L);
+        String token = provider.createToken("ui-user", List.of("VIEWER"), Map.of("tenant_id", "tenant-a"));
 
-        server = new DataCloudHttpServer(mock(DataCloudClient.class), port) 
-            .withJwtProvider(provider) 
-            .withHealthSubsystem("database", () -> Map.of("status", "DOWN")); 
-        server.start(); 
+        server = new DataCloudHttpServer(mock(DataCloudClient.class), port)
+            .withDeploymentMode("local")
+            .withJwtProvider(provider)
+            .withHealthSubsystem("database", () -> Map.of("status", "DOWN"));
+        server.start();
 
-        HttpResponse<String> response = get("/api/v1/surfaces", token); 
+        HttpResponse<String> response = get("/api/v1/surfaces", token);
 
         assertThat(response.statusCode()).isEqualTo(200);
         Map<String, Object> body = mapper.readValue(response.body(), Map.class);
@@ -91,9 +92,10 @@ class DataCloudHttpServerCapabilityTest {
     @SuppressWarnings("unchecked")
     void surfacesEndpointIsStableAcrossRequests() throws Exception {
         JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L);
-        String token = provider.createToken("ui-user", List.of("viewer"), Map.of("tenant_id", "tenant-a"));
+        String token = provider.createToken("ui-user", List.of("VIEWER"), Map.of("tenant_id", "tenant-a"));
 
         server = new DataCloudHttpServer(mock(DataCloudClient.class), port)
+            .withDeploymentMode("local")
             .withJwtProvider(provider)
             .withHealthSubsystem("database", () -> Map.of("status", "DOWN"));
         server.start();
@@ -140,9 +142,10 @@ class DataCloudHttpServerCapabilityTest {
     @SuppressWarnings("unchecked")
     void surfacesEndpointExposesTransactionalAndDurableContextPosture() throws Exception {
         JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L);
-        String token = provider.createToken("ui-user", List.of("viewer"), Map.of("tenant_id", "tenant-a"));
+        String token = provider.createToken("ui-user", List.of("VIEWER"), Map.of("tenant_id", "tenant-a"));
 
         server = new DataCloudHttpServer(mock(DataCloudClient.class), port)
+            .withDeploymentMode("local")
             .withJwtProvider(provider)
             .withTransactionManager(mock(TransactionManager.class))
             .withContextStore(durableContextStore());
@@ -168,13 +171,14 @@ class DataCloudHttpServerCapabilityTest {
         assertThat(details).containsEntry("contextStoreDurable", true);
     }
 
-    private HttpResponse<String> get(String path, String token) throws Exception { 
-        HttpRequest request = HttpRequest.newBuilder() 
-            .uri(URI.create("http://localhost:" + port + path)) 
-            .header("Authorization", "Bearer " + token) 
-            .GET() 
-            .build(); 
-        return httpClient.send(request, HttpResponse.BodyHandlers.ofString()); 
+    private HttpResponse<String> get(String path, String token) throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + path))
+            .GET();
+        if (token != null) {
+            builder.header("Authorization", "Bearer " + token);
+        }
+        return httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
     }
 
     private int findFreePort() throws IOException { 

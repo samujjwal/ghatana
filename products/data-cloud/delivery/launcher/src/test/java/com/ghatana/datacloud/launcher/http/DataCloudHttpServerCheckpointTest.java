@@ -6,6 +6,10 @@ package com.ghatana.datacloud.launcher.http;
 
 import com.ghatana.datacloud.DataCloudClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.audit.AuditService;
+import com.ghatana.platform.security.port.JwtTokenProvider;
+import com.ghatana.platform.security.port.JwtTokenProviders;
+import com.ghatana.governance.PolicyEngine;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -47,17 +52,29 @@ import static org.mockito.Mockito.when;
 @DisplayName("DataCloudHttpServer – Checkpoint Endpoints (DC-3)")
 class DataCloudHttpServerCheckpointTest {
 
+    private static final String TEST_JWT_SECRET = "0123456789abcdef0123456789abcdef";
+
     private DataCloudClient mockClient;
     private DataCloudHttpServer server;
     private int port;
     private HttpClient httpClient;
     private final ObjectMapper mapper = new ObjectMapper(); 
+    private JwtTokenProvider jwtProvider;
+    private String testToken;
+    private AuditService mockAuditService;
+    private PolicyEngine mockPolicyEngine;
 
     @BeforeEach
     void setUp() throws Exception { 
         mockClient = mock(DataCloudClient.class); 
+        mockAuditService = mock(AuditService.class);
+        mockPolicyEngine = mock(PolicyEngine.class);
+        lenient().when(mockAuditService.record(any())).thenReturn(Promise.complete());
+        lenient().when(mockPolicyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(true));
         port = findFreePort(); 
         httpClient = HttpClient.newBuilder().build(); 
+        jwtProvider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L);
+        testToken = jwtProvider.createToken("test-user", List.of("OPERATOR"), Map.of("tenant_id", "default-tenant"));
     }
 
     @AfterEach
@@ -143,12 +160,13 @@ class DataCloudHttpServerCheckpointTest {
         @Test
         @DisplayName("missing tenant falls back to default")
         void listCheckpoints_missingTenant_fallsBackToDefault() throws Exception { 
+            String defaultToken = jwtProvider.createToken("test-user", List.of("OPERATOR"), Map.of("tenant_id", "default"));
             when(mockClient.query(eq("default"), eq("dc_checkpoints"), any(DataCloudClient.Query.class)))
                 .thenReturn(Promise.of(List.of())); 
 
             startServer(); 
 
-            HttpResponse<String> resp = getWithoutTenant("/api/v1/checkpoints");
+            HttpResponse<String> resp = getWithTenant("/api/v1/checkpoints", "default", defaultToken);
 
             assertThat(resp.statusCode()).isEqualTo(200); // DC-AUD-014: default fallback
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
@@ -216,6 +234,7 @@ class DataCloudHttpServerCheckpointTest {
         @Test
         @DisplayName("missing tenant falls back to default")
         void saveCheckpoint_missingTenant_fallsBackToDefault() throws Exception { 
+            String defaultToken = jwtProvider.createToken("test-user", List.of("OPERATOR"), Map.of("tenant_id", "default"));
             Map<String, Object> cpData = Map.of( 
                 "id", "cp-new",
                 "pipelineId", "pipe-xyz",
@@ -230,7 +249,7 @@ class DataCloudHttpServerCheckpointTest {
 
             startServer(); 
 
-            HttpResponse<String> resp = postRawWithoutTenant("/api/v1/checkpoints", "{\"id\":\"cp-test\"}" ); 
+            HttpResponse<String> resp = postRawWithTenant("/api/v1/checkpoints", "{\"id\":\"cp-test\"}", "default", defaultToken); 
 
             assertThat(resp.statusCode()).isEqualTo(200); // DC-AUD-014: default fallback
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
@@ -318,12 +337,13 @@ class DataCloudHttpServerCheckpointTest {
         @Test
         @DisplayName("response includes tenantId from request header")
         void deleteCheckpoint_responseIncludesTenantId() throws Exception { 
+            String customToken = jwtProvider.createToken("test-user", List.of("OPERATOR"), Map.of("tenant_id", "my-tenant"));
             when(mockClient.delete(anyString(), eq("dc_checkpoints"), eq("cp-t")))
                 .thenReturn(Promise.of(null)); 
 
             startServer(); 
 
-            HttpResponse<String> resp = deleteWithTenant("/api/v1/checkpoints/cp-t", "my-tenant"); 
+            HttpResponse<String> resp = deleteWithTenant("/api/v1/checkpoints/cp-t", "my-tenant", customToken); 
 
             assertThat(resp.statusCode()).isEqualTo(200); 
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
@@ -334,28 +354,34 @@ class DataCloudHttpServerCheckpointTest {
     // ==================== Helpers ====================
 
     private void startServer() throws Exception { 
-        server = new DataCloudHttpServer(mockClient, port); 
+        server = new DataCloudHttpServer(mockClient, port)
+            .withDeploymentMode("local")
+            .withJwtProvider(jwtProvider)
+            .withAuditService(mockAuditService)
+            .withPolicyEngine(mockPolicyEngine);
         server.start(); 
         waitForServerReady(port); 
     }
 
     private HttpResponse<String> get(String path) throws Exception { 
-        return getWithTenant(path, "default-tenant"); 
+        return getWithTenant(path, "default-tenant", testToken); 
     }
 
     private HttpResponse<String> getWithoutTenant(String path) throws Exception { 
         HttpRequest req = HttpRequest.newBuilder() 
             .GET() 
             .uri(URI.create("http://127.0.0.1:" + port + path)) 
+            .header("Authorization", "Bearer " + testToken)
             .build(); 
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }
 
-    private HttpResponse<String> getWithTenant(String path, String tenantId) throws Exception { 
+    private HttpResponse<String> getWithTenant(String path, String tenantId, String token) throws Exception { 
         HttpRequest req = HttpRequest.newBuilder() 
             .GET() 
             .uri(URI.create("http://127.0.0.1:" + port + path)) 
             .header("X-Tenant-Id", tenantId) 
+            .header("Authorization", "Bearer " + token)
             .build(); 
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }
@@ -366,7 +392,7 @@ class DataCloudHttpServerCheckpointTest {
     }
 
     private HttpResponse<String> postRaw(String path, String body) throws Exception { 
-        return postRawWithTenant(path, body, "default-tenant"); 
+        return postRawWithTenant(path, body, "default-tenant", testToken); 
     }
 
     private HttpResponse<String> postRawWithoutTenant(String path, String body) throws Exception { 
@@ -374,29 +400,32 @@ class DataCloudHttpServerCheckpointTest {
             .POST(HttpRequest.BodyPublishers.ofString(body)) 
             .uri(URI.create("http://127.0.0.1:" + port + path)) 
             .header("Content-Type", "application/json") 
+            .header("Authorization", "Bearer " + testToken)
             .build(); 
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }
 
-    private HttpResponse<String> postRawWithTenant(String path, String body, String tenantId) throws Exception { 
+    private HttpResponse<String> postRawWithTenant(String path, String body, String tenantId, String token) throws Exception { 
         HttpRequest req = HttpRequest.newBuilder() 
             .POST(HttpRequest.BodyPublishers.ofString(body)) 
             .uri(URI.create("http://127.0.0.1:" + port + path)) 
             .header("Content-Type", "application/json") 
             .header("X-Tenant-Id", tenantId) 
+            .header("Authorization", "Bearer " + token)
             .build(); 
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }
 
     private HttpResponse<String> delete(String path) throws Exception { 
-        return deleteWithTenant(path, "default-tenant"); 
+        return deleteWithTenant(path, "default-tenant", testToken); 
     }
 
-    private HttpResponse<String> deleteWithTenant(String path, String tenantId) throws Exception { 
+    private HttpResponse<String> deleteWithTenant(String path, String tenantId, String token) throws Exception { 
         HttpRequest req = HttpRequest.newBuilder() 
             .DELETE() 
             .uri(URI.create("http://127.0.0.1:" + port + path)) 
             .header("X-Tenant-Id", tenantId) 
+            .header("Authorization", "Bearer " + token)
             .build(); 
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }

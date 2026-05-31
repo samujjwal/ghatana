@@ -132,19 +132,19 @@ class AiFallbackDeterminismTest {
         }
 
         @Test
-        @DisplayName("pipelines/optimise-hint → fallback=true, hint present in data")
-        void pipelineOptimiseHint_noLlm_returnsHeuristicHint() throws Exception { 
-            startServerWithoutLlm(); 
+        @DisplayName("action/pipelines/optimise-hint → fallback=true, hint present in data")
+        void pipelineOptimiseHint_noLlm_returnsHeuristicHint() throws Exception {
+            startServerWithoutLlm();
 
-            HttpResponse<String> resp = post( 
-                "/api/v1/pipelines/etl-pipeline-001/optimise-hint",
+            HttpResponse<String> resp = post(
+                "/api/v1/action/pipelines/etl-pipeline-001/optimise-hint",
                 "{\"pipelineId\":\"etl-pipeline-001\",\"avgLatencyMs\":12000,\"stepCount\":20}");
 
-            assertThat(resp.statusCode()).isEqualTo(200); 
-            Map<String, Object> body = parseBody(resp); 
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<String, Object> body = parseBody(resp);
             assertThat(body).containsKey("data");
-            Map<String, Object> ai = extractAiBlock(resp); 
-            assertThat(ai).containsEntry("fallback", true); 
+            Map<String, Object> ai = extractAiBlock(resp);
+            assertThat(ai).containsEntry("fallback", true);
         }
 
         @Test

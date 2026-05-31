@@ -85,6 +85,7 @@ class DataCloudHttpServerAiAssistTest {
     private MetricsCollector mockMetricsCollector;
     private TraceExportService mockTraceExportService;
     private com.ghatana.platform.governance.security.ApiKeyResolver mockApiKeyResolver;
+    private com.ghatana.datacloud.governance.TenantQuotaService mockTenantQuotaService;
     private DataCloudHttpServer server;
     private int port;
     private HttpClient httpClient;
@@ -106,6 +107,7 @@ class DataCloudHttpServerAiAssistTest {
         mockMetricsCollector = mock(MetricsCollector.class);
         mockTraceExportService = mock(TraceExportService.class);
         mockApiKeyResolver = mock(com.ghatana.platform.governance.security.ApiKeyResolver.class);
+        mockTenantQuotaService = mock(com.ghatana.datacloud.governance.TenantQuotaService.class);
         lenient().when(mockApiKeyResolver.resolve(any())).thenReturn(
             Optional.of(new Principal("test-user", List.of("OPERATOR"), "tenant-a"))
         );
@@ -113,6 +115,9 @@ class DataCloudHttpServerAiAssistTest {
         lenient().when(mockClient.eventLogStore()).thenReturn(mock(com.ghatana.datacloud.spi.EventLogStore.class));
         lenient().when(mockAuditService.record(any())).thenReturn(Promise.complete());
         lenient().when(mockTraceExportService.exportSpans(any(), any())).thenReturn(Promise.complete());
+        // Stub transaction manager for production validation
+        lenient().when(mockTransactionManager.executeInTransaction(any(), any()))
+            .thenReturn(Promise.of(Map.of("status", "ok")));
         port          = findFreePort(); 
         httpClient    = HttpClient.newBuilder().build(); 
     }
@@ -182,6 +187,8 @@ class DataCloudHttpServerAiAssistTest {
             lenient().when(mockCompletion.complete(any()))
                 .thenReturn(Promise.ofException(new RuntimeException("LLM unavailable")));
             when(mockSettingsStore.getStorageMode()).thenReturn("jdbc");
+            lenient().when(mockClient.entityStore()).thenReturn(mock(com.ghatana.datacloud.spi.EntityStore.class));
+            lenient().when(mockClient.eventLogStore()).thenReturn(mock(com.ghatana.datacloud.spi.EventLogStore.class));
             server = new DataCloudHttpServer(mockClient, port)
                 .withCompletionService(mockCompletion)
                 .withDeploymentMode("production")
@@ -196,7 +203,8 @@ class DataCloudHttpServerAiAssistTest {
                 .withEventLogStore(mockEventLogStore)
                 .withContextStore(durableContextStore())
                 .withMetricsCollector(mockMetricsCollector)
-                .withTraceExportService(mockTraceExportService);
+                .withTraceExportService(mockTraceExportService)
+                .withTenantQuotaService(mockTenantQuotaService);
             server.start();
             waitForServerReady(port);
 
@@ -233,6 +241,8 @@ class DataCloudHttpServerAiAssistTest {
             lenient().when(mockCompletion.complete(any()))
                 .thenReturn(Promise.ofException(new RuntimeException("LLM timeout")));
             when(mockSettingsStore.getStorageMode()).thenReturn("jdbc");
+            lenient().when(mockClient.entityStore()).thenReturn(mock(com.ghatana.datacloud.spi.EntityStore.class));
+            lenient().when(mockClient.eventLogStore()).thenReturn(mock(com.ghatana.datacloud.spi.EventLogStore.class));
 
             server = new DataCloudHttpServer(mockClient, port)
                 .withCompletionService(mockCompletion)
@@ -248,7 +258,8 @@ class DataCloudHttpServerAiAssistTest {
                 .withEventLogStore(mockEventLogStore)
                 .withContextStore(durableContextStore())
                 .withMetricsCollector(mockMetricsCollector)
-                .withTraceExportService(mockTraceExportService);
+                .withTraceExportService(mockTraceExportService)
+                .withTenantQuotaService(mockTenantQuotaService);
             server.start();
             waitForServerReady(port);
 
@@ -291,7 +302,7 @@ class DataCloudHttpServerAiAssistTest {
             waitForServerReady(port); 
 
             post("/api/v1/analytics/suggest", "{\"collections\":[\"orders\"],\"goal\":\"revenue trend\"}"); 
-            post("/api/v1/pipelines/draft", "{\"prompt\":\"Load customer data and validate records\"}"); 
+            post("/api/v1/action/pipelines/draft", "{\"prompt\":\"Load customer data and validate records\"}"); 
 
             HttpResponse<String> resp = get("/api/v1/ai/quality-summary");
 
@@ -318,7 +329,7 @@ class DataCloudHttpServerAiAssistTest {
             assertThat(analyticsSuggest).containsEntry("requestCount", 1); 
             assertThat(analyticsSuggest).containsEntry("route", "/api/v1/analytics/suggest"); 
             assertThat(pipelineDraft).containsEntry("fallbackCount", 1); 
-            assertThat(pipelineDraft).containsEntry("route", "/api/v1/pipelines/draft"); 
+            assertThat(pipelineDraft).containsEntry("route", "/api/v1/action/pipelines/draft"); 
             assertThat(pipelineDraft).containsEntry("provenanceMode", "ai-envelope-and-draft-provenance"); 
         }
     }
@@ -326,7 +337,7 @@ class DataCloudHttpServerAiAssistTest {
     // ──────────────────── POST /api/v1/pipelines/:id/optimise-hint ────────────────────
 
     @Nested
-    @DisplayName("POST /api/v1/pipelines/draft")
+    @DisplayName("POST /api/v1/action/pipelines/draft")
     class PipelineDraftTests {
 
         @Test
@@ -336,7 +347,7 @@ class DataCloudHttpServerAiAssistTest {
             server.start(); 
             waitForServerReady(port); 
 
-            HttpResponse<String> resp = post("/api/v1/pipelines/draft", 
+            HttpResponse<String> resp = post("/api/v1/action/pipelines/draft", 
                 "{\"prompt\":\"Load customer data, validate records, save to warehouse\"}");
 
             assertThat(resp.statusCode()).isEqualTo(200); 
@@ -350,7 +361,7 @@ class DataCloudHttpServerAiAssistTest {
     }
 
     @Nested
-    @DisplayName("POST /api/v1/pipelines/:pipelineId/optimise-hint")
+    @DisplayName("POST /api/v1/action/pipelines/:pipelineId/optimise-hint")
     class PipelineOptimiseHintTests {
 
         @Test
@@ -360,7 +371,7 @@ class DataCloudHttpServerAiAssistTest {
             server.start(); 
             waitForServerReady(port); 
 
-            HttpResponse<String> resp = post("/api/v1/pipelines/etl-001/optimise-hint", 
+            HttpResponse<String> resp = post("/api/v1/action/pipelines/etl-001/optimise-hint", 
                 "{\"pipelineId\":\"etl-001\",\"avgLatencyMs\":8000,\"stepCount\":12}");
 
             assertThat(resp.statusCode()).isEqualTo(200); 
