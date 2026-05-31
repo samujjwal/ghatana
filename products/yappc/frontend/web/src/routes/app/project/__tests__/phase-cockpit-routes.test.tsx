@@ -876,7 +876,7 @@ describe('phase cockpit routes', () => {
     expect(screen.queryByTestId('phase-technical-details')).not.toBeInTheDocument();
   });
 
-  it('approves validate transitions through the lifecycle backend', async () => {
+  it('blocks validate transition approval when lifecycle preview context is unavailable', async () => {
     mockPhaseBootstrap({ lifecyclePhase: 'VALIDATE', nextPhase: 'GENERATE' });
     vi.mocked(fetch)
       .mockResolvedValueOnce(auditResponse('audit-validate-1'))
@@ -899,7 +899,13 @@ describe('phase cockpit routes', () => {
 
     expect(await screen.findByTestId('validate-cockpit')).toBeInTheDocument();
     await rendered.user.click(screen.getByTestId('approve-changes'));
-    expect(await screen.findByText(/Lifecycle transition approved from VALIDATE to EXECUTE/i)).toBeInTheDocument();
+
+    expect(await screen.findByTestId('phase-action-error')).toHaveTextContent(
+      'phaseCockpit.errors.lifecyclePreviewRequired',
+    );
+    expect(
+      vi.mocked(fetch).mock.calls.some(([input]) => String(input).includes('/api/v1/lifecycle/advance')),
+    ).toBe(false);
   });
 
   it('starts backend generation and requests diff review from the generate cockpit CTA', async () => {
