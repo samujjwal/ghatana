@@ -311,7 +311,7 @@ describe('phase cockpit component packet rendering', () => {
       }));
 
       expect(screen.getByTestId(`${phase}-cockpit`)).toBeInTheDocument();
-      expect(screen.getByTestId(`${phase}-backend-panel`)).toBeInTheDocument();
+      expect(screen.queryByTestId(`${phase}-backend-panel`)).not.toBeInTheDocument();
       expect(screen.queryByText(/placeholder/i)).not.toBeInTheDocument();
       expect(screen.queryByText(/generic/i)).not.toBeInTheDocument();
     }

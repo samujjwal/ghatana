@@ -1,6 +1,6 @@
 import { expect, test, type Request } from '@playwright/test';
 
-import { PROJECT_ID, bootstrapLifecycleProject, gotoLifecyclePhase, setupLifecycleJourneyApi } from './support/lifecycle-fixtures';
+import { PROJECT_ID, bootstrapLifecycleProject, gotoLifecyclePhaseAndWaitFor, setupLifecycleJourneyApi } from './support/lifecycle-fixtures';
 
 test.describe('YAPPC Kernel Handoff Journey', () => {
   test('generate flow calls ProductUnitIntent handoff and run status appears in run/observe', async ({ page }) => {
@@ -23,7 +23,7 @@ test.describe('YAPPC Kernel Handoff Journey', () => {
       });
     });
 
-    await gotoLifecyclePhase(page, 'generate');
+    await gotoLifecyclePhaseAndWaitFor(page, 'generate', 'generate-cockpit');
     await page.evaluate(async (projectId) => {
       await fetch('/api/v1/yappc/generate/product-unit-intent', {
         method: 'POST',
@@ -41,10 +41,10 @@ test.describe('YAPPC Kernel Handoff Journey', () => {
 
     await expect.poll(() => handoffRequest !== null).toBe(true);
 
-    await gotoLifecyclePhase(page, 'run');
+    await gotoLifecyclePhaseAndWaitFor(page, 'run', 'run-cockpit');
     await expect(page.getByTestId('run-cockpit')).toBeVisible();
 
-    await gotoLifecyclePhase(page, 'observe');
+    await gotoLifecyclePhaseAndWaitFor(page, 'observe', 'observe-cockpit');
     await expect(page.getByTestId('observe-cockpit')).toBeVisible();
   });
 });

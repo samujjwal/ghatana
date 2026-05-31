@@ -17,6 +17,22 @@ export type LifecyclePhase =
 
 type DegradedDependency = 'DATA_CLOUD' | 'AEP' | 'KERNEL';
 
+async function ensureWorkspaceContextStorage(page: Page): Promise<void> {
+  const writeWorkspaceContext = async () => {
+    await page.evaluate((workspaceId) => {
+      window.localStorage.setItem('yappc:currentWorkspaceId', JSON.stringify(workspaceId));
+      window.localStorage.setItem('onboarding_complete', JSON.stringify('true'));
+    }, WORKSPACE_ID);
+  };
+
+  try {
+    await writeWorkspaceContext();
+  } catch {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await writeWorkspaceContext();
+  }
+}
+
 interface FixtureOptions {
   readonly blockedValidate?: boolean;
   readonly runFailure?: boolean;
@@ -428,43 +444,42 @@ export async function setupLifecycleJourneyApi(page: Page, options: FixtureOptio
 }
 
 export async function bootstrapLifecycleProject(page: Page): Promise<void> {
-  await page.goto('/workspaces');
-  await page.getByRole('heading', { name: /Workspaces/i }).first().waitFor();
+  await ensureWorkspaceContextStorage(page);
 
-  const workspaceOpenButton = page.getByRole('button', { name: /^Open$/ }).first();
-  if (await workspaceOpenButton.isVisible()) {
-    await workspaceOpenButton.click();
-  } else {
-    await page.getByRole('heading', { name: 'Golden Workspace' }).click();
-  }
-
-  try {
-    await page.waitForURL(/\/projects$/, { timeout: 5000 });
-  } catch {
-    await page.goto(`/workspaces/${WORKSPACE_ID}/projects`);
-    await page.waitForURL(/\/projects$/);
-  }
-
-  await page.goto(`/p/${PROJECT_ID}`);
-  try {
-    await page.waitForURL(new RegExp(`/p/${PROJECT_ID}`), { timeout: 5000 });
-  } catch {
-    await page.goto(`/workspaces/${WORKSPACE_ID}/projects`);
-    await page.waitForURL(/\/projects$/);
-    await page.goto(`/p/${PROJECT_ID}`);
-    await page.waitForURL(new RegExp(`/p/${PROJECT_ID}`));
+  await page.goto(`/p/${PROJECT_ID}`, { waitUntil: 'domcontentloaded' });
+  if (!page.url().includes(`/p/${PROJECT_ID}`)) {
+    await ensureWorkspaceContextStorage(page);
+    await page.goto(`/p/${PROJECT_ID}`, { waitUntil: 'domcontentloaded' });
   }
 }
 
 export async function gotoLifecyclePhase(page: Page, phase: LifecyclePhase): Promise<void> {
   const targetPath = `/p/${PROJECT_ID}/${phase}`;
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    await page.goto(targetPath);
+    await ensureWorkspaceContextStorage(page);
+    await page.goto(targetPath, { waitUntil: 'domcontentloaded' });
     if (page.url().includes(targetPath)) {
       return;
     }
-    await bootstrapLifecycleProject(page);
   }
 
   throw new Error(`Unable to navigate to lifecycle phase route: ${targetPath}`);
+}
+
+export async function gotoLifecyclePhaseAndWaitFor(
+  page: Page,
+  phase: LifecyclePhase,
+  readyTestId: string,
+): Promise<void> {
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    await gotoLifecyclePhase(page, phase);
+    try {
+      await page.getByTestId(readyTestId).waitFor({ state: 'visible', timeout: 3000 });
+      return;
+    } catch {
+      await bootstrapLifecycleProject(page);
+    }
+  }
+
+  throw new Error(`Unable to render ${readyTestId} for phase ${phase}`);
 }

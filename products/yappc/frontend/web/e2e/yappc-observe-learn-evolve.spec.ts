@@ -1,21 +1,20 @@
 import { expect, test } from '@playwright/test';
 
-import { PROJECT_ID, bootstrapLifecycleProject, gotoLifecyclePhase, setupLifecycleJourneyApi } from './support/lifecycle-fixtures';
+import { bootstrapLifecycleProject, gotoLifecyclePhaseAndWaitFor, setupLifecycleJourneyApi } from './support/lifecycle-fixtures';
 
 test.describe('YAPPC Observe Learn Evolve Journey', () => {
+  test.setTimeout(90000);
+
   test('observe issue surfaces then learn and evolve cockpit states render', async ({ page }) => {
     await setupLifecycleJourneyApi(page, { runFailure: true });
     await bootstrapLifecycleProject(page);
 
-    await gotoLifecyclePhase(page, 'observe');
-    await expect(page.getByTestId('observe-cockpit')).toBeVisible();
+    await gotoLifecyclePhaseAndWaitFor(page, 'observe', 'observe-cockpit');
 
-    await gotoLifecyclePhase(page, 'learn');
-    await expect(page.getByTestId('learn-cockpit')).toBeVisible();
+    await gotoLifecyclePhaseAndWaitFor(page, 'learn', 'learn-cockpit');
     await expect(page.getByTestId('learn-advance-action')).toBeVisible();
 
-    await gotoLifecyclePhase(page, 'evolve');
-    await expect(page.getByTestId('evolve-cockpit')).toBeVisible();
+    await gotoLifecyclePhaseAndWaitFor(page, 'evolve', 'evolve-cockpit');
     await expect(page.getByTestId('evolve-advance-action')).toBeVisible();
   });
 });

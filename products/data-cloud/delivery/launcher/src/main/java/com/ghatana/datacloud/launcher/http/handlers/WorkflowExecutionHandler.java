@@ -470,21 +470,6 @@ public class WorkflowExecutionHandler {
                         correlationId, tenantId, pipelineId, executionId, snapshot.status());
                 metrics.recordRequest(HANDLER_NAME, "cancelPipelineExecution", tenantId, 200);
                 metrics.recordLatency(HANDLER_NAME, "cancelPipelineExecution", latency);
-<<<<<<< Updated upstream
-                Map<String, Object> responseMap = new LinkedHashMap<>();
-                responseMap.put("requestId", correlationId != null ? correlationId : UUID.randomUUID().toString());
-                responseMap.put("operationId", operation == null ? "" : operation.operationId());
-                responseMap.put("executionId", snapshot.id());
-                responseMap.put("pipelineId", pipelineId);
-                responseMap.put("tenantId", tenantId);
-                responseMap.put("status", snapshot.status());
-                responseMap.put("startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString());
-                responseMap.put("completedAt", snapshot.completedAt());
-                responseMap.put("nodeStatuses", snapshot.nodeStatuses() != null ? snapshot.nodeStatuses() : List.of());
-                responseMap.put("failureReason", snapshot.error());
-                responseMap.put("retryable", isRetryable(snapshot));
-                return http.jsonResponse(responseMap);
-=======
                 Map<String, Object> response = new LinkedHashMap<>();
                 response.put("requestId", correlationId != null ? correlationId : UUID.randomUUID().toString());
                 response.put("operationId", operation == null ? "" : operation.operationId());
@@ -504,7 +489,6 @@ public class WorkflowExecutionHandler {
                         correlationId, tenantId, pipelineId, executionId, e.getMessage());
                 metrics.recordError(HANDLER_NAME, "cancelPipelineExecution", e);
                 return Promise.of(http.errorResponse(500, "Cancel execution failed"));
->>>>>>> Stashed changes
             });
     }
 
