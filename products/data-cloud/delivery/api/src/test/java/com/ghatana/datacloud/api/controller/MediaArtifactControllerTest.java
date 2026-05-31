@@ -3,6 +3,8 @@ package com.ghatana.datacloud.api.controller;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.memory.media.DataCloudMediaArtifactRepository;
+import com.ghatana.datacloud.operations.InMemoryOperationRecorder;
+import com.ghatana.datacloud.operations.OperationStatus;
 import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.bytebuf.ByteBuf;
@@ -149,6 +151,7 @@ class MediaArtifactControllerTest extends EventloopTestBase {
             HttpMethod.DELETE,
             "/api/v1/media/artifacts/" + artifactId,
             "tenant-a",
+            List.of("admin"),
             null,
             null)));
 
@@ -232,12 +235,61 @@ class MediaArtifactControllerTest extends EventloopTestBase {
         Map<String, String> queryParams,
         Map<String, Object> body
     ) {
+        return mockRequest(method, path, tenantId, List.of("editor"), queryParams, body);
+    }
+
+    @Test
+    @DisplayName("transcription is blocked when processing runtime is not configured")
+    void transcriptionBlockedWithoutProcessingRuntime() throws Exception {
+        InMemoryOperationRecorder operationRecorder = new InMemoryOperationRecorder();
+        controller = new MediaArtifactController(new DataCloudMediaArtifactRepository(), MAPPER, null, operationRecorder);
+
+        HttpResponse createResponse = runPromise(() -> controller.handle(mockRequest(
+            HttpMethod.POST,
+            "/api/v1/media/artifacts",
+            "tenant-a",
+            null,
+            Map.of(
+                "agentId", "agent-1",
+                "mediaType", "audio/wav",
+                "storageUri", "s3://bucket/artifacts/a.wav",
+                "consentStatus", "granted"
+            ))));
+
+        String artifactId = String.valueOf(parseObject(createResponse).get("artifactId"));
+        HttpResponse response = runPromise(() -> controller.handle(mockRequest(
+            HttpMethod.POST,
+            "/api/v1/media/artifacts/" + artifactId + "/transcribe",
+            "tenant-a",
+            null,
+            Map.of("languageCode", "en-US"))));
+
+        assertThat(response.getCode()).isEqualTo(503);
+        Map<String, Object> body = parseObject(response);
+        assertThat(body).containsEntry("status", "blocked");
+        assertThat(String.valueOf(body.get("operationId"))).startsWith("op-");
+        assertThat(operationRecorder.listRecent("tenant-a", 10))
+            .singleElement()
+            .satisfies(operation -> {
+                assertThat(operation.status()).isEqualTo(OperationStatus.BLOCKED);
+                assertThat(operation.resourceId()).isEqualTo(artifactId);
+            });
+    }
+
+    private HttpRequest mockRequest(
+        HttpMethod method,
+        String path,
+        String tenantId,
+        List<String> roles,
+        Map<String, String> queryParams,
+        Map<String, Object> body
+    ) {
         HttpRequest request = mock(HttpRequest.class);
         when(request.getMethod()).thenReturn(method);
         when(request.getPath()).thenReturn(path);
         when(request.getHeader(HttpHeaders.of("X-Tenant-ID"))).thenReturn(tenantId);
         when(request.getAttachment(Principal.class)).thenReturn(
-            tenantId == null ? null : new Principal("media-test-user", List.of("editor"), tenantId));
+            tenantId == null ? null : new Principal("media-test-user", roles, tenantId));
 
         when(request.getQueryParameter("mediaType")).thenReturn(queryParams == null ? null : queryParams.get("mediaType"));
         when(request.getQueryParameter("agentId")).thenReturn(queryParams == null ? null : queryParams.get("agentId"));

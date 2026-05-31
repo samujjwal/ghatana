@@ -10,6 +10,7 @@ import {
   type MountedPhase,
   type PhaseActionResult,
 } from '../../../services/phase';
+import { getPhaseActionById, type LifecyclePhase } from '../../../types/phaseActions';
 import type { PhaseAction, PhaseCockpitPacket } from '../../../types/phasePacket';
 
 import { phasePacketToPreview } from './phasePacketMappers';
@@ -37,21 +38,49 @@ interface UsePhaseActionHandlersParams {
   readonly scrollToBlockerPanel: () => void;
 }
 
-const GENERATE_OPERATION_MAP: Record<string, GenerateReviewDecision> = {
-  'generate.apply': 'apply',
-  'generate.reject': 'reject',
-  'generate.rollback': 'rollback',
-  'generate.review.apply': 'apply',
-  'generate.review.reject': 'reject',
-  'generate.review.rollback': 'rollback',
-};
+function resolveOperationCategory(phase: MountedPhase, action: PhaseAction): string {
+  const canonicalAction = getPhaseActionById(phase as LifecyclePhase, action.actionId);
+  return canonicalAction?.category ?? action.category;
+}
 
-const RUN_OPERATION_MAP: Record<string, RunPostDecision> = {
-  'run.retry': 'retry',
-  'run.rollback': 'rollback',
-  'run.promote': 'promote',
-  'run.observe': 'observe',
-};
+function resolveGenerateDecision(operation: string, category: string): GenerateReviewDecision | null {
+  const isGenerateOperation = operation.startsWith('generate.');
+  const isReviewCategory = category === 'review';
+  if (!isGenerateOperation && !isReviewCategory) {
+    return null;
+  }
+  if (operation.endsWith('.apply') || operation.endsWith('apply')) {
+    return 'apply';
+  }
+  if (operation.endsWith('.reject') || operation.endsWith('reject')) {
+    return 'reject';
+  }
+  if (operation.endsWith('.rollback') || operation.endsWith('rollback')) {
+    return 'rollback';
+  }
+  return null;
+}
+
+function resolveRunDecision(operation: string, category: string): RunPostDecision | null {
+  const isRunOperation = operation.startsWith('run.');
+  const isRunCategory = category === 'post-run';
+  if (!isRunOperation && !isRunCategory) {
+    return null;
+  }
+  if (operation.endsWith('retry')) {
+    return 'retry';
+  }
+  if (operation.endsWith('rollback')) {
+    return 'rollback';
+  }
+  if (operation.endsWith('promote')) {
+    return 'promote';
+  }
+  if (operation.endsWith('observe')) {
+    return 'observe';
+  }
+  return null;
+}
 
 
 /**
@@ -185,7 +214,8 @@ function resolveRunContext(
 
   const executeServerOperation = useCallback((action: PhaseAction): boolean => {
     const operation = action.serverOperation ?? action.actionId;
-    const generateDecision = GENERATE_OPERATION_MAP[operation];
+    const operationCategory = resolveOperationCategory(phase, action);
+    const generateDecision = resolveGenerateDecision(operation, operationCategory);
     if (generateDecision) {
       if (!projectId || !resolveRunContext(action, packet, actionResult)) {
         setActionError(t('phaseCockpit.errors.missingGenerationRunContext'));
@@ -206,7 +236,7 @@ function resolveRunContext(
       return true;
     }
 
-    const runDecision = RUN_OPERATION_MAP[operation];
+    const runDecision = resolveRunDecision(operation, operationCategory);
     if (runDecision) {
       if (!projectId || !resolveRunContext(action, packet, actionResult)) {
         setActionError(t('phaseCockpit.errors.missingRunContext'));
@@ -224,18 +254,19 @@ function resolveRunContext(
     }
 
     return false;
-  }, [actionResult, currentUser?.email, currentUser?.id, generateReviewMutation, packet, projectId, runPostActionMutation, t]);
+  }, [actionResult, currentUser?.email, currentUser?.id, generateReviewMutation, packet, phase, projectId, runPostActionMutation, t]);
 
   const isActionPending = useCallback((action: PhaseAction): boolean => {
     const operation = action.serverOperation ?? action.actionId;
-    if (operation in GENERATE_OPERATION_MAP) {
+    const operationCategory = resolveOperationCategory(phase, action);
+    if (resolveGenerateDecision(operation, operationCategory) !== null) {
       return generateReviewMutation.isPending;
     }
-    if (operation in RUN_OPERATION_MAP) {
+    if (resolveRunDecision(operation, operationCategory) !== null) {
       return runPostActionMutation.isPending;
     }
     return actionMutation.isPending;
-  }, [actionMutation.isPending, generateReviewMutation.isPending, runPostActionMutation.isPending]);
+  }, [actionMutation.isPending, generateReviewMutation.isPending, phase, runPostActionMutation.isPending]);
 
   const disabledActionFeedback = useCallback((action: PhaseAction): string => {
     const reviewMessage = t('phaseCockpit.feedback.reviewingAction', {

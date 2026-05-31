@@ -4,6 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.memory.media.MediaArtifactEventEmitter;
 import com.ghatana.datacloud.memory.media.MediaArtifactRecord;
 import com.ghatana.datacloud.memory.media.MediaArtifactRepository;
+import com.ghatana.datacloud.operations.OperationKind;
+import com.ghatana.datacloud.operations.OperationRecord;
+import com.ghatana.datacloud.operations.OperationRecorder;
+import com.ghatana.datacloud.operations.OperationStatus;
 import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
 import io.activej.http.HttpMethod;
@@ -46,15 +50,25 @@ public final class MediaArtifactController {
     private final MediaArtifactRepository repository;
     private final ObjectMapper objectMapper;
     private final MediaArtifactEventEmitter eventEmitter;
+    private final OperationRecorder operationRecorder;
 
     public MediaArtifactController(MediaArtifactRepository repository, ObjectMapper objectMapper) {
         this(repository, objectMapper, null);
     }
 
     public MediaArtifactController(MediaArtifactRepository repository, ObjectMapper objectMapper, MediaArtifactEventEmitter eventEmitter) {
+        this(repository, objectMapper, eventEmitter, null);
+    }
+
+    public MediaArtifactController(
+            MediaArtifactRepository repository,
+            ObjectMapper objectMapper,
+            MediaArtifactEventEmitter eventEmitter,
+            OperationRecorder operationRecorder) {
         this.repository = Objects.requireNonNull(repository, "repository cannot be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper cannot be null");
         this.eventEmitter = eventEmitter;
+        this.operationRecorder = operationRecorder;
 
         if (eventEmitter != null) {
             log.info("[media-artifact] Controller initialized with event emitter");
@@ -77,9 +91,15 @@ public final class MediaArtifactController {
         HttpMethod method = request.getMethod();
 
         if (method == HttpMethod.POST && COLLECTION_PATH.equals(path)) {
+            if (!hasAnyRole(principal, "editor", "admin", "processor")) {
+                return Promise.of(ResponseBuilder.forbidden().json(Map.of("error", "media artifact create permission is required")).build());
+            }
             return createArtifact(request, tenantId);
         }
         if (method == HttpMethod.GET && COLLECTION_PATH.equals(path)) {
+            if (!hasAnyRole(principal, "viewer", "editor", "admin", "processor")) {
+                return Promise.of(ResponseBuilder.forbidden().json(Map.of("error", "media artifact read permission is required")).build());
+            }
             return listArtifacts(request, tenantId);
         }
         if (path.startsWith(COLLECTION_PATH + "/")) {
@@ -94,7 +114,10 @@ public final class MediaArtifactController {
                         .build());
                 }
                 if (method == HttpMethod.POST) {
-                    return triggerTranscription(artifactId, tenantId, request);
+                    if (!hasAnyRole(principal, "editor", "admin", "processor")) {
+                        return Promise.of(ResponseBuilder.forbidden().json(Map.of("error", "media artifact process permission is required")).build());
+                    }
+                    return triggerTranscription(artifactId, tenantId, principal, request);
                 }
             }
             if (remainingPath.endsWith(VISION_SUFFIX)) {
@@ -105,7 +128,10 @@ public final class MediaArtifactController {
                         .build());
                 }
                 if (method == HttpMethod.POST) {
-                    return triggerVisionAnalysis(artifactId, tenantId, request);
+                    if (!hasAnyRole(principal, "editor", "admin", "processor")) {
+                        return Promise.of(ResponseBuilder.forbidden().json(Map.of("error", "media artifact process permission is required")).build());
+                    }
+                    return triggerVisionAnalysis(artifactId, tenantId, principal, request);
                 }
             }
 
@@ -118,9 +144,15 @@ public final class MediaArtifactController {
                         .build());
                 }
                 if (method == HttpMethod.GET) {
+                    if (!hasAnyRole(principal, "viewer", "editor", "admin", "processor")) {
+                        return Promise.of(ResponseBuilder.forbidden().json(Map.of("error", "media artifact read permission is required")).build());
+                    }
                     return getArtifact(artifactId, tenantId);
                 }
                 if (method == HttpMethod.DELETE) {
+                    if (!hasAnyRole(principal, "admin")) {
+                        return Promise.of(ResponseBuilder.forbidden().json(Map.of("error", "media artifact delete permission is required")).build());
+                    }
                     return deleteArtifact(artifactId, tenantId);
                 }
             }
@@ -255,7 +287,7 @@ public final class MediaArtifactController {
             });
     }
 
-    private Promise<HttpResponse> triggerTranscription(String artifactId, String tenantId, HttpRequest request) {
+    private Promise<HttpResponse> triggerTranscription(String artifactId, String tenantId, Principal principal, HttpRequest request) {
         return repository.findById(artifactId, tenantId)
             .then(optional -> {
                 if (optional.isEmpty()) {
@@ -269,6 +301,28 @@ public final class MediaArtifactController {
                     return Promise.of(ResponseBuilder.badRequest()
                         .json(Map.of("error", "Transcription is only supported for audio artifacts"))
                         .build());
+                }
+
+                if (eventEmitter == null) {
+                    OperationRecord operation = recordMediaOperation(
+                        tenantId,
+                        artifactId,
+                        record.agentId(),
+                        OperationKind.MEDIA_PROCESSING,
+                        OperationStatus.BLOCKED,
+                        "Media transcription",
+                        "Transcription runtime is not configured",
+                        principal,
+                        request,
+                        Map.of("operation", "transcription"));
+                    Map<String, Object> response = new LinkedHashMap<>();
+                    response.put("error", "Media transcription runtime is not configured");
+                    response.put("artifactId", artifactId);
+                    response.put("status", "blocked");
+                    if (operation != null) {
+                        response.put("operationId", operation.operationId());
+                    }
+                    return Promise.of(ResponseBuilder.serviceUnavailable().json(response).build());
                 }
 
                 return request.loadBody().then(body -> {
@@ -285,29 +339,29 @@ public final class MediaArtifactController {
 
                         String jobId = "transcription-" + artifactId + "-" + System.currentTimeMillis();
                         String requestedLanguageCode = languageCode;
+                        OperationRecord operation = recordMediaOperation(
+                            tenantId,
+                            artifactId,
+                            record.agentId(),
+                            OperationKind.MEDIA_PROCESSING,
+                            OperationStatus.ACCEPTED,
+                            "Media transcription",
+                            "Transcription requested",
+                            principal,
+                            request,
+                            Map.of("languageCode", requestedLanguageCode, "jobId", jobId));
 
-                        if (eventEmitter != null) {
-                            return eventEmitter.emitTranscriptionRequested(artifactId, tenantId, record.agentId(), requestedLanguageCode)
-                                .map(offset -> ResponseBuilder.accepted()
-                                    .json(Map.of(
-                                        "jobId", jobId,
-                                        "artifactId", artifactId,
-                                        "status", "pending",
-                                        "message", "Transcription job queued",
-                                        "languageCode", requestedLanguageCode
-                                    ))
-                                    .build());
-                        }
-
-                        return Promise.of(ResponseBuilder.accepted()
-                            .json(Map.of(
-                                "jobId", jobId,
-                                "artifactId", artifactId,
-                                "status", "pending",
-                                "message", "Transcription job queued",
-                                "languageCode", requestedLanguageCode
-                            ))
-                            .build());
+                        return eventEmitter.emitTranscriptionRequested(artifactId, tenantId, record.agentId(), requestedLanguageCode)
+                            .map(offset -> ResponseBuilder.accepted()
+                                .json(Map.of(
+                                    "jobId", jobId,
+                                    "operationId", operation == null ? "" : operation.operationId(),
+                                    "artifactId", artifactId,
+                                    "status", "pending",
+                                    "message", "Transcription job accepted",
+                                    "languageCode", requestedLanguageCode
+                                ))
+                                .build());
                     } catch (Exception e) {
                         log.warn("Invalid transcription request", e);
                         return Promise.of(ResponseBuilder.badRequest()
@@ -318,7 +372,7 @@ public final class MediaArtifactController {
             });
     }
 
-    private Promise<HttpResponse> triggerVisionAnalysis(String artifactId, String tenantId, HttpRequest request) {
+    private Promise<HttpResponse> triggerVisionAnalysis(String artifactId, String tenantId, Principal principal, HttpRequest request) {
         return repository.findById(artifactId, tenantId)
             .then(optional -> {
                 if (optional.isEmpty()) {
@@ -332,6 +386,28 @@ public final class MediaArtifactController {
                     return Promise.of(ResponseBuilder.badRequest()
                         .json(Map.of("error", "Vision analysis is only supported for image or video artifacts"))
                         .build());
+                }
+
+                if (eventEmitter == null) {
+                    OperationRecord operation = recordMediaOperation(
+                        tenantId,
+                        artifactId,
+                        record.agentId(),
+                        OperationKind.MEDIA_PROCESSING,
+                        OperationStatus.BLOCKED,
+                        "Media vision analysis",
+                        "Vision analysis runtime is not configured",
+                        principal,
+                        request,
+                        Map.of("operation", "vision-analysis"));
+                    Map<String, Object> response = new LinkedHashMap<>();
+                    response.put("error", "Media vision analysis runtime is not configured");
+                    response.put("artifactId", artifactId);
+                    response.put("status", "blocked");
+                    if (operation != null) {
+                        response.put("operationId", operation.operationId());
+                    }
+                    return Promise.of(ResponseBuilder.serviceUnavailable().json(response).build());
                 }
 
                 return request.loadBody().then(body -> {
@@ -348,29 +424,29 @@ public final class MediaArtifactController {
 
                         String jobId = "vision-" + artifactId + "-" + System.currentTimeMillis();
                         String requestedAnalysisType = analysisType;
+                        OperationRecord operation = recordMediaOperation(
+                            tenantId,
+                            artifactId,
+                            record.agentId(),
+                            OperationKind.MEDIA_PROCESSING,
+                            OperationStatus.ACCEPTED,
+                            "Media vision analysis",
+                            "Vision analysis requested",
+                            principal,
+                            request,
+                            Map.of("analysisType", requestedAnalysisType, "jobId", jobId));
 
-                        if (eventEmitter != null) {
-                            return eventEmitter.emitProcessingRequested(artifactId, tenantId, record.agentId(), "vision-analysis", requestedAnalysisType)
-                                .map(offset -> ResponseBuilder.accepted()
-                                    .json(Map.of(
-                                        "jobId", jobId,
-                                        "artifactId", artifactId,
-                                        "status", "pending",
-                                        "message", "Vision analysis job queued",
-                                        "analysisType", requestedAnalysisType
-                                    ))
-                                    .build());
-                        }
-
-                        return Promise.of(ResponseBuilder.accepted()
-                            .json(Map.of(
-                                "jobId", jobId,
-                                "artifactId", artifactId,
-                                "status", "pending",
-                                "message", "Vision analysis job queued",
-                                "analysisType", requestedAnalysisType
-                            ))
-                            .build());
+                        return eventEmitter.emitProcessingRequested(artifactId, tenantId, record.agentId(), "vision-analysis", requestedAnalysisType)
+                            .map(offset -> ResponseBuilder.accepted()
+                                .json(Map.of(
+                                    "jobId", jobId,
+                                    "operationId", operation == null ? "" : operation.operationId(),
+                                    "artifactId", artifactId,
+                                    "status", "pending",
+                                    "message", "Vision analysis job accepted",
+                                    "analysisType", requestedAnalysisType
+                                ))
+                                .build());
                     } catch (Exception e) {
                         log.warn("Invalid vision analysis request", e);
                         return Promise.of(ResponseBuilder.badRequest()
@@ -403,6 +479,47 @@ public final class MediaArtifactController {
 
     private static boolean requiresExplicitConsent(String mediaType) {
         return mediaType.startsWith("audio/") || mediaType.startsWith("video/");
+    }
+
+    private static boolean hasAnyRole(Principal principal, String... roles) {
+        for (String role : roles) {
+            if (principal.hasRole(role)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private OperationRecord recordMediaOperation(
+            String tenantId,
+            String artifactId,
+            String agentId,
+            OperationKind kind,
+            OperationStatus status,
+            String action,
+            String summary,
+            Principal principal,
+            HttpRequest request,
+            Map<String, Object> metadata) {
+        if (operationRecorder == null) {
+            return null;
+        }
+        String correlationId = request.getHeader(io.activej.http.HttpHeaders.of("X-Correlation-ID"));
+        if (correlationId == null || correlationId.isBlank()) {
+            correlationId = request.getHeader(io.activej.http.HttpHeaders.of("X-Request-ID"));
+        }
+        return operationRecorder.record(OperationRecord.create(
+            tenantId,
+            kind,
+            status,
+            "media-artifact",
+            artifactId,
+            action,
+            summary,
+            principal.getName(),
+            correlationId,
+            false,
+            metadata == null ? Map.of() : metadata));
     }
 
     private Map<String, Object> toResponse(MediaArtifactRecord record) {

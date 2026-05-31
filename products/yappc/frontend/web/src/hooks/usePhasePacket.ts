@@ -75,7 +75,12 @@ function normalizePhasePanelView(value: PhasePanelView): PhasePanelView {
 export function normalizePhaseCockpitPacket(data: GeneratedPhaseCockpitPacket): PhaseCockpitPacket {
   const rawPhasePanels = (data as { readonly phasePanels?: unknown }).phasePanels;
   const phasePanels = Array.isArray(rawPhasePanels)
-    ? rawPhasePanels.filter(hasPhasePanelViewShape).map(normalizePhasePanelView)
+    ? rawPhasePanels.map((panel, index) => {
+      if (!hasPhasePanelViewShape(panel)) {
+        throw new Error(`Invalid PhaseCockpitPacket.phasePanels[${index}] contract from backend`);
+      }
+      return normalizePhasePanelView(panel);
+    })
     : [];
 
   return {

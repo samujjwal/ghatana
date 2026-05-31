@@ -12,11 +12,6 @@ import {
   type PhaseIconId,
 } from '../../../services/phase';
 import type { PhaseAction } from '../../../types/phasePacket';
-
-import {
-  type PhaseActionSectionAction,
-  type PhaseActionSectionGroup,
-} from './PhaseActionSection';
 import { PhaseCockpitView } from './PhaseCockpitView';
 import { PhaseCurrentStateCard } from './PhaseCurrentStateCard';
 import { PhaseStatusPanelsCanonical } from './PhaseStatusPanelsCanonical';
@@ -28,14 +23,8 @@ import {
   MissingWorkspaceState,
   PhaseRouteLoadingState,
 } from './PhaseRouteGuards';
-import {
-  mapPacketActivity,
-  mapPacketBlockers,
-  mapPacketEvidence,
-  mapPacketGovernance,
-  mapPacketSuggestions,
-} from './phasePacketMappers';
 import { usePhaseActionHandlers, type PhaseCurrentUser } from './usePhaseActionHandlers';
+import { usePhaseCockpitViewModel } from './usePhaseCockpitViewModel';
 
 import { currentWorkspaceIdAtom } from '@/state/atoms/workspaceAtom';
 import { currentUserAtom } from '@/stores/user.store';
@@ -120,69 +109,6 @@ const PHASE_ICON_IDS: Record<MountedPhase, PhaseIconId> = {
   learn: 'lightbulb',
   evolve: 'arrow-up-right',
 };
-
-const RUN_CONTEXT_OPERATIONS = new Set([
-  'generate.apply',
-  'generate.reject',
-  'generate.rollback',
-  'generate.review.apply',
-  'generate.review.reject',
-  'generate.review.rollback',
-  'run.retry',
-  'run.rollback',
-  'run.promote',
-  'run.observe',
-]);
-
-function toTestId(actionId: string): string {
-  if (actionId === 'run.observe') {
-    return 'run-observe-handoff';
-  }
-  return actionId.replaceAll('.', '-');
-}
-
-function toSectionAction(
-  action: PhaseAction,
-  actionText: (key: string | undefined) => string | undefined,
-  disabled: boolean,
-  onClick: () => void,
-): PhaseActionSectionAction {
-  return {
-    actionId: action.actionId,
-    testId: toTestId(action.actionId),
-    label: actionText(action.label) ?? action.actionId,
-    severity: action.severity ?? 'default',
-    disabled,
-    onClick,
-  };
-}
-
-function categorySectionMeta(
-  category: string,
-  t: (key: string, options?: Record<string, unknown>) => string,
-): Pick<PhaseActionSectionGroup, 'testId' | 'title' | 'description'> {
-  if (category === 'review') {
-    return {
-      testId: 'generate-review-actions',
-      title: t('phaseCockpit.generateReview.title'),
-      description: t('phaseCockpit.generateReview.description'),
-    };
-  }
-  if (category === 'post-run') {
-    return {
-      testId: 'run-post-actions',
-      title: t('phaseCockpit.runPost.title'),
-      description: t('phaseCockpit.runPost.description'),
-    };
-  }
-
-  const slug = category.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  return {
-    testId: `phase-actions-${slug}`,
-    title: t('phaseCockpit.actionSections.title', { category }),
-    description: t('phaseCockpit.actionSections.description', { category }),
-  };
-}
 
 interface PhaseCockpitContainerProps {
   readonly phase: MountedPhase;
@@ -275,11 +201,29 @@ export function PhaseCockpitContainer({ phase }: PhaseCockpitContainerProps): Re
   }
 
   const projectName = packet.projectName ?? t('phaseCockpit.fallback.thisProject');
-  const blockers = mapPacketBlockers(packet);
-  const evidence = mapPacketEvidence(packet);
-  const governance = mapPacketGovernance(packet);
-  const suggestions = mapPacketSuggestions(packet, actionText, handleSuggestionAction);
-  const activity = mapPacketActivity(packet);
+
+  const {
+    blockers,
+    evidence,
+    governance,
+    suggestions,
+    activity,
+    primaryPacketAction,
+    isDependencyDegraded,
+    primaryNextActionLabel,
+    governanceOutcome,
+    isActionAvailable,
+    primaryActionDisabledReason,
+    actionSections,
+  } = usePhaseCockpitViewModel({
+    phase,
+    packet,
+    actionText,
+    isActionPending,
+    handleSuggestionAction,
+    mutationPending: actionMutation.isPending,
+    t,
+  });
 
   const statusPanels = (
     <PhaseStatusPanelsCanonical
@@ -287,55 +231,6 @@ export function PhaseCockpitContainer({ phase }: PhaseCockpitContainerProps): Re
       phasePanels={packet.phasePanels ?? []}
     />
   );
-
-  const primaryPacketAction = packet.availableActions.find(
-    (action) => action.actionId === packet.dashboardActions.primaryAction,
-  ) ?? packet.availableActions[0] ?? null;
-
-  const isDependencyDegraded = packet.readiness.isDegraded || Boolean(packet.degradedDetails);
-  const primaryNextActionLabel = actionText(primaryPacketAction?.label)
-    ?? t('phaseCockpit.contract.noSuggestedAction');
-  const governanceOutcome = packet.governance[0]?.outcome
-    ?? t('phaseCockpit.contract.readyWithoutReview');
-
-  // FE-06: Reduce fallback/action ambiguity - single source of truth for action availability
-  const isActionAvailable = Boolean(primaryPacketAction?.enabled) && !isDependencyDegraded && !actionMutation.isPending;
-  const primaryActionDisabledReason = actionMutation.isPending
-    ? t('phaseCockpit.disabled.running')
-    : primaryPacketAction?.disabledReason
-      ? actionText(primaryPacketAction.disabledReason)
-      : isDependencyDegraded
-        ? packet.degradedDetails?.recoveryAction ?? t('phaseCockpit.disabled.degradedDependency')
-        : !primaryPacketAction
-          ? t('phaseCockpit.disabled.noBackendAction')
-          : undefined;
-  const primaryActionId = primaryPacketAction?.actionId ?? null;
-
-  const actionSectionsMap = new Map<string, PhaseActionSectionGroup>();
-  packet.availableActions
-    .filter((action) => action.actionId !== primaryActionId)
-    .forEach((action) => {
-      const operation = action.serverOperation ?? action.actionId;
-      // FE-05: Do not hide backend-provided run actions due to local run context
-      // Backend now provides run context in packet.platformRunStatus, so we dont need to filter based on local runContextId
-
-      const sectionMeta = categorySectionMeta(action.category ?? 'general', t);
-      const existingActions = actionSectionsMap.get(sectionMeta.testId)?.actions ?? [];
-
-      actionSectionsMap.set(sectionMeta.testId, {
-        ...sectionMeta,
-        actions: [
-          ...existingActions,
-          toSectionAction(action, actionText, isActionPending(action) || !action.enabled, () => {
-            handleSuggestionAction(action);
-          }),
-        ],
-      });
-    });
-
-  const actionSections: readonly PhaseActionSectionGroup[] = [
-    ...actionSectionsMap.values(),
-  ].filter((section) => section.actions.length > 0);
 
   return (
     <PhaseCockpitView

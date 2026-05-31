@@ -121,7 +121,7 @@ Side-effecting EventOperatorCapability usage must require tool policy, approval 
 
 ## Current Reality
 
-AEP has foundations in event processing, pipelines, operators, state, ingestion, runtime services, and learning concepts. Today, much of the implementation remains co-located under `products/data-cloud/planes/action/*` for migration compatibility. That temporary location is allowed while build/module boundaries stabilize, but it does not make Data-Cloud the owner of AEP semantics.
+AEP has foundations in event processing, pipelines, operators, state, ingestion, runtime services, and learning concepts. Today, much of the implementation is deliberately co-located under `products/data-cloud/planes/action/*` for Data Cloud integration. That placement is a module-location decision, not a semantic readiness claim, and it does not make Data-Cloud the owner of AEP semantics.
 
 Readiness claims for AEP or the co-located Action Plane require executable proof. At minimum, the Action Plane modules must compile and test cleanly, AI governance behavioral proof must execute real tests with zero warnings, product release readiness must pass, and Data-Cloud/AEP boundary gates must prove non-action Data-Cloud planes do not import AEP internals.
 

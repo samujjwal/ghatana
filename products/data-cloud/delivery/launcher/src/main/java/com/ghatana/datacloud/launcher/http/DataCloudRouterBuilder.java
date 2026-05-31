@@ -52,7 +52,8 @@ import org.slf4j.LoggerFactory;
  *     .withAiAssistRoutes(aiAssistHandler)
  *     .withVoiceRoutes(voiceHandler)
  *     .withGovernanceRoutes(dataLifecycleHandler)
- *     .withSurfaceRoutes(surfaceRegistryHandler)
+     *     .withSurfaceRoutes(surfaceRegistryHandler)
+ *     .withOperationsJobRoutes(operationsJobHandler)
  *     .withLineageRoutes(lineageHandler)
  *     .withContextRoutes(contextLayerHandler, collectionContextHandler, semanticSearchHandler)
  *     .withMcpRoutes(mcpToolsHandler)
@@ -896,6 +897,20 @@ public class DataCloudRouterBuilder {
         builder
             .with(HttpMethod.GET,  "/api/v1/user-activity/recent", userActivityHandler::handleGetRecentActivity)
             .with(HttpMethod.POST, "/api/v1/user-activity/log",    userActivityHandler::handleLogActivity);
+        return this;
+    }
+
+    /**
+     * Adds the unified operations/job timeline endpoints.
+     */
+    public DataCloudRouterBuilder withOperationsJobRoutes(OperationsJobHandler operationsJobHandler) {
+        if (operationsJobHandler == null) {
+            return this;
+        }
+        builder
+            .with(HttpMethod.GET, "/api/v1/operations/jobs", operationsJobHandler::handleListJobs)
+            .with(HttpMethod.GET, "/api/v1/operations/jobs/:operationId", operationsJobHandler::handleGetJob)
+            .with(HttpMethod.POST, "/api/v1/operations/jobs/:operationId/cancel", operationsJobHandler::handleCancelJob);
         return this;
     }
 

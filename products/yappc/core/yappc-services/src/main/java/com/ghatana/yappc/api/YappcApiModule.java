@@ -72,6 +72,10 @@ import com.ghatana.yappc.services.phase.PhaseGateContextFactory;
 import com.ghatana.yappc.services.phase.PhaseReadinessEvaluator;
 import com.ghatana.yappc.services.phase.PhaseHealthSignalProvider;
 import com.ghatana.yappc.services.phase.PhasePacketAssembler;
+import com.ghatana.yappc.services.phase.LearningSignalRepository;
+import com.ghatana.yappc.services.phase.DataCloudLearningSignalRepository;
+import com.ghatana.yappc.services.phase.LearningWorkflowService;
+import com.ghatana.yappc.services.phase.EvolutionWorkflowService;
 import com.ghatana.yappc.services.run.CiCdPort;
 import com.ghatana.yappc.services.run.GitHubActionsCiCdAdapter;
 import com.ghatana.yappc.services.run.RunService;
@@ -565,6 +569,21 @@ public class YappcApiModule extends AbstractModule {
     }
 
     @Provides
+    LearningSignalRepository learningSignalRepository(DataCloudClient dataCloudClient) {
+        return new DataCloudLearningSignalRepository(dataCloudClient);
+    }
+
+    @Provides
+    LearningWorkflowService learningWorkflowService(LearningSignalRepository learningSignalRepository) {
+        return new LearningWorkflowService(learningSignalRepository);
+    }
+
+    @Provides
+    EvolutionWorkflowService evolutionWorkflowService(DataCloudClient dataCloudClient) {
+        return new EvolutionWorkflowService(dataCloudClient);
+    }
+
+    @Provides
     PhasePacketAssembler phasePacketAssembler() {
         return new PhasePacketAssembler();
     }
@@ -594,6 +613,8 @@ public class YappcApiModule extends AbstractModule {
             PhaseGateContextFactory phaseGateContextFactory,
             PhaseReadinessEvaluator phaseReadinessEvaluator,
             PhaseHealthSignalProvider phaseHealthSignalProvider,
+            LearningWorkflowService learningWorkflowService,
+            EvolutionWorkflowService evolutionWorkflowService,
             PhasePacketAssembler phasePacketAssembler) {
         return new PhasePacketServiceImpl(
             dataCloudClient,
@@ -619,6 +640,8 @@ public class YappcApiModule extends AbstractModule {
             phaseGateContextFactory,
             phaseReadinessEvaluator,
             phaseHealthSignalProvider,
+            learningWorkflowService,
+            evolutionWorkflowService,
             phasePacketAssembler
         );
     }

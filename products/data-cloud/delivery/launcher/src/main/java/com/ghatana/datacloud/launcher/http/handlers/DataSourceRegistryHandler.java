@@ -6,6 +6,10 @@ import com.ghatana.datacloud.feature.DataCloudFeature;
 import com.ghatana.datacloud.feature.DataCloudFeatureFlags;
 import com.ghatana.datacloud.launcher.http.ApiInputValidator;
 import com.ghatana.datacloud.launcher.http.security.RequestContextResolver;
+import com.ghatana.datacloud.operations.OperationKind;
+import com.ghatana.datacloud.operations.OperationRecord;
+import com.ghatana.datacloud.operations.OperationRecorder;
+import com.ghatana.datacloud.operations.OperationStatus;
 import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.observability.idempotency.IdempotencyHelper;
@@ -80,6 +84,7 @@ public final class DataSourceRegistryHandler {
     private final AuditService auditService;
     private final String deploymentProfile;
     private final IdempotencyStore idempotencyStore;
+    private OperationRecorder operationRecorder;
 
     /**
      * @param client       entity store client for persisting connection metadata
@@ -122,6 +127,11 @@ public final class DataSourceRegistryHandler {
     public DataSourceRegistryHandler(DataCloudClient client, HttpHandlerSupport http,
                                      DataFabricConnector fabric, AuditService auditService) {
         this(client, http, fabric, auditService, "local");
+    }
+
+    public DataSourceRegistryHandler withOperationRecorder(OperationRecorder operationRecorder) {
+        this.operationRecorder = operationRecorder;
+        return this;
     }
 
     // ─── Helper Methods (P0-09) ─────────────────────────────────────────────────
@@ -782,6 +792,15 @@ public final class DataSourceRegistryHandler {
 
         // P0-09: Fail closed when connector runtime is unavailable in production/staging/sovereign profiles
         if (isConnectorRuntimeRequired() && fabric == null) {
+            recordConnectorOperation(
+                tenantId,
+                connectionId,
+                OperationKind.CONNECTOR_SYNC,
+                OperationStatus.BLOCKED,
+                "Connector sync",
+                "Connector runtime is required but unavailable",
+                request,
+                Map.of("deploymentProfile", deploymentProfile));
             return connectorRuntimeUnavailableResponse("connector sync");
         }
 
@@ -811,12 +830,36 @@ public final class DataSourceRegistryHandler {
                     Boolean.TRUE.equals(payload.getOrDefault("incremental", Boolean.FALSE)),
                     columns
                 );
+                OperationRecord operation = recordConnectorOperation(
+                    tenantId,
+                    connectionId,
+                    OperationKind.CONNECTOR_SYNC,
+                    OperationStatus.RUNNING,
+                    "Connector sync",
+                    "Connector sync requested",
+                    request,
+                    Map.of(
+                        "syncMode", config.syncMode(),
+                        "targetCollection", config.targetCollection() == null ? "" : config.targetCollection()
+                    ));
+                String operationId = operation == null ? "" : operation.operationId();
+
                 return updateConnectionState(tenantId, connectionId, "SYNCING", "syncing")
                         .then(e -> fabric.sync(connectionId, config))
                         .map(result -> {
                             String postState = result.success() ? "ACTIVE" : "ERROR";
                             String postHealth = result.success() ? "healthy" : "unhealthy";
                             updateConnectionStateAsync(tenantId, connectionId, postState, postHealth);
+                            transitionOperation(
+                                tenantId,
+                                operationId,
+                                result.success() ? OperationStatus.SUCCEEDED : OperationStatus.FAILED,
+                                result.errorMessage(),
+                                Map.of(
+                                    "jobId", result.jobId() == null ? "" : result.jobId(),
+                                    "recordsSynced", result.recordsSynced(),
+                                    "recordsFailed", result.recordsFailed()
+                                ));
 
                             // P4.4: Link connector sync output to target collection registry
                             String targetCollection = config.targetCollection();
@@ -828,6 +871,7 @@ public final class DataSourceRegistryHandler {
                                 "tenantId", tenantId,
                                 "connectionId", connectionId,
                                 "jobId", result.jobId(),
+                                "operationId", operationId,
                                 "syncStatus", result.success() ? "completed" : "failed",
                                 "recordsSynced", result.recordsSynced(),
                                 "recordsFailed", result.recordsFailed(),
@@ -842,6 +886,12 @@ public final class DataSourceRegistryHandler {
                             r -> Promise.of(r),
                             ex -> {
                                 updateConnectionStateAsync(tenantId, connectionId, "ERROR", "unhealthy");
+                                transitionOperation(
+                                    tenantId,
+                                    operationId,
+                                    OperationStatus.FAILED,
+                                    ex.getMessage(),
+                                    Map.of());
                                 log.error("[triggerSync] tenant={} id={} failed: {}", tenantId, connectionId, ex.getMessage(), ex);
                                 return Promise.of(http.errorResponse(502, "Sync failed: " + ex.getMessage()));
                             });
@@ -1456,5 +1506,44 @@ public final class DataSourceRegistryHandler {
             .build();
         auditService.record(event).whenException(e ->
             log.warn("[connector-audit] emission failed eventType={} connectionId={}: {}", eventType, connectionId, e.getMessage()));
+    }
+
+    private OperationRecord recordConnectorOperation(
+            String tenantId,
+            String connectionId,
+            OperationKind kind,
+            OperationStatus status,
+            String action,
+            String summary,
+            HttpRequest request,
+            Map<String, Object> metadata) {
+        if (operationRecorder == null) {
+            return null;
+        }
+        OperationRecord record = OperationRecord.create(
+                tenantId,
+                kind,
+                status,
+                "connector",
+                connectionId,
+                action,
+                summary,
+                http.resolvePrincipalId(request),
+                http.resolveCorrelationId(request),
+                false,
+                metadata);
+        return operationRecorder.record(record);
+    }
+
+    private void transitionOperation(
+            String tenantId,
+            String operationId,
+            OperationStatus status,
+            String detail,
+            Map<String, Object> metadata) {
+        if (operationRecorder == null || operationId == null) {
+            return;
+        }
+        operationRecorder.transition(tenantId, operationId, status, detail, metadata);
     }
 }

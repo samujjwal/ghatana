@@ -944,6 +944,9 @@
         "description": "Platform data services and data lake infrastructure provider",
         "category": "platform-infrastructure"
       },
+      "productCompletenessStatus": "blocked",
+      "runtimeSurfaceStatus": "degraded",
+      "releaseReadinessExecutionStatus": "not-executed",
       "lifecycleReadiness": {
         "reasonCodes": [
           "platform-provider-mode-required",
@@ -951,11 +954,11 @@
           "platform-provider-health-validated",
           "runtime-truth-provider-validated",
           "conformance-gates-complete",
-          "aep-pattern-learning-hardened",
-          "agent-learning-quality-observable",
+          "aep-pattern-learning-partial",
+          "agent-learning-quality-observable-partial",
           "first-class-domain-contracts-implemented",
-          "connector-production-path-complete",
-          "audio-video-modality-first-class"
+          "connector-runtime-incomplete",
+          "audio-video-modality-partial"
         ],
         "requiredGates": [
           "bootstrap-build-without-platform-providers",
@@ -970,11 +973,14 @@
           "Keep Data Cloud registered as a platform provider rather than an ordinary Kernel lifecycle product",
           "Keep bootstrap separation, runtime truth provider, and Action Plane governance evidence current for each release target",
           "Maintain first-class Collection/Dataset/DataSource contracts implementation and backend handlers",
-          "Maintain connector production path with real handler, runtime truth states, and dataset linkage",
+          "Complete connector runtime wiring with real connector provider, runtime truth states, dataset linkage, health, schema, sync, and credential rotation",
           "Maintain typed DAG/node/edge/operator schema and validation for pipeline contracts",
-          "Maintain audio-video modality as first-class Data Cloud capability with MediaArtifact, Transcript, FrameIndex entities and complete workflow",
+          "Complete audio-video modality as first-class Data Cloud capability with durable MediaArtifact job lifecycle, Transcript, FrameIndex entities, consent, retention, and processing workflow",
+          "Complete AEP lifecycle semantics for unified operator model, PatternSpec compiler, EventCloud SPI, pattern lifecycle, learning-to-recommendation loop, and replay-safe agent execution",
           "Context Plane is target-only: planes/context/ directory exists as placeholder and ownership boundary but is not an active Gradle module. UI/runtime should not treat it as fully available.",
-          "Complete UI simplification: hide shell-role switcher in production UX"
+          "Keep execution capability optional until runtime truth proves action execution is live in the target profile",
+          "Complete UI simplification: hide shell-role switcher in production UX",
+          "Do not execute release-readiness or evidence-generation workflows in this implementation hardening pass"
         ],
         "evidenceRefs": [
           "products/data-cloud/lifecycle/readiness-evidence.yaml",
@@ -985,7 +991,14 @@
           "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/learning/consolidation/DefaultLLMFactExtractor.java"
         ],
         "blockerGateAdapterMatrix": {
-          "blockers": [],
+          "blockers": [
+            "runtime-truth-ui-drift",
+            "connector-runtime-missing",
+            "audio-video-modality-incomplete",
+            "aep-lifecycle-incomplete",
+            "context-plane-target-only",
+            "execution-capability-optional"
+          ],
           "gates": [
             {
               "gateId": "bootstrap-build-without-platform-providers",
@@ -1009,29 +1022,33 @@
             },
             {
               "gateId": "connector-production-path",
-              "description": "Connector production path complete with real handler and dataset linkage"
+              "description": "Connector production path requires real runtime provider, health, schema, sync, credential redaction, and dataset linkage before being marked ready"
             },
             {
               "gateId": "audio-video-modality-integration",
-              "description": "Audio-video modality as first-class Data Cloud capability with complete entities and workflow"
+              "description": "Audio-video modality requires durable job lifecycle, consent, retention, processor wiring, and result retrieval before being marked first-class"
             }
           ],
           "adapters": [
             {
               "adapterId": "backend-api",
-              "readiness": "ready"
+              "readiness": "partial",
+              "reasonCode": "runtime-truth-and-media-job-lifecycle-incomplete"
             },
             {
               "adapterId": "web",
-              "readiness": "ready"
+              "readiness": "partial",
+              "reasonCode": "runtime-truth-ui-drift"
             },
             {
               "adapterId": "sdk",
-              "readiness": "ready"
+              "readiness": "partial",
+              "reasonCode": "surface-contracts-still-hardening"
             },
             {
               "adapterId": "kernel-bridge",
-              "readiness": "ready"
+              "readiness": "partial",
+              "reasonCode": "aep-lifecycle-semantics-incomplete"
             }
           ]
         },

@@ -266,6 +266,8 @@ public final class ProductUnitIntentValidationService {
             errors.add("target.sourceProvider is required");
         } else if (!(sourceProvider instanceof String) || ((String) sourceProvider).isBlank()) {
             errors.add("target.sourceProvider must be a non-empty string");
+        } else if (!contractRegistry.isSourceProviderKnown((String) sourceProvider)) {
+            errors.add("target.sourceProvider '" + sourceProvider + "' is not a known source provider. Mark as 'external' if intentional.");
         }
     }
 

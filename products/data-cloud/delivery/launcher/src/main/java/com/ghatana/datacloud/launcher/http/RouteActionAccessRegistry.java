@@ -163,6 +163,8 @@ final class RouteActionAccessRegistry {
         Map.entry("GET /api/v1/mastery/preview/retrieval", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("GET /api/v1/models", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("GET /api/v1/models/:modelName", DataCloudSecurityFilter.AccessLevel.OPERATOR),
+        Map.entry("GET /api/v1/operations/jobs", DataCloudSecurityFilter.AccessLevel.OPERATOR),
+        Map.entry("GET /api/v1/operations/jobs/:operationId", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("GET /api/v1/patterns", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("GET /api/v1/patterns/:patternId", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("GET /api/v1/queries/estimate", DataCloudSecurityFilter.AccessLevel.OPERATOR),
@@ -345,6 +347,7 @@ final class RouteActionAccessRegistry {
         Map.entry("POST /api/v1/nlp/parse", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("POST /api/v1/operations/anomaly-group", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("POST /api/v1/operations/forecast", DataCloudSecurityFilter.AccessLevel.OPERATOR),
+        Map.entry("POST /api/v1/operations/jobs/:operationId/cancel", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("POST /api/v1/patterns", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("POST /api/v1/patterns/:patternId/activate", DataCloudSecurityFilter.AccessLevel.OPERATOR),
         Map.entry("POST /api/v1/patterns/:patternId/deactivate", DataCloudSecurityFilter.AccessLevel.OPERATOR),
@@ -454,6 +457,8 @@ final class RouteActionAccessRegistry {
         normalized = normalized.replaceAll("/alerts/rules/[^/]+$", "/alerts/rules/:ruleId");
         normalized = normalized.replaceAll("/alerts/[^/]+/(remediate|auto-remediate|escalate|acknowledge|resolve)$", "/alerts/:id/$1");
         normalized = normalized.replaceAll("/models/[^/]+$", "/models/:modelId");
+        normalized = normalized.replaceAll("/operations/jobs/[^/]+/cancel$", "/operations/jobs/:operationId/cancel");
+        normalized = normalized.replaceAll("/operations/jobs/[^/]+$", "/operations/jobs/:operationId");
         normalized = normalized.replaceAll("/action/memory/[^/]+/[^/]+", "/action/memory/:agentId/:memoryId");
         normalized = normalized.replaceAll("/release-readiness/[^/]+/[^/]+/[^/]+$", "/release-readiness/:productId/:productVersion/:releaseTarget");
         normalized = normalized.replaceAll("/release-readiness/(?!stats$)[^/]+$", "/release-readiness/:id");

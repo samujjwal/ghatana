@@ -1,29 +1,21 @@
 package com.ghatana.datacloud.launcher.http.handlers;
-import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
-import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.datacloud.launcher.http.ApiResponse;
 import com.ghatana.datacloud.launcher.http.SurfaceRecord;
 import com.ghatana.datacloud.launcher.http.RuntimeTruthStatus;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * @doc.type class
@@ -32,23 +24,12 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @DisplayName("SurfaceRegistryHandler")
-@ExtendWith(MockitoExtension.class) 
 class SurfaceRegistryHandlerTest extends EventloopTestBase {
 
-    @Mock
     private HttpHandlerSupport httpSupport;
 
-    @Mock
-    private HttpRequest request;
-
-    @Mock
-    private HttpResponse errorResponse;
-
-    @Mock
-    private HttpResponse successResponse;
-
     private SurfaceRegistryHandler handler;
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() { 
@@ -59,70 +40,83 @@ class SurfaceRegistryHandlerTest extends EventloopTestBase {
                 .probe(new com.ghatana.datacloud.launcher.http.DependencyProbeResult("voice-gateway-probe", true, "UP", "OK", java.time.Instant.now()))
                 .build()
         );
+        httpSupport = new HttpHandlerSupport(objectMapper, "*", "GET", "Content-Type", false, "test");
         handler = new SurfaceRegistryHandler(httpSupport, objectMapper, snapshotSupplier); 
+    }
+
+    private HttpRequest authorizedRequest(String path, String tenantId) {
+        HttpRequest.Builder builder = HttpRequest.get("http://localhost" + path)
+            .withHeader(HttpHeaders.HOST, "localhost")
+            .withHeader(HttpHeaders.of("X-Permissions"), "surface:read");
+        if (tenantId != null) {
+            builder.withHeader(HttpHeaders.of("X-Tenant-ID"), tenantId);
+        }
+        return builder.build();
+    }
+
+    private Map<String, Object> responseBody(HttpResponse response) {
+        try {
+            String body = runPromise(response::loadBody).getString(StandardCharsets.UTF_8);
+            return objectMapper.readValue(body, Map.class);
+        } catch (Exception error) {
+            throw new AssertionError("Failed to parse response body", error);
+        }
     }
 
     @Test
     @DisplayName("returns surfaces envelope when tenant header is present")
     void returnsSurfacesEnvelopeWhenTenantPresent() {
-        when(httpSupport.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.success("tenant-capabilities", null));
-        when(httpSupport.resolveCorrelationId(request)).thenReturn("req-1");
-        when(httpSupport.envelopeResponse(any(ApiResponse.class), any(ObjectMapper.class))).thenReturn(successResponse);
+        HttpRequest request = authorizedRequest("/api/v1/surfaces", "tenant-capabilities");
 
         HttpResponse response = runPromise(() -> handler.handleSurfaces(request));
 
-        assertThat(response).isSameAs(successResponse);
-        verify(httpSupport).envelopeResponse(any(ApiResponse.class), any(ObjectMapper.class));
+        assertThat(response.getCode()).isEqualTo(200);
+        Map<String, Object> body = responseBody(response);
+        assertThat(body).containsKey("data");
     }
 
     @Test
     @DisplayName("returns surfaces envelope when tenant header is present (alternate tenant)")
     void returnsSurfacesEnvelopeWhenTenantPresentForAlternateTenant() {
-        when(httpSupport.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.success("tenant-surfaces", null));
-        when(httpSupport.resolveCorrelationId(request)).thenReturn("req-2");
-        when(httpSupport.envelopeResponse(any(ApiResponse.class), any(ObjectMapper.class))).thenReturn(successResponse);
+        HttpRequest request = authorizedRequest("/api/v1/surfaces", "tenant-surfaces");
 
         HttpResponse response = runPromise(() -> handler.handleSurfaces(request));
 
-        assertThat(response).isSameAs(successResponse);
-        verify(httpSupport).envelopeResponse(any(ApiResponse.class), any(ObjectMapper.class));
+        assertThat(response.getCode()).isEqualTo(200);
+        Map<String, Object> body = responseBody(response);
+        assertThat(body).containsKey("data");
     }
 
     @Test
     @DisplayName("returns 400 when tenant header is missing")
     void returns400WhenTenantHeaderMissing() {
-        when(httpSupport.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(400, "X-Tenant-Id header is required"));
-        when(httpSupport.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse);
+        HttpRequest request = authorizedRequest("/api/v1/surfaces", null);
 
         HttpResponse response = runPromise(() -> handler.handleSurfaces(request));
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(httpSupport).errorResponse(400, "X-Tenant-Id header is required");
+        assertThat(response.getCode()).isEqualTo(400);
     }
 
     @Test
     @DisplayName("returns 400 from surfaces endpoint when tenant header is missing")
     void returns400WhenTenantHeaderMissingForSurfaces() {
-        when(httpSupport.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(400, "X-Tenant-Id header is required"));
-        when(httpSupport.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse);
+        HttpRequest request = authorizedRequest("/api/v1/surfaces", null);
 
         HttpResponse response = runPromise(() -> handler.handleSurfaces(request));
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(httpSupport).errorResponse(400, "X-Tenant-Id header is required");
+        assertThat(response.getCode()).isEqualTo(400);
     }
 
     @Test
     @DisplayName("returns schema envelope from canonical surfaces schema endpoint")
     void returnsSurfaceSchemaEnvelopeWhenTenantPresent() {
-        when(httpSupport.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.success("tenant-schema", null));
-        when(httpSupport.resolveCorrelationId(request)).thenReturn("req-3");
-        when(httpSupport.envelopeResponse(any(ApiResponse.class), any(ObjectMapper.class))).thenReturn(successResponse);
+        HttpRequest request = authorizedRequest("/api/v1/surfaces/schema", "tenant-schema");
 
         HttpResponse response = runPromise(() -> handler.handleSurfaceSchema(request));
 
-        assertThat(response).isSameAs(successResponse);
-        verify(httpSupport).envelopeResponse(any(ApiResponse.class), any(ObjectMapper.class));
+        assertThat(response.getCode()).isEqualTo(200);
+        Map<String, Object> body = responseBody(response);
+        assertThat(body).containsKey("data");
     }
 
     @Test
@@ -135,7 +129,7 @@ class SurfaceRegistryHandlerTest extends EventloopTestBase {
                 .probe(new com.ghatana.datacloud.launcher.http.DependencyProbeResult("test-probe", true, "UP", "OK", java.time.Instant.now()))
                 .build()
         );
-        SurfaceRegistryHandler contractHandler = new SurfaceRegistryHandler(httpSupport, objectMapper, snapshotSupplier);
+        new SurfaceRegistryHandler(httpSupport, objectMapper, snapshotSupplier);
 
         // Verify that SurfaceRecord.toMap() produces the expected structure
         SurfaceRecord testRecord = SurfaceRecord.builder("test-surface")

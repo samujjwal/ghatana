@@ -260,6 +260,82 @@ components:
       description: Arbitrary JSON object.
       additionalProperties: true
 
+    OperationStatus:
+      type: string
+      enum: [ACCEPTED, RUNNING, SUCCEEDED, FAILED, CANCELLED, BLOCKED]
+      description: Canonical Data Cloud operation lifecycle state.
+
+    OperationKind:
+      type: string
+      enum:
+        - CONNECTOR_SYNC
+        - CONNECTOR_TEST
+        - CONNECTOR_SCHEMA
+        - CONNECTOR_HEALTH
+        - CONNECTOR_CREDENTIAL_ROTATION
+        - MEDIA_PROCESSING
+        - MEDIA_RETENTION
+        - MEDIA_DELETE
+        - PIPELINE_EXECUTION
+        - PIPELINE_CANCEL
+        - PIPELINE_RETRY
+        - PIPELINE_ROLLBACK
+        - PIPELINE_CHECKPOINT
+        - PIPELINE_RESTORE
+        - AGENT_RUN
+        - AEP_PATTERN_RUN
+        - BACKGROUND_TASK
+      description: Product-wide category for an operator-visible operation.
+
+    OperationRecord:
+      type: object
+      required:
+        - operationId
+        - tenantId
+        - kind
+        - status
+        - action
+        - createdAt
+        - updatedAt
+        - cancellable
+      properties:
+        operationId: { type: string }
+        tenantId: { type: string }
+        kind:
+          $ref: "#/components/schemas/OperationKind"
+        status:
+          $ref: "#/components/schemas/OperationStatus"
+        resourceType: { type: string }
+        resourceId: { type: string }
+        action: { type: string }
+        summary: { type: string }
+        detail: { type: string }
+        actorId: { type: string }
+        correlationId: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        completedAt: { type: string, format: date-time }
+        cancellable: { type: boolean }
+        metadata:
+          type: object
+          additionalProperties: true
+
+    OperationTimeline:
+      type: object
+      required: [tenantId, items, count, storageMode, generatedAt]
+      properties:
+        tenantId: { type: string }
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperationRecord"
+        count: { type: integer, minimum: 0 }
+        storageMode:
+          type: string
+          enum: [volatile, durable]
+          description: Indicates whether operation records survive launcher process restarts.
+        generatedAt: { type: string, format: date-time }
+
     # First-class Data Cloud domain contracts
     Collection:
       type: object

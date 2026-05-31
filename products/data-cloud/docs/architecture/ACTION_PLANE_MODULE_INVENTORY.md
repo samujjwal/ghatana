@@ -2,7 +2,7 @@
 
 **Canonical source:** generated Gradle includes plus `scripts/list-data-cloud-active-modules.mjs`.
 
-Data-Cloud's Action Plane is AEP-powered. Data-Cloud owns persisted action metadata, review evidence, policy evidence, audit evidence, and storage integrations. AEP owns the adaptive event-processing semantics used by the Action Plane. AEP semantic modules are permanently co-located under `products/data-cloud/planes/action/*` as a deliberate architectural decision to maintain tight integration between Data Cloud's data plane and AEP's event processing capabilities. This co-location does not transfer product ownership to Data-Cloud.
+Data-Cloud's Action Plane is AEP-powered. Data-Cloud owns persisted action metadata, review evidence, policy evidence, audit evidence, and storage integrations. AEP owns the adaptive event-processing semantics used by the Action Plane. AEP semantic modules are co-located under `products/data-cloud/planes/action/*` as a deliberate architectural decision to maintain tight integration between Data Cloud's data plane and AEP's event processing capabilities. This co-location does not transfer product ownership to Data-Cloud and does not imply AEP semantic/product readiness.
 
 **Boundary Enforcement:** Data/Event/Context/Governance planes have Gradle `validateBoundaryRules` tasks that prevent dependencies on Action internals (engine, orchestrator, agent-runtime, central-runtime, operator-contracts). Action Plane semantics must be accessed through shared SPI contracts only.
 
@@ -65,7 +65,9 @@ These boundary rules run as part of the `check` task for each plane.
 4. Gradle boundary rules enforce proper dependency direction
 5. Package structure and documentation maintain clear AEP ownership
 
-**Migration Status**: COMPLETED - No further migration required. The co-location is now a deliberate architectural decision rather than a temporary state.
+**Module Placement Status**: COMPLETED - no further location migration is required for the co-located Action Plane modules.
+
+**Semantic/Product Readiness Status**: PARTIAL - the placement decision does not complete AEP semantics. Completion still requires executable proof for the unified operator model, PatternSpec compiler, EventCloud SPI, pattern lifecycle, learning-to-recommendation loop, replay-safe agent execution, and targeted checks.
 
 ## References
 

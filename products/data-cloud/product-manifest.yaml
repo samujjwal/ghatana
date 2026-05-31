@@ -83,6 +83,7 @@ capabilities:
     type: DATA_MANAGEMENT
     description: "Tenant-isolated entity storage with multi-tier caching and archival"
     metadata:
+      implementation_state: live
       storage_tiers: hot,warm,cold
       connectors: postgres,opensearch,clickhouse,s3,iceberg
 
@@ -91,6 +92,8 @@ capabilities:
     type: DATA_MANAGEMENT
     description: "Audio/video ingestion, processing, transcription, and multimodal search integration"
     metadata:
+      implementation_state: preview
+      readiness_note: "Metadata and APIs exist, but durable media job lifecycle, consent/retention enforcement, processor wiring, and result retrieval are still being hardened."
       supported_formats: mp3,wav,mp4,webm
       processing: stt,tts,frame-index,transcript-search
 
@@ -99,6 +102,7 @@ capabilities:
     type: DATA_MANAGEMENT
     description: "Immutable event log for audit trails and temporal queries"
     metadata:
+      implementation_state: live
       retention: configurable
       compression: enabled
 
@@ -107,6 +111,8 @@ capabilities:
     type: PROCESSING
     description: "Federated query engine with multi-connector support and query optimization"
     metadata:
+      implementation_state: degraded
+      readiness_note: "Query surfaces are available, while connector-backed federation remains dependent on connector runtime completion."
       query_types: sql,nlq,graphql
       optimization: cost-based
 
@@ -115,6 +121,8 @@ capabilities:
     type: WORKFLOW
     description: "Action Plane pipeline execution with governed agent dispatch"
     metadata:
+      implementation_state: preview
+      readiness_note: "Pipeline contracts and UI surfaces exist, but full AEP lifecycle, replay-safe execution, and unified operations telemetry are still being hardened."
       execution_modes: streaming,batch
       governance: invariant-monitor
 
@@ -123,6 +131,7 @@ capabilities:
     type: GOVERNANCE
     description: "Data governance with retention, redaction, policy enforcement, and compliance"
     metadata:
+      implementation_state: live
       controls: retention,redaction,rbac,audit
       frameworks: soc2,gdpr,hipaa
 
@@ -131,6 +140,8 @@ capabilities:
     type: OBSERVABILITY
     description: "Runtime truth provider with health checks, metrics, and tracing"
     metadata:
+      implementation_state: degraded
+      readiness_note: "Canonical /api/v1/surfaces exists; UI and route metadata are still being aligned to consume it as the only truth source."
       metrics: prometheus
       tracing: opentelemetry
       logging: structured
@@ -140,6 +151,8 @@ capabilities:
     type: AI_RUNTIME
     description: "Governed agent catalog with mastery bindings and learning deltas"
     metadata:
+      implementation_state: preview
+      readiness_note: "Agent catalog metadata exists, while replay-safe execution, lifecycle semantics, and learning-to-recommendation proof remain incomplete."
       governance: governed-dispatch
       learning: l1-l2-adaptive
 
@@ -148,41 +161,49 @@ extensions:
     name: "Redis Hot Tier Plugin"
     description: "Redis-based hot tier caching for high-performance access"
     target_capability: data-cloud.entity-storage
+    implementation_state: preview
 
   - id: data-cloud.s3-cold-archive
     name: "S3 Cold Archive Plugin"
     description: "S3-based cold archival for long-term storage"
     target_capability: data-cloud.entity-storage
+    implementation_state: preview
 
   - id: data-cloud.kafka-streaming
     name: "Kafka Streaming Plugin"
     description: "Kafka-based event streaming for real-time processing"
     target_capability: data-cloud.event-log
+    implementation_state: target
 
   - id: data-cloud.vector-memory
     name: "Vector Memory Plugin"
     description: "Vector-based semantic memory for AI agents"
     target_capability: data-cloud.agent-catalog
+    implementation_state: target
 
   - id: data-cloud.knowledge-graph
     name: "Knowledge Graph Plugin"
     description: "Knowledge graph for entity relationships and context"
     target_capability: data-cloud.entity-storage
+    implementation_state: target
 
   - id: data-cloud.iceberg-cool-tier
     name: "Iceberg Cool Tier Plugin"
     description: "Apache Iceberg-based cool tier for analytical queries"
     target_capability: data-cloud.entity-storage
+    implementation_state: target
 
   - id: data-cloud.enterprise-compliance
     name: "Enterprise Compliance Plugin"
     description: "Enterprise compliance frameworks and controls"
     target_capability: data-cloud.governance-controls
+    implementation_state: preview
 
   - id: data-cloud.lineage
     name: "Lineage Plugin"
     description: "Data lineage tracking and impact analysis"
     target_capability: data-cloud.governance-controls
+    implementation_state: target
 
 modules:
   - name: shared-spi

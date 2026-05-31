@@ -22,13 +22,6 @@ import { RoleProtectedRoute } from "./components/security/RoleProtectedRoute";
 import { RuntimeCapabilityRouteGate } from "./components/security/RuntimeCapabilityRouteGate";
 import { emitDataCloudDiagnostic } from "./diagnostics";
 import { DefaultLayout } from "./layouts/DefaultLayout";
-import {
-  isAgentCatalogSurfaceEnabled,
-  isAlertsSurfaceEnabled,
-  isMediaSurfaceEnabled,
-  isMemorySurfaceEnabled,
-  isSettingsSurfaceEnabled,
-} from "./lib/feature-gates";
 
 /** Warn in dev when a lazy chunk takes longer than this to load. */
 const SLOW_LOAD_WARN_MS = 3_000;
@@ -327,52 +320,6 @@ function withSuspense(
   );
 }
 
-/**
- * Runtime-truth-driven route gating.
- *
- * Instead of returning a generic 404 when disabled, this now renders
- * DisabledSurfacePage with meaningful context about why the surface
- * is unavailable. This provides progressive disclosure based on runtime
- * truth rather than silent failures.
- *
- * DC-P1-004: Replaced NotFound with DisabledSurfacePage for better UX.
- */
-function featureGatedRoute(
-  enabled: boolean,
-  element: React.ReactElement,
-  surfaceName: string,
-  surfaceDescription: string,
-): React.ReactElement {
-  if (!enabled) {
-    return withSuspense(() => (
-      <DisabledSurfacePageContent
-        surfaceName={surfaceName}
-        surfaceDescription={surfaceDescription}
-      />
-    ));
-  }
-  return element;
-}
-
-function DisabledSurfacePageContent({
-  surfaceName,
-  surfaceDescription,
-}: {
-  surfaceName: string;
-  surfaceDescription: string;
-}): React.ReactElement {
-  const { t } = useTranslation();
-
-  return (
-    <DisabledSurfacePage
-      surfaceName={surfaceName}
-      surfaceDescription={surfaceDescription}
-      status="DISABLED"
-      nextAction={t("disabledSurface.nextAction")}
-    />
-  );
-}
-
 // =============================================================================
 // ROUTE CONFIGURATION
 // =============================================================================
@@ -492,23 +439,18 @@ export const routes: RouteObject[] = [
       // Alerts - operator-facing alert triage console (restored as canonical route)
       {
         path: "alerts",
-        element: featureGatedRoute(
-          isAlertsSurfaceEnabled(),
+        element: (
           <RoleProtectedRoute routePath="/alerts">
             <RuntimeCapabilityRouteGate
               aliases={["alert-triage", "monitoring", "alerts"]}
+              allowPreview
               fallback={withSuspense(() => (
-                <DisabledSurfacePage
-                  surfaceName="Alerts"
-                  surfaceDescription="The Alerts surface provides real-time alert triage and monitoring for your Data Cloud deployment."
-                />
+                <DisabledSurfacePage surfaceName="Alerts" />
               ))}
             >
               {withSuspense(AlertsPage)}
             </RuntimeCapabilityRouteGate>
-          </RoleProtectedRoute>,
-          "Alerts",
-          "The Alerts surface provides real-time alert triage and monitoring for your Data Cloud deployment.",
+          </RoleProtectedRoute>
         ),
       },
 
@@ -533,23 +475,18 @@ export const routes: RouteObject[] = [
       // G22: Surface-driven navigation with runtime capability gate
       {
         path: "media/artifacts",
-        element: featureGatedRoute(
-          isMediaSurfaceEnabled(),
+        element: (
           <RoleProtectedRoute routePath="/media/artifacts">
             <RuntimeCapabilityRouteGate
               aliases={["media", "media-artifacts", "audio-video"]}
+              allowPreview
               fallback={withSuspense(() => (
-                <DisabledSurfacePage
-                  surfaceName="Media Artifacts"
-                  surfaceDescription="The Media Artifacts surface provides audio-video lifecycle management including transcription and vision analysis."
-                />
+                <DisabledSurfacePage surfaceName="Media Artifacts" />
               ))}
             >
               {withSuspense(MediaArtifactPage)}
             </RuntimeCapabilityRouteGate>
-          </RoleProtectedRoute>,
-          "Media Artifacts",
-          "The Media Artifacts surface provides audio-video lifecycle management including transcription and vision analysis.",
+          </RoleProtectedRoute>
         ),
       },
       // Release-truth route hidden per Group 7 requirement - not discoverable in this iteration
@@ -573,6 +510,7 @@ export const routes: RouteObject[] = [
           <RoleProtectedRoute routePath="/events">
             <RuntimeCapabilityRouteGate
               aliases={["event-stream", "aep", "event-explorer", "events"]}
+              allowPreview
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Event Explorer"
@@ -588,23 +526,18 @@ export const routes: RouteObject[] = [
       // Memory Plane Viewer — restored as canonical route
       {
         path: "memory",
-        element: featureGatedRoute(
-          isMemorySurfaceEnabled(),
+        element: (
           <RoleProtectedRoute routePath="/memory">
             <RuntimeCapabilityRouteGate
               aliases={["memory-plane", "memory"]}
+              allowPreview
               fallback={withSuspense(() => (
-                <DisabledSurfacePage
-                  surfaceName="Memory Plane"
-                  surfaceDescription="The Memory Plane surface provides persistent memory and context management for AI agent workloads."
-                />
+                <DisabledSurfacePage surfaceName="Memory Plane" />
               ))}
             >
               {withSuspense(MemoryPlaneViewerPage)}
             </RuntimeCapabilityRouteGate>
-          </RoleProtectedRoute>,
-          "Memory Plane",
-          "The Memory Plane surface provides persistent memory and context management for AI agent workloads.",
+          </RoleProtectedRoute>
         ),
       },
       // Entity Browser — preview operator surface gated on runtime truth
@@ -614,6 +547,7 @@ export const routes: RouteObject[] = [
           <RoleProtectedRoute routePath="/entities">
             <RuntimeCapabilityRouteGate
               aliases={["entity-browser", "entities"]}
+              allowPreview
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Entity Browser"
@@ -633,6 +567,7 @@ export const routes: RouteObject[] = [
           <RoleProtectedRoute routePath="/context">
             <RuntimeCapabilityRouteGate
               aliases={["context-explorer", "context"]}
+              allowPreview
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Context Explorer"
@@ -652,6 +587,7 @@ export const routes: RouteObject[] = [
           <RoleProtectedRoute routePath="/fabric">
             <RuntimeCapabilityRouteGate
               aliases={["data-fabric", "fabric"]}
+              allowPreview
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Data Fabric"
@@ -667,46 +603,36 @@ export const routes: RouteObject[] = [
       // Agent Catalog — restored as canonical operator-facing route
       {
         path: "agents",
-        element: featureGatedRoute(
-          isAgentCatalogSurfaceEnabled(),
+        element: (
           <RoleProtectedRoute routePath="/agents">
             <RuntimeCapabilityRouteGate
               aliases={["agent-catalog", "agents"]}
+              allowPreview
               fallback={withSuspense(() => (
-                <DisabledSurfacePage
-                  surfaceName="Agent Catalog"
-                  surfaceDescription="The Agent Catalog surface provides discovery, registration, and management of AI agents in your deployment."
-                />
+                <DisabledSurfacePage surfaceName="Agent Catalog" />
               ))}
             >
               {withSuspense(AgentPluginManagerPage)}
             </RuntimeCapabilityRouteGate>
-          </RoleProtectedRoute>,
-          "Agent Catalog",
-          "The Agent Catalog surface provides discovery, registration, and management of AI agents in your deployment.",
+          </RoleProtectedRoute>
         ),
       },
 
       // Settings
       {
         path: "settings",
-        element: featureGatedRoute(
-          isSettingsSurfaceEnabled(),
+        element: (
           <RoleProtectedRoute routePath="/settings">
             <RuntimeCapabilityRouteGate
               aliases={["settings", "config"]}
+              allowPreview
               fallback={withSuspense(() => (
-                <DisabledSurfacePage
-                  surfaceName="Settings"
-                  surfaceDescription="The Settings surface provides configuration management for your Data Cloud tenant."
-                />
+                <DisabledSurfacePage surfaceName="Settings" />
               ))}
             >
               {withSuspense(SettingsPage)}
             </RuntimeCapabilityRouteGate>
-          </RoleProtectedRoute>,
-          "Settings",
-          "The Settings surface provides configuration management for your Data Cloud tenant.",
+          </RoleProtectedRoute>
         ),
       },
 
@@ -718,6 +644,7 @@ export const routes: RouteObject[] = [
           <RoleProtectedRoute routePath="/plugins">
             <RuntimeCapabilityRouteGate
               aliases={["plugin-management", "plugins", "extensions"]}
+              allowPreview
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Plugins"
@@ -750,6 +677,7 @@ export const routes: RouteObject[] = [
           <RoleProtectedRoute routePath="/connectors">
             <RuntimeCapabilityRouteGate
               aliases={["data-connectors", "connectors"]}
+              allowPreview
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Data Connectors"

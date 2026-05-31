@@ -19,6 +19,7 @@ package com.ghatana.yappc.cli;
 import com.ghatana.yappc.kernel.ProductUnitIntentExporter;
 import com.ghatana.yappc.kernel.ProductUnitIntentValidationService;
 import com.ghatana.yappc.kernel.ProductUnitIntentExporter.ExportException;
+import com.ghatana.yappc.kernel.ProductUnitKernelContractRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,10 +41,20 @@ public class ProductUnitIntentCommandService {
 
     private final ProductUnitIntentExporter exporter;
     private final ProductUnitIntentValidationService validator;
+    private final ProductUnitKernelContractRegistry contractRegistry;
 
     public ProductUnitIntentCommandService() {
-        this.exporter = new ProductUnitIntentExporter();
-        this.validator = new ProductUnitIntentValidationService();
+        this(new ProductUnitIntentExporter(), new ProductUnitIntentValidationService(), new ProductUnitKernelContractRegistry());
+    }
+
+    public ProductUnitIntentCommandService(
+            ProductUnitIntentExporter exporter,
+            ProductUnitIntentValidationService validator,
+            ProductUnitKernelContractRegistry contractRegistry
+    ) {
+        this.exporter = exporter;
+        this.validator = validator;
+        this.contractRegistry = contractRegistry;
     }
 
     /**
@@ -118,13 +129,21 @@ public class ProductUnitIntentCommandService {
             String projectId,
             String lifecycleProfile,
             String runtimeProvider,
+            String sourceProvider,
             List<String> surfaces,
-            Path intentOutputPath
+            Path intentOutputPath,
+            String correlationId
     ) {
         String productUnitId = toKebabCase(projectId);
 
         if (surfaces.isEmpty()) {
             return CreationResult.createInvalid("At least one --surface is required for kernel-product-unit target.");
+        }
+        List<String> unknownSurfaces = surfaces.stream()
+                .filter(surface -> !contractRegistry.isSurfaceKnown(surface))
+                .toList();
+        if (!unknownSurfaces.isEmpty()) {
+            return CreationResult.createInvalid("Unknown --surface value(s): " + String.join(", ", unknownSurfaces));
         }
 
         ProductUnitIntentExporter.Request request = ProductUnitIntentExporter.Request.builder()
@@ -133,11 +152,12 @@ public class ProductUnitIntentCommandService {
                 .targetType("kernel-product-unit")
                 .surfaces(surfaces)
                 .runtimeProvider(runtimeProvider)
-                .sourceProvider(runtimeProvider)
+                .sourceProvider(sourceProvider)
                 .lifecycleProfile(lifecycleProfile)
                 .tenantId(tenantId)
                 .workspaceId(workspaceId)
                 .sourcePhase("generate")
+                .correlationId(correlationId)
                 .build();
 
         try {
@@ -163,6 +183,30 @@ public class ProductUnitIntentCommandService {
             return CreationResult.createInvalid("Failed to export ProductUnitIntent: " + e.getMessage());
         }
     }
+
+        public CreationResult createIntent(
+            String projectName,
+            String tenantId,
+            String workspaceId,
+            String projectId,
+            String lifecycleProfile,
+            String runtimeProvider,
+            List<String> surfaces,
+            Path intentOutputPath
+        ) {
+        return createIntent(
+            projectName,
+            tenantId,
+            workspaceId,
+            projectId,
+            lifecycleProfile,
+            runtimeProvider,
+            runtimeProvider,
+            surfaces,
+            intentOutputPath,
+            null
+        );
+        }
 
     private boolean isValidIdentifier(String value) {
         return value != null && value.matches("^[a-zA-Z0-9_-]+$");

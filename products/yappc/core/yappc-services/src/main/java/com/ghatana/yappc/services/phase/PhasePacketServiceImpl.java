@@ -72,6 +72,8 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
     private final PhaseGateContextFactory phaseGateContextFactory;
     private final PhaseReadinessEvaluator phaseReadinessEvaluator;
     private final PhaseHealthSignalProvider phaseHealthSignalProvider;
+    private final LearningWorkflowService learningWorkflowService;
+    private final EvolutionWorkflowService evolutionWorkflowService;
     private final PhasePacketAssembler phasePacketAssembler;
 
     public PhasePacketServiceImpl(
@@ -98,6 +100,8 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             @NotNull PhaseGateContextFactory phaseGateContextFactory,
             @NotNull PhaseReadinessEvaluator phaseReadinessEvaluator,
             @NotNull PhaseHealthSignalProvider phaseHealthSignalProvider,
+            @NotNull LearningWorkflowService learningWorkflowService,
+            @NotNull EvolutionWorkflowService evolutionWorkflowService,
             @NotNull PhasePacketAssembler phasePacketAssembler
             ) {
         this.dataCloudClient = Objects.requireNonNull(dataCloudClient, "dataCloudClient");
@@ -123,8 +127,66 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             this.phaseGateContextFactory = Objects.requireNonNull(phaseGateContextFactory, "phaseGateContextFactory");
             this.phaseReadinessEvaluator = Objects.requireNonNull(phaseReadinessEvaluator, "phaseReadinessEvaluator");
             this.phaseHealthSignalProvider = Objects.requireNonNull(phaseHealthSignalProvider, "phaseHealthSignalProvider");
+                this.learningWorkflowService = Objects.requireNonNull(learningWorkflowService, "learningWorkflowService");
+                this.evolutionWorkflowService = Objects.requireNonNull(evolutionWorkflowService, "evolutionWorkflowService");
             this.phasePacketAssembler = Objects.requireNonNull(phasePacketAssembler, "phasePacketAssembler");
     }
+
+                public PhasePacketServiceImpl(
+                    @NotNull DataCloudClient dataCloudClient,
+                    @NotNull YappcArtifactRepository artifactRepository,
+                    @NotNull PhaseGateValidator phaseGateValidator,
+                    @NotNull PolicyEngine policyEngine,
+                    @NotNull CapabilityEvaluationService capabilityEvaluationService,
+                    @NotNull TransitionConfigLoader transitionConfigLoader,
+                    @NotNull PlatformIntegrationClient platformIntegrationClient,
+                    @Nullable BusinessMetrics metrics,
+                    @NotNull AuditService auditService,
+                    @NotNull PreviewRuntimeService previewRuntimeService,
+                    @NotNull PlatformRunStatusService platformRunStatusService,
+                    @NotNull PhaseActionAuthorizationService phaseActionAuthorizationService,
+                    @NotNull PhaseRequiredArtifactProvider requiredArtifactProvider,
+                    @NotNull DegradedPhasePacketFactory degradedPhasePacketFactory,
+                    @NotNull PhaseFeatureFlagProvider phaseFeatureFlagProvider,
+                    @NotNull PhaseProjectStateService phaseProjectStateService,
+                    @NotNull PhaseEvidenceService phaseEvidenceService,
+                    @NotNull PhaseGovernanceService phaseGovernanceService,
+                    @NotNull PhaseActivityFeedService phaseActivityFeedService,
+                    @NotNull PhaseBlockerMapper phaseBlockerMapper,
+                    @NotNull PhaseGateContextFactory phaseGateContextFactory,
+                    @NotNull PhaseReadinessEvaluator phaseReadinessEvaluator,
+                    @NotNull PhaseHealthSignalProvider phaseHealthSignalProvider,
+                    @NotNull PhasePacketAssembler phasePacketAssembler
+                ) {
+                this(
+                    dataCloudClient,
+                    artifactRepository,
+                    phaseGateValidator,
+                    policyEngine,
+                    capabilityEvaluationService,
+                    transitionConfigLoader,
+                    platformIntegrationClient,
+                    metrics,
+                    auditService,
+                    previewRuntimeService,
+                    platformRunStatusService,
+                    phaseActionAuthorizationService,
+                    requiredArtifactProvider,
+                    degradedPhasePacketFactory,
+                    phaseFeatureFlagProvider,
+                    phaseProjectStateService,
+                    phaseEvidenceService,
+                    phaseGovernanceService,
+                    phaseActivityFeedService,
+                    phaseBlockerMapper,
+                    phaseGateContextFactory,
+                    phaseReadinessEvaluator,
+                    phaseHealthSignalProvider,
+                    LearningWorkflowService.noop(),
+                    EvolutionWorkflowService.unavailable(),
+                    phasePacketAssembler
+                );
+                }
 
     @Override
     public Promise<PhasePacket> buildPhasePacket(
@@ -263,65 +325,98 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                 String workspaceName = extractWorkspaceName(projectState, workspaceId);
                 PhasePacket.ActorContext actor = buildActorContext(principal, projectState);
                 String lifecyclePhase = extractLifecyclePhase(phase, projectState);
+                String fallbackSourceEvent = activityFeed.isEmpty()
+                    ? "No source event available"
+                    : activityFeed.get(0).summary();
+                String fallbackLearningState = healthSignals.agentGovernance().governanceState();
+                List<String> fallbackEvidenceIds = healthSignals.agentGovernance().evidenceIds();
+                LearningWorkflowState fallbackLearningWorkflow = LearningWorkflowState.fallback(
+                    fallbackSourceEvent,
+                    readiness.predictionConfidence() == null ? 0.5d : readiness.predictionConfidence(),
+                    fallbackLearningState,
+                    fallbackEvidenceIds);
+                EvolutionWorkflowState fallbackEvolutionWorkflow = EvolutionWorkflowState.fallback(
+                    activityFeed.isEmpty() ? "No evolution proposal is available yet." : "Proposal derived from latest lifecycle activity.",
+                    "Evidence: " + evidence.size() + ", Governance: " + governance.size(),
+                    activityFeed.isEmpty() ? "No diff summary available" : activityFeed.get(0).summary(),
+                    blockers.isEmpty() ? List.of("No additional validation blockers.") : List.of("Resolve lifecycle blockers before approval."),
+                    blockers.isEmpty() ? "READY_FOR_REVIEW" : "PENDING_REMEDIATION",
+                    readiness.nextPhase() == null ? "observe" : readiness.nextPhase());
 
-                PhasePacket packet = phasePacketAssembler.assemble(
-                        phase,
-                        projectId,
-                        projectName,
-                        tenantId,
-                        workspaceId,
-                        workspaceName,
-                        actor,
-                        lifecyclePhase,
-                        tier,
-                        enabledFlags,
-                        new com.ghatana.yappc.api.PhasePacket.CapabilityModel(
-                                capabilities.canRead(),
-                                capabilities.canCreate(),
-                                capabilities.canUpdate(),
-                                capabilities.canDelete(),
-                                capabilities.canApprove(),
-                                capabilities.canReject(),
-                                capabilities.canRollback()),
-                        blockers,
-                        readiness,
-                        requiredArtifacts,
-                        completedArtifacts,
-                        activityFeed,
-                        evidence,
-                        governance,
-                        platformRunStatus.orElse(null),
-                        actions,
-                        dashboardActions,
-                        healthSignals,
-                        null,
-                        Instant.now().toEpochMilli(),
-                        effectiveCorrelationId);
-
-                // Record metrics if available
-                if (metrics != null) {
-                    metrics.recordPhaseGateValidation(principal.getTenantId(), phase, "BUILT", System.currentTimeMillis() - startTime);
-                    metrics.recordPhasePacketBuild(
-                            principal.getTenantId(),
-                            workspaceId,
-                            projectId,
-                            phase,
-                            "build",
-                            readiness.isDegraded() ? "DEGRADED" : "SUCCESS",
-                            readiness.isDegraded(),
-                            null,
-                            effectiveCorrelationId);
-                }
-
-                log.debug(
-                        "Built phase packet successfully: tenantId={}, workspaceId={}, projectId={}, phase={}, correlationId={}",
+                return learningWorkflowService.resolveLatest(
+                    tenantId,
+                    workspaceId,
+                    projectId,
+                    fallbackLearningWorkflow.sourceEvent(),
+                    fallbackLearningWorkflow.confidence(),
+                    fallbackLearningWorkflow.approvalState(),
+                    fallbackLearningWorkflow.evidenceIds())
+                    .then(learningWorkflowState -> evolutionWorkflowService.resolveLatest(
                         tenantId,
                         workspaceId,
                         projectId,
-                        phase,
-                        effectiveCorrelationId);
+                        fallbackEvolutionWorkflow)
+                        .then(evolutionWorkflowState -> {
+                            PhasePacket packet = phasePacketAssembler.assemble(
+                                phase,
+                                projectId,
+                                projectName,
+                                tenantId,
+                                workspaceId,
+                                workspaceName,
+                                actor,
+                                lifecyclePhase,
+                                tier,
+                                enabledFlags,
+                                new com.ghatana.yappc.api.PhasePacket.CapabilityModel(
+                                    capabilities.canRead(),
+                                    capabilities.canCreate(),
+                                    capabilities.canUpdate(),
+                                    capabilities.canDelete(),
+                                    capabilities.canApprove(),
+                                    capabilities.canReject(),
+                                    capabilities.canRollback()),
+                                blockers,
+                                readiness,
+                                requiredArtifacts,
+                                completedArtifacts,
+                                activityFeed,
+                                evidence,
+                                governance,
+                                platformRunStatus.orElse(null),
+                                actions,
+                                dashboardActions,
+                                healthSignals,
+                                learningWorkflowState,
+                                evolutionWorkflowState,
+                                null,
+                                Instant.now().toEpochMilli(),
+                                effectiveCorrelationId);
 
-                 return Promise.of(packet);
+                            if (metrics != null) {
+                            metrics.recordPhaseGateValidation(principal.getTenantId(), phase, "BUILT", System.currentTimeMillis() - startTime);
+                            metrics.recordPhasePacketBuild(
+                                principal.getTenantId(),
+                                workspaceId,
+                                projectId,
+                                phase,
+                                "build",
+                                readiness.isDegraded() ? "DEGRADED" : "SUCCESS",
+                                readiness.isDegraded(),
+                                null,
+                                effectiveCorrelationId);
+                            }
+
+                            log.debug(
+                                "Built phase packet successfully: tenantId={}, workspaceId={}, projectId={}, phase={}, correlationId={}",
+                                tenantId,
+                                workspaceId,
+                                projectId,
+                                phase,
+                                effectiveCorrelationId);
+
+                            return Promise.of(packet);
+                        }));
                              })));
                     }));
             });

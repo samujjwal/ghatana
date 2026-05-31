@@ -2,7 +2,8 @@
  * Runtime feature gates with production-safe defaults.
  *
  * Uses runtime-truth-derived capability service for dynamic capability resolution.
- * Falls back to environment variables if the backend is unavailable.
+ * Allows environment fallback only for local/development profiles when runtime
+ * truth is unavailable.
  *
  * @doc.type module
  * @doc.purpose Centralized runtime feature-gate policy
@@ -40,7 +41,9 @@ function resolveRuntimeProfile(): string {
 }
 
 function isStrictProfile(profile: string): boolean {
-  return profile === "production" || profile === "staging";
+  return (
+    profile === "production" || profile === "staging" || profile === "sovereign"
+  );
 }
 
 function resolveGate(key: string, defaultInNonStrict: boolean): boolean {
@@ -52,64 +55,67 @@ function resolveGate(key: string, defaultInNonStrict: boolean): boolean {
   return isStrictProfile(resolveRuntimeProfile()) ? false : defaultInNonStrict;
 }
 
+function resolveRuntimeSurfaceGate(
+  surfaceAlias: string,
+  envKey: string,
+  defaultInNonStrict: boolean,
+): boolean {
+  const state = runtimeCapabilityService.getState();
+  if (state === "ready") {
+    return runtimeCapabilityService.isCapabilityEnabled(surfaceAlias);
+  }
+  if (isStrictProfile(resolveRuntimeProfile())) {
+    return false;
+  }
+  return resolveGate(envKey, defaultInNonStrict);
+}
+
 /**
  * Runtime-truth-derived capability checks.
  * These query the backend for dynamic capability flags.
  */
 export function isAlertsSurfaceEnabled(): boolean {
-  return (
-    runtimeCapabilityService.isCapabilityEnabled("alerts") ??
-    resolveGate("VITE_FEATURE_ALERTS", true)
-  );
+  return resolveRuntimeSurfaceGate("alerts", "VITE_FEATURE_ALERTS", true);
 }
 
 export function isFabricSurfaceEnabled(): boolean {
-  return (
-    runtimeCapabilityService.isCapabilityEnabled("fabric") ??
-    resolveGate("VITE_FEATURE_FABRIC", false)
-  );
+  return resolveRuntimeSurfaceGate("fabric", "VITE_FEATURE_FABRIC", false);
 }
 
 export function isMemorySurfaceEnabled(): boolean {
-  return (
-    runtimeCapabilityService.isCapabilityEnabled("memory") ??
-    resolveGate("VITE_FEATURE_MEMORY", true)
-  );
+  return resolveRuntimeSurfaceGate("memory", "VITE_FEATURE_MEMORY", true);
 }
 
 export function isEntityBrowserSurfaceEnabled(): boolean {
-  return (
-    runtimeCapabilityService.isCapabilityEnabled("entity-browser") ??
-    resolveGate("VITE_FEATURE_ENTITY_BROWSER", true)
+  return resolveRuntimeSurfaceGate(
+    "entity-browser",
+    "VITE_FEATURE_ENTITY_BROWSER",
+    true,
   );
 }
 
 export function isContextSurfaceEnabled(): boolean {
-  return (
-    runtimeCapabilityService.isCapabilityEnabled("context-explorer") ??
-    resolveGate("VITE_FEATURE_CONTEXT_EXPLORER", true)
+  return resolveRuntimeSurfaceGate(
+    "context-explorer",
+    "VITE_FEATURE_CONTEXT_EXPLORER",
+    true,
   );
 }
 
 export function isAgentCatalogSurfaceEnabled(): boolean {
-  return (
-    runtimeCapabilityService.isCapabilityEnabled("agent-catalog") ??
-    resolveGate("VITE_FEATURE_AGENT_CATALOG", true)
+  return resolveRuntimeSurfaceGate(
+    "agent-catalog",
+    "VITE_FEATURE_AGENT_CATALOG",
+    true,
   );
 }
 
 export function isSettingsSurfaceEnabled(): boolean {
-  return (
-    runtimeCapabilityService.isCapabilityEnabled("settings") ??
-    resolveGate("VITE_FEATURE_SETTINGS", true)
-  );
+  return resolveRuntimeSurfaceGate("settings", "VITE_FEATURE_SETTINGS", true);
 }
 
 export function isMediaSurfaceEnabled(): boolean {
-  return (
-    runtimeCapabilityService.isCapabilityEnabled("media") ??
-    resolveGate("VITE_FEATURE_MEDIA", false)
-  );
+  return resolveRuntimeSurfaceGate("media", "VITE_FEATURE_MEDIA", false);
 }
 
 /**

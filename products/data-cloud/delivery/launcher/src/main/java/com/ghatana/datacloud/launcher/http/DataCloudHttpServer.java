@@ -125,6 +125,8 @@ import com.ghatana.datacloud.launcher.settings.InMemorySettingsStore;
 import com.ghatana.datacloud.launcher.settings.SettingsStore;
 import com.ghatana.datacloud.memory.media.DataCloudMediaArtifactRepository;
 import com.ghatana.datacloud.memory.media.MediaArtifactRepository;
+import com.ghatana.datacloud.operations.InMemoryOperationRecorder;
+import com.ghatana.datacloud.operations.OperationRecorder;
 import com.ghatana.datacloud.launcher.http.plugins.DataCloudRuntimePluginManager;
 import com.ghatana.datacloud.launcher.http.plugins.ReportExecutionCapability;
 import com.ghatana.datacloud.launcher.http.plugins.WorkflowExecutionCapability;
@@ -1702,11 +1704,17 @@ public class DataCloudHttpServer {
         );
         productReleaseReadinessHandler = new ProductReleaseReadinessHandler(httpSupport, productReleaseReadinessService);
 
+        OperationRecorder operationRecorder = new InMemoryOperationRecorder();
         userActivityHandler = new UserActivityHandler(httpSupport);
+        OperationsJobHandler operationsJobHandler = new OperationsJobHandler(httpSupport, operationRecorder);
+        if (workflowExecutionHandler != null) {
+            workflowExecutionHandler.withOperationRecorder(operationRecorder);
+        }
 
         // P1.1: Data source connector registry handler — persists connection metadata in dc_connections
         DataSourceRegistryHandler dataSourceRegistryHandler = new DataSourceRegistryHandler(
-            client, httpSupport, null /* no DataFabricConnector implementation yet */, auditService);
+            client, httpSupport, null /* no DataFabricConnector implementation yet */, auditService)
+            .withOperationRecorder(operationRecorder);
 
         // P3.6: Compliance handler for legal holds and evidence packages
         ComplianceHandler complianceHandler = new ComplianceHandler(client, httpSupport, objectMapper);
@@ -1721,7 +1729,8 @@ public class DataCloudHttpServer {
 
         MasteryController masteryController = buildMasteryController();
         MediaArtifactRepository mediaArtifactRepository = new DataCloudMediaArtifactRepository();
-        MediaArtifactController mediaArtifactController = new MediaArtifactController(mediaArtifactRepository, objectMapper);
+        MediaArtifactController mediaArtifactController = new MediaArtifactController(
+            mediaArtifactRepository, objectMapper, null, operationRecorder);
 
         RoutingServlet router = new DataCloudRouterBuilder(eventloop)
             .withHealthRoutes(healthHandler)
@@ -1746,6 +1755,7 @@ public class DataCloudHttpServer {
             .withVoiceRoutes(voiceHandler)
             .withGovernanceRoutes(dataLifecycleHandler)
             .withSurfaceRoutes(surfaceRegistryHandler)
+            .withOperationsJobRoutes(operationsJobHandler)
             .withLineageRoutes(lineageHandler)
             .withContextRoutes(contextLayerHandler, collectionContextHandler, semanticSearchHandler)
             .withMcpRoutes(mcpToolsHandler)

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * @doc.type class
@@ -34,10 +35,19 @@ public final class PhaseReadinessEvaluator {
 
     private final TransitionConfigLoader transitionConfigLoader;
     private final ReadinessConfig config;
+    private final Map<String, PhaseReadinessPolicy> policyRegistry;
 
     public PhaseReadinessEvaluator(@NotNull TransitionConfigLoader transitionConfigLoader) {
         this.transitionConfigLoader = Objects.requireNonNull(transitionConfigLoader, "transitionConfigLoader");
         this.config = loadConfig();
+        this.policyRegistry = Map.of(
+                "INTENT", new IntentReadinessPolicy(),
+                "SHAPE", new ShapeReadinessPolicy(),
+                "GENERATE", new GenerateReadinessPolicy(),
+                "RUN", new RunReadinessPolicy(),
+                "OBSERVE", new RunReadinessPolicy(),
+                "LEARN", new LearnReadinessPolicy(),
+                "EVOLVE", new EvolveReadinessPolicy());
         log.info("PhaseReadinessEvaluator: loaded readiness config with threshold {}", config.threshold);
     }
 
@@ -54,6 +64,8 @@ public final class PhaseReadinessEvaluator {
     ) {
         try {
             String normalizedPhase = phase.trim().toUpperCase();
+                PhaseReadinessPolicy policy = Optional.ofNullable(policyRegistry.get(normalizedPhase))
+                    .orElse(new RunReadinessPolicy());
             PhaseConfig phaseConfig = getPhaseConfig(normalizedPhase);
             Weights weights = phaseConfig.weights();
 
@@ -89,17 +101,29 @@ public final class PhaseReadinessEvaluator {
                 missingPrerequisites.add("Phase evidence unavailable");
             }
 
-            boolean healthReady = isHealthRequired(normalizedPhase)
+            boolean healthReady = policy.requiresRuntimeHealth()
                     ? healthSignals.preview().isHealthy()
                         && healthSignals.generation().isHealthy()
                         && healthSignals.runtime().isHealthy()
                     : healthSignals.preview().isHealthy()
                         && healthSignals.generation().isHealthy();
             if (!healthReady) {
-                missingPrerequisites.add(isHealthRequired(normalizedPhase)
+                missingPrerequisites.add(policy.requiresRuntimeHealth()
                         ? "Healthy preview, generation, and runtime signals"
                         : "Healthy preview and generation signals");
             }
+
+            policy.appendMissingPrerequisites(new PhaseReadinessInput(
+                    normalizedPhase,
+                    blockers,
+                    List.of(),
+                    requiredArtifacts,
+                    completedArtifacts,
+                    evidence,
+                    governance,
+                    healthSignals,
+                    projectState
+            ), missingPrerequisites);
 
             double artifactScore = requiredArtifacts.isEmpty()
                     ? 1.0
@@ -152,17 +176,6 @@ public final class PhaseReadinessEvaluator {
                     24,
                     0.35);
         }
-    }
-
-    /**
-     * Determines if a phase requires runtime health signals.
-     */
-    private boolean isHealthRequired(String normalizedPhase) {
-        return switch (normalizedPhase) {
-            case "INTENT", "SHAPE", "VALIDATE", "LEARN", "EVOLVE", "GENERATE" -> false;
-            case "RUN", "OBSERVE" -> true;
-            default -> true; // Fail closed: require health for unknown phases
-        };
     }
 
     /**

@@ -11,6 +11,10 @@
  * NOTE: Context Plane (planes/context/) is target-only - not an active Gradle module.
  * The directory exists as a placeholder and ownership boundary but should not be treated
  * as fully available in UI/runtime until it is promoted to an active module.
+ *
+ * NOTE: This script classifies active modules for targeted build/test selection and for
+ * release policy consumers. It is not an instruction to execute release-readiness,
+ * release-evidence, or product-promotion workflows during implementation hardening.
  */
 
 import { existsSync, readFileSync } from 'node:fs';

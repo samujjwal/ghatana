@@ -30,6 +30,8 @@ public final class RouteSurfaceMapping {
         Map.entry("GET /api/v1/events", "event.read"),
         
         // Connector operations
+        Map.entry("GET /api/v1/connectors/health", "data.connectors"),
+        Map.entry("GET /api/v1/connectors/schema", "data.connectors"),
         Map.entry("POST /api/v1/connectors", "connectors.register"),
         Map.entry("PUT /api/v1/connectors/{id}", "connectors.update"),
         Map.entry("DELETE /api/v1/connectors/{id}", "connectors.delete"),
@@ -42,6 +44,10 @@ public final class RouteSurfaceMapping {
         Map.entry("GET /api/v1/connectors/{id}", "connectors.read"),
         
         // Pipeline operations (canonical Action Plane namespace)
+        Map.entry("GET /api/v1/action/plugins", "plugin-management"),
+        Map.entry("GET /api/v1/action/plugins/{id}", "plugin-management"),
+        Map.entry("POST /api/v1/action/plugins/{id}/enable", "plugin-management"),
+        Map.entry("POST /api/v1/action/plugins/{id}/disable", "plugin-management"),
         Map.entry("POST /api/v1/action/pipelines", "pipelines.create"),
         Map.entry("PUT /api/v1/action/pipelines/{id}", "pipelines.update"),
         Map.entry("DELETE /api/v1/action/pipelines/{id}", "pipelines.delete"),
@@ -50,6 +56,7 @@ public final class RouteSurfaceMapping {
         Map.entry("GET /api/v1/action/pipelines/{id}", "pipelines.read"),
         
         // Execution operations (canonical Action Plane namespace)
+        Map.entry("POST /api/v1/action/executions/{id}/checkpoint", "executions.checkpoint"),
         Map.entry("POST /api/v1/action/executions/{id}/cancel", "executions.cancel"),
         Map.entry("POST /api/v1/action/executions/{id}/retry", "executions.retry"),
         Map.entry("POST /api/v1/action/executions/{id}/rollback", "executions.rollback"),
@@ -89,6 +96,9 @@ public final class RouteSurfaceMapping {
         Map.entry("POST /api/v1/learning/review/{id}/reject", "learning.review.reject"),
         
         // AI operations
+        Map.entry("GET /api/v1/action/agents", "action.agentRuntime"),
+        Map.entry("GET /api/v1/action/agents/{id}", "action.agentRuntime"),
+        Map.entry("POST /api/v1/action/agents/{id}/execute", "action.agentRuntime"),
         Map.entry("POST /api/v1/aiassist/action", "ai.suggestions.apply"),
         Map.entry("POST /api/v1/models/{id}/promote", "ai.models.promote"),
         
@@ -104,6 +114,8 @@ public final class RouteSurfaceMapping {
         Map.entry("POST /api/v1/settings/approvals/{id}/reject", "settings.approvals.reject"),
         
         // Plugin operations
+        Map.entry("GET /api/v1/plugins", "plugin-management"),
+        Map.entry("GET /api/v1/plugins/{id}", "plugin-management"),
         Map.entry("POST /api/v1/plugins/{id}/enable", "plugins.enable"),
         Map.entry("POST /api/v1/plugins/{id}/disable", "plugins.disable"),
         Map.entry("POST /api/v1/plugins/{id}/upgrade", "plugins.upgrade"),
@@ -115,9 +127,17 @@ public final class RouteSurfaceMapping {
         Map.entry("POST /api/v1/autonomy/feedback-policy", "autonomy.feedback.set"),
         
         // Context operations
+        Map.entry("GET /api/v1/context", "context.plane"),
         Map.entry("PUT /api/v1/context", "context.update"),
         Map.entry("DELETE /api/v1/context/keys/{id}", "context.keys.delete"),
         Map.entry("POST /api/v1/context/{collection}/rag-policy-check", "context.rag.check"),
+
+        // Media operations
+        Map.entry("GET /api/v1/media/artifacts", "media.audioVideo"),
+        Map.entry("GET /api/v1/media/artifacts/{id}", "media.audioVideo"),
+        Map.entry("POST /api/v1/media/artifacts", "media.audioVideo"),
+        Map.entry("DELETE /api/v1/media/artifacts/{id}", "media.audioVideo"),
+        Map.entry("POST /api/v1/media/artifacts/{id}/process", "media.audioVideo"),
         
         // Runtime truth / surfaces
         Map.entry("GET /api/v1/surfaces", "runtime.truth.read"),
@@ -166,6 +186,8 @@ public final class RouteSurfaceMapping {
         String normalized = path.replaceAll("/[0-9a-fA-F-]{8,}", "/{id}");
         normalized = normalized.replaceAll("/connectors/[^/]+", "/connectors/{id}");
         normalized = normalized.replaceAll("/action/pipelines/[^/]+", "/action/pipelines/{id}");
+        normalized = normalized.replaceAll("/action/plugins/[^/]+", "/action/plugins/{id}");
+        normalized = normalized.replaceAll("/action/agents/[^/]+", "/action/agents/{id}");
         normalized = normalized.replaceAll("/action/executions/[^/]+", "/action/executions/{id}");
         normalized = normalized.replaceAll("/executions/[^/]+", "/executions/{id}");
         normalized = normalized.replaceAll("/alerts/[^/]+", "/alerts/{id}");
@@ -178,6 +200,7 @@ public final class RouteSurfaceMapping {
         normalized = normalized.replaceAll("/settings/keys/[^/]+", "/settings/keys/{id}");
         normalized = normalized.replaceAll("/settings/approvals/[^/]+", "/settings/approvals/{id}");
         normalized = normalized.replaceAll("/plugins/[^/]+", "/plugins/{id}");
+        normalized = normalized.replaceAll("/media/artifacts/[^/]+", "/media/artifacts/{id}");
         normalized = normalized.replaceAll("/context/keys/[^/]+", "/context/keys/{id}");
         normalized = normalized.replaceAll("/entities/[^/]+", "/entities/{collection}");
         return normalized;

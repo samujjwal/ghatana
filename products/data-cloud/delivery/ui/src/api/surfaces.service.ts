@@ -33,6 +33,14 @@ export interface SurfaceSignal {
   readonly status: SurfaceStatus;
   readonly summary: string;
   readonly detail?: string;
+  readonly ownerPlane: string;
+  readonly requiredDependencies: readonly string[];
+  readonly dependencyProbes: readonly Record<string, unknown>[];
+  readonly tenantScope: string;
+  readonly runtimeProfile: string;
+  readonly limitations: string;
+  readonly actionsAllowed: readonly string[];
+  readonly runtimePosture?: Record<string, unknown>;
   readonly rawValue: unknown;
 }
 
@@ -178,12 +186,51 @@ function summarizeSurface(
 function normalizeSurfaceEntry(key: string, rawValue: unknown): SurfaceSignal {
   const status = normalizeSurfaceStatus(rawValue);
   const { summary, detail } = summarizeSurface(status, rawValue);
+  const record =
+    typeof rawValue === "object" && rawValue !== null
+      ? (rawValue as Record<string, unknown>)
+      : {};
+  const requiredDependencies = Array.isArray(record.requiredDependencies)
+    ? record.requiredDependencies.filter(
+        (dependency): dependency is string => typeof dependency === "string",
+      )
+    : [];
+  const dependencyProbes = Array.isArray(record.dependencyProbes)
+    ? record.dependencyProbes.filter(
+        (probe): probe is Record<string, unknown> =>
+          typeof probe === "object" && probe !== null,
+      )
+    : [];
+  const actionsAllowed = Array.isArray(record.actionsAllowed)
+    ? record.actionsAllowed.filter(
+        (action): action is string => typeof action === "string",
+      )
+    : [];
+  const runtimePosture =
+    typeof record.runtimePosture === "object" && record.runtimePosture !== null
+      ? (record.runtimePosture as Record<string, unknown>)
+      : undefined;
+
   return {
     key,
     label: formatSurfaceLabel(key),
     status,
     summary,
     detail,
+    ownerPlane:
+      typeof record.ownerPlane === "string" ? record.ownerPlane : "unknown",
+    requiredDependencies,
+    dependencyProbes,
+    tenantScope:
+      typeof record.tenantScope === "string" ? record.tenantScope : "global",
+    runtimeProfile:
+      typeof record.runtimeProfile === "string"
+        ? record.runtimeProfile
+        : "unknown",
+    limitations:
+      typeof record.limitations === "string" ? record.limitations : "",
+    actionsAllowed,
+    runtimePosture,
     rawValue,
   };
 }
@@ -192,7 +239,7 @@ function normalizeSurfaceEntry(key: string, rawValue: unknown): SurfaceSignal {
 // API — canonical endpoint: /surfaces only (DC-P1.12: removed /capabilities fallback)
 // =============================================================================
 
-async function fetchFromSurfaces(): Promise<SurfaceRegistrySnapshot> {
+export async function fetchSurfaceRegistry(): Promise<SurfaceRegistrySnapshot> {
   // DC-P1.12: Use canonical /surfaces endpoint only; /capabilities compatibility alias removed.
   // Backend returns surfaces as an array of SurfaceRecord objects (P0 fix).
   const rawResponse = await apiClient.get<unknown>("/surfaces");
@@ -233,7 +280,7 @@ function toCapabilitySignal(signal: SurfaceSignal): CapabilitySignal {
 }
 
 export async function fetchCapabilityRegistry(): Promise<CapabilityRegistrySnapshot> {
-  const snapshot = await fetchFromSurfaces();
+  const snapshot = await fetchSurfaceRegistry();
   return {
     generatedAt: snapshot.generatedAt,
     requestId: snapshot.requestId,
@@ -248,7 +295,7 @@ export function useSurfaceRegistry(): UseQueryResult<
 > {
   return useQuery({
     queryKey: ["surface-registry"],
-    queryFn: fetchFromSurfaces,
+    queryFn: fetchSurfaceRegistry,
     staleTime: 60_000,
     refetchInterval: 60_000,
     refetchOnWindowFocus: false,
@@ -256,13 +303,55 @@ export function useSurfaceRegistry(): UseQueryResult<
 }
 
 /** Find a surface signal by any of its aliases. */
+const SURFACE_ALIASES: Readonly<Record<string, readonly string[]>> = {
+  alerts: ["alert-triage", "monitoring"],
+  "media.audioVideo": ["media", "media-artifacts", "audio-video"],
+  "data.connectors": ["data-connectors", "connectors", "external-data-sources"],
+  "action.agentRuntime": ["agent-catalog", "agents"],
+  "event.store": ["event-stream", "event-explorer", "events", "aep"],
+  "context.plane": ["context", "context-explorer"],
+  "data.entityStore": ["entity-browser", "entities", "data-explorer"],
+  "data.storageProfiles": ["data-fabric", "fabric"],
+  "runtime.truth.read": ["runtime-truth"],
+  "plugin-management": ["plugins", "extensions"],
+};
+
+function normalizeSurfaceLookupKey(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[_\s]+/g, "-");
+}
+
+function expandAliases(aliases: readonly string[]): Set<string> {
+  const normalized = new Set<string>();
+  for (const alias of aliases) {
+    normalized.add(normalizeSurfaceLookupKey(alias));
+    for (const [surfaceId, surfaceAliases] of Object.entries(SURFACE_ALIASES)) {
+      const candidates = [surfaceId, ...surfaceAliases];
+      if (
+        candidates.some(
+          (candidate) =>
+            normalizeSurfaceLookupKey(candidate) ===
+            normalizeSurfaceLookupKey(alias),
+        )
+      ) {
+        for (const candidate of candidates) {
+          normalized.add(normalizeSurfaceLookupKey(candidate));
+        }
+      }
+    }
+  }
+  return normalized;
+}
+
 export function getSurfaceSignal(
-  surfaces: SurfaceSignal[] | undefined,
+  surfaces: readonly SurfaceSignal[] | undefined,
   aliases: readonly string[],
 ): SurfaceSignal | undefined {
   if (!surfaces) return undefined;
-  const normalized = aliases.map((a) => a.toLowerCase());
-  return surfaces.find((s) => normalized.includes(s.key.toLowerCase()));
+  const normalized = expandAliases(aliases);
+  return surfaces.find((s) => normalized.has(normalizeSurfaceLookupKey(s.key)));
 }
 
 export function getCapabilitySignal(

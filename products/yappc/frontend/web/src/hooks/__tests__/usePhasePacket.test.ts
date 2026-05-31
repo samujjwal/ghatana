@@ -138,4 +138,61 @@ describe('usePhasePacket helpers', () => {
     expect(packet.phasePanels).toHaveLength(1);
     expect(packet.phasePanels[0]?.summary).toBe('Architecture model is ready');
   });
+
+  it('throws when backend returns malformed phase panel contract', () => {
+    expect(() => normalizePhaseCockpitPacket({
+      phase: 'shape',
+      projectId: 'project-1',
+      tenantId: 'tenant-1',
+      workspaceId: 'workspace-1',
+      actor: {
+        actorId: 'user-1',
+        actorName: 'User One',
+        role: 'OWNER',
+        isOwner: true,
+        isAdmin: false,
+      },
+      tenantTier: 'PRO',
+      enabledPhaseFlags: [],
+      capabilities: {
+        canRead: true,
+        canCreate: true,
+        canUpdate: true,
+        canDelete: false,
+        canApprove: true,
+        canReject: true,
+        canRollback: false,
+      },
+      blockers: [],
+      readiness: {
+        canAdvance: true,
+        nextPhase: 'validate',
+        missingPrerequisites: [],
+        completenessScore: 0.9,
+        isDegraded: false,
+      },
+      requiredArtifacts: [],
+      completedArtifacts: [],
+      activityFeed: [],
+      evidence: [],
+      governance: [],
+      availableActions: [],
+      dashboardActions: {
+        primaryAction: 'shape.approve',
+        blockedActions: [],
+        reviewRequiredActions: [],
+        safeToContinueActions: [],
+      },
+      healthSignals: {
+        preview: { isHealthy: true, status: 'ready', issues: [] },
+        generation: { isHealthy: true, status: 'ready', issues: [] },
+        runtime: { isHealthy: true, status: 'ready', issues: [] },
+      },
+      timestamp: 1,
+      phasePanels: [{
+        phase: 'shape',
+        cards: [],
+      }],
+    } as never)).toThrow(/Invalid PhaseCockpitPacket.phasePanels\[0\] contract/);
+  });
 });

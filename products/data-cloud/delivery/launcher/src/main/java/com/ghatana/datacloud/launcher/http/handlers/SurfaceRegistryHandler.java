@@ -88,7 +88,7 @@ public final class SurfaceRegistryHandler {
             return Promise.of(httpSupport.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
         String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
-        if (tenantId == null) {
+        if (tenantId == null || !hasExplicitTenantContext(request, contextResult)) {
             return Promise.of(httpSupport.errorResponse(400, "X-Tenant-Id header is required"));
         }
         String requestId = httpSupport.resolveCorrelationId(request);
@@ -140,7 +140,7 @@ public final class SurfaceRegistryHandler {
             return Promise.of(httpSupport.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
         }
         String tenantId = contextResult.context().map(RequestContext::tenantId).orElse(null);
-        if (tenantId == null) {
+        if (tenantId == null || !hasExplicitTenantContext(request, contextResult)) {
             return Promise.of(httpSupport.errorResponse(400, "X-Tenant-Id header is required"));
         }
         String requestId = httpSupport.resolveCorrelationId(request);
@@ -150,5 +150,11 @@ public final class SurfaceRegistryHandler {
         return Promise.of(httpSupport.envelopeResponse(
             ApiResponse.success(schema, tenantId, requestId),
             objectMapper));
+    }
+
+    private boolean hasExplicitTenantContext(HttpRequest request, RequestContextResolver.ResolutionResult contextResult) {
+        return request.getHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID")) != null
+            || request.getHeader(io.activej.http.HttpHeaders.of("X-Tenant-Id")) != null
+            || contextResult.context().flatMap(RequestContext::principal).isPresent();
     }
 }

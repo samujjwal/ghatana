@@ -1,33 +1,59 @@
 {
-  "generatedAt": "2026-05-30T04:22:57.139Z",
-  "status": "passed",
+  "generatedAt": "2026-05-31T02:28:01.368Z",
+  "status": "failed",
   "summary": {
     "requiredTaskCount": 63,
-    "parsedTaskCount": 16,
+    "parsedTaskCount": 83,
     "statusCounts": {
-      "Partial": 13,
-      "Planned": 3
+      "Partial": 76,
+      "Planned": 7
     },
-    "averageMaturityDepth": 2.25,
-    "warningCount": 4,
-    "violationCount": 0
+    "averageMaturityDepth": 2.31,
+    "warningCount": 89,
+    "violationCount": 1
   },
   "incrementalRoadmap": {
-    "generatedAt": "2026-05-30T04:22:57.140Z",
+    "generatedAt": "2026-05-31T02:28:01.370Z",
     "targetMaturityDepth": 5,
-    "remainingTaskCount": 16,
+    "remainingTaskCount": 83,
     "deferredTaskIds": [],
     "waveBuckets": {
       "wave-1-foundation": [
         8,
         5,
+        5,
+        5,
+        5,
+        5,
         7,
         9,
         10,
         1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
         2,
         3,
+        3,
+        3,
+        3,
+        3,
+        3,
         4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        6,
+        6,
         6
       ],
       "wave-2-runtime-governance": [
@@ -36,13 +62,58 @@
         13,
         14,
         15,
-        16
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23
+      ],
+      "wave-3-quality-performance": [
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33
+      ],
+      "wave-4-release-ops": [
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83
       ]
     },
     "tasks": [
       {
         "id": 8,
-        "title": "Group 4: Pipeline route contract consolidation",
+        "title": "BE-PHASE-008",
         "status": "Planned",
         "maturityDepth": 1,
         "targetDepth": 5,
@@ -57,7 +128,67 @@
       },
       {
         "id": 5,
-        "title": "Group 2: Enforce approved/registered agent before execution",
+        "title": "BE-PHASE-005",
+        "status": "Planned",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Product Family Platform",
+        "ownerModule": "products/yappc",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 5,
+        "title": "RUN-005",
+        "status": "Planned",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Product Family Platform",
+        "ownerModule": "products/yappc",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 5,
+        "title": "LEARN-005",
+        "status": "Planned",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Product Family Platform",
+        "ownerModule": "products/yappc",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 5,
+        "title": "EVOLVE-005",
+        "status": "Planned",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Product Family Platform",
+        "ownerModule": "products/yappc",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 5,
+        "title": "DC-005",
         "status": "Planned",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -72,7 +203,7 @@
       },
       {
         "id": 7,
-        "title": "Group 4: Remove implicit `\"system\"` user fallback",
+        "title": "BE-PHASE-007",
         "status": "Planned",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -87,7 +218,7 @@
       },
       {
         "id": 9,
-        "title": "Group 3: Metrics registry fail-closed in production profile",
+        "title": "BE-PHASE-009",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -102,7 +233,7 @@
       },
       {
         "id": 10,
-        "title": "Group 4: Pipeline controller regression test coverage",
+        "title": "BE-PHASE-010",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -117,7 +248,7 @@
       },
       {
         "id": 11,
-        "title": "Group 2: Route-level pipeline write authorization in Action Plane",
+        "title": "BE-MODEL-001",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -132,7 +263,7 @@
       },
       {
         "id": 12,
-        "title": "Group 5: Workflows UI i18n hardening slice",
+        "title": "BE-MODEL-002",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -147,7 +278,7 @@
       },
       {
         "id": 13,
-        "title": "Group 3: Durable runtime fail-closed expansion",
+        "title": "BE-MODEL-003",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -162,7 +293,7 @@
       },
       {
         "id": 14,
-        "title": "Group 7: Media modality API baseline in delivery API",
+        "title": "BE-MODEL-004",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -177,7 +308,7 @@
       },
       {
         "id": 15,
-        "title": "Group 8: UI dependency governance checks",
+        "title": "BE-MODEL-005",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -192,7 +323,7 @@
       },
       {
         "id": 16,
-        "title": "Group 6 (adaptive lifecycle)",
+        "title": "BE-MODEL-006",
         "status": "Partial",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -206,8 +337,698 @@
         "deferReason": null
       },
       {
+        "id": 17,
+        "title": "BE-MODEL-007",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 18,
+        "title": "BE-READY-001",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 19,
+        "title": "BE-READY-002",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 20,
+        "title": "BE-READY-003",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 21,
+        "title": "BE-READY-004",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 22,
+        "title": "BE-READY-005",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 23,
+        "title": "BE-READY-006",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 24,
+        "title": "BE-READY-007",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 25,
+        "title": "KRN-CMD-001",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 26,
+        "title": "KRN-CMD-002",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 27,
+        "title": "KRN-CMD-003",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 28,
+        "title": "KRN-CMD-004",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 29,
+        "title": "KRN-CMD-005",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 30,
+        "title": "KRN-CONTRACT-001",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 31,
+        "title": "KRN-CONTRACT-002",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 32,
+        "title": "KRN-CONTRACT-003",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 33,
+        "title": "KRN-CONTRACT-004",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 50,
+        "title": "FE-CONT-001",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 51,
+        "title": "FE-CONT-002",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 52,
+        "title": "FE-CONT-003",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 53,
+        "title": "FE-UX-001",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 54,
+        "title": "FE-UX-002",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 55,
+        "title": "FE-UX-003",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 56,
+        "title": "FE-UX-004",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 57,
+        "title": "FE-UX-005",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 58,
+        "title": "FE-CONTRACT-001",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 59,
+        "title": "FE-CONTRACT-002",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 60,
+        "title": "FE-CONTRACT-003",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 61,
+        "title": "FE-ACTION-001",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 62,
+        "title": "FE-ACTION-002",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 63,
+        "title": "FE-ACTION-003",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 74,
+        "title": "REUSE-I18N-001",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 75,
+        "title": "REUSE-I18N-002",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 76,
+        "title": "REUSE-ACTION-001",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 77,
+        "title": "REUSE-ACTION-002",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 78,
+        "title": "REUSE-UI-001",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 79,
+        "title": "REUSE-UI-002",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 80,
+        "title": "REUSE-UI-003",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 81,
+        "title": "REUSE-CONTRACT-001",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 82,
+        "title": "REUSE-CONTRACT-002",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 83,
+        "title": "REUSE-CONTRACT-003",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
         "id": 1,
-        "title": "Group 1: Fix corrupt legacy route mappings generation",
+        "title": "BE-PHASE-001",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 1,
+        "title": "RUN-001",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 1,
+        "title": "LEARN-001",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 1,
+        "title": "EVOLVE-001",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 1,
+        "title": "DC-001",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 1,
+        "title": "AEP-001",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -222,7 +1043,82 @@
       },
       {
         "id": 2,
-        "title": "Group 1: Canonical Action Plane namespace in AEP server",
+        "title": "BE-PHASE-002",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 2,
+        "title": "RUN-002",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 2,
+        "title": "LEARN-002",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 2,
+        "title": "EVOLVE-002",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 2,
+        "title": "DC-002",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 2,
+        "title": "AEP-002",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -237,7 +1133,82 @@
       },
       {
         "id": 3,
-        "title": "Group 1: Replace capabilities-shaped Runtime Truth response in AEP server",
+        "title": "BE-PHASE-003",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 3,
+        "title": "RUN-003",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 3,
+        "title": "LEARN-003",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 3,
+        "title": "EVOLVE-003",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 3,
+        "title": "DC-003",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 3,
+        "title": "AEP-003",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -252,7 +1223,82 @@
       },
       {
         "id": 4,
-        "title": "Group 2: Forbid tenant override from request body",
+        "title": "BE-PHASE-004",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 4,
+        "title": "RUN-004",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 4,
+        "title": "LEARN-004",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 4,
+        "title": "EVOLVE-004",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 4,
+        "title": "DC-004",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 4,
+        "title": "AEP-004",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -267,7 +1313,37 @@
       },
       {
         "id": 6,
-        "title": "Group 4: Pipeline execution parsing/error handling hardening",
+        "title": "BE-PHASE-006",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "release-evidence",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 6,
+        "title": "EVOLVE-006",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "release-evidence",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 6,
+        "title": "DC-006",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -291,12 +1367,9 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 1,
-      "title": "Group 1: Fix corrupt legacy route mappings generation",
+      "title": "BE-PHASE-001",
       "whereRefs": [
-        ":param",
-        "LegacyRouteMappings.generated.ts",
-        "node products/data-cloud/scripts/generate-route-security-metadata.mjs",
-        "node products/data-cloud/scripts/generate-route-security-metadata.mjs --check"
+        "products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/phase/PhasePacketAssembler.java"
       ]
     },
     {
@@ -307,14 +1380,9 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 2,
-      "title": "Group 1: Canonical Action Plane namespace in AEP server",
+      "title": "BE-PHASE-002",
       "whereRefs": [
-        "/api/v1/action/*",
-        "/api/v1/*",
-        "./gradlew :products:data-cloud:planes:action:server:compileJava",
-        "./gradlew :products:data-cloud:planes:action:server:test --tests \"com.ghatana.aep.server.http.AepHttpServerBuilderTest\"",
-        "./gradlew :products:data-cloud:planes:action:server:test --tests \"com.ghatana.aep.server.http.controllers.AgentControllerTest\"",
-        "./gradlew :products:data-cloud:planes:action:server:test --tests \"com.ghatana.aep.server.http.controllers.PatternControllerTest\""
+        "IntentPhasePanelProvider.java"
       ]
     },
     {
@@ -325,13 +1393,9 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 3,
-      "title": "Group 1: Replace capabilities-shaped Runtime Truth response in AEP server",
+      "title": "BE-PHASE-003",
       "whereRefs": [
-        "capabilities",
-        "/api/v1/surfaces",
-        "surfaces",
-        "data/meta",
-        "./gradlew :products:data-cloud:planes:action:server:compileJava"
+        "ShapePhasePanelProvider.java"
       ]
     },
     {
@@ -342,10 +1406,9 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 4,
-      "title": "Group 2: Forbid tenant override from request body",
+      "title": "BE-PHASE-004",
       "whereRefs": [
-        "AgentController",
-        "./gradlew :products:data-cloud:planes:action:server:test --tests \"com.ghatana.aep.server.http.controllers.AgentControllerTest\""
+        "ValidatePhasePanelProvider.java"
       ]
     },
     {
@@ -356,10 +1419,9 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 5,
-      "title": "Group 2: Enforce approved/registered agent before execution",
+      "title": "BE-PHASE-005",
       "whereRefs": [
-        "AgentController.handleExecuteAgent",
-        "./gradlew :products:data-cloud:planes:action:server:test --tests \"com.ghatana.aep.server.http.controllers.AgentControllerTest\""
+        "GeneratePhasePanelProvider.java"
       ]
     },
     {
@@ -370,10 +1432,9 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 6,
-      "title": "Group 4: Pipeline execution parsing/error handling hardening",
+      "title": "BE-PHASE-006",
       "whereRefs": [
-        "PipelineExecutionController",
-        "./gradlew :products:data-cloud:delivery:api:compileJava"
+        "RunPhasePanelProvider.java"
       ]
     },
     {
@@ -384,11 +1445,9 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 7,
-      "title": "Group 4: Remove implicit `\"system\"` user fallback",
+      "title": "BE-PHASE-007",
       "whereRefs": [
-        "X-User-ID",
-        "system",
-        "./gradlew :products:data-cloud:delivery:api:compileJava"
+        "ObservePhasePanelProvider.java"
       ]
     },
     {
@@ -399,11 +1458,9 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 8,
-      "title": "Group 4: Pipeline route contract consolidation",
+      "title": "BE-PHASE-008",
       "whereRefs": [
-        "PipelineExecutionController",
-        "/api/v1/action/pipelines/...",
-        "./gradlew :products:data-cloud:delivery:api:test --tests \"com.ghatana.datacloud.api.controller.PipelineExecutionControllerTest\""
+        "LearnPhasePanelProvider.java"
       ]
     },
     {
@@ -414,11 +1471,9 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 9,
-      "title": "Group 3: Metrics registry fail-closed in production profile",
+      "title": "BE-PHASE-009",
       "whereRefs": [
-        "AepHttpServer.handleMetrics",
-        "503",
-        "./gradlew :products:data-cloud:planes:action:server:compileJava"
+        "EvolvePhasePanelProvider.java"
       ]
     },
     {
@@ -429,11 +1484,9 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 10,
-      "title": "Group 4: Pipeline controller regression test coverage",
+      "title": "BE-PHASE-010",
       "whereRefs": [
-        "X-User-ID",
-        "inputVariables",
-        "./gradlew :products:data-cloud:delivery:api:test --tests \"com.ghatana.datacloud.api.controller.PipelineExecutionControllerTest\""
+        "PhasePanelProviderRegistry.java"
       ]
     },
     {
@@ -444,9 +1497,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 11,
-      "title": "Group 2: Route-level pipeline write authorization in Action Plane",
+      "title": "BE-MODEL-001",
       "whereRefs": [
-        "./gradlew :products:data-cloud:planes:action:server:test --tests \"com.ghatana.aep.server.http.controllers.PipelineControllerTest\""
+        "IntentPhaseModel.java",
+        "IntentPhaseModelProvider.java"
       ]
     },
     {
@@ -457,10 +1511,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 12,
-      "title": "Group 5: Workflows UI i18n hardening slice",
+      "title": "BE-MODEL-002",
       "whereRefs": [
-        "WorkflowsPage",
-        "pnpm --dir products/data-cloud/delivery/ui exec vitest run src/__tests__/pages/WorkflowsPage.test.tsx"
+        "ShapePhaseModel.java",
+        "ShapePhaseModelProvider.java"
       ]
     },
     {
@@ -471,10 +1525,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 13,
-      "title": "Group 3: Durable runtime fail-closed expansion",
+      "title": "BE-MODEL-003",
       "whereRefs": [
-        "session-store",
-        "./gradlew :products:data-cloud:planes:action:server:test --tests \"com.ghatana.aep.server.http.AepHttpServerBuilderTest\""
+        "GeneratePhaseModel.java",
+        "GeneratePhaseModelProvider.java"
       ]
     },
     {
@@ -485,11 +1539,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 14,
-      "title": "Group 7: Media modality API baseline in delivery API",
+      "title": "BE-MODEL-004",
       "whereRefs": [
-        "./gradlew :products:data-cloud:delivery:launcher:compileJava",
-        "./gradlew :products:data-cloud:delivery:api:test --tests \"com.ghatana.datacloud.api.controller.MediaArtifactControllerTest\"",
-        "node products/data-cloud/scripts/generate-route-manifest.mjs --check"
+        "RunPhaseModel.java",
+        "RunPhaseModelProvider.java"
       ]
     },
     {
@@ -500,10 +1553,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 15,
-      "title": "Group 8: UI dependency governance checks",
+      "title": "BE-MODEL-005",
       "whereRefs": [
-        "check:deps:governance",
-        "pnpm --dir products/data-cloud/delivery/ui run check:deps:governance"
+        "ObservePhaseModel.java",
+        "ObservePhaseModelProvider.java"
       ]
     },
     {
@@ -514,19 +1567,974 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 16,
-      "title": "Group 6 (adaptive lifecycle)",
+      "title": "BE-MODEL-006",
       "whereRefs": [
-        "./gradlew :products:data-cloud:planes:action:server:test --tests \"com.ghatana.aep.server.http.controllers.PatternControllerTest\"",
-        "./gradlew :products:data-cloud:planes:action:server:test --tests \"com.ghatana.aep.server.http.controllers.AgentControllerTest\"",
-        "./gradlew :products:data-cloud:planes:action:server:test --tests \"com.ghatana.aep.server.http.AepHttpServerBuilderTest\""
+        "LearnPhaseModel.java",
+        "LearnPhaseModelProvider.java"
       ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 17,
+      "title": "BE-MODEL-007",
+      "whereRefs": [
+        "EvolvePhaseModel.java",
+        "EvolvePhaseModelProvider.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 18,
+      "title": "BE-READY-001",
+      "whereRefs": [
+        "PhaseReadinessEvaluator.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 19,
+      "title": "BE-READY-002",
+      "whereRefs": [
+        "PhaseReadinessPolicy.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 20,
+      "title": "BE-READY-003",
+      "whereRefs": [
+        "IntentReadinessPolicy.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 21,
+      "title": "BE-READY-004",
+      "whereRefs": [
+        "ShapeReadinessPolicy.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 22,
+      "title": "BE-READY-005",
+      "whereRefs": [
+        "GenerateReadinessPolicy.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 23,
+      "title": "BE-READY-006",
+      "whereRefs": [
+        "RunReadinessPolicy.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 24,
+      "title": "BE-READY-007",
+      "whereRefs": [
+        "LearnReadinessPolicy.java",
+        "EvolveReadinessPolicy.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 25,
+      "title": "KRN-CMD-001",
+      "whereRefs": [
+        "ProductUnitIntentCommandService.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 26,
+      "title": "KRN-CMD-002",
+      "whereRefs": [
+        "ProductUnitIntentCommandService.java",
+        "CreateCommand.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 27,
+      "title": "KRN-CMD-003",
+      "whereRefs": [
+        "CreateCommand.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 28,
+      "title": "KRN-CMD-004",
+      "whereRefs": [
+        "ProductUnitIntentCommandService.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 29,
+      "title": "KRN-CMD-005",
+      "whereRefs": [
+        "ProductUnitIntentCommandService.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 30,
+      "title": "KRN-CONTRACT-001",
+      "whereRefs": [
+        "ProductUnitKernelContractRegistry.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 31,
+      "title": "KRN-CONTRACT-002",
+      "whereRefs": [
+        "ProductUnitKernelContractRegistry.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 32,
+      "title": "KRN-CONTRACT-003",
+      "whereRefs": [
+        "ProductUnitIntentValidationService.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 33,
+      "title": "KRN-CONTRACT-004",
+      "whereRefs": [
+        "ProductUnitIntentExporter.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 1,
+      "title": "RUN-001",
+      "whereRefs": [
+        "PhaseActionAuthorizationService.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 2,
+      "title": "RUN-002",
+      "whereRefs": [
+        "PhaseActionCatalog.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 3,
+      "title": "RUN-003",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 4,
+      "title": "RUN-004",
+      "whereRefs": [
+        "RunActionContext.java"
+      ]
+    },
+    {
+      "ownerTeam": "Product Family Platform",
+      "ownerModule": "products/yappc",
+      "status": "Planned",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 5,
+      "title": "RUN-005",
+      "whereRefs": [
+        "PlatformRunStatusService"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 1,
+      "title": "LEARN-001",
+      "whereRefs": [
+        "LearningInsightService.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 2,
+      "title": "LEARN-002",
+      "whereRefs": [
+        "LearningSignalRepository.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 3,
+      "title": "LEARN-003",
+      "whereRefs": [
+        "LearningWorkflowService.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 4,
+      "title": "LEARN-004",
+      "whereRefs": [
+        "LearnPhasePanelProvider.java"
+      ]
+    },
+    {
+      "ownerTeam": "Product Family Platform",
+      "ownerModule": "products/yappc",
+      "status": "Planned",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 5,
+      "title": "LEARN-005",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 1,
+      "title": "EVOLVE-001",
+      "whereRefs": [
+        "EvolutionPlanService.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 2,
+      "title": "EVOLVE-002",
+      "whereRefs": [
+        "EvolutionPlanRepository.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 3,
+      "title": "EVOLVE-003",
+      "whereRefs": [
+        "EvolutionWorkflowService.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 4,
+      "title": "EVOLVE-004",
+      "whereRefs": [
+        "EvolvePhasePanelProvider.java"
+      ]
+    },
+    {
+      "ownerTeam": "Product Family Platform",
+      "ownerModule": "products/yappc",
+      "status": "Planned",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 5,
+      "title": "EVOLVE-005",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "release-evidence",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 6,
+      "title": "EVOLVE-006",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 50,
+      "title": "FE-CONT-001",
+      "whereRefs": [
+        "products/yappc/frontend/web/src/routes/app/project/PhaseCockpitContainer.tsx"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 51,
+      "title": "FE-CONT-002",
+      "whereRefs": [
+        "usePhaseCockpitViewModel.ts"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 52,
+      "title": "FE-CONT-003",
+      "whereRefs": [
+        "PhaseCockpitContainer.tsx"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 53,
+      "title": "FE-UX-001",
+      "whereRefs": [
+        "PhaseCockpitView.tsx"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 54,
+      "title": "FE-UX-002",
+      "whereRefs": [
+        "PhaseCockpitView.tsx",
+        "PhaseCockpitLayout"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 55,
+      "title": "FE-UX-003",
+      "whereRefs": [
+        "PhasePacketSummary.tsx"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 56,
+      "title": "FE-UX-004",
+      "whereRefs": [
+        "PhaseActionSection.tsx"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 57,
+      "title": "FE-UX-005",
+      "whereRefs": [
+        "PhaseDegradedPacketPanel.tsx"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 58,
+      "title": "FE-CONTRACT-001",
+      "whereRefs": [
+        "usePhasePacket.ts"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 59,
+      "title": "FE-CONTRACT-002",
+      "whereRefs": [
+        "usePhasePacket.ts"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 60,
+      "title": "FE-CONTRACT-003",
+      "whereRefs": [
+        "types/phasePacket.ts"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 61,
+      "title": "FE-ACTION-001",
+      "whereRefs": [
+        "usePhaseActionHandlers.ts"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 62,
+      "title": "FE-ACTION-002",
+      "whereRefs": [
+        "usePhaseActionHandlers.ts"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 63,
+      "title": "FE-ACTION-003",
+      "whereRefs": [
+        "usePhaseActionHandlers.ts"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 1,
+      "title": "DC-001",
+      "whereRefs": [
+        "products/yappc/infrastructure/datacloud/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 2,
+      "title": "DC-002",
+      "whereRefs": [
+        "PhaseProjectStateService.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 3,
+      "title": "DC-003",
+      "whereRefs": [
+        "ProjectLifecycleSnapshot.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 4,
+      "title": "DC-004",
+      "whereRefs": [
+        "PhaseEvidenceService.java"
+      ]
+    },
+    {
+      "ownerTeam": "Product Family Platform",
+      "ownerModule": "products/yappc",
+      "status": "Planned",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 5,
+      "title": "DC-005",
+      "whereRefs": [
+        "PhaseGovernanceService.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "release-evidence",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 6,
+      "title": "DC-006",
+      "whereRefs": [
+        "PhaseActivityFeedService.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 1,
+      "title": "AEP-001",
+      "whereRefs": [
+        "PhaseHealthSignalProvider.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 2,
+      "title": "AEP-002",
+      "whereRefs": [
+        "LearningInsightService.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 3,
+      "title": "AEP-003",
+      "whereRefs": [
+        "EvolutionPlanService.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 4,
+      "title": "AEP-004",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 74,
+      "title": "REUSE-I18N-001",
+      "whereRefs": [
+        "PhaseCockpitView.tsx",
+        "_phaseCockpit.tsx",
+        "PhaseCockpitContainer.tsx"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 75,
+      "title": "REUSE-I18N-002",
+      "whereRefs": [
+        "i18n/messages"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 76,
+      "title": "REUSE-ACTION-001",
+      "whereRefs": [
+        "PhaseActionCatalog.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 77,
+      "title": "REUSE-ACTION-002",
+      "whereRefs": [
+        "usePhaseActionHandlers.ts"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 78,
+      "title": "REUSE-UI-001",
+      "whereRefs": [
+        "components/phase/**",
+        "routes/app/project/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 79,
+      "title": "REUSE-UI-002",
+      "whereRefs": [
+        "PhaseCockpitLayout",
+        "PhasePrimaryActionCard",
+        "PhaseActionSection"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 80,
+      "title": "REUSE-UI-003",
+      "whereRefs": [
+        "PhaseEmbeddedSurface.tsx"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 81,
+      "title": "REUSE-CONTRACT-001",
+      "whereRefs": [
+        "PhasePacket.java",
+        "types/phasePacket.ts"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 82,
+      "title": "REUSE-CONTRACT-002",
+      "whereRefs": [
+        "ProductUnitKernelContractRegistry.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 83,
+      "title": "REUSE-CONTRACT-003",
+      "whereRefs": []
     }
   ],
   "warnings": [
-    "Expected 63 plan tasks, found 16 (implementation-tracking summary format detected)",
-    "Task 1 references non-existing path \"LegacyRouteMappings.generated.ts\"",
-    "Task 1 references non-existing path \"node products/data-cloud/scripts/generate-route-security-metadata.mjs\"",
-    "Task 12 references non-existing path \"pnpm --dir products/data-cloud/delivery/ui exec vitest run src/__tests__/pages/WorkflowsPage.test.tsx\""
+    "Task 2 references non-existing path \"IntentPhasePanelProvider.java\"",
+    "Task 3 references non-existing path \"ShapePhasePanelProvider.java\"",
+    "Task 4 references non-existing path \"ValidatePhasePanelProvider.java\"",
+    "Task 5 references non-existing path \"GeneratePhasePanelProvider.java\"",
+    "Task 6 references non-existing path \"RunPhasePanelProvider.java\"",
+    "Task 7 references non-existing path \"ObservePhasePanelProvider.java\"",
+    "Task 8 references non-existing path \"LearnPhasePanelProvider.java\"",
+    "Task 9 references non-existing path \"EvolvePhasePanelProvider.java\"",
+    "Task 10 references non-existing path \"PhasePanelProviderRegistry.java\"",
+    "Task 11 references non-existing path \"IntentPhaseModel.java\"",
+    "Task 11 references non-existing path \"IntentPhaseModelProvider.java\"",
+    "Task 12 references non-existing path \"ShapePhaseModel.java\"",
+    "Task 12 references non-existing path \"ShapePhaseModelProvider.java\"",
+    "Task 13 references non-existing path \"GeneratePhaseModel.java\"",
+    "Task 13 references non-existing path \"GeneratePhaseModelProvider.java\"",
+    "Task 14 references non-existing path \"RunPhaseModel.java\"",
+    "Task 14 references non-existing path \"RunPhaseModelProvider.java\"",
+    "Task 15 references non-existing path \"ObservePhaseModel.java\"",
+    "Task 15 references non-existing path \"ObservePhaseModelProvider.java\"",
+    "Task 16 references non-existing path \"LearnPhaseModel.java\"",
+    "Task 16 references non-existing path \"LearnPhaseModelProvider.java\"",
+    "Task 17 references non-existing path \"EvolvePhaseModel.java\"",
+    "Task 17 references non-existing path \"EvolvePhaseModelProvider.java\"",
+    "Task 18 references non-existing path \"PhaseReadinessEvaluator.java\"",
+    "Task 19 references non-existing path \"PhaseReadinessPolicy.java\"",
+    "Task 20 references non-existing path \"IntentReadinessPolicy.java\"",
+    "Task 21 references non-existing path \"ShapeReadinessPolicy.java\"",
+    "Task 22 references non-existing path \"GenerateReadinessPolicy.java\"",
+    "Task 23 references non-existing path \"RunReadinessPolicy.java\"",
+    "Task 24 references non-existing path \"LearnReadinessPolicy.java\"",
+    "Task 24 references non-existing path \"EvolveReadinessPolicy.java\"",
+    "Task 25 references non-existing path \"ProductUnitIntentCommandService.java\"",
+    "Task 26 references non-existing path \"ProductUnitIntentCommandService.java\"",
+    "Task 26 references non-existing path \"CreateCommand.java\"",
+    "Task 27 references non-existing path \"CreateCommand.java\"",
+    "Task 28 references non-existing path \"ProductUnitIntentCommandService.java\"",
+    "Task 29 references non-existing path \"ProductUnitIntentCommandService.java\"",
+    "Task 30 references non-existing path \"ProductUnitKernelContractRegistry.java\"",
+    "Task 31 references non-existing path \"ProductUnitKernelContractRegistry.java\"",
+    "Task 32 references non-existing path \"ProductUnitIntentValidationService.java\"",
+    "Task 33 references non-existing path \"ProductUnitIntentExporter.java\"",
+    "Task 1 references non-existing path \"PhaseActionAuthorizationService.java\"",
+    "Task 2 references non-existing path \"PhaseActionCatalog.java\"",
+    "Task 3 has no parsed Where references in implementation plan",
+    "Task 4 references non-existing path \"RunActionContext.java\"",
+    "Task 1 references non-existing path \"LearningInsightService.java\"",
+    "Task 2 references non-existing path \"LearningSignalRepository.java\"",
+    "Task 3 references non-existing path \"LearningWorkflowService.java\"",
+    "Task 4 references non-existing path \"LearnPhasePanelProvider.java\"",
+    "Task 5 has no parsed Where references in implementation plan",
+    "Task 1 references non-existing path \"EvolutionPlanService.java\"",
+    "Task 2 references non-existing path \"EvolutionPlanRepository.java\"",
+    "Task 3 references non-existing path \"EvolutionWorkflowService.java\"",
+    "Task 4 references non-existing path \"EvolvePhasePanelProvider.java\"",
+    "Task 5 has no parsed Where references in implementation plan",
+    "Task 6 has no parsed Where references in implementation plan",
+    "Task 51 references non-existing path \"usePhaseCockpitViewModel.ts\"",
+    "Task 52 references non-existing path \"PhaseCockpitContainer.tsx\"",
+    "Task 53 references non-existing path \"PhaseCockpitView.tsx\"",
+    "Task 54 references non-existing path \"PhaseCockpitView.tsx\"",
+    "Task 55 references non-existing path \"PhasePacketSummary.tsx\"",
+    "Task 56 references non-existing path \"PhaseActionSection.tsx\"",
+    "Task 57 references non-existing path \"PhaseDegradedPacketPanel.tsx\"",
+    "Task 58 references non-existing path \"usePhasePacket.ts\"",
+    "Task 59 references non-existing path \"usePhasePacket.ts\"",
+    "Task 60 references non-existing path \"types/phasePacket.ts\"",
+    "Task 61 references non-existing path \"usePhaseActionHandlers.ts\"",
+    "Task 62 references non-existing path \"usePhaseActionHandlers.ts\"",
+    "Task 63 references non-existing path \"usePhaseActionHandlers.ts\"",
+    "Task 1 references non-existing path \"products/yappc/infrastructure/datacloud/**\"",
+    "Task 2 references non-existing path \"PhaseProjectStateService.java\"",
+    "Task 3 references non-existing path \"ProjectLifecycleSnapshot.java\"",
+    "Task 4 references non-existing path \"PhaseEvidenceService.java\"",
+    "Task 5 references non-existing path \"PhaseGovernanceService.java\"",
+    "Task 6 references non-existing path \"PhaseActivityFeedService.java\"",
+    "Task 1 references non-existing path \"PhaseHealthSignalProvider.java\"",
+    "Task 2 references non-existing path \"LearningInsightService.java\"",
+    "Task 3 references non-existing path \"EvolutionPlanService.java\"",
+    "Task 4 has no parsed Where references in implementation plan",
+    "Task 74 references non-existing path \"PhaseCockpitView.tsx\"",
+    "Task 74 references non-existing path \"_phaseCockpit.tsx\"",
+    "Task 74 references non-existing path \"PhaseCockpitContainer.tsx\"",
+    "Task 76 references non-existing path \"PhaseActionCatalog.java\"",
+    "Task 77 references non-existing path \"usePhaseActionHandlers.ts\"",
+    "Task 80 references non-existing path \"PhaseEmbeddedSurface.tsx\"",
+    "Task 81 references non-existing path \"PhasePacket.java\"",
+    "Task 81 references non-existing path \"types/phasePacket.ts\"",
+    "Task 82 references non-existing path \"ProductUnitKernelContractRegistry.java\"",
+    "Task 83 has no parsed Where references in implementation plan"
   ],
-  "violations": []
+  "violations": [
+    "Expected 63 plan tasks, found 83"
+  ]
 }

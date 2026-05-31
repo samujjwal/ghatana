@@ -6,6 +6,7 @@
 package com.ghatana.yappc.kernel;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -26,13 +27,17 @@ public final class ProductUnitKernelContractRegistry {
     private static final String MINIMUM_SCHEMA_VERSION = "1.0.0";
 
     private final KernelProductUnitContract contract;
+    private final ContractSourceMetadata sourceMetadata;
 
     /**
      * Creates the default registry from the imported Kernel ProductUnit contract resource.
      * KRN-06: The contract DTO path is the single source of truth shared with ProductUnitIntentExporter.
      */
     public ProductUnitKernelContractRegistry() {
-        this(loadDefaultContract());
+        LoadedContract loaded = loadDefaultContract();
+        validateNonEmptyContractSets(loaded.contract());
+        this.contract = loaded.contract();
+        this.sourceMetadata = loaded.metadata();
     }
 
     /**
@@ -43,6 +48,7 @@ public final class ProductUnitKernelContractRegistry {
     public ProductUnitKernelContractRegistry(@NotNull KernelProductUnitContract contract) {
         validateSchemaVersion(contract.schemaVersion());
         this.contract = contract;
+        this.sourceMetadata = ContractSourceMetadata.unknown();
     }
 
     /**
@@ -83,6 +89,18 @@ public final class ProductUnitKernelContractRegistry {
             surfaces,
             productUnitKinds,
             implementationStatuses));
+    }
+
+    public String contractVersion() {
+        return contract.schemaVersion();
+    }
+
+    public String generatedAt() {
+        return sourceMetadata.generatedAt();
+    }
+
+    public String sourceCommit() {
+        return sourceMetadata.sourceCommit();
     }
 
     public boolean isProviderKnown(String provider) {
@@ -133,16 +151,38 @@ public final class ProductUnitKernelContractRegistry {
         return contract.implementationStatuses();
     }
 
-    private static KernelProductUnitContract loadDefaultContract() {
+    private static LoadedContract loadDefaultContract() {
         try (InputStream input = ProductUnitKernelContractRegistry.class.getResourceAsStream("/kernel-product-unit-contract.json")) {
             if (input == null) {
                 throw new IllegalStateException("Missing Kernel ProductUnit contract resource: /kernel-product-unit-contract.json");
             }
-            KernelProductUnitContract contract = new ObjectMapper().readValue(input, KernelProductUnitContract.class);
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(input);
+            KernelProductUnitContract contract = mapper.treeToValue(root, KernelProductUnitContract.class);
             validateSchemaVersion(contract.schemaVersion());
-            return contract;
+            ContractSourceMetadata metadata = new ContractSourceMetadata(
+                    contract.schemaVersion(),
+                    root.path("generatedAt").asText("unknown"),
+                    root.path("sourceCommit").asText("unknown")
+            );
+            return new LoadedContract(contract, metadata);
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to load Kernel ProductUnit contract resource", e);
+        }
+    }
+
+    private static void validateNonEmptyContractSets(KernelProductUnitContract contract) {
+        if (contract.providers().isEmpty()) {
+            throw new IllegalStateException("Kernel ProductUnit contract providers cannot be empty");
+        }
+        if (contract.sourceProviders().isEmpty()) {
+            throw new IllegalStateException("Kernel ProductUnit contract sourceProviders cannot be empty");
+        }
+        if (contract.productUnitKinds().isEmpty()) {
+            throw new IllegalStateException("Kernel ProductUnit contract productUnitKinds cannot be empty");
+        }
+        if (contract.implementationStatuses().isEmpty()) {
+            throw new IllegalStateException("Kernel ProductUnit contract implementationStatuses cannot be empty");
         }
     }
 
@@ -202,5 +242,18 @@ public final class ProductUnitKernelContractRegistry {
             productUnitKinds = Set.copyOf(productUnitKinds);
             implementationStatuses = Set.copyOf(implementationStatuses);
         }
+    }
+
+    public record ContractSourceMetadata(
+            String contractVersion,
+            String generatedAt,
+            String sourceCommit
+    ) {
+        static ContractSourceMetadata unknown() {
+            return new ContractSourceMetadata("unknown", "unknown", "unknown");
+        }
+    }
+
+    private record LoadedContract(KernelProductUnitContract contract, ContractSourceMetadata metadata) {
     }
 }

@@ -125,7 +125,7 @@ UI must use generated clients and frontend adapters, not backend internals.
 
 ## Current Implementation Truth
 
-This iteration focuses on implementation, correctness, feature completeness, UI/UX, security/privacy, i18n/a11y, and observability. It is NOT about release-readiness execution.
+This iteration focuses on implementation, correctness, feature completeness, UI/UX, security/privacy, i18n/a11y, and observability. It is NOT release-readiness execution: do not run release-readiness checks, release evidence generation, product release promotion, or evidence freshness workflows as part of this pass.
 
 **Plane Status:**
 - Data Plane: active
@@ -152,7 +152,7 @@ When an advisory module becomes a production surface, it must be promoted to rel
 3. **Update CI workflows**: The release workflow automatically includes all release-blocking modules in strict checks.
 4. **Document the change**: Add a note to the implementation tracker or changelog explaining why the module was promoted.
 
-**Note:** Do not run release-readiness/evidence execution in this hardening iteration. Skip release-readiness check tasks.
+**Note:** Do not run release-readiness/evidence execution in this hardening iteration. Skip release-readiness check tasks and any script that generates release evidence.
 
 ### Current Advisory Modules
 

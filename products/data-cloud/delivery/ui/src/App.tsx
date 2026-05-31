@@ -21,6 +21,7 @@ import {
   DataCloudOnboardingWizard,
   isOnboardingComplete,
 } from "./features/onboarding/DataCloudOnboardingWizard";
+import { runtimeCapabilityService } from "./lib/capabilities/RuntimeCapabilityService";
 import { initializeI18n } from "./lib/i18n/config";
 import { routes } from "./routes";
 import "./styles/globals.css";
@@ -93,6 +94,10 @@ export function App(): React.ReactElement {
   const [showOnboarding, setShowOnboarding] = React.useState(
     () => !isOnboardingComplete(),
   );
+
+  React.useEffect(() => {
+    void runtimeCapabilityService.initialize();
+  }, []);
 
   return (
     <AppErrorBoundary>

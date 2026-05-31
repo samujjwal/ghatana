@@ -6,6 +6,10 @@ import com.ghatana.datacloud.launcher.http.DataCloudHttpMetrics;
 import com.ghatana.datacloud.launcher.http.plugins.WorkflowExecutionCapability;
 import com.ghatana.datacloud.launcher.http.security.RequestContext;
 import com.ghatana.datacloud.launcher.http.security.RequestContextResolver;
+import com.ghatana.datacloud.operations.OperationKind;
+import com.ghatana.datacloud.operations.OperationRecord;
+import com.ghatana.datacloud.operations.OperationRecorder;
+import com.ghatana.datacloud.operations.OperationStatus;
 import com.ghatana.platform.observability.idempotency.IdempotencyHelper;
 import com.ghatana.platform.observability.idempotency.IdempotencyStore;
 import io.activej.http.*;
@@ -47,6 +51,7 @@ public class WorkflowExecutionHandler {
     private WorkflowExecutionCapability executionCapability;
     private DataCloudHttpMetrics metrics = DataCloudHttpMetrics.noop();
     private IdempotencyStore idempotencyStore;
+    private OperationRecorder operationRecorder;
 
     public WorkflowExecutionHandler(DataCloudClient client, HttpHandlerSupport http) {
         this.client = client;
@@ -85,6 +90,11 @@ public class WorkflowExecutionHandler {
      */
     public WorkflowExecutionHandler withIdempotencyStore(IdempotencyStore idempotencyStore) {
         this.idempotencyStore = idempotencyStore;
+        return this;
+    }
+
+    public WorkflowExecutionHandler withOperationRecorder(OperationRecorder operationRecorder) {
+        this.operationRecorder = operationRecorder;
         return this;
     }
 
@@ -204,6 +214,15 @@ public class WorkflowExecutionHandler {
                     }
                     return executionCapability.execute(tenantId, pipelineId, input)
                         .then(snapshot -> {
+                            OperationRecord operation = recordWorkflowOperation(
+                                tenantId,
+                                pipelineId,
+                                OperationKind.PIPELINE_EXECUTION,
+                                snapshot.isTerminal() ? terminalStatus(snapshot.status()) : OperationStatus.RUNNING,
+                                "Pipeline execution",
+                                "Pipeline execution " + snapshot.status(),
+                                request,
+                                Map.of("executionId", snapshot.id(), "pipelineId", pipelineId));
                             long latency = System.currentTimeMillis() - startMs;
                             log.info("[correlation={} tenant={} pipeline={} execution={}] Workflow execution started, status={}",
                                     correlationId, tenantId, pipelineId, snapshot.id(), snapshot.status());
@@ -212,6 +231,9 @@ public class WorkflowExecutionHandler {
                             // E3: Enhanced response with all required fields.
                             Map<String, Object> responseBody = new LinkedHashMap<>();
                             responseBody.put("requestId", correlationId != null ? correlationId : UUID.randomUUID().toString());
+                            if (operation != null) {
+                                responseBody.put("operationId", operation.operationId());
+                            }
                             responseBody.put("tenantId", tenantId);
                             responseBody.put("executionId", snapshot.id());
                             responseBody.put("pipelineId", snapshot.workflowId());
@@ -415,6 +437,15 @@ public class WorkflowExecutionHandler {
         long startMs = System.currentTimeMillis();
         return executionCapability.cancelExecution(tenantId, executionId)
             .map(snapshot -> {
+                OperationRecord operation = recordWorkflowOperation(
+                    tenantId,
+                    executionId,
+                    OperationKind.PIPELINE_CANCEL,
+                    terminalStatus(snapshot.status()),
+                    "Pipeline execution cancel",
+                    "Pipeline execution cancel " + snapshot.status(),
+                    request,
+                    Map.of("executionId", snapshot.id(), "pipelineId", pipelineId));
                 long latency = System.currentTimeMillis() - startMs;
                 log.info("[correlation={} tenant={} pipeline={} execution={}] Workflow execution cancelled, status={}",
                         correlationId, tenantId, pipelineId, executionId, snapshot.status());
@@ -422,6 +453,7 @@ public class WorkflowExecutionHandler {
                 metrics.recordLatency(HANDLER_NAME, "cancelPipelineExecution", latency);
                 return http.jsonResponse(Map.of(
                     "requestId", correlationId != null ? correlationId : UUID.randomUUID().toString(),
+                    "operationId", operation == null ? "" : operation.operationId(),
                     "executionId", snapshot.id(),
                     "pipelineId", pipelineId,
                     "tenantId", tenantId,
@@ -544,6 +576,15 @@ public class WorkflowExecutionHandler {
         long startMs = System.currentTimeMillis();
         return executionCapability.cancelExecution(tenantId, executionId)
             .map(snapshot -> {
+                OperationRecord operation = recordWorkflowOperation(
+                    tenantId,
+                    executionId,
+                    OperationKind.PIPELINE_CANCEL,
+                    terminalStatus(snapshot.status()),
+                    "Pipeline execution cancel",
+                    "Pipeline execution cancel " + snapshot.status(),
+                    request,
+                    Map.of("executionId", snapshot.id()));
                 long latency = System.currentTimeMillis() - startMs;
                 log.info("[correlation={} tenant={} execution={}] Workflow execution cancelled, status={}",
                         correlationId, tenantId, executionId, snapshot.status());
@@ -551,6 +592,9 @@ public class WorkflowExecutionHandler {
                 metrics.recordLatency(HANDLER_NAME, "cancelExecution", latency);
                 Map<String, Object> response = new java.util.HashMap<>();
                 response.put("requestId", correlationId != null ? correlationId : UUID.randomUUID().toString());
+                if (operation != null) {
+                    response.put("operationId", operation.operationId());
+                }
                 response.put("executionId", snapshot.id());
                 response.put("tenantId", tenantId);
                 response.put("status", snapshot.status());
@@ -598,6 +642,15 @@ public class WorkflowExecutionHandler {
         long startMs = System.currentTimeMillis();
         return executionCapability.retryExecution(tenantId, executionId)
             .map(snapshot -> {
+                OperationRecord operation = recordWorkflowOperation(
+                    tenantId,
+                    executionId,
+                    OperationKind.PIPELINE_RETRY,
+                    snapshot.isTerminal() ? terminalStatus(snapshot.status()) : OperationStatus.RUNNING,
+                    "Pipeline execution retry",
+                    "Pipeline execution retry " + snapshot.status(),
+                    request,
+                    Map.of("executionId", snapshot.id()));
                 long latency = System.currentTimeMillis() - startMs;
                 log.info("[correlation={} tenant={} execution={}] Workflow execution retried, status={}",
                         correlationId, tenantId, executionId, snapshot.status());
@@ -605,6 +658,7 @@ public class WorkflowExecutionHandler {
                 metrics.recordLatency(HANDLER_NAME, "retryExecution", latency);
                 return http.jsonResponse(Map.of(
                     "requestId", correlationId != null ? correlationId : UUID.randomUUID().toString(),
+                    "operationId", operation == null ? "" : operation.operationId(),
                     "executionId", snapshot.id(),
                     "tenantId", tenantId,
                     "status", snapshot.status(),
@@ -653,6 +707,15 @@ public class WorkflowExecutionHandler {
                 // Rollback delegates to the capability which handles state transition
                 return executionCapability.cancelExecution(tenantId, executionId)
                     .map(snapshot -> {
+                        OperationRecord operation = recordWorkflowOperation(
+                            tenantId,
+                            executionId,
+                            OperationKind.PIPELINE_ROLLBACK,
+                            OperationStatus.SUCCEEDED,
+                            "Pipeline execution rollback",
+                            "Pipeline execution rollback completed",
+                            request,
+                            Map.of("executionId", snapshot.id()));
                         long latency = System.currentTimeMillis() - startMs;
                         log.info("[correlation={} tenant={} execution={}] Workflow execution rolled back",
                                 correlationId, tenantId, executionId);
@@ -660,6 +723,7 @@ public class WorkflowExecutionHandler {
                         metrics.recordLatency(HANDLER_NAME, "rollbackExecution", latency);
                         return http.jsonResponse(Map.of(
                             "requestId", correlationId != null ? correlationId : UUID.randomUUID().toString(),
+                            "operationId", operation == null ? "" : operation.operationId(),
                             "executionId", snapshot.id(),
                             "tenantId", tenantId,
                             "status", "rolled_back",
@@ -720,6 +784,15 @@ public class WorkflowExecutionHandler {
                 long startMs = System.currentTimeMillis();
                 return client.save(tenantId, "dc_execution_checkpoints", checkpointRecord)
                     .map(entity -> {
+                        OperationRecord operation = recordWorkflowOperation(
+                            tenantId,
+                            executionId,
+                            OperationKind.PIPELINE_CHECKPOINT,
+                            OperationStatus.SUCCEEDED,
+                            "Pipeline execution checkpoint",
+                            "Pipeline checkpoint saved",
+                            request,
+                            Map.of("executionId", executionId, "checkpointId", checkpointId));
                         long latency = System.currentTimeMillis() - startMs;
                         log.info("[correlation={} tenant={} execution={} checkpoint={}] Checkpoint saved",
                                 correlationId, tenantId, executionId, checkpointId);
@@ -727,6 +800,7 @@ public class WorkflowExecutionHandler {
                         metrics.recordLatency(HANDLER_NAME, "checkpointExecution", latency);
                         return http.jsonResponse(Map.of(
                             "requestId", correlationId != null ? correlationId : UUID.randomUUID().toString(),
+                            "operationId", operation == null ? "" : operation.operationId(),
                             "executionId", executionId,
                             "tenantId", tenantId,
                             "checkpointId", checkpointId,
@@ -815,6 +889,15 @@ public class WorkflowExecutionHandler {
         // Restore: retry the execution from its last saved state (capability handles state recovery)
         return executionCapability.retryExecution(tenantId, executionId)
             .map(snapshot -> {
+                OperationRecord operation = recordWorkflowOperation(
+                    tenantId,
+                    executionId,
+                    OperationKind.PIPELINE_RESTORE,
+                    snapshot.isTerminal() ? terminalStatus(snapshot.status()) : OperationStatus.RUNNING,
+                    "Pipeline execution restore",
+                    "Pipeline execution restore " + snapshot.status(),
+                    request,
+                    Map.of("executionId", snapshot.id()));
                 long latency = System.currentTimeMillis() - startMs;
                 log.info("[correlation={} tenant={} execution={}] Workflow execution restored, status={}",
                         correlationId, tenantId, executionId, snapshot.status());
@@ -822,6 +905,7 @@ public class WorkflowExecutionHandler {
                 metrics.recordLatency(HANDLER_NAME, "restoreExecution", latency);
                 return http.jsonResponse(Map.of(
                     "requestId", correlationId != null ? correlationId : UUID.randomUUID().toString(),
+                    "operationId", operation == null ? "" : operation.operationId(),
                     "executionId", snapshot.id(),
                     "tenantId", tenantId,
                     "status", snapshot.status(),
@@ -974,5 +1058,40 @@ public class WorkflowExecutionHandler {
 
     private static boolean isRetryable(WorkflowExecutionCapability.ExecutionSnapshot snapshot) {
         return "FAILED".equals(snapshot.status()) && snapshot.error() != null && !snapshot.error().isBlank();
+    }
+
+    private OperationRecord recordWorkflowOperation(
+            String tenantId,
+            String resourceId,
+            OperationKind kind,
+            OperationStatus status,
+            String action,
+            String summary,
+            HttpRequest request,
+            Map<String, Object> metadata) {
+        if (operationRecorder == null) {
+            return null;
+        }
+        return operationRecorder.record(OperationRecord.create(
+                tenantId,
+                kind,
+                status,
+                "pipeline",
+                resourceId,
+                action,
+                summary,
+                http.resolvePrincipalId(request),
+                http.resolveCorrelationId(request),
+                status == OperationStatus.RUNNING,
+                metadata));
+    }
+
+    private static OperationStatus terminalStatus(String status) {
+        return switch (status == null ? "" : status.toUpperCase(Locale.ROOT)) {
+            case "COMPLETED", "SUCCEEDED", "CHECKPOINTED", "ROLLED_BACK" -> OperationStatus.SUCCEEDED;
+            case "CANCELLED" -> OperationStatus.CANCELLED;
+            case "FAILED" -> OperationStatus.FAILED;
+            default -> OperationStatus.RUNNING;
+        };
     }
 }

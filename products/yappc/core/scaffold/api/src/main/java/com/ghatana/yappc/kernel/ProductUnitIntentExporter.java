@@ -436,7 +436,21 @@ public final class ProductUnitIntentExporter {
      * @return canonical surface ID in the format "projectId-surface"
      */
     private String canonicalSurfaceId(String projectId, String surface) {
-        return projectId + "-" + surface;
+        String normalizedProject = normalizeKernelIdComponent(projectId);
+        String normalizedSurface = normalizeKernelIdComponent(surface);
+        if (normalizedProject.isBlank() || normalizedSurface.isBlank()) {
+            throw new IllegalArgumentException("Surface canonical ID cannot be generated from blank project/surface");
+        }
+        return normalizedProject + "-" + normalizedSurface;
+    }
+
+    private String normalizeKernelIdComponent(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.toLowerCase()
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-+|-+$", "");
     }
 
     /**

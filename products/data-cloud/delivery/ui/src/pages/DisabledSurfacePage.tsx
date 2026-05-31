@@ -55,6 +55,16 @@ export interface DisabledSurfacePageProps {
   surfaceDescription?: string;
   /** Current status of the surface */
   status?: SurfaceStatus;
+  /** Owning runtime plane for this surface */
+  ownerPlane?: string;
+  /** Dependency names required by runtime truth */
+  requiredDependencies?: readonly string[];
+  /** Raw dependency probe records returned by runtime truth */
+  dependencyProbes?: readonly Record<string, unknown>[];
+  /** Deployment/runtime profile used by the backend evaluation */
+  runtimeProfile?: string;
+  /** Runtime-truth limitation text */
+  limitations?: string;
   /** List of dependencies that are causing the surface to be unavailable */
   dependencies?: SurfaceDependency[];
   /** Specific next action to remediate the issue */
@@ -78,6 +88,11 @@ export const DisabledSurfacePage = React.memo(function DisabledSurfacePage({
   surfaceName = "This surface",
   surfaceDescription,
   status = "DISABLED",
+  ownerPlane,
+  requiredDependencies = [],
+  dependencyProbes = [],
+  runtimeProfile,
+  limitations,
   dependencies = [],
   nextAction,
   remediationLink,
@@ -87,6 +102,11 @@ export const DisabledSurfacePage = React.memo(function DisabledSurfacePage({
 }: DisabledSurfacePageProps): React.ReactElement {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const headingRef = React.useRef<HTMLHeadingElement>(null);
+
+  React.useEffect(() => {
+    headingRef.current?.focus();
+  }, []);
 
   const getStatusIcon = () => {
     switch (status) {
@@ -153,8 +173,8 @@ export const DisabledSurfacePage = React.memo(function DisabledSurfacePage({
         "flex min-h-[60vh] flex-col items-center justify-center px-4 py-12 text-center",
         className,
       )}
-      role="status"
-      aria-live="polite"
+      role={status === "DISABLED" ? "status" : "alert"}
+      aria-live={status === "DISABLED" ? "polite" : "assertive"}
       data-testid={testId ?? "disabled-surface-page"}
     >
       <div className="mx-auto max-w-md">
@@ -171,7 +191,9 @@ export const DisabledSurfacePage = React.memo(function DisabledSurfacePage({
         </div>
 
         <h1 className="mt-4 text-2xl font-semibold text-gray-900 dark:text-white">
-          {surfaceName} {getStatusText()}
+          <span ref={headingRef} tabIndex={-1} className="outline-none">
+            {surfaceName} {getStatusText()}
+          </span>
         </h1>
 
         {surfaceDescription && (
@@ -205,6 +227,68 @@ export const DisabledSurfacePage = React.memo(function DisabledSurfacePage({
             actionHint ||
             t("disabledSurface.contactAdmin", "Contact your administrator.")}
         </p>
+
+        {(ownerPlane ||
+          runtimeProfile ||
+          limitations ||
+          requiredDependencies.length > 0 ||
+          dependencyProbes.length > 0) && (
+          <dl className="mt-6 grid gap-3 rounded-lg bg-gray-50 p-4 text-left text-sm dark:bg-gray-800">
+            {ownerPlane && (
+              <div>
+                <dt className="font-medium text-gray-900 dark:text-white">
+                  {t("disabledSurface.ownerPlane", "Owner plane")}
+                </dt>
+                <dd className="text-gray-600 dark:text-gray-400">
+                  {ownerPlane}
+                </dd>
+              </div>
+            )}
+            {runtimeProfile && (
+              <div>
+                <dt className="font-medium text-gray-900 dark:text-white">
+                  {t("disabledSurface.runtimeProfile", "Runtime profile")}
+                </dt>
+                <dd className="text-gray-600 dark:text-gray-400">
+                  {runtimeProfile}
+                </dd>
+              </div>
+            )}
+            {limitations && (
+              <div>
+                <dt className="font-medium text-gray-900 dark:text-white">
+                  {t("disabledSurface.limitations", "Limitations")}
+                </dt>
+                <dd className="text-gray-600 dark:text-gray-400">
+                  {limitations}
+                </dd>
+              </div>
+            )}
+            {requiredDependencies.length > 0 && (
+              <div>
+                <dt className="font-medium text-gray-900 dark:text-white">
+                  {t(
+                    "disabledSurface.requiredDependencies",
+                    "Required dependencies",
+                  )}
+                </dt>
+                <dd className="text-gray-600 dark:text-gray-400">
+                  {requiredDependencies.join(", ")}
+                </dd>
+              </div>
+            )}
+            {dependencyProbes.length > 0 && (
+              <div>
+                <dt className="font-medium text-gray-900 dark:text-white">
+                  {t("disabledSurface.dependencyProbes", "Dependency probes")}
+                </dt>
+                <dd className="text-gray-600 dark:text-gray-400">
+                  {dependencyProbes.length}
+                </dd>
+              </div>
+            )}
+          </dl>
+        )}
 
         {dependencies.length > 0 && (
           <div className="mt-6 rounded-lg bg-gray-50 dark:bg-gray-800 p-4 text-left">

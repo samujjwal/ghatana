@@ -2,7 +2,7 @@
 
 **Plane:** Data Cloud integration and storage substrate
 **External platform:** AEP
-**Status:** COMPLETED - AEP semantic modules are permanently co-located under Data Cloud Action Plane
+**Status:** Module placement completed; AEP semantic lifecycle remains incomplete
 **Canonical product architecture:** `../architecture/PLANE_ARCHITECTURE.md`
 
 ## Purpose
@@ -11,7 +11,7 @@ The Agentic Event Processor is the adaptive event intelligence platform. Data-Cl
 
 Product positioning, plane hierarchy, module migration, and dependency rules are defined in `../architecture/PLANE_ARCHITECTURE.md`. This folder is retained for Data-Cloud/AEP integration notes.
 
-AEP semantic modules (operator-contracts, central-runtime, engine, agent-runtime, orchestrator) are permanently co-located under `products/data-cloud/planes/action/*` as a deliberate architectural decision. This co-location enables tight integration between Data Cloud's data plane and AEP's event processing capabilities while maintaining clear AEP ownership through package structure and documentation. Data-Cloud storage planes must not import or expose AEP implementation internals.
+AEP semantic modules (operator-contracts, central-runtime, engine, agent-runtime, orchestrator) are co-located under `products/data-cloud/planes/action/*` as a deliberate architectural decision. This placement enables tight integration between Data Cloud's data plane and AEP's event processing capabilities while maintaining clear AEP ownership through package structure and documentation. Data-Cloud storage planes must not import or expose AEP implementation internals. Placement does not mean AEP semantics are complete; PatternSpec compilation, EventCloud SPI, pattern lifecycle, learning-to-recommendation, and replay-safe agent execution still require executable proof.
 
 ## Terminology Boundary
 

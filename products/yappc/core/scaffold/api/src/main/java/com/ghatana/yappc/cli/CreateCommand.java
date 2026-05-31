@@ -94,6 +94,12 @@ public class CreateCommand implements Callable<Integer> {
 
     @Option(names = {"--runtime-provider"}, description = "Runtime provider for kernel-product-unit (default: ghatana-file-registry)")
     private String runtimeProvider = "ghatana-file-registry";
+    
+    @Option(names = {"--source-provider"}, description = "Source provider for kernel-product-unit (default: runtime provider)")
+    private String sourceProvider;
+    
+    @Option(names = {"--correlation-id"}, description = "Optional correlation ID for ProductUnitIntent producer metadata")
+    private String correlationId;
 
     @Option(names = {"--lifecycle-profile"}, description = "Lifecycle profile for kernel-product-unit")
     private String lifecycleProfile;
@@ -213,7 +219,11 @@ public class CreateCommand implements Callable<Integer> {
         // Create intent
         ProductUnitIntentCommandService.CreationResult result = service.createIntent(
                 projectName, tenantId, workspaceId, projectId, lifecycleProfile,
-                runtimeProvider, requestedSurfaces, intentPath
+                runtimeProvider,
+                sourceProvider == null || sourceProvider.isBlank() ? runtimeProvider : sourceProvider,
+                requestedSurfaces,
+                intentPath,
+                correlationId
         );
 
         if (!result.success()) {
@@ -232,17 +242,6 @@ public class CreateCommand implements Callable<Integer> {
         return name.toLowerCase()
                 .replaceAll("[^a-z0-9]+", "-")
                 .replaceAll("^-+|-+$", "");
-    }
-
-    /**
-     * KRN-02: Validates that an identifier contains only valid characters.
-     * Valid characters: alphanumeric, hyphens, and underscores.
-     */
-    private boolean isValidIdentifier(String identifier) {
-        if (identifier == null || identifier.isBlank()) {
-            return false;
-        }
-        return identifier.matches("^[a-zA-Z0-9_-]+$");
     }
 
     private List<String> inferSurfaces() {

@@ -270,7 +270,7 @@ class PhasePacketAssemblerTest {
         assertThat(intentPanel.cards()).extracting(PhasePacket.PhasePanelCard::id)
                 .containsExactlyInAnyOrder("intent-goals", "intent-personas", "intent-constraints", "intent-success-criteria");
         assertThat(intentPanel.supportTrace()).isNotNull();
-        assertThat(intentPanel.supportTrace()).isEqualTo("backend:intent-evidence");
+        assertThat(intentPanel.supportTrace()).isEqualTo("backend:intent-model");
     }
 
     @Test
@@ -419,8 +419,8 @@ class PhasePacketAssemblerTest {
                 .orElseThrow();
 
         assertThat(generatePanel.cards()).extracting(PhasePacket.PhasePanelCard::id)
-                .containsExactly("generate-blockers");
-        assertThat(generatePanel.supportTrace()).isEqualTo("backend:phase-readiness");
+                .containsExactly("generate-blockers", "generate-assurance");
+        assertThat(generatePanel.supportTrace()).isEqualTo("backend:generate-model");
     }
 
     @Test
@@ -470,7 +470,7 @@ class PhasePacketAssemblerTest {
                 .orElseThrow();
 
         assertThat(runPanel.cards()).extracting(PhasePacket.PhasePanelCard::id)
-                .containsExactly("run-status");
+                .containsExactly("run-status", "run-rollback");
         assertThat(runPanel.supportTrace()).isEqualTo("backend:platform-run-status");
     }
 
@@ -514,8 +514,8 @@ class PhasePacketAssemblerTest {
                 .orElseThrow();
 
         assertThat(observePanel.cards()).extracting(PhasePacket.PhasePanelCard::id)
-                .containsExactly("observe-preview");
-        assertThat(observePanel.supportTrace()).isEqualTo("backend:health-signals");
+                .containsExactly("observe-preview", "observe-runtime");
+        assertThat(observePanel.supportTrace()).isEqualTo("backend:observe-model");
     }
 
     @Test
@@ -570,7 +570,7 @@ class PhasePacketAssemblerTest {
 
         assertThat(learnPanel.cards()).extracting(PhasePacket.PhasePanelCard::id)
                 .containsExactly("learn-evidence");
-        assertThat(learnPanel.supportTrace()).isEqualTo("backend:agent-governance");
+        assertThat(learnPanel.supportTrace()).isEqualTo("backend:learn-model");
         assertThat(learnPanel.learningInsight()).isNotNull();
     }
 
@@ -633,7 +633,7 @@ class PhasePacketAssemblerTest {
 
         assertThat(evolvePanel.cards()).extracting(PhasePacket.PhasePanelCard::id)
                 .containsExactly("evolve-activity");
-        assertThat(evolvePanel.supportTrace()).isEqualTo("backend:lifecycle");
+        assertThat(evolvePanel.supportTrace()).isEqualTo("backend:evolve-model");
         assertThat(evolvePanel.evolutionPlan()).isNotNull();
     }
 }
