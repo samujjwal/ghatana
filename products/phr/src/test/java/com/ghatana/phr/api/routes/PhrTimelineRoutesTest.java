@@ -74,6 +74,7 @@ class PhrTimelineRoutesTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
         verify(policyEvaluator).canAccessPatientRecordAsync(any(), eq("patient-1"));
         verify(recordService).getRecordTimeline(any(), eq("patient-1"));
     }
@@ -89,6 +90,7 @@ class PhrTimelineRoutesTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         assertThat(response.getCode()).isEqualTo(403);
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
         verify(policyEvaluator).canAccessPatientRecordAsync(any(), eq("patient-2"));
         verify(recordService, never()).getRecordTimeline(any(), eq("patient-2"));
     }
@@ -124,6 +126,7 @@ class PhrTimelineRoutesTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
         verify(policyEvaluator).canAccessPatientRecordAsync(any(), eq("patient-1"));
         verify(recordService).getTimelineByCategory(any(), eq("patient-1"), eq("labs"));
     }
@@ -145,11 +148,14 @@ class PhrTimelineRoutesTest extends EventloopTestBase {
     @Test
     @DisplayName("400 - missing context headers returns 400")
     void returns400WhenContextMissing() throws Exception {
-        HttpRequest request = HttpRequest.get("http://localhost/patient-1").build();
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/patient-1")
+            .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
+            .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         assertThat(response.getCode()).isEqualTo(400);
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
     }
 
     private static HttpRequest contextRequest(
@@ -158,6 +164,8 @@ class PhrTimelineRoutesTest extends EventloopTestBase {
             .withHeader(HttpHeaders.of("X-Tenant-ID"), tenantId)
             .withHeader(HttpHeaders.of("X-Principal-ID"), principalId)
             .withHeader(HttpHeaders.of("X-Role"), role)
+            .withHeader(HttpHeaders.of("X-Persona"), role)
+            .withHeader(HttpHeaders.of("X-Tier"), "core")
             .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
             .build();
     }

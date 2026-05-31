@@ -12,6 +12,8 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Bridges a pluggable {@link EventCloudConnector} to the AEP {@link EventCloud} facade.
@@ -91,5 +93,30 @@ final class ConnectorBackedEventCloud implements EventCloud {
                 return cancelled.get() || (d != null && d.isCancelled());
             }
         };
+    }
+
+    @Override
+    public boolean createCheckpoint(String tenantId, String checkpointId, Map<String, Object> metadata) {
+        throw new UnsupportedOperationException("Connector-backed EventCloud checkpoint creation is not implemented");
+    }
+
+    @Override
+    public Map<String, Object> readCheckpoint(String tenantId, String checkpointId) {
+        throw new UnsupportedOperationException("Connector-backed EventCloud checkpoint reads are not implemented");
+    }
+
+    @Override
+    public boolean deleteCheckpoint(String tenantId, String checkpointId) {
+        throw new UnsupportedOperationException("Connector-backed EventCloud checkpoint deletion is not implemented");
+    }
+
+    @Override
+    public List<CheckpointInfo> listCheckpoints(String tenantId) {
+        throw new UnsupportedOperationException("Connector-backed EventCloud checkpoint listing is not implemented");
+    }
+
+    @Override
+    public ReplayStatistics replay(String tenantId, String checkpointId, ReplayMode mode, EventHandler handler) {
+        throw new UnsupportedOperationException("Connector-backed EventCloud replay is not implemented");
     }
 }

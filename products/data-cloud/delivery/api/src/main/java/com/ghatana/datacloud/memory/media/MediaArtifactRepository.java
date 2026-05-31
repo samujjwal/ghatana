@@ -130,4 +130,143 @@ public interface MediaArtifactRepository {
      * @return promise of result IDs for processing results associated with this artifact
      */
     Promise<List<String>> findProcessingResultsByArtifact(String artifactId, String tenantId, int limit);
+
+    // ==================== Pass 6 - Lifecycle Methods ====================
+
+    /**
+     * Finds all processing jobs for a media artifact (P6).
+     *
+     * @param artifactId the artifact identifier
+     * @param tenantId   the tenant scope
+     * @return promise of job records
+     */
+    Promise<List<MediaProcessingJob>> findJobs(String artifactId, String tenantId);
+
+    /**
+     * Saves a transcript for a media artifact (P6).
+     *
+     * @param artifactId the artifact identifier
+     * @param tenantId   the tenant scope
+     * @param transcript the transcript to save
+     * @return promise of the saved transcript
+     */
+    Promise<Transcript> saveTranscript(String artifactId, String tenantId, Transcript transcript);
+
+    /**
+     * Finds the transcript for a media artifact (P6).
+     *
+     * @param artifactId the artifact identifier
+     * @param tenantId   the tenant scope
+     * @return promise of the transcript, empty if not found
+     */
+    Promise<Optional<Transcript>> findTranscript(String artifactId, String tenantId);
+
+    /**
+     * Saves a frame index for a media artifact (P6).
+     *
+     * @param artifactId the artifact identifier
+     * @param tenantId   the tenant scope
+     * @param frameIndex the frame index to save
+     * @return promise of the saved frame index
+     */
+    Promise<FrameIndex> saveFrameIndex(String artifactId, String tenantId, FrameIndex frameIndex);
+
+    /**
+     * Finds the frame index for a media artifact (P6).
+     *
+     * @param artifactId the artifact identifier
+     * @param tenantId   the tenant scope
+     * @return promise of the frame index, empty if not found
+     */
+    Promise<Optional<FrameIndex>> findFrameIndex(String artifactId, String tenantId);
+
+    /**
+     * Marks a media artifact as deleted (soft delete) (P6).
+     *
+     * @param artifactId the artifact identifier
+     * @param tenantId   the tenant scope
+     * @param deletedBy  user ID who performed the deletion
+     * @return promise completing when the record is marked deleted; resolves to {@code true} if marked,
+     *         {@code false} if the record was not found
+     */
+    Promise<Boolean> markDeleted(String artifactId, String tenantId, String deletedBy);
+
+    /**
+     * Finds all media artifacts with retention due within a time window (P6).
+     *
+     * @param tenantId the tenant scope
+     * @param limit    maximum number of results
+     * @return promise of matching records
+     */
+    Promise<List<MediaArtifactRecord>> findByRetentionDue(String tenantId, int limit);
+
+    /**
+     * Finds all media artifacts with a specific consent status (P6).
+     *
+     * @param consentStatus the consent status filter (GRANTED, PENDING, DENIED, NOT_REQUIRED)
+     * @param tenantId      the tenant scope
+     * @param limit         maximum number of results
+     * @return promise of matching records
+     */
+    Promise<List<MediaArtifactRecord>> findByConsentStatus(String consentStatus, String tenantId, int limit);
+
+    /**
+     * Updates the consent status of a media artifact (P6).
+     *
+     * @param artifactId    the artifact identifier
+     * @param tenantId      the tenant scope
+     * @param consentStatus the new consent status
+     * @param updatedBy     user ID who performed the update
+     * @return promise completing when the record is updated; resolves to {@code true} if updated,
+     *         {@code false} if the record was not found
+     */
+    Promise<Boolean> updateConsentStatus(String artifactId, String tenantId, String consentStatus, String updatedBy);
+
+    /**
+     * Updates the processing job ID for a media artifact (P6).
+     *
+     * @param artifactId      the artifact identifier
+     * @param tenantId        the tenant scope
+     * @param processingJobId the processing job ID
+     * @param updatedBy       user ID who performed the update
+     * @return promise completing when the record is updated; resolves to {@code true} if updated,
+     *         {@code false} if the record was not found
+     */
+    Promise<Boolean> updateProcessingJobId(String artifactId, String tenantId, String processingJobId, String updatedBy);
+
+    /**
+     * Updates the transcript ID for a media artifact (P6).
+     *
+     * @param artifactId   the artifact identifier
+     * @param tenantId     the tenant scope
+     * @param transcriptId the transcript ID
+     * @param updatedBy    user ID who performed the update
+     * @return promise completing when the record is updated; resolves to {@code true} if updated,
+     *         {@code false} if the record was not found
+     */
+    Promise<Boolean> updateTranscriptId(String artifactId, String tenantId, String transcriptId, String updatedBy);
+
+    /**
+     * Updates the frame index ID for a media artifact (P6).
+     *
+     * @param artifactId   the artifact identifier
+     * @param tenantId     the tenant scope
+     * @param frameIndexId the frame index ID
+     * @param updatedBy    user ID who performed the update
+     * @return promise completing when the record is updated; resolves to {@code true} if updated,
+     *         {@code false} if the record was not found
+     */
+    Promise<Boolean> updateFrameIndexId(String artifactId, String tenantId, String frameIndexId, String updatedBy);
+
+    /**
+     * Updates the last error message for a media artifact (P6).
+     *
+     * @param artifactId the artifact identifier
+     * @param tenantId   the tenant scope
+     * @param lastError  the last error message
+     * @param updatedBy  user ID who performed the update
+     * @return promise completing when the record is updated; resolves to {@code true} if updated,
+     *         {@code false} if the record was not found
+     */
+    Promise<Boolean> updateLastError(String artifactId, String tenantId, String lastError, String updatedBy);
 }

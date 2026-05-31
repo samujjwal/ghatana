@@ -163,6 +163,38 @@
       "requiresPatientId": false,
       "roles": ["admin"],
       "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.provider.dashboard.view": {
+      "category": "hidden",
+      "description": "Provider dashboard access while provider routes remain hidden",
+      "requiresPatientId": false,
+      "roles": ["clinician", "admin"],
+      "stability": "hidden",
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.provider.patients.view": {
+      "category": "hidden",
+      "description": "Provider patient roster access while provider routes remain hidden",
+      "requiresPatientId": false,
+      "roles": ["clinician", "admin"],
+      "stability": "hidden",
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.caregiver.dependents.view": {
+      "category": "hidden",
+      "description": "Caregiver dependents access while caregiver routes remain hidden",
+      "requiresPatientId": false,
+      "roles": ["caregiver", "admin"],
+      "stability": "hidden",
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
+    },
+    "phr.fchv.dashboard.view": {
+      "category": "hidden",
+      "description": "FCHV dashboard access while FCHV routes remain hidden",
+      "requiresPatientId": false,
+      "roles": ["fchv", "admin"],
+      "stability": "hidden",
+      "evaluator": "PhrPolicyEvaluator.evaluateByPolicyId"
     }
   }
 }

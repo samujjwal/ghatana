@@ -31,6 +31,58 @@ public final class RouteSecurityRegistry {
 
     private static final Map<String, RouteSecurityMetadata> METADATA_BY_ROUTE;
     private static final Map<String, Pattern> MATCHERS_BY_ROUTE;
+    private static final Map<String, RouteSecurityMetadata> DYNAMIC_METADATA = new HashMap<>();
+
+    /**
+     * Pass 8: Populates route security metadata from RouteRegistrar instances.
+     *
+     * @param registrars list of route registrars
+     */
+    public static void populateFromRegistrars(java.util.List<RouteRegistrar> registrars) {
+        for (RouteRegistrar registrar : registrars) {
+            for (RouteRegistrar.RouteMetadata metadata : registrar.getRouteMetadata()) {
+                String key = metadata.method().name() + " " + metadata.path();
+                RouteSecurityMetadata secMetadata = new RouteSecurityMetadata(
+                    metadata.method().name(),
+                    metadata.path(),
+                    EndpointSensitivity.SENSITIVE,
+                    true,
+                    true,
+                    metadata.method() == HttpMethod.POST || metadata.method() == HttpMethod.PUT || metadata.method() == HttpMethod.DELETE,
+                    false,
+                    DataCloudSecurityFilter.AccessLevel.OPERATOR,
+                    metadata.method() == HttpMethod.GET,
+                    metadata.tags().getOrDefault("plane", "unknown"),
+                    "active",
+                    metadata.description()
+                );
+                DYNAMIC_METADATA.put(key, secMetadata);
+            }
+        }
+    }
+
+    /**
+     * Pass 8: Gets route metadata including dynamically registered routes.
+     *
+     * @param method HTTP method
+     * @param path request path
+     * @return route metadata if found
+     */
+    public static Optional<RouteSecurityMetadata> getMetadataIncludingDynamic(HttpMethod method, String path) {
+        String key = method.name() + " " + path;
+        if (DYNAMIC_METADATA.containsKey(key)) {
+            return Optional.of(DYNAMIC_METADATA.get(key));
+        }
+        return Optional.ofNullable(getMetadata(method, path));
+    }
+
+    /**
+     * Pass 8: Clears dynamically registered route metadata.
+     * Used primarily in tests to isolate test cases.
+     */
+    public static void clearDynamicMetadata() {
+        DYNAMIC_METADATA.clear();
+    }
 
     static {
         Map<String, RouteSecurityMetadata> map = new HashMap<>();
@@ -69,7 +121,7 @@ public final class RouteSecurityRegistry {
         route(map, "DELETE", "/api/v1/action/pipelines/{pipelineId}", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "action_plane", "active", "DELETE /api/v1/action/pipelines/{pipelineId}");
         route(map, "GET", "/api/v1/action/pipelines/{pipelineId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "action_plane", "active", "GET /api/v1/action/pipelines/{pipelineId}");
         route(map, "PUT", "/api/v1/action/pipelines/{pipelineId}", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, true, "action_plane", "active", "PUT /api/v1/action/pipelines/{pipelineId}");
-        route(map, "POST", "/api/v1/action/pipelines/{pipelineId}/execute", EndpointSensitivity.SENSITIVE, true, true, true, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "action_plane", "active", "POST /api/v1/action/pipelines/{pipelineId}/execute");
+        route(map, "POST", "/api/v1/action/pipelines/{pipelineId}/execute", EndpointSensitivity.SENSITIVE, true, true, true, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "action_plane", "active", "POST /api/v1/action/pipelines/{pipelineId}/execute", java.util.Set.of("action:pipeline:execute"));
         route(map, "GET", "/api/v1/action/pipelines/{pipelineId}/executions", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "action_plane", "active", "GET /api/v1/action/pipelines/{pipelineId}/executions");
         route(map, "GET", "/api/v1/action/pipelines/{pipelineId}/executions/{executionId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "action_plane", "active", "GET /api/v1/action/pipelines/{pipelineId}/executions/{executionId}");
         route(map, "POST", "/api/v1/action/pipelines/{pipelineId}/executions/{executionId}/cancel", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "action_plane", "active", "POST /api/v1/action/pipelines/{pipelineId}/executions/{executionId}/cancel");
@@ -247,12 +299,12 @@ public final class RouteSecurityRegistry {
         route(map, "POST", "/api/v1/mastery/obsolescence-events/process", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/mastery/obsolescence-events/process");
         route(map, "GET", "/api/v1/mastery/preview/decision", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/mastery/preview/decision");
         route(map, "GET", "/api/v1/mastery/preview/retrieval", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/mastery/preview/retrieval");
-        route(map, "GET", "/api/v1/media/artifacts", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/media/artifacts");
-        route(map, "POST", "/api/v1/media/artifacts", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/media/artifacts");
-        route(map, "DELETE", "/api/v1/media/artifacts/{artifactId}", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "DELETE /api/v1/media/artifacts/{artifactId}");
-        route(map, "GET", "/api/v1/media/artifacts/{artifactId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/media/artifacts/{artifactId}");
-        route(map, "POST", "/api/v1/media/artifacts/{artifactId}/analyze", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/media/artifacts/{artifactId}/analyze");
-        route(map, "POST", "/api/v1/media/artifacts/{artifactId}/transcribe", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/media/artifacts/{artifactId}/transcribe");
+        route(map, "GET", "/api/v1/media/artifacts", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/media/artifacts", java.util.Set.of("media:artifact:read"));
+        route(map, "POST", "/api/v1/media/artifacts", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/media/artifacts", java.util.Set.of("media:artifact:create"));
+        route(map, "DELETE", "/api/v1/media/artifacts/{artifactId}", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "DELETE /api/v1/media/artifacts/{artifactId}", java.util.Set.of("media:artifact:delete"));
+        route(map, "GET", "/api/v1/media/artifacts/{artifactId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/media/artifacts/{artifactId}", java.util.Set.of("media:artifact:read"));
+        route(map, "POST", "/api/v1/media/artifacts/{artifactId}/analyze", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/media/artifacts/{artifactId}/analyze", java.util.Set.of("media:artifact:process"));
+        route(map, "POST", "/api/v1/media/artifacts/{artifactId}/transcribe", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/media/artifacts/{artifactId}/transcribe", java.util.Set.of("media:artifact:process"));
         route(map, "GET", "/api/v1/models", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/models");
         route(map, "POST", "/api/v1/models", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/models");
         route(map, "GET", "/api/v1/models/{modelName}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/models/{modelName}");
@@ -400,6 +452,40 @@ public final class RouteSecurityRegistry {
                         .runtimeTruthSurface(runtimeTruthSurface)
                         .legacyStatus(legacyStatus)
                         .description(description)
+                        .build());
+    }
+
+    private static void route(
+            Map<String, RouteSecurityMetadata> map,
+            String method,
+            String canonicalPath,
+            EndpointSensitivity sensitivity,
+            boolean requiresAuth,
+            boolean requiresTenant,
+            boolean requiresPolicy,
+            boolean requiresBlockingAudit,
+            DataCloudSecurityFilter.AccessLevel requiredAccess,
+            boolean idempotent,
+            String runtimeTruthSurface,
+            String legacyStatus,
+            String description,
+            java.util.Set<String> requiredPermissions) {
+        map.put(
+                method + " " + canonicalPath,
+                RouteSecurityMetadata.builder()
+                        .method(method)
+                        .canonicalPath(canonicalPath)
+                        .sensitivity(sensitivity)
+                        .requiresAuth(requiresAuth)
+                        .requiresTenant(requiresTenant)
+                        .requiresPolicy(requiresPolicy)
+                        .requiresBlockingAudit(requiresBlockingAudit)
+                        .requiredAccess(requiredAccess)
+                        .idempotent(idempotent)
+                        .runtimeTruthSurface(runtimeTruthSurface)
+                        .legacyStatus(legacyStatus)
+                        .description(description)
+                        .requiredPermissions(requiredPermissions)
                         .build());
     }
 

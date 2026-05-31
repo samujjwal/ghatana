@@ -253,4 +253,76 @@ public class PostgresDataFabricConnector implements DataFabricConnector {
         return Promise.of(syncStatuses.getOrDefault(connectionId,
             new SyncStatus(connectionId, "IDLE", 0, 0, 0, 0.0, Instant.now(), Instant.now())));
     }
+
+    // SPI-compatible method implementations (stubs for now)
+
+    @Override
+    public Promise<ConnectionTestResult> testConnection(String tenantId, String connectorId) {
+        return testConnection(connectorId);
+    }
+
+    @Override
+    public Promise<SchemaSnapshot> inferSchema(String tenantId, String connectorId, Map<String, Object> options) {
+        try {
+            DataSchema schema = getSchema(connectorId).getResult();
+            List<SchemaField> fields = schema.tables().stream()
+                .flatMap(table -> table.columns().stream()
+                    .map(col -> new SchemaField(
+                        table.name() + "." + col.name(),
+                        col.type(),
+                        col.nullable(),
+                        "",
+                        Map.of()
+                    )))
+                .toList();
+            return Promise.of(new SchemaSnapshot(
+                "snapshot-" + connectorId,
+                connectorId,
+                tenantId,
+                fields,
+                "1.0",
+                Instant.now(),
+                Map.of()
+            ));
+        } catch (Exception e) {
+            log.error("Schema inference failed for {}", connectorId, e);
+            return Promise.ofException(new RuntimeException("Schema inference failed", e));
+        }
+    }
+
+    @Override
+    public Promise<SyncResult> sync(String tenantId, String connectorId, SyncRequest request) {
+        return sync(connectorId, new SyncConfig(
+            request.mode(),
+            request.datasetId(),
+            null,
+            request.filters(),
+            request.incremental(),
+            List.of()
+        ));
+    }
+
+    @Override
+    public Promise<SyncStatus> getSyncStatus(String tenantId, String connectorId) {
+        return getSyncStatus(connectorId);
+    }
+
+    @Override
+    public Promise<DatasetLink> linkDataset(String tenantId, String connectorId, String datasetId, String userId) {
+        return Promise.of(new DatasetLink(
+            "link-" + connectorId + "-" + datasetId,
+            connectorId,
+            datasetId,
+            tenantId,
+            "SOURCE_TO_TARGET",
+            "1.0",
+            Instant.now(),
+            userId
+        ));
+    }
+
+    @Override
+    public Promise<DatasetLink> getDatasetLink(String tenantId, String connectorId) {
+        return Promise.of(null);
+    }
 }

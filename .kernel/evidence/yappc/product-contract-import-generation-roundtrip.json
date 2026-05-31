@@ -1,0 +1,93 @@
+{
+  "checkId": "YAPPC-010 Kernel product contract import and generation roundtrip",
+  "generatedAt": "2026-05-31T20:43:52.126Z",
+  "pass": true,
+  "evidenceRun": {
+    "generatedBy": "scripts/check-yappc-product-contract-roundtrip.mjs",
+    "command": "node scripts/check-yappc-product-contract-roundtrip.mjs",
+    "commit": "8c024b478ebcec4fbe5db75b854dcdfcc2775625"
+  },
+  "summary": {
+    "checkCount": 13,
+    "passedChecks": 13,
+    "violationCount": 0
+  },
+  "checks": [
+    {
+      "name": "Kernel route contract input exists",
+      "pass": true,
+      "path": "products/yappc/core/scaffold/api/src/test/resources/kernel/sample-route-contract.json",
+      "message": "missing products/yappc/core/scaffold/api/src/test/resources/kernel/sample-route-contract.json"
+    },
+    {
+      "name": "Kernel use-case baseline input exists",
+      "pass": true,
+      "path": "products/yappc/core/scaffold/api/src/test/resources/kernel/sample-usecase-baseline.json",
+      "message": "missing products/yappc/core/scaffold/api/src/test/resources/kernel/sample-usecase-baseline.json"
+    },
+    {
+      "name": "products/yappc/core/scaffold/api/src/main/java/com/ghatana/yappc/kernel/KernelProductContractImporter.java",
+      "pass": true,
+      "path": "products/yappc/core/scaffold/api/src/main/java/com/ghatana/yappc/kernel/KernelProductContractImporter.java",
+      "message": "missing products/yappc/core/scaffold/api/src/main/java/com/ghatana/yappc/kernel/KernelProductContractImporter.java"
+    },
+    {
+      "name": "products/yappc/core/scaffold/api/src/main/java/com/ghatana/yappc/kernel/KernelProductUnitTemplatePack.java",
+      "pass": true,
+      "path": "products/yappc/core/scaffold/api/src/main/java/com/ghatana/yappc/kernel/KernelProductUnitTemplatePack.java",
+      "message": "missing products/yappc/core/scaffold/api/src/main/java/com/ghatana/yappc/kernel/KernelProductUnitTemplatePack.java"
+    },
+    {
+      "name": "products/yappc/core/scaffold/api/src/main/java/com/ghatana/yappc/kernel/KernelBackendRouteGenerator.java",
+      "pass": true,
+      "path": "products/yappc/core/scaffold/api/src/main/java/com/ghatana/yappc/kernel/KernelBackendRouteGenerator.java",
+      "message": "missing products/yappc/core/scaffold/api/src/main/java/com/ghatana/yappc/kernel/KernelBackendRouteGenerator.java"
+    },
+    {
+      "name": "Product contract declares a product id",
+      "pass": true,
+      "product": "sample-product"
+    },
+    {
+      "name": "Product contract exposes stable routes for import",
+      "pass": true,
+      "stableRoutes": 2
+    },
+    {
+      "name": "Use-case baseline covers web mobile backend metadata",
+      "pass": true
+    },
+    {
+      "name": "Importer emits Kernel ProductUnit intent",
+      "pass": true
+    },
+    {
+      "name": "Importer does not pin a product id",
+      "pass": true
+    },
+    {
+      "name": "Template pack emits web mobile backend schema and journey artifacts",
+      "pass": true
+    },
+    {
+      "name": "Backend generator derives package and policy types from product id",
+      "pass": true
+    },
+    {
+      "name": "YAPPC generic Kernel product importer and generator tests",
+      "pass": true,
+      "command": "./gradlew :products:yappc:core:scaffold:api:test --tests com.ghatana.yappc.kernel.KernelProductContractImporterTest --tests com.ghatana.yappc.kernel.KernelProductUnitTemplatePackTest --tests com.ghatana.yappc.kernel.KernelBackendRouteGeneratorTest --no-daemon"
+    }
+  ],
+  "violations": [],
+  "inputs": {
+    "routeContractPath": "products/yappc/core/scaffold/api/src/test/resources/kernel/sample-route-contract.json",
+    "useCaseBaselinePath": "products/yappc/core/scaffold/api/src/test/resources/kernel/sample-usecase-baseline.json"
+  },
+  "routeSummary": {
+    "product": "sample-product",
+    "routes": 2,
+    "stableRoutes": 2,
+    "useCases": 2
+  }
+}

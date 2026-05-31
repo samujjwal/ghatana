@@ -843,6 +843,485 @@ components:
           format: date-time
           description: Creation timestamp
 
+    # Pass 12: Media processing job schema
+    MediaProcessingJob:
+      type: object
+      required: [jobId, artifactId, jobType, status, createdAt]
+      properties:
+        jobId:
+          type: string
+          description: Unique job identifier
+        artifactId:
+          type: string
+          description: Associated media artifact ID
+        jobType:
+          type: string
+          enum: [TRANSCRIPTION, ANALYSIS, EXTRACTION, INDEXING]
+          description: Type of processing job
+        status:
+          type: string
+          enum: [PENDING, RUNNING, COMPLETED, FAILED, CANCELLED]
+          description: Job status
+        progress:
+          type: number
+          minimum: 0.0
+          maximum: 100.0
+          description: Progress percentage
+        startedAt:
+          type: string
+          format: date-time
+          description: Job start time
+        completedAt:
+          type: string
+          format: date-time
+          description: Job completion time
+        error:
+          type: string
+          description: Error message if job failed
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Job-specific metadata
+        createdAt:
+          type: string
+          format: date-time
+          description: Job creation timestamp
+
+    # Pass 12: Transcript schema
+    Transcript:
+      type: object
+      required: [transcriptId, artifactId, languageCode, fullText, wordCount, confidence, createdAt]
+      properties:
+        transcriptId:
+          type: string
+          description: Unique transcript identifier
+        artifactId:
+          type: string
+          description: Associated media artifact ID
+        languageCode:
+          type: string
+          description: Language code (e.g., en-US, es-ES)
+        fullText:
+          type: string
+          description: Full transcript text
+        wordCount:
+          type: integer
+          description: Number of words in transcript
+        confidence:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+          description: Overall confidence score
+        segments:
+          type: array
+          items:
+            type: object
+            properties:
+              startTime:
+                type: number
+                description: Segment start time in seconds
+              endTime:
+                type: number
+                description: Segment end time in seconds
+              text:
+                type: string
+                description: Segment text
+              confidence:
+                type: number
+                description: Segment confidence score
+          description: Transcript segments with timestamps
+        createdAt:
+          type: string
+          format: date-time
+          description: Transcript creation timestamp
+
+    # Pass 12: Frame index schema
+    FrameIndex:
+      type: object
+      required: [frameIndexId, artifactId, analysisType, frameCount, confidence, createdAt]
+      properties:
+        frameIndexId:
+          type: string
+          description: Unique frame index identifier
+        artifactId:
+          type: string
+          description: Associated media artifact ID
+        analysisType:
+          type: string
+          enum: [OBJECT_DETECTION, FACE_RECOGNITION, SCENE_CLASSIFICATION, TEXT_EXTRACTION]
+          description: Type of frame analysis
+        frameCount:
+          type: integer
+          description: Number of frames analyzed
+        confidence:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+          description: Overall confidence score
+        labels:
+          type: array
+          items:
+            type: object
+            properties:
+              label:
+                type: string
+                description: Detected label
+              occurrenceCount:
+                type: integer
+                description: Number of occurrences
+              confidence:
+                type: number
+                description: Label confidence score
+          description: Detected labels with occurrence counts
+        frames:
+          type: array
+          items:
+            type: object
+            properties:
+              frameNumber:
+                type: integer
+                description: Frame number
+              timestamp:
+                type: number
+                description: Frame timestamp in seconds
+              detections:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+                description: Frame-specific detections
+          description: Per-frame detection results
+        createdAt:
+          type: string
+          format: date-time
+          description: Frame index creation timestamp
+
+    # Pass 12: Replay request schema
+    ReplayRequest:
+      type: object
+      required: [eventId, replayMode]
+      properties:
+        eventId:
+          type: string
+          description: Event ID to replay
+        replayMode:
+          type: string
+          enum: [EXACT, ADAPTIVE, DRY_RUN]
+          description: Replay mode
+        targetPipelineId:
+          type: string
+          description: Target pipeline ID for replay (if different from original)
+        overrides:
+          type: object
+          additionalProperties: true
+          description: Configuration overrides for replay
+        maxEvents:
+          type: integer
+          description: Maximum number of events to replay
+        stopOnError:
+          type: boolean
+          description: Whether to stop replay on first error
+
+    # Pass 12: Replay response schema
+    ReplayResponse:
+      type: object
+      required: [replayId, status, startedAt]
+      properties:
+        replayId:
+          type: string
+          description: Unique replay identifier
+        status:
+          type: string
+          enum: [PENDING, RUNNING, COMPLETED, FAILED, CANCELLED]
+          description: Replay status
+        startedAt:
+          type: string
+          format: date-time
+          description: Replay start time
+        completedAt:
+          type: string
+          format: date-time
+          description: Replay completion time
+        eventsProcessed:
+          type: integer
+          description: Number of events processed
+        eventsSucceeded:
+          type: integer
+          description: Number of events processed successfully
+        eventsFailed:
+          type: integer
+          description: Number of events that failed
+        error:
+          type: string
+          description: Error message if replay failed
+        results:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+          description: Per-event replay results
+
+    # Pass 12: Checkpoint schema
+    Checkpoint:
+      type: object
+      required: [checkpointId, executionId, tenantId, savedAt]
+      properties:
+        checkpointId:
+          type: string
+          description: Unique checkpoint identifier
+        executionId:
+          type: string
+          description: Associated execution ID
+        tenantId:
+          type: string
+          description: Tenant ID
+        savedAt:
+          type: string
+          format: date-time
+          description: Checkpoint save timestamp
+        data:
+          type: object
+          additionalProperties: true
+          description: Checkpoint data
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Checkpoint metadata
+
+    # Pass 12: Checkpoint commit request schema
+    CheckpointCommitRequest:
+      type: object
+      required: [checkpointId]
+      properties:
+        checkpointId:
+          type: string
+          description: Checkpoint ID to commit
+        targetExecutionId:
+          type: string
+          description: Target execution ID for restore
+        validationMode:
+          type: string
+          enum: [STRICT, LENIENT, SKIP]
+          description: Validation mode for checkpoint restore
+
+    # Pass 12: Surface readiness class schema
+    SurfaceReadinessClass:
+      type: object
+      required: [surfaceId, readinessClass, evaluatedAt]
+      properties:
+        surfaceId:
+          type: string
+          description: Surface identifier
+        readinessClass:
+          type: string
+          enum: [AVAILABLE, DISABLED, DEGRADED, UNAVAILABLE, MISCONFIGURED, PREVIEW]
+          description: Readiness class
+        evaluatedAt:
+          type: string
+          format: date-time
+          description: Evaluation timestamp
+        runtimeProfile:
+          type: string
+          description: Runtime profile used for evaluation
+        limitations:
+          type: string
+          description: Limitations if degraded or preview
+        requiredDependencies:
+          type: array
+          items:
+            type: string
+          description: Required dependencies
+        dependencyProbes:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+          description: Dependency probe results
+        nextAction:
+          type: string
+          description: Recommended next action
+
+    # Pass 12: Connector health schema
+    ConnectorHealth:
+      type: object
+      required: [connectorId, status, lastCheckedAt]
+      properties:
+        connectorId:
+          type: string
+          description: Connector identifier
+        status:
+          type: string
+          enum: [HEALTHY, DEGRADED, UNHEALTHY, UNKNOWN]
+          description: Connector health status
+        lastCheckedAt:
+          type: string
+          format: date-time
+          description: Last health check timestamp
+        latencyMs:
+          type: integer
+          description: Connection latency in milliseconds
+        errorRate:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+          description: Error rate (0.0 to 1.0)
+        lastError:
+          type: string
+          description: Last error message
+        metrics:
+          type: object
+          additionalProperties: true
+          description: Additional health metrics
+
+    # Pass 12: Operation trace schema (extends CrossPlaneTrace)
+    OperationTrace:
+      type: object
+      required: [traceId, operationId, tenantId, operationKind, status, startedAt]
+      properties:
+        traceId:
+          type: string
+          description: Unique trace identifier
+        operationId:
+          type: string
+          description: Associated operation ID
+        tenantId:
+          type: string
+          description: Tenant ID
+        operationKind:
+          $ref: "#/components/schemas/OperationKind"
+        status:
+          $ref: "#/components/schemas/OperationStatus"
+        startedAt:
+          type: string
+          format: date-time
+          description: Operation start time
+        completedAt:
+          type: string
+          format: date-time
+          description: Operation completion time
+        pipelineId:
+          type: string
+          description: Pipeline ID (if applicable)
+        executionId:
+          type: string
+          description: Execution ID (if applicable)
+        agentInvocationId:
+          type: string
+          description: Agent invocation ID (if applicable)
+        mediaArtifactId:
+          type: string
+          description: Media artifact ID (if applicable)
+        mediaJobId:
+          type: string
+          description: Media processing job ID (if applicable)
+        nodeStatuses:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+          description: Pipeline node statuses
+        failureReason:
+          type: string
+          description: Failure reason if operation failed
+        retryable:
+          type: boolean
+          description: Whether the operation is retryable
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional trace metadata
+
+    # Pass 9: Cross-plane trace model for observability
+    CrossPlaneTrace:
+      type: object
+      required: [traceId, spanId, tenantId, sourcePlane, serviceName, operationName, status, startTime]
+      properties:
+        traceId:
+          type: string
+          description: Unique trace identifier for distributed tracing
+        spanId:
+          type: string
+          description: Unique span identifier within the trace
+        parentSpanId:
+          type: string
+          description: Parent span ID for hierarchical tracing
+        operationId:
+          type: string
+          description: Associated operation ID from OperationsContext
+        tenantId:
+          type: string
+          description: Tenant ID for multi-tenancy
+        sourcePlane:
+          type: string
+          enum: [DATA_CLOUD, ACTION_PLANE, AGENT_RUNTIME, MEDIA_PROCESSING, CONNECTOR, WORKFLOW, EXTERNAL]
+          description: Source plane that initiated the trace
+        targetPlane:
+          type: string
+          enum: [DATA_CLOUD, ACTION_PLANE, AGENT_RUNTIME, MEDIA_PROCESSING, CONNECTOR, WORKFLOW, EXTERNAL]
+          description: Target plane being called (if applicable)
+        serviceName:
+          type: string
+          description: Service name that generated the span
+        operationName:
+          type: string
+          description: Operation name (e.g., HTTP method, function name)
+        status:
+          type: string
+          enum: [PENDING, RUNNING, COMPLETED, FAILED, CANCELLED, TIMEOUT]
+          description: Trace status
+        startTime:
+          type: string
+          format: date-time
+          description: Span start time
+        endTime:
+          type: string
+          format: date-time
+          description: Span end time
+        durationMs:
+          type: integer
+          format: int64
+          description: Span duration in milliseconds
+        attributes:
+          type: object
+          additionalProperties: true
+          description: Span attributes for observability
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/TraceEvent"
+          description: Trace events
+        correlationId:
+          type: string
+          description: Correlation ID for cross-plane correlation
+        userId:
+          type: string
+          description: User ID who initiated the operation
+        resourceType:
+          type: string
+          description: Type of resource being operated on
+        resourceId:
+          type: string
+          description: ID of the resource being operated on
+
+    TraceEvent:
+      type: object
+      required: [eventType, timestamp]
+      properties:
+        eventType:
+          type: string
+          description: Event type (e.g., ERROR, LOG, METRIC)
+        description:
+          type: string
+          description: Human-readable event description
+        timestamp:
+          type: string
+          format: date-time
+          description: Event timestamp
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Event metadata
+
     ConnectionRegistrationRequest:
       type: object
       required: [name, type]
@@ -1051,23 +1530,6 @@ components:
           format: date-time
           readOnly: true
 
-    ConnectorHealth:
-      type: object
-      properties:
-        connectorId:
-          type: string
-        status:
-          type: string
-          enum: [HEALTHY, UNHEALTHY, UNKNOWN]
-        lastCheckedAt:
-          type: string
-          format: date-time
-        latencyMs:
-          type: integer
-          format: int64
-        errorMessage:
-          type: string
-
     ConnectorSyncStatus:
       type: object
       properties:
@@ -1106,6 +1568,168 @@ components:
           type: number
           format: double
           description: Schema inference confidence score
+
+    # Pass 7: Connector production path schemas
+    ConnectorSchemaSnapshot:
+      type: object
+      required: [snapshotId, connectorId, tenantId, fields, capturedAt]
+      properties:
+        snapshotId:
+          type: string
+          description: Unique schema snapshot identifier
+        connectorId:
+          type: string
+          description: Connector that produced this schema
+        tenantId:
+          type: string
+          description: Tenant scope
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/SchemaField"
+          description: Inferred schema fields
+        schemaVersion:
+          type: string
+          description: Version of the schema format
+        capturedAt:
+          type: string
+          format: date-time
+          description: When the schema was captured
+        metadata:
+          type: object
+          description: Additional schema metadata
+
+    SchemaField:
+      type: object
+      required: [name, type]
+      properties:
+        name:
+          type: string
+          description: Field name
+        type:
+          type: string
+          description: Data type of the field
+        nullable:
+          type: boolean
+          description: Whether the field can be null
+        description:
+          type: string
+          description: Field description
+        constraints:
+          type: object
+          description: Field constraints (maxLength, pattern, etc.)
+
+    ConnectorSyncRequest:
+      type: object
+      properties:
+        datasetId:
+          type: string
+          description: Target dataset ID for the sync
+        mode:
+          type: string
+          enum: [FULL, INCREMENTAL, DELTA]
+          description: Sync mode
+        filters:
+          type: object
+          description: Filter criteria for selective sync
+        mapping:
+          type: object
+          description: Field mapping configuration
+        incremental:
+          type: boolean
+          description: Whether to perform incremental sync
+        idempotencyKey:
+          type: string
+          description: Idempotency key for the sync operation
+
+    CredentialRotationRequest:
+      type: object
+      properties:
+        rotationType:
+          type: string
+          enum: [AUTOMATIC, MANUAL, SCHEDULED]
+          description: Type of rotation to perform
+        newCredentialValue:
+          type: string
+          description: New credential value (for manual rotation)
+        testBeforeApply:
+          type: boolean
+          description: Whether to test the new credentials before applying
+        scheduledFor:
+          type: string
+          format: date-time
+          description: When to schedule the rotation
+
+    DatasetLink:
+      type: object
+      required: [linkId, connectorId, datasetId, tenantId]
+      properties:
+        linkId:
+          type: string
+          description: Unique link identifier
+        connectorId:
+          type: string
+          description: Source connector ID
+        datasetId:
+          type: string
+          description: Target dataset ID
+        tenantId:
+          type: string
+          description: Tenant scope
+        syncDirection:
+          type: string
+          enum: [SOURCE_TO_TARGET, TARGET_TO_SOURCE, BIDIRECTIONAL]
+          description: Direction of data flow
+        lastSyncVersion:
+          type: string
+          description: Last successful sync version
+        linkedAt:
+          type: string
+          format: date-time
+          description: When the link was created
+        linkedBy:
+          type: string
+          description: User who created the link
+
+    # Pass 7: Connector capabilities schema
+    ConnectorCapabilities:
+      type: object
+      required: [connectorId, connectorType]
+      properties:
+        connectorId:
+          type: string
+          description: Connector identifier
+        connectorType:
+          type: string
+          description: Type of connector (POSTGRESQL, MYSQL, MONGODB, S3, REST_API, KAFKA, SNOWFLAKE, BIGQUERY, CUSTOM)
+        supportsStreaming:
+          type: boolean
+          description: Whether the connector supports streaming data
+        supportsBatch:
+          type: boolean
+          description: Whether the connector supports batch operations
+        supportsIncremental:
+          type: boolean
+          description: Whether the connector supports incremental sync
+        supportsSchemaInference:
+          type: boolean
+          description: Whether the connector supports schema inference
+        supportsTwoWaySync:
+          type: boolean
+          description: Whether the connector supports bidirectional sync
+        supportedSyncModes:
+          type: array
+          items:
+            type: string
+          description: List of supported sync modes (FULL, INCREMENTAL, DELTA)
+        supportedAuthMethods:
+          type: array
+          items:
+            type: string
+          description: List of supported authentication methods
+        limits:
+          type: object
+          description: Connector-specific limits and constraints
 
     AiActionRecord:
       type: object
@@ -1531,18 +2155,6 @@ components:
         metadata:
           type: object
           additionalProperties: true
-
-    Checkpoint:
-      type: object
-      required: [id, data, tenantId]
-      properties:
-        id:
-          type: string
-        data:
-          type: object
-          additionalProperties: true
-        tenantId:
-          type: string
 
     CheckpointListResponse:
       type: object
@@ -7631,6 +8243,78 @@ paths:
           schema: { type: string }
       responses:
         "200": { description: Sync status. }
+
+  # Pass 7: Dataset link endpoints
+  /api/v1/connectors/{connectionId}/dataset-link:
+    get:
+      summary: Get dataset link for a connector
+      operationId: apiV1ConnectorsConnectionIdDatasetLinkGet
+      tags: [connectors]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: connectionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Dataset link information.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatasetLink"
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      summary: Create or update dataset link for a connector
+      operationId: apiV1ConnectorsConnectionIdDatasetLinkPost
+      tags: [connectors]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: connectionId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [datasetId]
+              properties:
+                datasetId:
+                  type: string
+                  description: Target dataset ID to link
+      responses:
+        "201":
+          description: Dataset link created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatasetLink"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  # Pass 7: Connector capabilities endpoint
+  /api/v1/connectors/{connectionId}/capabilities:
+    get:
+      summary: Get connector capabilities
+      operationId: apiV1ConnectorsConnectionIdCapabilitiesGet
+      tags: [connectors]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: connectionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Connector capabilities.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectorCapabilities"
+        "404": { $ref: "#/components/responses/NotFound" }
 
   # H1: Storage profile paths
   /api/v1/storage-profiles:

@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { SafeError } from '../components/SafeError';
-import { Card, CardContent, CardHeader, Input, Button, Select, Progress, TextField } from '@ghatana/design-system';
+import { Card, CardContent, CardHeader, Button, FileUpload, Select, Progress, TextField } from '@ghatana/design-system';
 import { uploadDocument } from '../api/documentsApi';
+import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import { logError } from '../utils/safeLogger';
@@ -29,11 +30,11 @@ export function DocumentUploadPage(): React.ReactElement {
   const [uploading, setUploading] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [result, setResult] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SafeApiErrorState | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [canRetry, setCanRetry] = useState<boolean>(false);
   const validationErrorRef = useRef<HTMLParagraphElement>(null);
-  const errorRef = useRef<HTMLParagraphElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLParagraphElement>(null);
 
   // Focus validation error when set for accessibility
@@ -115,7 +116,7 @@ export function DocumentUploadPage(): React.ReactElement {
     }
 
     if (!session) {
-      setError(t('documents.upload.error.auth'));
+      setError({ message: t('documents.upload.error.auth') });
       return;
     }
 
@@ -160,7 +161,7 @@ export function DocumentUploadPage(): React.ReactElement {
       if (inputRef.current) inputRef.current.value = '';
     } catch (err: unknown) {
       const aborted = err instanceof DOMException && err.name === 'AbortError';
-      setError(aborted ? t('documents.upload.cancelled') : err instanceof Error ? err.message : t('documents.upload.error'));
+      setError(aborted ? { message: t('documents.upload.cancelled') } : toSafeApiErrorState(err, t('documents.upload.error')));
       setCanRetry(!aborted);
       if (!aborted) {
         logError('Failed to upload document', undefined, { error: err });
@@ -183,16 +184,17 @@ export function DocumentUploadPage(): React.ReactElement {
         <CardContent>
           <form onSubmit={(e) => void handleUpload(e)} className="stack gap-md">
             <div>
-              <label htmlFor="doc-upload" className="form-label">{t('documents.upload.file.label')}</label>
-              <input
+              <FileUpload
                 ref={inputRef}
-                id="doc-upload"
-                type="file"
+                label={t('documents.upload.file.label')}
                 accept={ALLOWED_CONTENT_TYPES.join(',')}
                 onChange={handleFileChange}
+                helperText={t('documents.upload.file.help')}
+                buttonText={t('documents.upload.file.label')}
+                dragAndDrop={false}
+                showPreview={false}
                 aria-describedby={validationError != null ? 'validation-error' : undefined}
               />
-              <p className="muted">{t('documents.upload.file.help')}</p>
             </div>
 
             <div>
@@ -253,14 +255,9 @@ export function DocumentUploadPage(): React.ReactElement {
               </p>
             )}
             {error != null && (
-              <p 
-                ref={errorRef}
-                role="alert" 
-                className="error"
-                tabIndex={-1}
-              >
-                {error}
-              </p>
+              <div ref={errorRef} tabIndex={-1}>
+                <SafeError title={t('documents.upload.error')} message={error.message} correlationId={error.correlationId} />
+              </div>
             )}
             {result != null && (
               <p 

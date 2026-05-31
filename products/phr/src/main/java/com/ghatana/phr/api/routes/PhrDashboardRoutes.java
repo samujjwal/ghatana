@@ -7,6 +7,7 @@ import com.ghatana.phr.kernel.service.DocumentServiceExtensions;
 import com.ghatana.phr.kernel.service.ConsentManagementServiceExtensions;
 import com.ghatana.phr.kernel.service.EmergencyAccessLogServiceExtensions;
 import com.ghatana.phr.repository.UserRepository;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -44,6 +45,7 @@ public final class PhrDashboardRoutes {
     private final DocumentServiceExtensions documentServiceExtensions;
     private final ConsentManagementServiceExtensions consentServiceExtensions;
     private final EmergencyAccessLogServiceExtensions emergencyAccessLogServiceExtensions;
+    private final PhrPolicyEvaluator policyEvaluator;
 
     public PhrDashboardRoutes(
             Eventloop eventloop,
@@ -53,7 +55,8 @@ public final class PhrDashboardRoutes {
             PatientRecordServiceExtensions patientRecordServiceExtensions,
             DocumentServiceExtensions documentServiceExtensions,
             ConsentManagementServiceExtensions consentServiceExtensions,
-            EmergencyAccessLogServiceExtensions emergencyAccessLogServiceExtensions) {
+            EmergencyAccessLogServiceExtensions emergencyAccessLogServiceExtensions,
+            PhrPolicyEvaluator policyEvaluator) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.userRepository = Objects.requireNonNull(userRepository, "userRepository must not be null");
         this.appointmentService = Objects.requireNonNull(appointmentService, "appointmentService must not be null");
@@ -62,6 +65,7 @@ public final class PhrDashboardRoutes {
         this.documentServiceExtensions = Objects.requireNonNull(documentServiceExtensions, "documentServiceExtensions must not be null");
         this.consentServiceExtensions = Objects.requireNonNull(consentServiceExtensions, "consentServiceExtensions must not be null");
         this.emergencyAccessLogServiceExtensions = Objects.requireNonNull(emergencyAccessLogServiceExtensions, "emergencyAccessLogServiceExtensions must not be null");
+        this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 
 
@@ -82,13 +86,35 @@ public final class PhrDashboardRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
-        // Fetch patient profile
-        Optional<com.ghatana.phr.model.PHRUser> userOpt = userRepository.findByUserId(context.principalId());
+        String patientId = request.getQueryParameter("patientId");
+        if (patientId == null || patientId.isBlank()) {
+            patientId = context.principalId();
+        }
+        String resolvedPatientId = patientId.strip();
+
+        return policyEvaluator.canAccessPhiResourceAsync(
+                context,
+                resolvedPatientId,
+                "dashboard",
+                "READ",
+                context.tenantId(),
+                context.facilityId()
+            )
+            .then(decision -> {
+                if (!decision.isAllowed()) {
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
+                }
+                return buildDashboard(context, resolvedPatientId);
+            });
+    }
+
+    private Promise<HttpResponse> buildDashboard(PhrRouteSupport.PhrRequestContext context, String patientId) {
+        Optional<com.ghatana.phr.model.PHRUser> userOpt = userRepository.findByUserId(patientId);
         if (userOpt.isEmpty()) {
-            return PhrRouteSupport.errorResponse(404, "PATIENT_NOT_FOUND", "Patient not found");
+            return PhrRouteSupport.errorResponse(404, "PATIENT_NOT_FOUND", "Patient not found", context.correlationId());
         }
 
         com.ghatana.phr.model.PHRUser user = userOpt.get();
@@ -97,6 +123,7 @@ public final class PhrDashboardRoutes {
         Map<String, Object> dashboard = new LinkedHashMap<>();
         dashboard.put("tenantId", context.tenantId());
         dashboard.put("principalId", context.principalId());
+        dashboard.put("patientId", patientId);
         dashboard.put("role", context.role());
         dashboard.put("correlationId", context.correlationId());
 
@@ -109,7 +136,7 @@ public final class PhrDashboardRoutes {
         dashboard.put("profileSummary", profileSummary);
 
         // Fetch next appointment
-        return appointmentService.getNextAppointment(context.principalId())
+        return appointmentService.getNextAppointment(patientId)
             .then(nextAppointment -> {
                 Map<String, Object> nextAppointmentSummary = null;
                 if (nextAppointment != null) {
@@ -121,14 +148,14 @@ public final class PhrDashboardRoutes {
                 }
                 dashboard.put("nextAppointment", nextAppointmentSummary);
 
-                return medicationServiceExtensions.getActiveMedicationCount(context.principalId())
+                return medicationServiceExtensions.getActiveMedicationCount(patientId)
                     .then(medicationCount -> {
                         dashboard.put("medications", Map.of(
                             "activeCount", medicationCount,
                             "adherenceAlert", medicationCount > 5
                         ));
 
-                        return patientRecordServiceExtensions.getRecentObservations(context.principalId(), 5)
+                        return patientRecordServiceExtensions.getRecentObservations(patientId, 5)
                             .then(observations -> {
                                 boolean hasCritical = observations.stream()
                                     .anyMatch(obs -> "critical".equalsIgnoreCase(obs.getSeverity()));
@@ -137,7 +164,7 @@ public final class PhrDashboardRoutes {
                                     "hasCritical", hasCritical
                                 ));
 
-                                return patientRecordServiceExtensions.getActiveConditions(context.principalId())
+                                return patientRecordServiceExtensions.getActiveConditions(patientId)
                                     .then(conditions -> {
                                         boolean hasChronic = conditions.stream()
                                             .anyMatch(cond -> "chronic".equalsIgnoreCase(cond.getChronicity()));
@@ -146,15 +173,15 @@ public final class PhrDashboardRoutes {
                                             "hasChronic", hasChronic
                                         ));
 
-                                        return documentServiceExtensions.getDocumentCount(context.principalId())
+                                        return documentServiceExtensions.getDocumentCount(patientId)
                                             .then(docCount -> {
                                                 dashboard.put("documents", Map.of(
                                                     "totalCount", docCount,
                                                     "pendingOcr", 0
                                                 ));
 
-                                                return consentServiceExtensions.getExpiringConsents(context.principalId())
-                                                    .then(expiringCount -> emergencyAccessLogServiceExtensions.hasPendingEmergencyAccess(context.principalId())
+                                                return consentServiceExtensions.getExpiringConsents(patientId)
+                                                    .then(expiringCount -> emergencyAccessLogServiceExtensions.hasPendingEmergencyAccess(patientId)
                                                         .then(hasPending -> {
                                                             Map<String, Object> accessAlerts = new LinkedHashMap<>();
                                                             accessAlerts.put("expiringConsents", expiringCount);

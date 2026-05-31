@@ -3,11 +3,13 @@ package com.ghatana.phr.kernel.service;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * @doc.type class
@@ -73,6 +75,12 @@ class DurablePhrNotificationSenderTest extends EventloopTestBase {
         assertThat(entries)
             .extracting(DurablePhrNotificationSender.NotificationOutboxEntry::traceOperation)
             .containsOnly("phr_appointment_reminder_schedule");
+        assertThat(entries)
+            .extracting(DurablePhrNotificationSender.NotificationOutboxEntry::safeReasonCode)
+            .containsOnly("APPOINTMENT_REMINDER_SCHEDULED");
+        assertThat(entries)
+            .extracting(DurablePhrNotificationSender.NotificationOutboxEntry::deepLinkId)
+            .containsOnly("appointment:appointment-1");
     }
 
     @Test
@@ -127,5 +135,34 @@ class DurablePhrNotificationSenderTest extends EventloopTestBase {
         assertThat(dataCloud.metadataFor(DurablePhrNotificationSender.OUTBOX_DATASET, entries.getFirst().id()))
             .containsEntry("correlationId", "corr-tele-1")
             .containsEntry("traceOperation", "phr_phr-notification-outbox-entry_create");
+    }
+
+    @Test
+    @DisplayName("notification actions validate action names and persist read state")
+    void notificationActionsValidateAndPersistState() {
+        runPromise(() -> sender.scheduleAppointmentReminder(new PhrNotificationSender.AppointmentReminderNotification(
+            "appointment-2",
+            "patient-4",
+            "provider-4",
+            Instant.parse("2026-04-08T12:00:00Z"),
+            Set.of(PhrNotificationSender.NotificationChannel.PUSH),
+            "corr-appointment-2",
+            "phr_appointment_reminder_schedule"
+        )));
+        DurablePhrNotificationSender.NotificationOutboxEntry entry = runPromise(
+            () -> sender.getPendingNotifications("patient-4", 10)
+        ).getFirst();
+
+        String result = runPromise(() -> sender.handleNotificationAction(entry.id(), "patient-4", "dismiss"));
+
+        assertThat(result).isEqualTo("dismissed");
+        DurablePhrNotificationSender.NotificationOutboxEntry updated = runPromise(
+            () -> sender.getPendingNotifications("patient-4", 10)
+        ).getFirst();
+        assertThat(updated.readAt()).isNotNull();
+
+        assertThatThrownBy(() -> runPromise(() -> sender.handleNotificationAction(entry.id(), "patient-4", "export-record")))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Unsupported notification action");
     }
 }

@@ -13,11 +13,11 @@ import java.time.Duration;
 import java.util.Objects;
 
 /**
- * Circuit-breaker decorator for external queue producers (AEP-014).
+ * Circuit-breaker decorator for external queue producers.
  *
  * <p>This decorator fails fast when a downstream producer repeatedly fails,
  * preventing cascading overload during external broker outages. It composes
- * naturally with {@link com.ghatana.aep.connector.RetryingConnectorDecorator}:
+ * naturally with {@link com.ghatana.platform.messaging.RetryingConnectorDecorator}:
  * wrap the delegate with retry first, then place this circuit breaker around it.
  *
  * @doc.type class
@@ -94,7 +94,7 @@ public final class CircuitBreakerConnector implements QueueProducerStrategy {
      */
     public static final class Builder {
         private QueueProducerStrategy delegate;
-        private String name = "aep-connector";
+        private String name = "connector";
         private int failureThreshold = 5;
         private int successThreshold = 1;
         private Duration resetTimeout = Duration.ofSeconds(30);

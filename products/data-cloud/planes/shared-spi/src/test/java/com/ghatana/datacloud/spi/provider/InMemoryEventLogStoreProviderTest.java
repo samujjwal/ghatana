@@ -304,4 +304,159 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
             assertThat(afterCancel.get("activeSubscribers")).isEqualTo(0);
         }
     }
+
+    // ─── Checkpoint Management (P3-03) ───────────────────────────────────────
+
+    @Nested
+    @DisplayName("checkpoint management")
+    class CheckpointManagement {
+
+        @Test
+        void readCheckpointReturnsEmptyWhenNotCommitted() {
+            var result = runPromise(() -> store.readCheckpoint(tenant, "stream-1", "group-1"));
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        void commitCheckpointStoresCheckpoint() {
+            Offset offset = Offset.of("10");
+            var checkpoint = runPromise(() -> 
+                store.commitCheckpoint(tenant, "stream-1", "group-1", offset, "idem-key-1"));
+            
+            assertThat(checkpoint.stream()).isEqualTo("stream-1");
+            assertThat(checkpoint.consumerGroup()).isEqualTo("group-1");
+            assertThat(checkpoint.offset()).isEqualTo(offset);
+            assertThat(checkpoint.idempotencyKey()).isEqualTo("idem-key-1");
+        }
+
+        @Test
+        void readCheckpointReturnsCommittedCheckpoint() {
+            Offset offset = Offset.of("15");
+            runPromise(() -> store.commitCheckpoint(tenant, "stream-2", "group-2", offset, "idem-key-2"));
+            
+            var result = runPromise(() -> store.readCheckpoint(tenant, "stream-2", "group-2"));
+            assertThat(result).isPresent();
+            assertThat(result.get().offset()).isEqualTo(offset);
+        }
+
+        @Test
+        void deleteCheckpointRemovesCheckpoint() {
+            runPromise(() -> store.commitCheckpoint(tenant, "stream-3", "group-3", Offset.of("20"), "idem-key-3"));
+            
+            boolean deleted = runPromise(() -> store.deleteCheckpoint(tenant, "stream-3", "group-3"));
+            assertThat(deleted).isTrue();
+            
+            var result = runPromise(() -> store.readCheckpoint(tenant, "stream-3", "group-3"));
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        void deleteCheckpointReturnsFalseWhenNotExists() {
+            boolean deleted = runPromise(() -> store.deleteCheckpoint(tenant, "stream-4", "group-4"));
+            assertThat(deleted).isFalse();
+        }
+
+        @Test
+        void getAllCheckpointsWithMetadataReturnsAllCheckpoints() {
+            runPromise(() -> store.commitCheckpoint(tenant, "stream-a", "group-a", Offset.of("1"), "idem-a"));
+            runPromise(() -> store.commitCheckpoint(tenant, "stream-b", "group-b", Offset.of("2"), "idem-b"));
+            
+            var checkpoints = runPromise(() -> store.getAllCheckpointsWithMetadata(tenant));
+            assertThat(checkpoints).hasSize(2);
+        }
+
+        @Test
+        void checkpointsAreTenantIsolated() {
+            TenantContext otherTenant = TenantContext.of("tenant-2");
+            runPromise(() -> store.commitCheckpoint(tenant, "stream-1", "group-1", Offset.of("10"), "idem-1"));
+            
+            var otherResult = runPromise(() -> store.readCheckpoint(otherTenant, "stream-1", "group-1"));
+            assertThat(otherResult).isEmpty();
+        }
+    }
+
+    // ─── Replay (P3-03) ───────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("replay")
+    class Replay {
+
+        @Test
+        void replayRespectsFromOffset() {
+            runPromise(() -> store.append(tenant, entry("E1")));
+            runPromise(() -> store.append(tenant, entry("E2")));
+            runPromise(() -> store.append(tenant, entry("E3")));
+            
+            var spec = new com.ghatana.datacloud.spi.EventLogStore.ReplaySpec(
+                Offset.of("2"), Offset.of("-1"), List.of());
+            var events = runPromise(() -> store.replay(tenant, spec));
+            
+            assertThat(events).hasSize(2); // E2 and E3
+        }
+
+        @Test
+        void replayRespectsToOffset() {
+            runPromise(() -> store.append(tenant, entry("E1")));
+            runPromise(() -> store.append(tenant, entry("E2")));
+            runPromise(() -> store.append(tenant, entry("E3")));
+            
+            var spec = new com.ghatana.datacloud.spi.EventLogStore.ReplaySpec(
+                Offset.of("1"), Offset.of("2"), List.of());
+            var events = runPromise(() -> store.replay(tenant, spec));
+            
+            assertThat(events).hasSize(2); // E1 and E2
+        }
+
+        @Test
+        void replayFiltersByEventType() {
+            runPromise(() -> store.append(tenant, entry("TypeA")));
+            runPromise(() -> store.append(tenant, entry("TypeB")));
+            runPromise(() -> store.append(tenant, entry("TypeA")));
+            
+            var spec = new com.ghatana.datacloud.spi.EventLogStore.ReplaySpec(
+                Offset.of("0"), Offset.of("-1"), List.of("TypeA"));
+            var events = runPromise(() -> store.replay(tenant, spec));
+            
+            assertThat(events).hasSize(2);
+            assertThat(events).allMatch(e -> "TypeA".equals(e.eventType()));
+        }
+
+        @Test
+        void replayWithEmptyEventTypeFilterReturnsAll() {
+            runPromise(() -> store.append(tenant, entry("TypeA")));
+            runPromise(() -> store.append(tenant, entry("TypeB")));
+            
+            var spec = new com.ghatana.datacloud.spi.EventLogStore.ReplaySpec(
+                Offset.of("0"), Offset.of("-1"), List.of());
+            var events = runPromise(() -> store.replay(tenant, spec));
+            
+            assertThat(events).hasSize(2);
+        }
+
+        @Test
+        void replayToOffsetNegativeOneReturnsAllEvents() {
+            runPromise(() -> store.append(tenant, entry("E1")));
+            runPromise(() -> store.append(tenant, entry("E2")));
+            
+            var spec = new com.ghatana.datacloud.spi.EventLogStore.ReplaySpec(
+                Offset.of("0"), Offset.of("-1"), List.of());
+            var events = runPromise(() -> store.replay(tenant, spec));
+            
+            assertThat(events).hasSize(2);
+        }
+    }
+
+    // ─── Unsubscribe (P3-03) ───────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("unsubscribe")
+    class Unsubscribe {
+
+        @Test
+        void unsubscribeCompletesSuccessfully() {
+            var subscriptionId = new com.ghatana.datacloud.spi.EventLogStore.SubscriptionId("test-sub");
+            var result = runPromise(() -> store.unsubscribe(tenant, subscriptionId));
+            assertThat(result).isNull(); // Void promise completes with null
+        }
+    }
 }

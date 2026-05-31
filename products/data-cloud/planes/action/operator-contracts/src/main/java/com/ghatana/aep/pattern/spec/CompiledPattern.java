@@ -22,7 +22,9 @@ public record CompiledPattern(
         String timePolicy,
         String uncertaintyPolicy,
         boolean isShadow,
-        boolean isActive) {
+        boolean isActive,
+        PatternMatcher matcher
+) {
 
     public CompiledPattern {
         if (patternId == null || patternId.isBlank()) {
@@ -40,5 +42,6 @@ public record CompiledPattern(
         emit = Map.copyOf(emit != null ? emit : Map.of());
         lifecycle = Map.copyOf(lifecycle != null ? lifecycle : Map.of());
         governance = Map.copyOf(governance != null ? governance : Map.of());
+        matcher = matcher != null ? matcher : new DefaultPatternMatcher(root, timePolicy, uncertaintyPolicy);
     }
 }

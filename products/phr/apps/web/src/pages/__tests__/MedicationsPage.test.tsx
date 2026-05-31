@@ -66,6 +66,17 @@ describe('MedicationsPage', () => {
     expect(screen.queryByText(/Amlodipine/)).toBeNull();
   });
 
+  it('does not fabricate adherence when the backend omits adherence', async () => {
+    mockFetch.mockResolvedValue([
+      { id: 'med-1', medication: 'Metformin', dosage: '500mg', schedule: 'Twice daily', status: 'active' as const },
+    ]);
+
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText(/Metformin/)).toBeTruthy());
+    expect(screen.queryByText(/medications.adherenceLabel/)).toBeNull();
+  });
+
   it('renders the medications title key', async () => {
     mockFetch.mockResolvedValue(medications);
     renderPage();

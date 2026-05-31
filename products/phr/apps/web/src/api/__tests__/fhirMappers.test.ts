@@ -58,7 +58,6 @@ describe('FHIR mappers', () => {
       medication: 'Metformin',
       dosage: '500mg',
       schedule: 'Twice daily',
-      adherence: 100,
     });
   });
 

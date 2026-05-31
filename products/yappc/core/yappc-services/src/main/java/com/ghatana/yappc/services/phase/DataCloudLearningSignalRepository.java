@@ -12,6 +12,11 @@ import java.util.Optional;
 
 /**
  * Data Cloud-backed learning signal repository.
+ *
+ * @doc.type class
+ * @doc.purpose Persist learning signals in Data Cloud
+ * @doc.layer product
+ * @doc.pattern Repository
  */
 public final class DataCloudLearningSignalRepository implements LearningSignalRepository {
 

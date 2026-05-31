@@ -3,6 +3,7 @@ import { SafeError } from '../components/SafeError';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { Link } from 'react-router-dom';
 import { fetchLabs } from '../api/clinicalApi';
+import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { formatPhrDate, t } from '../i18n/phrI18n';
 import type { ObservationSummary } from '../types';
@@ -21,7 +22,7 @@ export function LabsPage(): React.ReactElement {
   const { session } = usePhrSession();
   const [labs, setLabs] = useState<ObservationSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SafeApiErrorState | null>(null);
 
   useEffect(() => {
     if (!session) return;
@@ -31,12 +32,12 @@ export function LabsPage(): React.ReactElement {
       role: session.role,
     })
       .then(setLabs)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('labs.error')))
+      .catch((err: unknown) => setError(toSafeApiErrorState(err, t('labs.error'))))
       .finally(() => setLoading(false));
   }, [session]);
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('labs.loading')}</div>;
-  if (error) return <SafeError title={t('dashboard.errorPrefix')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
+  if (error) return <SafeError title={t('dashboard.errorPrefix')} message={error.message} correlationId={error.correlationId} />;
 
   const criticalCount = labs.filter((lab) => lab.status === 'critical').length;
   const attentionCount = labs.filter((lab) => lab.status === 'attention' || lab.status === 'abnormal').length;

@@ -74,7 +74,7 @@ public final class PhrAuditRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         String patientIdParam = request.getQueryParameter("patientId");
@@ -82,61 +82,56 @@ public final class PhrAuditRoutes {
         String pageParam = request.getQueryParameter("page");
         String pageSizeParam = request.getQueryParameter("pageSize");
 
-        PhrPolicyEvaluator.PolicyDecision auditDecision = policyEvaluator.canQueryAuditEvents(context, patientIdParam);
-        if (!auditDecision.isAllowed()) {
-            return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
-        }
+        return policyEvaluator.canQueryAuditEventsAsync(context, patientIdParam)
+            .then(entityScopeDecision -> {
+                if (!entityScopeDecision.isAllowed()) {
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), entityScopeDecision.getReasonCode());
+                }
 
-        // Use policy evaluator for audit access decision (POL-001)
-        PhrPolicyEvaluator.PolicyDecision entityScopeDecision = policyEvaluator.canQueryAuditEvents(context, patientIdParam);
-        if (!entityScopeDecision.isAllowed()) {
-            return PhrRouteSupport.policyDenialResponse(403, context.correlationId());
-        }
+                String effectiveEntityId;
+                if ("admin".equals(context.role()) || "clinician".equals(context.role())) {
+                    effectiveEntityId = patientIdParam;
+                } else {
+                    effectiveEntityId = context.principalId();
+                }
+                String eventTypeFilter = resolveEventTypeFilter(filterParam);
+                int page = parsePage(pageParam);
+                int pageSize = parsePageSize(pageSizeParam);
 
-        // Use policy evaluator to determine effective entity ID scope (POL-001)
-        String effectiveEntityId;
-        if (entityScopeDecision.isAllowed() && ("admin".equals(context.role()) || "clinician".equals(context.role()))) {
-            effectiveEntityId = patientIdParam;
-        } else {
-            effectiveEntityId = context.principalId();
-        }
-        String eventTypeFilter = resolveEventTypeFilter(filterParam);
-        int page = parsePage(pageParam);
-        int pageSize = parsePageSize(pageSizeParam);
+                AuditTrailService.AuditQuery.Builder queryBuilder = AuditTrailService.AuditQuery.builder()
+                    .tenantId(context.tenantId())
+                    .limit(pageSize * page); // over-fetch to support offset-based paging
 
-        AuditTrailService.AuditQuery.Builder queryBuilder = AuditTrailService.AuditQuery.builder()
-            .tenantId(context.tenantId())
-            .limit(pageSize * page); // over-fetch to support offset-based paging
+                if (effectiveEntityId != null && !effectiveEntityId.isBlank()) {
+                    queryBuilder.entityId(effectiveEntityId);
+                }
+                if (eventTypeFilter != null) {
+                    queryBuilder.eventType(eventTypeFilter);
+                }
 
-        if (effectiveEntityId != null && !effectiveEntityId.isBlank()) {
-            queryBuilder.entityId(effectiveEntityId);
-        }
-        if (eventTypeFilter != null) {
-            queryBuilder.eventType(eventTypeFilter);
-        }
+                AuditTrailService.AuditQuery query = queryBuilder.build();
 
-        AuditTrailService.AuditQuery query = queryBuilder.build();
+                try {
+                    List<AuditTrailService.AuditTrailEvent> allMatching = auditTrailService.queryAuditEvents(query);
+                    int total = allMatching.size();
+                    int fromIndex = Math.min((page - 1) * pageSize, total);
+                    int toIndex = Math.min(fromIndex + pageSize, total);
+                    List<AuditTrailService.AuditTrailEvent> pageEvents = allMatching.subList(fromIndex, toIndex);
 
-        try {
-            List<AuditTrailService.AuditTrailEvent> allMatching = auditTrailService.queryAuditEvents(query);
-            int total = allMatching.size();
-            int fromIndex = Math.min((page - 1) * pageSize, total);
-            int toIndex = Math.min(fromIndex + pageSize, total);
-            List<AuditTrailService.AuditTrailEvent> pageEvents = allMatching.subList(fromIndex, toIndex);
+                    List<Map<String, Object>> eventDtos = pageEvents.stream()
+                        .map(this::toEventDto)
+                        .toList();
 
-            List<Map<String, Object>> eventDtos = pageEvents.stream()
-                .map(this::toEventDto)
-                .toList();
-
-            Map<String, Object> responseBody = new LinkedHashMap<>();
-            responseBody.put("events", eventDtos);
-            responseBody.put("total", total);
-            responseBody.put("page", page);
-            responseBody.put("pageSize", pageSize);
-            return PhrRouteSupport.jsonResponse(200, responseBody);
-        } catch (Exception ex) {
-            return PhrRouteSupport.errorResponse(500, "AUDIT_QUERY_FAILED", "Failed to query audit events");
-        }
+                    Map<String, Object> responseBody = new LinkedHashMap<>();
+                    responseBody.put("events", eventDtos);
+                    responseBody.put("total", total);
+                    responseBody.put("page", page);
+                    responseBody.put("pageSize", pageSize);
+                    return PhrRouteSupport.jsonResponse(200, responseBody, correlationId);
+                } catch (Exception ex) {
+                    return PhrRouteSupport.errorResponse(500, "AUDIT_QUERY_FAILED", "Failed to query audit events", correlationId);
+                }
+            });
     }
 
     private Promise<HttpResponse> handleGetEventDetail(HttpRequest request) {
@@ -145,12 +140,12 @@ public final class PhrAuditRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         String eventId = request.getPathParameter("eventId");
         if (eventId == null || eventId.isBlank()) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_EVENT_ID", "Event ID is required");
+            return PhrRouteSupport.errorResponse(400, "INVALID_EVENT_ID", "Event ID is required", correlationId);
         }
 
         try {
@@ -166,18 +161,18 @@ public final class PhrAuditRoutes {
                 .orElse(null);
 
             if (event == null) {
-                return PhrRouteSupport.errorResponse(404, "EVENT_NOT_FOUND", "Audit event not found");
+                return PhrRouteSupport.errorResponse(404, "EVENT_NOT_FOUND", "Audit event not found", correlationId);
             }
 
-            PhrPolicyEvaluator.PolicyDecision detailDecision =
-                policyEvaluator.canViewAuditEvent(context, event.getUserId(), event.getEntityId());
-            if (!detailDecision.isAllowed()) {
-                return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), detailDecision.getReasonCode());
-            }
-
-            return PhrRouteSupport.jsonResponse(200, toEventDto(event), correlationId);
+            return policyEvaluator.canViewAuditEventAsync(context, event.getUserId(), event.getEntityId())
+                .then(detailDecision -> {
+                    if (!detailDecision.isAllowed()) {
+                        return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), detailDecision.getReasonCode());
+                    }
+                    return PhrRouteSupport.jsonResponse(200, toEventDto(event), correlationId);
+                });
         } catch (Exception ex) {
-            return PhrRouteSupport.errorResponse(500, "AUDIT_DETAIL_FAILED", "Failed to fetch event detail");
+            return PhrRouteSupport.errorResponse(500, "AUDIT_DETAIL_FAILED", "Failed to fetch event detail", correlationId);
         }
     }
 
@@ -187,7 +182,7 @@ public final class PhrAuditRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         PhrPolicyEvaluator.PolicyDecision exportDecision = policyEvaluator.canViewAuditTrail(context);
@@ -201,7 +196,7 @@ public final class PhrAuditRoutes {
         String format = (formatParam != null && !formatParam.isBlank()) ? formatParam : "json";
 
         if (!"json".equalsIgnoreCase(format) && !"csv".equalsIgnoreCase(format)) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_FORMAT", "Format must be 'json' or 'csv'");
+            return PhrRouteSupport.errorResponse(400, "INVALID_FORMAT", "Format must be 'json' or 'csv'", correlationId);
         }
 
         String effectiveEntityId = patientIdParam;
@@ -223,7 +218,7 @@ public final class PhrAuditRoutes {
 
             if ("csv".equalsIgnoreCase(format)) {
                 String csv = convertToCsv(events);
-                return PhrRouteSupport.textResponse(200, csv, "text/csv");
+                return PhrRouteSupport.textResponse(200, csv, "text/csv", correlationId);
             } else {
                 List<Map<String, Object>> eventDtos = events.stream()
                     .map(this::toEventDto)
@@ -232,10 +227,10 @@ public final class PhrAuditRoutes {
                     "events", eventDtos,
                     "total", eventDtos.size(),
                     "exportedAt", Instant.now().toString()
-                ));
+                ), correlationId);
             }
         } catch (Exception ex) {
-            return PhrRouteSupport.errorResponse(500, "AUDIT_EXPORT_FAILED", "Failed to export audit events");
+            return PhrRouteSupport.errorResponse(500, "AUDIT_EXPORT_FAILED", "Failed to export audit events", correlationId);
         }
     }
 

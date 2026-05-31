@@ -2,6 +2,14 @@ package com.ghatana.yappc.services.phase;
 
 import java.util.List;
 
+/**
+ * Observe phase model provider.
+ *
+ * @doc.type class
+ * @doc.purpose Build Observe phase models
+ * @doc.layer product
+ * @doc.pattern PhaseModelProvider
+ */
 public final class ObservePhaseModelProvider {
 
     public ObservePhaseModel build(PhasePanelInput input) {

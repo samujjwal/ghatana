@@ -4,6 +4,13 @@
  * Provides HTTP client methods for CRUD operations on media artifacts,
  * transcription requests, and vision analysis.
  *
+ * Pass 6: Audio-video first-class modality with full lifecycle support:
+ * - Job management and tracking
+ * - Transcript retrieval
+ * - Frame index retrieval
+ * - Consent management
+ * - Retry processing
+ *
  * G17: Contract-backed media service for audio-video modality.
  *
  * @doc.type service
@@ -29,6 +36,96 @@ import {
   type TranscriptionResponse,
 } from "@/contracts/schemas";
 import { apiClient, type ApiError } from "@/lib/api/client";
+import { z } from "zod";
+
+// Pass 6: Job response schema
+const JobSchema = z.object({
+  jobId: z.string(),
+  artifactId: z.string(),
+  jobType: z.string(),
+  status: z.string(),
+  parameters: z.record(z.string(), z.unknown()).optional(),
+  resultId: z.string().optional(),
+  errorMessage: z.string().optional(),
+  progress: z.number().min(0).max(100).default(0),
+  createdAt: z.string(),
+  startedAt: z.string().optional(),
+  completedAt: z.string().optional(),
+  isTerminal: z.boolean(),
+  isSuccessful: z.boolean(),
+});
+
+// Pass 6: Transcript segment schema
+const TranscriptSegmentSchema = z.object({
+  segmentId: z.string(),
+  startMs: z.number(),
+  endMs: z.number(),
+  speakerId: z.string().optional(),
+  text: z.string(),
+  confidence: z.number(),
+});
+
+// Pass 6: Transcript response schema
+const TranscriptSchema = z.object({
+  transcriptId: z.string(),
+  artifactId: z.string(),
+  jobId: z.string(),
+  languageCode: z.string(),
+  confidence: z.number(),
+  durationMs: z.number(),
+  wordCount: z.number(),
+  speakerCount: z.number(),
+  fullText: z.string(),
+  segments: z.array(TranscriptSegmentSchema),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  createdAt: z.string(),
+});
+
+// Pass 6: Frame index label schema
+const FrameIndexLabelSchema = z.object({
+  label: z.string(),
+  occurrenceCount: z.number(),
+  avgConfidence: z.number(),
+});
+
+// Pass 6: Frame index event schema
+const FrameIndexEventSchema = z.object({
+  eventType: z.string(),
+  startMs: z.number(),
+  endMs: z.number(),
+  description: z.string(),
+  confidence: z.number(),
+});
+
+// Pass 6: Frame index frame schema
+const FrameIndexFrameSchema = z.object({
+  frameMs: z.number(),
+  labels: z.array(z.string()),
+  boundingBoxes: z.record(z.string(), z.array(z.number())).optional(),
+  confidence: z.number(),
+});
+
+// Pass 6: Frame index response schema
+const FrameIndexSchema = z.object({
+  frameIndexId: z.string(),
+  artifactId: z.string(),
+  jobId: z.string(),
+  analysisType: z.string(),
+  confidence: z.number(),
+  frameCount: z.number(),
+  durationMs: z.number(),
+  frames: z.array(FrameIndexFrameSchema),
+  labels: z.array(FrameIndexLabelSchema),
+  events: z.array(FrameIndexEventSchema),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  createdAt: z.string(),
+});
+
+export type Job = z.infer<typeof JobSchema>;
+export type Transcript = z.infer<typeof TranscriptSchema>;
+export type FrameIndex = z.infer<typeof FrameIndexSchema>;
+export type FrameIndexLabel = z.infer<typeof FrameIndexLabelSchema>;
+export type FrameIndexEvent = z.infer<typeof FrameIndexEventSchema>;
 
 /**
  * G17: Handle surface degradation/unavailable errors
@@ -184,6 +281,87 @@ export const mediaApi = {
         request,
       );
       return AnalysisResponseSchema.parse(rawResponse);
+    });
+  },
+
+  /**
+   * Pass 6: Get processing jobs for an artifact.
+   *
+   * @param artifactId - Artifact identifier
+   * @returns Promise resolving to array of jobs
+   */
+  async getJobs(artifactId: string): Promise<Job[]> {
+    return withSurfaceDegradationHandling(async () => {
+      const rawResponse = await apiClient.get<unknown[]>(
+        `/api/v1/media/artifacts/${artifactId}/jobs`,
+      );
+      return z.array(JobSchema).parse(rawResponse);
+    });
+  },
+
+  /**
+   * Pass 6: Get transcript for an audio artifact.
+   *
+   * @param artifactId - Artifact identifier
+   * @returns Promise resolving to transcript
+   */
+  async getTranscript(artifactId: string): Promise<Transcript> {
+    return withSurfaceDegradationHandling(async () => {
+      const rawResponse = await apiClient.get<unknown>(
+        `/api/v1/media/artifacts/${artifactId}/transcript`,
+      );
+      return TranscriptSchema.parse(rawResponse);
+    });
+  },
+
+  /**
+   * Pass 6: Get frame index for an image/video artifact.
+   *
+   * @param artifactId - Artifact identifier
+   * @returns Promise resolving to frame index
+   */
+  async getFrameIndex(artifactId: string): Promise<FrameIndex> {
+    return withSurfaceDegradationHandling(async () => {
+      const rawResponse = await apiClient.get<unknown>(
+        `/api/v1/media/artifacts/${artifactId}/frame-index`,
+      );
+      return FrameIndexSchema.parse(rawResponse);
+    });
+  },
+
+  /**
+   * Pass 6: Update consent status for an artifact.
+   *
+   * @param artifactId - Artifact identifier
+   * @param consentStatus - New consent status (GRANTED, DENIED, PENDING, NOT_REQUIRED)
+   * @returns Promise resolving to updated artifact
+   */
+  async updateConsent(
+    artifactId: string,
+    consentStatus: string,
+  ): Promise<ContractMediaArtifact> {
+    return withSurfaceDegradationHandling(async () => {
+      const rawResponse = await apiClient.post<ContractMediaArtifact>(
+        `/api/v1/media/artifacts/${artifactId}/consent`,
+        { consentStatus },
+      );
+      return MediaArtifactSchema.parse(rawResponse);
+    });
+  },
+
+  /**
+   * Pass 6: Retry failed processing for an artifact.
+   *
+   * @param artifactId - Artifact identifier
+   * @returns Promise resolving to retry response
+   */
+  async retryJob(artifactId: string): Promise<{ jobId: string; status: string }> {
+    return withSurfaceDegradationHandling(async () => {
+      const rawResponse = await apiClient.post<{ jobId: string; status: string }>(
+        `/api/v1/media/artifacts/${artifactId}/retry`,
+        {},
+      );
+      return rawResponse;
     });
   },
 };

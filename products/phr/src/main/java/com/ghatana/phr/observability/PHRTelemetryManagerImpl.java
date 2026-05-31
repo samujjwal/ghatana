@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -18,6 +19,16 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class PHRTelemetryManagerImpl implements KernelTelemetryManager {
     private static final Logger logger = LoggerFactory.getLogger(PHRTelemetryManagerImpl.class);
+    private static final Set<String> SAFE_TAG_NAMES = Set.of(
+        "action",
+        "decision",
+        "operation",
+        "outcome",
+        "reason_code",
+        "resource_type",
+        "role",
+        "success"
+    );
     private final Map<String, Double> metrics = new ConcurrentHashMap<>();
     private final Map<String, Long> counters = new ConcurrentHashMap<>();
 
@@ -75,11 +86,23 @@ public class PHRTelemetryManagerImpl implements KernelTelemetryManager {
         }
         StringBuilder sb = new StringBuilder(name);
         for (int i = 0; i < tags.length; i += 2) {
-            if (i + 1 < tags.length) {
+            if (i + 1 < tags.length && isSafeTagName(tags[i])) {
                 sb.append(",").append(tags[i]).append("=").append(tags[i + 1]);
             }
         }
         return sb.toString();
+    }
+
+    private boolean isSafeTagName(String tagName) {
+        return tagName != null && SAFE_TAG_NAMES.contains(tagName);
+    }
+
+    Map<String, Double> metricSnapshot() {
+        return Map.copyOf(metrics);
+    }
+
+    Map<String, Long> counterSnapshot() {
+        return Map.copyOf(counters);
     }
 
     private class PHRTimer implements Timer {

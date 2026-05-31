@@ -166,7 +166,7 @@ export function fhirMedicationRequestToSummary(raw: z.infer<typeof FhirMedicatio
   const medication = parts?.[1] ?? fullName;
   const dosage = parts?.[2] ?? '';
   const schedule = raw.dosageInstruction?.[0]?.text ?? '';
-  return { id: raw.id, medication, dosage, schedule, adherence: 100 };
+  return { id: raw.id, medication, dosage, schedule };
 }
 
 export function fhirConsentToGrant(raw: z.infer<typeof FhirConsentSchema>): ConsentGrant {

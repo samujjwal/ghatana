@@ -16,19 +16,17 @@ This guide provides step-by-step instructions for adopting the mastery system in
 ```java
 // In your runtime composition module
 import com.ghatana.agent.mastery.MasteryRegistry;
-import com.ghatana.datacloud.agent.mastery.DataCloudMasteryRegistry;
-import com.ghatana.datacloud.agent.mastery.DataCloudMasteryTransitionRepository;
-import com.ghatana.datacloud.agent.mastery.DataCloudMasteryEvidenceRepository;
-import com.ghatana.datacloud.entity.EntityRepository;
+import com.ghatana.agent.mastery.repository.MasteryTransitionRepository;
+import com.ghatana.agent.mastery.repository.MasteryEvidenceRepository;
 import com.ghatana.agent.mastery.transition.MasteryTransitionPolicy;
 
 EntityRepository entityRepository = // your existing EntityRepository
 MasteryTransitionPolicy transitionPolicy = // your transition policy
 
-MasteryRegistry masteryRegistry = new DataCloudMasteryRegistry(
+MasteryRegistry masteryRegistry = new MasteryRegistry(
     entityRepository,
-    new DataCloudMasteryTransitionRepository(entityRepository),
-    new DataCloudMasteryEvidenceRepository(entityRepository),
+    new MasteryTransitionRepository(entityRepository),
+    new MasteryEvidenceRepository(entityRepository),
     transitionPolicy
 );
 ```
@@ -140,10 +138,9 @@ Enable obsolescence signal ingestion:
 ```java
 import com.ghatana.agent.obsolescence.ObsolescenceDetector;
 import com.ghatana.agent.obsolescence.ObsolescenceSignalRepository;
-import com.ghatana.datacloud.agent.obsolescence.DataCloudObsolescenceSignalRepository;
 
 ObsolescenceSignalRepository signalRepository = 
-    new DataCloudObsolescenceSignalRepository(entityRepository);
+    new ObsolescenceSignalRepository(entityRepository);
 
 ObsolescenceDetector obsolescenceDetector = new ObsolescenceDetector(
     masteryRegistry,
@@ -157,7 +154,7 @@ ObsolescenceDetector obsolescenceDetector = new ObsolescenceDetector(
 Expose mastery and learning endpoints via your HTTP layer:
 
 ```java
-import com.ghatana.datacloud.api.controller.MasteryController;
+import com.ghatana.agent.mastery.MasteryController;
 
 MasteryController masteryController = new MasteryController(
     masteryRegistry,

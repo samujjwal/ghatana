@@ -63,7 +63,7 @@ export default defineConfig({
         find: "@ghatana/kernel-product-contracts/route",
         replacement: path.resolve(
           __dirname,
-          "../../../../platform/typescript/kernel-product-contracts/src/route/ProductRouteContract.ts",
+          "../../../../platform/typescript/kernel-product-contracts/src/route/index.ts",
         ),
       },
       {

@@ -24,6 +24,8 @@ vi.mock('../../auth/PhrSessionContext', () => ({
       principalId: 'patient-42',
       tenantId: 't1',
       role: 'patient' as const,
+      persona: 'patient',
+      tier: 'core',
       name: 'Test Patient',
       expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
     },
@@ -39,8 +41,9 @@ const medicationDetail = {
   medication: 'Metformin',
   dosage: '500mg',
   schedule: 'Twice daily',
-  adherence: 100,
   status: 'active' as const,
+  refillsRemaining: 0,
+  prescribedAt: '2026-05-28T01:00:00Z',
   interactions: ['Avoid duplicate metformin therapy'],
   warnings: ['No refills remain'],
   history: [{ date: '2026-05-28T01:00:00Z', action: 'Prescribed' }],
@@ -59,6 +62,9 @@ describe('MedicationDetailPage', () => {
       tenantId: 't1',
       principalId: 'patient-42',
       role: 'patient',
+      persona: 'patient',
+      tier: 'core',
+      facilityId: undefined,
     }));
   });
 
@@ -70,6 +76,20 @@ describe('MedicationDetailPage', () => {
     expect(screen.getByText('Avoid duplicate metformin therapy')).toBeTruthy();
     expect(screen.getByText('No refills remain')).toBeTruthy();
     expect(screen.getByText('Prescribed')).toBeTruthy();
+  });
+
+  it('does not render medication safety or history sections when backend omits them', async () => {
+    mockFetch.mockResolvedValue({
+      id: 'rx-1',
+      medication: 'Metformin',
+      dosage: '500mg',
+      status: 'active' as const,
+    });
+    render(<MedicationDetailPage />);
+
+    await waitFor(() => expect(screen.getByText('Metformin')).toBeTruthy());
+    expect(screen.queryByText('medicationDetail.safety.title')).toBeNull();
+    expect(screen.queryByText('medicationDetail.history.title')).toBeNull();
   });
 
   it('shows an error state when detail fetch fails', async () => {

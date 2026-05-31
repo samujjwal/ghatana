@@ -14,6 +14,7 @@ import { phiGet, phiRemove, phiSet } from "../phiEncryptedStorage";
 import {
   clearDashboardOffline,
   getDashboardOfflineTimestamp,
+  isDashboardOfflineTimestampStale,
   loadDashboardOffline,
   saveDashboardOffline,
   type SessionIdentity,
@@ -41,6 +42,9 @@ const SESSION_IDENTITY: SessionIdentity = {
   tenantId: "tenant-1",
   principalId: "p1",
   role: "patient",
+  persona: "patient",
+  tier: "core",
+  facilityId: "facility-1",
 };
 
 describe("offlineStore", () => {
@@ -67,6 +71,9 @@ describe("offlineStore", () => {
     expect(envelope.tenantId).toBe("tenant-1");
     expect(envelope.principalId).toBe("p1");
     expect(envelope.role).toBe("patient");
+    expect(envelope.persona).toBe("patient");
+    expect(envelope.tier).toBe("core");
+    expect(envelope.facilityId).toBe("facility-1");
     expect(envelope.data).toMatchObject({ patient: { id: "p1" } });
   });
 
@@ -75,6 +82,7 @@ describe("offlineStore", () => {
       ...SAMPLE_DASHBOARD,
       patient: {
         ...SAMPLE_DASHBOARD.patient,
+        nationalId: "restricted",
         mentalHealth: "restricted",
         nested: {
           hivStatus: "restricted",
@@ -88,6 +96,7 @@ describe("offlineStore", () => {
           summary: "Safe summary",
           fhirPreview: "{}",
           substanceUse: "restricted",
+          psychiatricHistory: "restricted",
           attachments: [{ geneticInfo: "restricted", label: "kept" }],
         },
       ],
@@ -100,9 +109,11 @@ describe("offlineStore", () => {
     );
 
     const [, raw] = mockSet.mock.calls[0] as [string, string];
+    expect(raw).not.toContain("nationalId");
     expect(raw).not.toContain("mentalHealth");
     expect(raw).not.toContain("hivStatus");
     expect(raw).not.toContain("substanceUse");
+    expect(raw).not.toContain("psychiatricHistory");
     expect(raw).not.toContain("geneticInfo");
     expect(raw).toContain("safe");
     expect(raw).toContain("label");
@@ -137,6 +148,66 @@ describe("offlineStore", () => {
     mockGet.mockResolvedValueOnce(JSON.stringify(envelope));
 
     const result = await loadDashboardOffline(SESSION_IDENTITY);
+
+    expect(result).toBeNull();
+    expect(mockRemove).toHaveBeenCalledWith("phr-mobile-dashboard");
+  });
+
+  it("loadDashboardOffline returns null and clears on persona mismatch", async () => {
+    const savedAt = Date.now();
+    const envelope = {
+      schemaVersion: 1,
+      savedAt,
+      ttlMs: 3_600_000,
+      ...SESSION_IDENTITY,
+      data: SAMPLE_DASHBOARD,
+    };
+    mockGet.mockResolvedValueOnce(JSON.stringify(envelope));
+
+    const result = await loadDashboardOffline({
+      ...SESSION_IDENTITY,
+      persona: "caregiver",
+    });
+
+    expect(result).toBeNull();
+    expect(mockRemove).toHaveBeenCalledWith("phr-mobile-dashboard");
+  });
+
+  it("loadDashboardOffline returns null and clears on tier mismatch", async () => {
+    const savedAt = Date.now();
+    const envelope = {
+      schemaVersion: 1,
+      savedAt,
+      ttlMs: 3_600_000,
+      ...SESSION_IDENTITY,
+      data: SAMPLE_DASHBOARD,
+    };
+    mockGet.mockResolvedValueOnce(JSON.stringify(envelope));
+
+    const result = await loadDashboardOffline({
+      ...SESSION_IDENTITY,
+      tier: "clinical",
+    });
+
+    expect(result).toBeNull();
+    expect(mockRemove).toHaveBeenCalledWith("phr-mobile-dashboard");
+  });
+
+  it("loadDashboardOffline returns null and clears on facility mismatch", async () => {
+    const savedAt = Date.now();
+    const envelope = {
+      schemaVersion: 1,
+      savedAt,
+      ttlMs: 3_600_000,
+      ...SESSION_IDENTITY,
+      data: SAMPLE_DASHBOARD,
+    };
+    mockGet.mockResolvedValueOnce(JSON.stringify(envelope));
+
+    const result = await loadDashboardOffline({
+      ...SESSION_IDENTITY,
+      facilityId: "facility-2",
+    });
 
     expect(result).toBeNull();
     expect(mockRemove).toHaveBeenCalledWith("phr-mobile-dashboard");
@@ -222,5 +293,13 @@ describe("offlineStore", () => {
     mockGet.mockResolvedValueOnce(JSON.stringify(envelope));
 
     await expect(getDashboardOfflineTimestamp()).resolves.toBe(savedAt);
+  });
+
+  it("uses the dashboard offline TTL to identify stale cache metadata", () => {
+    const now = Date.now();
+
+    expect(isDashboardOfflineTimestampStale(null, now)).toBe(true);
+    expect(isDashboardOfflineTimestampStale(now - 1_000, now)).toBe(false);
+    expect(isDashboardOfflineTimestampStale(now - 9 * 60 * 60 * 1000, now)).toBe(true);
   });
 });

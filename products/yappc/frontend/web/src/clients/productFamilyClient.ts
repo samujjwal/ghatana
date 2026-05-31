@@ -144,7 +144,7 @@ async function apiJson<T>(url: string, body: unknown, schema: z.ZodType<T>): Pro
   return schema.parse(raw);
 }
 
-export function getReleaseReadiness(productKey: 'phr' | 'digital-marketing'): Promise<ReleaseReadiness> {
+export function getReleaseReadiness(productKey: 'sample-product' | 'digital-marketing'): Promise<ReleaseReadiness> {
   return apiFetch(`${BASE_URL}/releases/${encodeURIComponent(productKey)}`, ReleaseReadinessSchema);
 }
 

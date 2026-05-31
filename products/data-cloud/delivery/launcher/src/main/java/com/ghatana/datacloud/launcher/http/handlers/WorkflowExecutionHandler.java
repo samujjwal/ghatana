@@ -235,12 +235,17 @@ public class WorkflowExecutionHandler {
                             metrics.recordRequest(HANDLER_NAME, "executePipeline", tenantId, 200);
                             metrics.recordLatency(HANDLER_NAME, "executePipeline", latency);
                             // E3: Enhanced response with all required fields.
+                            // P9: Add trace context fields for cross-plane observability
                             Map<String, Object> responseBody = new LinkedHashMap<>();
-                            responseBody.put("requestId", correlationId != null ? correlationId : UUID.randomUUID().toString());
+                            String traceId = correlationId != null ? correlationId : UUID.randomUUID().toString();
+                            responseBody.put("requestId", traceId);
+                            responseBody.put("traceId", traceId);
+                            responseBody.put("correlationId", traceId);
                             if (operation != null) {
                                 responseBody.put("operationId", operation.operationId());
                             }
                             responseBody.put("tenantId", tenantId);
+                            responseBody.put("principalId", http.resolvePrincipalId(request));
                             responseBody.put("executionId", snapshot.id());
                             responseBody.put("pipelineId", snapshot.workflowId());
                             responseBody.put("status", snapshot.status());
@@ -301,8 +306,11 @@ public class WorkflowExecutionHandler {
                 // E3: Enhanced response with requestId
                 return http.jsonResponse(Map.of(
                     "requestId", UUID.randomUUID().toString(),
-                    "pipelineId", pipelineId,
+                    "traceId", UUID.randomUUID().toString(),
+                    "correlationId", UUID.randomUUID().toString(),
                     "tenantId", tenantId,
+                    "principalId", http.resolvePrincipalId(request),
+                    "pipelineId", pipelineId,
                     "executions", snapshots,
                     "count", snapshots.size()
                 ));
@@ -346,7 +354,11 @@ public class WorkflowExecutionHandler {
             .map(opt -> {
                 if (opt.isPresent()) {
                     Map<String, Object> data = executionSnapshotToMap(opt.get());
+                    // P9: Add trace context fields for cross-plane observability
                     data.put("requestId", UUID.randomUUID().toString());
+                    data.put("traceId", UUID.randomUUID().toString());
+                    data.put("correlationId", UUID.randomUUID().toString());
+                    data.put("principalId", http.resolvePrincipalId(request));
                     return http.jsonResponse(data);
                 }
                 return http.errorResponse(404, "Execution not found: " + executionId);
@@ -404,10 +416,14 @@ public class WorkflowExecutionHandler {
                         List<Map<String, Object>> standardizedLogs = logs.stream()
                             .map(this::standardizeLogEntry)
                             .toList();
+                        // P9: Add trace context fields for cross-plane observability
                         return http.jsonResponse(Map.of(
                             "requestId", UUID.randomUUID().toString(),
-                            "executionId", executionId,
+                            "traceId", UUID.randomUUID().toString(),
+                            "correlationId", UUID.randomUUID().toString(),
                             "tenantId", tenantId,
+                            "principalId", http.resolvePrincipalId(request),
+                            "executionId", executionId,
                             "pipelineId", pipelineId,
                             "logs", standardizedLogs,
                             "count", standardizedLogs.size()
@@ -470,12 +486,17 @@ public class WorkflowExecutionHandler {
                         correlationId, tenantId, pipelineId, executionId, snapshot.status());
                 metrics.recordRequest(HANDLER_NAME, "cancelPipelineExecution", tenantId, 200);
                 metrics.recordLatency(HANDLER_NAME, "cancelPipelineExecution", latency);
+                // P9: Add trace context fields for cross-plane observability
                 Map<String, Object> response = new LinkedHashMap<>();
-                response.put("requestId", correlationId != null ? correlationId : UUID.randomUUID().toString());
+                String traceId = correlationId != null ? correlationId : UUID.randomUUID().toString();
+                response.put("requestId", traceId);
+                response.put("traceId", traceId);
+                response.put("correlationId", traceId);
                 response.put("operationId", operation == null ? "" : operation.operationId());
+                response.put("tenantId", tenantId);
+                response.put("principalId", http.resolvePrincipalId(request));
                 response.put("executionId", snapshot.id());
                 response.put("pipelineId", pipelineId);
-                response.put("tenantId", tenantId);
                 response.put("status", snapshot.status());
                 response.put("startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString());
                 response.put("completedAt", snapshot.completedAt());
@@ -699,11 +720,16 @@ public class WorkflowExecutionHandler {
                         correlationId, tenantId, executionId, snapshot.status());
                 metrics.recordRequest(HANDLER_NAME, "retryExecution", tenantId, 200);
                 metrics.recordLatency(HANDLER_NAME, "retryExecution", latency);
+                // P9: Add trace context fields for cross-plane observability
+                String traceId = correlationId != null ? correlationId : UUID.randomUUID().toString();
                 return http.jsonResponse(Map.of(
-                    "requestId", correlationId != null ? correlationId : UUID.randomUUID().toString(),
+                    "requestId", traceId,
+                    "traceId", traceId,
+                    "correlationId", traceId,
                     "operationId", operation == null ? "" : operation.operationId(),
-                    "executionId", snapshot.id(),
                     "tenantId", tenantId,
+                    "principalId", http.resolvePrincipalId(request),
+                    "executionId", snapshot.id(),
                     "status", snapshot.status(),
                     "startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString()
                 ));
@@ -749,51 +775,69 @@ public class WorkflowExecutionHandler {
 
         String correlationId = http.resolveCorrelationId(request);
         long startMs = System.currentTimeMillis();
-        return request.loadBody().then(buf -> {
-            try {
-                String body = buf.getString(StandardCharsets.UTF_8);
-                Map<String, Object> rollbackData = parseJsonMap(body);
-                // Rollback delegates to the capability which handles state transition
-                return executionCapability.cancelExecution(tenantId, executionId)
-                    .map(snapshot -> {
-                        OperationRecord operation = recordWorkflowOperation(
-                            tenantId,
-                            executionId,
-                            OperationKind.PIPELINE_ROLLBACK,
-                            OperationStatus.SUCCEEDED,
-                            "Pipeline execution rollback",
-                            "Pipeline execution rollback completed",
-                            request,
-                            Map.of("executionId", snapshot.id()));
-                        long latency = System.currentTimeMillis() - startMs;
-                        log.info("[correlation={} tenant={} execution={}] Workflow execution rolled back",
-                                correlationId, tenantId, executionId);
-                        metrics.recordRequest(HANDLER_NAME, "rollbackExecution", tenantId, 200);
-                        metrics.recordLatency(HANDLER_NAME, "rollbackExecution", latency);
-                        return http.jsonResponse(Map.of(
-                            "requestId", correlationId != null ? correlationId : UUID.randomUUID().toString(),
-                            "operationId", operation == null ? "" : operation.operationId(),
-                            "executionId", snapshot.id(),
-                            "tenantId", tenantId,
-                            "status", "rolled_back",
-                            "startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString(),
-                            "completedAt", snapshot.completedAt(),
-                            "rollbackData", rollbackData
-                        ));
-                    })
-                    .then(Promise::of, e -> {
-                        log.error("[correlation={} tenant={} execution={}] Failed to rollback execution: {}",
-                                correlationId, tenantId, executionId, e.getMessage());
-                        metrics.recordError(HANDLER_NAME, "rollbackExecution", e);
-                        return Promise.of(http.errorResponse(500, "Rollback execution failed"));
-                    });
-            } catch (Exception e) {
-                log.warn("[correlation={} tenant={} execution={}] Invalid rollback data: {}",
-                        correlationId, tenantId, executionId, e.getMessage());
-                metrics.recordError(HANDLER_NAME, "rollbackExecution", "InvalidRequest");
-                return Promise.of(http.errorResponse(400, "Invalid rollback data: " + e.getMessage()));
-            }
-        });
+        
+        return request.loadBody()
+            .then(buf -> {
+                try {
+                    String body = buf.getString(StandardCharsets.UTF_8);
+                    Map<String, Object> rollbackData = parseJsonMap(body);
+                    
+                    // Rollback delegates to the capability which handles state transition
+                    return executionCapability.cancelExecution(tenantId, executionId)
+                        .map(snapshot -> {
+                            OperationRecord operation = recordWorkflowOperation(
+                                tenantId,
+                                executionId,
+                                OperationKind.PIPELINE_ROLLBACK,
+                                OperationStatus.SUCCEEDED,
+                                "Pipeline execution rollback",
+                                "Pipeline execution rollback completed",
+                                request,
+                                Map.of("executionId", snapshot.id()));
+                            long latency = System.currentTimeMillis() - startMs;
+                            log.info("[correlation={} tenant={} execution={}] Workflow execution rolled back",
+                                    correlationId, tenantId, executionId);
+                            metrics.recordRequest(HANDLER_NAME, "rollbackExecution", tenantId, 200);
+                            metrics.recordLatency(HANDLER_NAME, "rollbackExecution", latency);
+                            // P9: Add trace context fields for cross-plane observability
+                            String traceId = correlationId != null ? correlationId : UUID.randomUUID().toString();
+                            Map<String, Object> responseMap = new java.util.HashMap<>();
+                            responseMap.put("requestId", traceId);
+                            responseMap.put("traceId", traceId);
+                            responseMap.put("correlationId", traceId);
+                            responseMap.put("operationId", operation == null ? "" : operation.operationId());
+                            responseMap.put("tenantId", tenantId);
+                            responseMap.put("principalId", http.resolvePrincipalId(request));
+                            responseMap.put("executionId", snapshot.id());
+                            responseMap.put("status", "rolled_back");
+                            responseMap.put("startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString());
+                            responseMap.put("completedAt", snapshot.completedAt());
+                            responseMap.put("rollbackData", rollbackData);
+                            return http.jsonResponse(responseMap);
+                        })
+                        .then(
+                            response -> Promise.of(response),
+                            error -> {
+                                log.error("[correlation={} tenant={} execution={}] Workflow execution rollback failed: {}",
+                                        correlationId, tenantId, executionId, error.getMessage(), error);
+                                metrics.recordRequest(HANDLER_NAME, "rollbackExecution", tenantId, 500);
+                                return Promise.of(http.errorResponse(500, "Rollback failed: " + error.getMessage()));
+                            });
+                } catch (Exception e) {
+                    log.error("[correlation={} tenant={} execution={}] Failed to parse rollback request: {}",
+                            correlationId, tenantId, executionId, e.getMessage(), e);
+                    metrics.recordRequest(HANDLER_NAME, "rollbackExecution", tenantId, 400);
+                    return Promise.of(http.errorResponse(400, "Invalid rollback request: " + e.getMessage()));
+                }
+            })
+            .then(
+                response -> Promise.of(response),
+                error -> {
+                    log.error("[correlation={} tenant={} execution={}] Workflow execution rollback failed: {}",
+                            correlationId, tenantId, executionId, error.getMessage(), error);
+                    metrics.recordRequest(HANDLER_NAME, "rollbackExecution", tenantId, 500);
+                    return Promise.of(http.errorResponse(500, "Rollback failed: " + error.getMessage()));
+                });
     }
 
     public Promise<HttpResponse> handleCheckpointExecution(HttpRequest request) {
@@ -847,11 +891,16 @@ public class WorkflowExecutionHandler {
                                 correlationId, tenantId, executionId, checkpointId);
                         metrics.recordRequest(HANDLER_NAME, "checkpointExecution", tenantId, 200);
                         metrics.recordLatency(HANDLER_NAME, "checkpointExecution", latency);
+                        // P9: Add trace context fields for cross-plane observability
+                        String traceId = correlationId != null ? correlationId : UUID.randomUUID().toString();
                         return http.jsonResponse(Map.of(
-                            "requestId", correlationId != null ? correlationId : UUID.randomUUID().toString(),
+                            "requestId", traceId,
+                            "traceId", traceId,
+                            "correlationId", traceId,
                             "operationId", operation == null ? "" : operation.operationId(),
-                            "executionId", executionId,
                             "tenantId", tenantId,
+                            "principalId", http.resolvePrincipalId(request),
+                            "executionId", executionId,
                             "checkpointId", checkpointId,
                             "savedAt", savedAt,
                             "status", "checkpointed"
@@ -958,11 +1007,16 @@ public class WorkflowExecutionHandler {
                         correlationId, tenantId, executionId, snapshot.status());
                 metrics.recordRequest(HANDLER_NAME, "restoreExecution", tenantId, 200);
                 metrics.recordLatency(HANDLER_NAME, "restoreExecution", latency);
+                // P9: Add trace context fields for cross-plane observability
+                String traceId = correlationId != null ? correlationId : UUID.randomUUID().toString();
                 return http.jsonResponse(Map.of(
-                    "requestId", correlationId != null ? correlationId : UUID.randomUUID().toString(),
+                    "requestId", traceId,
+                    "traceId", traceId,
+                    "correlationId", traceId,
                     "operationId", operation == null ? "" : operation.operationId(),
-                    "executionId", snapshot.id(),
                     "tenantId", tenantId,
+                    "principalId", http.resolvePrincipalId(request),
+                    "executionId", snapshot.id(),
                     "status", snapshot.status(),
                     "startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString()
                 ));
@@ -1161,8 +1215,13 @@ public class WorkflowExecutionHandler {
         if (operationRecorder == null) {
             return null;
         }
+        String traceId = http.resolveCorrelationId(request);
+        String requestId = traceId != null ? traceId : java.util.UUID.randomUUID().toString();
+        if (traceId == null || traceId.isBlank()) traceId = requestId;
         return operationRecorder.record(OperationRecord.create(
                 tenantId,
+                traceId,
+                requestId,
                 kind,
                 status,
                 "pipeline",

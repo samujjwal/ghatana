@@ -4,6 +4,14 @@ import com.ghatana.yappc.api.PhasePacket;
 
 import java.util.Map;
 
+/**
+ * Intent phase panel provider.
+ *
+ * @doc.type class
+ * @doc.purpose Provide Intent phase panel views
+ * @doc.layer product
+ * @doc.pattern PhasePanelProvider
+ */
 public final class IntentPhasePanelProvider implements PhasePanelProvider {
 
     private final IntentPhaseModelProvider modelProvider;

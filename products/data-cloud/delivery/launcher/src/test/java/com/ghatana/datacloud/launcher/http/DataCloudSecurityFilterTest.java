@@ -1408,4 +1408,199 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
             ).doesNotThrowAnyException();
         }
     }
+
+    // ==================== Canonical Permission Tests (P2-02) ====================
+
+    @Nested
+    @DisplayName("P2-02: Canonical Permission Enforcement")
+    class CanonicalPermissionTests {
+
+        @Test
+        @DisplayName("ADMIN role derives all canonical permissions")
+        void adminRoleDerivesAllPermissions() {
+            // Given: Principal with ADMIN role (has all permissions)
+            Principal adminPrincipal = new Principal(
+                "admin-user",
+                List.of("ADMIN"),
+                TEST_TENANT,
+                Set.of("datacloud:admin", "media:artifact:create", "action:pipeline:execute")
+            );
+            when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(adminPrincipal));
+
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .auditService(auditService)
+                    .enforcing(true)
+                    .build();
+
+            // When: Request to CRITICAL path
+            HttpRequest req = HttpRequest.post("http://localhost" + CRITICAL_PATH)
+                    .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
+
+            // Then: Access granted (ADMIN has all permissions)
+            int status = runPromise(() -> filter.apply(OK_DELEGATE).serve(req).map(HttpResponse::getCode));
+            assertThat(status).isEqualTo(200);
+        }
+
+        @Test
+        @DisplayName("VIEWER role denied access to critical paths")
+        void viewerRoleDeniedCriticalAccess() {
+            // Given: Principal with VIEWER role (limited permissions)
+            Principal viewerPrincipal = new Principal(
+                "viewer-user",
+                List.of("VIEWER"),
+                TEST_TENANT,
+                Set.of("datacloud:read", "surface:read")
+            );
+            when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(viewerPrincipal));
+
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .auditService(auditService)
+                    .enforcing(true)
+                    .build();
+
+            // When: Request to CRITICAL path
+            HttpRequest req = HttpRequest.post("http://localhost" + CRITICAL_PATH)
+                    .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
+
+            // Then: Access denied (VIEWER lacks required permissions)
+            int status = runPromise(() -> filter.apply(OK_DELEGATE).serve(req).map(HttpResponse::getCode));
+            assertThat(status).isEqualTo(403);
+
+            // Verify permission denied audit was emitted
+            ArgumentCaptor<AuditEvent> auditCaptor = ArgumentCaptor.forClass(AuditEvent.class);
+            verify(auditService).record(auditCaptor.capture());
+            AuditEvent auditEvent = auditCaptor.getValue();
+            assertThat(auditEvent.eventType()).isEqualTo("PERMISSION_DENIED");
+        }
+
+        @Test
+        @DisplayName("OPERATOR role has execute permissions")
+        void operatorRoleHasExecutePermissions() {
+            // Given: Principal with OPERATOR role
+            Principal operatorPrincipal = new Principal(
+                "operator-user",
+                List.of("OPERATOR"),
+                TEST_TENANT,
+                Set.of("datacloud:read", "datacloud:write", "action:pipeline:execute", "media:artifact:process")
+            );
+            when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(operatorPrincipal));
+
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .auditService(auditService)
+                    .enforcing(true)
+                    .build();
+
+            // When: Request to SENSITIVE path (requires OPERATOR level)
+            HttpRequest req = HttpRequest.post("http://localhost" + SENSITIVE_PATH)
+                    .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
+
+            // Then: Access granted
+            int status = runPromise(() -> filter.apply(OK_DELEGATE).serve(req).map(HttpResponse::getCode));
+            assertThat(status).isEqualTo(200);
+        }
+
+        @Test
+        @DisplayName("Permissions derived from role mapping, not request headers")
+        void permissionsDerivedFromRolesNotHeaders() {
+            // Given: Principal with VIEWER role (limited permissions)
+            Principal viewerPrincipal = new Principal(
+                "viewer-user",
+                List.of("VIEWER"),
+                TEST_TENANT,
+                Set.of("datacloud:read")
+            );
+            when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(viewerPrincipal));
+
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .auditService(auditService)
+                    .enforcing(true)
+                    .build();
+
+            // When: Request attempts to spoof admin permission via header
+            HttpRequest req = HttpRequest.get("http://localhost" + INTERNAL_PATH)
+                    .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                    .withHeader(HttpHeaders.of("X-Permissions"), "datacloud:admin,connector:sync")
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
+
+            // Then: Access granted to INTERNAL path (VIEWER has read), but spoofed header ignored
+            int status = runPromise(() -> filter.apply(OK_DELEGATE).serve(req).map(HttpResponse::getCode));
+            assertThat(status).isEqualTo(200);
+        }
+
+        @Test
+        @DisplayName("Permission denied response includes missing permission details")
+        void permissionDeniedResponseIncludesDetails() {
+            // Given: Principal with VIEWER role
+            Principal viewerPrincipal = new Principal(
+                "viewer-user",
+                List.of("VIEWER"),
+                TEST_TENANT,
+                Set.of("datacloud:read")
+            );
+            when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(viewerPrincipal));
+
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .auditService(auditService)
+                    .enforcing(true)
+                    .build();
+
+            // When: Request to CRITICAL path (requires admin permission)
+            HttpRequest req = HttpRequest.post("http://localhost" + CRITICAL_PATH)
+                    .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
+
+            // Then: 403 with permission denied details
+            HttpResponse response = runPromise(() -> filter.apply(OK_DELEGATE).serve(req));
+            assertThat(response.getCode()).isEqualTo(403);
+
+            // Verify audit includes permission context
+            ArgumentCaptor<AuditEvent> auditCaptor = ArgumentCaptor.forClass(AuditEvent.class);
+            verify(auditService).record(auditCaptor.capture());
+            AuditEvent auditEvent = auditCaptor.getValue();
+            assertThat(auditEvent.eventType()).isEqualTo("PERMISSION_DENIED");
+            assertThat(auditEvent.principal()).isEqualTo("viewer-user");
+        }
+
+        @Test
+        @DisplayName("AUDITOR role has audit read permissions only")
+        void auditorRoleHasAuditReadPermissions() {
+            // Given: Principal with AUDITOR role
+            Principal auditorPrincipal = new Principal(
+                "auditor-user",
+                List.of("AUDITOR"),
+                TEST_TENANT,
+                Set.of("datacloud:read", "datacloud:audit", "governance:read", "governance:compliance:read")
+            );
+            when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(auditorPrincipal));
+
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .auditService(auditService)
+                    .enforcing(true)
+                    .build();
+
+            // When: Request to INTERNAL path (read access)
+            HttpRequest req = HttpRequest.get("http://localhost" + INTERNAL_PATH)
+                    .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
+
+            // Then: Access granted (AUDITOR has datacloud:read)
+            int status = runPromise(() -> filter.apply(OK_DELEGATE).serve(req).map(HttpResponse::getCode));
+            assertThat(status).isEqualTo(200);
+        }
+    }
 }

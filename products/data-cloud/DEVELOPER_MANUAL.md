@@ -23,7 +23,29 @@ Data Cloud does not own higher-level agent orchestration, complex event processi
 
 > **Canonical boundary (2026):** Data-Cloud is the governed data/storage substrate. AEP is the adaptive event intelligence platform. EventCloud and adaptive event semantics belong to AEP. Data-Cloud may provide EventCloud persistence plugins, but those plugins must not expose CEP, PatternSpec, operator-runtime, or learning semantics.
 
-## 2. Repository Map
+## 2. Implementation Hardening Scope
+
+Do not run release-readiness checks or evidence-generation scripts in this pass.
+Use targeted unit/integration/component/API tests only.
+
+**AEP semantic lifecycle completion must happen through Action Plane contracts, not by moving AEP semantics into Data/Event/Governance planes.**
+
+This hardening pass focuses on:
+- Security and authorization trust-boundary fixes
+- Event, replay, checkpoint, and envelope correctness
+- AEP semantic lifecycle completion (PatternSpec compiler, EventCloud SPI, pattern lifecycle, learning-to-recommendation, replay-safe agent execution)
+- Runtime truth and UI capability disclosure
+- Audio-video first-class modality (durable MediaArtifact job lifecycle, consent, retention, processing workflow)
+- Connector production path (runtime truth states, dataset linkage, health, schema, sync, credential rotation)
+- Plugin/extensibility hardening
+- Observability and operations trace model
+- Shared library boundary cleanup
+- UI i18n, a11y, and raw-string cleanup
+- OpenAPI and contract alignment
+
+Release-readiness/evidence execution is explicitly out of scope.
+
+## 3. Repository Map
 
 Use these modules as the main starting points:
 
@@ -42,7 +64,7 @@ Use these modules as the main starting points:
 | `scripts/` | smoke, load, verification, and recovery helpers |
 | `deploy/terraform/`, `deploy/helm/`, `deploy/k8s/` | deployment assets |
 
-## 3. Prerequisites
+## 4. Prerequisites
 
 For normal development:
 
@@ -57,7 +79,7 @@ For infrastructure and deployment work:
 - Kubernetes tooling such as `helm` and `kubectl`
 - AWS CLI if you are using the Terraform deployment path
 
-## 4. Local Development Profiles
+## 5. Local Development Profiles
 
 ### `DATACLOUD_PROFILE=local`
 
@@ -105,7 +127,7 @@ Typical variables:
 
 See `docs/operations/RUNBOOK.md` for the durable provider expectations and failure signatures.
 
-## 5. Running the Main Surfaces
+## 6. Running the Main Surfaces
 
 ### Backend server
 
@@ -144,7 +166,7 @@ Generated outputs are written under:
 - `products/data-cloud/delivery/sdk/build/generated/sdk/typescript`
 - `products/data-cloud/delivery/sdk/build/generated/sdk/python`
 
-## 6. Core Developer Workflows
+## 7. Core Developer Workflows
 
 ### Add or update an HTTP endpoint
 

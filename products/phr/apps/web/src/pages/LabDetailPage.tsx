@@ -3,6 +3,7 @@ import { SafeError } from '../components/SafeError';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { useParams } from 'react-router-dom';
 import { fetchObservations } from '../api/clinicalApi';
+import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import type { ObservationSummary } from '../types';
@@ -12,7 +13,7 @@ export function LabDetailPage(): React.ReactElement {
   const { session } = usePhrSession();
   const [lab, setLab] = useState<ObservationSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SafeApiErrorState | null>(null);
 
   useEffect(() => {
     if (!session || !labId) return;
@@ -26,15 +27,15 @@ export function LabDetailPage(): React.ReactElement {
         if (found) {
           setLab(found);
         } else {
-          setError(t('labDetail.notFound'));
+          setError({ message: t('labDetail.notFound') });
         }
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('labDetail.error.load')))
+      .catch((err: unknown) => setError(toSafeApiErrorState(err, t('labDetail.error.load'))))
       .finally(() => setLoading(false));
   }, [session, labId]);
 
   if (loading) return <div className="loading">{t('labDetail.loading')}</div>;
-  if (error) return <SafeError title={t('dashboard.errorPrefix')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
+  if (error) return <SafeError title={t('dashboard.errorPrefix')} message={error.message} correlationId={error.correlationId} />;
   if (!lab) return <div className="empty">{t('labDetail.notFound')}</div>;
 
   return (

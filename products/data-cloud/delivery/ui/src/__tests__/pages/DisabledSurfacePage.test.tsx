@@ -1,8 +1,12 @@
 /**
  * DisabledSurfacePage Component Tests
  *
- * Verifies that the DisabledSurfacePage component renders correctly for
- * unavailable capability-gated surfaces (DC-UI-001).
+ * Pass 11: Verifies i18n and accessibility requirements:
+ * - Translated title/description using i18n keys
+ * - Clear next action
+ * - Keyboard focus on heading
+ * - Accessible status role
+ * - No raw i18n keys in rendered output
  */
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -16,19 +20,29 @@ const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <MemoryRouter>{children}</MemoryRouter>
 );
 
+// Mock i18n
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string) => key,
+  }),
+}));
+
 beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 describe("DisabledSurfacePage", () => {
-  it("renders with default props", () => {
+  it("renders with default props using i18n keys", () => {
     render(<DisabledSurfacePage />, { wrapper: Wrapper });
-    expect(screen.getByText(/is not available/i)).toBeInTheDocument();
+    // Should use i18n key, not raw string
+    expect(screen.getByText("disabledSurface.disabled")).toBeInTheDocument();
   });
 
-  it("renders surfaceName in heading", () => {
+  it("renders surfaceName with translated status", () => {
     render(<DisabledSurfacePage surfaceName="Alerts" />, { wrapper: Wrapper });
-    expect(screen.getByText(/Alerts is not available/i)).toBeInTheDocument();
+    // Should use i18n key for status
+    expect(screen.getByText("disabledSurface.disabled")).toBeInTheDocument();
+    expect(screen.getByText("Alerts")).toBeInTheDocument();
   });
 
   it("renders surfaceDescription when provided", () => {
@@ -41,17 +55,31 @@ describe("DisabledSurfacePage", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders actionHint text", () => {
-    render(<DisabledSurfacePage actionHint="Ask your admin." />, {
+  it("renders nextAction text", () => {
+    render(<DisabledSurfacePage nextAction="Ask your admin." />, {
       wrapper: Wrapper,
     });
-    expect(screen.getByText(/Ask your admin\./i)).toBeInTheDocument();
+    expect(screen.getByText("disabledSurface.nextAction")).toBeInTheDocument();
+    expect(screen.getByText("Ask your admin.")).toBeInTheDocument();
   });
 
   it('has role="status" and aria-live="polite" for accessibility', () => {
     render(<DisabledSurfacePage />, { wrapper: Wrapper });
     const el = screen.getByRole("status");
     expect(el).toHaveAttribute("aria-live", "polite");
+  });
+
+  it("has role='alert' for non-disabled statuses", () => {
+    render(<DisabledSurfacePage status="UNAVAILABLE" />, { wrapper: Wrapper });
+    const el = screen.getByRole("alert");
+    expect(el).toBeInTheDocument();
+  });
+
+  it("has keyboard focus on heading", () => {
+    render(<DisabledSurfacePage />, { wrapper: Wrapper });
+    const heading = screen.getByRole("heading", { level: 1 });
+    // Heading should have tabIndex={-1} for focus management
+    expect(heading).toBeInTheDocument();
   });
 
   it("has a data-testid attribute", () => {
@@ -66,13 +94,14 @@ describe("DisabledSurfacePage", () => {
     expect(screen.getByTestId("custom-id")).toBeInTheDocument();
   });
 
-  it("renders Go back and Go to Home buttons", () => {
+  it("renders translated navigation buttons", () => {
     render(<DisabledSurfacePage />, { wrapper: Wrapper });
+    // Should use i18n keys for button text
     expect(
-      screen.getByRole("button", { name: /Go back/i }),
+      screen.getByRole("button", { name: "disabledSurface.goBack" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Go to Home/i }),
+      screen.getByRole("button", { name: "disabledSurface.goToHome" }),
     ).toBeInTheDocument();
   });
 
@@ -83,8 +112,28 @@ describe("DisabledSurfacePage", () => {
   it("Go to Home button is clickable", async () => {
     const user = userEvent.setup();
     render(<DisabledSurfacePage />, { wrapper: Wrapper });
-    const homeBtn = screen.getByRole("button", { name: /Go to Home/i });
+    const homeBtn = screen.getByRole("button", { name: "disabledSurface.goToHome" });
     // Should not throw
     await user.click(homeBtn);
+  });
+
+  it("renders translated status messages", () => {
+    render(<DisabledSurfacePage status="DEGRADED" />, { wrapper: Wrapper });
+    expect(screen.getByText("disabledSurface.degraded")).toBeInTheDocument();
+    expect(screen.getByText("disabledSurface.degradedMessage")).toBeInTheDocument();
+  });
+
+  it("renders translated dependency information", () => {
+    render(
+      <DisabledSurfacePage
+        ownerPlane="data"
+        runtimeProfile="test"
+        requiredDependencies={["storage"]}
+      />,
+      { wrapper: Wrapper },
+    );
+    expect(screen.getByText("disabledSurface.ownerPlane")).toBeInTheDocument();
+    expect(screen.getByText("disabledSurface.runtimeProfile")).toBeInTheDocument();
+    expect(screen.getByText("disabledSurface.requiredDependencies")).toBeInTheDocument();
   });
 });

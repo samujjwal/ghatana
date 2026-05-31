@@ -150,6 +150,8 @@ export const ne: LocaleShape = {
   },
   offline: {
     banner: 'तपाईं अफलाइन हुनुहुन्छ। केही सुविधाहरू उपलब्ध नहोलान।',
+    cacheAvailable: 'अन्तिम सफल सिंकबाट इन्क्रिप्ट गरिएको अफलाइन डेटा देखाइँदैछ।',
+    cacheStaleWarning: 'अफलाइन क्यास पुरानो छ; म्याद सकिएको PHI देखाइने छैन।',
   },
   notifications: {
     enablePush: 'पुस सूचना सक्षम गर्नुहोस्',
@@ -197,6 +199,8 @@ export const ne: LocaleShape = {
     invalidRole: 'लगइन प्रतिक्रियामा अमान्य भूमिका छ।',
     missingName: 'लगइन प्रतिक्रियामा नाम हराइरहेको छ।',
     missingExpiresAt: 'लगइन प्रतिक्रियामा expiresAt हराइरहेको छ।',
+    missingPersona: 'सत्र प्रतिक्रियामा persona हराइरहेको छ।',
+    missingTier: 'सत्र प्रतिक्रियामा tier हराइरहेको छ।',
     credentialsRequired: 'राष्ट्रिय परिचयपत्र र पासवर्ड आवश्यक छ।',
     invalidCredentials: 'अमान्य राष्ट्रिय परिचयपत्र वा पासवर्ड।',
     loginFailed: 'लगइन {{status}} स्थितिमा असफल भयो।',

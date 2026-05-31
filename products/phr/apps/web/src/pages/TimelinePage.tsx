@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { Button, Card, CardContent, CardHeader, Select } from '@ghatana/design-system';
 import { fetchTimeline } from '../api/patientApi';
+import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { formatPhrDate, t } from '../i18n/phrI18n';
 import { SafeError } from '../components/SafeError';
@@ -33,7 +34,7 @@ export function TimelinePage(): React.ReactElement {
   const { session } = usePhrSession();
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SafeApiErrorState | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<TimelineFilter>('all');
   const [page, setPage] = useState<number>(1);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
@@ -46,12 +47,12 @@ export function TimelinePage(): React.ReactElement {
       role: session.role,
     }, {})
       .then(setEvents)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('timeline.error.load')))
+      .catch((err: unknown) => setError(toSafeApiErrorState(err, t('timeline.error.load'))))
       .finally(() => setLoading(false));
   }, [session]);
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('timeline.loading')}</div>;
-  if (error) return <SafeError title={t('timeline.error')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
+  if (error) return <SafeError title={t('timeline.error')} message={error.message} correlationId={error.correlationId} />;
   if (!events.length) return <div className="empty" role="status">{t('timeline.empty')}</div>;
 
   const categories = Array.from(new Set(events.map((event) => event.type))).sort();
@@ -74,31 +75,30 @@ export function TimelinePage(): React.ReactElement {
         <CardContent>
           <div className="filter-bar" role="search">
             <label htmlFor="category-filter" className="visually-hidden">{t('timeline.filter.label')}</label>
-            <select
+            <Select
               id="category-filter"
               value={categoryFilter}
               onChange={handleFilterChange}
-              className="filter-select"
               aria-label={t('timeline.filter.label')}
             >
               <option value="all">{t('timeline.filter.all')}</option>
               {categories.map((category) => (
                 <option key={category} value={category}>{timelineTypeLabel(category)}</option>
               ))}
-            </select>
+            </Select>
             {categoryFilter !== 'all' && (
-              <button
+              <Button
                 type="button"
                 onClick={() => {
                   setCategoryFilter('all');
                   setPage(1);
                   setSelectedEventId(null);
                 }}
-                className="filter-clear"
                 aria-label={t('timeline.filter.clear')}
+                variant="secondary"
               >
                 {t('timeline.filter.clear')}
-              </button>
+              </Button>
             )}
           </div>
 
@@ -111,17 +111,18 @@ export function TimelinePage(): React.ReactElement {
                     const isSelected = selectedEventId === event.id;
                     return (
                       <li key={event.id} className="timeline-event" role="listitem">
-                        <button
+                        <Button
                           type="button"
                           className="timeline-event-button"
                           onClick={() => setSelectedEventId(isSelected ? null : event.id)}
                           aria-expanded={isSelected}
                           aria-label={t('timeline.detail.open', { title: event.title })}
+                          variant="ghost"
                         >
                           <time dateTime={eventDate(event)}>{formatPhrDate(eventDate(event))}</time>
                           <strong>{event.title}</strong>
                           <p className="muted">{event.summary}</p>
-                        </button>
+                        </Button>
                         {isSelected && (
                           <div className="timeline-event-detail" role="region" aria-label={t('timeline.detail.label', { title: event.title })}>
                             <dl className="detail-list">
@@ -153,23 +154,23 @@ export function TimelinePage(): React.ReactElement {
           </div>
 
           <nav className="pagination row gap-sm align-center" aria-label={t('timeline.pagination.label')}>
-            <button
+            <Button
               type="button"
-              className="secondary"
               disabled={currentPage === 1}
               onClick={() => setPage((value) => Math.max(1, value - 1))}
+              variant="secondary"
             >
               {t('timeline.pagination.previous')}
-            </button>
+            </Button>
             <span>{t('timeline.pagination.status', { page: currentPage, pages: totalPages })}</span>
-            <button
+            <Button
               type="button"
-              className="secondary"
               disabled={currentPage === totalPages}
               onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+              variant="secondary"
             >
               {t('timeline.pagination.next')}
-            </button>
+            </Button>
           </nav>
         </CardContent>
       </Card>

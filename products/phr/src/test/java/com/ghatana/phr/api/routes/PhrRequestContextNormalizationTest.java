@@ -6,6 +6,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -17,8 +18,8 @@ import static org.mockito.Mockito.when;
  *   <li>Tenant ID is stripped of whitespace</li>
  *   <li>Principal ID is stripped of whitespace</li>
  *   <li>Role is stripped and normalized to lower-case</li>
- *   <li>Persona is preserved or defaults to role</li>
- *   <li>Tier is preserved or defaults to core</li>
+ *   <li>Persona is required and normalized</li>
+ *   <li>Tier is required and normalized</li>
  *   <li>Facility ID is preserved or null</li>
  *   <li>Correlation ID is stripped or generated</li>
  * </ul>
@@ -59,11 +60,12 @@ class PhrRequestContextNormalizationTest {
     }
 
     @Test
-    @DisplayName("persona defaults to role when not provided")
-    void personaDefaultsToRole() {
-        HttpRequest request = requestWithHeaders("tenant-1", "user-42", "clinician");
-        PhrRouteSupport.PhrRequestContext ctx = PhrRouteSupport.requireContext(request);
-        assertThat(ctx.persona()).isEqualTo("clinician");
+    @DisplayName("missing persona fails closed")
+    void missingPersonaFailsClosed() {
+        HttpRequest request = requestWithFullContext("tenant-1", "user-42", "clinician", null, "clinical", null, null);
+        assertThatThrownBy(() -> PhrRouteSupport.requireContext(request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("X-Persona");
     }
 
     @Test
@@ -83,11 +85,12 @@ class PhrRequestContextNormalizationTest {
     }
 
     @Test
-    @DisplayName("tier defaults to core when not provided")
-    void tierDefaultsToCore() {
-        HttpRequest request = requestWithHeaders("tenant-1", "user-42", "clinician");
-        PhrRouteSupport.PhrRequestContext ctx = PhrRouteSupport.requireContext(request);
-        assertThat(ctx.tier()).isEqualTo("core");
+    @DisplayName("missing tier fails closed")
+    void missingTierFailsClosed() {
+        HttpRequest request = requestWithFullContext("tenant-1", "user-42", "clinician", "clinician", null, null, null);
+        assertThatThrownBy(() -> PhrRouteSupport.requireContext(request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("X-Tier");
     }
 
     @Test
@@ -154,12 +157,15 @@ class PhrRequestContextNormalizationTest {
 
     private static HttpRequest requestWithCorrelation(
             String tenantId, String principalId, String role, String correlationId) {
-        HttpRequest request = mock(HttpRequest.class);
-        when(request.getHeader(HttpHeaders.of("X-Tenant-ID"))).thenReturn(tenantId);
-        when(request.getHeader(HttpHeaders.of("X-Principal-ID"))).thenReturn(principalId);
-        when(request.getHeader(HttpHeaders.of("X-Role"))).thenReturn(role);
-        when(request.getHeader(HttpHeaders.of("X-Correlation-ID"))).thenReturn(correlationId);
-        return request;
+        return requestWithFullContext(
+            tenantId,
+            principalId,
+            role,
+            role == null ? null : role.strip().toLowerCase(),
+            "core",
+            null,
+            correlationId
+        );
     }
 
     private static HttpRequest requestWithPersona(
@@ -169,6 +175,7 @@ class PhrRequestContextNormalizationTest {
         when(request.getHeader(HttpHeaders.of("X-Principal-ID"))).thenReturn(principalId);
         when(request.getHeader(HttpHeaders.of("X-Role"))).thenReturn(role);
         when(request.getHeader(HttpHeaders.of("X-Persona"))).thenReturn(persona);
+        when(request.getHeader(HttpHeaders.of("X-Tier"))).thenReturn("core");
         return request;
     }
 
@@ -178,6 +185,7 @@ class PhrRequestContextNormalizationTest {
         when(request.getHeader(HttpHeaders.of("X-Tenant-ID"))).thenReturn(tenantId);
         when(request.getHeader(HttpHeaders.of("X-Principal-ID"))).thenReturn(principalId);
         when(request.getHeader(HttpHeaders.of("X-Role"))).thenReturn(role);
+        when(request.getHeader(HttpHeaders.of("X-Persona"))).thenReturn(role == null ? null : role.strip().toLowerCase());
         when(request.getHeader(HttpHeaders.of("X-Tier"))).thenReturn(tier);
         return request;
     }
@@ -188,6 +196,8 @@ class PhrRequestContextNormalizationTest {
         when(request.getHeader(HttpHeaders.of("X-Tenant-ID"))).thenReturn(tenantId);
         when(request.getHeader(HttpHeaders.of("X-Principal-ID"))).thenReturn(principalId);
         when(request.getHeader(HttpHeaders.of("X-Role"))).thenReturn(role);
+        when(request.getHeader(HttpHeaders.of("X-Persona"))).thenReturn(role == null ? null : role.strip().toLowerCase());
+        when(request.getHeader(HttpHeaders.of("X-Tier"))).thenReturn("core");
         when(request.getHeader(HttpHeaders.of("X-Facility-ID"))).thenReturn(facilityId);
         return request;
     }

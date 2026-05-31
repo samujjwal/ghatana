@@ -15,7 +15,10 @@ import io.activej.http.RoutingServlet;
 import io.activej.promise.Promise;
 
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Base64;
+import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -70,7 +73,7 @@ public final class PhrDocumentImagingRoutes {
     public AsyncServlet getServlet() {
         return RoutingServlet.builder(eventloop)
             .with("/documents/*", getDocumentServlet())
-            .with("/imaging/*", imagingServlet())
+            .with("/imaging/*", getImagingServlet())
             .build();
     }
 
@@ -89,7 +92,7 @@ public final class PhrDocumentImagingRoutes {
             .build();
     }
 
-    private AsyncServlet imagingServlet() {
+    public AsyncServlet getImagingServlet() {
         return RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/orders", this::handleCreateImagingOrder)
             .with(HttpMethod.GET, "/orders/:orderId", this::handleGetImagingOrder)
@@ -157,13 +160,7 @@ public final class PhrDocumentImagingRoutes {
         String documentId = request.getPathParameter("documentId");
         return documentService.getOcrDocument(documentId, context.principalId())
             .then(ocrDoc -> ocrDoc
-                .<Promise<HttpResponse>>map(doc -> PhrRouteSupport.jsonResponse(200, Map.of(
-                    "documentId", doc.documentId(),
-                    "title", doc.title(),
-                    "extractedText", doc.extractedText(),
-                    "confidence", doc.confidence(),
-                    "status", doc.status()
-                )))
+                .<Promise<HttpResponse>>map(doc -> PhrRouteSupport.jsonResponse(200, ocrDocumentDto(doc), correlationId))
                 .orElseGet(() -> PhrRouteSupport.errorResponse(403, "OCR_ACCESS_DENIED", "OCR document is not visible to this principal", correlationId)));
     }
 
@@ -207,33 +204,38 @@ public final class PhrDocumentImagingRoutes {
                             .then(body -> {
                                 String correctedText;
                                 try {
-                                    JsonNode node = PhrRouteSupport.JSON.readTree(body.getString(StandardCharsets.UTF_8));
-                                    correctedText = node.path("correctedText").asText(null);
+                                    String rawBody = body.getString(StandardCharsets.UTF_8);
+                                    if (rawBody == null || rawBody.isBlank()) {
+                                        correctedText = null;
+                                    } else {
+                                        JsonNode node = PhrRouteSupport.JSON.readTree(rawBody);
+                                        correctedText = node.path("correctedText").asText(null);
+                                    }
                                 } catch (Exception ex) {
                                     return PhrRouteSupport.errorResponse(400, "INVALID_OCR_CONFIRM", ex.getMessage());
                                 }
 
-                                return documentService.confirmOcrDocument(documentId, context.principalId(), correctedText)
+                                return documentService.confirmOcrDocument(documentId, context.principalId(), correctedText, idempotencyKey)
                                     .then(confirmed -> {
                                         String auditCorrelationId = PhrTraceContext.newCorrelationId("phr_ocr_confirm");
                                         auditOcrConfirmation(context, documentId, correctedText, auditCorrelationId);
                                         return documentService.toFhirDocumentReference(documentId)
-                                            .then(fhir -> PhrRouteSupport.jsonResponse(200, Map.of(
-                                                "documentId", documentId,
-                                                "confirmed", true,
-                                                "fhirResource", fhir,
-                                                "provenance", Map.of(
+                                            .then(fhir -> {
+                                                Map<String, Object> dto = ocrDocumentDto(confirmed);
+                                                dto.put("confirmed", true);
+                                                dto.put("fhirResource", fhir);
+                                                dto.put("provenance", Map.of(
                                                     "reviewerId", context.principalId(),
-                                                    "reviewedAt", java.time.Instant.now().toString(),
+                                                    "reviewedAt", confirmed.reviewedAt() != null ? confirmed.reviewedAt().toString() : java.time.Instant.now().toString(),
                                                     "correlationId", auditCorrelationId
-                                                )
-                                            )));
+                                                ));
+                                                return PhrRouteSupport.jsonResponse(200, dto, correlationId);
+                                            });
                                     });
                             });
                     });
             });
-
-            }
+    }
 
     private Promise<HttpResponse> handleRejectOcrDocument(HttpRequest request) {
         String correlationId = PhrRouteSupport.extractCorrelationId(request);
@@ -247,14 +249,38 @@ public final class PhrDocumentImagingRoutes {
         }
 
         String documentId = request.getPathParameter("documentId");
-        return documentService.rejectOcrDocument(documentId, context.principalId())
-            .then($ -> {
-                String auditCorrelationId = PhrTraceContext.newCorrelationId("phr_ocr_reject");
-                auditOcrRejection(context, documentId, auditCorrelationId);
-                return PhrRouteSupport.jsonResponse(200, Map.of(
-                    "documentId", documentId,
-                    "rejected", true
-                ), correlationId);
+        return policyEvaluator.canAccessPhiResourceAsync(
+                context,
+                "ocr-review-scope",
+                "ocr-document-review",
+                "WRITE",
+                context.tenantId(),
+                context.facilityId())
+            .then(decision -> {
+                if (!decision.isAllowed()) {
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
+                }
+                return documentService.getOcrDocument(documentId, context.principalId())
+                    .then(ocrDoc -> {
+                        if (ocrDoc.isEmpty()) {
+                            return PhrRouteSupport.errorResponse(403, "OCR_ACCESS_DENIED",
+                                "OCR document is not visible to this principal",
+                                context.correlationId());
+                        }
+                        return documentService.rejectOcrDocument(documentId, context.principalId(), idempotencyKey)
+                            .then(rejected -> {
+                                String auditCorrelationId = PhrTraceContext.newCorrelationId("phr_ocr_reject");
+                                auditOcrRejection(context, documentId, auditCorrelationId);
+                                Map<String, Object> dto = ocrDocumentDto(rejected);
+                                dto.put("rejected", true);
+                                dto.put("provenance", Map.of(
+                                    "reviewerId", context.principalId(),
+                                    "reviewedAt", rejected.reviewedAt() != null ? rejected.reviewedAt().toString() : java.time.Instant.now().toString(),
+                                    "correlationId", auditCorrelationId
+                                ));
+                                return PhrRouteSupport.jsonResponse(200, dto, correlationId);
+                            });
+                    });
             });
     }
 
@@ -590,6 +616,10 @@ public final class PhrDocumentImagingRoutes {
             throw new IllegalArgumentException(
                 "File size exceeds maximum allowed size of 10MB. Actual size: " + (content.length / 1024 / 1024) + "MB");
         }
+        String contentHash = requiredText(node, "contentHash");
+        if (!sha256Hex(content).equalsIgnoreCase(contentHash)) {
+            throw new IllegalArgumentException("contentHash does not match uploaded content");
+        }
 
         return new DocumentService.DocumentUploadRequest(
             requiredText(node, "patientId"),
@@ -598,14 +628,97 @@ public final class PhrDocumentImagingRoutes {
             text(node, "description", null),
             contentType,
             content,
-            requiredText(node, "contentHash"),
-            requiredText(node, "visibility")
+            contentHash,
+            requiredText(node, "visibility"),
+            parseStoragePolicy(node.path("storagePolicy")),
+            parseProvenance(node.path("provenance"), requiredText(node, "patientId")),
+            parseMalwareScan(node.path("malwareScan"))
         );
+    }
+
+    private static DocumentService.DocumentStoragePolicy parseStoragePolicy(JsonNode node) {
+        if (!node.isObject()) {
+            throw new IllegalArgumentException("storagePolicy is required");
+        }
+        return new DocumentService.DocumentStoragePolicy(
+            requiredText(node, "residency"),
+            requiredText(node, "retention"),
+            requiredText(node, "encryption")
+        );
+    }
+
+    private static DocumentService.UploadProvenance parseProvenance(JsonNode node, String patientId) {
+        if (!node.isObject()) {
+            throw new IllegalArgumentException("provenance is required");
+        }
+        String provenancePatientId = text(node, "patientId", patientId);
+        if (!patientId.equals(provenancePatientId)) {
+            throw new IllegalArgumentException("provenance.patientId must match patientId");
+        }
+        return new DocumentService.UploadProvenance(
+            requiredText(node, "source"),
+            requiredText(node, "uploadedBy"),
+            provenancePatientId
+        );
+    }
+
+    private static DocumentService.MalwareScanAttestation parseMalwareScan(JsonNode node) {
+        if (!node.isObject()) {
+            throw new IllegalArgumentException("malwareScan is required");
+        }
+        String status = requiredText(node, "status");
+        if (!"clean".equals(status)) {
+            throw new IllegalArgumentException("malwareScan.status must be clean");
+        }
+        return new DocumentService.MalwareScanAttestation(
+            status,
+            requiredText(node, "engine"),
+            java.time.Instant.parse(requiredText(node, "scannedAt"))
+        );
+    }
+
+    private static String sha256Hex(byte[] content) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(content));
+        } catch (java.security.NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("SHA-256 digest is unavailable", ex);
+        }
     }
 
     private static String patientIdFrom(String json) throws java.io.IOException {
         JsonNode node = PhrRouteSupport.JSON.readTree(json);
         return requiredText(node, "patientId");
+    }
+
+    private static Map<String, Object> ocrDocumentDto(DocumentService.OcrDocument doc) {
+        Map<String, Object> dto = new LinkedHashMap<>();
+        dto.put("id", doc.documentId());
+        dto.put("documentId", doc.documentId());
+        dto.put("title", doc.title());
+        dto.put("ocrText", doc.extractedText());
+        dto.put("extractedText", doc.extractedText());
+        dto.put("confidence", doc.confidence());
+        dto.put("status", ocrStatus(doc.status()));
+        if (doc.extractedText() != null) {
+            dto.put("correctedText", doc.extractedText());
+        }
+        if (doc.reviewerId() != null) {
+            dto.put("reviewerId", doc.reviewerId());
+        }
+        if (doc.reviewedAt() != null) {
+            dto.put("reviewedAt", doc.reviewedAt().toString());
+        }
+        return dto;
+    }
+
+    private static String ocrStatus(String status) {
+        if ("CONFIRMED".equals(status)) {
+            return "confirmed";
+        }
+        if ("REJECTED".equals(status)) {
+            return "rejected";
+        }
+        return "pending_review";
     }
 
     private static String requiredText(JsonNode node, String fieldName) {

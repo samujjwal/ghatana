@@ -2,16 +2,7 @@ package com.ghatana.aep.operator.agent;
 
 import com.ghatana.aep.model.CanonicalEvent;
 import com.ghatana.aep.model.EventContext;
-import com.ghatana.aep.operator.contract.CompileContext;
-import com.ghatana.aep.operator.contract.EventOperator;
-import com.ghatana.aep.operator.contract.EventOperatorResult;
-import com.ghatana.aep.operator.contract.OperatorKind;
-import com.ghatana.aep.operator.contract.OperatorRuntimeContext;
-import com.ghatana.aep.operator.contract.OperatorSpec;
-import com.ghatana.aep.operator.contract.OperatorVersion;
-import com.ghatana.aep.operator.contract.RuntimePlan;
-import com.ghatana.aep.operator.contract.ValidationContext;
-import com.ghatana.aep.operator.contract.ValidationResult;
+import com.ghatana.aep.operator.contract.*;
 import com.ghatana.core.operator.OperatorId;
 import io.activej.promise.Promise;
 
@@ -21,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -216,5 +208,52 @@ public final class AgentActionOperator implements EventOperator<Map<String, Obje
             throw new IllegalArgumentException(fieldName + " must not be blank");
         }
         return value;
+    }
+
+    @Override
+    public OperatorExplanation explain(RuntimePlan plan, ExplanationDetailLevel detailLevel) {
+        return OperatorLifecycleContract.OperatorExplanation.empty();
+    }
+
+    @Override
+    public SideEffectDeclaration declareSideEffects(OperatorSpec spec) {
+        return new SideEffectDeclaration(
+            Set.of(SideEffectType.EXTERNAL_CALL, SideEffectType.EVENT_EMISSION),
+            List.of(agentRef),
+            true,
+            false,
+            Optional.of("Manual rollback required for agent actions"));
+    }
+
+    @Override
+    public ReplayBehavior declareReplayBehavior(OperatorSpec spec) {
+        return new ReplayBehavior(
+            false,
+            false,
+            true,
+            StateRecoveryMode.EVENT_SOURCING,
+            DeduplicationStrategy.EVENT_ID,
+            Optional.empty());
+    }
+
+    @Override
+    public RequiredPolicies declareRequiredPolicies(OperatorSpec spec) {
+        return new RequiredPolicies(
+            List.of(new PolicyRequirement("toolPolicy", "agent-tools", Map.of(), EnforcementLevel.REQUIRED)),
+            List.of(new PolicyRequirement("approvalPolicy", "human-approval", Map.of(), EnforcementLevel.REQUIRED)),
+            List.of(new PolicyRequirement("auditPolicy", "audit-trail", Map.of(), EnforcementLevel.REQUIRED)),
+            List.of(new PolicyRequirement("idempotencyPolicy", "idempotency-key", Map.of(), EnforcementLevel.REQUIRED)));
+    }
+
+    @Override
+    public ObservabilityRequirements declareObservabilityRequirements(OperatorSpec spec) {
+        return new ObservabilityRequirements(
+            List.of(
+                new MetricRequirement("agent.action.count", MetricType.COUNTER, AggregationMode.SUM),
+                new MetricRequirement("agent.action.duration", MetricType.TIMER, AggregationMode.AVG)),
+            List.of(new TraceRequirement("agent-action", List.of("agentRef", "operatorId"), true)),
+            List.of(new LogRequirement("agent-action", LogLevel.INFO, List.of("agentRef", "operatorId", "correlationId"))),
+            true,
+            false);
     }
 }

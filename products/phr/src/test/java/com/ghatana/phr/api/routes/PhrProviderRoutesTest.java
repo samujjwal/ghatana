@@ -20,9 +20,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,6 +34,7 @@ import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -70,27 +74,14 @@ class PhrProviderRoutesTest extends EventloopTestBase {
         );
         servlet = routes.getServlet();
 
-        PatientRecordService.Patient patient = PatientRecordService.Patient.builder()
-            .id("p99")
-            .nationalId("NP-999")
-            .demographics(new PatientRecordService.Demographics(
-                "Provider",
-                "Patient",
-                "1985-03-14",
-                "female",
-                new PatientRecordService.Address("Ward 2", "Lalitpur", "Lalitpur", "Bagmati", "44700"),
-                new PatientRecordService.Contact("9800000000", "patient@example.com", "Guardian", "9811111111")
-            ))
-            .medicalHistory(new PatientRecordService.MedicalHistory(List.of(), List.of("hypertension"), List.of(), "A+"))
-            .createdAt(Instant.now())
-            .updatedAt(Instant.now())
-            .deleted(false)
-            .build();
+        PatientRecordService.Patient patient = patient("p99", "Provider", "Patient");
 
         lenient().when(patientRecordService.searchPatients(anyString(), anyMap(), anyInt(), anyInt()))
             .thenReturn(Promise.of(List.of(patient)));
         lenient().when(patientRecordService.getPatient(anyString()))
             .thenReturn(Promise.of(Optional.of(patient)));
+        lenient().when(consentService.getActiveGrantsForRecipient(anyString()))
+            .thenReturn(Promise.of(List.of()));
         lenient().when(consentService.checkAccess(any(ConsentService.ConsentCheckRequest.class)))
             .thenReturn(Promise.of(ConsentService.ConsentAccessDecision.allow(
                 ConsentService.ReasonCode.EXPLICIT_GRANT,
@@ -101,6 +92,59 @@ class PhrProviderRoutesTest extends EventloopTestBase {
         lenient().when(policyEvaluator.canAccessPhiResourceAsync(
                 any(), anyString(), anyString(), anyString(), anyString(), any()))
             .thenReturn(Promise.of(PhrPolicyEvaluator.PolicyDecision.allowed("TEST_ALLOWED", "allowed")));
+    }
+
+    @Nested
+    @DisplayName("GET /dashboard")
+    class GetDashboard {
+
+        @Test
+        @DisplayName("returns 403 for patient role")
+        void returns403ForPatient() throws Exception {
+            HttpRequest request = contextRequest(HttpMethod.GET, "/dashboard", "t1", "patient-1", "patient");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(403);
+        }
+
+        @Test
+        @DisplayName("filters recent patients through patient-specific PHI policy")
+        void filtersRecentPatientsThroughPatientSpecificPolicy() throws Exception {
+            PatientRecordService.Patient allowedPatient = patient("p-allowed", "Allowed", "Patient");
+            PatientRecordService.Patient deniedPatient = patient("p-denied", "Denied", "Patient");
+            lenient().when(patientRecordService.searchPatients(anyString(), anyMap(), anyInt(), anyInt()))
+                .thenReturn(Promise.of(List.of(allowedPatient, deniedPatient)));
+            lenient().when(consentService.getActiveGrantsForRecipient("clinician-1"))
+                .thenReturn(Promise.of(List.of(
+                    grant("grant-allowed", "p-allowed", "clinician-1"),
+                    grant("grant-denied", "p-denied", "clinician-1")
+                )));
+            lenient().when(patientRecordService.getPatient("p-allowed"))
+                .thenReturn(Promise.of(Optional.of(allowedPatient)));
+            lenient().when(patientRecordService.getPatient("p-denied"))
+                .thenReturn(Promise.of(Optional.of(deniedPatient)));
+            lenient().when(policyEvaluator.canAccessPhiResourceAsync(
+                    any(), eq("p-allowed"), eq("provider-dashboard"), eq("READ"), eq("t1"), any()))
+                .thenReturn(Promise.of(PhrPolicyEvaluator.PolicyDecision.allowed("CONSENT_GRANTED", "allowed")));
+            lenient().when(policyEvaluator.canAccessPhiResourceAsync(
+                    any(), eq("p-denied"), eq("provider-dashboard"), eq("READ"), eq("t1"), any()))
+                .thenReturn(Promise.of(PhrPolicyEvaluator.PolicyDecision.denied("NO_TREATMENT_RELATIONSHIP", "denied")));
+            HttpRequest request = contextRequest(HttpMethod.GET, "/dashboard", "t1", "clinician-1", "clinician");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+            String body = body(response);
+
+            assertThat(response.getCode()).isEqualTo(200);
+            assertThat(body)
+                .contains("p-allowed", "Allowed", "CONSENT_GRANTED")
+                .doesNotContain("p-denied", "Denied", "NO_TREATMENT_RELATIONSHIP");
+            verify(policyEvaluator).canAccessPhiResourceAsync(
+                any(), eq("p-allowed"), eq("provider-dashboard"), eq("READ"), eq("t1"), any());
+            verify(policyEvaluator).canAccessPhiResourceAsync(
+                any(), eq("p-denied"), eq("provider-dashboard"), eq("READ"), eq("t1"), any());
+            verify(patientRecordService, never()).searchPatients(eq("deleted = false"), anyMap(), anyInt(), anyInt());
+        }
     }
 
     @Nested
@@ -176,6 +220,56 @@ class PhrProviderRoutesTest extends EventloopTestBase {
 
             assertThat(response.getCode()).isEqualTo(400);
         }
+
+        @Test
+        @DisplayName("filters roster patients through patient-specific PHI policy")
+        void filtersRosterPatientsThroughPatientSpecificPolicy() throws Exception {
+            PatientRecordService.Patient allowedPatient = patient("p-allowed", "Allowed", "Patient");
+            PatientRecordService.Patient deniedPatient = patient("p-denied", "Denied", "Patient");
+            lenient().when(patientRecordService.searchPatients(anyString(), anyMap(), anyInt(), anyInt()))
+                .thenReturn(Promise.of(List.of(allowedPatient, deniedPatient)));
+            lenient().when(consentService.getActiveGrantsForRecipient("clinician-1"))
+                .thenReturn(Promise.of(List.of(
+                    grant("grant-allowed", "p-allowed", "clinician-1"),
+                    grant("grant-denied", "p-denied", "clinician-1")
+                )));
+            lenient().when(patientRecordService.getPatient("p-allowed"))
+                .thenReturn(Promise.of(Optional.of(allowedPatient)));
+            lenient().when(patientRecordService.getPatient("p-denied"))
+                .thenReturn(Promise.of(Optional.of(deniedPatient)));
+            lenient().when(policyEvaluator.canAccessPhiResourceAsync(
+                    any(), eq("p-allowed"), eq("patient-roster"), eq("READ"), eq("t1"), any()))
+                .thenReturn(Promise.of(PhrPolicyEvaluator.PolicyDecision.allowed("CONSENT_GRANTED", "allowed")));
+            lenient().when(policyEvaluator.canAccessPhiResourceAsync(
+                    any(), eq("p-denied"), eq("patient-roster"), eq("READ"), eq("t1"), any()))
+                .thenReturn(Promise.of(PhrPolicyEvaluator.PolicyDecision.denied("NO_TREATMENT_RELATIONSHIP", "denied")));
+            HttpRequest request = contextRequest(HttpMethod.GET, "/patients", "t1", "clinician-1", "clinician");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+            String body = body(response);
+
+            assertThat(response.getCode()).isEqualTo(200);
+            assertThat(body)
+                .contains("p-allowed", "Allowed", "CONSENT_GRANTED")
+                .doesNotContain("p-denied", "Denied", "NO_TREATMENT_RELATIONSHIP");
+            verify(policyEvaluator).canAccessPhiResourceAsync(
+                any(), eq("p-allowed"), eq("patient-roster"), eq("READ"), eq("t1"), any());
+            verify(policyEvaluator).canAccessPhiResourceAsync(
+                any(), eq("p-denied"), eq("patient-roster"), eq("READ"), eq("t1"), any());
+            verify(patientRecordService, never()).searchPatients(eq("deleted = false"), anyMap(), anyInt(), anyInt());
+        }
+
+        @Test
+        @DisplayName("returns 400 when limit is invalid")
+        void returns400WhenLimitInvalid() throws Exception {
+            HttpRequest request = contextRequest(HttpMethod.GET, "/patients?limit=abc", "t1", "p1", "clinician");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+            String body = body(response);
+
+            assertThat(response.getCode()).isEqualTo(400);
+            assertThat(body).contains("INVALID_LIMIT");
+        }
     }
 
     @Nested
@@ -229,6 +323,51 @@ class PhrProviderRoutesTest extends EventloopTestBase {
             .withHeader(HttpHeaders.of("X-Tenant-ID"), tenantId)
             .withHeader(HttpHeaders.of("X-Principal-ID"), principalId)
             .withHeader(HttpHeaders.of("X-Role"), role)
+            .withHeader(HttpHeaders.of("X-Persona"), role)
+            .withHeader(HttpHeaders.of("X-Tier"), "core")
             .build();
+    }
+
+    private static PatientRecordService.Patient patient(String id, String firstName, String lastName) {
+        return PatientRecordService.Patient.builder()
+            .id(id)
+            .nationalId("NP-" + id)
+            .demographics(new PatientRecordService.Demographics(
+                firstName,
+                lastName,
+                "1985-03-14",
+                "female",
+                new PatientRecordService.Address("Ward 2", "Lalitpur", "Lalitpur", "Bagmati", "44700"),
+                new PatientRecordService.Contact("9800000000", "patient@example.com", "Guardian", "9811111111")
+            ))
+            .medicalHistory(new PatientRecordService.MedicalHistory(List.of(), List.of("hypertension"), List.of(), "A+"))
+            .createdAt(Instant.now())
+            .updatedAt(Instant.now())
+            .deleted(false)
+            .build();
+    }
+
+    private static ConsentManagementService.ConsentGrant grant(String id, String patientId, String recipientId) {
+        return new ConsentManagementService.ConsentGrant(
+            id,
+            patientId,
+            recipientId,
+            new ConsentManagementService.ConsentScope(
+                Set.of("*"),
+                true,
+                Set.of(),
+                Set.of("READ"),
+                Map.of()
+            ),
+            "ACTIVE",
+            Instant.now(),
+            Instant.now().plusSeconds(3600),
+            null,
+            id
+        );
+    }
+
+    private String body(HttpResponse response) throws Exception {
+        return new String(runPromise(response::loadBody).asArray(), StandardCharsets.UTF_8);
     }
 }

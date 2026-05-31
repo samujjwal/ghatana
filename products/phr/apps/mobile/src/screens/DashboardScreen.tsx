@@ -1,21 +1,33 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { t } from '../i18n/phrMobileI18n';
-import type { MobileDashboard } from '../types';
-
-function newCorrelationId(): string {
-  return crypto.randomUUID();
-}
-
+import type { MobileDashboard, MobileOfflineCacheStatus } from '../types';
 
 interface DashboardScreenProps {
   dashboard: MobileDashboard;
+  offlineCacheStatus?: MobileOfflineCacheStatus;
 }
 
-export function DashboardScreen({ dashboard }: DashboardScreenProps): React.ReactElement {
+function formatLastSync(timestamp: number | null): string {
+  return timestamp ? new Date(timestamp).toLocaleString() : t('settings.never');
+}
+
+export function DashboardScreen({ dashboard, offlineCacheStatus }: DashboardScreenProps): React.ReactElement {
   return (
     <View style={styles.container}>
-      <Text style={styles.title} accessibilityLabel={`${t('dashboard.patientName')}: ${dashboard.patient.name}`}>
+      {offlineCacheStatus ? (
+        <View style={styles.cacheStatus}>
+          <Text style={styles.cacheText}>
+            {t('dashboard.lastSync', { time: formatLastSync(offlineCacheStatus.lastSyncAt) })}
+          </Text>
+          {offlineCacheStatus.isOffline ? (
+            <Text style={[styles.cacheText, offlineCacheStatus.isStale ? styles.stale : styles.fresh]}>
+              {offlineCacheStatus.isStale ? t('offline.cacheStaleWarning') : t('offline.cacheAvailable')}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
+      <Text style={styles.title} accessibilityLabel={dashboard.patient.name}>
         {dashboard.patient.name}
       </Text>
       <Text style={styles.subtitle} accessibilityLabel={`${t('dashboard.location')}: ${dashboard.patient.district}, ${t('dashboard.bloodType')}: ${dashboard.patient.bloodType}`}>
@@ -46,4 +58,8 @@ const styles = StyleSheet.create({
   metrics: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
   metricCard: { backgroundColor: '#edf4ff', padding: 14, borderRadius: 16, minWidth: 100 },
   metricValue: { fontSize: 28, fontWeight: '700', color: '#123c84' },
+  cacheStatus: { backgroundColor: '#fff', borderColor: '#d5dded', borderWidth: 1, borderRadius: 8, padding: 10, gap: 4 },
+  cacheText: { color: '#4b5c77', fontSize: 13 },
+  fresh: { color: '#166534', fontWeight: '700' },
+  stale: { color: '#b91c1c', fontWeight: '700' },
 });

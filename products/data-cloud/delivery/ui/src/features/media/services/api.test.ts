@@ -203,4 +203,133 @@ describe("media API service", () => {
       }
     });
   });
+
+  // Pass 6: Job management tests
+  describe("job management", () => {
+    it("gets jobs for an artifact", async () => {
+      const mockJobs = [
+        {
+          jobId: "job-1",
+          artifactId: "artifact-1",
+          jobType: "transcription",
+          status: "completed",
+          progress: 100,
+          createdAt: "2026-05-01T00:00:00Z",
+          isTerminal: true,
+          isSuccessful: true,
+        },
+      ];
+      vi.mocked(apiClient.get).mockResolvedValueOnce(mockJobs);
+
+      const jobs = await mediaApi.getJobs("artifact-1");
+
+      expect(apiClient.get).toHaveBeenCalledWith("/api/v1/media/artifacts/artifact-1/jobs");
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0].jobId).toBe("job-1");
+    });
+
+    it("retries failed job for an artifact", async () => {
+      vi.mocked(apiClient.post).mockResolvedValueOnce({
+        jobId: "job-2",
+        status: "pending",
+      });
+
+      const result = await mediaApi.retryJob("artifact-1");
+
+      expect(apiClient.post).toHaveBeenCalledWith(
+        "/api/v1/media/artifacts/artifact-1/retry",
+        {},
+      );
+      expect(result.jobId).toBe("job-2");
+    });
+  });
+
+  // Pass 6: Transcript retrieval tests
+  describe("transcript retrieval", () => {
+    it("gets transcript for an artifact", async () => {
+      const mockTranscript = {
+        transcriptId: "transcript-1",
+        artifactId: "artifact-1",
+        jobId: "job-1",
+        languageCode: "en-US",
+        confidence: 0.95,
+        durationMs: 1000,
+        wordCount: 150,
+        speakerCount: 1,
+        fullText: "Hello world",
+        segments: [],
+        createdAt: "2026-05-01T00:00:00Z",
+      };
+      vi.mocked(apiClient.get).mockResolvedValueOnce(mockTranscript);
+
+      const transcript = await mediaApi.getTranscript("artifact-1");
+
+      expect(apiClient.get).toHaveBeenCalledWith("/api/v1/media/artifacts/artifact-1/transcript");
+      expect(transcript.transcriptId).toBe("transcript-1");
+      expect(transcript.languageCode).toBe("en-US");
+    });
+  });
+
+  // Pass 6: Frame index retrieval tests
+  describe("frame index retrieval", () => {
+    it("gets frame index for an artifact", async () => {
+      const mockFrameIndex = {
+        frameIndexId: "frame-1",
+        artifactId: "artifact-1",
+        jobId: "job-1",
+        analysisType: "object_detection",
+        confidence: 0.9,
+        frameCount: 100,
+        durationMs: 5000,
+        frames: [],
+        labels: [
+          { label: "person", occurrenceCount: 50, avgConfidence: 0.9 },
+        ],
+        events: [],
+        createdAt: "2026-05-01T00:00:00Z",
+      };
+      vi.mocked(apiClient.get).mockResolvedValueOnce(mockFrameIndex);
+
+      const frameIndex = await mediaApi.getFrameIndex("artifact-1");
+
+      expect(apiClient.get).toHaveBeenCalledWith("/api/v1/media/artifacts/artifact-1/frame-index");
+      expect(frameIndex.frameIndexId).toBe("frame-1");
+      expect(frameIndex.analysisType).toBe("object_detection");
+    });
+  });
+
+  // Pass 6: Consent management tests
+  describe("consent management", () => {
+    it("updates consent status for an artifact", async () => {
+      const updatedArtifact = {
+        ...artifactResponse,
+        consentStatus: "GRANTED",
+      };
+      vi.mocked(apiClient.post).mockResolvedValueOnce(updatedArtifact);
+
+      const artifact = await mediaApi.updateConsent("artifact-1", "GRANTED");
+
+      expect(apiClient.post).toHaveBeenCalledWith(
+        "/api/v1/media/artifacts/artifact-1/consent",
+        { consentStatus: "GRANTED" },
+      );
+      expect(artifact.consentStatus).toBe("GRANTED");
+    });
+
+    it("denies consent for an artifact", async () => {
+      const updatedArtifact = {
+        ...artifactResponse,
+        consentStatus: "DENIED",
+      };
+      vi.mocked(apiClient.post).mockResolvedValueOnce(updatedArtifact);
+
+      const artifact = await mediaApi.updateConsent("artifact-1", "DENIED");
+
+      expect(apiClient.post).toHaveBeenCalledWith(
+        "/api/v1/media/artifacts/artifact-1/consent",
+        { consentStatus: "DENIED" },
+      );
+      expect(artifact.consentStatus).toBe("DENIED");
+    });
+  });
 });

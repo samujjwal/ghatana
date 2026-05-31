@@ -8,6 +8,7 @@ import {
   parseProductRouteContract,
 } from "@ghatana/kernel-product-contracts/route";
 import routeContractJson from "../../../config/phr-route-contract.json";
+import type { PhrMessageKey } from "./i18n/phrI18n";
 
 export type PhrRole = "patient" | "caregiver" | "fchv" | "clinician" | "admin";
 export type PhrRouteStability = RouteStability;
@@ -30,8 +31,8 @@ export interface PhrRouteContract extends ProductRouteCapability {
   readonly policyId?: string;
   readonly testId?: string;
   readonly surface?: readonly ("web" | "mobile" | "backend" | "hidden")[];
-  readonly i18nKey?: string;
-  readonly descriptionI18nKey?: string;
+  readonly i18nKey: string;
+  readonly descriptionI18nKey: string;
   readonly routeType?: "page" | "detail" | "action" | "system";
   readonly visibilityReason?: string;
 }
@@ -63,16 +64,21 @@ export const phrRouteContracts = canonicalRouteContract.routes;
 export type PhrRoutePath = (typeof phrRouteContracts)[number]["path"];
 
 /**
- * Get the i18n key for a route's label, falling back to the raw label if no i18n key exists.
- * This ensures UI rendering uses localized strings instead of raw English.
+ * Get the i18n key for a route's label.
  */
-export function getRouteLabelI18nKey(route: PhrRouteContract): string {
-  return route.i18nKey ?? route.label;
+export function getRouteLabelI18nKey(route: PhrRouteContract): PhrMessageKey {
+  if (!route.i18nKey) {
+    throw new Error(`PHR route ${route.path} is missing i18nKey`);
+  }
+  return route.i18nKey as PhrMessageKey;
 }
 
 /**
- * Get the i18n key for a route's description, falling back to the raw description if no i18n key exists.
+ * Get the i18n key for a route's description.
  */
-export function getRouteDescriptionI18nKey(route: PhrRouteContract): string {
-  return route.descriptionI18nKey ?? route.description;
+export function getRouteDescriptionI18nKey(route: PhrRouteContract): PhrMessageKey {
+  if (!route.descriptionI18nKey) {
+    throw new Error(`PHR route ${route.path} is missing descriptionI18nKey`);
+  }
+  return route.descriptionI18nKey as PhrMessageKey;
 }

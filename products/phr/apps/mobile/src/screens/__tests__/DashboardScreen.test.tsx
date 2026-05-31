@@ -59,4 +59,20 @@ describe('DashboardScreen', () => {
     const rendered = render(<DashboardScreen dashboard={empty} />);
     expect(renderedText(rendered)).toContain('No Data');
   });
+
+  it('renders offline last-sync and stale status metadata', () => {
+    const rendered = render(
+      <DashboardScreen
+        dashboard={dashboard}
+        offlineCacheStatus={{
+          lastSyncAt: Date.parse('2026-05-31T12:00:00.000Z'),
+          isOffline: true,
+          isStale: true,
+        }}
+      />,
+    );
+
+    expect(renderedText(rendered)).toContain('Last synced:');
+    expect(renderedText(rendered)).toContain('Offline cache is stale');
+  });
 });

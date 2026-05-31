@@ -790,6 +790,309 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
         assertThat(connection).doesNotContainKey("secretRef");
     }
 
+    // Pass 7: Connector production path tests
+
+    @Test
+    @DisplayName("P7: No credentials returned in connection responses")
+    void noCredentialsReturnedInResponses() {
+        // Given connection entity with credentials
+        DataCloudClient.Entity entity = mockEntity("conn-1", Map.of(
+            "name", "orders-source",
+            "type", "POSTGRESQL",
+            "state", "ACTIVE",
+            "tenantId", "test-tenant",
+            "credentials", Map.of("username", "svc", "password", "secret"),
+            "secretRef", Map.of("provider", "vault", "path", "kv/datacloud/orders")
+        ));
+
+        lenient().when(client.findById(anyString(), anyString(), eq("conn-1")))
+            .thenReturn(io.activej.promise.Promise.of(java.util.Optional.of(entity)));
+
+        HttpRequest request = RequestContextTestHelper.createTestRequest(
+            "test-tenant",
+            "conn-1",
+            "/api/v1/connectors/conn-1");
+        lenient().when(request.getMethod()).thenReturn(HttpMethod.GET);
+
+        HttpResponse response = runPromise(() -> handler.handleGetConnection(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        Map<String, Object> connection = parseJsonBody(response);
+        assertThat(connection).doesNotContainKey("credentials");
+        assertThat(connection).doesNotContainKey("secretRef");
+    }
+
+    @Test
+    @DisplayName("P7: Runtime unavailable returns 503 in production-like profiles")
+    void runtimeUnavailableReturns503InProductionProfiles() {
+        DataSourceRegistryHandler productionHandler = new DataSourceRegistryHandler(
+            client, http, null, null, "production");
+
+        HttpRequest request = RequestContextTestHelper.createTestRequest(
+            "test-tenant",
+            "conn-1",
+            "/api/v1/connectors/conn-1/test");
+        lenient().when(request.getMethod()).thenReturn(HttpMethod.POST);
+
+        HttpResponse response = runPromise(() -> productionHandler.handleTestConnection(request));
+
+        assertThat(response.getCode()).isEqualTo(503);
+        Map<String, Object> body = parseJsonBody(response);
+        assertThat(String.valueOf(body.get("message")).toLowerCase())
+            .contains("connector runtime is required");
+    }
+
+    @Test
+    @DisplayName("P7: Local profile can save pending connector truthfully")
+    void localProfileCanSavePendingConnector() {
+        DataSourceRegistryHandler localHandler = new DataSourceRegistryHandler(
+            client, http, null, null, "local");
+
+        HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/connectors")
+            .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
+            .withHeader(HttpHeaders.of("X-Permissions"), "connector:register")
+            .withHeader(HttpHeaders.of("Content-Type"), "application/json")
+            .withBody(ByteBufStrings.wrapUtf8("""
+                {
+                  "name":"orders-source",
+                  "type":"POSTGRESQL",
+                  "secretRef":{"provider":"vault","path":"kv/datacloud/orders"}
+                }
+                """))
+            .build();
+
+        lenient().when(client.save(anyString(), anyString(), anyMap()))
+            .thenAnswer(invocation -> {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> payload = invocation.getArgument(2);
+                return io.activej.promise.Promise.of(mockEntity(String.valueOf(payload.get("id")), payload));
+            });
+
+        HttpResponse response = runPromise(() -> localHandler.handleRegisterConnection(request));
+
+        assertThat(response.getCode()).isEqualTo(201);
+        Map<String, Object> body = parseJsonBody(response);
+        assertThat(body.get("created")).isEqualTo(true);
+        assertThat(body.get("state")).isEqualTo("INACTIVE");
+    }
+
+    @Test
+    @DisplayName("P7: Schema inference stores snapshot")
+    void schemaInferenceStoresSnapshot() {
+        DataFabricConnector mockFabric = mock(DataFabricConnector.class);
+        DataFabricConnector.SchemaSnapshot schemaSnapshot = new DataFabricConnector.SchemaSnapshot(
+            "snapshot-123", "conn-1", "test-tenant",
+            List.of(
+                new DataFabricConnector.SchemaField("id", "INTEGER", false, "Primary key", Map.of("primaryKey", true)),
+                new DataFabricConnector.SchemaField("name", "VARCHAR", true, "Customer name", Map.of("maxLength", 255))
+            ),
+            "1.0.0",
+            java.time.Instant.now(),
+            Map.of("source", "inference")
+        );
+        lenient().when(mockFabric.getSchema(anyString()))
+            .thenReturn(io.activej.promise.Promise.of(schemaSnapshot));
+
+        DataSourceRegistryHandler handlerWithFabric = new DataSourceRegistryHandler(
+            client, http, mockFabric, null, "local");
+
+        HttpRequest request = RequestContextTestHelper.createTestRequest(
+            "test-tenant",
+            "conn-1",
+            "/api/v1/connectors/conn-1/schema");
+        lenient().when(request.getMethod()).thenReturn(HttpMethod.GET);
+        lenient().when(request.getHeader(HttpHeaders.of("X-Permissions")))
+            .thenReturn("connector:read-schema");
+
+        DataCloudClient.Entity existingConnection = mockEntity("conn-1", Map.of("name", "test-conn", "type", "POSTGRESQL", "state", "ACTIVE"));
+        lenient().when(client.findById(anyString(), anyString(), eq("conn-1")))
+            .thenReturn(io.activej.promise.Promise.of(java.util.Optional.of(existingConnection)));
+
+        HttpResponse response = runPromise(() -> handlerWithFabric.handleGetSchema(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        Map<String, Object> body = parseJsonBody(response);
+        assertThat(body).containsKey("schema");
+        assertThat(body.get("operationId")).isNotNull();
+    }
+
+    @Test
+    @DisplayName("P7: Credential rotation records operation")
+    void credentialRotationRecordsOperation() {
+        InMemoryOperationRecorder operationRecorder = new InMemoryOperationRecorder();
+        DataSourceRegistryHandler handlerWithOperations = new DataSourceRegistryHandler(
+            client, http, null, null, "local")
+            .withOperationRecorder(operationRecorder);
+
+        DataCloudClient.Entity existingConnection = mockEntity("conn-1", Map.of(
+            "name", "orders-source",
+            "type", "POSTGRESQL",
+            "state", "ACTIVE",
+            "tenantId", "test-tenant"));
+        lenient().when(client.findById(anyString(), anyString(), eq("conn-1")))
+            .thenReturn(io.activej.promise.Promise.of(java.util.Optional.of(existingConnection)));
+
+        DataCloudClient.Entity savedConnection = mock(DataCloudClient.Entity.class);
+        lenient().when(savedConnection.id()).thenReturn("conn-1");
+        lenient().when(savedConnection.data()).thenReturn(Map.of("name", "orders-source", "type", "POSTGRESQL", "state", "ACTIVE"));
+        lenient().when(savedConnection.collection()).thenReturn("dc_connections");
+        lenient().when(savedConnection.version()).thenReturn(1L);
+        lenient().when(savedConnection.createdAt()).thenReturn(java.time.Instant.now());
+        
+        lenient().when(client.save(anyString(), anyString(), anyMap()))
+            .thenReturn(io.activej.promise.Promise.of(savedConnection));
+
+        HttpRequest request = RequestContextTestHelper.createTestRequestWithBody(
+            "test-tenant",
+            "conn-1",
+            "/api/v1/connectors/conn-1/rotate-credentials",
+            ByteBufStrings.wrapUtf8("""
+                { "secretRef": { "provider": "vault", "path": "kv/datacloud/orders/v2" } }
+                """));
+        lenient().when(request.getHeader(HttpHeaders.of("X-Permissions")))
+            .thenReturn("connector:rotate-credentials");
+
+        HttpResponse response = runPromise(() -> handlerWithOperations.handleRotateCredentials(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        Map<String, Object> body = parseJsonBody(response);
+        assertThat(body.get("rotated")).isEqualTo(true);
+        assertThat(body.get("operationId")).isNotNull();
+
+        List<OperationRecord> operations = operationRecorder.listRecent("test-tenant", 10);
+        assertThat(operations)
+            .extracting(OperationRecord::kind)
+            .contains(OperationKind.CONNECTOR_CREDENTIAL_ROTATION);
+    }
+
+    @Test
+    @DisplayName("P7: Get dataset link returns link information when linked")
+    void getDatasetLinkReturnsLinkInformationWhenLinked() {
+        DataFabricConnector mockFabric = mock(DataFabricConnector.class);
+        DataSourceRegistryHandler handlerWithFabric = new DataSourceRegistryHandler(
+            client, http, mockFabric, null, "local");
+
+        DataFabricConnector.DatasetLink mockLink = new DataFabricConnector.DatasetLink(
+            "link-123",
+            "conn-1",
+            "dataset-456",
+            "test-tenant",
+            "SOURCE_TO_TARGET",
+            "v1.0.0",
+            Instant.now(),
+            "user-123"
+        );
+
+        lenient().when(mockFabric.getDatasetLink(eq("test-tenant"), eq("conn-1")))
+            .thenReturn(io.activej.promise.Promise.of(mockLink));
+
+        HttpRequest request = RequestContextTestHelper.createTestRequest(
+            "test-tenant",
+            "conn-1",
+            "/api/v1/connectors/conn-1/dataset-link");
+        lenient().when(request.getMethod()).thenReturn(HttpMethod.GET);
+        lenient().when(request.getHeader(HttpHeaders.of("X-Permissions")))
+            .thenReturn("connector:read");
+
+        HttpResponse response = runPromise(() -> handlerWithFabric.handleGetDatasetLink(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        Map<String, Object> body = parseJsonBody(response);
+        assertThat(body.get("linked")).isEqualTo(true);
+        assertThat(body.get("linkId")).isEqualTo("link-123");
+        assertThat(body.get("datasetId")).isEqualTo("dataset-456");
+        assertThat(body.get("syncDirection")).isEqualTo("SOURCE_TO_TARGET");
+    }
+
+    @Test
+    @DisplayName("P7: Get dataset link returns not linked when no link exists")
+    void getDatasetLinkReturnsNotLinkedWhenNoLinkExists() {
+        DataFabricConnector mockFabric = mock(DataFabricConnector.class);
+        DataSourceRegistryHandler handlerWithFabric = new DataSourceRegistryHandler(
+            client, http, mockFabric, null, "local");
+
+        lenient().when(mockFabric.getDatasetLink(eq("test-tenant"), eq("conn-1")))
+            .thenReturn(io.activej.promise.Promise.of(null));
+
+        HttpRequest request = RequestContextTestHelper.createTestRequest(
+            "test-tenant",
+            "conn-1",
+            "/api/v1/connectors/conn-1/dataset-link");
+        lenient().when(request.getMethod()).thenReturn(HttpMethod.GET);
+        lenient().when(request.getHeader(HttpHeaders.of("X-Permissions")))
+            .thenReturn("connector:read");
+
+        HttpResponse response = runPromise(() -> handlerWithFabric.handleGetDatasetLink(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        Map<String, Object> body = parseJsonBody(response);
+        assertThat(body.get("linked")).isEqualTo(false);
+        assertThat(body.get("operationId")).isNotNull();
+    }
+
+    @Test
+    @DisplayName("P7: Link dataset creates dataset link")
+    void linkDatasetCreatesDatasetLink() {
+        DataFabricConnector mockFabric = mock(DataFabricConnector.class);
+        DataSourceRegistryHandler handlerWithFabric = new DataSourceRegistryHandler(
+            client, http, mockFabric, null, "local");
+
+        DataFabricConnector.DatasetLink mockLink = new DataFabricConnector.DatasetLink(
+            "link-123",
+            "conn-1",
+            "dataset-456",
+            "test-tenant",
+            "SOURCE_TO_TARGET",
+            "v1.0.0",
+            Instant.now(),
+            "user-123"
+        );
+
+        lenient().when(mockFabric.linkDataset(eq("test-tenant"), eq("conn-1"), eq("dataset-456"), anyString()))
+            .thenReturn(io.activej.promise.Promise.of(mockLink));
+
+        HttpRequest request = RequestContextTestHelper.createTestRequestWithBody(
+            "test-tenant",
+            "conn-1",
+            "/api/v1/connectors/conn-1/dataset-link",
+            ByteBufStrings.wrapUtf8("""
+                { "datasetId": "dataset-456" }
+                """));
+        lenient().when(request.getMethod()).thenReturn(HttpMethod.POST);
+        lenient().when(request.getHeader(HttpHeaders.of("X-Permissions")))
+            .thenReturn("connector:link-dataset");
+
+        HttpResponse response = runPromise(() -> handlerWithFabric.handleLinkDataset(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        Map<String, Object> body = parseJsonBody(response);
+        assertThat(body.get("linked")).isEqualTo(true);
+        assertThat(body.get("linkId")).isEqualTo("link-123");
+        assertThat(body.get("datasetId")).isEqualTo("dataset-456");
+        assertThat(body.get("operationId")).isNotNull();
+    }
+
+    @Test
+    @DisplayName("P7: Link dataset requires datasetId in payload")
+    void linkDatasetRequiresDatasetIdInPayload() {
+        DataFabricConnector mockFabric = mock(DataFabricConnector.class);
+        DataSourceRegistryHandler handlerWithFabric = new DataSourceRegistryHandler(
+            client, http, mockFabric, null, "local");
+
+        HttpRequest request = RequestContextTestHelper.createTestRequestWithBody(
+            "test-tenant",
+            "conn-1",
+            "/api/v1/connectors/conn-1/dataset-link",
+            ByteBufStrings.wrapUtf8("{}"));
+        lenient().when(request.getMethod()).thenReturn(HttpMethod.POST);
+        lenient().when(request.getHeader(HttpHeaders.of("X-Permissions")))
+            .thenReturn("connector:link-dataset");
+
+        HttpResponse response = runPromise(() -> handlerWithFabric.handleLinkDataset(request));
+
+        assertThat(response.getCode()).isEqualTo(400);
+    }
+
     // Helper methods
 
     @SuppressWarnings("unchecked")

@@ -38,6 +38,63 @@ class DataCloudRouterBuilderIntegrationTest {
             "Content-Type,Authorization");
 
     /**
+     * Pass 8: Test that RouteRegistrar integration works.
+     */
+    @Test
+    @DisplayName("Pass 8: RouteRegistrar registers routes")
+    void routeRegistrarRegistersRoutes() {
+        Eventloop eventloop = Eventloop.create();
+        HealthHandler mockHealthHandler = new HealthHandler(HTTP_SUPPORT);
+        
+        DataCloudRouterBuilder builder = new DataCloudRouterBuilder(eventloop);
+        RouteRegistrar healthRegistrar = new com.ghatana.datacloud.launcher.http.registrars.HealthRouteRegistrar(mockHealthHandler);
+        
+        RoutingServlet servlet = builder.withRouteRegistrar(healthRegistrar).build();
+        
+        assertThat(servlet).isNotNull();
+    }
+
+    /**
+     * Pass 8: Test that route metadata is generated from registrars.
+     */
+    @Test
+    @DisplayName("Pass 8: Route metadata generated from registrars")
+    void routeMetadataGeneratedFromRegistrars() {
+        Eventloop eventloop = Eventloop.create();
+        HealthHandler mockHealthHandler = new HealthHandler(HTTP_SUPPORT);
+        
+        DataCloudRouterBuilder builder = new DataCloudRouterBuilder(eventloop);
+        RouteRegistrar healthRegistrar = new com.ghatana.datacloud.launcher.http.registrars.HealthRouteRegistrar(mockHealthHandler);
+        
+        builder.withRouteRegistrar(healthRegistrar);
+        
+        var metadata = builder.getAllRouteMetadata();
+        
+        assertThat(metadata).isNotEmpty();
+        assertThat(metadata).anyMatch(m -> m.routeId().equals("health-get"));
+        assertThat(metadata).anyMatch(m -> m.permissionId().equals("platform:health:read"));
+    }
+
+    /**
+     * Pass 8: Test that multiple registrars can be registered.
+     */
+    @Test
+    @DisplayName("Pass 8: Multiple registrars can be registered")
+    void multipleRegistrarsCanBeRegistered() {
+        Eventloop eventloop = Eventloop.create();
+        HealthHandler mockHealthHandler = new HealthHandler(HTTP_SUPPORT);
+        
+        DataCloudRouterBuilder builder = new DataCloudRouterBuilder(eventloop);
+        RouteRegistrar healthRegistrar = new com.ghatana.datacloud.launcher.http.registrars.HealthRouteRegistrar(mockHealthHandler);
+        
+        builder.withRouteRegistrar(healthRegistrar);
+        
+        var metadata = builder.getAllRouteMetadata();
+        
+        assertThat(metadata.size()).isGreaterThan(1);
+    }
+
+    /**
      * Test that verifies the router builder creates a valid RoutingServlet.
      */
     @Test

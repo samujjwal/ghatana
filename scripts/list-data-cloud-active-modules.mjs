@@ -26,11 +26,10 @@ const repoRoot = path.resolve(__dirname, '..');
 const settingsPath = path.join(repoRoot, 'config/generated/settings-gradle-includes.kts');
 
 const advisoryModules = new Set([
-  // DC-E2E-001: Promoted API contract and integration tests to release-blocking
-  // These modules are now required for release to ensure E2E journey coverage
+  // Modules that provide test/contract coverage but are not critical for core functionality
 ]);
 
-const releaseBlockingModules = new Set([
+const implementationCriticalModules = new Set([
   ':products:data-cloud:planes:shared-spi',
   ':products:data-cloud:planes:data:entity',
   ':products:data-cloud:planes:event:core',
@@ -51,6 +50,10 @@ const releaseBlockingModules = new Set([
   ':products:data-cloud:planes:event:store',
   ':products:data-cloud:extensions:kernel-bridge',
 ]);
+
+// Deprecated: use implementationCriticalModules instead
+// Kept for backwards compatibility during transition
+const releaseBlockingModules = implementationCriticalModules;
 
 const actionPlaneModules = new Set([
   ':products:data-cloud:planes:action',
@@ -102,23 +105,42 @@ export function classifyDataCloudModule(modulePath) {
     return { category: 'invalid', reason: 'Not a Data Cloud module' };
   }
   if (advisoryModules.has(modulePath)) {
-    return { category: 'advisory', reason: 'Integration or contract-test module; compile-gated, release-check optional' };
+    return {
+      category: 'advisory',
+      reason: 'Integration or contract-test module; compile-gated, test optional. Do not run release-readiness/evidence workflows.',
+      classification: 'implementation-advisory'
+    };
   }
   if (actionPlaneModules.has(modulePath)) {
-    return { category: 'release-blocking', reason: 'AEP Action Plane module; compile and release checks are blocking' };
+    return {
+      category: 'implementation-critical',
+      reason: 'AEP Action Plane module; compile and test are required. Do not run release-readiness/evidence workflows.',
+      classification: 'implementation-critical'
+    };
   }
-  if (releaseBlockingModules.has(modulePath)) {
-    return { category: 'release-blocking', reason: 'Active Data Cloud production module' };
+  if (implementationCriticalModules.has(modulePath)) {
+    return {
+      category: 'implementation-critical',
+      reason: 'Active Data Cloud module; include in implementation hardening and targeted tests. Do not run release-readiness/evidence workflows.',
+      classification: 'implementation-critical'
+    };
   }
-  return { category: 'invalid', reason: 'Data Cloud module is not classified as release-blocking or advisory' };
+  return {
+    category: 'invalid',
+    reason: 'Data Cloud module is not classified as implementation-critical or advisory'
+  };
 }
 
 export function filterModulesByScope(modules, scope) {
   if (scope === 'all-active') {
     return modules;
   }
-  if (scope === 'release-blocking') {
-    return modules.filter((modulePath) => classifyDataCloudModule(modulePath).category === 'release-blocking');
+  if (scope === 'implementation-critical' || scope === 'release-blocking') {
+    // Support both old 'release-blocking' and new 'implementation-critical' scopes
+    return modules.filter((modulePath) => {
+      const classification = classifyDataCloudModule(modulePath);
+      return classification.category === 'implementation-critical' || classification.category === 'release-blocking';
+    });
   }
   if (scope === 'advisory') {
     return modules.filter((modulePath) => classifyDataCloudModule(modulePath).category === 'advisory');

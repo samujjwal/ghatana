@@ -13,6 +13,9 @@
  * to the home page with an `accessDenied` state flag so the shell can display
  * an appropriate notice.
  *
+ * P5-05: Added route lifecycle checks (user-ready, operator-preview, internal-preview,
+ * target-only, disabled) to enforce runtime truth disclosure rules.
+ *
  * @doc.type component
  * @doc.purpose Enforce route-level shell-role access control for Data Cloud
  * @doc.layer frontend
@@ -23,6 +26,7 @@ import { Navigate, Outlet, useLocation } from "react-router";
 import SessionBootstrap, { type ShellRole } from "../../lib/auth/session";
 import {
   getRouteSurfaceByPath,
+  type RouteLifecycle,
   type RouteSurface,
 } from "../../lib/routing/RouteSurfaceRegistry";
 
@@ -38,6 +42,11 @@ interface RoleProtectedRouteProps {
    * When omitted, redirects to "/" with accessDenied state.
    */
   fallback?: React.ReactNode;
+  /**
+   * P5-05: Override to allow access to preview routes for this audience.
+   * Must match the route's previewAudience to access operator-preview or internal-preview routes.
+   */
+  allowPreviewAs?: "operator" | "admin";
 }
 
 /**
@@ -77,11 +86,87 @@ function resolveRoute(pathname: string): RouteSurface | undefined {
 }
 
 /**
+ * P5-05: Check if route lifecycle allows access for the given shell role and preview audience.
+ *
+ * Lifecycle rules:
+ * - user-ready: Accessible to all roles that meet minimumShellRole
+ * - operator-preview: Requires operator or admin role + allowPreviewAs match
+ * - internal-preview: Requires admin role only
+ * - target-only: Never accessible (returns false)
+ * - disabled: Never accessible (returns false)
+ */
+function routeLifecycleAllowsAccess(
+  route: RouteSurface,
+  shellRole: ShellRole,
+  allowPreviewAs?: "operator" | "admin",
+): { allowed: boolean; reason?: string } {
+  const lifecycle: RouteLifecycle = route.lifecycle;
+
+  // Target-only and disabled routes are never accessible
+  if (lifecycle === "target-only" || lifecycle === "disabled") {
+    return { allowed: false, reason: `Route is ${lifecycle}` };
+  }
+
+  // User-ready routes use standard role checking
+  if (lifecycle === "user-ready" || lifecycle === "active") {
+    return { allowed: true };
+  }
+
+  // Operator-preview routes require operator or admin role
+  if (lifecycle === "operator-preview") {
+    if (shellRole !== "operator" && shellRole !== "admin") {
+      return { allowed: false, reason: "Requires operator or admin role" };
+    }
+    if (allowPreviewAs !== "operator" && allowPreviewAs !== "admin") {
+      return { allowed: false, reason: "Preview access not granted" };
+    }
+    return { allowed: true };
+  }
+
+  // Internal-preview routes require admin role only
+  if (lifecycle === "internal-preview") {
+    if (shellRole !== "admin") {
+      return { allowed: false, reason: "Requires admin role" };
+    }
+    if (allowPreviewAs !== "admin") {
+      return { allowed: false, reason: "Internal preview access not granted" };
+    }
+    return { allowed: true };
+  }
+
+  // Legacy lifecycle values
+  if (lifecycle === "preview") {
+    if (shellRole === "primary-user") {
+      return { allowed: false, reason: "Preview not available to primary users" };
+    }
+    if (allowPreviewAs === undefined) {
+      return { allowed: false, reason: "Preview access not granted" };
+    }
+    return { allowed: true };
+  }
+
+  // Boundary routes require explicit opt-in (handled by caller)
+  if (lifecycle === "boundary") {
+    return { allowed: true }; // Caller must check includesBoundary
+  }
+
+  // Deprecated/redirect/removed routes should not be accessed directly
+  if (lifecycle === "deprecated" || lifecycle === "redirect" || lifecycle === "removed") {
+    return { allowed: false, reason: `Route is ${lifecycle}` };
+  }
+
+  return { allowed: true };
+}
+
+/**
  * Route-level shell-role guard for Data Cloud.
  *
  * Wraps routes that require a specific shell role. If the user's current
  * shell role is below the route's `minimumShellRole`, renders the fallback
  * or redirects to the home page.
+ *
+ * P5-05: Extended to enforce route lifecycle state (user-ready, operator-preview,
+ * internal-preview, target-only, disabled) for runtime truth disclosure.
  *
  * Usage in routes.tsx:
  * ```tsx
@@ -97,6 +182,7 @@ export function RoleProtectedRoute({
   children,
   routePath,
   fallback,
+  allowPreviewAs,
 }: RoleProtectedRouteProps): React.ReactElement {
   const location = useLocation();
   const pathToCheck = routePath ?? location.pathname;
@@ -107,6 +193,7 @@ export function RoleProtectedRoute({
   const route = resolveRoute(pathToCheck);
 
   if (route) {
+    // Check minimum shell role requirement
     const meetsMinimum = shellRoleMeetsMinimum(
       shellRole,
       route.minimumShellRole,
@@ -124,6 +211,27 @@ export function RoleProtectedRoute({
             accessDenied: true,
             from: pathToCheck,
             requiredShellRole: route.minimumShellRole,
+            currentShellRole: shellRole,
+          }}
+        />
+      );
+    }
+
+    // P5-05: Check route lifecycle state
+    const lifecycleCheck = routeLifecycleAllowsAccess(route, shellRole, allowPreviewAs);
+    if (!lifecycleCheck.allowed) {
+      if (fallback) {
+        return <>{fallback}</>;
+      }
+      return (
+        <Navigate
+          to="/"
+          replace
+          state={{
+            accessDenied: true,
+            from: pathToCheck,
+            lifecycle,
+            reason: lifecycleCheck.reason,
             currentShellRole: shellRole,
           }}
         />

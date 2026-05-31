@@ -20,17 +20,20 @@ import { RecordsScreen } from './screens/RecordsScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { authenticateBiometric } from './services/biometricAuth';
 import { fetchMobileDashboard, loginMobile, logoutMobile, syncOfflineDashboard } from './services/phrMobileApi';
-import { clearDashboardOffline } from './services/offlineStore';
+import {
+  clearDashboardOffline,
+  getDashboardOfflineTimestamp,
+  isDashboardOfflineTimestampStale,
+} from './services/offlineStore';
 import { clearMobileSession, loadMobileSession, saveMobileSession } from './services/mobileSessionStore';
 import { registerForPushNotificationsAsync } from './services/pushNotifications';
 import { initializeLocale, t } from './i18n/phrMobileI18n';
-import type { MobileDashboard, MobileSession } from './types';
+import { getMobileRoutes, type MobileScreenKey } from './mobileRouteManifest';
+import type { MobileDashboard, MobileOfflineCacheStatus, MobileSession } from './types';
 
-type ScreenKey = 'dashboard' | 'records' | 'consents' | 'notifications' | 'emergency' | 'settings';
+type ScreenKey = Exclude<MobileScreenKey, 'recordDetail'>;
 type SubscriptionCleanup = (() => void) | { remove: () => void };
 const APP_DIAGNOSTIC_EVENT = 'phr-mobile:diagnostic';
-
-const TAB_KEYS: readonly ScreenKey[] = ['dashboard', 'records', 'consents', 'notifications', 'emergency', 'settings'];
 
 interface TabItem {
   key: ScreenKey;
@@ -40,12 +43,17 @@ interface TabItem {
 }
 
 function getTabItems(): TabItem[] {
-  return TAB_KEYS.map((key) => ({
-    key,
-    label: getTabLabel(key),
-    hint: getTabHint(key),
-    icon: getTabLetter(key),
-  }));
+  return getMobileRoutes()
+    .filter((route) => isTabScreenKey(route.key))
+    .map((route) => {
+      const key = route.key as ScreenKey;
+      return {
+        key,
+        label: getTabLabel(key),
+        hint: getTabHint(key),
+        icon: route.icon,
+      };
+    });
 }
 
 function cleanupSubscription(subscription: SubscriptionCleanup): void {
@@ -54,6 +62,10 @@ function cleanupSubscription(subscription: SubscriptionCleanup): void {
     return;
   }
   subscription.remove();
+}
+
+function isTabScreenKey(key: MobileScreenKey): key is ScreenKey {
+  return key !== 'recordDetail';
 }
 
 function getTabLabel(key: ScreenKey): string {
@@ -78,18 +90,6 @@ function getTabHint(key: ScreenKey): string {
     settings: t('tabs.settingsHint'),
   };
   return keyMap[key];
-}
-
-function getTabLetter(key: ScreenKey): string {
-  const letterMap: Record<ScreenKey, string> = {
-    dashboard: 'H',
-    records: 'R',
-    consents: 'C',
-    notifications: 'N',
-    emergency: 'E',
-    settings: 'S',
-  };
-  return letterMap[key];
 }
 
 class AppErrorBoundary extends React.Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -148,6 +148,7 @@ export default function App(): React.ReactElement {
   const [syncMessage, setSyncMessage] = React.useState(t('app.initialSyncMessage'));
   const [isConnected, setIsConnected] = React.useState<boolean>(true);
   const [consents, setConsents] = React.useState(dashboard?.consents ?? []);
+  const [dashboardLastSyncAt, setDashboardLastSyncAt] = React.useState<number | null>(null);
 
   // Restore session on app launch
   React.useEffect(() => {
@@ -188,6 +189,7 @@ export default function App(): React.ReactElement {
           await clearDashboardOffline();
           setSession(currentSession);
           setDashboard(null);
+          setDashboardLastSyncAt(null);
           setConsents([]);
         }
       }
@@ -215,15 +217,18 @@ export default function App(): React.ReactElement {
   const loadDashboard = React.useCallback(() => {
     if (!session) return;
     setLoadError(null);
-    void fetchMobileDashboard(session)
-      .then((nextDashboard) => {
+    void (async () => {
+      try {
+        const nextDashboard = await fetchMobileDashboard(session);
         setDashboard(nextDashboard);
+        setDashboardLastSyncAt(await getDashboardOfflineTimestamp());
         setLoadError(null);
-      })
-      .catch((error: unknown) => {
+      } catch (error: unknown) {
         setDashboard(null);
+        setDashboardLastSyncAt(null);
         setLoadError(error instanceof Error ? error.message : t('app.dashboardLoadError'));
-      });
+      }
+    })();
   }, [session]);
 
   React.useEffect(() => {
@@ -247,6 +252,7 @@ export default function App(): React.ReactElement {
     if (!session) return;
     try {
       setSyncMessage(await syncOfflineDashboard(session));
+      setDashboardLastSyncAt(await getDashboardOfflineTimestamp());
       loadDashboard();
     } catch (error) {
       setSyncMessage(error instanceof Error ? error.message : t('app.offlineCacheRefreshFailed'));
@@ -260,6 +266,7 @@ export default function App(): React.ReactElement {
     await clearMobileSession();
     setSession(null);
     setDashboard(null);
+    setDashboardLastSyncAt(null);
     setConsents([]);
     setLoadError(null);
   };
@@ -271,6 +278,7 @@ export default function App(): React.ReactElement {
 
   const handleConsentRevoked = React.useCallback((grantId: string): void => {
     setConsents((prev) => prev.filter((c) => c.id !== grantId));
+    setDashboardLastSyncAt(null);
   }, []);
 
   if (isRestoringSession) {
@@ -323,10 +331,16 @@ export default function App(): React.ReactElement {
     );
   }
 
+  const offlineCacheStatus: MobileOfflineCacheStatus = {
+    lastSyncAt: dashboardLastSyncAt,
+    isOffline: !isConnected,
+    isStale: isDashboardOfflineTimestampStale(dashboardLastSyncAt),
+  };
+
   const renderScreen = (): React.ReactElement => {
     switch (activeScreen) {
       case 'records':
-        return <RecordsScreen records={dashboard.records} session={session} />;
+        return <RecordsScreen records={dashboard.records} session={session} offlineCacheStatus={offlineCacheStatus} />;
       case 'consents':
         return (
           <ConsentScreen
@@ -343,7 +357,7 @@ export default function App(): React.ReactElement {
         return <SettingsScreen onSyncOffline={() => void onSyncOffline()} onLogout={() => void handleLogout()} syncMessage={syncMessage} session={session} />;
       case 'dashboard':
       default:
-        return <DashboardScreen dashboard={dashboard} />;
+        return <DashboardScreen dashboard={dashboard} offlineCacheStatus={offlineCacheStatus} />;
     }
   };
 

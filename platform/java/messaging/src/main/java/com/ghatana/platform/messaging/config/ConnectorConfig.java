@@ -8,7 +8,7 @@ import java.time.Duration;
 import java.util.Objects;
 
 /**
- * Base configuration for all AEP connector types.
+ * Base configuration for all connector types.
  *
  * <p>Provides cross-cutting concerns shared by every connector: TLS, retry policy, and
  * request timeouts. Protocol-specific connection details (e.g. Kafka bootstrap servers,
@@ -39,7 +39,7 @@ import java.util.Objects;
  * }</pre>
  *
  * @doc.type class
- * @doc.purpose Base configuration providing shared TLS, retry, and timeout settings for all AEP connectors
+ * @doc.purpose Base configuration providing shared TLS, retry, and timeout settings for all connectors
  * @doc.layer infrastructure
  * @doc.pattern Template Method
  */

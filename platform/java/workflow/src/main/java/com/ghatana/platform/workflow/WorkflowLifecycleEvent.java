@@ -15,7 +15,7 @@ import java.util.Objects;
  * Immutable lifecycle event emitted at every significant phase of workflow execution.
  *
  * <p>Consumed by {@link WorkflowLifecycleListener} implementations for observability,
- * audit logging, and AEP event publishing.
+ * audit logging, and event publishing.
  *
  * @doc.type record
  * @doc.purpose Workflow lifecycle event (emitted at every state change)

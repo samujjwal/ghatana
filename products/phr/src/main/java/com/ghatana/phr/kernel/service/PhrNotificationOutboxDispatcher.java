@@ -80,7 +80,9 @@ public final class PhrNotificationOutboxDispatcher extends PhrServiceBase {
             entry.scheduledFor(),
             entry.createdAt(),
             entry.correlationId(),
-            entry.traceOperation()
+            entry.traceOperation(),
+            entry.safeReasonCode(),
+            entry.deepLinkId()
         );
 
         return dispatchByChannel(entry.channel(), envelope)

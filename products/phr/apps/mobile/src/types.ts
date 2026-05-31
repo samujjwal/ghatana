@@ -33,6 +33,12 @@ export interface MobileDashboard {
   notifications: MobileNotificationItem[];
 }
 
+export interface MobileOfflineCacheStatus {
+  lastSyncAt: number | null;
+  isOffline: boolean;
+  isStale: boolean;
+}
+
 export interface MobileEmergencyData {
   patientName: string;
   bloodType: string;

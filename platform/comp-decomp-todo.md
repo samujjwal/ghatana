@@ -1,2081 +1,1890 @@
-Below is the **file-by-file task backlog** for `samujjwal/ghatana` at commit `9058b7747f6056cbb9800376801c1946466d7529`.
+Below is the **file-by-file implementation task list** from the audit at commit `0aa8aa9161103146ad52e1029aa9b0805e2f95be`.
 
-Scope rule: **do not add release-evidence tasks, do not generate release evidence, and do not run release-readiness/readiness checks in this iteration.** This list focuses only on implementation, correctness, feature completeness, UI/UX, security/privacy, i18n/a11y, observability, and targeted tests.
+This is **not** a release-readiness plan. Do **not** run release-readiness checks, release evidence generation, release freshness checks, product promotion workflows, or evidence bundle scripts. The repo itself already marks this pass as implementation hardening and says not to run release-readiness/evidence workflows. 
 
 ---
 
-# A. Product truth, module boundaries, and canonical architecture
+# Pass 1 — Canonical product truth, module truth, and stale-status cleanup
 
-## A1. `products/data-cloud/README.md`
+Root cause: Data Cloud has competing truth sources. The canonical registry marks Data Cloud as `blocked`, runtime surface status as `degraded`, and release-readiness execution as `not-executed`, while other docs/scripts still use release-blocking or production-ready language. 
 
-**What to change**
+## `config/canonical-product-registry.json`
 
-* Keep the core statement that Data Cloud is one product and Action Plane is integrated inside Data Cloud.
-* Clarify that this iteration is **not** about release-readiness execution.
-* Remove or quarantine implementation-plan language that instructs engineers to regenerate evidence or execute release-readiness checks during normal hardening.
-* Add a short “Current implementation truth” section:
+**What to change:**
 
-  * Data Plane: active.
-  * Event Plane: active.
-  * Intelligence Plane: active.
-  * Governance Plane: active.
-  * Action Plane: active but still has AEP naming/test-boundary debt.
-  * Context Plane: target plane, but not currently present as an active Gradle module unless added in this pass.
-  * Audio-video: external shared service with partial Data Cloud metadata integration, not yet full first-class modality.
+Update the `data-cloud` entry to become the canonical source for:
 
-**Where**
+* plane status: `active`, `preview`, `degraded`, `target-only`, `blocked`
+* surface status: `user-ready`, `operator-preview`, `internal-preview`, `disabled`, `unavailable`, `degraded`
+* module status
+* ownership classification
+* product completeness blockers
+* no-release-readiness-execution flag
 
-* Update around current canonical description and module map lines that describe Data Cloud and Action Plane. The README already defines Data Cloud as a governed operational data fabric and says Action Plane formerly AEP is integrated under `products/data-cloud/planes/action`.
-* Update the “Module Classification and Promotion” area to say **skip release-readiness/evidence execution for this hardening iteration**.
+**Where:**
 
-**Tests**
+Inside the `"data-cloud"` object, especially:
 
-* No release-readiness check.
-* Add/update documentation consistency test only if an existing doc-lint test already exists and can be run in isolation.
+* `productCompletenessStatus`
+* `runtimeSurfaceStatus`
+* `releaseReadinessExecutionStatus`
+* `lifecycleReadiness.reasonCodes`
+* `lifecycleReadiness.nextRequiredWork`
+* `lifecycleReadiness.blockerGateAdapterMatrix`
 
----
-
-## A2. `products/data-cloud/docs/architecture/PLANE_ARCHITECTURE.md`
-
-**What to change**
+The current registry already contains the right blockers: runtime-truth UI drift, connector runtime missing, audio-video incomplete, AEP lifecycle incomplete, Context Plane target-only, and optional execution capability. Keep and make these the generated source of truth. 
 
-* Update “Current-To-Target Module Map” so it matches actual generated Gradle includes.
-* Add explicit status for `planes/context`:
+**Exact task:**
 
-  * Either create it as an active module, or mark it as target-only and prevent UI/runtime from treating it as fully available.
-* Remove remaining ambiguity between “AEP product” and “Action Plane inside Data Cloud.”
-* Keep dependency rules:
+Add normalized structures like:
 
-  * Data/Event/Context/Governance/Intelligence must not depend on Action internals.
-  * Action may depend on public SPI/contracts only.
-  * Delivery composition may wire planes together.
+```json
+"planes": {
+  "data": { "status": "active" },
+  "event": { "status": "active" },
+  "context": { "status": "target-only" },
+  "intelligence": { "status": "active" },
+  "governance": { "status": "active" },
+  "action": {
+    "status": "partial",
+    "semanticReadiness": "partial",
+    "blockers": [
+      "patternspec-compiler-incomplete",
+      "eventcloud-spi-incomplete",
+      "learning-to-recommendation-incomplete",
+      "replay-safe-agent-execution-incomplete"
+    ]
+  },
+  "operations": { "status": "active" }
+}
+```
 
-**Where**
+Do **not** add evidence-generation tasks.
 
-* Plane model and target layout sections.
-* Shared platform review rules and migration sequence.
-
-**Tests**
-
-* Add/update architecture boundary test entries only.
-* Do **not** run production-readiness or evidence checks.
-
 ---
 
-## A3. `config/canonical-product-registry.json`
+## `config/generated/settings-gradle-includes.kts`
 
-**What to change**
+**What to change:**
 
-* If Context Plane is implemented now, add the canonical Data Cloud module entry for:
+Do not edit manually. It is generated from `canonical-product-registry.json`. The file itself says it is auto-generated and should not be manually edited. 
 
-  * `:products:data-cloud:planes:context`
-* If not implementing Context Plane now, add product-shape metadata that marks Context Plane as `planned` or `target-only`, not `active`.
-* Ensure audio-video module paths match actual modules:
+**Exact task:**
 
-  * `products:audio-video:modules:speech:stt-service`
-  * `products:audio-video:modules:speech:tts-service`
-  * `products:audio-video:modules:vision:vision-service`
-  * `products:audio-video:modules:intelligence:multimodal-service`
-  * infrastructure modules currently present in generated settings.
+After registry changes, regenerate this file only through the generator.
 
-**Where**
+**Where:**
 
-* Product registry source that generates `config/generated/settings-gradle-includes.kts`, which currently includes Data Cloud and audio-video modules.
+Data Cloud module section currently includes active Data Cloud modules and Action Plane modules. 
 
-**Tests**
+**Do not:**
 
-* Run only the product-registry generation test or snapshot test if available.
-* Do **not** run release-readiness checks.
+Do not manually add/remove Gradle includes here.
 
 ---
-
-## A4. `config/generated/settings-gradle-includes.kts`
 
-**What to change**
+## `scripts/generate-product-registry-artifacts.mjs`
 
-* Do not hand-edit if generated.
-* Regenerate only from `config/canonical-product-registry.json`.
-* Expected result:
+**What to change:**
 
-  * Add `:products:data-cloud:planes:context` only if Context Plane is implemented.
-  * Keep Action Plane modules under Data Cloud.
-  * Keep audio-video module list consistent with actual module docs and build files.
+Update the generator so it emits:
 
-**Where**
+* Gradle includes
+* product/module status summaries
+* plane/surface readiness summaries
+* Data Cloud hardening status
+* no-release-readiness-execution marker
 
-* Data Cloud section currently includes Data/Event/Operations/Intelligence/Governance/Action modules but no Context Plane module.
-* Audio-video section includes active modules that differ from docs claiming `apps/*`, `core/*`, and `infrastructure/*` paths.
+**Where:**
 
-**Tests**
+Generator logic that reads `config/canonical-product-registry.json` and writes generated settings/artifacts.
 
-* Targeted generation drift test only.
-* Do **not** run readiness checks.
+**Exact task:**
 
----
-
-## A5. `scripts/list-data-cloud-active-modules.mjs`
+Make generated outputs distinguish:
 
-**What to change**
+* implementation-hardening tasks
+* release-readiness execution tasks
+* evidence-generation tasks
 
-* Add Context Plane module classification only if the module is implemented.
-* Keep Action Plane modules classified as release-blocking in the script, but do not add any task requiring release-readiness execution in this iteration.
-* Remove misleading advisory/release wording from comments if it causes developers to execute release checks during hardening.
-* Add validation for “target-only plane must not appear in active modules.”
+For this pass, generated summaries must explicitly say:
 
-**Where**
+```text
+releaseReadinessExecutionStatus = not-executed
+doNotRunReleaseReadinessChecks = true
+doNotGenerateReleaseEvidence = true
+```
 
-* `releaseBlockingModules` and `actionPlaneModules` sets.
-
-**Tests**
+---
 
-* Add unit test for:
+## `scripts/list-data-cloud-active-modules.mjs`
 
-  * active Data Cloud module classification,
-  * missing Context Plane behavior,
-  * invalid unclassified Data Cloud module.
-* No release-readiness run.
+**What to change:**
 
----
+This script currently classifies modules as `release-blocking`, and comments say the script is used by release policy consumers while also saying not to execute release workflows during implementation hardening. 
 
-# B. Action Plane / AEP naming, test exclusions, and boundary cleanup
+**Where:**
 
-## B1. `products/data-cloud/planes/action/server/build.gradle.kts`
+* `releaseBlockingModules`
+* `actionPlaneModules`
+* `classifyDataCloudModule`
+* reason strings returned by classification
 
-**What to change**
+**Exact task:**
 
-* Replace module comments saying “canonical server surface for the AEP product” with “Data Cloud Action Plane server surface.”
-* Keep compatibility OpenAPI sync if still needed, but ensure comments say:
+Rename or split classification concepts:
 
-  * `action-plane.yaml` is canonical.
-  * `aep.yaml` is compatibility-only until retired.
-* Do not add release-readiness execution.
-* Keep `verifyOpenApiSync` as a contract sync task, not a readiness task.
+* `implementationCriticalModules`
+* `activeHardeningModules`
+* `releaseBlockingModules` only for future release workflows
 
-**Where**
+For this iteration, return reasons such as:
 
-* Top module comment currently says AEP server/product.
-* OpenAPI sync section currently says canonical source is `products/data-cloud/contracts/openapi/aep.yaml`; update wording to prefer `action-plane.yaml` where possible.
+```js
+{
+  category: "implementation-critical",
+  reason: "Active Data Cloud module; include in implementation hardening and targeted tests. Do not run release-readiness/evidence workflows."
+}
+```
 
-**Tests**
+**Do not:**
 
-* Existing server unit/contract tests only.
-* Do not run release-readiness.
+Do not trigger release readiness from this script.
 
 ---
 
-## B2. `products/data-cloud/planes/action/engine/build.gradle.kts`
+## `products/data-cloud/README.md`
 
-**What to change**
+**What to change:**
 
-* Replace “Core AEP execution engine” wording with “Data Cloud Action Plane execution engine.”
-* Review dependencies on broad platform modules:
+Preserve the current statement that this iteration is not release-readiness execution. 
 
-  * `platform:contracts`
-  * `platform:java:agent-core`
-  * `platform:java:messaging`
-* Ensure engine depends only on public contracts/SPI and not delivery/runtime implementation internals.
-* Add or update ArchUnit boundary test if missing.
+**Where:**
 
-**Where**
+* `Current Implementation Truth`
+* `Module Classification and Promotion`
+* `Shared Platform Review`
 
-* Top comment and dependency block.
+**Exact task:**
 
-**Tests**
+Update README to say:
 
-* Targeted engine boundary test.
-* Existing engine unit tests.
-* No readiness checks.
+* Data Cloud product is coherent but blocked for production completeness.
+* Action Plane is active but AEP semantic lifecycle is partial.
+* Context Plane is target-only.
+* Audio-video is metadata/control-plane integration until first-class lifecycle is implemented.
+* Release-readiness/evidence execution is explicitly out of scope for this implementation pass.
 
 ---
-
-## B3. `products/data-cloud/planes/action/orchestrator/build.gradle.kts`
 
-**What to change**
+## `products/data-cloud/DEVELOPER_MANUAL.md`
 
-* Remove or fix legacy test exclusions:
+**What to change:**
 
-  * `AepDiModulesTest.java`
-  * `AgentMemoryPlaneClientMasteryTest.java`
-* If old tests are invalid, replace them with current-boundary tests instead of excluding them.
-* Remove duplicate `testImplementation(libs.bundles.testing.core)` entry.
-* Confirm orchestrator dependencies use Action Plane contracts/SPI and do not leak Data Plane internals beyond intended public APIs.
+The manual correctly says Data Cloud owns storage/query/events/governance/context APIs/agent memory/SDK/UI and does not own AEP semantic internals. 
 
-**Where**
+**Where:**
 
-* Test exclusions section.
-* Dependency block.
+* `What Data Cloud Owns`
+* `Work on plugins`
+* `Work on UI features`
+* local workflow instructions
 
-**Tests**
+**Exact task:**
 
-* Add/update:
+Add a new section:
 
-  * orchestrator lifecycle test,
-  * agent dispatch wiring test,
-  * pipeline execution queue test,
-  * Data Cloud public SPI dependency boundary test.
+```md
+## Implementation Hardening Scope
 
----
+Do not run release-readiness checks or evidence-generation scripts in this pass.
+Use targeted unit/integration/component/API tests only.
+```
 
-## B4. `products/data-cloud/planes/action/agent-runtime/build.gradle.kts`
+Also add a boundary note:
 
-**What to change**
+```md
+AEP semantic lifecycle completion must happen through Action Plane contracts, not by moving AEP semantics into Data/Event/Governance planes.
+```
 
-* Replace “AEP Agent Runtime” wording with “Data Cloud Action Plane Agent Runtime.”
-* Remove temporary test exclusions or replace excluded tests with current implementations:
+---
 
-  * `RegistryAndFactoryTest.java`
-  * `GovernedMemoryPlaneMasteryTest.java`
-  * `GaaMasteryLifecycleE2ETest.java`
-  * `GovernedAgentDispatcherMasteryTest.java`
-  * `AgentExecutionSecurityIntegrationTest.java`
-  * `AgentPackageLoaderTest.java`
-  * `MemoryWritePolicyMasteryTest.java`
-  * `StructuredContextInjectorMasteryTest.java`
-* Keep only justified exclusions with issue and removal date if absolutely unavoidable, but target should be zero exclusions for production readiness.
+## `products/data-cloud/docs/architecture/PLANE_ARCHITECTURE.md`
 
-**Where**
+**What to change:**
 
-* Top module description and `tasks.compileTestJava` exclusion block.
+This file is the canonical plane architecture and already marks Context as target-only, Action Plane modules as preview/degraded/active, and UI/API as degraded. 
 
-**Tests**
+**Where:**
 
-* Re-enable or recreate tests in the same module under:
+* `Current-To-Target Module Map`
+* `Dependency Rules`
+* `Shared Platform Review Rules`
 
-  * `products/data-cloud/planes/action/agent-runtime/src/test/java/**`
-* Add focused tests for:
+**Exact task:**
 
-  * governed dispatcher,
-  * memory write policy,
-  * structured context injection,
-  * agent package loading,
-  * security integration.
+Update the table to align with `canonical-product-registry.json` and remove any language that implies production readiness before executable lifecycle is complete.
 
----
+Add explicit statuses:
 
-## B5. `products/data-cloud/contracts/openapi/action-plane.yaml`
+* `context`: target-only, not user-visible
+* `action/engine`: active implementation, semantic readiness partial
+* `action/orchestrator`: active implementation, replay-safe lifecycle partial
+* `action/agent-runtime`: active implementation, replay-safe execution partial
+* `delivery/ui`: degraded until runtime-truth UI drift is fixed
+* `media`: partial external modality integration
 
-**What to change**
+---
 
-* Ensure canonical Action Plane routes use `/api/v1/action/*`.
-* Ensure pipeline, agent, memory, autonomy, plugin, learning, review, run/execution, and pattern routes are explicitly represented.
-* Remove root-level legacy paths from the canonical Action Plane spec.
-* Keep backward compatibility only in compatibility registry or `aep.yaml`.
+## `products/data-cloud/docs/architecture/ACTION_PLANE_MODULE_INVENTORY.md`
 
-**Where**
+**What to change:**
 
-* Action contract paths and schemas.
+Keep this as the canonical Action Plane inventory, but generate it from the registry.
 
-**Tests**
+**Where:**
 
-* OpenAPI route sync test only.
-* Do not run readiness checks.
+This file already states the correct root truth: placement is complete, but semantic/product readiness is partial and still requires PatternSpec compiler, EventCloud SPI, pattern lifecycle, learning-to-recommendation, and replay-safe agent execution. 
 
----
+**Exact task:**
 
-## B6. `products/data-cloud/contracts/openapi/aep.yaml`
+Add per-module status columns:
 
-**What to change**
+* placement status
+* semantic readiness
+* runtime readiness
+* API readiness
+* UI readiness
+* test coverage status
 
-* Mark as compatibility contract only.
-* Keep equivalent to Action Plane only where compatibility is still required.
-* Do not introduce new canonical routes here.
-* Add deprecation note if missing.
+Do not call modules production-ready unless lifecycle proof exists.
 
-**Where**
+---
 
-* Contract header and route comments.
+## `products/data-cloud/planes/action/MODULE_INVENTORY.md`
 
-**Tests**
+**What to change:**
 
-* Contract equivalence test with `action-plane.yaml`, not readiness.
+This file conflicts with the canonical architecture because it claims all release-blocking modules are production-ready.  It also says it is current as of an older commit, not the audited commit. 
 
----
+**Exact task:**
 
-## B7. `products/data-cloud/contracts/openapi/route-compatibility-registry.yaml`
+Either delete this file or replace it with a pointer:
 
-**What to change**
+```md
+# Moved
 
-* Move all legacy root Action/AEP paths here.
-* Ensure compatibility aliases are feature-flagged or explicitly deprecated.
-* Add removal criteria for aliases, but no release-readiness task.
+The canonical Action Plane module inventory is:
+products/data-cloud/docs/architecture/ACTION_PLANE_MODULE_INVENTORY.md
 
-**Tests**
+This file must not contain independent readiness claims.
+```
 
-* Router compatibility test only.
+**Preferred:** delete the stale file after updating references.
 
 ---
 
-# C. Media/audio-video: make it real, secure, and reachable
+# Pass 2 — Security and authorization trust-boundary fix
 
-## C1. `products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/api/controller/MediaArtifactController.java`
+Root cause: backend permissions can be accepted from a request header. `RequestContextResolver` reads `X-Permissions`, validates only string format, and merges those permissions with role-derived permissions.  
 
-**What to change**
+## `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/security/RequestContextResolver.java`
 
-* Replace direct `X-Tenant-ID` tenant extraction with canonical `RequestContextResolver` / `HttpHandlerSupport`.
-* Do not accept tenant identity from raw headers in production.
-* Fix nested route dispatch:
+**What to change:**
 
-  * Current code extracts everything after `/api/v1/media/artifacts/` as `artifactId`, then rejects values containing `/`, so `/transcribe` and `/analyze` are unreachable.
-* Parse subroutes before validating artifact ID.
-* Add handlers for:
+Remove user-controlled permission injection.
 
-  * `POST /api/v1/media/artifacts/:artifactId/transcribe`
-  * `POST /api/v1/media/artifacts/:artifactId/analyze`
-  * `GET /api/v1/media/artifacts/:artifactId/jobs/:jobId`
-  * `GET /api/v1/media/artifacts/:artifactId/results`
-* Replace synthetic job IDs with persisted job records.
-* Enforce role/permission checks:
+**Where:**
 
-  * create artifact,
-  * view artifact,
-  * delete artifact,
-  * trigger processing,
-  * read result.
-* Redact `storageUri`, metadata, consent, and retention fields unless caller has required permission.
-* Add audit event for create/delete/transcribe/analyze/result read.
+* `extractPermissions`
+* permission merge in `resolve`
+* `ADMIN_PERMISSIONS`
+* `OPERATOR_PERMISSIONS`
+* `VIEWER_PERMISSIONS`
+* `hasPermission`
+* `hasAnyPermission`
+* `hasAllPermissions`
 
-**Where**
+**Exact task:**
 
-* Tenant extraction block.
-* Nested route handling block.
-* `triggerTranscription` and `triggerVisionAnalysis`.
-* `toResponse`.
+1. Delete or disable `extractPermissions(HttpRequest request)`.
+2. Remove `X-Permissions` as a trusted authorization source.
+3. Derive permissions only from:
 
-**Tests**
+   * authenticated principal roles/claims,
+   * API-key identity,
+   * server-side policy engine,
+   * signed support delegation token.
+4. Add canonical permissions required by existing handlers:
 
-* `MediaArtifactControllerTenantSecurityTest`
-* `MediaArtifactControllerRouteDispatchTest`
-* `MediaArtifactControllerRedactionTest`
-* `MediaArtifactControllerProcessingJobTest`
+   * `connector:read`
+   * `connector:register`
+   * `connector:update`
+   * `connector:delete`
+   * `connector:sync`
+   * `connector:rotate-credentials`
+   * `action:pipeline:read`
+   * `action:pipeline:create`
+   * `action:pipeline:update`
+   * `action:pipeline:delete`
+   * `action:pipeline:execute`
+   * `action:pipeline:cancel`
+   * `media:artifact:read`
+   * `media:artifact:create`
+   * `media:artifact:process`
+   * `media:artifact:delete`
+5. Return `403` if a required permission is absent.
 
 ---
 
-## C2. `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudRouterBuilder.java`
+## `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudSecurityFilter.java`
 
-**What to change**
+**What to change:**
 
-* Register explicit media processing routes:
+Keep the strong fail-closed model, but align route metadata permissions with the new canonical permission registry.
 
-  * `POST /api/v1/media/artifacts/:artifactId/transcribe`
-  * `POST /api/v1/media/artifacts/:artifactId/analyze`
-  * `GET /api/v1/media/artifacts/:artifactId/jobs/:jobId`
-  * `GET /api/v1/media/artifacts/:artifactId/results`
-* Do not rely on the generic `mediaArtifactController::handle` route for nested subresources.
-* Make route group count dynamic or accurate; current `log.info("... {}", 29)` is hardcoded.
+**Where:**
 
-**Where**
+* `serveAsPrincipal`
+* `requiredAccess`
+* `hasRequiredAccess`
+* policy evaluation
+* audit emission
 
-* `withMediaArtifactRoutes`.
-* `build()` logging.
+The filter already fails closed for missing route metadata in production-like profiles.  It also evaluates policy before serving critical routes. 
 
-**Tests**
+**Exact task:**
 
-* `DataCloudRouterBuilderMediaRoutesTest`
-* OpenAPI-router sync test update.
-
----
+1. Ensure `AccessLevel` is only coarse-grained.
+2. Add fine-grained permission checks through canonical permission mapping.
+3. Ensure policy engine sees:
 
-## C3. `products/data-cloud/contracts/openapi/data-cloud.yaml`
+   * tenant ID,
+   * principal,
+   * roles,
+   * canonical permissions,
+   * route ID,
+   * operation ID,
+   * sensitivity.
+4. Add audit details for denied permission:
 
-**What to change**
+   * `requiredPermission`
+   * `routeId`
+   * `principal`
+   * `tenantId`
+   * `requestId`
 
-* Add/align media artifact contracts:
+---
 
-  * `MediaArtifact`
-  * `CreateMediaArtifactRequest`
-  * `MediaProcessingJob`
-  * `MediaProcessingResult`
-  * `MediaArtifactListResponse`
-* Add media paths:
+## `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java`
 
-  * `POST /api/v1/media/artifacts`
-  * `GET /api/v1/media/artifacts`
-  * `GET /api/v1/media/artifacts/{artifactId}`
-  * `DELETE /api/v1/media/artifacts/{artifactId}`
-  * `POST /api/v1/media/artifacts/{artifactId}/transcribe`
-  * `POST /api/v1/media/artifacts/{artifactId}/analyze`
-  * `GET /api/v1/media/artifacts/{artifactId}/jobs/{jobId}`
-  * `GET /api/v1/media/artifacts/{artifactId}/results`
-* Add security metadata:
+**What to change:**
 
-  * read media,
-  * manage media,
-  * process media,
-  * read media result.
-* Mark `storageUri` as sensitive/redactable.
+This is the authoritative route security metadata registry. 
 
-**Where**
+**Where:**
 
-* Add under existing path/schema sections; OpenAPI currently documents broad product surfaces and security requirements.
+All `route(...)` entries.
 
-**Tests**
+**Exact task:**
 
-* Data Cloud OpenAPI-router sync test.
-* Media API contract test.
+1. Add canonical permission IDs to route metadata.
+2. Stop relying only on `AccessLevel`.
+3. Ensure Action Plane routes map to Action Plane permissions.
+4. Ensure media routes map to media permissions.
+5. Ensure connector routes map to connector permissions.
+6. Ensure route metadata is generated or checked against router registrations.
 
 ---
-
-## C4. `products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/memory/media/MediaArtifactRecord.java`
-
-**What to change**
-
-* Add fields:
 
-  * `status`
-  * `processingState`
-  * `retentionUntil`
-  * `consentStatus`
-  * `redactionPolicy`
-  * `createdBy`
-  * `updatedAt`
-* Keep tenant ID immutable.
-* Add helper for safe/redacted response projection.
+## `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/HttpHandlerSupport.java`
 
-**Tests**
+**What to change:**
 
-* Record serialization test.
-* Redaction projection test.
+Centralize permission checking.
 
----
-
-## C5. `products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/memory/media/MediaArtifactRepository.java`
+**Where:**
 
-**What to change**
+Methods such as `requirePermission`, request context resolution, principal resolution.
 
-* Add methods:
+**Exact task:**
 
-  * `findJobsByArtifact(String artifactId, String tenantId)`
-  * `findResultsByArtifact(String artifactId, String tenantId)`
-  * `saveJob(MediaProcessingJobRecord job)`
-  * `updateJobStatus(...)`
-  * `saveResult(MediaProcessingResultRecord result)`
-* Ensure all methods require tenant ID.
-* Ensure delete either soft-deletes or emits retention-aware deletion event.
+1. Make `requirePermission` use the new canonical permission registry.
+2. Ensure it never trusts request headers for permissions.
+3. Return structured errors:
 
-**Tests**
+   * `PERMISSION_DENIED`
+   * `AUTHENTICATION_REQUIRED`
+   * `TENANT_REQUIRED`
+   * `SUPPORT_DELEGATION_REQUIRED`
+4. Add request ID and route ID to every error body.
 
-* Repository tenant isolation test.
-* Job lifecycle persistence test.
-
 ---
-
-## C6. `products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/memory/media/MediaArtifactEventEmitter.java`
 
-**What to change**
+## `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/WorkflowExecutionHandler.java`
 
-* Emit typed events for:
+**What to change:**
 
-  * `media.artifact.created`
-  * `media.artifact.deleted`
-  * `media.transcription.requested`
-  * `media.vision-analysis.requested`
-  * `media.processing.completed`
-  * `media.processing.failed`
-* Include:
+Pipeline/execution handlers use fine-grained permissions such as `action:pipeline:read`. 
 
-  * tenant ID,
-  * artifact ID,
-  * job ID,
-  * correlation ID,
-  * request ID,
-  * agent ID,
-  * media type,
-  * consent status,
-  * retention metadata.
-* Do not include raw storage URI in event payload unless encrypted/redacted.
+**Where:**
 
-**Tests**
+Every handler method:
 
-* Event payload shape test.
-* Sensitive-field redaction test.
+* `handleGetExecution`
+* `handleExecutePipeline`
+* `handleCancelPipelineExecution`
+* `handleRetryExecution`
+* `handleRollbackExecution`
+* `handleCheckpointExecution`
+* `handleRestoreExecution`
+* pipeline execution log/list methods
 
----
-
-## C7. Add `products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/memory/media/MediaProcessingJobRecord.java`
-
-**What to add**
+**Exact task:**
 
-* Immutable record for:
+Ensure each action has the canonical permission:
 
-  * `jobId`
-  * `tenantId`
-  * `artifactId`
-  * `jobType`
-  * `status`
-  * `requestedBy`
-  * `requestedAt`
-  * `startedAt`
-  * `completedAt`
-  * `errorCode`
-  * `errorMessage`
-  * `correlationId`
-  * `requestId`
-  * `resultRef`
+* read/list/logs → `action:pipeline:read`
+* execute/retry → `action:pipeline:execute`
+* cancel → `action:pipeline:cancel`
+* rollback/restore → `action:pipeline:admin`
+* checkpoint → `action:pipeline:checkpoint`
 
-**Tests**
+Also ensure operation audit records include the permission used.
 
-* Serialization and state transition test.
-
 ---
-
-## C8. Add `products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/memory/media/MediaProcessingResultRecord.java`
-
-**What to add**
-
-* Immutable result record for:
 
-  * transcription result,
-  * vision labels,
-  * confidence,
-  * model/provider,
-  * processing metadata,
-  * redaction marker,
-  * created timestamp.
+## `products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/api/controller/MediaArtifactController.java`
 
-**Tests**
+**What to change:**
 
-* Serialization and redaction test.
+Media authorization currently checks simple roles like `viewer`, `editor`, `admin`, `processor`. 
 
----
-
-## C9. `products/data-cloud/planes/action/agent-catalog/capabilities/audio-video-capabilities.yaml`
-
-**What to change**
-
-* Align capabilities with actual Data Cloud media routes and audio-video service routes.
-* Add capability entries for:
+**Where:**
 
-  * register media artifact,
-  * request transcription,
-  * request vision analysis,
-  * read media processing status,
-  * read media processing result.
-* Add permission requirements and tenant-scope metadata.
-* Mark unsupported modalities as unavailable if not implemented.
+* `handle`
+* create/list/get/delete/transcribe/analyze authorization branches
 
-**Where**
+**Exact task:**
 
-* File identified in search results as existing audio-video capability catalog.
+Replace local role checks with canonical permissions:
 
-**Tests**
+* create → `media:artifact:create`
+* list/get → `media:artifact:read`
+* transcribe/analyze → `media:artifact:process`
+* delete → `media:artifact:delete`
 
-* Agent catalog capability validation test.
+Keep tenant resolution from authenticated principal only.
 
 ---
 
-## C10. `products/audio-video/docs/capability-map.md`
+## Test files to add/update for Pass 2
 
-**What to change**
+### `products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/security/RequestContextResolverTest.java`
 
-* Correct module paths to match actual generated settings.
-* Do not claim `apps/*`, `core/*`, or `infrastructure/*` modules exist if they do not.
-* Replace “all capabilities implemented” with precise state:
+Add tests:
 
-  * STT service module present,
-  * TTS service module present,
-  * Vision service module present,
-  * Multimodal service module present,
-  * Data Cloud integration partial until media job lifecycle is wired.
-* Remove evidence-generation wording from this iteration.
+* `X-Permissions` does not grant permissions.
+* roles expand only through server-side mapping.
+* unsupported permission returns false.
+* production rejects spoofed tenant header/query.
+* support delegation requires signed/server-side context.
 
-**Where**
+### `products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/DataCloudSecurityFilterTest.java`
 
-* Current map claims all capabilities are implemented with modules/routes/tests/gates.
-* Actual generated module paths differ.
-
-**Tests**
-
-* Documentation/module path consistency test only.
-
----
+Add tests:
 
-## C11. `products/audio-video/modules/speech/stt-service/build.gradle.kts`
+* missing route metadata fails closed in production.
+* denied permission emits audit.
+* critical route without policy engine fails closed.
+* audit-only mode does not apply to production hardening tests unless explicitly configured.
 
-**What to change**
+### `products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/handlers/WorkflowExecutionHandlerSecurityTest.java`
 
-* Ensure main class `com.ghatana.stt.grpc.SttGrpcServer` exists and exposes a service contract compatible with Data Cloud media job requests.
-* Add Data Cloud event consumer or bridge client dependency only through public contract/SPI, not direct launcher internals.
-* Add integration test for Data Cloud `media.transcription.requested` event to STT job handling.
+Add tests:
 
-**Where**
+* viewer can read execution.
+* operator can execute/retry.
+* operator cannot rollback/restore without admin permission.
+* injected `X-Permissions` cannot bypass role policy.
 
-* Current build file defines `SttGrpcServer` as main class and has a smoke test for it.
+### `products/data-cloud/delivery/api/src/test/java/com/ghatana/datacloud/api/controller/MediaArtifactControllerSecurityTest.java`
 
-**Tests**
+Add tests:
 
-* Existing `smokeTestMainClass`.
-* Add targeted STT event bridge test.
-* No readiness checks.
+* viewer cannot create/process/delete.
+* processor can process but not delete.
+* admin can delete.
+* injected permission header does not bypass authorization.
 
 ---
 
-## C12. `products/audio-video/modules/speech/tts-service/build.gradle.kts`
+# Pass 3 — Event, replay, checkpoint, and envelope correctness
 
-**What to change**
+Root cause: event replay/checkpoint APIs are not production-grade. `checkpoint` currently defaults to a no-op returning `true`, and `replayEvents` uses `toOffset` only to compute a limit. 
 
-* Align with same security/observability/contract conventions as STT.
-* Ensure TTS is not falsely exposed through Data Cloud media artifact flows unless a Data Cloud route exists.
-* Add integration contract for future TTS if in scope.
+## `products/data-cloud/planes/shared-spi/src/main/java/com/ghatana/datacloud/DataCloudClient.java`
 
-**Tests**
+**What to change:**
 
-* Main-class smoke test.
-* Contract test.
+Make replay/checkpoint semantics explicit and non-silent.
 
----
-
-## C13. `products/audio-video/modules/vision/vision-service/build.gradle.kts`
-
-**What to change**
+**Where:**
 
-* Ensure vision service accepts Data Cloud media artifact processing jobs through public bridge/SPI.
-* Add object-detection/analysis status response contract.
-* Add result schema compatible with Data Cloud `MediaProcessingResultRecord`.
+* `checkpoint`
+* `replayEvents`
+* `EventQuery`
+* `TailRequest`
+* `Offset`
 
-**Tests**
+**Exact task:**
 
-* Vision processing integration test.
-* Result contract test.
+1. Replace default `checkpoint` no-op with one of:
 
----
-
-## C14. `products/audio-video/modules/intelligence/multimodal-service/build.gradle.kts`
+   * abstract required method, or
+   * default `Promise.ofException(new UnsupportedOperationException(...))`.
+2. Add `ReplayRequest` record:
 
-**What to change**
+   * `fromOffset`
+   * `toOffset`
+   * `eventTypes`
+   * `replayMode`
+   * `idempotencyKey`
+   * `consumerGroup`
+3. Replace `replayEvents(String tenantId, long fromOffset, long toOffset)` implementation with real bounded filtering.
+4. Define inclusive/exclusive offset semantics in JavaDoc.
+5. Add checkpoint read API:
 
-* Align multimodal job input/output with Data Cloud media artifact and Action Plane agent capabilities.
-* Add tenant/correlation/request ID propagation.
-* Ensure no raw media content is logged.
+   * `readCheckpoint(tenantId, stream, consumerGroup)`
+6. Add checkpoint commit API with idempotency:
 
-**Tests**
+   * `commitCheckpoint(tenantId, stream, consumerGroup, offset, idempotencyKey)`
 
-* Multimodal job lifecycle test.
-* Observability propagation test.
-
 ---
 
-# D. Security, authorization, tenant isolation, and audit
+## `products/data-cloud/delivery/runtime-composition/src/main/java/com/ghatana/datacloud/DataCloud.java`
 
-## D1. `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/security/RequestContextResolver.java`
+**What to change:**
 
-**What to change**
+`appendEvent` validates event envelopes only outside `LOCAL`. 
 
-* Keep production behavior rejecting `X-Tenant-ID` and `tenantId` query parameters. This is already directionally correct.
-* Add explicit support for permission/scope extraction if not already present in `Principal`.
-* Add helper result for:
+**Where:**
 
-  * authenticated user,
-  * tenant,
-  * workspace,
-  * project,
-  * roles,
-  * permissions,
-  * support access,
-  * correlation ID,
-  * trace ID.
-* Validate workspace/project IDs using canonical patterns, not only length.
-* Emit structured audit event for rejected tenant spoofing attempts.
+* `DefaultDataCloudClient.appendEvent`
+* `queryEvents`
+* `tailEvents`
+* `InMemoryEventLogStore`
+* `InMemoryEntityStore`
 
-**Tests**
+**Exact task:**
 
-* Existing tenant resolution tests.
-* Add:
+1. Validate event envelope in all profiles by default.
+2. Add explicit config flag:
 
-  * production rejects `X-Tenant-ID`,
-  * production rejects `tenantId`,
-  * local allows fallback,
-  * support access requires proper role,
-  * workspace/project ID validation.
+   * `allowInvalidLocalEventsForTests`
+3. Do not silently bypass validation in local mode.
+4. Implement bounded replay using actual offset range.
+5. Make `tailEvents.cancel()` unregister the listener from `InMemoryEventLogStore`, not just ignore callbacks.
+6. Add checkpoint persistence in in-memory profile for tests.
+7. Ensure query sorting by timestamp/offset is stable.
 
 ---
-
-## D2. `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/HttpHandlerSupport.java`
 
-**What to change**
+## `products/data-cloud/planes/shared-spi/src/main/java/com/ghatana/datacloud/spi/EventLogStore.java`
 
-* Add a common method:
+**What to change:**
 
-  * `requireRequestContext(HttpRequest request)`
-  * `requirePermission(HttpRequest request, String permission)`
-  * `requireAnyPermission(HttpRequest request, Set<String> permissions)`
-* Deprecate direct tenant-only helpers in new handlers.
-* Prevent new production handlers from using `resolvePrincipalId` header values for authorization.
-* Add response helpers for:
+Add durable checkpoint and replay primitives.
 
-  * unauthorized,
-  * forbidden,
-  * policy denied,
-  * degraded/unavailable surface,
-  * redacted response.
-* Keep request/correlation ID propagation.
+**Exact task:**
 
-**Where**
+Add SPI methods:
 
-* Existing helper already resolves correlation ID, trace context, tenant context, and error responses.
+```java
+Promise<Checkpoint> readCheckpoint(TenantContext tenant, String stream, String consumerGroup);
+Promise<Checkpoint> commitCheckpoint(TenantContext tenant, String stream, String consumerGroup, Offset offset, String idempotencyKey);
+Promise<List<EventEntry>> replay(TenantContext tenant, ReplaySpec spec);
+Promise<Void> unsubscribe(TenantContext tenant, SubscriptionId subscriptionId);
+```
 
-**Tests**
-
-* `HttpHandlerSupportAuthorizationTest`
-* `HttpHandlerSupportErrorEnvelopeTest`
-* `HttpHandlerSupportRedactionTest`
-
 ---
-
-## D3. `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataLifecycleHandler.java`
-
-**What to change**
 
-* Ensure all governance mutation handlers call centralized request context and permission helpers.
-* Add policy decision result to responses for simulation/toggle/delete/purge/redact operations.
-* Add audit event for:
+## `products/data-cloud/planes/event/store/**`
 
-  * policy create/update/delete/toggle,
-  * retention classify,
-  * purge,
-  * redaction.
+**What to change:**
 
-**Where**
+Durable store providers must implement the checkpoint/replay contract.
 
-* Router registers governance routes for retention, purge, redaction, policy CRUD, and simulation.
+**Exact task:**
 
-**Tests**
+For each event store implementation:
 
-* Governance permission matrix test.
-* Governance audit emission test.
-* Policy simulation no-mutation test.
+* add checkpoint table/collection if durable,
+* implement bounded replay,
+* enforce tenant isolation,
+* enforce idempotent checkpoint commits,
+* add tests for replay and checkpoint recovery.
 
 ---
 
-## D4. `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/SettingsHandler.java`
+## Tests for Pass 3
 
-**What to change**
+### `products/data-cloud/planes/shared-spi/src/test/java/com/ghatana/datacloud/DataCloudClientReplayTest.java`
 
-* Ensure API key create/rotate/revoke and security settings changes require admin permission.
-* Require approval workflow for sensitive settings changes.
-* Redact API key material in list/get responses.
-* Add audit event for all sensitive changes.
+Add tests for:
 
-**Where**
+* replay respects `fromOffset`.
+* replay respects `toOffset`.
+* replay filters event types.
+* replay requires valid tenant.
+* checkpoint commit/read works.
+* no-op checkpoint is impossible.
 
-* Settings routes include API keys, security settings, profile/preferences, notification preferences, and approval workflow.
+### `products/data-cloud/delivery/runtime-composition/src/test/java/com/ghatana/datacloud/DataCloudEventEnvelopeValidationTest.java`
 
-**Tests**
+Add tests for:
 
-* Settings permission test.
-* API key redaction test.
-* Approval workflow test.
+* local profile validates required source by default.
+* explicit test override allows invalid event only in test config.
+* source/correlation/trace headers round-trip.
 
 ---
 
-## D5. `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataSourceRegistryHandler.java`
+# Pass 4 — AEP semantic lifecycle completion
 
-**What to change**
+Root cause: AEP placement is complete, but semantic lifecycle is explicitly partial. The Action Plane inventory says completion still requires unified operator model, PatternSpec compiler, EventCloud SPI, pattern lifecycle, learning-to-recommendation loop, and replay-safe agent execution. 
 
-* Ensure connector credentials are never returned.
-* Require permissions for:
+## `products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/aep/agent/capability/EventOperatorCapability.java`
 
-  * register connector,
-  * update connector,
-  * delete connector,
-  * rotate credentials,
-  * trigger sync,
-  * read schema/health.
-* Add audit event for connector lifecycle operations.
-* Ensure handler returns canonical response shape used by generated UI contracts.
+**What to change:**
 
-**Where**
+This is currently a thin interface. 
 
-* Router exposes connector lifecycle routes under `/api/v1/connectors` and compatibility `/data-fabric/connectors`.
+**Exact task:**
 
-**Tests**
+Add or connect canonical operator lifecycle contracts:
 
-* `DataSourceRegistryHandlerSecurityTest`
-* `ConnectorLifecycleTest`
-* `ConnectorCredentialRedactionTest`
+* validate operator spec
+* compile operator spec
+* explain operator plan
+* declare side effects
+* declare replay behavior
+* declare required policies
+* declare observability requirements
 
 ---
 
-## D6. `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/AiAssistHandler.java`
+## `products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/aep/operator/contract/**`
 
-**What to change**
+**What to change:**
 
-* Make production-mode fail-closed wiring mandatory when deployment profile is production/staging/sovereign.
-* Require `TenantQuotaService` in production if AI routes are enabled.
-* Require `IdempotencyStore` in production for mutating AI operations.
-* Require `DataCloudClient` or audit service for AI action persistence in production.
-* Do not allow heuristic fallback in production when `CompletionService` is missing.
-* Confirm every AI route records audit/action telemetry.
-* Ensure prompts never include raw PII fields; enforce schema/metadata-only policy.
+Make PatternSpec/operator contracts first-class.
 
-**Where**
+**Exact task:**
 
-* Existing fail-closed production support and optional quota/idempotency/client wiring.
-* Example route logic for entity suggest and schema infer.
+Add or harden:
 
-**Tests**
+* `PatternSpec`
+* `PatternSpecCompiler`
+* `PatternValidationResult`
+* `PatternRuntimePlan`
+* `PatternLifecycleState`
+* `PatternMatchResult`
+* `PatternExplainability`
+* `LearningFeedback`
+* `RecommendationCandidate`
 
-* `AiAssistHandlerProductionFailClosedTest`
-* `AiAssistHandlerQuotaRequiredTest`
-* `AiAssistHandlerIdempotencyTest`
-* `AiAssistHandlerAuditPersistenceTest`
-* `AiAssistHandlerPiiPromptPolicyTest`
-
 ---
-
-# E. Backend API and route correctness
-
-## E1. `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudRouterBuilder.java`
-
-**What to change**
 
-* Keep canonical Action routes under `/api/v1/action/*`.
-* Ensure root legacy routes are only registered when `LEGACY_ACTION_ROUTES` is enabled.
-* Remove canonical duplicate routes that still use root paths:
+## `products/data-cloud/planes/action/engine/src/main/java/**`
 
-  * `/api/v1/pipelines/draft`
-  * `/api/v1/pipelines/:pipelineId/optimise-hint`
-  * any other Action-owned root route.
-* Add explicit storage profile routes if UI feature remains:
+**What to change:**
 
-  * `GET /api/v1/storage-profiles`
-  * `POST /api/v1/storage-profiles`
-  * `GET /api/v1/storage-profiles/:profileId`
-  * `PUT /api/v1/storage-profiles/:profileId`
-  * `DELETE /api/v1/storage-profiles/:profileId`
-  * `POST /api/v1/storage-profiles/:profileId/set-default`
-  * `GET /api/v1/storage-profiles/:profileId/metrics`
-* If `/data-fabric/profiles` compatibility aliases remain, mark them as compatibility-only and route them to the same handler.
-* Ensure every registered route appears in OpenAPI.
+Implement the event-pattern execution lifecycle.
 
-**Where**
+**Exact task:**
 
-* Pipeline/action routes.
-* AI assist routes with mixed canonical and root paths.
-* Connector compatibility aliases.
+Add engine services:
 
-**Tests**
+* compile PatternSpec
+* register active patterns
+* consume Data Cloud Event Plane records
+* detect matches
+* create pattern instances
+* emit explainability evidence
+* support replay mode
+* support tenant isolation
+* support confidence and uncertainty metadata
 
-* Router/OpenAPI sync.
-* Legacy route feature-flag test.
-* Storage profile route test.
-* Action canonical route test.
-
 ---
 
-## E2. `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/PipelineCheckpointHandler.java`
+## `products/data-cloud/planes/action/registry/src/main/java/**`
 
-**What to change**
+**What to change:**
 
-* Enforce canonical Action Plane permissions.
-* Validate pipeline payload against contract schema, not free-form map.
-* Persist created/updated/deleted audit events.
-* Return stable errors for invalid DAGs, missing nodes, duplicate node IDs, invalid edges.
-* Add optimistic concurrency/version support if pipeline updates can race.
+Make pattern/agent registry versioned and lifecycle-aware.
 
-**Where**
+**Exact task:**
 
-* Router maps this handler to Action pipeline CRUD routes.
+Persist:
 
-**Tests**
+* pattern definition
+* version
+* lifecycle status
+* owner
+* tenant
+* validation result
+* activation timestamp
+* retirement timestamp
+* rollback version
+* learning feedback references
 
-* Pipeline CRUD contract test.
-* Invalid DAG test.
-* Permission test.
-* Audit test.
-
 ---
 
-## E3. `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/WorkflowExecutionHandler.java`
+## `products/data-cloud/planes/action/orchestrator/src/main/java/**`
 
-**What to change**
+**What to change:**
 
-* Ensure execute/cancel/retry/rollback/checkpoint/restore are consistent under `/api/v1/action`.
-* Ensure execution responses include:
+Connect pattern decisions to governed action execution.
 
-  * request ID,
-  * tenant ID,
-  * execution ID,
-  * status,
-  * started/completed timestamps,
-  * node statuses,
-  * failure reason,
-  * retryability.
-* Add durable state transition validation.
-* Add idempotency for execute/retry/cancel/rollback.
+**Exact task:**
 
-**Where**
+Add orchestration path:
 
-* Router registers pipeline and execution routes.
-* OpenAPI defines workflow execution response/details/log schemas.
+```text
+event → pattern match → policy check → review if required → agent/pipeline execution → operation record → learning feedback
+```
 
-**Tests**
+Add replay-safe behavior:
 
-* Workflow execution lifecycle test.
-* Execution logs test.
-* Cancel/retry/rollback permission test.
-* Idempotency test.
+* idempotency key
+* replay mode
+* compensation strategy
+* no side effects during dry-run replay
 
 ---
-
-## E4. `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/SurfaceRegistryHandler.java`
 
-**What to change**
+## `products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/registry/AgentEventOperatorCapabilityAdapter.java`
 
-* Ensure `/api/v1/surfaces` is the only canonical runtime truth endpoint.
-* Remove any UI/client dependency on `/api/v1/capabilities`.
-* Ensure response includes:
+**What to change:**
 
-  * owner plane,
-  * status,
-  * required dependencies,
-  * dependency probes,
-  * runtime profile,
-  * limitations,
-  * actions allowed.
-* Add media/audio-video surfaces and Context Plane surface truth.
-* Hide target-only planes from default navigation unless status is available/degraded with clear reason.
+The adapter has useful policies and metrics, but validation only checks operator kind and compile emits a minimal runtime plan. 
 
-**Where**
+**Where:**
 
-* Router exposes `/api/v1/surfaces` and `/api/v1/surfaces/schema`.
-* OpenAPI defines `SurfaceRecord`.
+* `validate`
+* `compile`
+* `process`
+* `mapAgentResult`
+* `buildEvidence`
+* `requireSideEffectControls`
+* `requireDurableMemoryStore`
 
-**Tests**
+**Exact task:**
 
-* Surface schema test.
-* Unavailable/degraded surface test.
-* UI route visibility contract test.
+1. Validate:
 
----
+   * input schema,
+   * output schema,
+   * side-effect policy,
+   * replay policy,
+   * human review policy,
+   * observability policy,
+   * tenant context,
+   * trace/correlation requirements.
+2. Compile a real runtime plan with:
 
-# F. Context Plane and RAG/product memory ownership
+   * operator ID,
+   * input/output schemas,
+   * side-effect profile,
+   * replay mode,
+   * policy requirements,
+   * required tools,
+   * memory requirements.
+3. Make replay mode explicit in `AgentContext`.
+4. Emit structured evidence for every outcome.
+5. Add fail-closed behavior for missing trace/correlation/tenant.
 
-## F1. Add `products/data-cloud/planes/context/build.gradle.kts` if Context Plane is implemented now
+The adapter already requires durable memory unless explicitly allowed as no-op. Keep that behavior. 
 
-**What to add**
+---
 
-* New Java module for:
+## `products/data-cloud/planes/action/event-bridge/src/main/java/**`
 
-  * lineage,
-  * provenance,
-  * semantic context,
-  * freshness,
-  * memory/RAG grounding,
-  * retrieval policies.
-* Dependencies allowed:
+**What to change:**
 
-  * `planes:shared-spi`
-  * Data/Event/Governance public contracts only.
-* Must not depend on Action implementation internals.
+Make EventCloud persistence bridge explicit and replay-safe.
 
-**Tests**
+**Exact task:**
 
-* Context module boundary test.
-* Context service unit tests.
+* Consume only public Event Plane SPI.
+* Do not import Data/Event/Governance implementation internals.
+* Persist EventCloud records behind AEP-owned SPI.
+* Include tenant, offset, correlation, causation, policy context, trace.
+* Add replay and backfill mode.
 
 ---
 
-## F2. Add `products/data-cloud/planes/context/src/main/java/com/ghatana/datacloud/context/ContextRecord.java`
+## Tests for Pass 4
 
-**What to add**
+### `products/data-cloud/planes/action/operator-contracts/src/test/java/**`
 
-* Canonical context record:
+Add tests:
 
-  * tenant ID,
-  * collection/entity scope,
-  * source,
-  * provenance,
-  * freshness timestamp,
-  * trust score,
-  * semantic tags,
-  * policy classification.
+* PatternSpec validation.
+* PatternSpec compile failure messages.
+* operator lifecycle states.
+* schema compatibility.
+* side-effect declarations.
 
-**Tests**
+### `products/data-cloud/planes/action/engine/src/test/java/**`
 
-* Serialization test.
-* Validation test.
+Add tests:
 
----
+* event stream → pattern match.
+* no match.
+* replay match.
+* late event handling.
+* uncertainty/confidence propagation.
 
-## F3. Add `products/data-cloud/planes/context/src/main/java/com/ghatana/datacloud/context/ContextService.java`
+### `products/data-cloud/planes/action/agent-runtime/src/test/java/com/ghatana/agent/registry/AgentEventOperatorCapabilityAdapterTest.java`
 
-**What to add**
+Update tests for:
 
-* Public service interface for:
+* compile produces complete runtime plan.
+* missing policy fails validation.
+* side-effecting agent requires human-review/idempotency/audit.
+* replay dry-run does not perform side effects.
 
-  * get context,
-  * put context,
-  * delete context,
-  * snapshot,
-  * collection context,
-  * RAG grounding check,
-  * lineage/trust lookup.
+### `products/data-cloud/integration-tests/src/test/java/**`
 
-**Tests**
+Add one vertical slice test:
 
-* Context service contract test.
+```text
+append Data Cloud event
+→ AEP pattern detects match
+→ review generated
+→ approve review
+→ agent action executes
+→ operation record visible
+→ replay does not duplicate side effect
+```
 
 ---
-
-## F4. `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/ContextLayerHandler.java`
 
-**What to change**
+# Pass 5 — Runtime truth and UI capability disclosure
 
-* Move business logic into Context Plane service if Context Plane is implemented.
-* Handler should only:
+Root cause: UI has runtime gating, but preview surfaces are still too easily reachable. `RuntimeCapabilityRouteGate` treats `LIVE`, `DEGRADED`, and `PREVIEW` as available, and routes can opt into `allowPreview`.  
 
-  * resolve request context,
-  * enforce permission,
-  * call Context Plane service,
-  * map response.
-* Add redaction for sensitive context values.
+## `products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.ts`
 
-**Where**
+**What to change:**
 
-* Router exposes context routes.
+This file is the UI route surface registry. It currently defines active/preview/boundary/discoverable metadata. 
 
-**Tests**
+**Where:**
 
-* Context handler permission test.
-* Context redaction test.
+* `RouteLifecycleSchema`
+* `RouteSurfaceSchema`
+* `canonicalRouteSurfaceRegistry`
+* `getDiscoverableRouteSurfaces`
 
----
-
-## F5. `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/CollectionContextHandler.java`
-
-**What to change**
-
-* Move lineage/trust business logic into Context Plane service.
-* Ensure RAG policy checks are governed by Governance Plane policy service.
-* Include provenance and freshness in response.
+**Exact task:**
 
-**Where**
+1. Add new lifecycle values:
 
-* Router exposes collection context, lineage trust, and RAG policy check routes.
+   * `user-ready`
+   * `operator-preview`
+   * `internal-preview`
+   * `target-only`
+   * `disabled`
+2. Mark:
 
-**Tests**
+   * `/context` as `target-only` until Context Plane is active.
+   * `/memory` as `operator-preview`.
+   * `/agents` as `operator-preview`.
+   * `/media/artifacts` as `operator-preview` until first-class lifecycle exists.
+   * `/fabric` as `operator-preview`.
+   * `/plugins` as `operator-preview` unless plugin lifecycle is complete.
+3. Keep default discoverable nav minimal:
 
-* RAG policy check test.
-* Collection lineage/trust test.
+   * `/`
+   * `/data`
+   * `/events`
+   * `/query`
+   * `/pipelines`
+   * `/trust`
+   * `/operations`
+4. Do not show target-only routes in navigation/search.
 
 ---
 
-# G. UI contract, endpoint alignment, and simple product UX
+## `products/data-cloud/delivery/ui/src/components/security/RuntimeCapabilityRouteGate.tsx`
 
-## G1. `products/data-cloud/delivery/ui/ARCHITECTURE.md`
+**What to change:**
 
-**What to change**
+Do not treat preview as usable by default.
 
-* Replace “current implementation uses ad hoc response types” with the implemented generated-client approach after Group G is complete.
-* Keep explicit rule: UI services must use generated/validated clients.
-* Add rule that UI must use Runtime Truth `/api/v1/surfaces` for feature availability.
-* Add rule that default nav must remain outcome-first:
+**Where:**
 
-  * Home,
-  * Data,
-  * Events,
-  * Query,
-  * Pipelines,
-  * Trust,
-  * Operations.
-* Add “Do not run readiness checks in this implementation iteration.”
+* `RuntimeCapabilityRouteGateProps`
+* `allowPreview`
+* `allowed`
+* `RuntimePostureBanner`
 
-**Where**
+**Exact task:**
 
-* DC-UI-004 note currently states generated API types are missing and current services use ad hoc response types.
+1. Change default `allowPreview` to `false`.
+2. Add `previewAudience` support:
 
-**Tests**
+   * `internal`
+   * `operator`
+   * `admin`
+3. Require both:
 
-* Docs-only consistency test if available.
+   * backend surface status allows preview,
+   * UI route registry allows that preview audience.
+4. Replace hardcoded strings:
 
----
+   * `"Preview"`
+   * `"Degraded"`
+   * `"Checking surface availability..."`
+     with i18n keys.
 
-## G2. `products/data-cloud/delivery/ui/package.json`
+---
 
-**What to change**
+## `products/data-cloud/delivery/ui/src/api/surfaces.service.ts`
 
-* Change `"test"` so it does **not** run `test:readiness` by default.
-* Add:
+**What to change:**
 
-  * `"test:focused": "vitest run"`
-  * `"test:contracts": "vitest run tests/contract"`
-  * keep `"test:readiness"` but do not use it in this iteration.
-* Keep `generate:api-types` and `check:api-types`.
-* Add script for targeted data-fabric tests if useful:
+The canonical surface status taxonomy exists. 
 
-  * `"test:data-fabric": "vitest run src/features/data-fabric"`
+**Where:**
 
-**Where**
+* `SurfaceStatus`
+* `SurfaceSignal`
+* `normalizeSurfaceStatus`
+* `SURFACE_ALIASES`
+* `isSurfaceAvailable`
 
-* Current `"test"` points to `"pnpm run test:readiness"`.
+**Exact task:**
 
-**Tests**
+1. Add `audience` to `SurfaceSignal`.
+2. Add `readinessClass`:
 
-* No test needed for package script change.
-* Do not run `test:readiness`.
+   * `user-ready`
+   * `operator-preview`
+   * `internal-preview`
+   * `target-only`
+3. Change `isSurfaceAvailable` so `PREVIEW` is not globally available.
+4. Normalize backend `targetOnly`, `audience`, and `limitations`.
+5. Add aliases for Pattern/AEP/Learning once Action Plane lifecycle is implemented.
 
 ---
 
-## G3. `products/data-cloud/delivery/ui/scripts/generate-api-types.ts`
+## `products/data-cloud/delivery/ui/src/routes.tsx`
 
-**What to change**
+**What to change:**
 
-* Generate types from:
+Routes currently pass `allowPreview` for many surfaces, including media, events, memory, entities, context, fabric, agents, settings, plugins, and connectors.   
 
-  * `products/data-cloud/contracts/openapi/data-cloud.yaml`
-  * `products/data-cloud/contracts/openapi/action-plane.yaml`
-* Output generated types into a stable generated folder:
+**Exact task:**
 
-  * `products/data-cloud/delivery/ui/src/generated/api/data-cloud.ts`
-  * `products/data-cloud/delivery/ui/src/generated/api/action-plane.ts`
-* Fail generation on invalid OpenAPI.
-* Do not generate release evidence.
+1. Remove blanket `allowPreview`.
+2. Replace with explicit audience-aware preview:
 
-**Tests**
+   * `allowPreviewFor="operator"`
+   * `allowPreviewFor="admin"`
+3. Remove `/context` preview rendering until Context Plane is active.
+4. Keep compatibility routes but ensure they do not appear in navigation/search.
+5. Hide release-truth route completely in this pass.
 
-* `check-api-types.ts`.
-* Targeted type-check only.
-
 ---
 
-## G4. `products/data-cloud/delivery/ui/scripts/check-api-types.ts`
+## `products/data-cloud/delivery/ui/src/components/security/RoleProtectedRoute.tsx`
 
-**What to change**
+**What to change:**
 
-* Compare generated UI types against OpenAPI source.
-* Fail only on type drift.
-* Do not invoke readiness/evidence/maturity scripts.
+This file correctly states shell role is only UI disclosure, not backend authorization. 
 
-**Tests**
+**Exact task:**
 
-* Script unit test if present.
-* No readiness check.
+1. Keep that separation.
+2. Add route lifecycle check from `RouteSurfaceRegistry`.
+3. If route is `target-only`, render disabled surface even if role matches.
+4. Do not allow shell role to imply backend capability.
 
 ---
-
-## G5. Add `products/data-cloud/delivery/ui/src/generated/api/data-cloud.ts`
 
-**What to add**
+## Tests for Pass 5
 
-* Generated OpenAPI TypeScript types.
-* Mark as generated.
-* No manual edits.
+### `products/data-cloud/delivery/ui/src/lib/routing/RouteSurfaceRegistry.test.ts`
 
-**Tests**
+Add tests:
 
-* Type-check.
+* target-only routes are never discoverable.
+* preview routes require explicit preview audience.
+* default nav contains only the intended outcome-first routes.
 
----
+### `products/data-cloud/delivery/ui/src/components/security/RuntimeCapabilityRouteGate.test.tsx`
 
-## G6. Add `products/data-cloud/delivery/ui/src/generated/api/action-plane.ts`
+Add tests:
 
-**What to add**
+* PREVIEW does not render by default.
+* operator-preview renders only for operator/admin.
+* target-only always renders disabled state.
+* loading state does not flash optional surface.
 
-* Generated Action Plane OpenAPI TypeScript types.
-* Mark as generated.
-* No manual edits.
+### `products/data-cloud/delivery/ui/src/routes.test.tsx`
 
-**Tests**
+Add tests:
 
-* Type-check.
+* `/context` blocked while Context Plane target-only.
+* `/media/artifacts` preview gated.
+* `/plugins` preview gated.
+* compatibility aliases redirect without increasing nav items.
 
 ---
-
-## G7. `products/data-cloud/delivery/ui/src/contracts/schemas.ts`
-
-**What to change**
 
-* Replace hand-maintained contract-like types with generated OpenAPI-derived types where possible.
-* Keep Zod schemas only for runtime validation at UI boundaries.
-* Ensure connector, storage profile, media artifact, surface, pipeline, execution, and governance schemas match backend.
+# Pass 6 — Audio-video first-class modality
 
-**Where**
+Root cause: Data Cloud currently treats audio-video as partial metadata integration. The registry says audio-video modality is partial and must become durable MediaArtifact job lifecycle, Transcript, FrameIndex, consent, retention, and processing workflow. 
 
-* Data-fabric API service imports this file for connector/storage schemas.
+## `products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/api/controller/MediaArtifactController.java`
 
-**Tests**
+**What to change:**
 
-* Schema parse tests.
-* Generated type compatibility tests.
+The controller currently registers media metadata and returns blocked/service-unavailable if runtime is not configured. 
 
----
+**Where:**
 
-## G8. `products/data-cloud/delivery/ui/src/lib/api/client.ts`
+* `createArtifact`
+* `listArtifacts`
+* `triggerTranscription`
+* `triggerVisionAnalysis`
+* `deleteArtifact`
 
-**What to change**
+**Exact task:**
 
-* Add canonical request ID propagation.
-* Do not send `X-Tenant-ID` in production mode.
-* Handle backend error envelope consistently.
-* Handle 401, 403, 404, 409, 429, 503.
-* Add response parsing hooks for generated types.
-* Add degraded/unavailable surface response handling.
+1. Add durable lifecycle states:
 
-**Tests**
+   * `REGISTERED`
+   * `CONSENT_PENDING`
+   * `CONSENT_DENIED`
+   * `QUEUED`
+   * `PROCESSING`
+   * `TRANSCRIBED`
+   * `ANALYZED`
+   * `INDEXED`
+   * `FAILED`
+   * `RETAINED`
+   * `DELETED`
+2. Enforce consent before processing.
+3. Enforce retention policy before delete/process/export.
+4. Create operation record for every lifecycle transition.
+5. Return job IDs for transcribe/analyze.
+6. Add endpoints:
 
-* API client error envelope test.
-* Request ID propagation test.
-* Production tenant header absence test.
+   * `GET /api/v1/media/artifacts/:artifactId/jobs`
+   * `GET /api/v1/media/artifacts/:artifactId/transcript`
+   * `GET /api/v1/media/artifacts/:artifactId/frame-index`
+   * `POST /api/v1/media/artifacts/:artifactId/retry`
+7. Emit Data Cloud events for every transition.
 
 ---
-
-## G9. `products/data-cloud/delivery/ui/src/features/data-fabric/services/api.ts`
 
-**What to change**
+## `products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/memory/media/MediaArtifactRecord.java`
 
-* Replace `/data-fabric/connectors` calls with `/api/v1/connectors`.
-* Replace `/data-fabric/profiles` calls with canonical `/api/v1/storage-profiles` or whatever backend canonical route is implemented.
-* Remove manual type mapping that conflicts with backend contracts.
-* Fix suspicious mapping:
+**What to change:**
 
-  * `clickhouse` should not map to `StorageType.DATABRICKS`.
-  * `in-memory` should not map to `StorageType.HDFS`.
-* Use generated OpenAPI types and Zod validation at boundaries.
-* Handle 503 runtime truth response when connectors/storage profiles are disabled.
+Add first-class fields instead of storing lifecycle-critical data only in metadata.
 
-**Where**
+**Exact task:**
 
-* Current service calls `/data-fabric/profiles` and `/data-fabric/connectors`.
-* Current type mapping maps `clickhouse` to `DATABRICKS` and `in-memory` to `HDFS`.
+Add fields:
 
-**Tests**
+* `status`
+* `consentStatus`
+* `retentionPolicy`
+* `retentionUntil`
+* `processingJobId`
+* `transcriptId`
+* `frameIndexId`
+* `lastError`
+* `createdBy`
+* `updatedBy`
+* `deletedAt`
 
-* Data-fabric API service test.
-* Endpoint path test.
-* Storage type mapping test.
-* Runtime unavailable/degraded test.
-
 ---
+
+## `products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/memory/media/MediaArtifactRepository.java`
 
-## G10. `products/data-cloud/delivery/ui/src/features/data-fabric/types/index.ts`
+**What to change:**
 
-**What to change**
+Support lifecycle and job queries.
 
-* Align enums with backend OpenAPI.
-* Remove UI-only status values that backend never returns.
-* Add explicit degraded/unavailable states if Runtime Truth can return them.
-* Add redaction-aware fields for credentials and storage URI.
+**Exact task:**
 
-**Tests**
+Add methods:
 
-* Type compatibility test against generated OpenAPI types.
+* `updateStatus`
+* `findJobs`
+* `saveTranscript`
+* `findTranscript`
+* `saveFrameIndex`
+* `findFrameIndex`
+* `markDeleted`
+* `findByRetentionDue`
+* `findByConsentStatus`
 
 ---
 
-## G11. `products/data-cloud/delivery/ui/src/features/data-fabric/stores/storage-profile.store.ts`
+## `products/audio-video/modules/intelligence/multimodal-service/**`
 
-**What to change**
+**What to change:**
 
-* Add explicit states:
+Connect multimodal processing to Data Cloud media lifecycle.
 
-  * idle,
-  * loading,
-  * loaded,
-  * empty,
-  * error,
-  * unauthorized,
-  * unavailable,
-  * degraded.
-* Remove silent failures.
-* Store backend request ID on errors.
-* Do not keep secrets in state.
+**Exact task:**
 
-**Tests**
+Expose provider interface or adapter consumed by Data Cloud:
 
-* Store reducer/action tests.
+* submit media processing job
+* get job status
+* fetch transcript
+* fetch frame index
+* fetch extracted events
+* fetch embeddings/index metadata
 
 ---
 
-## G12. `products/data-cloud/delivery/ui/src/features/data-fabric/stores/connector.store.ts`
+## `products/audio-video/modules/speech/stt-service/**`
 
-**What to change**
+**What to change:**
 
-* Add same state model as storage profiles.
-* Add sync job state:
+Make STT integration job-based and traceable.
 
-  * queued,
-  * running,
-  * succeeded,
-  * failed,
-  * canceled.
-* Store connector health and schema state separately.
-* Do not store credentials after submit.
+**Exact task:**
 
-**Tests**
+* Accept Data Cloud artifact ID.
+* Return job ID.
+* Emit job state transitions.
+* Return transcript with confidence, language, timestamps, speaker labels where available.
 
-* Connector store tests.
-* Sync lifecycle state tests.
-
 ---
 
-## G13. `products/data-cloud/delivery/ui/src/features/data-fabric/components/StorageProfilesPage.tsx`
+## `products/audio-video/modules/vision/vision-service/**`
 
-**What to change**
+**What to change:**
 
-* Use common page layout.
-* Use generated contract-backed service.
-* Add empty/loading/error/unauthorized/unavailable states.
-* Add progressive disclosure for advanced storage settings.
-* Make destructive delete require confirmation.
-* Use i18n keys for all user-visible text.
+Make frame/object/scene analysis job-based and traceable.
 
-**Tests**
+**Exact task:**
 
-* Page render test.
-* Empty/error/unauthorized tests.
-* Delete confirmation test.
-* i18n raw-string test.
+* Accept Data Cloud artifact ID.
+* Return job ID.
+* Emit frame index result.
+* Include confidence, timestamp ranges, extracted labels/events.
 
 ---
 
-## G14. `products/data-cloud/delivery/ui/src/features/data-fabric/components/StorageProfilesList.tsx`
+## `products/data-cloud/delivery/ui/src/pages/MediaArtifactPage.tsx`
 
-**What to change**
+**What to change:**
 
-* Use common table/list component.
-* Add accessible row actions.
-* Add sorting/filtering if supported by backend, otherwise hide unsupported controls.
-* Add redaction for sensitive config fields.
-* Add keyboard navigation.
+This page currently contains raw i18n keys as visible strings and a modal form. 
 
-**Tests**
+**Exact task:**
 
-* Table action test.
-* Keyboard accessibility test.
-* Sensitive field redaction test.
+1. Use `useTranslation`.
+2. Replace raw text keys with `t(...)`.
+3. Add status timeline.
+4. Add job panel.
+5. Add transcript panel.
+6. Add frame index panel.
+7. Disable process buttons unless consent is granted.
+8. Show retention warnings.
+9. Replace raw toast keys with translated messages. Current toast calls use raw keys. 
 
 ---
+
+## `products/data-cloud/delivery/ui/src/features/media/services/api.ts`
 
-## G15. `products/data-cloud/delivery/ui/src/features/data-fabric/components/DataConnectorsPage.tsx`
+**What to change:**
 
-**What to change**
+The API service already supports create/list/get/delete/transcribe/analyze. 
 
-* Use canonical `/api/v1/connectors` service.
-* Add connect/test/sync/enable/disable flows.
-* Show runtime unavailable state when feature disabled.
-* Show connector health and last sync status.
-* Add i18n keys.
+**Exact task:**
 
-**Tests**
+Add methods:
 
-* Connector lifecycle page test.
-* Feature disabled test.
-* i18n test.
+* `getJobs(artifactId)`
+* `getTranscript(artifactId)`
+* `getFrameIndex(artifactId)`
+* `retryJob(artifactId, jobId)`
+* `updateConsent(artifactId, consentStatus)`
+* `applyRetentionPolicy(artifactId, policy)`
 
 ---
 
-## G16. `products/data-cloud/delivery/ui/src/features/data-fabric/components/DataConnectorsList.tsx`
+## Tests for Pass 6
 
-**What to change**
+### `products/data-cloud/delivery/api/src/test/java/com/ghatana/datacloud/api/controller/MediaArtifactControllerTest.java`
 
-* Use common table/list component.
-* Add row click to details.
-* Add row actions:
+Add tests:
 
-  * test,
-  * sync,
-  * enable,
-  * disable,
-  * rotate credentials,
-  * delete.
-* Gate actions by permission/capability.
-* Add accessible labels and keyboard support.
+* consent required for audio/video.
+* denied consent blocks processing.
+* retention policy blocks delete/process as required.
+* transcription creates job.
+* vision analysis creates job.
+* job failure returns structured error.
 
-**Tests**
+### `products/data-cloud/delivery/ui/src/pages/MediaArtifactPage.test.tsx`
 
-* Action visibility test.
-* Permission gating test.
-* Keyboard test.
+Add tests:
 
+* no raw i18n keys visible.
+* processing disabled until consent granted.
+* transcript/frame tabs render when available.
+* failed job shows retry action.
+
 ---
 
-## G17. Add `products/data-cloud/delivery/ui/src/features/media/services/api.ts`
+# Pass 7 — Connector production path
 
-**What to add**
+Root cause: Data Cloud registry says connector runtime is incomplete and needs provider, runtime truth states, dataset linkage, health, schema, sync, and credential rotation. 
 
-* Contract-backed media service:
+## `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataSourceRegistryHandler.java`
 
-  * create artifact,
-  * list artifacts,
-  * get artifact,
-  * delete artifact,
-  * request transcription,
-  * request vision analysis,
-  * get job status,
-  * get results.
-* Use generated OpenAPI types.
-* Handle redacted fields and 403/503.
+**What to change:**
 
-**Tests**
+This handler stores connector metadata and delegates operations to `DataFabricConnector` if available; otherwise it returns degraded/truthful responses. 
 
-* Media API service test.
+**Where:**
 
----
+* `handleListConnections`
+* `handleRegisterConnection`
+* test/sync/schema/health/rotate/delete methods
+* `isConnectorRuntimeRequired`
+* idempotency helpers
 
-## G18. Add `products/data-cloud/delivery/ui/src/features/media/types/index.ts`
+**Exact task:**
 
-**What to add**
+1. Replace tenant error message `"X-Tenant-Id header is required"` with authenticated tenant context language. Current message conflicts with production tenant rules. 
+2. Ensure connector runtime is mandatory in staging/production/sovereign.
+3. Add dataset linkage:
 
-* UI-safe media artifact types.
-* Job state enum.
-* Result state.
-* Redaction marker type.
-* Consent status type.
+   * connector ID → dataset ID
+   * sync job → dataset version
+   * schema snapshot → contract version
+4. Redact credentials in all responses.
+5. Add credential rotation operation record.
+6. Add health status model:
 
-**Tests**
+   * `UNKNOWN`
+   * `HEALTHY`
+   * `DEGRADED`
+   * `FAILED`
+   * `CREDENTIALS_EXPIRED`
+7. Add sync status model:
 
-* Type compatibility test.
+   * `IDLE`
+   * `QUEUED`
+   * `RUNNING`
+   * `FAILED`
+   * `COMPLETED`
+8. Require idempotency for mutating operations.
 
 ---
 
-## G19. Add `products/data-cloud/delivery/ui/src/features/media/stores/media.store.ts`
+## `products/data-cloud/planes/shared-spi/src/main/java/com/ghatana/datacloud/fabric/DataFabricConnector.java`
 
-**What to add**
+**What to change:**
 
-* Media artifact state.
-* Processing job state.
-* Result state.
-* Error/request ID state.
-* Feature unavailable/degraded state.
+Make connector runtime contract production-ready.
 
-**Tests**
+**Exact task:**
 
-* Media store lifecycle test.
+Add methods:
 
----
+* `testConnection`
+* `inferSchema`
+* `sync`
+* `getSyncStatus`
+* `getHealth`
+* `rotateCredentials`
+* `linkDataset`
+* `redactConfig`
 
-## G20. Add `products/data-cloud/delivery/ui/src/features/media/components/MediaArtifactsPage.tsx`
+---
 
-**What to add**
+## `products/data-cloud/contracts/openapi/data-cloud.yaml`
 
-* Low-cognitive-load media artifact page.
-* Default list with search/filter.
-* Actions:
+**What to change:**
 
-  * register artifact,
-  * request transcription,
-  * request analysis,
-  * view status,
-  * view result,
-  * delete.
-* Hide advanced metadata behind disclosure.
-* Show consent/retention warnings.
+Add or align connector schemas and endpoints.
 
-**Tests**
+**Exact task:**
 
-* Page flow test.
-* Consent warning test.
-* Processing status test.
+Add schemas:
 
----
+* `Connector`
+* `ConnectorCreateRequest`
+* `ConnectorHealth`
+* `ConnectorSchemaSnapshot`
+* `ConnectorSyncRequest`
+* `ConnectorSyncStatus`
+* `CredentialRotationRequest`
+* `DatasetLink`
 
-## G21. Add `products/data-cloud/delivery/ui/src/features/media/components/MediaArtifactDetails.tsx`
+Do not add release evidence endpoints or release-readiness schemas.
 
-**What to add**
+---
 
-* Details panel/page for artifact metadata, processing jobs, and results.
-* Redact sensitive fields unless allowed.
-* Show lineage/event links when available.
+## Tests for Pass 7
 
-**Tests**
+### `products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/handlers/DataSourceRegistryHandlerTest.java`
 
-* Details render test.
-* Redaction test.
+Add tests:
 
----
+* no credentials returned.
+* runtime unavailable returns 503 in production-like profiles.
+* local profile can save pending connector truthfully.
+* schema inference stores snapshot.
+* sync links dataset.
+* credential rotation records operation.
 
-## G22. `products/data-cloud/delivery/ui/src/routes/*` or route manifest source
+### `products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/handlers/ConnectorLifecycleTest.java`
 
-**What to change**
+Update to cover full lifecycle:
 
-* Add route for media only if backend media job flow is implemented.
-* Ensure default nav remains outcome-first.
-* Hide role-disclosed surfaces unless capabilities allow them:
+```text
+register → test → infer schema → link dataset → sync → health → rotate credentials → disable/delete
+```
 
-  * Context,
-  * Insights,
-  * Reviews,
-  * Patterns,
-  * Agents,
-  * Learning,
-  * Connectors,
-  * Plugins,
-  * Settings,
-  * Contracts.
-* Use `/api/v1/surfaces` to decide whether route is visible, degraded, or unavailable.
+---
 
-**Tests**
+# Pass 8 — Plugin/extensibility hardening
 
-* Route truth test.
-* Surface-based nav visibility test.
-* Unauthorized route test.
+## `products/data-cloud/extensions/plugins/**`
 
----
+**What to change:**
 
-# H. Data contracts, connectors, storage profiles, and Data Plane completeness
+Make plugins lifecycle-driven, not just route-driven.
 
-## H1. `products/data-cloud/contracts/openapi/data-cloud.yaml`
+**Exact task:**
 
-**What to change**
+Add canonical plugin contract:
 
-* Add/align canonical storage profile schemas:
+* `PluginDescriptor`
+* `PluginVersion`
+* `PluginConfigSchema`
+* `PluginCapability`
+* `PluginLifecycleState`
+* `PluginPolicyRequirements`
+* `PluginRuntimeIsolation`
+* `PluginHealth`
+* `PluginAuditPolicy`
 
-  * `StorageProfile`
-  * `CreateStorageProfileRequest`
-  * `UpdateStorageProfileRequest`
-  * `StorageProfileMetrics`
-* Add/align connector schemas:
+---
 
-  * `Connector`
-  * `CreateConnectorRequest`
-  * `UpdateConnectorRequest`
-  * `ConnectorHealth`
-  * `ConnectorSyncStatus`
-  * `ConnectorSchemaPreview`
-* Add canonical paths:
+## `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudRouterBuilder.java`
 
-  * `/api/v1/storage-profiles`
-  * `/api/v1/storage-profiles/{profileId}`
-  * `/api/v1/storage-profiles/{profileId}/set-default`
-  * `/api/v1/storage-profiles/{profileId}/metrics`
-  * `/api/v1/connectors`
-  * `/api/v1/connectors/{connectionId}`
-  * `/api/v1/connectors/{connectionId}/test`
-  * `/api/v1/connectors/{connectionId}/enable`
-  * `/api/v1/connectors/{connectionId}/disable`
-  * `/api/v1/connectors/{connectionId}/rotate-credentials`
-  * `/api/v1/connectors/{connectionId}/health`
-  * `/api/v1/connectors/{connectionId}/schema`
-  * `/api/v1/connectors/{connectionId}/sync`
-  * `/api/v1/connectors/{connectionId}/sync/status`
-* Mark credential fields write-only.
-* Add response examples for unavailable/degraded connector feature.
+**What to change:**
 
-**Where**
+The router centrally wires many domains. 
 
-* Existing DataSource contract and connector registration request exist but need canonical endpoint alignment.
+**Exact task:**
 
-**Tests**
+1. Keep current routes working.
+2. Introduce plane-owned route registrar interfaces:
 
-* OpenAPI schema test.
-* UI generated type test.
-* Router sync test.
+   * `DataPlaneRouteRegistrar`
+   * `EventPlaneRouteRegistrar`
+   * `ActionPlaneRouteRegistrar`
+   * `GovernancePlaneRouteRegistrar`
+   * `OperationsPlaneRouteRegistrar`
+   * `MediaRouteRegistrar`
+   * `PluginRouteRegistrar`
+3. Move route groups out incrementally.
+4. Generate route metadata into `RouteSecurityRegistry`.
 
 ---
 
-## H2. Add or update `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/StorageProfileHandler.java`
+## `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java`
 
-**What to change/add**
+**What to change:**
 
-* If file exists, update; otherwise create.
-* Implement:
+Make route security metadata generated from route registrars.
 
-  * list profiles,
-  * create profile,
-  * get profile,
-  * update profile,
-  * delete profile,
-  * set default,
-  * get metrics.
-* Enforce request context and permissions.
-* Redact sensitive config.
-* Validate storage type, encryption, compression, provider config.
-* Emit audit events for create/update/delete/default changes.
+**Exact task:**
 
-**Tests**
+Add generated route IDs and permission IDs for plugin routes:
 
-* `StorageProfileHandlerTest`
-* `StorageProfileHandlerSecurityTest`
-* `StorageProfileHandlerRedactionTest`
+* `plugin:read`
+* `plugin:install`
+* `plugin:enable`
+* `plugin:disable`
+* `plugin:upgrade`
+* `plugin:validate`
+* `plugin:sandbox`
 
 ---
 
-## H3. `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataSourceRegistryHandler.java`
+## Tests for Pass 8
 
-**What to change**
+### `products/data-cloud/extensions/plugins/src/test/java/**`
 
-* Align response shape with OpenAPI.
-* Make connector sync return durable job ID and status endpoint.
-* Ensure `/statistics` compatibility maps to canonical `/sync/status`.
-* Remove secrets from all GET responses.
-* Add feature-unavailable response shape consistent with Runtime Truth.
+Add tests:
 
-**Where**
+* plugin descriptor validation.
+* config schema validation.
+* lifecycle transitions.
+* policy requirements.
+* sandbox/isolation requirements.
 
-* Router currently returns runtime truth 503 when connector handler is unavailable or feature-disabled.
+### `products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/DataCloudRouterBuilderTest.java`
 
-**Tests**
+Update tests:
 
-* Connector API contract test.
-* Sync job status test.
-* Feature disabled test.
+* route registrars register expected routes.
+* every route has security metadata.
+* plugin routes have canonical permissions.
 
 ---
-
-## H4. `products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/handlers/DataSourceRegistryHandlerTest.java`
 
-**What to add/update**
+# Pass 9 — Observability and operations trace model
 
-* Assert canonical `/api/v1/connectors` response shape.
-* Assert credentials are not returned.
-* Assert feature-disabled returns runtime truth payload.
-* Assert sync lifecycle returns job ID/status.
+## `products/data-cloud/planes/action/observability/**`
 
----
+**What to change:**
 
-## H5. `products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/handlers/ConnectorLifecycleTest.java`
+Create one trace model for Data Cloud + AEP + agents + media.
 
-**What to add/update**
+**Exact task:**
 
-* End-to-end handler-level flow:
+Add canonical IDs:
 
-  * register connector,
-  * get connector,
-  * test connector,
-  * enable,
-  * trigger sync,
-  * read sync status,
-  * disable,
-  * rotate credentials,
-  * delete.
-* Tenant isolation for every step.
+* `requestId`
+* `tenantId`
+* `principalId`
+* `operationId`
+* `eventOffset`
+* `pipelineExecutionId`
+* `patternInstanceId`
+* `agentInvocationId`
+* `mediaArtifactId`
+* `mediaJobId`
+* `correlationId`
+* `traceId`
 
 ---
 
-# I. Runtime Truth, observability, and async lifecycle
+## `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/WorkflowExecutionHandler.java`
 
-## I1. `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/SurfaceRegistryHandler.java`
+**What to change:**
 
-**What to change**
+Execution cancellation already records operation and metrics. 
 
-* Add surfaces for:
+**Exact task:**
 
-  * Context Plane,
-  * Media artifacts,
-  * Audio-video STT,
-  * Audio-video Vision,
-  * Audio-video Multimodal,
-  * Connectors,
-  * Storage profiles,
-  * Agent runtime,
-  * Action execution,
-  * AI assist.
-* Each surface must include:
+Apply the same structured operation record model to:
 
-  * owner plane,
-  * state,
-  * status,
-  * required dependencies,
-  * dependency probes,
-  * runtime profile,
-  * limitations,
-  * actions allowed.
-* Do not expose release-readiness surfaces as normal product UX in this iteration.
+* execute
+* retry
+* rollback
+* checkpoint
+* restore
+* cancel
+* logs
+* list executions
 
-**Tests**
+Each response should include:
 
-* Surface registry unit test.
-* Surface schema test.
-* UI nav contract test.
+* `requestId`
+* `operationId`
+* `tenantId`
+* `pipelineId`
+* `executionId`
+* `traceId`
+* `correlationId`
+* `status`
+* `retryable`
+* `failureReason`
 
 ---
+
+## `products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/api/controller/MediaArtifactController.java`
 
-## I2. `products/data-cloud/contracts/openapi/data-cloud.yaml`
+**Exact task:**
 
-**What to change**
+Add operation/trace IDs to all media responses:
 
-* Expand `SurfaceRecord` if needed:
+* create artifact
+* transcribe
+* analyze
+* retry
+* delete
+* consent update
+* retention update
 
-  * add `featureFlag`,
-  * add `visibility`,
-  * add `roleRequirements`,
-  * add `reasonCode`,
-  * add `recommendedAction`.
-* Ensure generated UI can distinguish:
+---
+
+## `products/data-cloud/delivery/ui/src/pages/OperationsJobCenterPage.tsx`
 
-  * unavailable,
-  * degraded,
-  * disabled,
-  * preview,
-  * unauthorized.
+**What to change:**
 
-**Where**
+Expose cross-plane operation timeline.
 
-* Existing `SurfaceRecord` schema.
+**Exact task:**
 
-**Tests**
+Add filters:
 
-* Surface schema generation test.
-* UI surface parsing test.
+* operation type
+* status
+* plane
+* tenant
+* correlation ID
+* media job ID
+* pipeline execution ID
+* agent invocation ID
 
 ---
 
-## I3. `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RequestTraceSupport.java`
+## Tests for Pass 9
 
-**What to change**
+Add tests:
 
-* Ensure every response includes request/correlation ID.
-* Ensure async job creation stores request/correlation ID.
-* Ensure SSE/WebSocket messages include correlation or event IDs.
+* operation IDs appear on mutating responses.
+* failed action produces traceable error response.
+* media processing job appears in operations.
+* agent denial appears in operations timeline.
 
-**Tests**
+---
 
-* Request trace propagation test.
+# Pass 10 — Shared library boundary cleanup
 
----
+The architecture explicitly says shared platform modules should remain shared only when genuinely cross-product, and Data Cloud/AEP semantics should move or stay in Data Cloud/Action Plane as appropriate. 
 
-## I4. `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/WorkflowExecutionHandler.java`
+## `platform/java/agent-core/**`
 
-**What to change**
+**What to change:**
 
-* Standardize execution log entry structure.
-* Include node-level status and duration.
-* Include failure reason and retryability.
-* Ensure logs endpoint cannot leak cross-tenant data.
+Keep only generic agent contracts.
 
-**Where**
+**Exact task:**
 
-* OpenAPI already includes execution detail and logs schemas.
+Move or avoid adding:
 
-**Tests**
+* AEP operator semantics
+* EventCloud semantics
+* Data Cloud persistence semantics
+* review/runtime dispatch semantics
 
-* Execution logs tenant isolation test.
-* Failure-state observability test.
+Those belong under `products/data-cloud/planes/action/**` or AEP-owned contracts.
 
 ---
 
-## I5. `monitoring/prometheus/rules/data-cloud.yml`
+## `platform/java/workflow/**`
 
-**What to change**
+**What to change:**
 
-* Add alerts for:
+Keep generic workflow primitives only.
 
-  * media job failures,
-  * connector sync failures,
-  * Action execution failure rate,
-  * AI provider unavailable,
-  * tenant auth rejection spikes,
-  * surface dependency unavailable.
-* Do not add release-readiness alerts.
+**Exact task:**
 
-**Tests**
+Move Data Cloud pipeline metadata and Action Plane runtime behavior into:
 
-* YAML lint if available.
-* No readiness checks.
+* `products/data-cloud/planes/action/orchestrator`
+* `products/data-cloud/planes/action/central-runtime`
 
 ---
 
-## I6. `monitoring/grafana/dashboards/data-cloud-platform.json`
+## `platform/java/messaging/**`
 
-**What to change**
+**What to change:**
 
-* Add panels for:
+Keep generic messaging abstractions only.
 
-  * surface state,
-  * connector sync status,
-  * media processing jobs,
-  * Action executions,
-  * AI assist fail-closed/fallback,
-  * tenant auth rejection.
-* Avoid evidence/release panels in this pass.
+**Exact task:**
 
-**Tests**
+Move Data Cloud storage-plane event routing into:
 
-* Dashboard JSON validation only.
+* `products/data-cloud/planes/event/core`
+* `products/data-cloud/planes/event/store`
 
----
+Move Action Plane event semantics into:
 
-# J. Tests and quality gates without readiness execution
+* `products/data-cloud/planes/action/operator-contracts`
+* `products/data-cloud/planes/action/engine`
 
-## J1. `products/data-cloud/delivery/launcher/build.gradle.kts`
+---
 
-**What to change**
+## `platform/java/ai-integration/**`
 
-* Raise Jacoco threshold from `0.00` after adding focused tests.
-* Set staged threshold initially to realistic value for touched launcher handlers.
-* Change `spotbugs.ignoreFailures = true` to false only after fixing current SpotBugs blockers in touched areas.
-* Keep `checkDataCloudOpenApiSync` because it is contract drift, not release-readiness.
-* Do not wire in readiness scripts.
+**What to change:**
 
-**Where**
+Keep provider abstractions only.
 
-* Jacoco threshold currently `0.00`.
-* SpotBugs currently ignores failures.
-* OpenAPI-router sync task exists and is useful.
+**Exact task:**
 
-**Tests**
+Move product-specific AI behavior into:
 
-* Targeted launcher tests only.
+* query assist → `products/data-cloud/planes/intelligence/analytics`
+* schema inference → `products/data-cloud/planes/intelligence/analytics`
+* action suggestions → `products/data-cloud/planes/action/*`
 
 ---
 
-## J2. `products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/DataCloudRouterBuilderTest.java`
+## `platform/java/data-governance/**`
 
-**What to add/update**
+**What to change:**
 
-* Assert media nested routes exist.
-* Assert storage profile routes exist if implemented.
-* Assert legacy Action root routes are disabled by default.
-* Assert canonical `/api/v1/action/*` routes are always present.
+Keep generic policy primitives only.
 
----
+**Exact task:**
+
+Move Data Cloud-specific retention/redaction/provenance/audit evidence into:
 
-## J3. `products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/handlers/HttpHandlerSupportTenantResolutionTest.java`
+* `products/data-cloud/planes/governance/core`
 
-**What to add/update**
+---
 
-* Add coverage for new helper methods:
+## Tests for Pass 10
 
-  * `requireRequestContext`,
-  * `requirePermission`,
-  * policy-denied response.
-* Confirm no handler needs raw `X-Tenant-ID` after migration.
+### `scripts/check-action-plane-boundaries.mjs`
 
----
+Update to enforce:
 
-## J4. Add `products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/handlers/MediaArtifactControllerTest.java`
+* Data/Event/Governance do not import Action internals.
+* Platform modules do not import Data Cloud product semantics.
+* Contracts do not import runtime implementation.
+* UI does not import backend internals.
 
-**What to test**
+### `scripts/__tests__/check-action-plane-boundaries.test.mjs`
 
-* Create artifact.
-* List artifacts.
-* Get artifact.
-* Delete artifact.
-* Reject missing consent for audio/video.
-* Do not expose raw sensitive metadata unless allowed.
+Add fixture cases for every forbidden dependency.
 
 ---
 
-## J5. Add `products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/handlers/MediaArtifactControllerTenantSecurityTest.java`
+# Pass 11 — UI i18n, a11y, and raw-string cleanup
 
-**What to test**
+## `products/data-cloud/delivery/ui/src/pages/MediaArtifactPage.tsx`
 
-* Production rejects raw tenant header.
-* Authenticated principal tenant is used.
-* Cross-tenant artifact access is denied.
-* Support access requires support/admin role and reason.
+**What to change:**
 
----
+Raw translation keys are rendered as visible text. 
+
+**Exact task:**
 
-## J6. Add `products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/handlers/MediaArtifactProcessingJobTest.java`
+Replace raw strings with `t(...)`:
 
-**What to test**
+* `mediaArtifacts.registerArtifact`
+* `mediaArtifacts.registerDescription`
+* `mediaArtifactDetails.agentId`
+* `mediaArtifactDetails.mediaType`
+* `mediaArtifactDetails.storageUri`
+* `mediaArtifactDetails.durationMs`
+* `mediaArtifactDetails.consentStatus`
+* `mediaArtifactDetails.checksum`
+* `mediaArtifactDetails.retentionPolicy`
+* `mediaArtifactDetails.retentionUntil`
+* `common.cancel`
+* `mediaArtifacts.registering`
 
-* Transcription request creates durable job.
-* Vision analysis request creates durable job.
-* Job status transitions.
-* Failed job includes reason.
-* Result is tenant-isolated and redacted.
+Also add:
 
+* dialog title ID
+* `aria-labelledby`
+* focus trap
+* Escape key close
+* initial focus
+* error summary
+
 ---
 
-## J7. Add `products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/handlers/StorageProfileHandlerTest.java`
+## `products/data-cloud/delivery/ui/src/components/security/RuntimeCapabilityRouteGate.tsx`
 
-**What to test**
+**What to change:**
 
-* CRUD.
-* Set default.
-* Metrics.
-* Validation.
-* Redaction.
-* Permission denial.
+Hardcoded UI strings remain. 
 
----
+**Exact task:**
 
-## J8. Add `products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/handlers/ActionRouteNamespaceTest.java`
+Replace:
 
-**What to test**
+* `"Preview"`
+* `"Degraded"`
+* `"Checking surface availability..."`
 
-* Canonical Action routes under `/api/v1/action/*`.
-* Legacy routes disabled unless feature flag enabled.
-* No new Action-owned route added at root.
+with i18n keys.
 
 ---
 
-## J9. Add `products/data-cloud/delivery/ui/src/features/data-fabric/services/api.test.ts`
+## `products/data-cloud/delivery/ui/src/pages/DisabledSurfacePage.tsx`
 
-**What to test**
+**Exact task:**
 
-* Uses canonical `/api/v1/connectors`.
-* Uses canonical `/api/v1/storage-profiles`.
-* Correct storage type mapping.
-* Handles unavailable/degraded response.
-* Does not send credentials after create/update.
+Ensure disabled/degraded/unavailable/target-only states have:
 
+* translated title,
+* translated description,
+* clear next action,
+* keyboard focus,
+* accessible status role.
+
 ---
 
-## J10. Add `products/data-cloud/delivery/ui/src/features/media/services/api.test.ts`
+## Translation files
 
-**What to test**
+Likely locations:
 
-* Create/list/get/delete artifact.
-* Request transcription.
-* Request analysis.
-* Read job status.
-* Read results.
-* Handles 403/503/redacted fields.
+* `products/data-cloud/delivery/ui/src/i18n/**`
+* `products/data-cloud/delivery/ui/src/locales/**`
+* or current translation resource files used by `react-i18next`
 
----
+**Exact task:**
 
-## J11. Add `products/data-cloud/delivery/ui/src/features/media/components/MediaArtifactsPage.test.tsx`
+Add all keys introduced above.
 
-**What to test**
+---
 
-* Loading/empty/error/unauthorized/degraded states.
-* Register artifact.
-* Trigger processing.
-* View job status.
-* View result.
-* Permission-gated actions.
+## Tests for Pass 11
 
----
+Add/update:
 
-## J12. Add `products/data-cloud/delivery/ui/src/__tests__/routes/surfaceDrivenNavigation.test.tsx`
+* `MediaArtifactPage.test.tsx`
+* `RuntimeCapabilityRouteGate.test.tsx`
+* `DisabledSurfacePage.test.tsx`
 
-**What to test**
+Assertions:
 
-* Default nav only shows outcome-first surfaces.
-* Context/Agents/Plugins/Settings are role/capability disclosed.
-* Disabled/unavailable surfaces are hidden or explained.
-* No release-readiness/evidence surfaces appear in normal product nav.
+* no raw i18n keys visible.
+* dialog has accessible name.
+* preview/degraded banners are translated.
+* disabled state is announced correctly.
 
 ---
 
-# K. Audio-video service alignment
+# Pass 12 — OpenAPI and contract alignment
 
-## K1. `products/audio-video/docs/capability-map.md`
+## `products/data-cloud/contracts/openapi/data-cloud.yaml`
 
-**What to change**
+**What to change:**
 
-* Replace overstated “Implemented” status with actual states.
-* Use active module paths from generated settings.
-* Add Data Cloud integration status:
+Update contracts for:
 
-  * metadata registration: partial,
-  * processing request: pending after media route fix,
-  * durable job lifecycle: required,
-  * result retrieval: required,
-  * privacy/retention enforcement: required.
-* Remove “evidence” as an implementation target for this pass.
+* connector lifecycle,
+* media lifecycle,
+* checkpoint/replay,
+* operation trace model,
+* runtime truth readiness classes.
 
-**Where**
+**Exact task:**
 
-* Current capability matrix says all capabilities are implemented.
+Add/modify schemas:
 
+* `ReplayRequest`
+* `ReplayResponse`
+* `Checkpoint`
+* `CheckpointCommitRequest`
+* `SurfaceReadinessClass`
+* `ConnectorHealth`
+* `ConnectorSyncStatus`
+* `MediaArtifact`
+* `MediaProcessingJob`
+* `Transcript`
+* `FrameIndex`
+* `OperationTrace`
+
 ---
+
+## `products/data-cloud/contracts/openapi/action-plane.yaml`
 
-## K2. `products/audio-video/libs/common/src/test/java/com/ghatana/audio/video/common/proto/ProtoCompatibilityTest.java`
+**What to change:**
 
-**What to change**
+Add AEP semantic lifecycle contracts.
 
-* Add compatibility assertions for Data Cloud media job request/result contracts if proto bridge is used.
-* Ensure STT/TTS/Vision/Multimodal proto types include tenant ID, artifact ID, job ID, correlation ID, and consent/retention metadata.
+**Exact task:**
 
-**Where**
+Add schemas/endpoints for:
 
-* Existing proto compatibility test file found in search results.
+* PatternSpec validate
+* PatternSpec compile
+* pattern activate/deactivate
+* pattern match explain
+* learning review
+* recommendation candidate
+* replay-safe agent invocation
 
 ---
 
-## K3. `products/audio-video/modules/infrastructure/messaging`
+## `products/data-cloud/contracts/openapi/aep.yaml`
 
-**What to change**
+**What to change:**
 
-* Add consumer/producer contract for Data Cloud media processing events.
-* Ensure no direct dependency on Data Cloud launcher internals.
-* Use public event/SPI contracts.
+Keep compatibility only.
 
-**Tests**
+**Exact task:**
 
-* Media event bridge contract test.
+Ensure it mirrors canonical `action-plane.yaml` only where compatibility is required. Do not make `aep.yaml` the new canonical source.
 
 ---
 
-## K4. `products/audio-video/modules/infrastructure/security`
+## `products/data-cloud/delivery/sdk/**`
 
-**What to change**
+**What to change:**
 
-* Enforce tenant and permission metadata from Data Cloud job request.
-* Add consent/retention validation for audio/video processing.
-* Reject job without consent where required.
+Regenerate SDKs from updated OpenAPI after contract changes.
 
-**Tests**
+**Exact task:**
 
-* Media consent enforcement test.
-* Tenant isolation test.
+Update generated Java/TypeScript/Python clients only through the SDK generation flow.
 
----
-
-## K5. `products/audio-video/modules/intelligence/multimodal-service`
+Do not run release readiness.
 
-**What to change**
+---
 
-* Accept Data Cloud media processing jobs.
-* Emit processing result references, not raw sensitive media content.
-* Include trace/request IDs in logs and metrics.
+# Pass 13 — Focused tests only, no evidence-generation runs
 
-**Tests**
+## Do update/add targeted tests
 
-* Multimodal Data Cloud job integration test.
+Add or update tests in:
 
----
+* `products/data-cloud/delivery/launcher/src/test/java/**`
+* `products/data-cloud/delivery/api/src/test/java/**`
+* `products/data-cloud/planes/shared-spi/src/test/java/**`
+* `products/data-cloud/planes/action/**/src/test/java/**`
+* `products/data-cloud/delivery/ui/src/**/*.test.tsx`
+* `products/data-cloud/integration-tests/src/test/java/**`
 
-# L. Files explicitly out of scope for this iteration
+## Do not run or add tasks around these scripts in this iteration
 
-Do **not** create tasks to execute or regenerate these now:
+Do **not** execute or plan execution for:
 
-* `.kernel/evidence/**`
-* `release-evidence/**`
-* `products/data-cloud/lifecycle/readiness-evidence.yaml`
 * `scripts/validate-data-cloud-release-evidence.mjs`
-* `scripts/check-product-release-readiness.mjs`
+* `scripts/check-data-cloud-release-runtime-profile.mjs`
+* `scripts/check-data-cloud-operations-readiness.mjs`
 * `scripts/check-data-cloud-maturity-proof.mjs`
-* `products/data-cloud/scripts/verify-production-readiness.sh`
-* `products/data-cloud/scripts/generate-route-inventory.mjs` unless needed for route docs only
-* any `*release*`, `*readiness*`, `*evidence*`, or `*maturity-proof*` script as an execution target
+* release evidence bundle scripts
+* release freshness scripts
+* product promotion workflows
 
-Keep those files unchanged unless a future iteration explicitly focuses on release readiness.
+The task plan may update static code/tests, but it must not include release-readiness execution.
 
 ---
 
-# Minimal grouped verification plan
+# Minimal verification passes after implementation
 
-Use only targeted checks after each task group.
+Use only targeted hardening verification, grouped to minimize repetition:
 
-## Backend/API targeted checks
+1. **Security pass:** resolver/filter/handler permission tests.
+2. **Event pass:** replay/checkpoint/event envelope tests.
+3. **AEP pass:** PatternSpec/operator/agent lifecycle tests.
+4. **Media pass:** media API + UI tests.
+5. **Connector pass:** connector lifecycle tests.
+6. **UI pass:** runtime truth route gating + i18n/a11y tests.
+7. **Boundary pass:** dependency-boundary tests.
 
-```bash
-./gradlew :products:data-cloud:delivery:launcher:test --tests '*MediaArtifact*'
-./gradlew :products:data-cloud:delivery:launcher:test --tests '*StorageProfile*'
-./gradlew :products:data-cloud:delivery:launcher:test --tests '*DataSourceRegistry*'
-./gradlew :products:data-cloud:delivery:launcher:test --tests '*ActionRouteNamespace*'
-./gradlew :products:data-cloud:delivery:launcher:checkDataCloudOpenApiSync
-```
-
-## Action Plane targeted checks
-
-```bash
-./gradlew :products:data-cloud:planes:action:engine:test
-./gradlew :products:data-cloud:planes:action:orchestrator:test
-./gradlew :products:data-cloud:planes:action:agent-runtime:test
-./gradlew :products:data-cloud:planes:action:server:test
-```
-
-## UI targeted checks
-
-```bash
-pnpm --filter @data-cloud/ui type-check
-pnpm --filter @data-cloud/ui vitest run src/features/data-fabric
-pnpm --filter @data-cloud/ui vitest run src/features/media
-pnpm --filter @data-cloud/ui vitest run src/__tests__/routes/surfaceDrivenNavigation.test.tsx
-```
-
-Do **not** run:
-
-```bash
-pnpm --filter @data-cloud/ui test
-pnpm --filter @data-cloud/ui test:readiness
-pnpm check:data-cloud-maturity-proof
-pnpm check:product-release-readiness
-pnpm validate:data-cloud-release-evidence
-```
+Do **not** add release-readiness/evidence verification to these passes.

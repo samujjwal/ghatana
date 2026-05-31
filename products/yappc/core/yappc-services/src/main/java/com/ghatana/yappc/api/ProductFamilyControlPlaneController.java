@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * Product-family control-plane read API for YAPPC release cockpits and reusable assets.
@@ -444,12 +445,29 @@ public final class ProductFamilyControlPlaneController {
     }
 
     private Promise<Void> ingestAssetCandidatesFromEvidence(String tenantId) {
-        Path phrAssets = repoRoot.resolve(".kernel/evidence/phr/reusable-assets-registration.json");
-        Path dmosAssets = repoRoot.resolve(".kernel/evidence/digital-marketing/reusable-assets-registration.json");
+        Path evidenceRoot = repoRoot.resolve(".kernel/evidence");
+        if (!Files.isDirectory(evidenceRoot)) {
+            return Promise.complete();
+        }
 
-        return Promise.complete()
-                .then(() -> ingestAssetFile(tenantId, phrAssets))
-                .then(() -> ingestAssetFile(tenantId, dmosAssets));
+        List<Path> registrationFiles;
+        try (Stream<Path> entries = Files.list(evidenceRoot)) {
+            registrationFiles = entries
+                    .filter(Files::isDirectory)
+                    .map(path -> path.resolve("reusable-assets-registration.json"))
+                    .filter(Files::exists)
+                    .sorted()
+                    .toList();
+        } catch (IOException error) {
+            log.warn("Failed to discover product-family asset registration evidence under {}", evidenceRoot, error);
+            return Promise.complete();
+        }
+
+        Promise<Void> chain = Promise.complete();
+        for (Path registrationFile : registrationFiles) {
+            chain = chain.then(() -> ingestAssetFile(tenantId, registrationFile));
+        }
+        return chain;
     }
 
     @SuppressWarnings("unchecked")

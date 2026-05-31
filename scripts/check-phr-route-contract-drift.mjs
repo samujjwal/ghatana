@@ -5,17 +5,17 @@
  *
  * Verifies that the canonical phr-route-contract.json is the single source
  * of truth and that all downstream representations (TS route elements, web router,
- * backend entitlement loader) remain in sync and enforce hidden/blocked routes
- * correctly. This is a CI-safe static analysis check — no runtime calls needed.
+ * backend entitlement loader) remain in sync and enforce non-stable route
+ * lifecycles correctly. This is a CI-safe static analysis check; no runtime calls needed.
  *
  * Assertions:
  *   1. Every stable route in the JSON contract has apiEndpoint, policyId, testId.
- *   2. Every route in the JSON contract has a corresponding element in phrRouteElements.tsx.
+ *   2. Every browser-mountable route in the JSON contract has a corresponding element in phrRouteElements.tsx.
  *   3. No route element exists in phrRouteElements.tsx that is absent from the JSON contract.
- *   4. Hidden routes redirect to /not-found in routes.tsx guard (not render the real element).
- *   5. Blocked routes redirect to /forbidden in routes.tsx guard (not render the real element).
+ *   4. Hidden/deferred/removed routes redirect to /not-found in routes.tsx guard.
+ *   5. Blocked/preview routes redirect to /forbidden in routes.tsx guard.
  *   6. phrRouteContracts.ts imports from the canonical JSON file and does not duplicate paths.
- *   7. Backend PhrEntitlementRoutes skips hidden/blocked routes (does not include them in output).
+ *   7. Backend PhrEntitlementRoutes includes stable routes only in entitlement output.
  *   8. roleOrder in JSON contract contains all five PHR roles.
  *   9. No stable route uses a placeholder policyId pattern (e.g. "phr.TBD").
  *  10. routeManifest.ts re-exports from phrRouteContracts (single import chain).
@@ -56,8 +56,8 @@ try {
 
 const allRoutes = jsonContract.routes ?? [];
 const stableRoutes = allRoutes.filter((r) => r.stability === 'stable');
-const hiddenRoutes = allRoutes.filter((r) => r.stability === 'hidden');
-const blockedRoutes = allRoutes.filter((r) => r.stability === 'blocked');
+const suppressedNotFoundRoutes = allRoutes.filter((r) => ['hidden', 'deferred', 'removed'].includes(r.stability));
+const suppressedForbiddenRoutes = allRoutes.filter((r) => ['blocked', 'preview'].includes(r.stability));
 const roleOrder = jsonContract.roleOrder ?? {};
 
 let failures = 0;
@@ -81,47 +81,47 @@ for (const route of stableRoutes) {
 }
 pass(`stable routes have required metadata fields (${stableRoutes.length} routes)`);
 
-// 2 & 3. Route elements bijection: JSON ↔ phrRouteElements.tsx
+// 2 & 3. Route elements bijection: browser-mountable JSON routes ↔ phrRouteElements.tsx
 const elementPathMatches = [...routeElements.matchAll(/^\s+'(\/[^']+)'\s*:/gm)].map((m) => m[1]);
 const elementPaths = new Set(elementPathMatches);
 const jsonPaths = new Set(allRoutes.map((r) => r.path));
+const browserMountableRoutes = allRoutes.filter((r) => ['stable', 'preview', 'blocked'].includes(r.stability));
+const browserMountablePaths = new Set(browserMountableRoutes.map((r) => r.path));
 
-for (const route of allRoutes) {
+for (const route of browserMountableRoutes) {
   if (!elementPaths.has(route.path)) {
     fail(`JSON contract path '${route.path}' has no entry in phrRouteElements.tsx routeElements map`);
   }
 }
 
 for (const path of elementPaths) {
-  if (!jsonPaths.has(path)) {
+  if (!browserMountablePaths.has(path)) {
     fail(`phrRouteElements.tsx has element for '${path}' which is absent from phr-route-contract.json`);
   }
 }
-pass(`phrRouteElements.tsx ↔ JSON contract bijection verified (${allRoutes.length} routes)`);
+pass(`phrRouteElements.tsx ↔ browser-mountable JSON contract bijection verified (${browserMountableRoutes.length} routes)`);
 
-// 4. Hidden routes must redirect to /not-found in routes.tsx, not render element
-if (!routesTsx.includes("route.stability === 'hidden'") || !routesTsx.includes('/not-found')) {
-  fail(`routes.tsx must redirect hidden routes to /not-found, not render their element`);
-} else {
-  // Confirm the guard uses Navigate, not direct element render
-  const hiddenBlock = routesTsx.match(/route\.stability === 'hidden'[\s\S]{0,200}/)?.[0] ?? '';
-  if (hiddenBlock.includes('return route.element')) {
-    fail(`routes.tsx still renders route.element for hidden routes — must use Navigate to /not-found`);
-  } else {
-    pass(`hidden routes redirect to /not-found in routes.tsx`);
+for (const route of suppressedNotFoundRoutes) {
+  if (elementPaths.has(route.path)) {
+    fail(`suppressed route '${route.path}' must not have a product page element`);
   }
 }
+pass(`hidden/deferred/removed routes have no product page elements (${suppressedNotFoundRoutes.length} routes)`);
 
-// 5. Blocked routes must redirect to /forbidden in routes.tsx
-if (!routesTsx.includes("route.stability === 'blocked'") || !routesTsx.includes('/forbidden')) {
-  fail(`routes.tsx must redirect blocked routes to /forbidden`);
+// 4. Hidden/deferred/removed routes must redirect to /not-found in routes.tsx, not render element.
+const notFoundGuardStates = ['hidden', 'deferred', 'removed'];
+if (!notFoundGuardStates.every((state) => routesTsx.includes(`route.stability === '${state}'`)) || !routesTsx.includes('/not-found')) {
+  fail(`routes.tsx must redirect hidden/deferred/removed routes to /not-found, not render their element`);
 } else {
-  const blockedBlock = routesTsx.match(/route\.stability === 'blocked'[\s\S]{0,200}/)?.[0] ?? '';
-  if (blockedBlock.includes('return route.element')) {
-    fail(`routes.tsx still renders route.element for blocked routes — must use Navigate to /forbidden`);
-  } else {
-    pass(`blocked routes redirect to /forbidden in routes.tsx`);
-  }
+  pass(`hidden/deferred/removed routes redirect to /not-found in routes.tsx`);
+}
+
+// 5. Blocked/preview routes must redirect to /forbidden in routes.tsx.
+const forbiddenGuardStates = ['blocked', 'preview'];
+if (!forbiddenGuardStates.every((state) => routesTsx.includes(`route.stability === '${state}'`)) || !routesTsx.includes('/forbidden')) {
+  fail(`routes.tsx must redirect blocked/preview routes to /forbidden`);
+} else {
+  pass(`blocked/preview routes redirect to /forbidden in routes.tsx`);
 }
 
 // 6. phrRouteContracts.ts imports canonical JSON and does not hardcode paths
@@ -137,13 +137,12 @@ if (/path:\s*['"`]\//.test(tsContracts)) {
   pass(`phrRouteContracts.ts has no hardcoded route path literals`);
 }
 
-// 7. Backend entitlement routes must skip hidden/blocked entries
-// Look for the guard pattern: if ("hidden".equals(stability) || "blocked".equals(stability)) { continue; }
-const hiddenBlockedGuard = entitlementRoutes.match(/if\s*\(["']hidden["']\.equals\(stability\)[\s\S]{0,200}continue\s*;/);
-if (!hiddenBlockedGuard) {
-  fail(`PhrEntitlementRoutes.java must have an if("hidden".equals(stability) || ...) { continue; } guard to exclude hidden/blocked routes from entitlement output`);
+// 7. Backend entitlement routes must publish only stable entries.
+const stableOnlyGuard = entitlementRoutes.match(/if\s*\(\s*!\s*["']stable["']\.equals\(stability\)\s*\)\s*\{[\s\S]{0,120}continue\s*;/);
+if (!stableOnlyGuard) {
+  fail(`PhrEntitlementRoutes.java must exclude every non-stable route from entitlement output`);
 } else {
-  pass(`backend PhrEntitlementRoutes skips hidden/blocked routes via explicit continue guard`);
+  pass(`backend PhrEntitlementRoutes publishes stable routes only`);
 }
 
 // 8. Role order must contain all five PHR roles
@@ -175,4 +174,4 @@ if (failures > 0) {
   process.exit(1);
 }
 
-console.log(`\nPASS: Route contract drift check passed (${allRoutes.length} routes, ${stableRoutes.length} stable, ${hiddenRoutes.length} hidden, ${blockedRoutes.length} blocked)`);
+console.log(`\nPASS: Route contract drift check passed (${allRoutes.length} routes, ${stableRoutes.length} stable, ${suppressedNotFoundRoutes.length} not-found suppressed, ${suppressedForbiddenRoutes.length} forbidden suppressed)`);

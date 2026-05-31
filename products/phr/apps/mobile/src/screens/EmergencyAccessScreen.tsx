@@ -12,10 +12,6 @@ import { t } from "../i18n/phrMobileI18n";
 import { requestMobileEmergencyAccess } from "../services/phrMobileApi";
 import type { MobileEmergencyData, MobileSession } from "../types";
 
-function newCorrelationId(): string {
-  return crypto.randomUUID();
-}
-
 interface EmergencyAccessScreenProps {
   onAuthenticate: () => Promise<boolean>;
   session: MobileSession;
@@ -67,7 +63,7 @@ export function EmergencyAccessScreen({
 
   if (state === "verifying" || state === "server_approval") {
     return (
-      <View style={styles.container}>
+      <View style={styles.container} accessibilityLabel={t("emergency.title")}>
         <ActivityIndicator size="large" color="#7f1d1d" />
         <Text style={styles.summary}>
           {state === "verifying"
@@ -83,6 +79,7 @@ export function EmergencyAccessScreen({
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
+        accessibilityLabel={t("emergency.title")}
       >
         <Text style={styles.title}>{t("emergency.authorized")}</Text>
         <Text style={styles.summary}>
@@ -149,7 +146,7 @@ export function EmergencyAccessScreen({
 
   if (state === "denied") {
     return (
-      <View style={styles.container}>
+      <View style={styles.container} accessibilityLabel={t("emergency.title")}>
         <Text style={styles.title}>{t("emergency.denied")}</Text>
         <Text style={styles.summary}>{t("emergency.error")}</Text>
         <Pressable
@@ -166,7 +163,7 @@ export function EmergencyAccessScreen({
 
   // state === 'locked'
   return (
-    <View style={styles.container}>
+    <View style={styles.container} accessibilityLabel={t("emergency.title")}>
       <Text style={styles.title}>{t("emergency.title")}</Text>
       <Text style={styles.summary}>{t("emergency.biometricPrompt")}</Text>
       <Text style={styles.label}>{t("emergency.patientIdLabel")}</Text>

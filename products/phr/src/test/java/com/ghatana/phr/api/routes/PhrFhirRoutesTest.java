@@ -3,6 +3,7 @@ package com.ghatana.phr.api.routes;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.phr.api.FhirController;
 import com.ghatana.phr.api.PhrApiResponse;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
@@ -22,7 +23,11 @@ import java.nio.charset.StandardCharsets;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Enforcement matrix tests for {@link PhrFhirRoutes}.
@@ -47,12 +52,18 @@ class PhrFhirRoutesTest extends EventloopTestBase {
     @Mock
     private FhirController fhirController;
 
+    @Mock
+    private PhrPolicyEvaluator policyEvaluator;
+
     private AsyncServlet servlet;
 
     @BeforeEach
     void setUp() {
-        servlet = new PhrFhirRoutes(eventloop(), fhirController).getServlet();
+        servlet = new PhrFhirRoutes(eventloop(), fhirController, policyEvaluator).getServlet();
 
+        lenient().when(policyEvaluator.canAccessPhiResourceAsync(
+                any(), anyString(), anyString(), anyString(), anyString(), any()))
+            .thenReturn(Promise.of(PhrPolicyEvaluator.PolicyDecision.allowed("FHIR_POLICY_ALLOWED", "FHIR access allowed")));
         lenient().when(fhirController.getResource(anyString(), anyString()))
             .thenReturn(Promise.of(PhrApiResponse.fhirJson(200, "{\"resourceType\":\"Patient\"}")));
         lenient().when(fhirController.searchResources(anyString(), any()))
@@ -73,6 +84,24 @@ class PhrFhirRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(200);
+            verify(policyEvaluator).canAccessPhiResourceAsync(
+                any(), eq("patient-1"), eq("fhir-Patient"), eq("READ"), eq("tenant-health-1"), any());
+            verify(fhirController).getResource("Patient", "patient-1");
+        }
+
+        @Test
+        @DisplayName("403 — denies before controller when policy rejects the FHIR read")
+        void deniesFhirReadWhenPolicyRejects() throws Exception {
+            when(policyEvaluator.canAccessPhiResourceAsync(
+                    any(), eq("patient-1"), eq("fhir-Patient"), eq("READ"), eq("tenant-health-1"), any()))
+                .thenReturn(Promise.of(PhrPolicyEvaluator.PolicyDecision.denied(
+                    "FHIR_PATIENT_SCOPE_DENIED", "FHIR patient scope denied")));
+            HttpRequest request = authenticatedGet("http://localhost/Patient/patient-1");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(403);
+            verify(fhirController, never()).getResource(anyString(), anyString());
         }
     }
 
@@ -88,6 +117,22 @@ class PhrFhirRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(200);
+            verify(policyEvaluator).canAccessPhiResourceAsync(
+                any(), eq("patient-1"), eq("fhir-Observation"), eq("SEARCH"), eq("tenant-health-1"), any());
+            verify(fhirController).searchResources(eq("Observation"), any());
+        }
+
+        @Test
+        @DisplayName("400 — requires patient scope for non-Patient FHIR searches")
+        void requiresPatientScopeForSearch() throws Exception {
+            HttpRequest request = authenticatedGet("http://localhost/Observation");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(400);
+            verify(policyEvaluator, never()).canAccessPhiResourceAsync(
+                any(), anyString(), anyString(), anyString(), anyString(), any());
+            verify(fhirController, never()).searchResources(anyString(), any());
         }
     }
 
@@ -103,12 +148,17 @@ class PhrFhirRoutesTest extends EventloopTestBase {
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-health-1")
                 .withHeader(HttpHeaders.of("X-Principal-ID"), "patient-1")
                 .withHeader(HttpHeaders.of("X-Role"), "patient")
-                .withBody("{\"resourceType\":\"Patient\"}".getBytes(StandardCharsets.UTF_8))
+                .withHeader(HttpHeaders.of("X-Persona"), "patient")
+                .withHeader(HttpHeaders.of("X-Tier"), "core")
+                .withBody("{\"resourceType\":\"Patient\",\"id\":\"patient-1\"}".getBytes(StandardCharsets.UTF_8))
                 .build();
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(201);
+            verify(policyEvaluator).canAccessPhiResourceAsync(
+                any(), eq("patient-1"), eq("fhir-Patient"), eq("WRITE"), eq("tenant-health-1"), any());
+            verify(fhirController).createResource(eq("Patient"), anyString());
         }
 
         @Test
@@ -122,12 +172,37 @@ class PhrFhirRoutesTest extends EventloopTestBase {
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-health-1")
                 .withHeader(HttpHeaders.of("X-Principal-ID"), "patient-1")
                 .withHeader(HttpHeaders.of("X-Role"), "patient")
-                .withBody("{\"resourceType\":\"Observation\"}".getBytes(StandardCharsets.UTF_8))
+                .withHeader(HttpHeaders.of("X-Persona"), "patient")
+                .withHeader(HttpHeaders.of("X-Tier"), "core")
+                .withBody("""
+                    {"resourceType":"Observation","subject":{"reference":"Patient/patient-1"}}
+                    """.getBytes(StandardCharsets.UTF_8))
                 .build();
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(422);
+        }
+
+        @Test
+        @DisplayName("400 — rejects FHIR create when body resourceType does not match route")
+        void rejectsResourceTypeMismatch() throws Exception {
+            HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/Observation")
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/fhir+json")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-health-1")
+                .withHeader(HttpHeaders.of("X-Principal-ID"), "patient-1")
+                .withHeader(HttpHeaders.of("X-Role"), "patient")
+                .withHeader(HttpHeaders.of("X-Persona"), "patient")
+                .withHeader(HttpHeaders.of("X-Tier"), "core")
+                .withBody("{\"resourceType\":\"Patient\",\"id\":\"patient-1\"}".getBytes(StandardCharsets.UTF_8))
+                .build();
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(400);
+            verify(policyEvaluator, never()).canAccessPhiResourceAsync(
+                any(), anyString(), anyString(), anyString(), anyString(), any());
+            verify(fhirController, never()).createResource(anyString(), anyString());
         }
     }
 
@@ -136,6 +211,8 @@ class PhrFhirRoutesTest extends EventloopTestBase {
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-health-1")
             .withHeader(HttpHeaders.of("X-Principal-ID"), "patient-1")
             .withHeader(HttpHeaders.of("X-Role"), "patient")
+            .withHeader(HttpHeaders.of("X-Persona"), "patient")
+            .withHeader(HttpHeaders.of("X-Tier"), "core")
             .build();
     }
 }

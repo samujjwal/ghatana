@@ -19,11 +19,11 @@ import type React from 'react';
 /**
  * Route lifecycle state — mirrors the canonical registry enum.
  * stable  → fully implemented, discoverable
- * preview → partially implemented, visible with caveats
- * boundary → not ready, navigation-hidden or replaced by UnsupportedSurfaceBoundary
- * deprecated → retained for compatibility but hidden from primary navigation
+ * preview -> partially implemented, visible with caveats
+ * boundary -> not ready, navigation-hidden or replaced by UnsupportedSurfaceBoundary
+ * deprecated -> retained for compatibility but hidden from primary navigation
  */
-export type RouteLifecycle = 'stable' | 'preview' | 'hidden' | 'blocked' | 'boundary' | 'deprecated';
+export type RouteLifecycle = 'stable' | 'preview' | 'hidden' | 'blocked' | 'deferred' | 'removed' | 'boundary' | 'deprecated';
 
 /**
  * Generic route capability that product registries can map to. Products keep
@@ -51,7 +51,7 @@ export interface ProductRouteCapability {
   /** Route lifecycle state. hidden, blocked, boundary, and deprecated routes are excluded from navigation. */
   readonly lifecycle?: RouteLifecycle;
   /** Product route-state alias used by generated route contracts. */
-  readonly stability?: 'stable' | 'preview' | 'hidden' | 'blocked';
+  readonly stability?: 'stable' | 'preview' | 'hidden' | 'blocked' | 'deferred' | 'removed';
   /** Explicit hidden flag used by generated route contracts. */
   readonly hidden?: boolean;
   /** Explicit blocked flag used by generated route contracts. */

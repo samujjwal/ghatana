@@ -41,9 +41,9 @@ class PostgresConsentManagerTest extends EventloopTestBase {
     @Container
     private static final PostgreSQLContainer<?> POSTGRES =
             new PostgreSQLContainer<>("postgres:15-alpine")
-                    .withDatabaseName("aep_consent_test")
-                    .withUsername("aep_test")
-                    .withPassword("aep_test");
+                    .withDatabaseName("consent_test")
+                    .withUsername("test_user")
+                    .withPassword("test_password");
 
     private HikariDataSource dataSource;
     private PostgresConsentManager manager;

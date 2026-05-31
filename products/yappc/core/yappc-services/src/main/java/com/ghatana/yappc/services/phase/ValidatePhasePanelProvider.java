@@ -4,6 +4,14 @@ import com.ghatana.yappc.api.PhasePacket;
 
 import java.util.Map;
 
+/**
+ * Validate phase panel provider.
+ *
+ * @doc.type class
+ * @doc.purpose Provide Validate phase panel views
+ * @doc.layer product
+ * @doc.pattern PhasePanelProvider
+ */
 public final class ValidatePhasePanelProvider implements PhasePanelProvider {
     @Override
     public String phase() {

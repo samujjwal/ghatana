@@ -5,11 +5,6 @@ import { phiClearAll, phiIsBiometricPolicyEnabled } from '../services/phiEncrypt
 import { clearDashboardOffline, getDashboardOfflineTimestamp } from '../services/offlineStore';
 import type { MobileSession } from '../types';
 
-function newCorrelationId(): string {
-  return crypto.randomUUID();
-}
-
-
 interface SettingsScreenProps {
   onSyncOffline: () => void;
   onLogout: () => void;
@@ -105,7 +100,11 @@ export function SettingsScreen({ onSyncOffline, onLogout, syncMessage, session }
   const privacyStatus = biometricPolicyLabelByState[biometricPolicyState];
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      accessibilityLabel={t('tabs.settings')}
+    >
       <Text style={styles.sectionTitle}>{t('settings.profile')}</Text>
       <View style={styles.card}>
         <Text style={styles.label}>{t('login.title')}</Text>

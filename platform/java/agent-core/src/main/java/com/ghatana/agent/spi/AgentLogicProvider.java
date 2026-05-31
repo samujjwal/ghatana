@@ -15,7 +15,7 @@ import java.util.Set;
  *
  * <p>Products register an {@code AgentLogicProvider} that maps one or more
  * {@code implementationRef} strings to concrete {@link TypedAgent} instances.
- * The AEP runtime resolves refs through the provider registry at
+ * The runtime resolves refs through the provider registry at
  * materialization time (YAML → provider → agent instance).
  *
  * <h3>implementationRef format</h3>

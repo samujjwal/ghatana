@@ -6,7 +6,7 @@
 
 import { z } from "zod";
 
-export const RouteStabilityValues = ["stable", "preview", "blocked", "hidden"] as const;
+export const RouteStabilityValues = ["stable", "preview", "blocked", "hidden", "deferred", "removed"] as const;
 export const RouteGroupValues = [
   "care",
   "governance",

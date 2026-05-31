@@ -4,6 +4,14 @@ import com.ghatana.yappc.api.PhasePacket;
 
 import java.util.Map;
 
+/**
+ * Generate phase panel provider.
+ *
+ * @doc.type class
+ * @doc.purpose Provide Generate phase panel views
+ * @doc.layer product
+ * @doc.pattern PhasePanelProvider
+ */
 public final class GeneratePhasePanelProvider implements PhasePanelProvider {
 
     private final GeneratePhaseModelProvider modelProvider;

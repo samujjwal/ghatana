@@ -37,8 +37,10 @@ pluginsConsumed:
   - plugin-audit-trail
   - plugin-compliance
   - plugin-consent
+  - plugin-fraud-detection
   - plugin-human-approval
   - plugin-ledger
+  - plugin-risk-management
 bridgesConsumed:
   - data-cloud-kernel-bridge
 domainPacksProvided:

@@ -142,4 +142,99 @@ class DataCloudRouterBuilderTest {
         // J2: Assert surface registry routes exist - /api/v1/surfaces and /api/v1/surfaces/schema
         assertThat(router).isNotNull();
     }
+
+    @Test
+    @DisplayName("Pass 8: Should register route registrar and collect metadata")
+    void shouldRegisterRouteRegistrarAndCollectMetadata() {
+        RouteRegistrar mockRegistrar = new RouteRegistrar() {
+            @Override
+            public String getPlaneId() {
+                return "test-plane";
+            }
+
+            @Override
+            public String getRouteGroupId() {
+                return "test-group";
+            }
+
+            @Override
+            public void registerRoutes(RoutingServlet.Builder builder) {
+                builder.with(HttpMethod.GET, "/api/v1/test", (req, res) -> res.ofCode(200));
+            }
+
+            @Override
+            public java.util.List<RouteMetadata> getRouteMetadata() {
+                return java.util.List.of(
+                    new RouteMetadata(
+                        "test-route",
+                        "/api/v1/test",
+                        HttpMethod.GET,
+                        "test:read",
+                        "Test route",
+                        java.util.Map.of("plane", "test-plane")
+                    )
+                );
+            }
+        };
+
+        RoutingServlet router = builder
+            .withRouteRegistrar(mockRegistrar)
+            .build();
+
+        assertThat(router).isNotNull();
+
+        java.util.List<RouteRegistrar.RouteMetadata> metadata = builder.getAllRouteMetadata();
+        assertThat(metadata).hasSize(1);
+        assertThat(metadata.get(0).routeId()).isEqualTo("test-route");
+        assertThat(metadata.get(0).path()).isEqualTo("/api/v1/test");
+        assertThat(metadata.get(0).method()).isEqualTo(HttpMethod.GET);
+    }
+
+    @Test
+    @DisplayName("Pass 8: Should handle null route registrar gracefully")
+    void shouldHandleNullRouteRegistrarGracefully() {
+        RoutingServlet router = builder
+            .withRouteRegistrar(null)
+            .build();
+
+        assertThat(router).isNotNull();
+        assertThat(builder.getAllRouteMetadata()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Pass 8: Should collect metadata from multiple registrars")
+    void shouldCollectMetadataFromMultipleRegistrars() {
+        RouteRegistrar registrar1 = new RouteRegistrar() {
+            @Override
+            public String getPlaneId() { return "plane1"; }
+            @Override
+            public String getRouteGroupId() { return "group1"; }
+            @Override
+            public void registerRoutes(RoutingServlet.Builder builder) {}
+            @Override
+            public java.util.List<RouteMetadata> getRouteMetadata() {
+                return java.util.List.of(new RouteMetadata("route1", "/path1", HttpMethod.GET, "perm1", "Desc1", java.util.Map.of()));
+            }
+        };
+
+        RouteRegistrar registrar2 = new RouteRegistrar() {
+            @Override
+            public String getPlaneId() { return "plane2"; }
+            @Override
+            public String getRouteGroupId() { return "group2"; }
+            @Override
+            public void registerRoutes(RoutingServlet.Builder builder) {}
+            @Override
+            public java.util.List<RouteMetadata> getRouteMetadata() {
+                return java.util.List.of(new RouteMetadata("route2", "/path2", HttpMethod.POST, "perm2", "Desc2", java.util.Map.of()));
+            }
+        };
+
+        builder.withRouteRegistrar(registrar1).withRouteRegistrar(registrar2);
+
+        java.util.List<RouteRegistrar.RouteMetadata> metadata = builder.getAllRouteMetadata();
+        assertThat(metadata).hasSize(2);
+        assertThat(metadata.stream().map(RouteRegistrar.RouteMetadata::routeId))
+            .containsExactlyInAnyOrder("route1", "route2");
+    }
 }

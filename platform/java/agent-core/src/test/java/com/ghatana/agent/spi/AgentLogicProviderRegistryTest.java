@@ -123,15 +123,15 @@ class AgentLogicProviderRegistryTest {
         @Test
         @DisplayName("selects lower-priority provider when multiple match")
         void selectsLowerPriorityProvider() { 
-            var lowPrio = new StubProvider("aep", Set.of("shared-agent"), 100, true);
-            var highPrio = new StubProvider("aep-premium", Set.of("shared-agent"), 500, true);
+            var lowPrio = new StubProvider("provider-a", Set.of("shared-agent"), 100, true);
+            var highPrio = new StubProvider("provider-b", Set.of("shared-agent"), 500, true);
             registry.register(lowPrio); 
             registry.register(highPrio); 
 
             // "shared-agent" has no colon prefix → slow path, both match
             var result = registry.resolve("shared-agent");
             assertThat(result).isPresent(); 
-            assertThat(result.get().getProviderId()).isEqualTo("aep"); // priority 100 < 500
+            assertThat(result.get().getProviderId()).isEqualTo("provider-a"); // priority 100 < 500
         }
     }
 

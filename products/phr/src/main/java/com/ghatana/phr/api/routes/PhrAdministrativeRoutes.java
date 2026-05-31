@@ -17,6 +17,8 @@ import io.activej.promise.Promise;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -107,7 +109,11 @@ public final class PhrAdministrativeRoutes {
      */
     public AsyncServlet getPatientFacingServlet() {
         return RoutingServlet.builder(eventloop)
-            .with(HttpMethod.POST, "/", this::handleCreateSchedulingRequest)
+            .with(HttpMethod.POST, "/", this::handlePatientFacingAppointmentPost)
+            .with(HttpMethod.GET, "/slots", this::handleAvailableSlots)
+            .with(HttpMethod.POST, "/:appointmentId/reschedule", this::handlePatientFacingRescheduleAppointment)
+            .with(HttpMethod.POST, "/:appointmentId/cancel", this::handlePatientFacingCancelAppointment)
+            .with(HttpMethod.GET, "/", this::handleListAppointments)
             .build();
     }
 
@@ -121,7 +127,7 @@ public final class PhrAdministrativeRoutes {
             .build();
     }
 
-    private Promise<HttpResponse> handleCreateSchedulingRequest(HttpRequest request) {
+    private Promise<HttpResponse> handlePatientFacingAppointmentPost(HttpRequest request) {
         String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String idempotencyKey;
@@ -134,46 +140,71 @@ public final class PhrAdministrativeRoutes {
 
         return request.loadBody()
             .then(body -> {
-                String specialty;
-                String preferredDate;
-                String notes;
+                JsonNode node;
                 try {
-                    JsonNode node = PhrRouteSupport.JSON.readTree(body.getString(StandardCharsets.UTF_8));
-                    specialty = requireTextField(node, "specialty");
-                    preferredDate = requireTextField(node, "preferredDate");
-                    notes = node.path("notes").isMissingNode() ? null : node.path("notes").asText(null);
-                } catch (IllegalArgumentException ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_APPOINTMENT_REQUEST", ex.getMessage());
+                    node = PhrRouteSupport.JSON.readTree(body.getString(StandardCharsets.UTF_8));
                 } catch (Exception ex) {
                     return PhrRouteSupport.errorResponse(400, "INVALID_APPOINTMENT_REQUEST", "Request body must be valid JSON");
                 }
 
-                String requestId = "req-" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 12);
-                String createdAt = Instant.now().toString();
-                String patientId = context.principalId();
-
-                Map<String, Object> result = new java.util.LinkedHashMap<>();
-                result.put("id", requestId);
-                result.put("status", "requested");
-                result.put("specialty", specialty);
-                result.put("preferredDate", preferredDate);
-                result.put("createdAt", createdAt);
-                if (notes != null && !notes.isBlank()) {
-                    result.put("notes", notes);
-                }
-                result.put("patientId", patientId);
-                if (idempotencyKey != null) {
-                    result.put("idempotencyKey", idempotencyKey);
+                if (node.hasNonNull("specialty") && node.hasNonNull("preferredDate") && !node.hasNonNull("providerId")) {
+                    return createSchedulingRequest(context, idempotencyKey, node, correlationId);
                 }
 
-                return PhrRouteSupport.jsonResponse(201, result);
+                AppointmentService.AppointmentRequest appointmentRequest;
+                try {
+                    appointmentRequest = parseAppointmentRequest(node);
+                } catch (IllegalArgumentException ex) {
+                    return PhrRouteSupport.errorResponse(400, "INVALID_APPOINTMENT_REQUEST", ex.getMessage(), correlationId);
+                }
+
+                return requireAccess(context, appointmentRequest.getPatientId(), "appointments", "WRITE")
+                    .then(decision -> decision.isAllowed()
+                        ? appointmentService.createAppointment(appointmentRequest)
+                            .then(stored -> PhrRouteSupport.jsonResponse(201, appointmentDto(stored), correlationId))
+                        : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
             });
+    }
+
+    private Promise<HttpResponse> createSchedulingRequest(
+            PhrRouteSupport.PhrRequestContext context,
+            String idempotencyKey,
+            JsonNode node,
+            String correlationId) {
+        AppointmentService.SchedulingRequest schedulingRequest;
+        try {
+            schedulingRequest = new AppointmentService.SchedulingRequest(
+                null,
+                context.principalId(),
+                requireTextField(node, "specialty"),
+                requireTextField(node, "preferredDate"),
+                textField(node, "notes"),
+                null,
+                null,
+                idempotencyKey
+            );
+        } catch (IllegalArgumentException ex) {
+            return PhrRouteSupport.errorResponse(400, "INVALID_APPOINTMENT_REQUEST", ex.getMessage(), correlationId);
+        }
+        return requireAccess(context, context.principalId(), "appointments", "WRITE")
+            .then(decision -> decision.isAllowed()
+                ? appointmentService.createSchedulingRequest(schedulingRequest, idempotencyKey, context.principalId())
+                    .then(stored -> PhrRouteSupport.jsonResponse(201, schedulingRequestDto(stored), correlationId))
+                : PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode()));
     }
 
     private static String requireTextField(JsonNode node, String fieldName) {
         JsonNode field = node.get(fieldName);
         if (field == null || field.isNull() || field.asText("").isBlank()) {
             throw new IllegalArgumentException(fieldName + " is required");
+        }
+        return field.asText().strip();
+    }
+
+    private static String textField(JsonNode node, String fieldName) {
+        JsonNode field = node.get(fieldName);
+        if (field == null || field.isNull() || field.asText("").isBlank()) {
+            return null;
         }
         return field.asText().strip();
     }
@@ -215,14 +246,19 @@ public final class PhrAdministrativeRoutes {
         String correlationId = PhrRouteSupport.extractCorrelationId(request);
         String status = request.getQueryParameter("status");
         return withPatientAccess(request, "appointments", "READ", patientId -> appointmentService.getPatientAppointments(patientId, status)
-            .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", items, "count", items.size()), correlationId)));
+            .then(items -> {
+                List<Map<String, Object>> dtos = items.stream()
+                    .map(PhrAdministrativeRoutes::appointmentDto)
+                    .toList();
+                return PhrRouteSupport.jsonResponse(200, Map.of("patientId", patientId, "items", dtos, "count", dtos.size()), correlationId);
+            }));
     }
 
     private Promise<HttpResponse> handleBookAppointment(HttpRequest request) {
         String correlationId = PhrRouteSupport.extractCorrelationId(request);
         return withBodyAndConsent(request, "appointments", "WRITE", AppointmentService.AppointmentRequest.class,
             appointmentRequest -> appointmentService.createAppointment(appointmentRequest)
-                .then(stored -> PhrRouteSupport.jsonResponse(201, stored, correlationId)));
+                .then(stored -> PhrRouteSupport.jsonResponse(201, appointmentDto(stored), correlationId)));
     }
 
     private Promise<HttpResponse> handleRescheduleAppointment(HttpRequest request) {
@@ -237,8 +273,39 @@ public final class PhrAdministrativeRoutes {
                     return PhrRouteSupport.errorResponse(400, "INVALID_RESCHEDULE", ex.getMessage());
                 }
                 return appointmentService.rescheduleAppointment(request.getPathParameter("appointmentId"), newDateTime)
-                    .then(updated -> PhrRouteSupport.jsonResponse(200, updated, correlationId));
+                    .then(updated -> PhrRouteSupport.jsonResponse(200, appointmentDto(updated), correlationId));
             }));
+    }
+
+    private Promise<HttpResponse> handlePatientFacingRescheduleAppointment(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
+        PhrRouteSupport.PhrRequestContext context;
+        try {
+            context = PhrRouteSupport.requireContext(request);
+        } catch (IllegalArgumentException ex) {
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
+        }
+        PhrRouteSupport.PhrRequestContext finalContext = context;
+        return request.loadBody()
+            .then(body -> {
+                String patientId;
+                String newDateTime;
+                try {
+                    JsonNode node = PhrRouteSupport.JSON.readTree(body.getString(StandardCharsets.UTF_8));
+                    patientId = firstNonBlank(textField(node, "patientId"), finalContext.principalId());
+                    newDateTime = firstNonBlank(textField(node, "newDateTime"), textField(node, "scheduledTime"), textField(node, "newSlot"));
+                    if (newDateTime == null || newDateTime.isBlank()) {
+                        throw new IllegalArgumentException("newDateTime is required");
+                    }
+                } catch (Exception ex) {
+                    return PhrRouteSupport.errorResponse(400, "INVALID_RESCHEDULE", ex.getMessage(), correlationId);
+                }
+                return requireAccess(finalContext, patientId, "appointments", "WRITE")
+                    .then(decision -> decision.isAllowed()
+                        ? appointmentService.rescheduleAppointment(request.getPathParameter("appointmentId"), newDateTime)
+                            .then(updated -> PhrRouteSupport.jsonResponse(200, appointmentDto(updated), correlationId))
+                        : PhrRouteSupport.policyDenialResponse(403, finalContext.correlationId(), decision.getReasonCode()));
+            });
     }
 
     private Promise<HttpResponse> handleAvailableSlots(HttpRequest request) {
@@ -248,7 +315,12 @@ public final class PhrAdministrativeRoutes {
             String providerId = PhrRouteSupport.requiredQuery(request, "providerId");
             String date = PhrRouteSupport.requiredQuery(request, "date");
             return appointmentService.getAvailableSlots(providerId, date)
-                .then(items -> PhrRouteSupport.jsonResponse(200, Map.of("providerId", providerId, "items", items, "count", items.size()), correlationId));
+                .then(items -> {
+                    List<Map<String, Object>> dtos = items.stream()
+                        .map(PhrAdministrativeRoutes::timeSlotDto)
+                        .toList();
+                    return PhrRouteSupport.jsonResponse(200, Map.of("providerId", providerId, "items", dtos, "count", dtos.size()), correlationId);
+                });
         } catch (RuntimeException ex) {
             return PhrRouteSupport.errorResponse(400, "INVALID_SLOT_QUERY", ex.getMessage());
         }
@@ -262,8 +334,46 @@ public final class PhrAdministrativeRoutes {
                 reason == null || reason.isBlank() ? "cancelled by API request" : reason)
             .then($ -> PhrRouteSupport.jsonResponse(200, Map.of(
                 "appointmentId", request.getPathParameter("appointmentId"),
-                "status", "CANCELLED"
+                "status", "cancelled",
+                "success", true
             ), correlationId)));
+    }
+
+    private Promise<HttpResponse> handlePatientFacingCancelAppointment(HttpRequest request) {
+        String correlationId = PhrRouteSupport.extractCorrelationId(request);
+        PhrRouteSupport.PhrRequestContext context;
+        try {
+            context = PhrRouteSupport.requireContext(request);
+        } catch (IllegalArgumentException ex) {
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
+        }
+        String queryReason = request.getQueryParameter("reason");
+        PhrRouteSupport.PhrRequestContext finalContext = context;
+        return request.loadBody()
+            .then(body -> {
+                String patientId = finalContext.principalId();
+                String reason = queryReason;
+                try {
+                    if (body.getArray().length > 0) {
+                        JsonNode node = PhrRouteSupport.JSON.readTree(body.getString(StandardCharsets.UTF_8));
+                        patientId = firstNonBlank(textField(node, "patientId"), patientId);
+                        reason = firstNonBlank(textField(node, "reason"), reason);
+                    }
+                } catch (Exception ex) {
+                    return PhrRouteSupport.errorResponse(400, "INVALID_CANCEL", ex.getMessage(), correlationId);
+                }
+                String finalReason = reason == null || reason.isBlank() ? "cancelled by API request" : reason;
+                String finalPatientId = patientId;
+                return requireAccess(finalContext, finalPatientId, "appointments", "WRITE")
+                    .then(decision -> decision.isAllowed()
+                        ? appointmentService.cancelAppointment(request.getPathParameter("appointmentId"), finalReason)
+                            .then($ -> PhrRouteSupport.jsonResponse(200, Map.of(
+                                "appointmentId", request.getPathParameter("appointmentId"),
+                                "status", "cancelled",
+                                "success", true
+                            ), correlationId))
+                        : PhrRouteSupport.policyDenialResponse(403, finalContext.correlationId(), decision.getReasonCode()));
+            });
     }
 
     private Promise<HttpResponse> handleScheduleTelemedicine(HttpRequest request) {
@@ -542,5 +652,109 @@ public final class PhrAdministrativeRoutes {
             throw new IllegalArgumentException("patientId is required");
         }
         return patientId;
+    }
+
+    private static AppointmentService.AppointmentRequest parseAppointmentRequest(JsonNode node) {
+        String patientId = requireTextField(node, "patientId");
+        String providerId = requireTextField(node, "providerId");
+        String slotId = firstNonBlank(textField(node, "slotId"), textField(node, "slot"));
+        if (slotId == null) {
+            throw new IllegalArgumentException("slotId is required");
+        }
+        Instant scheduledTime;
+        try {
+            scheduledTime = Instant.parse(requireTextField(node, "scheduledTime"));
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("scheduledTime must be a valid ISO-8601 instant");
+        }
+        int durationMinutes = node.path("durationMinutes").asInt(30);
+        String appointmentType = firstNonBlank(textField(node, "appointmentType"), textField(node, "type"), "IN_PERSON");
+        String reason = firstNonBlank(textField(node, "reason"), textField(node, "notes"), appointmentType);
+        return new AppointmentService.AppointmentRequest(
+            patientId,
+            providerId,
+            slotId,
+            scheduledTime,
+            durationMinutes,
+            reason,
+            appointmentType
+        );
+    }
+
+    private static Map<String, Object> appointmentDto(AppointmentService.Appointment appointment) {
+        Map<String, Object> dto = new LinkedHashMap<>();
+        dto.put("id", appointment.getId());
+        dto.put("appointmentId", appointment.getId());
+        dto.put("patientId", appointment.getPatientId());
+        dto.put("provider", appointment.getProviderId());
+        dto.put("providerId", appointment.getProviderId());
+        dto.put("specialty", firstNonBlank(appointment.getAppointmentType(), appointment.getReason()));
+        dto.put("appointmentType", appointment.getAppointmentType());
+        dto.put("startsAt", appointment.getScheduledTime() != null ? appointment.getScheduledTime().toString() : "");
+        dto.put("scheduledTime", appointment.getScheduledTime() != null ? appointment.getScheduledTime().toString() : "");
+        dto.put("durationMinutes", appointment.getDurationMinutes());
+        dto.put("location", "provider-calendar");
+        dto.put("status", appointmentStatus(appointment.getStatus()));
+        dto.put("slotId", appointment.getSlotId());
+        dto.put("reason", appointment.getReason());
+        dto.put("createdAt", appointment.getCreatedAt() != null ? appointment.getCreatedAt().toString() : "");
+        dto.put("updatedAt", appointment.getUpdatedAt() != null ? appointment.getUpdatedAt().toString() : "");
+        dto.put("reminderSent", "SCHEDULED".equals(appointment.getStatus()));
+        dto.put("version", appointment.getVersion());
+        return dto;
+    }
+
+    private static Map<String, Object> schedulingRequestDto(AppointmentService.SchedulingRequest request) {
+        Map<String, Object> dto = new LinkedHashMap<>();
+        dto.put("id", request.id());
+        dto.put("patientId", request.patientId());
+        dto.put("status", "requested");
+        dto.put("specialty", request.specialty());
+        dto.put("preferredDate", request.preferredDate());
+        dto.put("createdAt", request.createdAt() != null ? request.createdAt().toString() : "");
+        if (request.notes() != null) {
+            dto.put("notes", request.notes());
+        }
+        if (request.idempotencyKey() != null) {
+            dto.put("idempotencyKey", request.idempotencyKey());
+        }
+        return dto;
+    }
+
+    private static Map<String, Object> timeSlotDto(AppointmentService.TimeSlot slot) {
+        Map<String, Object> dto = new LinkedHashMap<>();
+        dto.put("id", slot.getId());
+        dto.put("slotId", slot.getId());
+        dto.put("providerId", slot.getProviderId());
+        dto.put("date", slot.getDate());
+        dto.put("startTime", slot.getStartTime() != null ? slot.getStartTime().toString() : "");
+        dto.put("endTime", slot.getEndTime() != null ? slot.getEndTime().toString() : "");
+        dto.put("status", slot.getStatus() != null ? slot.getStatus().toLowerCase() : "unknown");
+        return dto;
+    }
+
+    private static String appointmentStatus(String status) {
+        if ("SCHEDULED".equals(status)) {
+            return "confirmed";
+        }
+        if ("CANCELLED".equals(status)) {
+            return "cancelled";
+        }
+        if ("COMPLETED".equals(status)) {
+            return "completed";
+        }
+        if (status == null || status.isBlank()) {
+            return "requested";
+        }
+        return status.toLowerCase();
+    }
+
+    private static String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
     }
 }

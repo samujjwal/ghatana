@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
@@ -222,5 +223,63 @@ public final class InMemoryEventLogStoreProvider implements EventLogStore {
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Offset must be numeric: " + offset.value(), e);
         }
+    }
+
+    // ==================== Checkpoint Management (P3-03) ====================
+
+    private final Map<String, Map<String, Checkpoint>> checkpoints = new ConcurrentHashMap<>();
+
+    @Override
+    public Promise<Optional<Checkpoint>> readCheckpoint(TenantContext tenant, String stream, String consumerGroup) {
+        Map<String, Checkpoint> streamCheckpoints = checkpoints.get(tenant.tenantId());
+        if (streamCheckpoints == null) {
+            return Promise.of(Optional.empty());
+        }
+        String key = stream + ":" + consumerGroup;
+        return Promise.of(Optional.ofNullable(streamCheckpoints.get(key)));
+    }
+
+    @Override
+    public Promise<Checkpoint> commitCheckpoint(TenantContext tenant, String stream, String consumerGroup, Offset offset, String idempotencyKey) {
+        String key = stream + ":" + consumerGroup;
+        Map<String, Checkpoint> streamCheckpoints = checkpoints.computeIfAbsent(tenant.tenantId(), k -> new ConcurrentHashMap<>());
+        Checkpoint checkpoint = new Checkpoint(stream, consumerGroup, offset, Instant.now(), idempotencyKey);
+        streamCheckpoints.put(key, checkpoint);
+        return Promise.of(checkpoint);
+    }
+
+    @Override
+    public Promise<Boolean> deleteCheckpoint(TenantContext tenant, String stream, String consumerGroup) {
+        Map<String, Checkpoint> streamCheckpoints = checkpoints.get(tenant.tenantId());
+        if (streamCheckpoints == null) {
+            return Promise.of(false);
+        }
+        String key = stream + ":" + consumerGroup;
+        return Promise.of(streamCheckpoints.remove(key) != null);
+    }
+
+    @Override
+    public Promise<Map<String, Checkpoint>> getAllCheckpointsWithMetadata(TenantContext tenant) {
+        Map<String, Checkpoint> streamCheckpoints = checkpoints.get(tenant.tenantId());
+        return Promise.of(streamCheckpoints != null ? Map.copyOf(streamCheckpoints) : Map.of());
+    }
+
+    @Override
+    public Promise<List<EventEntry>> replay(TenantContext tenant, ReplaySpec spec) {
+        List<EventEntry> entries = store.getOrDefault(tenant.tenantId(), List.of());
+        long fromOffsetValue = numericOffsetValue(spec.fromOffset());
+        long toOffsetValue = spec.toOffset().value().equals("-1") ? Long.MAX_VALUE : numericOffsetValue(spec.toOffset());
+
+        return Promise.of(entries.stream()
+            .filter(e -> headerOffset(e) >= fromOffsetValue && headerOffset(e) <= toOffsetValue)
+            .filter(e -> spec.eventTypes().isEmpty() || spec.eventTypes().contains(e.eventType()))
+            .toList());
+    }
+
+    @Override
+    public Promise<Void> unsubscribe(TenantContext tenant, SubscriptionId subscriptionId) {
+        // P3-03: For in-memory implementation, cancellation is handled by the Subscription.cancel() method
+        // which removes the listener from tailListeners. This is a no-op for tracking purposes.
+        return Promise.of(null);
     }
 }

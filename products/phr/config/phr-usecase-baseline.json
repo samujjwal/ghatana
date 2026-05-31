@@ -1,7 +1,7 @@
 {
   "product": "phr",
   "version": "2.0.0",
-  "lastUpdated": "2026-05-26",
+  "lastUpdated": "2026-05-31",
   "description": "Canonical PHR use-case baseline: maps personas, IA routes/screens, backend APIs, and implementation status.",
   "statusValues": [
     "implemented",
@@ -460,8 +460,8 @@
       "webRoute": "/documents",
       "mobileScreen": null,
       "backendApis": [
-        "GET /documents?patientId=:id",
-        "POST /documents/upload"
+        "GET /api/v1/records/documents",
+        "POST /api/v1/records/documents"
       ],
       "kernelCapability": "document-manage",
       "offlineSupport": false,
@@ -493,7 +493,7 @@
       "webRoute": "/documents/upload",
       "mobileScreen": null,
       "backendApis": [
-        "POST /documents/upload"
+        "POST /api/v1/records/documents"
       ],
       "kernelCapability": "document-manage",
       "offlineSupport": false,
@@ -599,9 +599,9 @@
       "webRoute": "/settings",
       "mobileScreen": "settings",
       "backendApis": [
-        "POST /auth/logout",
-        "PUT /patients/:patientId",
-        "POST /fhir/Patient/current/$export"
+        "POST /api/v1/auth/logout",
+        "PUT /api/v1/profile/settings",
+        "POST /api/v1/hie/export"
       ],
       "kernelCapability": "patient-profile-manage",
       "offlineSupport": false,
@@ -850,9 +850,9 @@
     {
       "id": "uc-admin-emergency-review",
       "persona": "admin",
-      "screen": "EmergencyReviewPage",
+      "screen": "EmergencyReviewsPage",
       "iaRoute": "/emergency/reviews",
-      "webRoute": "/emergency",
+      "webRoute": "/emergency/reviews",
       "mobileScreen": null,
       "backendApis": [
         "GET /emergency/reviews/pending",

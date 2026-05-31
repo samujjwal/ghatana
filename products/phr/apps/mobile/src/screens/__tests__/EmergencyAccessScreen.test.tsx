@@ -106,6 +106,9 @@ describe('EmergencyAccessScreen', () => {
     await waitFor(() => {
       expect(renderedText(rendered)).toContain('emergency.requesting');
     });
+    expect(mockRequestMobileEmergencyAccess).not.toHaveBeenCalled();
+    expect(renderedText(rendered)).not.toContain('Ram Bahadur');
+    expect(renderedText(rendered)).not.toContain('O+');
 
     act(() => { resolveAuth(true); });
   });
@@ -177,6 +180,9 @@ describe('EmergencyAccessScreen', () => {
     await waitFor(() => {
       expect(renderedText(rendered)).toContain('emergency.denied');
     });
+    expect(mockRequestMobileEmergencyAccess).not.toHaveBeenCalled();
+    expect(renderedText(rendered)).not.toContain('Ram Bahadur');
+    expect(renderedText(rendered)).not.toContain('O+');
   });
 
   it('retry button in denied state resets to locked', async () => {

@@ -83,6 +83,13 @@ class HttpPhrNotificationDeliveryChannelsTest extends EventloopTestBase {
         assertThat(correlationHeaders).containsOnly("corr-http-1");
         assertThat(traceHeaders).containsOnly("phr_appointment_reminder_schedule");
         assertThat(bodies).allMatch(body -> body.contains("\"correlationId\":\"corr-http-1\""));
+        String pushBody = bodies.getLast();
+        assertThat(pushBody)
+            .contains("\"reasonCode\":\"APPOINTMENT_REMINDER_SCHEDULED\"")
+            .contains("\"deepLinkId\":\"appointment:ref-1\"")
+            .doesNotContain("\"patientId\"")
+            .doesNotContain("\"providerId\"")
+            .doesNotContain("\"referenceId\"");
     }
 
     private static void respond(

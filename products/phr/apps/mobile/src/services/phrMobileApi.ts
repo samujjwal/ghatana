@@ -7,10 +7,11 @@ import type {
   MobileRecord,
   MobileSession,
 } from '../types';
-import { clearDashboardOffline, loadDashboardOffline, saveDashboardOffline, type SessionIdentity } from './offlineStore';
+import { loadDashboardOffline, saveDashboardOffline, type SessionIdentity } from './offlineStore';
 import { clearMobileSession } from './mobileSessionStore';
-import { phiClearAll } from './phiEncryptedStorage';
+import { clearMobilePrivacyState } from './mobilePrivacyPlugin';
 import { t } from '../i18n/phrMobileI18n';
+import { buildMobileHeaders } from './mobileHeaders';
 
 const DASHBOARD_PATH = '/mobile/dashboard';
 
@@ -36,6 +37,37 @@ function isBoolean(value: unknown): value is boolean {
 
 function isMobileRole(value: unknown): value is MobileSession['role'] {
   return value === 'patient' || value === 'caregiver' || value === 'fchv' || value === 'clinician' || value === 'admin';
+}
+
+function sessionIdentity(session: MobileSession): SessionIdentity {
+  assertSessionRequestContext(session);
+  return {
+    tenantId: session.tenantId,
+    principalId: session.principalId,
+    role: session.role,
+    persona: session.persona,
+    tier: session.tier,
+    facilityId: session.facilityId,
+  };
+}
+
+function assertSessionRequestContext(
+  session: MobileSession,
+): asserts session is MobileSession & { persona: string; tier: string } {
+  if (!session.persona) {
+    throw new Error(t('api.missingPersona'));
+  }
+  if (!session.tier) {
+    throw new Error(t('api.missingTier'));
+  }
+}
+
+function mobileJsonHeaders(session: MobileSession): Record<string, string> {
+  assertSessionRequestContext(session);
+  return {
+    ...buildMobileHeaders(session),
+    'Content-Type': 'application/json',
+  };
 }
 
 function assertMobileDashboard(value: unknown): MobileDashboard {
@@ -166,22 +198,8 @@ async function fetchDashboardFromApi(session: MobileSession): Promise<MobileDash
     throw new Error(t('api.apiNotConfigured'));
   }
 
-  const sessionIdentity: SessionIdentity = {
-    tenantId: session.tenantId,
-    principalId: session.principalId,
-    role: session.role,
-  };
-
   const response = await fetch(`${apiBaseUrl}${DASHBOARD_PATH}`, {
-    headers: {
-      Accept: 'application/json',
-      'X-Tenant-Id': session.tenantId,
-      'X-Principal-Id': session.principalId,
-      'X-Role': session.role,
-      'X-Persona': session.persona || 'default',
-      'X-Tier': session.tier || 'standard',
-      'X-Correlation-ID': crypto.randomUUID(),
-    },
+    headers: buildMobileHeaders(session),
   });
   if (!response.ok) {
     throw new Error(t('api.dashboardRequestFailed', { status: String(response.status) }));
@@ -191,18 +209,14 @@ async function fetchDashboardFromApi(session: MobileSession): Promise<MobileDash
 }
 
 export async function fetchMobileDashboard(session: MobileSession): Promise<MobileDashboard> {
-  const sessionIdentity: SessionIdentity = {
-    tenantId: session.tenantId,
-    principalId: session.principalId,
-    role: session.role,
-  };
+  const identity = sessionIdentity(session);
 
   try {
     const dashboard = await fetchDashboardFromApi(session);
-    await saveDashboardOffline(dashboard, undefined, sessionIdentity);
+    await saveDashboardOffline(dashboard, undefined, identity);
     return dashboard;
   } catch (error) {
-    const cached = await loadDashboardOffline(sessionIdentity);
+    const cached = await loadDashboardOffline(identity);
     if (cached) {
       return cached;
     }
@@ -212,14 +226,10 @@ export async function fetchMobileDashboard(session: MobileSession): Promise<Mobi
 }
 
 export async function syncOfflineDashboard(session: MobileSession): Promise<string> {
-  const sessionIdentity: SessionIdentity = {
-    tenantId: session.tenantId,
-    principalId: session.principalId,
-    role: session.role,
-  };
+  const identity = sessionIdentity(session);
 
   const dashboard = await fetchDashboardFromApi(session);
-  await saveDashboardOffline(dashboard, undefined, sessionIdentity);
+  await saveDashboardOffline(dashboard, undefined, identity);
   return t('api.offlineCacheRefreshed');
 }
 
@@ -241,16 +251,7 @@ export async function requestMobileEmergencyAccess(
 
   const response = await fetch(`${apiBaseUrl}/emergency/access`, {
     method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      'X-Tenant-Id': session.tenantId,
-      'X-Principal-Id': session.principalId,
-      'X-Role': session.role,
-      'X-Persona': session.persona || 'default',
-      'X-Tier': session.tier || 'standard',
-      'X-Correlation-ID': crypto.randomUUID(),
-    },
+    headers: mobileJsonHeaders(session),
     body: JSON.stringify({
       patientId: trimmedPatientId,
       accessorId: session.principalId,
@@ -277,8 +278,6 @@ export async function logoutMobile(session: MobileSession): Promise<void> {
   const apiBaseUrl = getApiBaseUrl();
   if (!apiBaseUrl) {
     // Even if API is not configured, clear local PHI and session.
-    await phiClearAll();
-    await clearDashboardOffline();
     await clearMobileSession();
     return;
   }
@@ -286,23 +285,11 @@ export async function logoutMobile(session: MobileSession): Promise<void> {
   try {
     await fetch(`${apiBaseUrl}/auth/logout`, {
       method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'X-Tenant-Id': session.tenantId,
-        'X-Principal-Id': session.principalId,
-        'X-Role': session.role,
-        'X-Persona': session.persona || 'default',
-        'X-Tier': session.tier || 'standard',
-        'X-Correlation-ID': crypto.randomUUID(),
-      },
+      headers: mobileJsonHeaders(session),
     });
   } catch {
     // Network failure; continue with local cleanup.
   }
-  // Clear encrypted PHI cache and session on logout
-  await phiClearAll();
-  await clearDashboardOffline();
   await clearMobileSession();
 }
 
@@ -312,7 +299,7 @@ function assertMobileSession(value: unknown): MobileSession {
   if (!isRecord(value)) {
     throw new Error(t('api.loginNotObject'));
   }
-  const { principalId, tenantId, role, name, expiresAt } = value;
+  const { principalId, tenantId, role, name, expiresAt, persona, tier } = value;
   if (!isString(principalId) || !principalId) {
     throw new Error(t('api.missingPrincipalId'));
   }
@@ -328,14 +315,21 @@ function assertMobileSession(value: unknown): MobileSession {
   if (!isString(expiresAt) || !expiresAt) {
     throw new Error(t('api.missingExpiresAt'));
   }
+  if (!isString(persona) || !persona) {
+    throw new Error(t('api.missingPersona'));
+  }
+  if (!isString(tier) || !tier) {
+    throw new Error(t('api.missingTier'));
+  }
   return {
     principalId,
     tenantId,
     role,
     name,
     expiresAt,
-    ...(isString(value.persona) ? { persona: value.persona } : {}),
-    ...(isString(value.tier) ? { tier: value.tier } : {}),
+    persona,
+    tier,
+    ...(isString(value.facilityId) ? { facilityId: value.facilityId } : {}),
   };
 }
 
@@ -387,21 +381,10 @@ export async function revokeConsentGrant(grantId: string, patientId: string, ses
   }
   const response = await fetch(`${apiBaseUrl}/consents/grants/${encodeURIComponent(grantId)}/revoke?patientId=${encodeURIComponent(patientId)}`, {
     method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      'X-Tenant-Id': session.tenantId,
-      'X-Principal-Id': session.principalId,
-      'X-Role': session.role,
-      'X-Persona': session.persona || 'default',
-      'X-Tier': session.tier || 'standard',
-      'X-Correlation-ID': crypto.randomUUID(),
-    },
+    headers: mobileJsonHeaders(session),
   });
   if (!response.ok) {
     throw new Error(t('api.consentRevokeFailed', { status: String(response.status) }));
   }
-  // Clear all encrypted PHI cache on consent revocation
-  await phiClearAll();
-  await clearDashboardOffline();
+  await clearMobilePrivacyState("consent-revoked");
 }

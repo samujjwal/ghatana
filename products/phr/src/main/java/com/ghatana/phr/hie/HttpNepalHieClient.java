@@ -43,6 +43,9 @@ public final class HttpNepalHieClient implements NepalHieClient {
     }
 
     private NepalHieAck sendBlocking(String patientId, String correlationId, String hl7Message) throws IOException, InterruptedException {
+        if (config.endpoint() == null || config.endpoint().isBlank()) {
+            throw new IllegalStateException("HIE endpoint is not configured");
+        }
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
             .uri(URI.create(config.endpoint()))
             .timeout(config.requestTimeout())

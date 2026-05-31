@@ -29,7 +29,7 @@ import java.time.Instant;
 import java.util.Map;
 
 /**
- * Stateful event stream processor: the base class for all AEP operator agents.
+ * Stateful event stream processor: the base class for event processing operator agents.
  *
  * <h2>When to Use</h2>
  * <ul>
@@ -73,7 +73,7 @@ import java.util.Map;
  * }</pre>
  *
  * @doc.type class
- * @doc.purpose Stateful event stream processor base class — for AEP operators
+ * @doc.purpose Stateful event stream processor base class — for event processing operators
  * @doc.layer platform
  * @doc.pattern Template Method
  * @doc.gaa.lifecycle act, capture

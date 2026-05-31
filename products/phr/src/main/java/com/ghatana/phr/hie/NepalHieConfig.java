@@ -20,11 +20,11 @@ public record NepalHieConfig(
 
     public static NepalHieConfig fromEnvironment() {
         return new NepalHieConfig(
-            read("PHR_NEPAL_HIE_ENDPOINT", "https://nepal-hie.invalid/ingest"),
+            read("PHR_NEPAL_HIE_ENDPOINT", ""),
             read("PHR_NEPAL_HIE_SENDING_APPLICATION", "GHATANA-PHR"),
-            read("PHR_NEPAL_HIE_SENDING_FACILITY", "PHR-NEPAL"),
-            read("PHR_NEPAL_HIE_RECEIVING_APPLICATION", "NEPAL-HIE"),
-            read("PHR_NEPAL_HIE_RECEIVING_FACILITY", "NHIE-GATEWAY"),
+            read("PHR_NEPAL_HIE_SENDING_FACILITY", ""),
+            read("PHR_NEPAL_HIE_RECEIVING_APPLICATION", ""),
+            read("PHR_NEPAL_HIE_RECEIVING_FACILITY", ""),
             read("PHR_NEPAL_HIE_BEARER_TOKEN", ""),
             Duration.ofSeconds(Long.parseLong(read("PHR_NEPAL_HIE_TIMEOUT_SECONDS", "15")))
         );

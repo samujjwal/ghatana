@@ -46,6 +46,18 @@ const stubEvent = {
   reviewerId: null,
 };
 
+const fillEmergencyRequest = (): void => {
+  fireEvent.change(screen.getByLabelText('emergency.patientId.label'), { target: { value: '  patient-42  ' } });
+  fireEvent.change(screen.getByLabelText('emergency.clinicianId.label'), { target: { value: 'clinician-7' } });
+  fireEvent.change(screen.getByLabelText('emergency.reason.label'), { target: { value: 'Unconscious patient in A&E.' } });
+};
+
+const submitAndConfirmEmergencyRequest = async (): Promise<void> => {
+  fireEvent.click(screen.getByRole('button', { name: /emergency.request/i }));
+  await waitFor(() => expect(screen.getByRole('button', { name: /emergency.confirm.submit/i })).toBeTruthy());
+  fireEvent.click(screen.getByRole('button', { name: /emergency.confirm.submit/i }));
+};
+
 describe('EmergencyAccessPage – request workflow', () => {
   beforeEach(() => {
     mockRequest.mockReset();
@@ -71,11 +83,12 @@ describe('EmergencyAccessPage – request workflow', () => {
     mockRequest.mockResolvedValue(stubEvent);
     render(<EmergencyAccessPage />);
 
-    fireEvent.change(screen.getByLabelText('emergency.patientId.label'), { target: { value: '  patient-42  ' } });
-    fireEvent.change(screen.getByLabelText('emergency.clinicianId.label'), { target: { value: 'clinician-7' } });
-    fireEvent.change(screen.getByLabelText('emergency.reason.label'), { target: { value: 'Unconscious patient in A&E.' } });
+    fillEmergencyRequest();
 
     fireEvent.click(screen.getByRole('button', { name: /emergency.request/i }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /emergency.confirm.submit/i })).toBeTruthy());
+    expect(mockRequest).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /emergency.confirm.submit/i }));
 
     await waitFor(() => expect(mockRequest).toHaveBeenCalledTimes(1));
 
@@ -97,7 +110,7 @@ describe('EmergencyAccessPage – request workflow', () => {
     fireEvent.change(screen.getByLabelText('emergency.patientId.label'), { target: { value: 'p1' } });
     fireEvent.change(screen.getByLabelText('emergency.clinicianId.label'), { target: { value: 'c1' } });
     fireEvent.change(screen.getByLabelText('emergency.reason.label'), { target: { value: 'Critical emergency' } });
-    fireEvent.click(screen.getByRole('button', { name: /emergency.request/i }));
+    await submitAndConfirmEmergencyRequest();
 
     await waitFor(() => expect(screen.getByRole('status')).toBeTruthy());
     expect(screen.getByRole('status').textContent).toContain('emergency.success.request');
@@ -111,7 +124,7 @@ describe('EmergencyAccessPage – request workflow', () => {
     fireEvent.change(patientInput, { target: { value: 'p1' } });
     fireEvent.change(screen.getByLabelText('emergency.clinicianId.label'), { target: { value: 'c1' } });
     fireEvent.change(screen.getByLabelText('emergency.reason.label'), { target: { value: 'Critical emergency' } });
-    fireEvent.click(screen.getByRole('button', { name: /emergency.request/i }));
+    await submitAndConfirmEmergencyRequest();
 
     await waitFor(() => expect(screen.getByRole('status')).toBeTruthy());
     expect(patientInput.value).toBe('');
@@ -124,7 +137,7 @@ describe('EmergencyAccessPage – request workflow', () => {
     fireEvent.change(screen.getByLabelText('emergency.patientId.label'), { target: { value: 'p1' } });
     fireEvent.change(screen.getByLabelText('emergency.clinicianId.label'), { target: { value: 'c1' } });
     fireEvent.change(screen.getByLabelText('emergency.reason.label'), { target: { value: 'Critical emergency' } });
-    fireEvent.click(screen.getByRole('button', { name: /emergency.request/i }));
+    await submitAndConfirmEmergencyRequest();
 
     await waitFor(() => expect(screen.getAllByRole('alert').length).toBeGreaterThan(0));
     const alerts = screen.getAllByRole('alert');

@@ -2,13 +2,13 @@
 
 **Document type:** Security Architecture  
 **Layer:** Product  
-**Last updated:** 2026-05-02  
+**Last updated:** 2026-05-31  
 
 ---
 
 ## 1. Overview
 
-The PHR mobile app uses AES-256-GCM symmetric encryption to protect Protected Health Information (PHI) cached locally on the device. This allows patients to view their recent dashboard data while offline without exposing plaintext PHI to the device file system or AsyncStorage.
+The PHR mobile app uses encrypted local storage plus the Kernel mobile privacy plugin contract to protect Protected Health Information (PHI) cached locally on the device. Current offline support is limited to approved mobile dashboard/record surfaces and must preserve scope, TTL, last-sync metadata, biometric requirements, and consent invalidation behavior.
 
 ---
 
@@ -45,8 +45,9 @@ The IV and ciphertext are concatenated before base64 encoding per the `phiEncryp
 
 | Data | AsyncStorage key | Eviction policy |
 |---|---|---|
-| Mobile dashboard JSON | `phr_offline_cache` | On successful network refresh or app upgrade |
-| (nothing else by default) | — | — |
+| Mobile dashboard JSON | Dashboard offline store | On successful network refresh, TTL expiry, consent revocation, logout, or privacy clear |
+| Restricted-field stripped PHI snapshots | PHI encrypted storage | On logout, consent revocation, biometric/session invalidation, TTL expiry, or privacy clear |
+| (nothing else by default) | - | - |
 
 PHI that is **never** cached offline:
 - Full patient records with complete medical history
@@ -61,7 +62,7 @@ PHI that is **never** cached offline:
 | Trigger | Action |
 |---|---|
 | Device SecureStore cleared (re-install, wipe) | Generate new key; purge all cached ciphertext |
-| User-initiated logout | Purge cached ciphertext; retain key (key eviction is optional) |
+| User-initiated logout | Purge PHI cache and product-specific offline stores through the Kernel mobile privacy plugin |
 | App detects key retrieval failure | Log structured error; fall back to network-only mode |
 | Annual rotation (future) | Not yet implemented; will require re-encryption of cached data with new key |
 
@@ -73,7 +74,8 @@ The `NetInfo` listener in `App.tsx` monitors connectivity state. When the device
 
 1. `isOnline` state is set to `false`.
 2. New API calls are skipped; the app serves the most recent cached (decrypted) data.
-3. A banner indicates offline status to the patient.
+3. A banner indicates offline status and last-sync/staleness state to the patient.
+4. Expired PHI is not rendered from cache.
 
 When connectivity is restored:
 1. `isOnline` is set to `true`.
@@ -99,8 +101,9 @@ When connectivity is restored:
 
 | File | Purpose |
 |---|---|
-| `products/phr/apps/mobile/src/services/phiEncryptedStorage.ts` | AES-256-GCM encrypt/decrypt implementation + `PhiStorageAdapter` interface |
+| `products/phr/apps/mobile/src/services/phiEncryptedStorage.ts` | Encrypted PHI storage implementation + `PhiStorageAdapter` interface |
 | `products/phr/apps/mobile/src/services/offlineStore.ts` | Offline cache read/write using the `PhiStorageAdapter` |
+| `products/phr/apps/mobile/src/services/mobilePrivacyPlugin.ts` | PHR adapter for the Kernel mobile privacy plugin clearing contract |
 | `products/phr/apps/mobile/src/services/pushNotifications.ts` | Push notification handler with PHI redaction |
 | `products/phr/apps/mobile/src/types/ambient.d.ts` | Type stubs for `expo-secure-store` |
 | `products/phr/apps/mobile/src/App.tsx` | NetInfo connectivity listener; offline banner |
@@ -109,6 +112,7 @@ When connectivity is restored:
 
 ## 8. Compliance Notes
 
-- PHI at rest on mobile devices must be encrypted per HIPAA Security Rule § 164.312(a)(2)(iv) (Encryption and Decryption).
-- AES-256-GCM is an NIST-approved encryption mode and satisfies this requirement.
-- Audit events are emitted for all PHI access (online mode) but offline access from cache does not emit a real-time audit event. Future work: emit a local audit queue that is flushed on reconnect.
+- PHI at rest on mobile devices must be encrypted per applicable healthcare privacy requirements.
+- Emergency PHI is never rendered before biometric/device approval and server authorization.
+- Consent revoke and logout paths must invoke the Kernel mobile privacy clearing contract for all PHI/offline stores.
+- Offline access from cache does not emit a real-time server audit event. Future work: emit a local audit queue that is flushed on reconnect.

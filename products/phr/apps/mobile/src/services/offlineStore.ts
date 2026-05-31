@@ -10,16 +10,17 @@
  *   `phiEncryptedStorage` adapter. The key is held in the OS keychain
  *   via expo-secure-store; AsyncStorage holds ciphertext only.
  *   Consent revocation must call `clearDashboardOffline()` directly.
- * - Field classification: Restricted fields (mental health, substance use,
- *   genetic info, reproductive health, HIV status) are never cached.
+ * - Field classification: Kernel mobile PHI field policy determines which
+ *   restricted fields are never cached.
  *   Identifiable fields (patient ID, name, DOB) are encrypted at rest.
  *   Sensitive PHI fields (diagnosis, medication, lab results) are encrypted.
- * - Session binding: Cache envelope includes tenantId, principalId, role
- *   to reject cache if session differs.
+ * - Session binding: Cache envelope includes tenantId, principalId, role,
+ *   persona, tier, and facilityId to reject cache if session scope differs.
  *
  * NEVER call `AsyncStorage.setItem` with PHI outside this module.
  */
 import { phiGet, phiRemove, phiSet } from "./phiEncryptedStorage";
+import { shouldRemoveFieldFromMobileCache } from "./mobilePhiPolicy";
 import type { MobileDashboard } from "../types";
 /**
  * G11-T07: Mobile offline cache telemetry without PHI.
@@ -36,9 +37,9 @@ function emitCacheMetric(
   sessionIdentity: SessionIdentity,
 ): void {
   // In a real implementation, this would call a telemetry service.
-  // For now, we log at debug level without PHI.
+  // For now, we log at debug level without PHI or tenant identifiers.
   console.debug(
-    `[phr.cache] operation=${operation}, role=${sessionIdentity.role}, tenantId=${sessionIdentity.tenantId}`,
+    `[phr.cache] operation=${operation}, role=${sessionIdentity.role}`,
   );
 }
 
@@ -46,18 +47,7 @@ const DASHBOARD_KEY = "phr-mobile-dashboard";
 const SCHEMA_VERSION = 1;
 
 /** Default cache lifetime: 8 hours (one clinical shift). */
-const DEFAULT_TTL_MS = 8 * 60 * 60 * 1000;
-
-/** Restricted PHI fields that must never be cached */
-const RESTRICTED_FIELDS = new Set([
-  "mentalHealth",
-  "substanceUse",
-  "geneticInfo",
-  "reproductiveHealth",
-  "hivStatus",
-  "psychiatricHistory",
-  "substanceAbuseHistory",
-]);
+export const DASHBOARD_OFFLINE_TTL_MS = 8 * 60 * 60 * 1000;
 
 type JsonPrimitive = string | number | boolean | null;
 type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
@@ -70,12 +60,15 @@ interface DashboardCacheEnvelope {
   tenantId: string;
   principalId: string;
   role: string;
+  persona?: string;
+  tier?: string;
+  facilityId?: string;
   data: JsonValue;
 }
 
 export async function saveDashboardOffline(
   dashboard: MobileDashboard,
-  ttlMs: number = DEFAULT_TTL_MS,
+  ttlMs: number = DASHBOARD_OFFLINE_TTL_MS,
   sessionIdentity: SessionIdentity,
 ): Promise<void> {
   // Sanitize restricted fields before caching
@@ -88,6 +81,9 @@ export async function saveDashboardOffline(
     tenantId: sessionIdentity.tenantId,
     principalId: sessionIdentity.principalId,
     role: sessionIdentity.role,
+    persona: sessionIdentity.persona,
+    tier: sessionIdentity.tier,
+    facilityId: sessionIdentity.facilityId,
     data: sanitizedDashboard,
   };
   await phiSet(DASHBOARD_KEY, JSON.stringify(envelope));
@@ -176,12 +172,18 @@ export async function getDashboardOfflineTimestamp(): Promise<number | null> {
   return envelope.savedAt;
 }
 
+export function isDashboardOfflineTimestampStale(
+  timestamp: number | null,
+  now: number = Date.now(),
+): boolean {
+  return timestamp === null || now - timestamp > DASHBOARD_OFFLINE_TTL_MS;
+}
+
 /**
- * Sanitizes restricted fields from dashboard data before caching.
- * Restricted fields are never cached per security policy.
+ * Sanitizes fields that the Kernel mobile PHI policy forbids from caching.
  */
 function sanitizeRestrictedFields(dashboard: MobileDashboard): JsonValue {
-  return removeRestrictedFields(toJsonValue(dashboard));
+  return removeFieldsDeniedByMobilePhiPolicy(toJsonValue(dashboard));
 }
 
 function toJsonValue(value: unknown): JsonValue {
@@ -306,19 +308,19 @@ function parseMobileDashboard(value: JsonValue): MobileDashboard {
   };
 }
 
-function removeRestrictedFields(value: JsonValue): JsonValue {
+function removeFieldsDeniedByMobilePhiPolicy(value: JsonValue): JsonValue {
   if (value === null || typeof value !== "object") {
     return value;
   }
 
   if (Array.isArray(value)) {
-    return value.map(removeRestrictedFields);
+    return value.map(removeFieldsDeniedByMobilePhiPolicy);
   }
 
   const result: { [key: string]: JsonValue } = {};
   for (const [key, childValue] of Object.entries(value)) {
-    if (!RESTRICTED_FIELDS.has(key)) {
-      result[key] = removeRestrictedFields(childValue);
+    if (!shouldRemoveFieldFromMobileCache(key)) {
+      result[key] = removeFieldsDeniedByMobilePhiPolicy(childValue);
     }
   }
 
@@ -335,7 +337,10 @@ function sessionMatches(
   return (
     envelope.tenantId === currentSession.tenantId &&
     envelope.principalId === currentSession.principalId &&
-    envelope.role === currentSession.role
+    envelope.role === currentSession.role &&
+    envelope.persona === currentSession.persona &&
+    envelope.tier === currentSession.tier &&
+    envelope.facilityId === currentSession.facilityId
   );
 }
 
@@ -346,4 +351,7 @@ export interface SessionIdentity {
   tenantId: string;
   principalId: string;
   role: string;
+  persona?: string;
+  tier?: string;
+  facilityId?: string;
 }

@@ -2,6 +2,14 @@ package com.ghatana.yappc.services.phase;
 
 import java.util.List;
 
+/**
+ * Run phase model provider.
+ *
+ * @doc.type class
+ * @doc.purpose Build Run phase models
+ * @doc.layer product
+ * @doc.pattern PhaseModelProvider
+ */
 public final class RunPhaseModelProvider {
 
     public RunPhaseModel build(PhasePanelInput input) {

@@ -72,7 +72,8 @@ public final class PhrHttpServerTestFactory {
             noopFchvRoutes(eventloop),
             noopMobileRoutes(eventloop),
             noopNotificationRoutes(eventloop),
-            noopPatientProfileRoutes(eventloop)
+            noopPatientProfileRoutes(eventloop),
+            noopHieRoutes(eventloop)
         );
     }
 
@@ -112,7 +113,8 @@ public final class PhrHttpServerTestFactory {
                 allRoutes.fchvRoutes,
                 allRoutes.mobileRoutes,
                 allRoutes.notificationRoutes,
-                allRoutes.patientProfileRoutes
+                allRoutes.patientProfileRoutes,
+                allRoutes.hieRoutes
             );
         }
         // Add more exclusions as needed
@@ -143,6 +145,7 @@ public final class PhrHttpServerTestFactory {
         public final PhrNotificationRoutes notificationRoutes;
         public final PhrPatientProfileRoutes patientProfileRoutes;
         public final PhrConditionRoutes conditionRoutes;
+        public final PhrHieRoutes hieRoutes;
 
         public AllPhrRoutes(
                 PhrFhirRoutes fhirRoutes,
@@ -164,7 +167,8 @@ public final class PhrHttpServerTestFactory {
                 PhrFchvRoutes fchvRoutes,
                 PhrMobileRoutes mobileRoutes,
                 PhrNotificationRoutes notificationRoutes,
-                PhrPatientProfileRoutes patientProfileRoutes) {
+                PhrPatientProfileRoutes patientProfileRoutes,
+                PhrHieRoutes hieRoutes) {
             this.fhirRoutes = fhirRoutes;
             this.dashboardRoutes = dashboardRoutes;
             this.patientRecordRoutes = patientRecordRoutes;
@@ -185,6 +189,7 @@ public final class PhrHttpServerTestFactory {
             this.mobileRoutes = mobileRoutes;
             this.notificationRoutes = notificationRoutes;
             this.patientProfileRoutes = patientProfileRoutes;
+            this.hieRoutes = hieRoutes;
         }
     }
 
@@ -195,6 +200,7 @@ public final class PhrHttpServerTestFactory {
     private static PhrDashboardRoutes noopDashboardRoutes(Eventloop eventloop) {
         return new PhrDashboardRoutes(
             eventloop,
+            null,
             null,
             null,
             null,
@@ -266,14 +272,45 @@ public final class PhrHttpServerTestFactory {
     }
 
     private static PhrPatientProfileRoutes noopPatientProfileRoutes(Eventloop eventloop) {
-        return new PhrPatientProfileRoutes(eventloop, null);
+        return new PhrPatientProfileRoutes(eventloop, null, null);
+    }
+
+    private static PhrHieRoutes noopHieRoutes(Eventloop eventloop) {
+        return new PhrHieRoutes(eventloop, new com.ghatana.phr.hie.HieIntegrationContract() {
+            @Override public String contractId() { return "noop-hie"; }
+            @Override public java.util.Set<Operation> supportedOperations() { return java.util.Set.of(); }
+            @Override public io.activej.promise.Promise<HieIntegrationResult> submit(HieIntegrationRequest request) {
+                return io.activej.promise.Promise.of(new HieIntegrationResult(
+                    "noop", request.operation(), contractId(), "REJECTED", false, "HIE_NOT_CONFIGURED", "HIE test route is not configured"));
+            }
+            @Override public io.activej.promise.Promise<HieIntegrationStatus> getStatus(String requestId, String correlationId) {
+                return io.activej.promise.Promise.of(new HieIntegrationStatus(
+                    requestId, null, contractId(), "UNKNOWN", "HIE_NOT_CONFIGURED", "HIE test route is not configured"));
+            }
+        }, allowAllPolicyEvaluator());
+    }
+
+    private static com.ghatana.phr.security.PhrPolicyEvaluator allowAllPolicyEvaluator() {
+        com.ghatana.phr.security.PhrPolicyEvaluator evaluator =
+            org.mockito.Mockito.mock(com.ghatana.phr.security.PhrPolicyEvaluator.class);
+        org.mockito.Mockito.lenient()
+            .when(evaluator.canAccessPhiResourceAsync(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.nullable(String.class)))
+            .thenReturn(io.activej.promise.Promise.of(
+                com.ghatana.phr.security.PhrPolicyEvaluator.PolicyDecision.allowed("TEST_ALLOWED", "allowed")));
+        return evaluator;
     }
 
     private static PhrConditionRoutes noopConditionRoutes(Eventloop eventloop) {
-        return new PhrConditionRoutes(eventloop, null, null);
+        return new PhrConditionRoutes(eventloop, null, (com.ghatana.phr.application.clinical.ClinicalService) null);
     }
 
     private static PhrFhirRoutes noopFhirRoutes(Eventloop eventloop) {
-        return new PhrFhirRoutes(eventloop, null);
+        return new PhrFhirRoutes(eventloop, null, null);
     }
 }

@@ -40,6 +40,7 @@ import com.ghatana.phr.api.routes.PhrEmergencyRoutes;
 import com.ghatana.phr.api.routes.PhrFchvRoutes;
 import com.ghatana.phr.api.routes.PhrFhirRoutes;
 import com.ghatana.phr.api.routes.PhrHealthRoutes;
+import com.ghatana.phr.api.routes.PhrHieRoutes;
 import com.ghatana.phr.api.routes.PhrMobileRoutes;
 import com.ghatana.phr.api.routes.PhrNotificationRoutes;
 import com.ghatana.phr.api.routes.PhrPatientProfileRoutes;
@@ -55,6 +56,7 @@ import com.ghatana.phr.hie.NepalHieIntegrationService;
 import com.ghatana.phr.application.record.RecordService;
 import com.ghatana.phr.application.record.RecordServiceImpl;
 import com.ghatana.phr.hie.NepalHieMessageBuilder;
+import com.ghatana.phr.plugin.HieIntegrationKernelPlugin;
 import com.ghatana.phr.hl7.Hl7LabResultIntegrationService;
 import com.ghatana.phr.kernel.evidence.FileBackedPhrEvidenceOutbox;
 import com.ghatana.phr.kernel.evidence.PhrEvidenceOutboxDispatcher;
@@ -400,7 +402,6 @@ public class PhrKernelModule implements KernelModule {
         KernelSecurityManager securityManager = resolveSecurityManager(context, userRepository);
 
         PatientRecordService patientRecords = new PatientRecordService(context);
-        RecordService recordService = new RecordServiceImpl();
         ConsentManagementService consent = new ConsentManagementService(context, consentCache);
         DocumentService documents = new DocumentService(context);
         AppointmentService appointments = new AppointmentService(context);
@@ -415,6 +416,8 @@ public class PhrKernelModule implements KernelModule {
             new NepalHieMessageBuilder(),
             NepalHieConfig.fromEnvironment()
         );
+        HieIntegrationKernelPlugin hieIntegrationPlugin = new HieIntegrationKernelPlugin(nepalHieIntegration);
+        hieIntegrationPlugin.initialize(context);
         Hl7LabResultIntegrationService hl7LabIntegration = new Hl7LabResultIntegrationService(labResults);
         ClinicalNoteService clinicalNotes = new ClinicalNoteService(context);
         ClinicalDecisionSupportService clinicalDecisionSupport = new ClinicalDecisionSupportService();
@@ -424,17 +427,32 @@ public class PhrKernelModule implements KernelModule {
         TelemedicineService telemedicine = new TelemedicineService(context);
         CaregiverService caregivers = new CaregiverService(context);
         ClinicalService clinicalService = new ClinicalServiceImpl();
+        RecordService recordService = new RecordServiceImpl(
+            patientRecords,
+            appointments,
+            medications,
+            labResults,
+            immunizations,
+            documents,
+            consent
+        );
         TreatmentRelationshipService treatmentRelationship = new TreatmentRelationshipService(context);
         FchvCommunityAssignmentService fchvAssignment = new FchvCommunityAssignmentService(context);
         // Create policy evaluator with required services (injected, not static)
-        PhrPolicyEvaluator policyEvaluator = new PhrPolicyEvaluator(consent, treatmentRelationship, fchvAssignment, auditTrailService);
+        PhrPolicyEvaluator policyEvaluator = new PhrPolicyEvaluator(
+            consent,
+            treatmentRelationship,
+            fchvAssignment,
+            auditTrailService,
+            caregivers
+        );
         context.registerService(PhrPolicyEvaluator.class, policyEvaluator);
         EmergencyAccessReviewWorkflow emergencyReview = EmergencyAccessReviewWorkflow.fromContext(context);
         EmergencyAccessLogService emergencyAccess = new EmergencyAccessLogService(context, emergencyReview);
 
         // Create route objects with eventloop
         Eventloop eventloop = context.getEventloop();
-        PhrFhirRoutes fhirRoutes = new PhrFhirRoutes(eventloop, fhirController);
+        PhrFhirRoutes fhirRoutes = new PhrFhirRoutes(eventloop, fhirController, policyEvaluator);
         PhrDashboardRoutes dashboardRoutes = new PhrDashboardRoutes(
             eventloop,
             userRepository,
@@ -443,7 +461,8 @@ public class PhrKernelModule implements KernelModule {
             new PatientRecordServiceExtensions(patientRecords, labResults),
             new DocumentServiceExtensions(documents),
             new ConsentManagementServiceExtensions(consent),
-            new EmergencyAccessLogServiceExtensions(emergencyAccess)
+            new EmergencyAccessLogServiceExtensions(emergencyAccess),
+            policyEvaluator
         );
         PhrPatientRecordRoutes patientRecordRoutes = new PhrPatientRecordRoutes(eventloop, patientRecords, recordService, policyEvaluator);
         PhrConsentRoutes consentRoutes = new PhrConsentRoutes(eventloop, consent, policyEvaluator);
@@ -458,7 +477,7 @@ public class PhrKernelModule implements KernelModule {
         PhrConditionRoutes conditionRoutes = new PhrConditionRoutes(
             eventloop,
             policyEvaluator,
-            new PatientRecordServiceExtensions(patientRecords)
+            clinicalService
         );
         PhrEmergencyRoutes emergencyRoutes = new PhrEmergencyRoutes(eventloop, emergencyAccess, treatmentRelationship, policyEvaluator);
         PhrAdministrativeRoutes administrativeRoutes = new PhrAdministrativeRoutes(
@@ -496,7 +515,8 @@ public class PhrKernelModule implements KernelModule {
         PhrCaregiverRoutes caregiverRoutes = new PhrCaregiverRoutes(eventloop, caregivers, patientRecords, policyEvaluator);
         PhrFchvRoutes fchvRoutes = new PhrFchvRoutes(eventloop, policyEvaluator);
         PhrNotificationRoutes notificationRoutes = new PhrNotificationRoutes(eventloop, notificationSender);
-        PhrPatientProfileRoutes patientProfileRoutes = new PhrPatientProfileRoutes(eventloop, patientRecords);
+        PhrPatientProfileRoutes patientProfileRoutes = new PhrPatientProfileRoutes(eventloop, patientRecords, policyEvaluator);
+        PhrHieRoutes hieRoutes = new PhrHieRoutes(eventloop, hieIntegrationPlugin, policyEvaluator);
 
         PhrHttpServer phrHttpServer = new PhrHttpServer(
             eventloop,
@@ -519,13 +539,15 @@ public class PhrKernelModule implements KernelModule {
             fchvRoutes,
             mobileRoutes,
             notificationRoutes,
-            patientProfileRoutes
+            patientProfileRoutes,
+            hieRoutes
         );
         context.registerService(PhrEvidenceOutboxDispatcher.class, evidenceDispatcher);
         context.registerService(PhrHttpServer.class, phrHttpServer);
         context.registerService(PhrFhirR4Server.class, fhirServer);
         context.registerService(FhirController.class, fhirController);
         context.registerService(NepalHieIntegrationService.class, nepalHieIntegration);
+        context.registerService(HieIntegrationKernelPlugin.class, hieIntegrationPlugin);
         context.registerService(Hl7LabResultIntegrationService.class, hl7LabIntegration);
 
         serviceCatalog = new PhrServiceCatalog(

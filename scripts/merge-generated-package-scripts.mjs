@@ -103,7 +103,7 @@ const GENERIC_SCRIPTS = new Set([
   'check:phr-legacy-cleanup',
   'check:flashit-lifecycle-readiness',
   'check:yappc-platform-provider-readiness',
-  'check:yappc-phr-roundtrip',
+  'check:yappc-product-contract-roundtrip',
   'check:data-cloud-platform-provider-readiness',
   'check:dmos-boundary-workflow-coverage',
   'check:inmemory-policy-store-usage',

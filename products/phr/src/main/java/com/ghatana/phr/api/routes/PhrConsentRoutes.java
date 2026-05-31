@@ -65,19 +65,7 @@ public final class PhrConsentRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
-        // If idempotency key is provided, check for existing grant
-        if (idempotencyKey != null) {
-            return consentService.getGrantByIdempotencyKey(idempotencyKey)
-                .then(existing -> {
-                    if (existing.isPresent()) {
-                        return PhrRouteSupport.jsonResponse(200, existing.get(), correlationId);
-                    }
-                    // Proceed with creation
-                    return createConsentGrant(request, context, idempotencyKey);
-                });
-        }
-
-        return createConsentGrant(request, context, null);
+        return createConsentGrant(request, context, idempotencyKey);
     }
 
     private Promise<HttpResponse> createConsentGrant(
@@ -95,7 +83,25 @@ public final class PhrConsentRoutes {
                 }
                 PhrPolicyEvaluator.PolicyDecision decision = policyEvaluator.canManageConsent(context, grant.getPatientId());
                 if (!decision.isAllowed()) {
-                    return PhrRouteSupport.errorResponse(403, decision.getReasonCode(), decision.getReasonMessage());
+                    return PhrRouteSupport.errorResponse(403, decision.getReasonCode(), decision.getReasonMessage(), correlationId);
+                }
+                if (idempotencyKey != null) {
+                    return consentService.getGrantByIdempotencyKey(idempotencyKey)
+                        .then(existing -> {
+                            if (existing.isEmpty()) {
+                                return consentService.createGrant(grant)
+                                    .then(created -> PhrRouteSupport.jsonResponse(201, created, correlationId));
+                            }
+                            if (!sameIdempotentGrant(existing.get(), grant)) {
+                                return PhrRouteSupport.errorResponse(
+                                    409,
+                                    "IDEMPOTENCY_KEY_CONFLICT",
+                                    "Idempotency key is already associated with a different consent grant",
+                                    correlationId
+                                );
+                            }
+                            return PhrRouteSupport.jsonResponse(200, existing.get(), correlationId);
+                        });
                 }
                 return consentService.createGrant(grant)
                     .then(created -> PhrRouteSupport.jsonResponse(201, created, correlationId));
@@ -114,7 +120,7 @@ public final class PhrConsentRoutes {
         }
         PhrPolicyEvaluator.PolicyDecision decision = policyEvaluator.canManageConsent(context, patientId);
         if (!decision.isAllowed()) {
-            return PhrRouteSupport.errorResponse(403, decision.getReasonCode(), decision.getReasonMessage());
+            return PhrRouteSupport.errorResponse(403, decision.getReasonCode(), decision.getReasonMessage(), correlationId);
         }
         String grantId = request.getPathParameter("grantId");
         return consentService.revokeGrant(grantId)
@@ -158,7 +164,7 @@ public final class PhrConsentRoutes {
                 response.put("reason", result.getReason());
                 response.put("grantId", result.getGrantId());
                 response.put("action", requestedAction);
-                return PhrRouteSupport.jsonResponse(200, response);
+                return PhrRouteSupport.jsonResponse(200, response, correlationId);
             });
     }
 
@@ -174,14 +180,14 @@ public final class PhrConsentRoutes {
         }
         PhrPolicyEvaluator.PolicyDecision decision = policyEvaluator.canManageConsent(context, patientId);
         if (!decision.isAllowed()) {
-            return PhrRouteSupport.errorResponse(403, decision.getReasonCode(), decision.getReasonMessage());
+            return PhrRouteSupport.errorResponse(403, decision.getReasonCode(), decision.getReasonMessage(), correlationId);
         }
         return consentService.getPatientGrants(patientId)
             .then(grants -> PhrRouteSupport.jsonResponse(200, Map.of(
                 "patientId", patientId,
                 "items", grants,
                 "count", grants.size()
-            )));
+            ), correlationId));
     }
 
     private static ConsentManagementService.ConsentGrant parseGrant(String json, String idempotencyKey) {
@@ -213,6 +219,26 @@ public final class PhrConsentRoutes {
             null, // grantedAt
             idempotencyKey
         );
+    }
+
+    private static boolean sameIdempotentGrant(
+            ConsentManagementService.ConsentGrant existing,
+            ConsentManagementService.ConsentGrant requested) {
+        return Objects.equals(existing.getPatientId(), requested.getPatientId())
+            && Objects.equals(existing.getRecipientId(), requested.getRecipientId())
+            && Objects.equals(existing.getStatus(), requested.getStatus())
+            && Objects.equals(existing.getExpiresAt(), requested.getExpiresAt())
+            && sameScope(existing.getScope(), requested.getScope());
+    }
+
+    private static boolean sameScope(
+            ConsentManagementService.ConsentScope existing,
+            ConsentManagementService.ConsentScope requested) {
+        return Objects.equals(existing.getResourceTypes(), requested.getResourceTypes())
+            && existing.isAllDocuments() == requested.isAllDocuments()
+            && Objects.equals(existing.getSpecificDocumentIds(), requested.getSpecificDocumentIds())
+            && Objects.equals(existing.getActions(), requested.getActions())
+            && Objects.equals(existing.getFieldLevelAccess(), requested.getFieldLevelAccess());
     }
 
 }

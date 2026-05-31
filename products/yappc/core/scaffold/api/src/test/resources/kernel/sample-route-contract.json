@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "1.0.0",
+  "product": "sample-product",
+  "version": "1.0.0",
+  "routes": [
+    {
+      "path": "/dashboard",
+      "label": "Dashboard",
+      "description": "Workspace dashboard",
+      "group": "workspace",
+      "minimumRole": "member",
+      "personas": ["operator"],
+      "tiers": ["core"],
+      "actions": ["view"],
+      "cards": ["summary"],
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/dashboard",
+      "policyId": "sample.dashboard.view",
+      "testId": "sample-dashboard-view-001",
+      "surface": ["web"],
+      "i18nKey": "sample.routes.dashboard.label",
+      "descriptionI18nKey": "sample.routes.dashboard.description",
+      "routeType": "web"
+    },
+    {
+      "path": "/records",
+      "label": "Records",
+      "description": "Workspace records",
+      "group": "workspace",
+      "minimumRole": "member",
+      "personas": ["operator"],
+      "tiers": ["core"],
+      "actions": ["view"],
+      "cards": ["table"],
+      "stability": "stable",
+      "apiEndpoint": "/api/v1/records",
+      "policyId": "sample.records.view",
+      "testId": "sample-records-view-001",
+      "surface": ["web"],
+      "i18nKey": "sample.routes.records.label",
+      "descriptionI18nKey": "sample.routes.records.description",
+      "routeType": "web"
+    }
+  ]
+}

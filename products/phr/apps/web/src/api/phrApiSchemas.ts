@@ -1,52 +1,5 @@
 import { z } from 'zod';
 
-export const dashboardSchema = z.object({
-  patient: z.object({
-    id: z.string(),
-    name: z.string(),
-    age: z.number(),
-    bloodType: z.string(),
-    location: z.string(),
-    emergencyContact: z.string(),
-  }),
-  records: z.array(z.object({
-    id: z.string(),
-    title: z.string(),
-    category: z.enum(['visit', 'lab', 'immunization', 'medication']),
-    updatedAt: z.string(),
-    resourceType: z.string(),
-    fhirJson: z.string(),
-  })),
-  consents: z.array(z.object({
-    id: z.string(),
-    recipient: z.string(),
-    purpose: z.string(),
-    status: z.enum(['active', 'expiring', 'revoked']),
-    expiresAt: z.string(),
-  })),
-  appointments: z.array(z.object({
-    id: z.string(),
-    provider: z.string(),
-    specialty: z.string(),
-    startsAt: z.string(),
-    location: z.string(),
-  })),
-  labs: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
-    status: z.enum(['normal', 'attention']),
-    value: z.string(),
-    collectedAt: z.string(),
-  })),
-  medications: z.array(z.object({
-    id: z.string(),
-    medication: z.string(),
-    dosage: z.string(),
-    schedule: z.string(),
-    adherence: z.number(),
-  })),
-});
-
 export const BackendDashboardSchema = z.object({
   tenantId: z.string(),
   principalId: z.string(),
@@ -58,7 +11,12 @@ export const BackendDashboardSchema = z.object({
     providerId: z.string().nullable().optional(),
     active: z.boolean(),
   }),
-  nextAppointment: z.unknown().nullable(),
+  nextAppointment: z.object({
+    appointmentId: z.string(),
+    scheduledTime: z.string(),
+    provider: z.string(),
+    type: z.string(),
+  }).nullable(),
   medications: z.object({
     activeCount: z.number(),
     adherenceAlert: z.boolean(),
@@ -126,11 +84,30 @@ export const ObservationSummarySchema = z.object({
 export const ImmunizationSummarySchema = z.object({
   id: z.string(),
   vaccine: z.string(),
+  vaccineName: z.string().optional(),
   date: z.string(),
   occurrenceDate: z.string(),
   status: z.enum(['completed', 'not-done', 'entered-in-error', 'due']),
+  dose: z.string().optional(),
+  doseNumber: z.number().optional(),
   lotNumber: z.string().optional(),
   cvxCode: z.string().optional(),
+  route: z.string().optional(),
+  seriesName: z.string().optional(),
+  source: z.object({
+    system: z.string(),
+    administeredBy: z.string().optional(),
+  }).passthrough().optional(),
+  nextDue: z.object({
+    id: z.string(),
+    vaccine: z.string(),
+    vaccineName: z.string().optional(),
+    cvxCode: z.string().optional(),
+    seriesName: z.string().optional(),
+    doseNumber: z.number().optional(),
+    dueDate: z.string(),
+    status: z.string(),
+  }).passthrough().optional(),
 }).passthrough();
 
 export const DocumentSummarySchema = z.object({
@@ -165,24 +142,54 @@ export const MedicationSummarySchema = z.object({
   id: z.string(),
   medication: z.string(),
   dosage: z.string(),
-  schedule: z.string(),
-  adherence: z.number(),
+  schedule: z.string().optional(),
+  adherence: z.number().optional(),
+  route: z.string().nullable().optional(),
+  routeSource: z.string().optional(),
+  frequency: z.string().optional(),
+  status: z.enum(['active', 'history', 'stopped']).optional(),
+  prescriberId: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  adherenceSource: z.string().optional(),
+  adherenceStatus: z.object({
+    measured: z.boolean(),
+    source: z.string(),
+  }).passthrough().optional(),
+  prescribedAt: z.string().optional(),
+  expiresAt: z.string().optional(),
+  refillsRemaining: z.number().optional(),
 }).passthrough();
 
 export const MedicationDetailSchema = MedicationSummarySchema.extend({
-  interactions: z.array(z.string()),
-  warnings: z.array(z.string()),
+  interactions: z.array(z.string()).optional(),
+  warnings: z.array(z.string()).optional(),
   history: z.array(z.object({
     date: z.string(),
     action: z.string(),
-  })),
+  })).optional(),
 }).passthrough();
 
 export const BackendMedicationPrescriptionSchema = z.object({
   id: z.string(),
-  medicationName: z.string(),
+  medicationName: z.string().optional(),
+  medication: z.string().optional(),
   dosage: z.string(),
   indication: z.string().optional(),
+  route: z.string().nullable().optional(),
+  routeSource: z.string().optional(),
+  frequency: z.string().optional(),
+  schedule: z.string().optional(),
+  prescriberId: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  adherenceSource: z.string().optional(),
+  adherenceStatus: z.object({
+    measured: z.boolean(),
+    source: z.string(),
+  }).passthrough().optional(),
+  interactions: z.array(z.string()).optional(),
+  warnings: z.array(z.string()).optional(),
   prescribedAt: z.string().optional(),
   expiresAt: z.string().optional(),
   refillsRemaining: z.number().optional(),
@@ -195,6 +202,15 @@ export const AppointmentSummarySchema = z.object({
   specialty: z.string(),
   startsAt: z.string(),
   location: z.string(),
+  status: z.enum(['requested', 'confirmed', 'completed', 'cancelled']).optional(),
+  reminderSent: z.boolean().optional(),
+  appointmentId: z.string().optional(),
+  patientId: z.string().optional(),
+  providerId: z.string().optional(),
+  scheduledTime: z.string().optional(),
+  durationMinutes: z.number().optional(),
+  appointmentType: z.string().optional(),
+  slotId: z.string().optional(),
 }).passthrough();
 
 export const NotificationSummarySchema = z.object({
@@ -264,16 +280,6 @@ export const TimelinePageSchema = z.object({
   generatedAt: z.string(),
 });
 
-export const PatientRecordAccessSchema = z.object({
-  patientId: z.string(),
-  recordId: z.string(),
-  resourceType: z.string(),
-  status: z.string(),
-  accessedAt: z.string(),
-  accessedBy: z.string(),
-  accessReason: z.string(),
-});
-
 export const PatientRecordSummarySchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -283,6 +289,21 @@ export const PatientRecordSummarySchema = z.object({
   redacted: z.boolean().optional(),
   provenance: z.record(z.string(), z.unknown()).optional(),
 }).passthrough();
+
+export const PatientRecordAccessAuditSchema = z.object({
+  accessedAt: z.string(),
+  accessedBy: z.string(),
+  accessRole: z.string().optional(),
+  correlationId: z.string().optional(),
+  policyReason: z.string().optional(),
+  requiresAudit: z.boolean().optional(),
+}).passthrough();
+
+export const PatientRecordDetailSchema = z.object({
+  record: PatientRecordSummarySchema,
+  fhirJson: z.string(),
+  accessAudit: PatientRecordAccessAuditSchema,
+});
 
 export const PatientRecordListSchema = z.object({
   patientId: z.string(),
@@ -331,7 +352,43 @@ export const ConsentGrantSchema = z.object({
   expiresAt: z.string(),
 });
 
-export const ExportPatientBundleSchema = z.string();
+const BackendConsentGrantItemSchema = z.object({
+  id: z.string().nullable().optional(),
+  recipientId: z.string(),
+  scope: z.object({
+    resourceTypes: z.array(z.string()).optional(),
+  }).passthrough().optional(),
+  status: z.string(),
+  expiresAt: z.string(),
+}).passthrough().transform((grant) => {
+  const normalizedStatus = grant.status.toLowerCase();
+  return {
+    id: grant.id ?? `${grant.recipientId}:${grant.expiresAt}`,
+    recipient: grant.recipientId,
+    purpose: grant.scope?.resourceTypes?.join(', ') || 'consent',
+    status: normalizedStatus === 'revoked'
+      ? 'revoked' as const
+      : normalizedStatus === 'expiring'
+        ? 'expiring' as const
+        : 'active' as const,
+    expiresAt: grant.expiresAt,
+  };
+});
+
+export const ConsentGrantListResponseSchema = z.object({
+  items: z.array(z.union([ConsentGrantSchema, BackendConsentGrantItemSchema])),
+  count: z.number(),
+  patientId: z.string(),
+});
+
+export const ExportPatientBundleSchema = z.object({
+  requestId: z.string(),
+  operation: z.literal('EXPORT'),
+  contractId: z.string(),
+  status: z.string(),
+  reasonCode: z.string(),
+  correlationId: z.string(),
+}).passthrough();
 
 export const AppointmentCreateResultSchema = z.object({
   id: z.string(),
@@ -394,8 +451,12 @@ export const AppointmentBookingResultSchema = z.object({
 });
 
 export const AppointmentCancelResultSchema = z.object({
-  success: z.boolean(),
-});
+  success: z.boolean().optional(),
+  appointmentId: z.string().optional(),
+  status: z.string().optional(),
+}).transform((value) => ({
+  success: value.success ?? (value.status === 'CANCELLED' || value.status === 'cancelled'),
+}));
 
 export const DocumentUploadInitResultSchema = z.object({
   id: z.string(),
@@ -454,6 +515,10 @@ export const PhrSessionSchema = z.object({
   role: z.enum(['patient', 'caregiver', 'clinician', 'admin', 'fchv']),
   name: z.string(),
   expiresAt: z.string(),
+  persona: z.string().optional(),
+  tier: z.string().optional(),
+  facilityId: z.string().optional(),
+  correlationId: z.string().optional(),
 });
 
 // --- List Response Schemas ---

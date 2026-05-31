@@ -1,7 +1,6 @@
 import React from 'react';
-import { SafeError } from '../components/SafeError';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { t } from '../i18n/phrI18n';
 
 export function NotFoundPage(): React.ReactElement {
@@ -13,13 +12,12 @@ export function NotFoundPage(): React.ReactElement {
         <CardHeader title={t('notFound.title')} subheader="" />
         <CardContent>
           <p>{t('notFound.message')}</p>
-          <button
+          <Button
             type="button"
-            className="btn btn--primary"
             onClick={() => void navigate('/dashboard')}
           >
             {t('notFound.back')}
-          </button>
+          </Button>
         </CardContent>
       </Card>
     </div>

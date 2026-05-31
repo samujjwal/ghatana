@@ -16,6 +16,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@ghatana/kernel-product-contracts": "workspace:*",
     "@react-native-async-storage/async-storage": "^3.0.2",
     "@react-native-community/netinfo": "^11.4.1",
     "expo": "^55.0.14",

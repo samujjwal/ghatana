@@ -36,7 +36,6 @@ public final class RequestContextResolver {
     private static final Logger log = LoggerFactory.getLogger(RequestContextResolver.class);
 
     private static final Pattern TENANT_ID_PATTERN = Pattern.compile("^[A-Za-z0-9][A-Za-z0-9-]{1,62}[A-Za-z0-9]$");
-    private static final Pattern PERMISSION_PATTERN = Pattern.compile("^[a-z][a-z0-9_-]*(?::[a-z][a-z0-9_-]*)*$");
     private static final Set<String> PRODUCTION_PROFILES = Set.of("production", "staging", "sovereign");
     private static final Set<String> SAFE_FALLBACK_PROFILES = Set.of("local", "test", "development", "preview");
     
@@ -62,6 +61,7 @@ public final class RequestContextResolver {
     private final boolean strictTenantResolution;
     private final boolean rejectHeaderTenant;
     private final boolean rejectQueryTenant;
+    private final boolean rejectHeaderPermissions;
 
     /**
      * Creates a resolver for the specified deployment profile.
@@ -74,6 +74,7 @@ public final class RequestContextResolver {
         this.strictTenantResolution = strictTenantResolution;
         this.rejectHeaderTenant = PRODUCTION_PROFILES.contains(this.deploymentProfile);
         this.rejectQueryTenant = PRODUCTION_PROFILES.contains(this.deploymentProfile);
+        this.rejectHeaderPermissions = PRODUCTION_PROFILES.contains(this.deploymentProfile);
     }
 
     /**
@@ -104,6 +105,17 @@ public final class RequestContextResolver {
                     request.getPath(), correlationId);
                 return ResolutionResult.error(403, "X-Tenant-Id header is not allowed in production. " +
                     "Tenant must be provided via authenticated JWT or API key.");
+            }
+        }
+
+        // Check for spoofed permissions in production
+        if (rejectHeaderPermissions) {
+            String headerPermissions = request.getHeader(HttpHeaders.of("X-Permissions"));
+            if (headerPermissions != null && !headerPermissions.isBlank()) {
+                log.warn("[SECURITY] Rejected request with X-Permissions header in production: path={}, correlationId={}",
+                    request.getPath(), correlationId);
+                return ResolutionResult.error(403, "X-Permissions header is not allowed in production. " +
+                    "Permissions must be derived from authenticated identity provider.");
             }
         }
 
@@ -159,14 +171,9 @@ public final class RequestContextResolver {
             ? Set.copyOf(principal.getRoles())
             : Set.of();
 
-        // Extract permissions from headers
-        Set<String> explicitPermissions = extractPermissions(request);
-        
-        // Merge role-based permissions with explicit permissions
-        Set<String> rolePermissions = expandRolePermissions(roles);
-        Set<String> permissions = new java.util.HashSet<>(explicitPermissions);
-        permissions.addAll(rolePermissions);
-        permissions = Set.copyOf(permissions);
+        // Derive permissions from identity provider only (canonical permission derivation)
+        // X-Permissions header is rejected in production; permissions must come from authenticated identity
+        Set<String> permissions = derivePermissionsFromPrincipal(principal, roles);
 
         // Check for support access delegation
         boolean supportAccess = false;
@@ -285,44 +292,20 @@ public final class RequestContextResolver {
         return candidate;
     }
 
-    private Set<String> extractPermissions(HttpRequest request) {
-        String raw = request.getHeader(HttpHeaders.of("X-Permissions"));
-        if (raw == null || raw.isBlank()) {
-            return Set.of();
-        }
-        String[] parts = raw.split(",");
-        Set<String> permissions = new java.util.HashSet<>();
-        for (String part : parts) {
-            String trimmed = part.trim();
-            if (!trimmed.isEmpty()) {
-                // Validate permission format
-                if (isValidPermission(trimmed)) {
-                    permissions.add(trimmed);
-                } else {
-                    log.warn("[SECURITY] Invalid permission format rejected: permission={}, correlationId={}",
-                        trimmed, resolveCorrelationId(request));
-                }
-            }
-        }
-        return Set.copyOf(permissions);
-    }
-
     /**
-     * Validates permission format: resource:action (e.g., datacloud:read).
+     * Derives permissions from Principal and roles (canonical permission derivation).
+     * Permissions are resolved from authenticated identity provider only.
+     * X-Permissions header is rejected in production.
+     *
+     * @param principal the authenticated principal (may be null in development)
+     * @param roles the set of roles from the principal
+     * @return set of canonical permissions derived from identity
      */
-    private boolean isValidPermission(String permission) {
-        if (permission == null || permission.isBlank()) {
-            return false;
-        }
-        return PERMISSION_PATTERN.matcher(permission).matches();
-    }
-
-    /**
-     * Expands role-based permissions into explicit permission set.
-     * Maps standard roles to their corresponding permission sets.
-     */
-    private static Set<String> expandRolePermissions(Set<String> roles) {
+    private static Set<String> derivePermissionsFromPrincipal(Principal principal, Set<String> roles) {
         Set<String> expanded = new java.util.HashSet<>();
+
+        // Permissions are derived from roles using canonical mapping (no direct permissions on Principal)
+        // Expand role-based permissions (canonical mapping)
         for (String role : roles) {
             switch (role.toUpperCase()) {
                 case "ADMIN", "PLATFORM_ADMIN":
@@ -344,31 +327,27 @@ public final class RequestContextResolver {
 
     /**
      * Checks if the given context has the specified permission.
-     * Considers both explicit permissions and role-based permissions.
+     * Permissions are derived from authenticated identity only (canonical derivation).
+     * X-Permissions header trust has been removed; permissions must come from identity provider.
      */
     public static boolean hasPermission(RequestContext context, String requiredPermission) {
         if (context == null || requiredPermission == null) {
             return false;
         }
-        
-        // Check explicit permissions
-        if (context.permissions().contains(requiredPermission)) {
-            return true;
-        }
-        
-        // Check role-based permissions
-        Set<String> rolePermissions = expandRolePermissions(context.roles());
-        return rolePermissions.contains(requiredPermission);
+
+        // Check permissions derived from identity provider
+        return context.permissions().contains(requiredPermission);
     }
 
     /**
      * Checks if the given context has any of the specified permissions.
+     * Permissions are derived from authenticated identity only (canonical derivation).
      */
     public static boolean hasAnyPermission(RequestContext context, Set<String> requiredPermissions) {
         if (context == null || requiredPermissions == null || requiredPermissions.isEmpty()) {
             return false;
         }
-        
+
         for (String permission : requiredPermissions) {
             if (hasPermission(context, permission)) {
                 return true;
@@ -379,12 +358,13 @@ public final class RequestContextResolver {
 
     /**
      * Checks if the given context has all of the specified permissions.
+     * Permissions are derived from authenticated identity only (canonical derivation).
      */
     public static boolean hasAllPermissions(RequestContext context, Set<String> requiredPermissions) {
         if (context == null || requiredPermissions == null || requiredPermissions.isEmpty()) {
             return false;
         }
-        
+
         for (String permission : requiredPermissions) {
             if (!hasPermission(context, permission)) {
                 return false;

@@ -1,21 +1,23 @@
 import React, { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { t } from "../i18n/phrMobileI18n";
-import type { MobileRecord, MobileSession } from "../types";
+import type {
+  MobileOfflineCacheStatus,
+  MobileRecord,
+  MobileSession,
+} from "../types";
 import { RecordDetailScreen } from "./RecordDetailScreen";
-
-function newCorrelationId(): string {
-  return crypto.randomUUID();
-}
 
 interface RecordsScreenProps {
   records?: MobileRecord[];
   session?: MobileSession | null;
+  offlineCacheStatus?: MobileOfflineCacheStatus;
 }
 
 export function RecordsScreen({
   records = [],
   session = null,
+  offlineCacheStatus,
 }: RecordsScreenProps): React.ReactElement {
   const [selectedRecord, setSelectedRecord] = useState<MobileRecord | null>(
     null,
@@ -32,7 +34,33 @@ export function RecordsScreen({
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      accessibilityLabel={t("records.title")}
+    >
+      {offlineCacheStatus ? (
+        <View style={styles.cacheStatus}>
+          <Text style={styles.cacheText}>
+            {t("dashboard.lastSync", {
+              time: offlineCacheStatus.lastSyncAt
+                ? new Date(offlineCacheStatus.lastSyncAt).toLocaleString()
+                : t("settings.never"),
+            })}
+          </Text>
+          {offlineCacheStatus.isOffline ? (
+            <Text
+              style={[
+                styles.cacheText,
+                offlineCacheStatus.isStale ? styles.stale : styles.fresh,
+              ]}
+            >
+              {offlineCacheStatus.isStale
+                ? t("offline.cacheStaleWarning")
+                : t("offline.cacheAvailable")}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
       {records.map((record) => (
         <Pressable
           key={record.id}
@@ -62,4 +90,15 @@ const styles = StyleSheet.create({
   title: { fontWeight: "700", fontSize: 16, color: "#102243" },
   summary: { color: "#4b5c77", marginTop: 6 },
   preview: { color: "#173b7a", marginTop: 10, fontFamily: "Courier" },
+  cacheStatus: {
+    backgroundColor: "#fff",
+    borderColor: "#d5dded",
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    gap: 4,
+  },
+  cacheText: { color: "#4b5c77", fontSize: 13 },
+  fresh: { color: "#166534", fontWeight: "700" },
+  stale: { color: "#b91c1c", fontWeight: "700" },
 });

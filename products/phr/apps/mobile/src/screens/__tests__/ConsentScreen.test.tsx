@@ -3,7 +3,8 @@
  * Exercises the real production component — no object-literal assertions.
  */
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { Alert } from 'react-native';
+import { act, render, waitFor } from '@testing-library/react-native';
 import { ConsentScreen } from '../ConsentScreen';
 import type { MobileConsent, MobileSession } from '../../types';
 
@@ -17,6 +18,7 @@ jest.mock('../../i18n/phrMobileI18n', () => ({
 }));
 
 import { revokeConsentGrant } from '../../services/phrMobileApi';
+const mockRevokeConsentGrant = revokeConsentGrant as jest.MockedFunction<typeof revokeConsentGrant>;
 
 const session: MobileSession = {
   principalId: 'patient-1',
@@ -35,9 +37,21 @@ function renderedText(rendered: { toJSON: () => unknown }): string {
   return JSON.stringify(rendered.toJSON());
 }
 
+async function pressNode(node: { props: Record<string, unknown> }): Promise<void> {
+  const onPress = node.props.onPress;
+  if (typeof onPress !== 'function') {
+    throw new Error('Expected rendered node to expose an onPress handler.');
+  }
+  const result: unknown = onPress();
+  if (result && typeof result === 'object' && 'then' in result) {
+    await result;
+  }
+}
+
 describe('ConsentScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockRevokeConsentGrant.mockResolvedValue();
   });
 
   it('renders empty state when no consents', () => {
@@ -76,5 +90,31 @@ describe('ConsentScreen', () => {
     );
     const revokeButtons = getAllByLabelText('consents.revoke');
     expect(revokeButtons.length).toBe(1);
+  });
+
+  it('delegates consent revocation cleanup to the API service once', async () => {
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(
+      (_title, _message, buttons) => {
+        buttons?.find((button) => button.style === 'destructive')?.onPress?.();
+      },
+    );
+    const onConsentRevoked = jest.fn();
+    const rendered = render(
+      <ConsentScreen consents={consents} session={session} onConsentRevoked={onConsentRevoked} />,
+    );
+
+    const revokeButton = rendered.UNSAFE_getAllByProps({ accessibilityLabel: 'consents.revoke' })[0]!;
+    await act(async () => {
+      await pressNode(revokeButton);
+    });
+
+    await waitFor(() => {
+      expect(mockRevokeConsentGrant).toHaveBeenCalledWith('con-1', 'patient-1', session);
+    });
+    await waitFor(() => {
+      expect(onConsentRevoked).toHaveBeenCalledWith('con-1');
+    });
+    expect(mockRevokeConsentGrant).toHaveBeenCalledTimes(1);
+    alertSpy.mockRestore();
   });
 });

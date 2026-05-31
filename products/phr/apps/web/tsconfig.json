@@ -24,7 +24,7 @@
         "../../../../platform/typescript/kernel-product-contracts/dist/index.d.ts"
       ],
       "@ghatana/kernel-product-contracts/route": [
-        "../../../../platform/typescript/kernel-product-contracts/src/route/ProductRouteContract.ts"
+        "../../../../platform/typescript/kernel-product-contracts/src/route/index.ts"
       ],
       "@ghatana/product-shell": [
         "../../../../platform/typescript/product-shell/src/index.ts"

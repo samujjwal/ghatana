@@ -2,6 +2,7 @@ import React from 'react';
 import { SafeError } from '../components/SafeError';
 import { Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { fetchReleaseReadiness } from '../api/releaseApi';
+import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrAccess } from '../auth/PhrAccessContext';
 import { t } from '../i18n/phrI18n';
 import type { PhrReleaseReadiness, PhrReleaseReadinessSection } from '../types';
@@ -23,7 +24,7 @@ export function ReleaseCockpitPage(): React.ReactElement {
   const [environment, setEnvironment] = React.useState<ReleaseEnvironment>('staging');
   const [readiness, setReadiness] = React.useState<PhrReleaseReadiness | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
-  const [error, setError] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<SafeApiErrorState | null>(null);
 
   React.useEffect(() => {
     let active = true;
@@ -38,7 +39,7 @@ export function ReleaseCockpitPage(): React.ReactElement {
       .catch((err: unknown) => {
         if (active) {
           setReadiness(null);
-          setError(err instanceof Error ? err.message : t('release.error'));
+          setError(toSafeApiErrorState(err, t('release.error')));
         }
       })
       .finally(() => {
@@ -75,7 +76,7 @@ export function ReleaseCockpitPage(): React.ReactElement {
       </section>
 
       {loading ? <div className="loading">{t('release.loading')}</div> : null}
-      {error ? <SafeError title={t('release.errorPrefix')} message={error} correlationId={tenantId + '-' + principalId} /> : null}
+      {error ? <SafeError title={t('release.errorPrefix')} message={error.message} correlationId={error.correlationId} /> : null}
       {!loading && !error && readiness ? <ReadinessSummary readiness={readiness} /> : null}
     </div>
   );

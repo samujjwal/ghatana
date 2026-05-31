@@ -130,12 +130,16 @@ export async function phrFetch<T>(
         }
 
         const backendError = typeof errorBody === 'object' && errorBody !== null ? errorBody as Record<string, unknown> : undefined;
+        const responseCorrelationId =
+          response.headers.get('X-Correlation-ID')
+          ?? response.headers.get('X-Ghatana-Correlation-Id')
+          ?? undefined;
         
         throw new PhrApiError(
           `PHR request failed: ${method} ${path} returned ${response.status}`,
           response.status,
           undefined,
-          headers['X-Correlation-ID'],
+          responseCorrelationId,
           typeof backendError?.error === 'string' ? backendError.error : undefined,
           typeof backendError?.code === 'string' ? backendError.code : undefined,
           backendError?.details,

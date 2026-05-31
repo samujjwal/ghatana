@@ -7,6 +7,7 @@ import {
   createProductRoleSelectorConfig,
   useProductEntitlements,
   useProductShellConfig,
+  type ProductRouteCapability,
   type ProductShellConfig,
 } from '@ghatana/product-shell';
 import { Outlet, useNavigate } from 'react-router-dom';
@@ -15,13 +16,15 @@ import { API_BASE_URL } from '../api/requestApi';
 import { t } from '../i18n/phrI18n';
 import { PHR_ROLE_ORDER, phrRouteContracts, getRouteLabelI18nKey, getRouteDescriptionI18nKey, type PhrRouteContract } from '../phrRouteContracts';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
+import { SafeError } from '../components/SafeError';
+import { LoadingState } from '../components/PageStates';
 
 const roleLabels = {
   patient: t('role.patient.label'),
   caregiver: t('role.caregiver.label'),
   clinician: t('role.clinician.label'),
   admin: t('role.admin.label'),
-  fchv: 'FCHV',
+  fchv: t('role.fchv.label'),
 } satisfies NonNullable<ProductShellConfig['roleLabels']>;
 
 const roleDescriptions = {
@@ -29,7 +32,7 @@ const roleDescriptions = {
   caregiver: t('role.caregiver.description'),
   clinician: t('role.clinician.description'),
   admin: t('role.admin.description'),
-  fchv: 'Community Health Volunteer',
+  fchv: t('role.fchv.description'),
 } satisfies NonNullable<ProductShellConfig['roleDescriptions']>;
 
 const availableRoles = ['patient', 'caregiver', 'clinician', 'admin', 'fchv'] as const;
@@ -52,6 +55,22 @@ function labelForRole(role: string): string {
   return Object.prototype.hasOwnProperty.call(roleLabels, role)
     ? roleLabels[role as keyof typeof roleLabels]
     : t('shell.signedIn');
+}
+
+function isPhrRouteContract(route: ProductRouteCapability): route is PhrRouteContract {
+  const candidate = route as Partial<PhrRouteContract>;
+  return typeof candidate.i18nKey === 'string' && typeof candidate.descriptionI18nKey === 'string';
+}
+
+function localizeRoute(route: ProductRouteCapability): ProductRouteCapability {
+  if (!isPhrRouteContract(route)) {
+    return route;
+  }
+  return {
+    ...route,
+    label: t(getRouteLabelI18nKey(route)),
+    description: t(getRouteDescriptionI18nKey(route)),
+  };
 }
 
 export function PhrProductShell(): React.ReactElement {
@@ -78,6 +97,7 @@ export function PhrProductShell(): React.ReactElement {
         'X-Tier': tier,
         'X-Correlation-ID': correlationId,
       },
+      credentials: 'include',
     }),
     [role, tenantId, principalId, tier, correlationId],
   );
@@ -87,28 +107,23 @@ export function PhrProductShell(): React.ReactElement {
     requestInit: entitlementRequestInit,
   });
 
-  // Transform routes to use i18n keys instead of raw English labels
   const localizedRoutes = React.useMemo(() => {
-    return entitlements.routes.map((route) => ({
-      ...route,
-      label: t(getRouteLabelI18nKey(route as PhrRouteContract) as any),
-      description: t(getRouteDescriptionI18nKey(route as PhrRouteContract) as any),
-    }));
+    return entitlements.routes.map(localizeRoute);
   }, [entitlements.routes]);
-  const canReviewEmergencyAccess = entitlements.entitlement?.actions?.some(
-    (action) => action.id === 'break-glass-review',
-  ) ?? false;
+  const emergencyReviewAction = entitlements.entitlement?.actions?.find((action) => action.id === 'break-glass-review');
+  const canReviewEmergencyAccess = Boolean(emergencyReviewAction);
+  const emergencyReviewRoute = emergencyReviewAction?.routePath ?? '/emergency/reviews';
   const headerActions = canReviewEmergencyAccess
     ? (
         <div className="flex items-center gap-3">
-          <Button onClick={() => navigate('/emergency')}>{t('shell.emergencyReview')}</Button>
+          <Button onClick={() => navigate(emergencyReviewRoute)}>{t('shell.emergencyReview')}</Button>
           <ProductHeaderUserMenu fallbackLabel={labelForRole(role)} />
         </div>
       )
     : <ProductHeaderUserMenu fallbackLabel={labelForRole(role)} />;
 
   const config = useProductShellConfig({
-    productName: 'PHR Nepal',
+    productName: t('app.productName'),
     currentRole: role,
     ...roleSelectorConfig,
     onRoleChange: (nextRole: string) => {
@@ -123,9 +138,23 @@ export function PhrProductShell(): React.ReactElement {
     return <ForbiddenPage />;
   }
 
+  const shellContent = entitlements.status === 'loading' || entitlements.status === 'idle'
+    ? <LoadingState message={t('shell.entitlements.loading')} />
+    : entitlements.status === 'denied'
+      ? <ForbiddenPage />
+      : entitlements.status === 'error'
+        ? <SafeError title={t('shell.entitlements.errorTitle')} message={t('shell.entitlements.error')} onDismiss={entitlements.refresh} />
+        : <Outlet />;
+
   return (
-    <ProductShell config={config} contentClassName="pt-20 p-6">
-      <Outlet />
+    <ProductShell
+      config={config}
+      contentClassName="pt-20 px-4 py-8 sm:px-6 lg:px-8"
+      mainContentId="main-content"
+      mainContentTabIndex={-1}
+      mainContentRole="main"
+    >
+      {shellContent}
     </ProductShell>
   );
 }

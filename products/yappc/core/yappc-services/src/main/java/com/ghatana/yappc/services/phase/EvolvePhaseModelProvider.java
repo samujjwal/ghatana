@@ -1,5 +1,13 @@
 package com.ghatana.yappc.services.phase;
 
+/**
+ * Evolve phase model provider.
+ *
+ * @doc.type class
+ * @doc.purpose Build Evolve phase models
+ * @doc.layer product
+ * @doc.pattern PhaseModelProvider
+ */
 public final class EvolvePhaseModelProvider {
 
     public EvolvePhaseModel build(PhasePanelInput input) {

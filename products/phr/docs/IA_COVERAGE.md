@@ -1,6 +1,6 @@
 # PHR IA Coverage Report
 
-**Generated:** 2026-05-28
+**Generated:** 2026-05-31
 **Baseline Version:** 2.0.0
 **Total Use Cases:** 27
 
@@ -77,7 +77,7 @@
 |----------|--------|-------|--------|-------|
 | uc-admin-audit | AuditPage | /audit | implemented |  |
 | uc-admin-release-readiness | ReleaseCockpitPage | /release-readiness | implemented | Currently parses evidence files directly. Should m... |
-| uc-admin-emergency-review | EmergencyReviewPage | /emergency/reviews | implemented |  |
+| uc-admin-emergency-review | EmergencyReviewsPage | /emergency/reviews | implemented |  |
 
 
 ## Use Cases by Status
@@ -103,7 +103,7 @@
 - **uc-patient-emergency-access** (patient): EmergencyAccessPage / EmergencyAccessScreen - /emergency
 - **uc-admin-audit** (admin): AuditPage - /audit
 - **uc-admin-release-readiness** (admin): ReleaseCockpitPage - /release-readiness
-- **uc-admin-emergency-review** (admin): EmergencyReviewPage - /emergency/reviews
+- **uc-admin-emergency-review** (admin): EmergencyReviewsPage - /emergency/reviews
 - **uc-mobile-dashboard** (patient): MobileDashboard - /mobile/dashboard
 - **uc-error-pages** (patient): ForbiddenPage / NotFoundPage - /forbidden, /not-found
 
@@ -230,13 +230,13 @@
 
 ### uc-patient-documents
 
-- GET /documents?patientId=:id
-- POST /documents/upload
+- GET /api/v1/records/documents
+- POST /api/v1/records/documents
 
 
 ### uc-patient-document-upload
 
-- POST /documents/upload
+- POST /api/v1/records/documents
 
 
 ### uc-patient-ocr-review
@@ -253,9 +253,9 @@
 
 ### uc-patient-settings
 
-- POST /auth/logout
-- PUT /patients/:patientId
-- POST /fhir/Patient/current/$export
+- POST /api/v1/auth/logout
+- PUT /api/v1/profile/settings
+- POST /api/v1/hie/export
 
 
 ### uc-patient-emergency-access

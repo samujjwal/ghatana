@@ -210,6 +210,14 @@ public class PatientRecordService extends PhrServiceBase {
             return new Patient(id, nationalId, demographics, medicalHistory, createdAt, newUpdatedAt, deleted);
         }
 
+        public Patient withDemographics(Demographics newDemographics) {
+            return new Patient(id, nationalId, newDemographics, medicalHistory, createdAt, updatedAt, deleted);
+        }
+
+        public Patient withMedicalHistory(MedicalHistory newMedicalHistory) {
+            return new Patient(id, nationalId, demographics, newMedicalHistory, createdAt, updatedAt, deleted);
+        }
+
         public Patient asDeleted() {
             return new Patient(id, nationalId, demographics, medicalHistory, createdAt, Instant.now(), true);
         }
@@ -244,6 +252,8 @@ public class PatientRecordService extends PhrServiceBase {
         private final String gender; // male, female, other, unknown
         private final Address address;
         private final Contact contact;
+        private final String preferredLanguage;
+        private final String facilityId;
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public Demographics(
@@ -252,13 +262,27 @@ public class PatientRecordService extends PhrServiceBase {
                            @JsonProperty("dateOfBirth") String dateOfBirth,
                            @JsonProperty("gender") String gender,
                            @JsonProperty("address") Address address,
-                           @JsonProperty("contact") Contact contact) {
+                           @JsonProperty("contact") Contact contact,
+                           @JsonProperty("preferredLanguage") String preferredLanguage,
+                           @JsonProperty("facilityId") String facilityId) {
             this.givenName = givenName;
             this.familyName = familyName;
             this.dateOfBirth = dateOfBirth;
             this.gender = gender;
             this.address = address;
             this.contact = contact;
+            this.preferredLanguage = preferredLanguage;
+            this.facilityId = facilityId;
+        }
+
+        public Demographics(
+                           String givenName,
+                           String familyName,
+                           String dateOfBirth,
+                           String gender,
+                           Address address,
+                           Contact contact) {
+            this(givenName, familyName, dateOfBirth, gender, address, contact, null, null);
         }
 
         public String getGivenName() { return givenName; }
@@ -267,6 +291,28 @@ public class PatientRecordService extends PhrServiceBase {
         public String getGender() { return gender; }
         public Address getAddress() { return address; }
         public Contact getContact() { return contact; }
+        public String getPreferredLanguage() { return preferredLanguage; }
+        public String getFacilityId() { return facilityId; }
+
+        public Demographics withGender(String newGender) {
+            return new Demographics(givenName, familyName, dateOfBirth, newGender, address, contact, preferredLanguage, facilityId);
+        }
+
+        public Demographics withAddress(Address newAddress) {
+            return new Demographics(givenName, familyName, dateOfBirth, gender, newAddress, contact, preferredLanguage, facilityId);
+        }
+
+        public Demographics withContact(Contact newContact) {
+            return new Demographics(givenName, familyName, dateOfBirth, gender, address, newContact, preferredLanguage, facilityId);
+        }
+
+        public Demographics withPreferredLanguage(String newPreferredLanguage) {
+            return new Demographics(givenName, familyName, dateOfBirth, gender, address, contact, newPreferredLanguage, facilityId);
+        }
+
+        public Demographics withFacilityId(String newFacilityId) {
+            return new Demographics(givenName, familyName, dateOfBirth, gender, address, contact, preferredLanguage, newFacilityId);
+        }
 
         public String getFullName() {
             return (givenName != null ? givenName : "") + (familyName != null ? " " + familyName : "");
@@ -328,6 +374,10 @@ public class PatientRecordService extends PhrServiceBase {
         public String getDistrict() { return district; }
         public String getProvince() { return province; }
         public String getPostalCode() { return postalCode; }
+
+        public Address withDistrict(String newDistrict) {
+            return new Address(line1, city, newDistrict, province, postalCode);
+        }
     }
 
     public static class Contact {
@@ -352,6 +402,10 @@ public class PatientRecordService extends PhrServiceBase {
         public String getEmail() { return email; }
         public String getEmergencyContact() { return emergencyContact; }
         public String getEmergencyPhone() { return emergencyPhone; }
+
+        public Contact withEmergencyContact(String newEmergencyContact) {
+            return new Contact(phone, email, newEmergencyContact, emergencyPhone);
+        }
     }
 
     public static class MedicalHistory {
@@ -377,5 +431,9 @@ public class PatientRecordService extends PhrServiceBase {
         public List<String> getMedications() { return medications; }
         public List<String> getChronicConditions() { return conditions; }
         public String getBloodType() { return bloodType; }
+
+        public MedicalHistory withBloodType(String newBloodType) {
+            return new MedicalHistory(conditions, allergies, medications, newBloodType);
+        }
     }
 }

@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Tests for AEP connector configuration classes.
+ * Tests for connector configuration classes.
  * Validates the immutable builder pattern, inheritance from {@link ConnectorConfig},
  * and default values for each connector type.
  *

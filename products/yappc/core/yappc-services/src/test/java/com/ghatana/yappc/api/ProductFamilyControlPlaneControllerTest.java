@@ -61,7 +61,7 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
         Path evidenceDir = tempDir.resolve(".kernel/evidence");
         Files.createDirectories(evidenceDir);
         Files.writeString(
-                evidenceDir.resolve("product-release-readiness.phr.json"),
+                evidenceDir.resolve("product-release-readiness.sample-product.json"),
                 """
                 {
                   "generatedAt": "2026-05-23T22:10:18.389Z",
@@ -76,11 +76,11 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
                     "targetCommitSha": "ca6a53684a4685fe04fff1dd23cea80b9b65d27d",
                     "targetEnvironment": "staging"
                   },
-                  "productId": "phr",
+                  "productId": "sample-product",
                   "releaseVerdict": "fail",
                   "releaseProfiles": ["standard-web-api-release"],
                   "blockingGaps": [{"severity":"P0","gate":"./scripts/check-production-stubs.mjs","reason":"script-failure"}],
-                  "evidencePaths": [".kernel/evidence/product-release-readiness.phr.json"],
+                  "evidencePaths": [".kernel/evidence/product-release-readiness.sample-product.json"],
                   "dimensions": [{"dimensionName":"Runtime correctness","score":4.8}]
                 }
                 """,
@@ -90,20 +90,20 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
                 .thenReturn(Promise.of(List.of()));
         when(dataCloudClient.save(eq(TENANT_ID), eq("product_release_readiness"), org.mockito.ArgumentMatchers.<Map<String, Object>>any()))
                 .thenAnswer(invocation -> Promise.of(DataCloudClient.Entity.of(
-                        "release-readiness-phr",
+                        "release-readiness-sample-product",
                         "product_release_readiness",
                         invocation.getArgument(2))));
 
-        HttpRequest request = HttpRequest.get("http://localhost/api/v1/yappc/product-family/releases/phr").build();
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/yappc/product-family/releases/sample-product").build();
         request.attach(Principal.class, new Principal("asset-admin", List.of("admin"), TENANT_ID));
-        putPathParameter(request, "productKey", "phr");
+        putPathParameter(request, "productKey", "sample-product");
 
         ProductFamilyControlPlaneController controller = new ProductFamilyControlPlaneController(dataCloudClient, objectMapper, tempDir);
         HttpResponse response = runPromise(() -> controller.getReleaseReadiness(request));
 
         assertThat(response.getCode()).isEqualTo(200);
         String body = response.getBody().asString(StandardCharsets.UTF_8);
-        assertThat(body).contains("\"productKey\":\"phr\"");
+        assertThat(body).contains("\"productKey\":\"sample-product\"");
         assertThat(body).contains("\"status\":\"FAILED\"");
         assertThat(body).contains("check-production-stubs.mjs");
         verify(dataCloudClient).save(eq(TENANT_ID), eq("product_release_readiness"), org.mockito.ArgumentMatchers.<Map<String, Object>>any());
@@ -112,29 +112,29 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
     @Test
     @DisplayName("asset list ingests reusable asset evidence when Data Cloud is empty")
     void listAssetsIngestsEvidenceWhenMissing() throws Exception {
-        Path phrEvidenceDir = tempDir.resolve(".kernel/evidence/phr");
-        Files.createDirectories(phrEvidenceDir);
+        Path sampleProductEvidenceDir = tempDir.resolve(".kernel/evidence/sample-product");
+        Files.createDirectories(sampleProductEvidenceDir);
         Files.writeString(
-                phrEvidenceDir.resolve("reusable-assets-registration.json"),
+                sampleProductEvidenceDir.resolve("reusable-assets-registration.json"),
                 """
                 {
-                  "productId": "phr",
+                  "productId": "sample-product",
                   "assets": [
                     {
-                      "asset_id": "phr-consent-panel",
-                      "asset_name": "PHR Consent Panel",
+                      "asset_id": "sample-product-approval-panel",
+                      "asset_name": "Product Approval Panel",
                       "asset_type": "ui-component",
-                      "source_product": "phr",
+                      "source_product": "sample-product",
                       "maturity_level": "hardened",
                       "reuse_mode": "reference",
-                      "paths": ["products/phr/frontend/src/components/consent/ConsentPanel.tsx"],
-                      "tests": ["products/phr/frontend/src/components/consent/__tests__/ConsentPanel.test.tsx"],
+                      "paths": ["products/sample-product/frontend/src/components/approval/ApprovalPanel.tsx"],
+                      "tests": ["products/sample-product/frontend/src/components/approval/__tests__/ApprovalPanel.test.tsx"],
                       "dependencies": ["platform:typescript:design-system"],
                       "product_usage": [],
-                      "owner": "phr-team",
+                      "owner": "sample-product-team",
                       "promotion_target": "shared-package",
                       "compatibility": {"framework":"react"},
-                      "promotion_evidence": {"evidence_refs": [".kernel/evidence/phr/reusable-assets-registration.json"]}
+                      "promotion_evidence": {"evidence_refs": [".kernel/evidence/sample-product/reusable-assets-registration.json"]}
                     }
                   ]
                 }
@@ -147,21 +147,21 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
         when(dataCloudClient.query(eq(TENANT_ID), eq("product_family_assets"), org.mockito.ArgumentMatchers.any()))
                 .thenReturn(Promise.of(List.of()))
                 .thenReturn(Promise.of(List.of(DataCloudClient.Entity.of(
-                        "phr-consent-panel",
+                        "sample-product-approval-panel",
                         "product_family_assets",
                         Map.ofEntries(
-                                Map.entry("asset_id", "phr-consent-panel"),
+                                Map.entry("asset_id", "sample-product-approval-panel"),
                                 Map.entry("asset_type", "ui-component"),
-                                Map.entry("source_product", "phr"),
-                                Map.entry("display_name", "PHR Consent Panel"),
+                                Map.entry("source_product", "sample-product"),
+                                Map.entry("display_name", "Product Approval Panel"),
                                 Map.entry("domain", "unknown"),
-                                Map.entry("paths", List.of("products/phr/frontend/src/components/consent/ConsentPanel.tsx")),
+                                Map.entry("paths", List.of("products/sample-product/frontend/src/components/approval/ApprovalPanel.tsx")),
                                 Map.entry("maturity", "hardened"),
                                 Map.entry("reuse_mode", "reference"),
                                 Map.entry("dependencies", List.of("platform:typescript:design-system")),
-                                Map.entry("tests", List.of("products/phr/frontend/src/components/consent/__tests__/ConsentPanel.test.tsx")),
+                                Map.entry("tests", List.of("products/sample-product/frontend/src/components/approval/__tests__/ApprovalPanel.test.tsx")),
                                 Map.entry("product_usage", List.of()),
-                                Map.entry("owner", "phr-team"),
+                                Map.entry("owner", "sample-product-team"),
                                 Map.entry("promotion_target", "shared-package"),
                                 Map.entry("promotion_state", "proposed"),
                                 Map.entry("compatibility", Map.of("framework", "react")))))));
@@ -180,7 +180,7 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
 
         assertThat(response.getCode()).isEqualTo(200);
         String body = response.getBody().asString(StandardCharsets.UTF_8);
-        assertThat(body).contains("phr-consent-panel");
+        assertThat(body).contains("sample-product-approval-panel");
         assertThat(body).contains("\"status\":\"READY\"");
         verify(dataCloudClient).save(eq(TENANT_ID), eq("product_family_assets"), org.mockito.ArgumentMatchers.<Map<String, Object>>any());
     }
@@ -190,19 +190,19 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
     void promoteAssetPersistsAssetAndHistory() throws Exception {
         Map<String, Object> currentAsset = Map.ofEntries(
                 Map.entry("id", "entity-1"),
-                Map.entry("asset_id", "phr-consent-module"),
+                Map.entry("asset_id", "sample-product-approval-module"),
                 Map.entry("asset_type", "module"),
-                Map.entry("display_name", "PHR Consent Module"),
-                Map.entry("source_product", "phr"),
-                Map.entry("domain", "healthcare"),
+                Map.entry("display_name", "Product Approval Module"),
+                Map.entry("source_product", "sample-product"),
+                Map.entry("domain", "regulated"),
                 Map.entry("maturity", "candidate"),
                 Map.entry("reuse_mode", "reference"),
                 Map.entry("owner", "platform"),
-                Map.entry("paths", List.of("products/phr/src/main/java/com/ghatana/phr/consent/ConsentManagementService.java")),
-                Map.entry("tests", List.of("products/phr/src/test/java/com/ghatana/phr/consent/ConsentManagementServiceTest.java")),
+                Map.entry("paths", List.of("products/sample-product/src/main/java/com/ghatana/sample-product/approval/ApprovalManagementService.java")),
+                Map.entry("tests", List.of("products/sample-product/src/test/java/com/ghatana/sample-product/approval/ApprovalManagementServiceTest.java")),
                 Map.entry("dependencies", List.of("platform:java:governance")),
                 Map.entry("version", 2));
-        when(dataCloudClient.findById(TENANT_ID, ASSET_COLLECTION, "phr-consent-module"))
+        when(dataCloudClient.findById(TENANT_ID, ASSET_COLLECTION, "sample-product-approval-module"))
                 .thenReturn(Promise.of(Optional.of(DataCloudClient.Entity.of("entity-1", ASSET_COLLECTION, currentAsset))));
         when(dataCloudClient.save(eq(TENANT_ID), anyString(), org.mockito.ArgumentMatchers.<Map<String, Object>>any()))
                 .thenAnswer(invocation -> Promise.of(DataCloudClient.Entity.of(
@@ -211,7 +211,7 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
                         invocation.getArgument(2))));
 
         HttpResponse response = runPromise(() -> controller().promoteAsset(postPromotion(
-                "phr-consent-module",
+                "sample-product-approval-module",
                 Map.of(
                         "targetState", "hardened",
                         "reason", "phase-4 hardening",
@@ -226,7 +226,7 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
         Map<String, Object> savedAsset = assetCaptor.getValue();
         assertThat(savedAsset)
                 .containsEntry("id", "entity-1")
-                .containsEntry("asset_id", "phr-consent-module")
+                .containsEntry("asset_id", "sample-product-approval-module")
                 .containsEntry("promotion_state", "hardened")
                 .containsEntry("maturity", "hardened")
                 .containsEntry("promotion_reason", "phase-4 hardening")
@@ -239,7 +239,7 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
 
         Map<String, Object> history = historyCaptor.getValue();
         assertThat(history)
-                .containsEntry("asset_id", "phr-consent-module")
+                .containsEntry("asset_id", "sample-product-approval-module")
                 .containsEntry("previous_state", "candidate")
                 .containsEntry("promotion_state", "hardened")
                 .containsEntry("rollback_target_state", "candidate")
@@ -253,7 +253,7 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
     @DisplayName("asset promotion rejects viewer role without mutating Data Cloud")
     void promoteAssetRejectsViewerRole() throws Exception {
         HttpRequest request = postPromotionAs(
-                "phr-consent-module",
+                "sample-product-approval-module",
                 Map.of("targetState", "hardened", "reason", "viewer cannot promote"),
                 "asset-viewer",
                 List.of("viewer"));
@@ -272,14 +272,14 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
     void promoteAssetRejectsSkippedTransition() throws Exception {
         Map<String, Object> currentAsset = Map.of(
                 "id", "entity-1",
-                "asset_id", "phr-consent-module",
+                "asset_id", "sample-product-approval-module",
                 "maturity", "candidate",
                 "reuse_mode", "reference");
-        when(dataCloudClient.findById(TENANT_ID, ASSET_COLLECTION, "phr-consent-module"))
+        when(dataCloudClient.findById(TENANT_ID, ASSET_COLLECTION, "sample-product-approval-module"))
                 .thenReturn(Promise.of(Optional.of(DataCloudClient.Entity.of("entity-1", ASSET_COLLECTION, currentAsset))));
 
         HttpResponse response = runPromise(() -> controller().promoteAsset(postPromotion(
-                "phr-consent-module",
+                "sample-product-approval-module",
                 Map.of("targetState", "production"))));
 
         assertThat(response.getCode()).isEqualTo(409);
@@ -291,19 +291,19 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
     void promoteToHardenedBlockedWhenOwnerUnassigned() throws Exception {
         Map<String, Object> currentAsset = new java.util.LinkedHashMap<>();
         currentAsset.put("id", "entity-2");
-        currentAsset.put("asset_id", "phr-audit-trail");
+        currentAsset.put("asset_id", "sample-product-audit-trail");
         currentAsset.put("asset_type", "module");
-        currentAsset.put("source_product", "phr");
+        currentAsset.put("source_product", "sample-product");
         currentAsset.put("maturity", "candidate");
         currentAsset.put("reuse_mode", "reference");
         currentAsset.put("owner", "unassigned");
         currentAsset.put("paths", List.of());
         currentAsset.put("tests", List.of());
-        when(dataCloudClient.findById(TENANT_ID, ASSET_COLLECTION, "phr-audit-trail"))
+        when(dataCloudClient.findById(TENANT_ID, ASSET_COLLECTION, "sample-product-audit-trail"))
                 .thenReturn(Promise.of(Optional.of(DataCloudClient.Entity.of("entity-2", ASSET_COLLECTION, Map.copyOf(currentAsset)))));
 
         HttpResponse response = runPromise(() -> controller().promoteAsset(postPromotion(
-                "phr-audit-trail",
+                "sample-product-audit-trail",
                 Map.of("targetState", "hardened", "reason", "missing owner"))));
 
         assertThat(response.getCode()).isEqualTo(422);
@@ -318,21 +318,21 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
     void promoteToProductionBlockedWhenEvidenceRefsMissing() throws Exception {
         Map<String, Object> currentAsset = new java.util.LinkedHashMap<>();
         currentAsset.put("id", "entity-3");
-        currentAsset.put("asset_id", "phr-fhir-adapter");
+        currentAsset.put("asset_id", "sample-product-connector-adapter");
         currentAsset.put("asset_type", "connector");
-        currentAsset.put("source_product", "phr");
+        currentAsset.put("source_product", "sample-product");
         currentAsset.put("maturity", "hardened");
         currentAsset.put("reuse_mode", "reference");
-        currentAsset.put("owner", "phr-platform");
-        currentAsset.put("paths", List.of("src/FhirAdapter.java"));
-        currentAsset.put("tests", List.of("src/FhirAdapterTest.java"));
+        currentAsset.put("owner", "sample-product-platform");
+        currentAsset.put("paths", List.of("src/ConnectorAdapter.java"));
+        currentAsset.put("tests", List.of("src/ConnectorAdapterTest.java"));
         currentAsset.put("dependencies", List.of());
         // evidence_refs absent
-        when(dataCloudClient.findById(TENANT_ID, ASSET_COLLECTION, "phr-fhir-adapter"))
+        when(dataCloudClient.findById(TENANT_ID, ASSET_COLLECTION, "sample-product-connector-adapter"))
                 .thenReturn(Promise.of(Optional.of(DataCloudClient.Entity.of("entity-3", ASSET_COLLECTION, Map.copyOf(currentAsset)))));
 
         HttpResponse response = runPromise(() -> controller().promoteAsset(postPromotion(
-                "phr-fhir-adapter",
+                "sample-product-connector-adapter",
                 Map.of("targetState", "production", "reason", "missing evidence"))));
 
         assertThat(response.getCode()).isEqualTo(422);
@@ -357,11 +357,11 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
             Path evidenceDir = tempDir.resolve(".kernel/evidence");
             Files.createDirectories(evidenceDir);
             Files.writeString(
-                    evidenceDir.resolve("product-release-readiness.phr.json"),
+                    evidenceDir.resolve("product-release-readiness.sample-product.json"),
                     """
                     {
                       "generatedAt": "2026-05-23T00:00:00.000Z",
-                      "productId": "phr",
+                      "productId": "sample-product",
                       "releaseVerdict": "pass",
                       "releaseProfiles": [],
                       "blockingGaps": [],
@@ -376,11 +376,11 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
                     .thenReturn(Promise.of(List.of()));
             when(dataCloudClient.save(eq(TENANT_ID), eq("product_release_readiness"), org.mockito.ArgumentMatchers.<Map<String, Object>>any()))
                     .thenAnswer(invocation -> Promise.of(DataCloudClient.Entity.of(
-                            "release-readiness-phr", "product_release_readiness", invocation.getArgument(2))));
+                            "release-readiness-sample-product", "product_release_readiness", invocation.getArgument(2))));
 
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/yappc/product-family/releases/phr").build();
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/yappc/product-family/releases/sample-product").build();
             request.attach(Principal.class, new Principal("tester", List.of("admin"), TENANT_ID));
-            putPathParameter(request, "productKey", "phr");
+            putPathParameter(request, "productKey", "sample-product");
 
             ProductFamilyControlPlaneController controller = new ProductFamilyControlPlaneController(dataCloudClient, objectMapper, tempDir);
             HttpResponse response = runPromise(() -> controller.getReleaseReadiness(request));
@@ -404,11 +404,11 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
             Path evidenceDir = tempDir.resolve(".kernel/evidence");
             Files.createDirectories(evidenceDir);
             Files.writeString(
-                    evidenceDir.resolve("product-release-readiness.phr.json"),
+                    evidenceDir.resolve("product-release-readiness.sample-product.json"),
                     """
                     {
                       "generatedAt": "2026-05-23T00:00:00.000Z",
-                      "productId": "phr",
+                      "productId": "sample-product",
                       "releaseVerdict": "pass",
                       "releaseProfiles": [],
                       "blockingGaps": [],
@@ -423,11 +423,11 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
                     .thenReturn(Promise.of(List.of()));
             when(dataCloudClient.save(eq(TENANT_ID), eq("product_release_readiness"), org.mockito.ArgumentMatchers.<Map<String, Object>>any()))
                     .thenAnswer(invocation -> Promise.of(DataCloudClient.Entity.of(
-                            "release-readiness-phr", "product_release_readiness", invocation.getArgument(2))));
+                            "release-readiness-sample-product", "product_release_readiness", invocation.getArgument(2))));
 
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/yappc/product-family/releases/phr").build();
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/yappc/product-family/releases/sample-product").build();
             request.attach(Principal.class, new Principal("tester", List.of("admin"), TENANT_ID));
-            putPathParameter(request, "productKey", "phr");
+            putPathParameter(request, "productKey", "sample-product");
 
             ProductFamilyControlPlaneController controller = new ProductFamilyControlPlaneController(dataCloudClient, objectMapper, tempDir);
             HttpResponse response = runPromise(() -> controller.getReleaseReadiness(request));

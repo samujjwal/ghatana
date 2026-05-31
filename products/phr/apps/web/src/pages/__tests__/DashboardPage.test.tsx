@@ -20,6 +20,8 @@ vi.mock('../../auth/PhrSessionContext', () => ({
       tenantId: 'tenant-test',
       principalId: 'patient-test',
       role: 'patient',
+      persona: 'patient',
+      tier: 'core',
       name: 'Patient Test',
       expiresAt: '2026-05-28T02:00:00Z',
     },
@@ -31,12 +33,23 @@ import { fetchDashboardData } from '../../api/patientApi';
 const mockFetch = fetchDashboardData as ReturnType<typeof vi.fn>;
 
 const sampleData = {
-  patient: { name: 'Ram Bahadur', location: 'Kathmandu', bloodType: 'B+', emergencyContact: '+977-9800000001' },
-  consents: [{ id: 'con-1' }],
-  appointments: [{ id: 'apt-1' }, { id: 'apt-2' }],
-  labs: [{ id: 'lab-1' }],
-  medications: [{ id: 'med-1' }, { id: 'med-2' }, { id: 'med-3' }],
-  records: [],
+  tenantId: 'tenant-test',
+  principalId: 'patient-test',
+  role: 'patient',
+  correlationId: 'corr-1',
+  profileSummary: { name: 'Ram Bahadur', active: true },
+  nextAppointment: {
+    appointmentId: 'apt-1',
+    scheduledTime: '2026-05-30T09:00:00Z',
+    provider: 'provider-1',
+    type: 'follow-up',
+  },
+  medications: { activeCount: 3, adherenceAlert: false },
+  recentObservations: { count: 1, hasCritical: false },
+  activeConditions: { count: 2, hasChronic: true },
+  documents: { totalCount: 4, pendingOcr: 1 },
+  accessAlerts: { expiringConsents: 1, emergencyAccessPending: false },
+  generatedAt: '2026-05-30T01:00:00Z',
 };
 
 describe('DashboardPage', () => {
@@ -76,6 +89,17 @@ describe('DashboardPage', () => {
     await waitFor(() => expect(screen.getByText('dashboard.metric.medications')).toBeTruthy());
   });
 
+  it('does not render legacy placeholder patient facts or fake dashboard arrays', async () => {
+    mockFetch.mockResolvedValue(sampleData);
+    render(<DashboardPage />);
+
+    await waitFor(() => expect(screen.getByText('Ram Bahadur')).toBeTruthy());
+    expect(screen.queryByText('Unknown')).toBeNull();
+    expect(screen.queryByText('Blood group')).toBeNull();
+    expect(screen.queryByText('dashboard.carePlan.title')).toBeNull();
+    expect(screen.queryByText('dashboard.emergency.title')).toBeNull();
+  });
+
   it('shows empty state when data is null', async () => {
     mockFetch.mockResolvedValue(null);
     render(<DashboardPage />);
@@ -89,6 +113,9 @@ describe('DashboardPage', () => {
       tenantId: 'tenant-test',
       principalId: 'patient-test',
       role: 'patient',
+      persona: 'patient',
+      tier: 'core',
+      facilityId: undefined,
     }));
   });
 });

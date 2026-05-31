@@ -9,108 +9,6 @@ servers:
 security:
   - bearerAuth: []
 paths:
-  /patients:
-    get:
-      operationId: searchPatientRecords
-      summary: Search patient records scoped by patientId
-      tags: [Patients]
-      x-pii: true
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - in: query
-          name: patientId
-          required: true
-          schema: { type: string }
-        - in: query
-          name: limit
-          schema: { type: integer, minimum: 0, maximum: 1000, default: 50 }
-        - in: query
-          name: offset
-          schema: { type: integer, minimum: 0, maximum: 10000, default: 0 }
-      responses:
-        "200": { $ref: "#/components/responses/PatientList" }
-        "400": { $ref: "#/components/responses/Error" }
-        "403": { $ref: "#/components/responses/Error" }
-    post:
-      operationId: createPatientRecord
-      summary: Create a patient record
-      tags: [Patients]
-      x-pii: true
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/Patient" }
-      responses:
-        "201":
-          description: Patient record created
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Patient" }
-        "400": { $ref: "#/components/responses/Error" }
-        "403": { $ref: "#/components/responses/Error" }
-  /patients/{patientId}:
-    get:
-      operationId: getPatientRecord
-      summary: Read a patient record
-      tags: [Patients]
-      x-pii: true
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - $ref: "#/components/parameters/PatientIdPath"
-      responses:
-        "200":
-          description: Patient record
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Patient" }
-        "403": { $ref: "#/components/responses/Error" }
-        "404": { $ref: "#/components/responses/Error" }
-    put:
-      operationId: updatePatientRecord
-      summary: Update a patient record
-      tags: [Patients]
-      x-pii: true
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - $ref: "#/components/parameters/PatientIdPath"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/Patient" }
-      responses:
-        "200":
-          description: Patient record updated
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Patient" }
-        "400": { $ref: "#/components/responses/Error" }
-        "403": { $ref: "#/components/responses/Error" }
-  /patients/{patientId}/history:
-    get:
-      operationId: getPatientRecordHistory
-      summary: Read patient record history
-      tags: [Patients]
-      x-pii: true
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - $ref: "#/components/parameters/PatientIdPath"
-      responses:
-        "200":
-          description: Patient record history
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/PatientHistory" }
-        "403": { $ref: "#/components/responses/Error" }
-        "404": { $ref: "#/components/responses/Error" }
   /consents:
     get:
       operationId: listConsentGrants
@@ -425,6 +323,55 @@ paths:
         "200": { description: Immunization }
         "403": { $ref: "#/components/responses/Error" }
         "404": { $ref: "#/components/responses/Error" }
+  /clinical/conditions:
+    get:
+      operationId: listConditions
+      summary: List patient conditions
+      tags: [Clinical]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/ClinicalList" }
+        "403": { $ref: "#/components/responses/Error" }
+  /clinical/conditions/{conditionId}:
+    get:
+      operationId: getCondition
+      summary: Read a condition
+      tags: [Clinical]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: conditionId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Condition }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /clinical/conditions/patient/{patientId}:
+    get:
+      operationId: getPatientConditions
+      summary: Get conditions for a specific patient
+      tags: [Clinical]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: patientId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/ClinicalList" }
+        "403": { $ref: "#/components/responses/Error" }
   /fhir/{resourceType}:
     get:
       operationId: searchFhirResources
@@ -580,6 +527,76 @@ paths:
               schema: { $ref: "#/components/schemas/EmergencyAccessEvent" }
         "400": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
+  /hie/export:
+    post:
+      operationId: exportHieData
+      summary: Export patient data to HIE system
+      tags: [HIE]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Export initiated }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /hie/import:
+    post:
+      operationId: importHieData
+      summary: Import patient data from HIE system
+      tags: [HIE]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Import initiated }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /hie/sync:
+    post:
+      operationId: syncHieData
+      summary: Synchronize patient data with HIE system
+      tags: [HIE]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Sync initiated }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /hie/status/{requestId}:
+    get:
+      operationId: getHieRequestStatus
+      summary: Get status of HIE request
+      tags: [HIE]
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+        - in: path
+          name: requestId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Request status }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
   /admin/appointments:
     get:
       operationId: listAppointments
@@ -1246,6 +1263,17 @@ paths:
         "400": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
   /appointments:
+    get:
+      operationId: listPatientAppointments
+      summary: List patient appointments
+      tags: [Appointments]
+      x-pii: true
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PrincipalHeader"
+      responses:
+        "200": { $ref: "#/components/responses/ClinicalList" }
+        "403": { $ref: "#/components/responses/Error" }
     post:
       operationId: createPatientSchedulingRequest
       summary: Create patient-facing appointment request
@@ -1263,126 +1291,57 @@ paths:
         "201": { description: Scheduling request created }
         "400": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
-  /documents:
+  /appointments/slots:
     get:
-      operationId: listPhrDocuments
-      summary: List patient documents through the web route alias
-      tags: [Documents]
-      x-pii: true
+      operationId: listAppointmentSlots
+      summary: List available appointment slots
+      tags: [Appointments]
       parameters:
         - $ref: "#/components/parameters/TenantHeader"
         - $ref: "#/components/parameters/PrincipalHeader"
+        - in: query
+          name: providerId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: date
+          required: true
+          schema: { type: string }
       responses:
         "200": { $ref: "#/components/responses/ClinicalList" }
-        "403": { $ref: "#/components/responses/Error" }
+        "400": { $ref: "#/components/responses/Error" }
+  /appointments/{appointmentId}/cancel:
     post:
-      operationId: uploadPhrDocument
-      summary: Upload a patient document through the web route alias
-      tags: [Documents]
+      operationId: cancelPatientAppointment
+      summary: Cancel patient appointment
+      tags: [Appointments]
       x-pii: true
       parameters:
         - $ref: "#/components/parameters/TenantHeader"
         - $ref: "#/components/parameters/PrincipalHeader"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { type: object }
+        - in: path
+          name: appointmentId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: patientId
+          required: true
+          schema: { type: string }
       responses:
-        "201": { description: Document uploaded }
+        "200": { description: Appointment cancelled }
         "400": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
-  /documents/{documentId}:
-    get:
-      operationId: getPhrDocument
-      summary: Read document metadata
-      tags: [Documents]
-      x-pii: true
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - in: path
-          name: documentId
-          required: true
-          schema: { type: string }
-      responses:
-        "200": { description: Document metadata }
-        "403": { $ref: "#/components/responses/Error" }
-        "404": { $ref: "#/components/responses/Error" }
-    delete:
-      operationId: deletePhrDocument
-      summary: Delete a patient document
-      tags: [Documents]
-      x-pii: true
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - in: path
-          name: documentId
-          required: true
-          schema: { type: string }
-      responses:
-        "200": { description: Document deleted }
-        "403": { $ref: "#/components/responses/Error" }
-  /documents/{documentId}/content:
-    get:
-      operationId: downloadPhrDocumentContent
-      summary: Download document content
-      tags: [Documents]
-      x-pii: true
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - in: path
-          name: documentId
-          required: true
-          schema: { type: string }
-      responses:
-        "200": { description: Document content }
-        "403": { $ref: "#/components/responses/Error" }
-  /documents/{documentId}/fhir:
-    get:
-      operationId: getPhrDocumentFhir
-      summary: Read document FHIR projection
-      tags: [Documents]
-      x-pii: true
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - in: path
-          name: documentId
-          required: true
-          schema: { type: string }
-      responses:
-        "200": { description: FHIR DocumentReference }
-        "403": { $ref: "#/components/responses/Error" }
-  /documents/{documentId}/ocr:
-    get:
-      operationId: getPhrDocumentOcr
-      summary: Read OCR review draft
-      tags: [Documents]
-      x-pii: true
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - in: path
-          name: documentId
-          required: true
-          schema: { type: string }
-      responses:
-        "200": { description: OCR review draft }
-        "403": { $ref: "#/components/responses/Error" }
-  /documents/{documentId}/ocr/confirm:
+  /appointments/{appointmentId}/reschedule:
     post:
-      operationId: confirmPhrDocumentOcr
-      summary: Confirm OCR review draft
-      tags: [Documents]
+      operationId: reschedulePatientAppointment
+      summary: Reschedule patient appointment
+      tags: [Appointments]
       x-pii: true
       parameters:
         - $ref: "#/components/parameters/TenantHeader"
         - $ref: "#/components/parameters/PrincipalHeader"
         - in: path
-          name: documentId
+          name: appointmentId
           required: true
           schema: { type: string }
       requestBody:
@@ -1391,40 +1350,8 @@ paths:
           application/json:
             schema: { type: object }
       responses:
-        "200": { description: OCR review confirmed }
+        "200": { description: Appointment rescheduled }
         "400": { $ref: "#/components/responses/Error" }
-        "403": { $ref: "#/components/responses/Error" }
-  /documents/{documentId}/ocr/reject:
-    post:
-      operationId: rejectPhrDocumentOcr
-      summary: Reject OCR review draft
-      tags: [Documents]
-      x-pii: true
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - in: path
-          name: documentId
-          required: true
-          schema: { type: string }
-      responses:
-        "200": { description: OCR review rejected }
-        "403": { $ref: "#/components/responses/Error" }
-  /documents/{documentId}/consent:
-    post:
-      operationId: updatePhrDocumentConsent
-      summary: Update document consent state
-      tags: [Documents]
-      x-pii: true
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - in: path
-          name: documentId
-          required: true
-          schema: { type: string }
-      responses:
-        "200": { description: Document consent updated }
         "403": { $ref: "#/components/responses/Error" }
   /records/documents/{documentId}/ocr:
     get:
@@ -1510,36 +1437,6 @@ paths:
       responses:
         "200": { description: Imaging series download }
         "403": { $ref: "#/components/responses/Error" }
-  /patients/{patientId}/records/{recordId}:
-    get:
-      operationId: getPatientRecordDetail
-      summary: Read patient record detail
-      tags: [Patients]
-      x-pii: true
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - $ref: "#/components/parameters/PatientIdPath"
-        - in: path
-          name: recordId
-          required: true
-          schema: { type: string }
-      responses:
-        "200": { description: Patient record detail }
-        "403": { $ref: "#/components/responses/Error" }
-  /patients/{patientId}/records:
-    get:
-      operationId: listPatientRecords
-      summary: List patient records
-      tags: [Patients]
-      x-pii: true
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - $ref: "#/components/parameters/PatientIdPath"
-      responses:
-        "200": { description: Patient record list }
-        "403": { $ref: "#/components/responses/Error" }
   /audit/events:
     get:
       operationId: listPhrAuditEvents
@@ -1577,229 +1474,6 @@ paths:
       responses:
         "200": { description: PHI-safe audit export }
         "403": { $ref: "#/components/responses/Error" }
-  /provider/patients:
-    get:
-      operationId: listProviderPatients
-      summary: List provider-scoped patient roster
-      tags: [Provider]
-      x-pii: true
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-      responses:
-        "200": { $ref: "#/components/responses/ClinicalList" }
-        "403": { $ref: "#/components/responses/Error" }
-  /provider/patient/{patientId}/summary:
-    get:
-      operationId: getProviderPatientSummary
-      summary: Read provider patient summary
-      tags: [Provider]
-      x-pii: true
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - $ref: "#/components/parameters/PatientIdPath"
-      responses:
-        "200": { description: Provider patient summary }
-        "403": { $ref: "#/components/responses/Error" }
-  /provider/patient/{patientId}/detail:
-    get:
-      operationId: getProviderPatientDetail
-      summary: Read provider patient detail
-      tags: [Provider]
-      x-pii: true
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - $ref: "#/components/parameters/PatientIdPath"
-      responses:
-        "200": { description: Provider patient detail }
-        "403": { $ref: "#/components/responses/Error" }
-  /provider/patient/{patientId}/encounters:
-    post:
-      operationId: createProviderEncounter
-      summary: Create provider encounter
-      tags: [Provider]
-      x-pii: true
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - $ref: "#/components/parameters/PatientIdPath"
-      responses:
-        "201": { description: Encounter created }
-        "403": { $ref: "#/components/responses/Error" }
-  /provider/patient/{patientId}/encounters/{encounterId}:
-    get:
-      operationId: getProviderEncounter
-      summary: Read provider encounter
-      tags: [Provider]
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - $ref: "#/components/parameters/PatientIdPath"
-        - in: path
-          name: encounterId
-          required: true
-          schema: { type: string }
-      responses:
-        "200": { description: Encounter detail }
-    put:
-      operationId: updateProviderEncounter
-      summary: Update provider encounter
-      tags: [Provider]
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - $ref: "#/components/parameters/PatientIdPath"
-        - in: path
-          name: encounterId
-          required: true
-          schema: { type: string }
-      responses:
-        "200": { description: Encounter updated }
-  /provider/patient/{patientId}/encounters/{encounterId}/complete:
-    post:
-      operationId: completeProviderEncounter
-      summary: Complete provider encounter
-      tags: [Provider]
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - $ref: "#/components/parameters/PatientIdPath"
-        - in: path
-          name: encounterId
-          required: true
-          schema: { type: string }
-      responses:
-        "200": { description: Encounter completed }
-  /provider/patient/{patientId}/medications:
-    post:
-      operationId: prescribeProviderMedication
-      summary: Prescribe medication for a patient
-      tags: [Provider]
-      x-pii: true
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - $ref: "#/components/parameters/PatientIdPath"
-      responses:
-        "201": { description: Medication prescribed }
-  /provider/calendar:
-    get:
-      operationId: getProviderCalendar
-      summary: Read provider calendar
-      tags: [Provider]
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-      responses:
-        "200": { description: Provider calendar }
-  /caregiver/dependents:
-    get:
-      operationId: listCaregiverDependents
-      summary: List caregiver dependents
-      tags: [Caregiver]
-      x-pii: true
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-      responses:
-        "200": { $ref: "#/components/responses/ClinicalList" }
-        "403": { $ref: "#/components/responses/Error" }
-  /caregiver/patient/{patientId}:
-    get:
-      operationId: getCaregiverPatientSummary
-      summary: Read caregiver-scoped patient summary
-      tags: [Caregiver]
-      x-pii: true
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - $ref: "#/components/parameters/PatientIdPath"
-      responses:
-        "200": { description: Caregiver patient summary }
-        "403": { $ref: "#/components/responses/Error" }
-  /caregiver/patient/{patientId}/detail:
-    get:
-      operationId: getCaregiverPatientDetail
-      summary: Read caregiver-scoped patient detail
-      tags: [Caregiver]
-      x-pii: true
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - $ref: "#/components/parameters/PatientIdPath"
-      responses:
-        "200": { description: Caregiver patient detail }
-        "403": { $ref: "#/components/responses/Error" }
-  /fchv/dashboard:
-    get:
-      operationId: getFchvDashboard
-      summary: Read FCHV dashboard
-      tags: [FCHV]
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-      responses:
-        "200": { description: FCHV dashboard }
-        "403": { $ref: "#/components/responses/Error" }
-  /fchv/patients:
-    get:
-      operationId: listFchvPatients
-      summary: List FCHV-assigned patients
-      tags: [FCHV]
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-      responses:
-        "200": { $ref: "#/components/responses/ClinicalList" }
-    post:
-      operationId: registerFchvPatient
-      summary: Register patient through FCHV workflow
-      tags: [FCHV]
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-      responses:
-        "201": { description: Patient registration accepted }
-  /fchv/patients/{patientId}:
-    get:
-      operationId: getFchvPatient
-      summary: Read FCHV patient detail
-      tags: [FCHV]
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - $ref: "#/components/parameters/PatientIdPath"
-      responses:
-        "200": { description: FCHV patient detail }
-        "403": { $ref: "#/components/responses/Error" }
-  /fchv/patients/{patientId}/vitals:
-    post:
-      operationId: recordFchvVitals
-      summary: Record FCHV vitals
-      tags: [FCHV]
-      parameters:
-        - $ref: "#/components/parameters/TenantHeader"
-        - $ref: "#/components/parameters/PrincipalHeader"
-        - $ref: "#/components/parameters/PatientIdPath"
-      responses:
-        "201": { description: Vitals recorded }
-        "403": { $ref: "#/components/responses/Error" }
-  /fchv/sync/status:
-    get:
-      operationId: getFchvSyncStatus
-      summary: Read FCHV sync status
-      tags: [FCHV]
-      responses:
-        "200": { description: Sync status }
-  /fchv/sync:
-    post:
-      operationId: syncFchvOperations
-      summary: Submit FCHV offline operations
-      tags: [FCHV]
-      responses:
-        "200": { description: Sync result }
   /mobile/dashboard:
     get:
       operationId: getMobileDashboard
@@ -2117,24 +1791,6 @@ paths:
       x-pii: true
       responses:
         "200": { description: Appointment rescheduled }
-        "403": { $ref: "#/components/responses/Error" }
-  /provider/dashboard:
-    get:
-      operationId: getProviderDashboard
-      summary: Read provider dashboard
-      tags: [Provider]
-      x-pii: true
-      responses:
-        "200": { description: Provider dashboard }
-        "403": { $ref: "#/components/responses/Error" }
-  /caregiver/dashboard:
-    get:
-      operationId: getCaregiverDashboard
-      summary: Read caregiver dashboard
-      tags: [Caregiver]
-      x-pii: true
-      responses:
-        "200": { description: Caregiver dashboard }
         "403": { $ref: "#/components/responses/Error" }
   /profile/settings:
     get:

@@ -73,10 +73,10 @@ describe("RouteSurfaceRegistry", () => {
       expect(memoryRoute.discoverable).toBe(false);
       expect(agentsRoute.discoverable).toBe(false);
 
-      // They are in preview lifecycle
-      expect(alertsRoute.lifecycle).toBe("preview");
-      expect(memoryRoute.lifecycle).toBe("preview");
-      expect(agentsRoute.lifecycle).toBe("preview");
+      // They are in operator-preview lifecycle
+      expect(alertsRoute.lifecycle).toBe("operator-preview");
+      expect(memoryRoute.lifecycle).toBe("operator-preview");
+      expect(agentsRoute.lifecycle).toBe("operator-preview");
 
       // They should not appear in discoverable routes
       const discoverable = getDiscoverableRouteSurfaces("operator");
@@ -135,12 +135,17 @@ describe("RouteSurfaceRegistry", () => {
     it("groups routes by lifecycle correctly", () => {
       const byLifecycle = getRouteSurfacesByLifecycle();
 
-      expect(byLifecycle.active).toHaveLength(11); // home, data, connectors, pipelines, query, insights, trust, events, operations, operationsJobs, plugins
-      expect(byLifecycle.preview).toHaveLength(7); // alerts, memory, entities, context, fabric, agents, mediaArtifacts
+      // P5-01: Updated counts for new lifecycle values
+      expect(byLifecycle.active).toHaveLength(10); // home, data, connectors, pipelines, query, insights, trust, events, operations, operationsJobs
+      expect(byLifecycle["operator-preview"]).toHaveLength(7); // alerts, memory, entities, fabric, agents, mediaArtifacts, plugins
+      expect(byLifecycle["target-only"]).toHaveLength(1); // context
       expect(byLifecycle.boundary).toHaveLength(2); // operationsReleaseTruth, settings
       expect(byLifecycle.deprecated).toHaveLength(0);
       expect(byLifecycle.redirect).toHaveLength(0);
       expect(byLifecycle.removed).toHaveLength(0);
+      expect(byLifecycle["user-ready"]).toHaveLength(0);
+      expect(byLifecycle["internal-preview"]).toHaveLength(0);
+      expect(byLifecycle.disabled).toHaveLength(0);
     });
 
     it("active routes are correctly identified", () => {
@@ -151,12 +156,36 @@ describe("RouteSurfaceRegistry", () => {
       expect(paths).toContain("/data");
       expect(paths).toContain("/pipelines");
       expect(paths).toContain("/query");
+      expect(paths).toContain("/trust");
+      expect(paths).toContain("/events");
       expect(paths).toContain("/operations");
-      expect(paths).toContain("/plugins");
+      expect(paths).toContain("/operations/jobs");
 
-      expect(paths).not.toContain("/alerts"); // preview
-      expect(paths).not.toContain("/memory"); // preview
+      expect(paths).not.toContain("/connectors"); // operator-preview
+      expect(paths).not.toContain("/insights"); // operator-preview
+      expect(paths).not.toContain("/alerts"); // operator-preview
+      expect(paths).not.toContain("/memory"); // operator-preview
+      expect(paths).not.toContain("/entities"); // operator-preview
+      expect(paths).not.toContain("/fabric"); // operator-preview
+      expect(paths).not.toContain("/agents"); // operator-preview
+      expect(paths).not.toContain("/media/artifacts"); // operator-preview
+      expect(paths).not.toContain("/plugins"); // operator-preview
+      expect(paths).not.toContain("/context"); // target-only
       expect(paths).not.toContain("/operations/release-truth"); // boundary
+      expect(paths).not.toContain("/settings"); // boundary
+    });
+
+    it("target-only routes are excluded from discoverable routes", () => {
+      const contextRoute = canonicalRouteSurfaceRegistry.context;
+
+      // Context is marked as target-only
+      expect(contextRoute.lifecycle).toBe("target-only");
+      expect(contextRoute.discoverable).toBe(false);
+
+      // Should not appear in discoverable routes even for admin
+      const discoverable = getDiscoverableRouteSurfaces("admin");
+      const paths = discoverable.map((r) => r.path);
+      expect(paths).not.toContain("/context");
     });
   });
 

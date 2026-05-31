@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -82,6 +83,8 @@ class PhrConsentRoutesTest extends EventloopTestBase {
         lenient().when(consentService.validateAccess(anyString(), anyString(), anyString(), anyString()))
             .thenReturn(Promise.of(new ConsentManagementService.ConsentValidationResult(
                 true, "GRANT_VALID", "grant-42")));
+        lenient().when(consentService.getGrantByIdempotencyKey(anyString()))
+            .thenReturn(Promise.of(Optional.empty()));
     }
 
     @Nested
@@ -104,6 +107,49 @@ class PhrConsentRoutesTest extends EventloopTestBase {
 
             assertThat(response.getCode()).isEqualTo(201);
             verify(consentService).createGrant(any());
+        }
+
+        @Test
+        @DisplayName("200 - idempotent replay returns matching existing grant")
+        void idempotentReplayReturnsExistingGrant() throws Exception {
+            lenient().when(consentService.getGrantByIdempotencyKey("idem-consent-1"))
+                .thenReturn(Promise.of(Optional.of(sampleGrant("patient-1", "clinician-1", "idem-consent-1"))));
+            HttpRequest request = contextRequestWithBody(HttpMethod.POST, "/grants",
+                "tenant-1", "patient-1", "patient", GRANT_BODY, "idem-consent-1");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(200);
+            verify(consentService, never()).createGrant(any());
+        }
+
+        @Test
+        @DisplayName("403 - idempotency lookup does not bypass patient ownership")
+        void idempotencyLookupDoesNotBypassOwnership() throws Exception {
+            lenient().when(consentService.getGrantByIdempotencyKey("idem-consent-2"))
+                .thenReturn(Promise.of(Optional.of(sampleGrant("patient-1", "clinician-1", "idem-consent-2"))));
+            HttpRequest request = contextRequestWithBody(HttpMethod.POST, "/grants",
+                "tenant-1", "patient-2", "patient", GRANT_BODY, "idem-consent-2");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(403);
+            verify(consentService, never()).getGrantByIdempotencyKey("idem-consent-2");
+            verify(consentService, never()).createGrant(any());
+        }
+
+        @Test
+        @DisplayName("409 - idempotency key reuse must match original consent grant")
+        void idempotencyKeyReuseMustMatchOriginalGrant() throws Exception {
+            lenient().when(consentService.getGrantByIdempotencyKey("idem-consent-3"))
+                .thenReturn(Promise.of(Optional.of(sampleGrant("patient-1", "other-clinician", "idem-consent-3"))));
+            HttpRequest request = contextRequestWithBody(HttpMethod.POST, "/grants",
+                "tenant-1", "patient-1", "patient", GRANT_BODY, "idem-consent-3");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(409);
+            verify(consentService, never()).createGrant(any());
         }
 
         @Test
@@ -218,6 +264,19 @@ class PhrConsentRoutesTest extends EventloopTestBase {
 
             assertThat(response.getCode()).isEqualTo(400);
         }
+
+        @Test
+        @DisplayName("200 - revoke echoes request correlation ID")
+        void revokeEchoesCorrelationId() throws Exception {
+            consentService.revokeGrant("grant-42");
+            HttpRequest request = contextRequest(HttpMethod.POST,
+                "/grants/grant-42/revoke?patientId=patient-1", "tenant-1", "patient-1", "patient");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(200);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
+        }
     }
 
     @Nested
@@ -283,6 +342,20 @@ class PhrConsentRoutesTest extends EventloopTestBase {
 
             assertThat(response.getCode()).isEqualTo(400);
         }
+
+        @Test
+        @DisplayName("200 - check echoes request correlation ID")
+        void checkEchoesCorrelationId() throws Exception {
+            consentService.validateAccess("patient-1", "clinician-1", "labs", "READ");
+            HttpRequest request = contextRequest(HttpMethod.GET,
+                "/check?patientId=patient-1&accessorId=clinician-1&resourceType=labs",
+                "tenant-1", "patient-1", "patient");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(200);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
+        }
     }
 
     @Nested
@@ -331,6 +404,19 @@ class PhrConsentRoutesTest extends EventloopTestBase {
 
             assertThat(response.getCode()).isEqualTo(400);
         }
+
+        @Test
+        @DisplayName("200 - list echoes request correlation ID")
+        void listEchoesCorrelationId() throws Exception {
+            consentService.getPatientGrants("patient-1");
+            HttpRequest request = contextRequest(HttpMethod.GET,
+                "/?patientId=patient-1", "tenant-1", "patient-1", "patient");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(200);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
+        }
     }
 
     private static HttpRequest contextRequest(
@@ -339,34 +425,60 @@ class PhrConsentRoutesTest extends EventloopTestBase {
             .withHeader(HttpHeaders.of("X-Tenant-ID"), tenantId)
             .withHeader(HttpHeaders.of("X-Principal-ID"), principalId)
             .withHeader(HttpHeaders.of("X-Role"), role)
+            .withHeader(HttpHeaders.of("X-Persona"), role)
+            .withHeader(HttpHeaders.of("X-Tier"), "core")
             .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
             .build();
     }
 
     private static HttpRequest contextRequestWithBody(
             HttpMethod method, String path, String tenantId, String principalId, String role, String body) {
-        return HttpRequest.builder(method, "http://localhost" + path)
+        return contextRequestWithBody(method, path, tenantId, principalId, role, body, null);
+    }
+
+    private static HttpRequest contextRequestWithBody(
+            HttpMethod method,
+            String path,
+            String tenantId,
+            String principalId,
+            String role,
+            String body,
+            String idempotencyKey) {
+        HttpRequest.Builder builder = HttpRequest.builder(method, "http://localhost" + path)
             .withHeader(HttpHeaders.of("X-Tenant-ID"), tenantId)
             .withHeader(HttpHeaders.of("X-Principal-ID"), principalId)
             .withHeader(HttpHeaders.of("X-Role"), role)
+            .withHeader(HttpHeaders.of("X-Persona"), role)
+            .withHeader(HttpHeaders.of("X-Tier"), "core")
             .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
-            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+        if (idempotencyKey != null) {
+            builder.withHeader(HttpHeaders.of("X-Idempotency-Key"), idempotencyKey);
+        }
+        return builder
             .withBody(body.getBytes(StandardCharsets.UTF_8))
             .build();
     }
 
     private static ConsentManagementService.ConsentGrant sampleGrant() {
+        return sampleGrant("patient-1", "clinician-1", null);
+    }
+
+    private static ConsentManagementService.ConsentGrant sampleGrant(
+            String patientId,
+            String recipientId,
+            String idempotencyKey) {
         return new ConsentManagementService.ConsentGrant(
             "grant-42",
-            "patient-1",
-            "clinician-1",
+            patientId,
+            recipientId,
             new ConsentManagementService.ConsentScope(
                 Set.of("labs"), false, Set.of(), Set.of("read"), Map.of()),
             "ACTIVE",
             Instant.now(),
-            Instant.now().plusSeconds(86400),
+            Instant.parse("2099-01-01T00:00:00Z"),
             null,
-            null
+            idempotencyKey
         );
     }
 }

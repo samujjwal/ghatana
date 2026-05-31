@@ -125,6 +125,183 @@ public interface EventLogStore {
      */
     Promise<Subscription> tail(TenantContext tenant, Offset from, Consumer<EventEntry> handler);
 
+    // ==================== Checkpoint Management (P3-03) ====================
+
+    /**
+     * Store a consumer checkpoint for a named stream.
+     *
+     * <p>P3-03: Checkpoints enable exactly-once processing semantics by tracking
+     * consumer progress through the event log. Each checkpoint is scoped to a
+     * tenant and stream, allowing multiple consumers to track independent positions.
+     *
+     * <p>P3-03: This method is deprecated in favor of {@link #commitCheckpoint} which
+     * provides idempotency guarantees and consumer group scoping.
+     *
+     * @param tenant tenant context
+     * @param stream stream identifier (consumer group name)
+     * @param offset offset to checkpoint
+     * @return promise of true if checkpoint stored successfully
+     * @deprecated Use {@link #commitCheckpoint} for production-grade checkpoint management
+     */
+    @Deprecated(since = "2026.05", forRemoval = true)
+    default Promise<Boolean> storeCheckpoint(TenantContext tenant, String stream, Offset offset) {
+        return Promise.ofException(new UnsupportedOperationException(
+            "storeCheckpoint() is deprecated. Use commitCheckpoint() with consumer group and idempotency key for production-grade checkpoint management."));
+    }
+
+    /**
+     * Retrieve the last stored checkpoint for a named stream.
+     *
+     * <p>P3-03: Returns the offset last committed by the consumer for this stream.
+     * If no checkpoint exists, returns the earliest offset.
+     *
+     * <p>P3-03: This method is deprecated in favor of {@link #readCheckpoint} which
+     * provides consumer group scoping and structured checkpoint metadata.
+     *
+     * @param tenant tenant context
+     * @param stream stream identifier (consumer group name)
+     * @return promise of offset (earliest if no checkpoint exists)
+     * @deprecated Use {@link #readCheckpoint} for production-grade checkpoint reading
+     */
+    @Deprecated(since = "2026.05", forRemoval = true)
+    default Promise<Offset> getCheckpoint(TenantContext tenant, String stream) {
+        return Promise.ofException(new UnsupportedOperationException(
+            "getCheckpoint() is deprecated. Use readCheckpoint() with consumer group for production-grade checkpoint management."));
+    }
+
+    /**
+     * Delete a checkpoint for a named stream.
+     *
+     * <p>P3-03: Removes the stored checkpoint, causing the consumer to restart
+     * from the earliest offset on next read.
+     *
+     * @param tenant tenant context
+     * @param stream stream identifier (consumer group name)
+     * @return promise of true if checkpoint was deleted
+     */
+    default Promise<Boolean> deleteCheckpoint(TenantContext tenant, String stream) {
+        return Promise.ofException(new UnsupportedOperationException(
+            "deleteCheckpoint() requires consumer group context. Use deleteCheckpoint(TenantContext, String, String) for production-grade checkpoint management."));
+    }
+
+    /**
+     * Get all checkpoints for a tenant.
+     *
+     * <p>P3-03: Administrative API for monitoring consumer progress across all streams.
+     *
+     * @param tenant tenant context
+     * @return promise of map from stream name to checkpoint offset
+     * @deprecated Use {@link #getAllCheckpointsWithMetadata} for production-grade checkpoint monitoring
+     */
+    @Deprecated(since = "2026.05", forRemoval = true)
+    default Promise<Map<String, Offset>> getAllCheckpoints(TenantContext tenant) {
+        return Promise.ofException(new UnsupportedOperationException(
+            "getAllCheckpoints() is deprecated. Use getAllCheckpointsWithMetadata() for production-grade checkpoint monitoring."));
+    }
+
+    /**
+     * Read a checkpoint for a specific consumer group.
+     *
+     * <p>P3-03: Returns structured checkpoint metadata including offset,
+     * timestamp, and consumer group information.
+     *
+     * @param tenant tenant context
+     * @param stream stream identifier
+     * @param consumerGroup consumer group name
+     * @return promise of checkpoint (empty if no checkpoint exists)
+     */
+    default Promise<Optional<Checkpoint>> readCheckpoint(TenantContext tenant, String stream, String consumerGroup) {
+        return Promise.ofException(new UnsupportedOperationException(
+            "readCheckpoint() must be implemented by durable event store providers."));
+    }
+
+    /**
+     * Commit a checkpoint with idempotency guarantees.
+     *
+     * <p>P3-03: Idempotent checkpoint commit that:
+     * <ul>
+     *   <li>Stores the offset for the tenant/stream/consumer-group tuple</li>
+     *   <li>Uses idempotency key to prevent duplicate commits</li>
+     *   <li>Returns the committed checkpoint metadata</li>
+     * </ul>
+     *
+     * @param tenant tenant context
+     * @param stream stream identifier
+     * @param consumerGroup consumer group name
+     * @param offset offset to commit
+     * @param idempotencyKey idempotency key for safe retry
+     * @return promise of committed checkpoint
+     */
+    default Promise<Checkpoint> commitCheckpoint(TenantContext tenant, String stream, String consumerGroup, Offset offset, String idempotencyKey) {
+        return Promise.ofException(new UnsupportedOperationException(
+            "commitCheckpoint() must be implemented by durable event store providers."));
+    }
+
+    /**
+     * Delete a checkpoint for a specific consumer group.
+     *
+     * <p>P3-03: Removes the stored checkpoint for the tenant/stream/consumer-group tuple.
+     *
+     * @param tenant tenant context
+     * @param stream stream identifier
+     * @param consumerGroup consumer group name
+     * @return promise of true if checkpoint was deleted
+     */
+    default Promise<Boolean> deleteCheckpoint(TenantContext tenant, String stream, String consumerGroup) {
+        return Promise.ofException(new UnsupportedOperationException(
+            "deleteCheckpoint() must be implemented by durable event store providers."));
+    }
+
+    /**
+     * Get all checkpoints with metadata for a tenant.
+     *
+     * <p>P3-03: Administrative API for monitoring consumer progress across all streams
+     * with structured checkpoint metadata.
+     *
+     * @param tenant tenant context
+     * @return promise of map from stream/consumer-group to checkpoint metadata
+     */
+    default Promise<Map<String, Checkpoint>> getAllCheckpointsWithMetadata(TenantContext tenant) {
+        return Promise.ofException(new UnsupportedOperationException(
+            "getAllCheckpointsWithMetadata() must be implemented by durable event store providers."));
+    }
+
+    /**
+     * Replay events with comprehensive replay semantics.
+     *
+     * <p>P3-03: Production-grade replay supporting:
+     * <ul>
+     *   <li>Bounded offset ranges with inclusive semantics</li>
+     *   <li>Event type filtering</li>
+     *   <li>Replay mode selection (AT_LEAST_ONCE, EXACTLY_ONCE, AT_MOST_ONCE)</li>
+     *   <li>Idempotency keys for safe retry</li>
+     *   <li>Consumer group scoping</li>
+     * </ul>
+     *
+     * @param tenant tenant context
+     * @param spec replay specification
+     * @return promise of event entries in the specified range
+     */
+    default Promise<List<EventEntry>> replay(TenantContext tenant, ReplaySpec spec) {
+        return Promise.ofException(new UnsupportedOperationException(
+            "replay() must be implemented by durable event store providers."));
+    }
+
+    /**
+     * Unsubscribe from a tail subscription.
+     *
+     * <p>P3-03: Properly unregisters the listener from the event store,
+     * not just ignoring callbacks.
+     *
+     * @param tenant tenant context
+     * @param subscriptionId subscription identifier
+     * @return promise completing when unsubscribed
+     */
+    default Promise<Void> unsubscribe(TenantContext tenant, SubscriptionId subscriptionId) {
+        return Promise.ofException(new UnsupportedOperationException(
+            "unsubscribe() must be implemented by event store providers with proper listener management."));
+    }
+
     // ==================== Supporting Types ====================
 
     /**
@@ -277,5 +454,123 @@ public interface EventLogStore {
     interface Subscription {
         void cancel();
         boolean isCancelled();
+        
+        /**
+         * Get the subscription ID for unsubscribe operations.
+         *
+         * @return subscription identifier
+         */
+        default SubscriptionId getId() {
+            return new SubscriptionId(UUID.randomUUID().toString());
+        }
+    }
+
+    /**
+     * Subscription identifier for unsubscribe operations.
+     *
+     * <p>P3-03: Unique identifier for a tail subscription that can be used
+     * to properly unregister the listener from the event store.
+     */
+    record SubscriptionId(String value) {
+        public SubscriptionId {
+            if (value == null || value.isBlank()) {
+                throw new IllegalArgumentException("subscription ID is required");
+            }
+        }
+
+        public static SubscriptionId of(String value) {
+            return new SubscriptionId(value);
+        }
+    }
+
+    /**
+     * Structured checkpoint with metadata.
+     *
+     * <p>P3-03: Contains checkpoint offset, timestamp, consumer group,
+     * and idempotency key for production-grade checkpoint management.
+     */
+    record Checkpoint(
+        String stream,
+        String consumerGroup,
+        Offset offset,
+        java.time.Instant timestamp,
+        String idempotencyKey
+    ) {
+        public Checkpoint {
+            if (stream == null || stream.isBlank()) {
+                throw new IllegalArgumentException("stream is required");
+            }
+            if (consumerGroup == null || consumerGroup.isBlank()) {
+                throw new IllegalArgumentException("consumerGroup is required");
+            }
+            timestamp = timestamp != null ? timestamp : java.time.Instant.now();
+        }
+    }
+
+    /**
+     * Replay specification for comprehensive replay semantics.
+     *
+     * <p>P3-03: Enables production-grade event replay with:
+     * <ul>
+     *   <li>Bounded offset ranges (inclusive fromOffset, inclusive toOffset or -1 for latest)</li>
+     *   <li>Event type filtering for selective replay</li>
+     *   <li>Replay mode selection (AT_LEAST_ONCE, EXACTLY_ONCE, AT_MOST_ONCE)</li>
+     *   <li>Idempotency keys for safe retry semantics</li>
+     *   <li>Consumer group scoping for independent consumer tracking</li>
+     * </ul>
+     */
+    record ReplaySpec(
+        Offset fromOffset,
+        Offset toOffset,
+        List<String> eventTypes,
+        ReplayMode replayMode,
+        String idempotencyKey,
+        String consumerGroup
+    ) {
+        public ReplaySpec {
+            eventTypes = eventTypes != null ? List.copyOf(eventTypes) : List.of();
+            replayMode = replayMode != null ? replayMode : ReplayMode.AT_LEAST_ONCE;
+            consumerGroup = consumerGroup != null && !consumerGroup.isBlank() ? consumerGroup : "default";
+        }
+
+        public static ReplaySpec fromOffset(Offset fromOffset) {
+            return new ReplaySpec(fromOffset, Offset.of(-1), List.of(), ReplayMode.AT_LEAST_ONCE, null, "default");
+        }
+
+        public static ReplaySpec bounded(Offset fromOffset, Offset toOffset) {
+            return new ReplaySpec(fromOffset, toOffset, List.of(), ReplayMode.AT_LEAST_ONCE, null, "default");
+        }
+
+        public static ReplaySpec filtered(Offset fromOffset, Offset toOffset, List<String> eventTypes) {
+            return new ReplaySpec(fromOffset, toOffset, eventTypes, ReplayMode.AT_LEAST_ONCE, null, "default");
+        }
+
+        public static ReplaySpec withIdempotency(Offset fromOffset, Offset toOffset, String idempotencyKey) {
+            return new ReplaySpec(fromOffset, toOffset, List.of(), ReplayMode.EXACTLY_ONCE, idempotencyKey, "default");
+        }
+
+        public static ReplaySpec forConsumerGroup(Offset fromOffset, Offset toOffset, String consumerGroup) {
+            return new ReplaySpec(fromOffset, toOffset, List.of(), ReplayMode.AT_LEAST_ONCE, null, consumerGroup);
+        }
+    }
+
+    /**
+     * Replay mode semantics.
+     */
+    enum ReplayMode {
+        /**
+         * At-least-once semantics: events may be delivered multiple times on failure/retry.
+         * Consumers must be idempotent.
+         */
+        AT_LEAST_ONCE,
+        /**
+         * Exactly-once semantics: events are delivered exactly once using idempotency keys.
+         * Requires idempotencyKey to be set.
+         */
+        EXACTLY_ONCE,
+        /**
+         * At-most-once semantics: events may be lost on failure but never duplicated.
+         */
+        AT_MOST_ONCE
     }
 }

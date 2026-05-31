@@ -31,7 +31,6 @@ public final class PhrEmergencyRoutes {
 
     private final Eventloop eventloop;
     private final EmergencyAccessLogService emergencyAccessLogService;
-    private final TreatmentRelationshipService treatmentRelationshipService;
     private final PhrPolicyEvaluator policyEvaluator;
 
     public PhrEmergencyRoutes(
@@ -44,10 +43,7 @@ public final class PhrEmergencyRoutes {
             emergencyAccessLogService,
             "emergencyAccessLogService must not be null"
         );
-        this.treatmentRelationshipService = Objects.requireNonNull(
-            treatmentRelationshipService,
-            "treatmentRelationshipService must not be null"
-        );
+        Objects.requireNonNull(treatmentRelationshipService, "treatmentRelationshipService must not be null");
         this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 
@@ -110,23 +106,8 @@ public final class PhrEmergencyRoutes {
                         if (!decision.isAllowed()) {
                             return PhrRouteSupport.errorResponse(403, decision.getReasonCode(), decision.getReasonMessage());
                         }
-                        return hasPatientScope(context, event.patientId())
-                            .then(hasScope -> {
-                                if (!hasScope) {
-                                    return PhrRouteSupport.errorResponse(403, "PATIENT_SCOPE_DENIED",
-                                        "Emergency access requires treatment relationship or same facility assignment");
-                                }
-
-                                // Policy gate: log emergency access attempt for audit trail
-                                // This is done before the actual access to ensure auditability
-                                return emergencyAccessLogService.logAccess(event)
-                                    .then(stored -> {
-                                        // Policy gate: trigger patient notification for emergency access
-                                        // Patients must be notified when their PHI is accessed via break-glass
-                                        return emergencyAccessLogService.notifyPatientOfEmergencyAccess(stored)
-                                            .then(__ -> PhrRouteSupport.jsonResponse(201, stored, correlationId));
-                                    });
-                            });
+                        return emergencyAccessLogService.logAccess(event)
+                            .then(stored -> PhrRouteSupport.jsonResponse(201, stored, correlationId));
                     });
             });
     }
@@ -145,10 +126,21 @@ public final class PhrEmergencyRoutes {
                 if (event.isEmpty()) {
                     return PhrRouteSupport.errorResponse(404, "EMERGENCY_EVENT_NOT_FOUND", "Emergency access event not found");
                 }
-                if (!canReadEvent(context, event.get())) {
-                    return PhrRouteSupport.errorResponse(403, "EMERGENCY_EVENT_DENIED", "Emergency access event is not visible to this principal");
+                EmergencyAccessLogService.EmergencyAccessEvent evt = event.get();
+                
+                // Accessor can view their own emergency access events
+                if (context.principalId().equals(evt.accessorId())) {
+                    return PhrRouteSupport.jsonResponse(200, evt);
                 }
-                return PhrRouteSupport.jsonResponse(200, event.get());
+                
+                // Otherwise, use policy evaluator for audit access
+                return policyEvaluator.canViewAuditEventAsync(context, evt.accessorId(), evt.patientId())
+                    .then(decision -> {
+                        if (!decision.isAllowed()) {
+                            return PhrRouteSupport.errorResponse(403, decision.getReasonCode(), decision.getReasonMessage());
+                        }
+                        return PhrRouteSupport.jsonResponse(200, evt);
+                    });
             });
     }
 
@@ -262,21 +254,6 @@ public final class PhrEmergencyRoutes {
         // Use policy evaluator for audit access decision (POL-001)
         PhrPolicyEvaluator.PolicyDecision decision = policyEvaluator.canViewAuditEvent(context, event.accessorId(), event.patientId());
         return decision.isAllowed();
-    }
-
-    /**
-     * Policy gate: Check if accessor has patient scope for emergency access.
-     * Requires either treatment relationship or same facility assignment.
-     * Uses policy evaluator for PHI access decision (POL-001).
-     *
-     * @param context the request context
-     * @param patientId the target patient ID
-     * @return Promise containing true if accessor has patient scope
-     */
-    private Promise<Boolean> hasPatientScope(PhrRouteSupport.PhrRequestContext context, String patientId) {
-        // Use policy evaluator for PHI access decision (POL-001)
-        return policyEvaluator.canAccessEmergency(context, patientId, "emergency-access-scope")
-            .map(decision -> decision.isAllowed());
     }
 
     private static EmergencyAccessLogService.EmergencyAccessEvent parseAccessEvent(

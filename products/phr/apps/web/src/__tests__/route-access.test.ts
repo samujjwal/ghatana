@@ -31,7 +31,15 @@ function activeRoutes(): typeof phrRouteContracts {
 }
 
 function isSuppressedRoute(route: { stability?: string; hidden?: boolean; blocked?: boolean }): boolean {
-  return route.hidden === true || route.blocked === true || route.stability === 'hidden' || route.stability === 'blocked';
+  return (
+    route.hidden === true ||
+    route.blocked === true ||
+    route.stability === 'hidden' ||
+    route.stability === 'blocked' ||
+    route.stability === 'deferred' ||
+    route.stability === 'removed' ||
+    route.stability === 'preview'
+  );
 }
 
 // ---------------------------------------------------------------------------

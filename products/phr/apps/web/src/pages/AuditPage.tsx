@@ -11,31 +11,125 @@
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import { SafeError } from '../components/SafeError';
+import {
+  Badge,
+  Button,
+  Checkbox,
+  Input,
+  Modal,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from '@ghatana/design-system';
 import { fetchAuditEvents } from '../api/auditApi';
+import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { formatPhrDateTime, t } from '../i18n/phrI18n';
 import type { AuditEvent } from '../types';
 
 type AuditFilter = 'all' | 'access' | 'consent' | 'emergency';
+type AuditPolicyMode = 'patient-self' | 'clinician-scoped' | 'admin-tenant' | 'unsupported';
+type TranslationKey = Parameters<typeof t>[0];
+
+interface AuditPolicy {
+  mode: AuditPolicyMode;
+  titleKey: TranslationKey;
+  subheaderKey: TranslationKey;
+  allowedFilters: AuditFilter[];
+  canExport: boolean;
+  requiresPatientScope: boolean;
+}
+
+const AUDIT_FILTERS: AuditFilter[] = ['all', 'access', 'consent', 'emergency'];
+
+function getAuditPolicy(role: string): AuditPolicy {
+  if (role === 'patient') {
+    return {
+      mode: 'patient-self',
+      titleKey: 'audit.policy.patient.title',
+      subheaderKey: 'audit.policy.patient.subheader',
+      allowedFilters: AUDIT_FILTERS,
+      canExport: true,
+      requiresPatientScope: false,
+    };
+  }
+  if (role === 'clinician') {
+    return {
+      mode: 'clinician-scoped',
+      titleKey: 'audit.policy.clinician.title',
+      subheaderKey: 'audit.policy.clinician.subheader',
+      allowedFilters: ['access', 'emergency'],
+      canExport: false,
+      requiresPatientScope: true,
+    };
+  }
+  if (role === 'admin') {
+    return {
+      mode: 'admin-tenant',
+      titleKey: 'audit.policy.admin.title',
+      subheaderKey: 'audit.policy.admin.subheader',
+      allowedFilters: AUDIT_FILTERS,
+      canExport: true,
+      requiresPatientScope: false,
+    };
+  }
+  return {
+    mode: 'unsupported',
+    titleKey: 'audit.policy.unsupported.title',
+    subheaderKey: 'audit.policy.unsupported.subheader',
+    allowedFilters: [],
+    canExport: false,
+    requiresPatientScope: false,
+  };
+}
 
 export function AuditPage(): React.ReactElement {
   const { session } = usePhrSession();
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const policy = getAuditPolicy(session?.role ?? 'unsupported');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<SafeApiErrorState | null>(null);
   const [filter, setFilter] = useState<AuditFilter>('all');
+  const [scopePatientId, setScopePatientId] = useState<string>('');
+  const [appliedPatientScope, setAppliedPatientScope] = useState<string>('');
   const [selectedEvent, setSelectedEvent] = useState<AuditEvent | null>(null);
-  const [detailLoading, setDetailLoading] = useState<boolean>(false);
   const [showExportModal, setShowExportModal] = useState<boolean>(false);
   const [exportAcknowledged, setExportAcknowledged] = useState<boolean>(false);
   const [exporting, setExporting] = useState<boolean>(false);
 
+  const patientScope = policy.mode === 'patient-self'
+    ? session?.principalId
+    : policy.mode === 'clinician-scoped'
+      ? appliedPatientScope
+      : undefined;
+  const isScopeReady = !policy.requiresPatientScope || Boolean(patientScope);
+
   const loadAuditEvents = useCallback((activeFilter: AuditFilter): void => {
     if (!session) return;
+    const activePolicy = getAuditPolicy(session.role);
+    const scopedPatientId = activePolicy.mode === 'patient-self'
+      ? session.principalId
+      : activePolicy.mode === 'clinician-scoped'
+        ? appliedPatientScope
+        : undefined;
+
+    if (activePolicy.mode === 'unsupported') {
+      setAuditEvents([]);
+      setLoading(false);
+      return;
+    }
+    if (activePolicy.requiresPatientScope && !scopedPatientId) {
+      setAuditEvents([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     fetchAuditEvents({
       filter: activeFilter,
+      patientId: scopedPatientId,
       tenantId: session.tenantId,
       principalId: session.principalId,
       role: session.role,
@@ -44,18 +138,25 @@ export function AuditPage(): React.ReactElement {
         setAuditEvents(page.events);
       })
       .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : t('audit.loading'));
+        setError(toSafeApiErrorState(err, t('audit.error.load')));
       })
       .finally(() => {
         setLoading(false);
       });
-  }, [session]);
+  }, [appliedPatientScope, session]);
 
   useEffect(() => {
     loadAuditEvents(filter);
   }, [filter, loadAuditEvents]);
 
+  useEffect(() => {
+    if (!policy.allowedFilters.includes(filter)) {
+      setFilter(policy.allowedFilters[0] ?? 'all');
+    }
+  }, [filter, policy.allowedFilters]);
+
   const handleFilterChange = (nextFilter: AuditFilter): void => {
+    if (!policy.allowedFilters.includes(nextFilter)) return;
     setFilter(nextFilter);
   };
 
@@ -68,6 +169,7 @@ export function AuditPage(): React.ReactElement {
   };
 
   const handleExportClick = (): void => {
+    if (!policy.canExport) return;
     setShowExportModal(true);
     setExportAcknowledged(false);
   };
@@ -91,9 +193,10 @@ export function AuditPage(): React.ReactElement {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
       setShowExportModal(false);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Export failed');
+      setError(toSafeApiErrorState(err, t('audit.export.failed')));
     } finally {
       setExporting(false);
     }
@@ -113,109 +216,133 @@ export function AuditPage(): React.ReactElement {
     return [headers, ...rows].map(row => row.join(',')).join('\n');
   };
 
-  const filterButtons: Array<{ key: AuditFilter; label: string }> = [
-    { key: 'all', label: t('audit.filter.all') },
-    { key: 'access', label: t('audit.filter.access') },
-    { key: 'consent', label: t('audit.filter.consent') },
-  ];
+  const filterButtons: Array<{ key: AuditFilter; label: string }> = policy.allowedFilters.map((key) => ({
+    key,
+    label: t(`audit.filter.${key}`),
+  }));
 
   return (
     <section className="max-w-6xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">{t('audit.title')}</h1>
-        <button
+        <div>
+          <h1 className="text-2xl font-bold">{t(policy.titleKey)}</h1>
+          <p className="mt-1 text-sm text-gray-600">{t(policy.subheaderKey)}</p>
+        </div>
+        <Button
+          type="button"
           onClick={handleExportClick}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          disabled={auditEvents.length === 0}
+          disabled={!policy.canExport || auditEvents.length === 0}
         >
-          Export CSV
-        </button>
+          {t('audit.export.csv')}
+        </Button>
       </div>
+
+      {policy.mode === 'unsupported' && (
+        <SafeError message={t('audit.policy.unsupported.message')} severity="warning" />
+      )}
+
+      {policy.mode === 'clinician-scoped' && (
+        <form
+          className="mb-6 flex gap-3"
+          onSubmit={(event: React.FormEvent<HTMLFormElement>) => {
+            event.preventDefault();
+            setAppliedPatientScope(scopePatientId.trim());
+          }}
+        >
+          <label className="sr-only" htmlFor="audit-patient-scope">{t('audit.scope.patientId.label')}</label>
+          <Input
+            id="audit-patient-scope"
+            value={scopePatientId}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => setScopePatientId(event.target.value)}
+            placeholder={t('audit.scope.patientId.placeholder')}
+            required
+          />
+          <Button
+            type="submit"
+            disabled={!scopePatientId.trim()}
+          >
+            {t('audit.scope.apply')}
+          </Button>
+        </form>
+      )}
 
       <div className="mb-6 flex gap-4">
         {filterButtons.map(({ key, label }) => (
-          <button
+          <Button
             key={key}
+            type="button"
             onClick={() => handleFilterChange(key)}
             aria-pressed={filter === key}
-            className={`px-4 py-2 rounded ${filter === key ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+            variant={filter === key ? 'primary' : 'secondary'}
           >
             {label}
-          </button>
+          </Button>
         ))}
       </div>
 
-      {loading ? (
+      {policy.requiresPatientScope && !isScopeReady ? (
+        <div className="text-center py-8 text-gray-500">{t('audit.scope.required')}</div>
+      ) : loading ? (
         <div className="text-center py-8">{t('audit.loading')}</div>
       ) : error ? (
-        <div role="alert" className="text-center py-8 text-red-700">{error}</div>
+        <SafeError message={error.message} correlationId={error.correlationId} onDismiss={() => setError(null)} />
       ) : (
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+        <div className="overflow-hidden">
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell component="th">
                   {t('audit.timestamp')}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </TableCell>
+                <TableCell component="th">
                   {t('audit.eventType')}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </TableCell>
+                <TableCell component="th">
                   {t('audit.principal')}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </TableCell>
+                <TableCell component="th">
                   {t('audit.resource')}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </TableCell>
+                <TableCell component="th">
                   {t('audit.status')}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </TableCell>
+                <TableCell component="th">
                   {t('audit.details')}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {auditEvents.map((event) => (
-                <tr 
+                <TableRow
                   key={event.id}
                   onClick={() => handleEventClick(event)}
-                  className="cursor-pointer hover:bg-gray-50"
+                  className="cursor-pointer"
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <TableCell>
                     {formatPhrDateTime(event.timestamp)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  </TableCell>
+                  <TableCell>
                     {event.eventType}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  </TableCell>
+                  <TableCell>
                     {event.principal}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  </TableCell>
+                  <TableCell>
                     {event.resourceType}
                     {event.resourceId !== null && ` (${event.resourceId})`}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        event.success
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                    >
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={event.success ? 'success' : 'destructive'}>
                       {event.success ? t('audit.success') : t('audit.failed')}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {Object.entries(event.details ?? {}).map(([key, value]) => (
-                      <div key={key}>
-                        {key}: {String(value)}
-                      </div>
-                    ))}
-                  </td>
-                </tr>
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {event.details && Object.keys(event.details).length > 0 ? t('audit.details.available') : t('audit.details.empty')}
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
 
           {auditEvents.length === 0 && (
             <div className="text-center py-8 text-gray-500">
@@ -225,24 +352,9 @@ export function AuditPage(): React.ReactElement {
         </div>
       )}
 
-      {/* Audit Detail Drawer */}
       {selectedEvent && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={handleCloseDetail} />
-          <div className="absolute right-0 top-0 h-full w-full max-w-lg bg-white shadow-xl overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold">Audit Event Details</h2>
-                <button
-                  onClick={handleCloseDetail}
-                  className="text-gray-500 hover:text-gray-700"
-                  aria-label="Close"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="space-y-4">
+        <Modal isOpen onClose={handleCloseDetail} title={t('audit.detail.title')} size="md">
+          <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">{t('audit.timestamp')}</label>
                   <p className="mt-1 text-sm text-gray-900">{formatPhrDateTime(selectedEvent.timestamp)}</p>
@@ -268,43 +380,25 @@ export function AuditPage(): React.ReactElement {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">{t('audit.status')}</label>
-                  <span
-                    className={`mt-1 inline-flex px-2 py-1 text-xs leading-5 font-semibold rounded-full ${
-                      selectedEvent.success
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}
-                  >
+                  <Badge variant={selectedEvent.success ? 'success' : 'destructive'}>
                     {selectedEvent.success ? t('audit.success') : t('audit.failed')}
-                  </span>
+                  </Badge>
                 </div>
 
                 {selectedEvent.details && Object.keys(selectedEvent.details).length > 0 && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700">{t('audit.details')}</label>
                     <div className="mt-1 bg-gray-50 p-3 rounded-md">
-                      {Object.entries(selectedEvent.details).map(([key, value]) => (
-                        <div key={key} className="text-sm">
-                          <span className="font-medium">{key}:</span> {String(value)}
-                        </div>
-                      ))}
+                      <p className="text-sm">{t('audit.details.redacted')}</p>
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {showExportModal && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={handleCloseExportModal} />
-          <div className="absolute inset-0 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-full overflow-y-auto">
-              <div className="p-6">
-                <h2 className="text-xl font-bold mb-4">{t('audit.export.title')}</h2>
-                
+        <Modal isOpen onClose={handleCloseExportModal} title={t('audit.export.title')} size="md">
                 <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
                   <h3 className="font-semibold text-yellow-800 mb-2">{t('audit.export.noticeTitle')}</h3>
                   <p className="text-sm text-yellow-700 mb-2">
@@ -320,38 +414,30 @@ export function AuditPage(): React.ReactElement {
                 </div>
 
                 <div className="mb-4">
-                  <label className="flex items-start space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={exportAcknowledged}
-                      onChange={(e) => setExportAcknowledged(e.target.checked)}
-                      className="mt-1"
-                    />
-                    <span className="text-sm text-gray-700">
-                      {t('audit.export.acknowledgement')}
-                    </span>
-                  </label>
+                  <Checkbox
+                    checked={exportAcknowledged}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setExportAcknowledged(e.target.checked)}
+                    label={t('audit.export.acknowledgement')}
+                  />
                 </div>
 
                 <div className="flex justify-end space-x-3">
-                  <button
+                  <Button
+                    type="button"
                     onClick={handleCloseExportModal}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                    variant="secondary"
                   >
-                    Cancel
-                  </button>
-                  <button
+                    {t('audit.export.cancel')}
+                  </Button>
+                  <Button
+                    type="button"
                     onClick={handleExport}
                     disabled={!exportAcknowledged || exporting}
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
                   >
-                    {exporting ? 'Exporting...' : 'Export'}
-                  </button>
+                    {exporting ? t('audit.export.exporting') : t('audit.export.submit')}
+                  </Button>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        </Modal>
       )}
     </section>
   );

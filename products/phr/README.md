@@ -1,42 +1,36 @@
 # PHR Nepal - Personal Health Records
 
 **Product Owner:** @ghatana/phr-team
-**Status:** Alpha - Core Implementation Complete
+**Status:** Alpha - Kernel-native implementation in progress
 **Stack:** Java 21 + ActiveJ, React 19 + Tailwind CSS, React Native (Expo)
 
 ## Purpose
 
-**PHR Nepal** is a personal health records application for the Nepal market. It provides patients and healthcare providers with a secure, interoperable platform for managing medical records, prescriptions, lab results, appointment history, clinical notes, imaging, immunizations, referrals, caregiver access, telemedicine, and emergency break-glass access.
+**PHR Nepal** is a Kernel-native personal health records application for the Nepal market. It provides patients and healthcare operators with a secure, interoperable platform for managing medical records, prescriptions, lab results, appointment history, immunizations, documents, notifications, profile data, and emergency break-glass access. Provider, caregiver, FCHV, insurance, referrals, and broader telemedicine workflows remain hidden or deferred unless the Kernel route contract promotes them.
 
 ## Implementation Status
 
-| Module                                                | Status            | Notes                                                                       |
-| ----------------------------------------------------- | ----------------- | --------------------------------------------------------------------------- |
-| `PhrKernelModule` (14 services)                       | Complete          | ActiveJ + Kernel Platform integration                                       |
-| Security (`PHRSecurityManagerImpl`)                   | Complete          | HIPAA-compliant authN/authZ                                                 |
-| Privacy (`PHRPrivacyManagerImpl`)                     | Complete          | Nepal Directive 2081 consent model                                          |
-| Consent Management                                    | Complete          | Distributed cache, rate-limited, audit-logged                               |
-| FHIR R4 Transformation Engine                         | Complete          | Patient, Observation, Medication, Appointment, Consent, Document            |
-| Observability (`PHRAuditTrailServiceImpl`, telemetry) | Complete          | Immutable audit trail, Micrometer metrics                                   |
-| Patient Record Service                                | Complete          | 25-year retention, field-level consent enforcement                          |
-| Lab / Medication / Imaging / Immunization             | Complete          | FHIR-backed clinical services                                               |
-| Appointments / Telemedicine / Referrals               | Complete          | Scheduling, reminder hooks, caregiver delegation                            |
-| Emergency Access                                      | Complete          | Break-glass with mandatory post-access audit                                |
-| Retention / Deletion Workflow                         | Complete          | Nepal Privacy Act 2075 right-to-erasure compliance                          |
-| Billing (PHR-side)                                    | Complete          | Encounter + insurance claim baseline; EDI clearinghouse out of scope for v1 |
-| FHIR Server Endpoint                                  | Planned           | Only transformation engine exists today                                     |
-| Mobile App                                            | Baseline Complete | Expo app with secure shell, offline cache, push/biometric hooks, and API-backed dashboard |
-| AI/ML Clinical Decision Support                       | Complete          | Lab anomaly, medication interaction, and readmission agents exposed via kernel service |
-| Nepal HIE Integration                                 | Planned           | Interface design pending                                                    |
+| Area | Status | Notes |
+| --- | --- | --- |
+| Kernel product registration | Implemented | PHR declares product/plugin metadata and Kernel dependencies. |
+| Route contract and web shell | Implemented for current stable routes | `products/phr/config/phr-route-contract.json` is the canonical route source. Hidden provider/caregiver/FCHV routes are not mounted. |
+| Policy dispatch | Implemented through Kernel plugin | Kernel dispatches to PHR healthcare decision providers; unknown policy IDs fail closed. |
+| Audit and telemetry | Implemented with remaining evidence work | Audit envelopes use Kernel defaults with a PHR persistence adapter; telemetry enforces safe tags. Staging/performance evidence is not complete. |
+| Mobile privacy | Implemented for current mobile surfaces | Encrypted cache clearing, consent invalidation, biometric emergency gate, stale metadata, and context headers are covered by mobile tests. |
+| FHIR/HL7 and HIE | Partial | Kernel supplies reusable FHIR validation; PHR owns providers, transformations, HL7 parsing, and HIE adapters. |
+| Documents/OCR | Implemented for current workflow | Kernel validates upload policy, provenance, malware attestation, and OCR review transitions; PHR owns persistence and authorization. |
+| Appointments | Partial | Request workflow exists; full scheduling lifecycle is not complete. |
+| Provider/caregiver/FCHV workflows | Deferred/hidden | Present in the route contract as hidden until full UI/API/policy/test coverage exists. |
+| Compliance readiness | Not complete | HIPAA/staging/security-performance sign-off must be produced before production-readiness claims. |
 
 ## Architecture
 
 - **Backend:** Java 21 + ActiveJ (ActiveJ Promise async, ServiceLauncher lifecycle)
-- **Security:** `platform:java:security` - JWT, RBAC, ABAC, API key management
-- **Observability:** `platform:java:observability` - OpenTelemetry, Micrometer, immutable audit trail
+- **Security:** Kernel policy plugin + PHR healthcare decision providers; `platform:java:security` remains a supporting dependency
+- **Observability:** Kernel audit envelopes, safe telemetry tags, and product-specific persistence/metrics adapters
 - **Database:** `platform:java:database` - DataCloud kernel adapter, 25-year retention policy
 - **Standards:** HL7 FHIR R4 for health data interoperability
-- **Regulatory:** Nepal Directive 2081, Nepal Privacy Act 2075, HIPAA (for international compatibility)
+- **Regulatory:** Nepal Directive 2081 and Nepal Privacy Act 2075 alignment work; HIPAA compatibility evidence is not complete
 - **Frontend:** React 19 + Tailwind CSS + `@ghatana/design-system`
 - **Mobile:** React Native (Expo) with API-backed dashboard loading and offline cache support
 
@@ -61,7 +55,7 @@ src/main/java/com/ghatana/phr/
 
 | Document                                                               | Description                                                    |
 | ---------------------------------------------------------------------- | -------------------------------------------------------------- |
-| [`PHR_KERNEL_INTEGRATION_README.md`](PHR_KERNEL_INTEGRATION_README.md) | Full Kernel Platform integration guide and component inventory |
+| [`PHR_KERNEL_INTEGRATION_README.md`](PHR_KERNEL_INTEGRATION_README.md) | Code-grounded Kernel integration status and remaining evidence work |
 | [`docs/phr-research.md`](docs/phr-research.md)                         | Market analysis, regulatory considerations (MoHP Nepal)        |
 | [`docs/phr-feature-list.md`](docs/phr-feature-list.md)                 | Prioritized feature backlog (MoSCoW)                           |
 | [`docs/phr-e2e-requirements.md`](docs/phr-e2e-requirements.md)         | End-to-end system requirements                                 |

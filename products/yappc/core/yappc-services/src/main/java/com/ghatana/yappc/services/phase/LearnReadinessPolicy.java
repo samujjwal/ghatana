@@ -2,6 +2,14 @@ package com.ghatana.yappc.services.phase;
 
 import java.util.List;
 
+/**
+ * Learn phase readiness policy.
+ *
+ * @doc.type class
+ * @doc.purpose Evaluate Learn phase readiness
+ * @doc.layer product
+ * @doc.pattern PhaseReadinessPolicy
+ */
 public final class LearnReadinessPolicy implements PhaseReadinessPolicy {
     @Override
     public String phase() {

@@ -32,6 +32,15 @@ public interface DataFabricConnector {
     Promise<ConnectionTestResult> testConnection(String connectionId);
 
     /**
+     * Tests the connection to the data source (SPI-compatible signature).
+     *
+     * @param tenantId the tenant ID (required)
+     * @param connectorId the connector ID (required)
+     * @return Promise containing connection test result
+     */
+    Promise<ConnectionTestResult> testConnection(String tenantId, String connectorId);
+
+    /**
      * Establish connection to data source.
      *
      * @param config connection configuration
@@ -81,6 +90,16 @@ public interface DataFabricConnector {
     Promise<DataSchema> getSchema(String connectionId);
 
     /**
+     * Infers schema from the data source (SPI-compatible signature).
+     *
+     * @param tenantId the tenant ID (required)
+     * @param connectorId the connector ID (required)
+     * @param options schema inference options (optional)
+     * @return Promise containing inferred schema
+     */
+    Promise<SchemaSnapshot> inferSchema(String tenantId, String connectorId, Map<String, Object> options);
+
+    /**
      * Sync data from external source.
      *
      * @param connectionId connection identifier
@@ -90,12 +109,51 @@ public interface DataFabricConnector {
     Promise<SyncResult> sync(String connectionId, SyncConfig syncConfig);
 
     /**
+     * Synchronizes data from source to target dataset (SPI-compatible signature).
+     *
+     * @param tenantId the tenant ID (required)
+     * @param connectionId the connector ID (required)
+     * @param request sync request configuration (required)
+     * @return Promise containing sync operation result
+     */
+    Promise<SyncResult> sync(String tenantId, String connectionId, SyncRequest request);
+
+    /**
      * Get sync status.
      *
      * @param connectionId connection identifier
      * @return promise of sync status
      */
     Promise<SyncStatus> getSyncStatus(String connectionId);
+
+    /**
+     * Gets the current synchronization status (SPI-compatible signature).
+     *
+     * @param tenantId the tenant ID (required)
+     * @param connectorId the connector ID (required)
+     * @return Promise containing sync status
+     */
+    Promise<SyncStatus> getSyncStatus(String tenantId, String connectorId);
+
+    /**
+     * Links connector to a dataset.
+     *
+     * @param tenantId the tenant ID (required)
+     * @param connectorId the connector ID (required)
+     * @param datasetId the dataset ID to link (required)
+     * @param userId the user performing the link (for audit)
+     * @return promise containing link result
+     */
+    Promise<DatasetLink> linkDataset(String tenantId, String connectorId, String datasetId, String userId);
+
+    /**
+     * Gets dataset link information.
+     *
+     * @param tenantId the tenant ID (required)
+     * @param connectorId the connector ID (required)
+     * @return promise containing dataset link or null if not linked
+     */
+    Promise<DatasetLink> getDatasetLink(String tenantId, String connectorId);
 
     /**
      * Connection types.
@@ -183,7 +241,21 @@ public interface DataFabricConnector {
         String message,
         long latencyMs,
         String version
-    ) {}
+    ) {
+        /**
+         * Returns true if the connection test succeeded.
+         */
+        public boolean success() {
+            return success;
+        }
+
+        /**
+         * Returns the status string (for compatibility).
+         */
+        public String status() {
+            return success ? "CONNECTED" : "FAILED";
+        }
+    }
 
     /**
      * Query result.
@@ -205,6 +277,45 @@ public interface DataFabricConnector {
         List<TableSchema> tables,
         Instant fetchedAt
     ) {}
+
+    /**
+     * Schema snapshot from inference (SPI-compatible).
+     */
+    record SchemaSnapshot(
+        String snapshotId,
+        String connectorId,
+        String tenantId,
+        List<SchemaField> fields,
+        String schemaVersion,
+        Instant capturedAt,
+        Map<String, Object> metadata
+    ) {
+        public SchemaSnapshot {
+            if (fields == null) {
+                fields = List.of();
+            }
+            if (metadata == null) {
+                metadata = Map.of();
+            }
+        }
+    }
+
+    /**
+     * Schema field definition (SPI-compatible).
+     */
+    record SchemaField(
+        String name,
+        String type,
+        boolean nullable,
+        String description,
+        Map<String, Object> constraints
+    ) {
+        public SchemaField {
+            if (constraints == null) {
+                constraints = Map.of();
+            }
+        }
+    }
 
     /**
      * Table schema.
@@ -238,6 +349,30 @@ public interface DataFabricConnector {
     ) {}
 
     /**
+     * Synchronization request (SPI-compatible).
+     */
+    record SyncRequest(
+        String datasetId,
+        String mode,
+        Map<String, Object> filters,
+        Map<String, Object> mapping,
+        boolean incremental,
+        String idempotencyKey
+    ) {
+        public SyncRequest {
+            if (mode == null) {
+                mode = "FULL";
+            }
+            if (filters == null) {
+                filters = Map.of();
+            }
+            if (mapping == null) {
+                mapping = Map.of();
+            }
+        }
+    }
+
+    /**
      * Sync result.
      */
     record SyncResult(
@@ -249,7 +384,63 @@ public interface DataFabricConnector {
         Instant startedAt,
         Instant completedAt,
         String errorMessage
-    ) {}
+    ) {
+        /**
+         * Returns true if the sync operation succeeded.
+         */
+        public boolean success() {
+            return success;
+        }
+
+        /**
+         * Returns the sync ID (alias for jobId).
+         */
+        public String syncId() {
+            return jobId;
+        }
+
+        /**
+         * Returns the number of records processed (alias for recordsSynced).
+         */
+        public int recordsProcessed() {
+            return recordsSynced;
+        }
+
+        /**
+         * Returns the number of records inserted (0 for compatibility).
+         */
+        public int recordsInserted() {
+            return 0;
+        }
+
+        /**
+         * Returns the number of records updated (0 for compatibility).
+         */
+        public int recordsUpdated() {
+            return 0;
+        }
+
+        /**
+         * Returns the error message.
+         */
+        public String errorMessage() {
+            return errorMessage;
+        }
+
+        /**
+         * Returns the status string (for compatibility).
+         */
+        public String status() {
+            return success ? "COMPLETED" : "FAILED";
+        }
+
+        /**
+         * Returns the dataset version (null for compatibility).
+         */
+        public String datasetVersion() {
+            return null;
+        }
+    }
 
     /**
      * Sync status.
@@ -263,5 +454,19 @@ public interface DataFabricConnector {
         double progressPercent,
         Instant startedAt,
         Instant estimatedCompletionAt
+    ) {}
+
+    /**
+     * Dataset link information.
+     */
+    record DatasetLink(
+        String linkId,
+        String connectorId,
+        String datasetId,
+        String tenantId,
+        String syncDirection,
+        String lastSyncVersion,
+        Instant linkedAt,
+        String linkedBy
     ) {}
 }

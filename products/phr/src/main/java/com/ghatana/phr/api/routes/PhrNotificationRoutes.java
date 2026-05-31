@@ -58,7 +58,7 @@ public final class PhrNotificationRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         int limit = 50;
@@ -88,8 +88,8 @@ public final class PhrNotificationRoutes {
                         String body = getNotificationBody(entry.notificationType());
                         map.put("title", PhrLogRedactor.redactForNotification(title));
                         map.put("body", PhrLogRedactor.redactForNotification(body));
-                        map.put("referenceId", entry.referenceId());
-                        map.put("referenceType", entry.referenceType());
+                        map.put("reasonCode", entry.safeReasonCode());
+                        map.put("deepLinkId", entry.deepLinkId());
                         map.put("channel", entry.channel().name());
                         map.put("scheduledFor", entry.scheduledFor() != null ? entry.scheduledFor().toString() : "");
                         map.put("status", entry.status().name());
@@ -116,7 +116,7 @@ public final class PhrNotificationRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         String notificationId = request.getPathParameter("notificationId");
@@ -140,7 +140,7 @@ public final class PhrNotificationRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         String notificationId = request.getPathParameter("notificationId");
@@ -225,7 +225,7 @@ public final class PhrNotificationRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         return notificationSender.getNotificationPreferences(context.principalId())
@@ -243,7 +243,7 @@ public final class PhrNotificationRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         return request.loadBody()

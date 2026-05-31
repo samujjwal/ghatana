@@ -60,7 +60,7 @@ public final class PhrTimelineRoutes {
             context = PhrRouteSupport.requireContext(request);
             patientId = request.getPathParameter("patientId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         Promise<Boolean> accessCheck = policyEvaluator.canAccessPatientRecordAsync(context, patientId)
@@ -115,7 +115,7 @@ public final class PhrTimelineRoutes {
             patientId = request.getPathParameter("patientId");
             category = request.getPathParameter("category");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         PatientOperationContext opCtx = new PatientOperationContext(

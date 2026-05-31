@@ -13,6 +13,13 @@ function withPhrMobileSetup(preset, options = {}) {
     ...preset,
     setupFiles: [...(preset.setupFiles ?? []), setupBeforeEnv],
     setupFilesAfterEnv: [...(preset.setupFilesAfterEnv ?? []), setupAfterEnv],
+    moduleNameMapper: {
+      ...(preset.moduleNameMapper ?? {}),
+      '^@ghatana/kernel-product-contracts/policy$':
+        '<rootDir>/../../../../platform/typescript/kernel-product-contracts/src/policy/MobilePhiPolicyContract.ts',
+      '^@ghatana/kernel-product-contracts/mobile-privacy$':
+        '<rootDir>/../../../../platform/typescript/kernel-product-contracts/src/privacy/MobilePrivacyPlugin.ts',
+    },
     testPathIgnorePatterns: [
       ...(preset.testPathIgnorePatterns ?? []),
       ...(options.testPathIgnorePatterns ?? []),

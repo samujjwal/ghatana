@@ -13,6 +13,7 @@ import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
+import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -63,7 +64,12 @@ class PhrAuditRoutesTest extends EventloopTestBase {
         PhrAuditRoutes routes = new PhrAuditRoutes(
             eventloop(),
             auditTrailService,
-            new PhrPolicyEvaluator(consentService, treatmentRelationshipService, fchvCommunityAssignmentService)
+            new PhrPolicyEvaluator(
+                consentService,
+                treatmentRelationshipService,
+                fchvCommunityAssignmentService,
+                auditTrailService
+            )
         );
         servlet = routes.getServlet();
     }
@@ -81,7 +87,9 @@ class PhrAuditRoutesTest extends EventloopTestBase {
         void returns400ForMissingTenantId() throws Exception {
             HttpResponse response = dispatch("/events", Map.of(
                 "X-Principal-ID", "patient-1",
-                "X-Role", "patient"
+                "X-Role", "patient",
+                "X-Persona", "patient",
+                "X-Tier", "core"
             ));
 
             assertThat(response.getCode()).isEqualTo(400);
@@ -94,7 +102,9 @@ class PhrAuditRoutesTest extends EventloopTestBase {
         void returns400ForMissingPrincipalId() throws Exception {
             HttpResponse response = dispatch("/events", Map.of(
                 "X-Tenant-ID", "tenant-health-1",
-                "X-Role", "patient"
+                "X-Role", "patient",
+                "X-Persona", "patient",
+                "X-Tier", "core"
             ));
 
             assertThat(response.getCode()).isEqualTo(400);
@@ -133,7 +143,9 @@ class PhrAuditRoutesTest extends EventloopTestBase {
             HttpResponse response = dispatch("/events?patientId=patient-1", Map.of(
                 "X-Tenant-ID", "tenant-health-1",
                 "X-Principal-ID", "patient-1",
-                "X-Role", "patient"
+                "X-Role", "patient",
+                "X-Persona", "patient",
+                "X-Tier", "core"
             ));
 
             assertThat(response.getCode()).isEqualTo(200);
@@ -146,11 +158,13 @@ class PhrAuditRoutesTest extends EventloopTestBase {
             HttpResponse response = dispatch("/events?patientId=other-patient", Map.of(
                 "X-Tenant-ID", "tenant-health-1",
                 "X-Principal-ID", "patient-1",
-                "X-Role", "patient"
+                "X-Role", "patient",
+                "X-Persona", "patient",
+                "X-Tier", "core"
             ));
 
             assertThat(response.getCode()).isEqualTo(403);
-            assertThat(parseBody(response).path("error").asText()).isEqualTo("POLICY_DENIED");
+            assertThat(parseBody(response).path("error").asText()).isEqualTo("AUDIT_SELF_SCOPE_REQUIRED");
         }
 
         @Test
@@ -162,7 +176,9 @@ class PhrAuditRoutesTest extends EventloopTestBase {
             HttpResponse response = dispatch("/events?patientId=patient-42", Map.of(
                 "X-Tenant-ID", "tenant-health-1",
                 "X-Principal-ID", "admin-1",
-                "X-Role", "admin"
+                "X-Role", "admin",
+                "X-Persona", "admin",
+                "X-Tier", "core"
             ));
 
             assertThat(response.getCode()).isEqualTo(200);
@@ -170,18 +186,44 @@ class PhrAuditRoutesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("clinician role may query using the patientId query parameter")
-        void clinicianRoleCanQueryArbitraryPatientId() throws Exception {
+        @DisplayName("clinician role may query patient-scoped audit events with treatment relationship")
+        void clinicianRoleCanQueryPatientWithTreatmentRelationship() throws Exception {
             when(auditTrailService.queryAuditEvents(any())).thenReturn(List.of());
+            when(treatmentRelationshipService.hasActiveTreatmentRelationship("clinician-1", "patient-77"))
+                .thenReturn(Promise.of(true));
 
             HttpResponse response = dispatch("/events?patientId=patient-77", Map.of(
                 "X-Tenant-ID", "tenant-health-1",
                 "X-Principal-ID", "clinician-1",
-                "X-Role", "clinician"
+                "X-Role", "clinician",
+                "X-Persona", "clinician",
+                "X-Tier", "core",
+                "X-Facility-ID", "facility-1"
             ));
 
             assertThat(response.getCode()).isEqualTo(200);
             verify(auditTrailService).queryAuditEvents(argWithEntityId("patient-77"));
+        }
+
+        @Test
+        @DisplayName("clinician role cannot query patient audit events without relationship or consent")
+        void clinicianRoleCannotQueryPatientWithoutScope() throws Exception {
+            when(treatmentRelationshipService.hasActiveTreatmentRelationship("clinician-1", "patient-77"))
+                .thenReturn(Promise.of(false));
+            when(consentService.validateAccess("patient-77", "clinician-1", "audit", "READ"))
+                .thenReturn(Promise.of(new ConsentManagementService.ConsentValidationResult(false, "denied", null)));
+
+            HttpResponse response = dispatch("/events?patientId=patient-77", Map.of(
+                "X-Tenant-ID", "tenant-health-1",
+                "X-Principal-ID", "clinician-1",
+                "X-Role", "clinician",
+                "X-Persona", "clinician",
+                "X-Tier", "core",
+                "X-Facility-ID", "facility-1"
+            ));
+
+            assertThat(response.getCode()).isEqualTo(403);
+            assertThat(parseBody(response).path("error").asText()).isEqualTo("CLINICIAN_SCOPE_REQUIRED");
         }
 
         @Test
@@ -190,11 +232,13 @@ class PhrAuditRoutesTest extends EventloopTestBase {
             HttpResponse response = dispatch("/events", Map.of(
                 "X-Tenant-ID", "tenant-health-1",
                 "X-Principal-ID", "clinician-1",
-                "X-Role", "clinician"
+                "X-Role", "clinician",
+                "X-Persona", "clinician",
+                "X-Tier", "core"
             ));
 
             assertThat(response.getCode()).isEqualTo(403);
-            assertThat(parseBody(response).path("error").asText()).isEqualTo("POLICY_DENIED");
+            assertThat(parseBody(response).path("error").asText()).isEqualTo("AUDIT_PATIENT_SCOPE_REQUIRED");
         }
     }
 
@@ -215,6 +259,7 @@ class PhrAuditRoutesTest extends EventloopTestBase {
             HttpResponse response = dispatch("/events", adminHeaders("admin-1"));
 
             assertThat(response.getCode()).isEqualTo(200);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("audit-test-corr-1");
             JsonNode body = parseBody(response);
             assertThat(body.has("events")).isTrue();
             assertThat(body.path("events").isArray()).isTrue();
@@ -263,6 +308,7 @@ class PhrAuditRoutesTest extends EventloopTestBase {
             HttpResponse response = dispatch("/events/evt-requested", adminHeaders("admin-1"));
 
             assertThat(response.getCode()).isEqualTo(200);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("audit-test-corr-1");
             assertThat(parseBody(response).path("id").asText()).isEqualTo("evt-requested");
             verify(auditTrailService).queryAuditEvents(argWithLimit(1000));
         }
@@ -379,6 +425,7 @@ class PhrAuditRoutesTest extends EventloopTestBase {
             HttpResponse response = dispatch("/events", adminHeaders("admin-1"));
 
             assertThat(response.getCode()).isEqualTo(500);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("audit-test-corr-1");
             JsonNode body = parseBody(response);
             assertThat(body.path("error").asText()).isEqualTo("AUDIT_QUERY_FAILED");
         }
@@ -397,6 +444,7 @@ class PhrAuditRoutesTest extends EventloopTestBase {
             HttpResponse response = dispatch("/events/export?format=csv", adminHeaders("admin-1"));
 
             assertThat(response.getCode()).isEqualTo(200);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("audit-test-corr-1");
         }
 
         @Test
@@ -416,6 +464,7 @@ class PhrAuditRoutesTest extends EventloopTestBase {
             HttpResponse response = dispatch("/events/export?format=csv", adminHeaders("admin-1"));
 
             assertThat(response.getCode()).isEqualTo(200);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("audit-test-corr-1");
             String csv = new String(runPromise(response::loadBody).asArray(), StandardCharsets.UTF_8);
             assertThat(csv).contains("\"access,review\"");
             assertThat(csv).contains("\"admin,\"\"one\"\"\"");
@@ -427,7 +476,9 @@ class PhrAuditRoutesTest extends EventloopTestBase {
             HttpResponse response = dispatch("/events/export?format=json", Map.of(
                 "X-Tenant-ID", "tenant-health-1",
                 "X-Principal-ID", "clinician-1",
-                "X-Role", "clinician"
+                "X-Role", "clinician",
+                "X-Persona", "clinician",
+                "X-Tier", "core"
             ));
 
             assertThat(response.getCode()).isEqualTo(403);
@@ -449,7 +500,10 @@ class PhrAuditRoutesTest extends EventloopTestBase {
         return Map.of(
             "X-Tenant-ID", "tenant-health-1",
             "X-Principal-ID", principalId,
-            "X-Role", "admin"
+            "X-Role", "admin",
+            "X-Persona", "admin",
+            "X-Tier", "core",
+            "X-Correlation-ID", "audit-test-corr-1"
         );
     }
 

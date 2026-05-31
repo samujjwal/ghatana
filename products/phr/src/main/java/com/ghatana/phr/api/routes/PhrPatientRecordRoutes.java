@@ -70,7 +70,7 @@ public final class PhrPatientRecordRoutes {
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         return request.loadBody()
@@ -79,7 +79,7 @@ public final class PhrPatientRecordRoutes {
                 try {
                     patient = parsePatient(body.getString(StandardCharsets.UTF_8), null);
                 } catch (IllegalArgumentException ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT", ex.getMessage());
+                    return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT", ex.getMessage(), correlationId);
                 }
                 String patientId = patient.getId();
                 if (patientId == null) {
@@ -100,7 +100,7 @@ public final class PhrPatientRecordRoutes {
             context = PhrRouteSupport.requireContext(request);
             patientId = request.getPathParameter("patientId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         return requireSelfOrConsent(context, patientId, RESOURCE_TYPE, "READ")
@@ -123,7 +123,7 @@ public final class PhrPatientRecordRoutes {
             context = PhrRouteSupport.requireContext(request);
             patientId = request.getPathParameter("patientId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         return requireSelfOrConsent(context, patientId, RESOURCE_TYPE, "WRITE")
@@ -137,7 +137,7 @@ public final class PhrPatientRecordRoutes {
                         try {
                             patient = parsePatient(body.getString(StandardCharsets.UTF_8), patientId);
                         } catch (IllegalArgumentException ex) {
-                            return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT", ex.getMessage());
+                            return PhrRouteSupport.errorResponse(400, "INVALID_PATIENT", ex.getMessage(), correlationId);
                         }
                         return patientRecordService.updatePatient(patient)
                             .then(updated -> PhrRouteSupport.jsonResponse(200, updated, correlationId));
@@ -160,7 +160,7 @@ public final class PhrPatientRecordRoutes {
             limit = PhrRouteSupport.intQuery(request, "limit", 50, 1000);
             offset = PhrRouteSupport.intQuery(request, "offset", 0, 10_000);
         } catch (RuntimeException ex) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_SEARCH", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "INVALID_SEARCH", ex.getMessage(), correlationId);
         }
 
         return requireSelfOrConsent(context, patientId, RESOURCE_TYPE, "SEARCH")
@@ -178,7 +178,7 @@ public final class PhrPatientRecordRoutes {
                         "count", records.size(),
                         "limit", limit,
                         "offset", offset
-                    )));
+                    ), correlationId));
             });
     }
 
@@ -190,7 +190,7 @@ public final class PhrPatientRecordRoutes {
             context = PhrRouteSupport.requireContext(request);
             patientId = request.getPathParameter("patientId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         return requireSelfOrConsent(context, patientId, "patient-record-history", "READ")
@@ -209,7 +209,7 @@ public final class PhrPatientRecordRoutes {
                             Map<String, Object> response = new java.util.LinkedHashMap<>();
                             response.put("patientId", patientId);
                             response.put("history", List.of(historyEntry));
-                            return PhrRouteSupport.jsonResponse(200, response);
+                            return PhrRouteSupport.jsonResponse(200, response, correlationId);
                         })
                         .orElseGet(() -> PhrRouteSupport.errorResponse(404, "PATIENT_NOT_FOUND", "Patient record not found", correlationId)));
             });
@@ -227,7 +227,7 @@ public final class PhrPatientRecordRoutes {
             limit = PhrRouteSupport.intQuery(request, "limit", 50, 100);
             offset = PhrRouteSupport.intQuery(request, "offset", 0, 10_000);
         } catch (RuntimeException ex) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_RECORD_LIST", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "INVALID_RECORD_LIST", ex.getMessage(), correlationId);
         }
 
         String category = request.getQueryParameter("category");
@@ -287,7 +287,7 @@ public final class PhrPatientRecordRoutes {
                             "offset", offset,
                             "patientId", patientId,
                             "generatedAt", timeline.generatedAt()
-                        ));
+                        ), correlationId);
                     });
             });
     }
@@ -302,7 +302,7 @@ public final class PhrPatientRecordRoutes {
             patientId = request.getPathParameter("patientId");
             recordId = request.getPathParameter("recordId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
 

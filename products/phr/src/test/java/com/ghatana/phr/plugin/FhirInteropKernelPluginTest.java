@@ -126,7 +126,8 @@ class FhirInteropKernelPluginTest {
     void shouldDeclareCorrectExportedContracts() {
         Set<String> contracts = plugin.getExportedContracts();
 
-        assertEquals(3, contracts.size());
+        assertEquals(4, contracts.size());
+        assertTrue(contracts.contains("com.ghatana.kernel.interop.KernelFhirHl7Plugin"));
         assertTrue(contracts.contains("com.ghatana.phr.fhir.FhirResourceService"));
         assertTrue(contracts.contains("com.ghatana.phr.fhir.FhirValidator"));
         assertTrue(contracts.contains("com.ghatana.phr.fhir.FhirTransformer"));

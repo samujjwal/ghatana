@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { Button, Card, CardContent, CardHeader, Input, Select } from '@ghatana/design-system';
 import { Link } from 'react-router-dom';
 import { fetchRecords } from '../api/recordsApi';
 import { formatPhrDateTime, t } from '../i18n/phrI18n';
 import type { PatientRecordSummary } from '../types';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { SafeError } from '../components/SafeError';
+import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 
 export function RecordsPage(): React.ReactElement {
   const [records, setRecords] = useState<PatientRecordSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SafeApiErrorState | null>(null);
   const { session } = usePhrSession();
   
   // Filter state
@@ -26,7 +27,7 @@ export function RecordsPage(): React.ReactElement {
 
   useEffect(() => {
     if (!session) {
-      setError(t('error.sessionRequired'));
+      setError({ message: t('error.sessionRequired') });
       setLoading(false);
       return;
     }
@@ -47,12 +48,12 @@ export function RecordsPage(): React.ReactElement {
         setRecords(data);
         setTotalCount(data.length);
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('error.recordsLoad')))
+      .catch((err: unknown) => setError(toSafeApiErrorState(err, t('error.recordsLoad'))))
       .finally(() => setLoading(false));
   }, [session, categoryFilter, resourceTypeFilter, dateFromFilter, dateToFilter, limit, offset]);
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('records.loading')}</div>;
-  if (error) return <SafeError title={t('dashboard.errorPrefix')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
+  if (error) return <SafeError title={t('dashboard.errorPrefix')} message={error.message} correlationId={error.correlationId} />;
 
   // Extract unique categories and resource types for filter options
   const categories = Array.from(new Set(records.map(r => r.category)));
@@ -64,56 +65,53 @@ export function RecordsPage(): React.ReactElement {
       <CardContent>
         <div className="stack gap-md">
           <div className="filter-bar">
-            <select
+            <Select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="filter-select"
             >
               <option value="">{t('records.filter.category')}</option>
               {categories.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
-            </select>
+            </Select>
             
-            <select
+            <Select
               value={resourceTypeFilter}
               onChange={(e) => setResourceTypeFilter(e.target.value)}
-              className="filter-select"
             >
               <option value="">{t('records.filter.resourceType')}</option>
               {resourceTypes.map(type => (
                 <option key={type} value={type}>{type}</option>
               ))}
-            </select>
+            </Select>
             
-            <input
+            <Input
               type="date"
               value={dateFromFilter}
               onChange={(e) => setDateFromFilter(e.target.value)}
-              className="filter-input"
               placeholder={t('records.filter.fromDate')}
             />
             
-            <input
+            <Input
               type="date"
               value={dateToFilter}
               onChange={(e) => setDateToFilter(e.target.value)}
-              className="filter-input"
               placeholder={t('records.filter.toDate')}
             />
             
             {(categoryFilter || resourceTypeFilter || dateFromFilter || dateToFilter) && (
-              <button
+              <Button
+                type="button"
                 onClick={() => {
                   setCategoryFilter('');
                   setResourceTypeFilter('');
                   setDateFromFilter('');
                   setDateToFilter('');
                 }}
-                className="filter-clear"
+                variant="secondary"
               >
                 {t('records.filter.clear')}
-              </button>
+              </Button>
             )}
           </div>
 
@@ -122,7 +120,7 @@ export function RecordsPage(): React.ReactElement {
           ) : (
             <>
               <div className="pagination-info" role="status">
-                {t('records.pagination.showing' as any, {
+                {t('records.pagination.showing', {
                   start: offset + 1,
                   end: Math.min(offset + limit, totalCount),
                   total: totalCount
@@ -141,10 +139,10 @@ export function RecordsPage(): React.ReactElement {
                           })}
                         </p>
                         {record.provenance && (
-                          <p className="muted" aria-label="Provenance information">
-                            Source: {String(record.provenance.source ?? t('common.unknown'))}
+                          <p className="muted" aria-label={t('records.provenance.label')}>
+                            {t('records.provenance.source', { source: String(record.provenance.source ?? t('common.unknown')) })}
                             {record.provenance.accessedAt as string && (
-                              <span> • Accessed: {formatPhrDateTime(record.provenance.accessedAt as string)}</span>
+                              <span>{t('records.provenance.accessed', { date: formatPhrDateTime(record.provenance.accessedAt as string) })}</span>
                             )}
                           </p>
                         )}
@@ -154,23 +152,25 @@ export function RecordsPage(): React.ReactElement {
                   </li>
                 ))}
               </ul>
-              <div className="pagination-controls" role="navigation" aria-label={t('records.pagination.label' as any)}>
-                <button
+              <div className="pagination-controls" role="navigation" aria-label={t('records.pagination.label')}>
+                <Button
+                  type="button"
                   onClick={() => setOffset(Math.max(0, offset - limit))}
                   disabled={offset === 0}
-                  className="pagination-button"
-                  aria-label={t('records.pagination.previous' as any)}
+                  aria-label={t('records.pagination.previous')}
+                  variant="secondary"
                 >
-                  {t('records.pagination.previous' as any)}
-                </button>
-                <button
+                  {t('records.pagination.previous')}
+                </Button>
+                <Button
+                  type="button"
                   onClick={() => setOffset(offset + limit)}
                   disabled={offset + limit >= totalCount}
-                  className="pagination-button"
-                  aria-label={t('records.pagination.next' as any)}
+                  aria-label={t('records.pagination.next')}
+                  variant="secondary"
                 >
-                  {t('records.pagination.next' as any)}
-                </button>
+                  {t('records.pagination.next')}
+                </Button>
               </div>
             </>
           )}

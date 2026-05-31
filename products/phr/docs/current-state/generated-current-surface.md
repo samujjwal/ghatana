@@ -1,6 +1,6 @@
 # PHR Current Implementation Surface
 
-**Generated:** 2026-05-28T19:35:13.439Z
+**Generated:** 2026-05-31T19:04:47.146Z
 
 This document describes the current implementation surface of the PHR product,
 including web routes, mobile screens, backend APIs, and their implementation status.
@@ -10,10 +10,10 @@ including web routes, mobile screens, backend APIs, and their implementation sta
 ## Summary
 
 - **Total Use Cases:** 27
-- **Fully Implemented:** 23 (85%)
-- **Partial Implementation:** 0 (0%)
+- **Fully Implemented:** 21 (78%)
+- **Partial Implementation:** 2 (7%)
 - **Deferred:** 4 (15%)
-- **Web Routes:** 27
+- **Web Routes:** 28
 - **Hidden Web Routes:** 4
 
 ---
@@ -27,10 +27,11 @@ The following routes are currently implemented in the PHR web application:
 | /dashboard | Dashboard | patient | stable | implemented |
 | /records | Records | patient | stable | implemented |
 | /consents | Consents | patient | stable | implemented |
-| /appointments | Appointments | patient | stable | implemented |
+| /appointments | Appointments | patient | stable | partial |
 | /settings | Settings | patient | stable | implemented |
 | /labs | Labs | caregiver | stable | implemented |
 | /medications | Medications | caregiver | stable | implemented |
+| /medications/:medicationId | Medication detail | caregiver | stable | unknown |
 | /conditions | Conditions | patient | stable | implemented |
 | /observations | Observations | caregiver | stable | implemented |
 | /immunizations | Immunizations | patient | stable | implemented |
@@ -39,12 +40,12 @@ The following routes are currently implemented in the PHR web application:
 | /documents/:docId/ocr | OCR Review | patient | stable | implemented |
 | /timeline | Timeline | patient | stable | implemented |
 | /profile | Profile | patient | stable | implemented |
-| /records/:recordId | Record Detail | patient | stable | implemented |
+| /records/:recordId | Record Detail | patient | stable | partial |
 | /notifications | Notifications | patient | stable | implemented |
 | /forbidden | Forbidden | patient | stable | unknown |
 | /not-found | Not Found | patient | stable | unknown |
 | /emergency | Emergency | clinician | stable | implemented |
-| /emergency/reviews | Emergency Reviews | admin | stable | unknown |
+| /emergency/reviews | Emergency Reviews | admin | stable | implemented |
 | /release-readiness | Release Readiness | admin | stable | implemented |
 | /audit | Audit | admin | stable | implemented |
 | /provider/dashboard | Provider Dashboard | clinician | hidden | deferred |
@@ -93,7 +94,7 @@ The following backend API endpoints are currently implemented:
 ### Patient
 
 - **Total Use Cases:** 20
-- **Implemented:** 20 (100%)
+- **Implemented:** 18 (90%)
 
 ### Clinician
 

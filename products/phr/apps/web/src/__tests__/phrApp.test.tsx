@@ -151,51 +151,43 @@ const releaseReadinessFixture = {
 };
 
 const dashboardFixture: DashboardData = {
-  patient: {
-    id: 'patient-001',
+  tenantId: 'tenant-health-1',
+  principalId: 'patient-001',
+  role: 'patient',
+  correlationId: 'corr-dashboard-1',
+  profileSummary: {
     name: 'Aarati Shrestha',
-    age: 42,
-    bloodType: 'O+',
-    location: 'Kathmandu',
-    emergencyContact: 'Sushil Shrestha',
+    email: 'aarati@example.test',
+    providerId: null,
+    active: true,
   },
-  records: [],
-  consents: [
-    {
-      id: 'consent-1',
-      recipient: 'Nepal HIE',
-      purpose: 'Care coordination',
-      status: 'active',
-      expiresAt: '2026-12-31',
-    },
-  ],
-  appointments: [
-    {
-      id: 'appointment-1',
-      provider: 'Dr. Koirala',
-      specialty: 'Endocrinology',
-      startsAt: '2026-05-06T09:00:00Z',
-      location: 'Kathmandu Clinic',
-    },
-  ],
-  labs: [
-    {
-      id: 'lab-1',
-      name: 'HbA1c',
-      status: 'normal',
-      value: '6.9%',
-      collectedAt: '2026-05-01',
-    },
-  ],
-  medications: [
-    {
-      id: 'med-1',
-      medication: 'Metformin',
-      dosage: '500mg',
-      schedule: 'BID',
-      adherence: 100,
-    },
-  ],
+  nextAppointment: {
+    appointmentId: 'appointment-1',
+    provider: 'Dr. Koirala',
+    scheduledTime: '2026-05-06T09:00:00Z',
+    type: 'Endocrinology',
+  },
+  medications: {
+    activeCount: 1,
+    adherenceAlert: false,
+  },
+  recentObservations: {
+    count: 1,
+    hasCritical: false,
+  },
+  activeConditions: {
+    count: 1,
+    hasChronic: true,
+  },
+  documents: {
+    totalCount: 0,
+    pendingOcr: 0,
+  },
+  accessAlerts: {
+    expiringConsents: 1,
+    emergencyAccessPending: false,
+  },
+  generatedAt: '2026-05-30T01:00:00Z',
 };
 
 function renderDashboardPage(): void {
@@ -218,7 +210,9 @@ function testSessionFor(role: PhrRole = 'patient') {
   tenantId: 'tenant-test',
     role,
     name: isClinicalActor ? 'Test Clinician' : 'Test User',
-  expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+    expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+    persona: role,
+    tier: 'core',
   };
 }
 

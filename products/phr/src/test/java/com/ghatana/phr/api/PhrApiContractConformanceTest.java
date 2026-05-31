@@ -78,8 +78,8 @@ public final class PhrApiContractConformanceTest extends ApiContractConformanceT
 
         // Verify PHR-specific endpoints are documented
         assertThat(content)
-            .as("OpenAPI spec should document patient endpoints")
-            .contains("/patients");
+            .as("OpenAPI spec should document canonical patient record endpoints")
+            .contains("/records");
 
         assertThat(content)
             .as("OpenAPI spec should document consent endpoints")

@@ -51,7 +51,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @doc.type class
- * @doc.purpose Integration coverage for broker-backed AEP connector strategies using Testcontainers
+ * @doc.purpose Integration coverage for broker-backed connector strategies using Testcontainers
  * @doc.layer product
  * @doc.pattern Test, Integration
  */
@@ -82,7 +82,7 @@ class BrokerConnectorIntegrationTest extends EventloopTestBase {
     @Test
     @DisplayName("KafkaProducerStrategy sends records to Kafka")
     void shouldSendKafkaRecords() { 
-        String topic = "aep-producer-" + UUID.randomUUID(); 
+        String topic = "producer-" + UUID.randomUUID(); 
         KafkaProducerStrategy strategy = new KafkaProducerStrategy(KafkaProducerConfig.builder() 
             .bootstrapServers(KAFKA.getBootstrapServers()) 
             .topic(topic) 
@@ -108,7 +108,7 @@ class BrokerConnectorIntegrationTest extends EventloopTestBase {
     @Test
     @DisplayName("KafkaConsumerStrategy consumes records from Kafka")
     void shouldConsumeKafkaRecords() throws Exception { 
-        String topic = "aep-consumer-" + UUID.randomUUID(); 
+        String topic = "consumer-" + UUID.randomUUID(); 
         CountDownLatch received = new CountDownLatch(1); 
         AtomicReference<String> bodyRef = new AtomicReference<>(); 
         KafkaConsumerStrategy strategy = new KafkaConsumerStrategy(KafkaConsumerConfig.builder() 
@@ -139,7 +139,7 @@ class BrokerConnectorIntegrationTest extends EventloopTestBase {
     @Test
     @DisplayName("D-7: RabbitMQConsumerStrategy consumes queued messages")
     void shouldConsumeRabbitMqMessages() throws Exception { 
-        String queueName = "aep-rabbit-" + UUID.randomUUID();
+        String queueName = "rabbit-" + UUID.randomUUID();
         CountDownLatch received = new CountDownLatch(1);
         AtomicReference<String> bodyRef = new AtomicReference<>();
 
@@ -176,7 +176,7 @@ class BrokerConnectorIntegrationTest extends EventloopTestBase {
     @Test
     @DisplayName("SqsProducerStrategy sends messages to emulated SQS")
     void shouldSendSqsMessages() { 
-        String queueUrl = createQueue("aep-producer-queue-" + UUID.randomUUID()); 
+        String queueUrl = createQueue("producer-queue-" + UUID.randomUUID()); 
         SqsProducerStrategy strategy = new SqsProducerStrategy(sqsConfig(queueUrl)); 
 
         runPromise(strategy::start); 
@@ -200,7 +200,7 @@ class BrokerConnectorIntegrationTest extends EventloopTestBase {
     @Test
     @DisplayName("SqsConsumerStrategy consumes messages from emulated SQS")
     void shouldConsumeSqsMessages() throws Exception { 
-        String queueUrl = createQueue("aep-consumer-queue-" + UUID.randomUUID()); 
+        String queueUrl = createQueue("consumer-queue-" + UUID.randomUUID()); 
         CountDownLatch received = new CountDownLatch(1); 
         AtomicReference<String> bodyRef = new AtomicReference<>(); 
         SqsConsumerStrategy strategy = new SqsConsumerStrategy(sqsConfig(queueUrl), body -> { 

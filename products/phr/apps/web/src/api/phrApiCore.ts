@@ -20,6 +20,7 @@ import type {
   FchvPatientEntry,
   ImmunizationSummary,
   LabResultSummary,
+  MedicationDetail,
   MedicationSummary,
   NotificationSummary,
   ObservationSummary,
@@ -27,6 +28,7 @@ import type {
   PatientProfile,
   PatientProfileExtended,
   PatientProfileUpdateRequest,
+  PatientRecordDetail,
   PatientRecordSummary,
   PatientRosterEntry,
   PhrLoginRequest,
@@ -34,7 +36,6 @@ import type {
   PhrSession,
   TimelineEvent,
 } from '../types';
-import { t } from '../i18n/phrI18n';
 import {
   FhirConsentSchema,
   fhirConsentToGrant,
@@ -50,9 +51,9 @@ import {
   BackendDashboardSchema,
   BackendMedicationPrescriptionSchema,
   ConditionSummarySchema,
+  ConsentGrantListResponseSchema,
   ConsentGrantSchema,
   ConsentRevokeResultSchema,
-  dashboardSchema,
   DependentEntrySchema,
   DocumentDetailSchema,
   DocumentSummarySchema,
@@ -71,8 +72,8 @@ import {
   OcrRejectResultSchema,
   OcrReviewDocumentSchema,
   PatientProfileExtendedSchema,
+  PatientRecordDetailSchema,
   PatientRecordListSchema,
-  PatientRecordAccessSchema,
   PatientRosterEntrySchema,
   PhrReleaseReadinessSchema,
   PhrSessionSchema,
@@ -82,45 +83,19 @@ import {
 import { API_BASE_URL, buildPhrHeaders, phrFetch, PhrApiError, type PhrRole, type SessionContext, withIdempotency } from './requestApi';
 
 type MutationSessionContext = SessionContext & { idempotencyKey?: string };
-
-async function fhirGet(resourceType: string, id: string | undefined, context: SessionContext): Promise<unknown> {
-  const path = id !== undefined ? `/fhir/${resourceType}/${id}` : `/fhir/${resourceType}`;
-  return phrFetch(path, {
-    accept: 'application/fhir+json',
-    context,
-  });
-}
 // --- Public ---
 
 export async function fetchDashboardData(context: SessionContext): Promise<DashboardData> {
-  const dashboard = await phrFetch('/api/v1/dashboard', { context, expectedSchema: BackendDashboardSchema });
-  
-  // Map backend dashboard contract to frontend DashboardData structure
-  // Backend provides summary counts and alerts; frontend renders these directly
-  return {
-    patient: {
-      id: dashboard.principalId,
-      name: dashboard.profileSummary.name,
-      age: 0, // Backend does not provide age in summary
-      bloodType: t('common.unknown'), // Backend does not provide blood type in summary
-      location: dashboard.tenantId,
-      emergencyContact: t('common.unknown'), // Backend does not provide emergency contact in summary
-    },
-    records: [], // Backend summary does not include individual records
-    consents: [], // Backend summary does not include individual consents (only counts in accessAlerts)
-    appointments: [], // Backend provides nextAppointment as summary, not full list
-    labs: [], // Backend summary does not include individual labs (only counts in recentObservations)
-    medications: [], // Backend provides activeCount and adherenceAlert, not individual medications
-  };
+  return phrFetch('/api/v1/dashboard', { context, expectedSchema: BackendDashboardSchema });
 }
 
 export async function exportPatientBundle(context: SessionContext): Promise<string> {
-  return phrFetch('/fhir/Patient/current/$export', {
+  const result = await phrFetch('/api/v1/hie/export', {
     method: 'POST',
     context: withIdempotency(context),
-    contentType: 'application/json',
     expectedSchema: ExportPatientBundleSchema,
   });
+  return `${result.status}:${result.requestId}`;
 }
 
 export async function fetchReleaseReadiness(options: {
@@ -195,6 +170,22 @@ export async function createConsentGrant(
     context: withIdempotency(context),
     expectedSchema: consentGrantResponseSchema,
   });
+}
+
+export async function fetchConsentGrants(
+  patientId: string,
+  context: SessionContext,
+): Promise<ConsentGrant[]> {
+  if (!patientId) {
+    throw new PhrApiError('patientId is required to list consent grants', 400, 'Consent');
+  }
+  const url = new URL(`${API_BASE_URL}/api/v1/consents`);
+  url.searchParams.set('patientId', patientId);
+  const response = await phrFetch(`${url.pathname}${url.search}`, {
+    context,
+    expectedSchema: ConsentGrantListResponseSchema,
+  });
+  return response.items;
 }
 
 export async function revokeConsentGrant(
@@ -463,7 +454,11 @@ function uploadDocumentWithProgress(
     xhr.onload = (): void => {
       options.signal?.removeEventListener('abort', abortUpload);
       if (xhr.status < 200 || xhr.status >= 300) {
-        reject(new PhrApiError(`PHR request failed: POST ${path} returned ${xhr.status}`, xhr.status));
+        const responseCorrelationId =
+          xhr.getResponseHeader('X-Correlation-ID')
+          ?? xhr.getResponseHeader('X-Ghatana-Correlation-Id')
+          ?? undefined;
+        reject(new PhrApiError(`PHR request failed: POST ${path} returned ${xhr.status}`, xhr.status, undefined, responseCorrelationId));
         return;
       }
       try {
@@ -477,7 +472,11 @@ function uploadDocumentWithProgress(
 
     xhr.onerror = (): void => {
       options.signal?.removeEventListener('abort', abortUpload);
-      reject(new PhrApiError(`PHR request failed: POST ${path} network error`, 0));
+      const responseCorrelationId =
+        xhr.getResponseHeader('X-Correlation-ID')
+        ?? xhr.getResponseHeader('X-Ghatana-Correlation-Id')
+        ?? undefined;
+      reject(new PhrApiError(`PHR request failed: POST ${path} network error`, 0, undefined, responseCorrelationId));
     };
 
     xhr.onabort = (): void => {
@@ -499,27 +498,40 @@ export async function fetchMedicationDetail(
   patientId: string,
   medicationId: string,
   context: SessionContext,
-): Promise<MedicationSummary & { interactions: string[]; warnings: string[]; history: Array<{ date: string; action: string }> }> {
+): Promise<MedicationDetail> {
   const prescription = await phrFetch(`/api/v1/clinical/medications/prescriptions/${encodeURIComponent(medicationId)}?patientId=${encodeURIComponent(patientId)}`, { context, expectedSchema: BackendMedicationPrescriptionSchema });
-  const medication = toMedicationSummary(prescription);
 
-  return MedicationDetailSchema.parse({
-    ...medication,
-    interactions: [],
-    warnings: prescription.refillsRemaining === 0 ? [t('medicationDetail.warning.noRefills')] : [],
-    history: prescription.prescribedAt ? [{ date: prescription.prescribedAt, action: t('medicationDetail.action.prescribed') }] : [],
-  });
+  return MedicationDetailSchema.parse(toMedicationSummary(prescription));
 }
 
 function toMedicationSummary(prescription: z.infer<typeof BackendMedicationPrescriptionSchema>): MedicationSummary {
   return {
     id: prescription.id,
-    medication: prescription.medicationName,
+    medication: prescription.medication ?? prescription.medicationName ?? '',
     dosage: prescription.dosage,
-    schedule: prescription.indication ?? t('common.unknown'),
-    adherence: 100,
-    status: prescription.status?.toLowerCase() === 'discontinued' ? 'stopped' : 'active',
+    ...(prescription.schedule ? { schedule: prescription.schedule } : prescription.indication ? { schedule: prescription.indication } : {}),
+    ...(prescription.frequency ? { frequency: prescription.frequency } : {}),
+    ...(prescription.route !== undefined ? { route: prescription.route } : {}),
+    ...(prescription.routeSource ? { routeSource: prescription.routeSource } : {}),
+    ...(prescription.prescriberId ? { prescriberId: prescription.prescriberId } : {}),
+    ...(prescription.prescribedAt ? { prescribedAt: prescription.prescribedAt } : {}),
+    ...(prescription.startDate ? { startDate: prescription.startDate } : {}),
+    ...(prescription.expiresAt ? { expiresAt: prescription.expiresAt } : {}),
+    ...(prescription.endDate ? { endDate: prescription.endDate } : {}),
+    ...(prescription.refillsRemaining !== undefined ? { refillsRemaining: prescription.refillsRemaining } : {}),
+    ...(prescription.adherenceSource ? { adherenceSource: prescription.adherenceSource } : {}),
+    ...(prescription.adherenceStatus ? { adherenceStatus: prescription.adherenceStatus } : {}),
+    ...(prescription.interactions ? { interactions: prescription.interactions } : {}),
+    ...(prescription.warnings ? { warnings: prescription.warnings } : {}),
+    status: toMedicationStatus(prescription.status),
   };
+}
+
+function toMedicationStatus(status: string | undefined): MedicationSummary['status'] {
+  const normalized = status?.toLowerCase();
+  if (normalized === 'stopped' || normalized === 'discontinued') return 'stopped';
+  if (normalized === 'history' || normalized === 'completed' || normalized === 'expired') return 'history';
+  return 'active';
 }
 
 // --- Appointments ---
@@ -540,7 +552,14 @@ export async function bookAppointment(
 ): Promise<{ id: string; status: string }> {
   const data = await phrFetch('/api/v1/appointments', {
     method: 'POST',
-    body: JSON.stringify({ patientId, providerId, slot, notes }),
+    body: JSON.stringify({
+      patientId,
+      providerId,
+      slotId: slot,
+      scheduledTime: slot,
+      appointmentType: 'IN_PERSON',
+      reason: notes,
+    }),
     context: withIdempotency(context),
     expectedSchema: AppointmentBookingResultSchema,
   });
@@ -569,7 +588,7 @@ export async function rescheduleAppointment(
 ): Promise<{ id: string; status: string }> {
   const data = await phrFetch(`/api/v1/appointments/${encodeURIComponent(appointmentId)}/reschedule`, {
     method: 'POST',
-    body: JSON.stringify({ patientId, newSlot }),
+    body: JSON.stringify({ patientId, scheduledTime: newSlot }),
     context: withIdempotency(context),
     expectedSchema: AppointmentBookingResultSchema,
   });
@@ -610,27 +629,11 @@ export async function fetchRecordDetail(
   patientId: string,
   recordId: string,
   context: SessionContext,
-): Promise<{ record: PatientRecordSummary; fhirJson: string; accessAudit: { accessedAt: string; accessedBy: string } }> {
-  const response = await phrFetch(`/api/v1/records/${encodeURIComponent(recordId)}?patientId=${encodeURIComponent(patientId)}`, { context, expectedSchema: PatientRecordAccessSchema });
-
-  // Fetch the actual FHIR resource
-  const fhirData = await fhirGet(response.resourceType, recordId, context);
-  
-  return {
-    record: {
-      id: recordId,
-      title: `${response.resourceType} - ${recordId}`,
-      category: 'clinical',
-      updatedAt: response.accessedAt,
-      resourceType: response.resourceType,
-      fhirJson: JSON.stringify(fhirData, null, 2),
-    },
-    fhirJson: JSON.stringify(fhirData, null, 2),
-    accessAudit: {
-      accessedAt: response.accessedAt,
-      accessedBy: response.accessedBy,
-    },
-  };
+): Promise<PatientRecordDetail> {
+  return phrFetch(`/api/v1/records/${encodeURIComponent(recordId)}?patientId=${encodeURIComponent(patientId)}`, {
+    context,
+    expectedSchema: PatientRecordDetailSchema,
+  });
 }
 
 export async function fetchOcrDocument(
@@ -692,4 +695,3 @@ export async function markNotificationRead(
 }
 
 // Provider, Caregiver, FCHV routes removed - marked as hidden in route contract
-

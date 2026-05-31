@@ -5,6 +5,14 @@ import com.ghatana.yappc.api.PhasePacket;
 import java.time.Instant;
 import java.util.Map;
 
+/**
+ * Evolve phase panel provider.
+ *
+ * @doc.type class
+ * @doc.purpose Provide Evolve phase panel views
+ * @doc.layer product
+ * @doc.pattern PhasePanelProvider
+ */
 public final class EvolvePhasePanelProvider implements PhasePanelProvider {
 
     private final EvolvePhaseModelProvider modelProvider;

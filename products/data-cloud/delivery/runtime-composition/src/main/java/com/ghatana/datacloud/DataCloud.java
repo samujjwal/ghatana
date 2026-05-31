@@ -255,7 +255,8 @@ public final class DataCloud {
         boolean enableCaching,
         boolean enableMetrics,
         DataCloudProfile profile,
-        Map<String, Object> customConfig
+        Map<String, Object> customConfig,
+        boolean allowInvalidLocalEventsForTests
     ) {
         /**
          * Trace exporter backend configuration for P3.7 observability.
@@ -287,14 +288,17 @@ public final class DataCloud {
             if (maxConnectionsPerTenant <= 0) maxConnectionsPerTenant = 10;
             profile = profile != null ? profile : DataCloudProfile.LOCAL;
             customConfig = customConfig != null ? Map.copyOf(customConfig) : Map.of();
+            // P3-03: By default, enforce event envelope validation in all profiles
+            // Tests must explicitly set allowInvalidLocalEventsForTests to bypass validation
+            allowInvalidLocalEventsForTests = false;
         }
 
         public static DataCloudConfig defaults() {
-            return new DataCloudConfig(null, 10, true, true, DataCloudProfile.LOCAL, Map.of());
+            return new DataCloudConfig(null, 10, true, true, DataCloudProfile.LOCAL, Map.of(), false);
         }
 
         public static DataCloudConfig forTesting() {
-            return new DataCloudConfig("test-instance", 1, false, false, DataCloudProfile.LOCAL, Map.of());
+            return new DataCloudConfig("test-instance", 1, false, false, DataCloudProfile.LOCAL, Map.of(), true);
         }
 
         public static Builder builder() {
@@ -316,6 +320,7 @@ public final class DataCloud {
             private boolean enableMetricsValue = true;
             private DataCloudProfile profileValue = DataCloudProfile.LOCAL;
             private Map<String, Object> customConfig = Map.of();
+            private boolean allowInvalidLocalEventsForTests = false;
 
             public Builder instanceId(String instanceId) {
                 this.instanceIdValue = instanceId;
@@ -347,9 +352,14 @@ public final class DataCloud {
                 return this;
             }
 
+            public Builder allowInvalidLocalEventsForTests(boolean allow) {
+                this.allowInvalidLocalEventsForTests = allow;
+                return this;
+            }
+
             public DataCloudConfig build() {
                 return new DataCloudConfig(instanceIdValue, maxConnectionsPerTenantValue,
-                    enableCachingValue, enableMetricsValue, profileValue, customConfig);
+                    enableCachingValue, enableMetricsValue, profileValue, customConfig, allowInvalidLocalEventsForTests);
             }
         }
 
@@ -377,12 +387,14 @@ public final class DataCloud {
         private final EntityStore entityStore;
         private final EventLogStore eventLogStore;
         private final DataCloudConfig.DataCloudProfile profile;
+        private final boolean allowInvalidLocalEventsForTests;
         private volatile boolean closed = false;
 
         DefaultDataCloudClient(EntityStore entityStore, EventLogStore eventLogStore, DataCloudConfig config) {
             this.entityStore = Objects.requireNonNull(entityStore, "entityStore required");
             this.eventLogStore = Objects.requireNonNull(eventLogStore, "eventLogStore required");
             this.profile = Objects.requireNonNull(config, "config required").profile();
+            this.allowInvalidLocalEventsForTests = config.allowInvalidLocalEventsForTests();
         }
 
         @Override
@@ -493,7 +505,9 @@ public final class DataCloud {
             checkNotClosed();
             TenantContext tenant = TenantContext.of(tenantId);
 
-            if (profile != DataCloudConfig.DataCloudProfile.LOCAL) {
+            // P3-03: Validate event envelope in all profiles by default
+            // Tests must explicitly set allowInvalidLocalEventsForTests to bypass validation
+            if (!allowInvalidLocalEventsForTests) {
                 try {
                     event.validate();
                 } catch (IllegalArgumentException exception) {
@@ -563,6 +577,7 @@ public final class DataCloud {
                         .map(results -> results.stream()
                             .flatMap(List::stream)
                             .filter(e -> !e.timestamp().isBefore(query.startTime()) && e.timestamp().isBefore(query.endTime()))
+                            // P3-03: Ensure stable sorting by timestamp then eventId for consistent ordering
                             .sorted(Comparator
                                 .comparing(EventLogStore.EventEntry::timestamp)
                                 .thenComparing(EventLogStore.EventEntry::eventId))
@@ -575,6 +590,10 @@ public final class DataCloud {
                     query.startTime(), query.endTime(), query.limit())
                     .map(entries -> entries.stream()
                         .filter(e -> query.eventTypes().isEmpty() || query.eventTypes().contains(e.eventType()))
+                        // P3-03: Ensure stable sorting by timestamp then eventId
+                        .sorted(Comparator
+                            .comparing(EventLogStore.EventEntry::timestamp)
+                            .thenComparing(EventLogStore.EventEntry::eventId))
                         .map(this::toEvent)
                         .toList());
             }
@@ -586,6 +605,10 @@ public final class DataCloud {
                         fromOffset,
                         query.limit())
                     .map(entries -> entries.stream()
+                        // P3-03: Ensure stable sorting by timestamp then eventId
+                        .sorted(Comparator
+                            .comparing(EventLogStore.EventEntry::timestamp)
+                            .thenComparing(EventLogStore.EventEntry::eventId))
                         .map(this::toEvent)
                         .toList());
             }
@@ -595,6 +618,10 @@ public final class DataCloud {
                     fromOffset, query.limit())
                 .map(entries -> entries.stream()
                     .filter(e -> query.eventTypes().isEmpty() || query.eventTypes().contains(e.eventType()))
+                    // P3-03: Ensure stable sorting by timestamp then eventId
+                    .sorted(Comparator
+                        .comparing(EventLogStore.EventEntry::timestamp)
+                        .thenComparing(EventLogStore.EventEntry::eventId))
                     .map(this::toEvent)
                     .toList());
         }
@@ -606,8 +633,9 @@ public final class DataCloud {
             com.ghatana.platform.types.identity.Offset fromOffset = com.ghatana.platform.types.identity.Offset.of(request.fromOffset().value());
 
             final boolean[] cancelled = {false};
-
-            eventLogStore.tail(
+            
+            // P3-03: Store the subscription for proper unregistration
+            Promise<com.ghatana.datacloud.spi.EventLogStore.Subscription> subscriptionPromise = eventLogStore.tail(
                 tenant,
                 fromOffset, entry -> {
                 if (!cancelled[0]) {
@@ -617,15 +645,19 @@ public final class DataCloud {
                 }
             });
 
+            com.ghatana.datacloud.spi.EventLogStore.Subscription spiSubscription = subscriptionPromise.getResult();
+
             return new Subscription() {
                 @Override
                 public void cancel() {
                     cancelled[0] = true;
+                    // P3-03: Properly unregister the listener from the event store
+                    spiSubscription.cancel();
                 }
 
                 @Override
                 public boolean isCancelled() {
-                    return cancelled[0];
+                    return cancelled[0] || spiSubscription.isCancelled();
                 }
             };
         }
@@ -1024,6 +1056,139 @@ public final class DataCloud {
                     return cancelled[0];
                 }
             });
+        }
+
+        // ==================== Checkpoint Management (P3-04) ====================
+
+        // P3-03: Nested map: tenantId -> consumerGroup -> stream -> Checkpoint
+        private final Map<String, Map<String, Map<String, com.ghatana.datacloud.spi.EventLogStore.Checkpoint>>> checkpoints = new ConcurrentHashMap<>();
+
+        @Override
+        public Promise<Boolean> storeCheckpoint(com.ghatana.datacloud.spi.TenantContext tenant, String stream, Offset offset) {
+            // P3-03: Deprecated method - use default implementation that throws exception
+            return com.ghatana.datacloud.spi.EventLogStore.super.storeCheckpoint(tenant, stream, offset);
+        }
+
+        @Override
+        public Promise<Offset> getCheckpoint(com.ghatana.datacloud.spi.TenantContext tenant, String stream) {
+            // P3-03: Deprecated method - use default implementation that throws exception
+            return com.ghatana.datacloud.spi.EventLogStore.super.getCheckpoint(tenant, stream);
+        }
+
+        @Override
+        public Promise<Boolean> deleteCheckpoint(com.ghatana.datacloud.spi.TenantContext tenant, String stream) {
+            // P3-03: Deprecated method - use default implementation that throws exception
+            return com.ghatana.datacloud.spi.EventLogStore.super.deleteCheckpoint(tenant, stream);
+        }
+
+        @Override
+        public Promise<Map<String, Offset>> getAllCheckpoints(com.ghatana.datacloud.spi.TenantContext tenant) {
+            // P3-03: Deprecated method - use default implementation that throws exception
+            return com.ghatana.datacloud.spi.EventLogStore.super.getAllCheckpoints(tenant);
+        }
+
+        @Override
+        public Promise<Optional<com.ghatana.datacloud.spi.EventLogStore.Checkpoint>> readCheckpoint(
+                com.ghatana.datacloud.spi.TenantContext tenant, String stream, String consumerGroup) {
+            Map<String, Map<String, com.ghatana.datacloud.spi.EventLogStore.Checkpoint>> tenantCheckpoints = 
+                checkpoints.get(tenant.tenantId());
+            if (tenantCheckpoints != null) {
+                Map<String, com.ghatana.datacloud.spi.EventLogStore.Checkpoint> groupCheckpoints = 
+                    tenantCheckpoints.get(consumerGroup);
+                if (groupCheckpoints != null) {
+                    return Promise.of(Optional.ofNullable(groupCheckpoints.get(stream)));
+                }
+            }
+            return Promise.of(Optional.empty());
+        }
+
+        @Override
+        public Promise<com.ghatana.datacloud.spi.EventLogStore.Checkpoint> commitCheckpoint(
+                com.ghatana.datacloud.spi.TenantContext tenant, String stream, String consumerGroup, 
+                Offset offset, String idempotencyKey) {
+            // P3-03: Implement idempotent checkpoint commit
+            com.ghatana.datacloud.spi.EventLogStore.Checkpoint newCheckpoint = 
+                new com.ghatana.datacloud.spi.EventLogStore.Checkpoint(
+                    stream, consumerGroup, offset, java.time.Instant.now(), idempotencyKey);
+            
+            checkpoints
+                .computeIfAbsent(tenant.tenantId(), k -> new ConcurrentHashMap<>())
+                .computeIfAbsent(consumerGroup, k -> new ConcurrentHashMap<>())
+                .put(stream, newCheckpoint);
+            
+            return Promise.of(newCheckpoint);
+        }
+
+        @Override
+        public Promise<Boolean> deleteCheckpoint(
+                com.ghatana.datacloud.spi.TenantContext tenant, String stream, String consumerGroup) {
+            Map<String, Map<String, com.ghatana.datacloud.spi.EventLogStore.Checkpoint>> tenantCheckpoints = 
+                checkpoints.get(tenant.tenantId());
+            if (tenantCheckpoints != null) {
+                Map<String, com.ghatana.datacloud.spi.EventLogStore.Checkpoint> groupCheckpoints = 
+                    tenantCheckpoints.get(consumerGroup);
+                if (groupCheckpoints != null) {
+                    return Promise.of(groupCheckpoints.remove(stream) != null);
+                }
+            }
+            return Promise.of(false);
+        }
+
+        @Override
+        public Promise<Map<String, com.ghatana.datacloud.spi.EventLogStore.Checkpoint>> getAllCheckpointsWithMetadata(
+                com.ghatana.datacloud.spi.TenantContext tenant) {
+            Map<String, Map<String, com.ghatana.datacloud.spi.EventLogStore.Checkpoint>> tenantCheckpoints = 
+                checkpoints.getOrDefault(tenant.tenantId(), Map.of());
+            
+            // Flatten nested structure into composite keys: "consumerGroup:stream"
+            Map<String, com.ghatana.datacloud.spi.EventLogStore.Checkpoint> flattened = new java.util.LinkedHashMap<>();
+            for (Map.Entry<String, Map<String, com.ghatana.datacloud.spi.EventLogStore.Checkpoint>> groupEntry : 
+                    tenantCheckpoints.entrySet()) {
+                String consumerGroup = groupEntry.getKey();
+                for (Map.Entry<String, com.ghatana.datacloud.spi.EventLogStore.Checkpoint> streamEntry : 
+                        groupEntry.getValue().entrySet()) {
+                    String stream = streamEntry.getKey();
+                    flattened.put(consumerGroup + ":" + stream, streamEntry.getValue());
+                }
+            }
+            return Promise.of(Map.copyOf(flattened));
+        }
+
+        @Override
+        public Promise<List<EventEntry>> replay(com.ghatana.datacloud.spi.TenantContext tenant, 
+                com.ghatana.datacloud.spi.EventLogStore.ReplaySpec spec) {
+            List<EventEntry> entries = store.getOrDefault(tenant.tenantId(), List.of());
+            
+            // P3-03: Implement bounded replay with actual offset range
+            long fromOffsetValue = numericOffsetValue(spec.fromOffset());
+            long toOffsetValue = spec.toOffset().value().equals("-1") 
+                ? entries.size() 
+                : numericOffsetValue(spec.toOffset());
+            
+            List<EventEntry> results = entries.stream()
+                .skip(fromOffsetValue)
+                .limit(toOffsetValue - fromOffsetValue + 1)
+                .filter(e -> spec.eventTypes().isEmpty() || spec.eventTypes().contains(e.eventType()))
+                // P3-03: Ensure stable sorting by timestamp then eventId
+                .sorted(Comparator
+                    .comparing(EventEntry::timestamp)
+                    .thenComparing(EventEntry::eventId))
+                .toList();
+            
+            return Promise.of(results);
+        }
+
+        @Override
+        public Promise<Void> unsubscribe(com.ghatana.datacloud.spi.TenantContext tenant, 
+                com.ghatana.datacloud.spi.EventLogStore.SubscriptionId subscriptionId) {
+            // P3-03: Properly unregister the listener from the event store
+            List<Consumer<EventEntry>> listeners = tailListeners.get(tenant.tenantId());
+            if (listeners != null) {
+                // For in-memory implementation, we clear all listeners for simplicity
+                // A production implementation would track subscription IDs
+                listeners.clear();
+            }
+            return Promise.of(null);
         }
     }
 }

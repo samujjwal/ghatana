@@ -1,5 +1,15 @@
 package com.ghatana.yappc.services.phase;
 
+import java.util.List;
+
+/**
+ * Learn phase model provider.
+ *
+ * @doc.type class
+ * @doc.purpose Build Learn phase models
+ * @doc.layer product
+ * @doc.pattern PhaseModelProvider
+ */
 public final class LearnPhaseModelProvider {
 
     public LearnPhaseModel build(PhasePanelInput input) {

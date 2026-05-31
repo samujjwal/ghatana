@@ -13,12 +13,12 @@ The Ghatana monorepo currently has **two incompatible workflow systems** that ha
 
 | Layer | Location | Characteristics |
 |-------|----------|-----------------|
-| **Platform (ephemeral + partial durable)** | `platform:java:workflow` | `Workflow`, `WorkflowStep`, `WorkflowContext`, `DurableWorkflowEngine` (in-memory state), `Pipeline`/`DAGPipelineExecutor`, `UnifiedOperator` (for AEP) |
+| **Platform (ephemeral + partial durable)** | `platform:java:workflow` | `Workflow`, `WorkflowStep`, `WorkflowContext`, `DurableWorkflowEngine` (in-memory state), `Pipeline`/`DAGPipelineExecutor`, `UnifiedOperator` (for event processing) |
 | **App-platform (full durable)** | `app-platform/kernel/workflow-orchestration` | 15-service FSM with PostgreSQL persistence, CEL evaluation, WAIT/PARALLEL/SUB_WORKFLOW steps, saga compensation, SLA tracking, event-driven triggers — **not connected to the platform interfaces** |
 
 This divergence means:
 - Other products (tutorputor, flashit, audio-video, dcmaar) that need durable workflows must re-invent what app-platform built
-- AEP's operator pipelines cannot seamlessly interoperate with app-platform's FSM workflows
+- Event processing pipelines cannot seamlessly interoperate with app-platform's FSM workflows
 - App-platform gains no benefit from platform upgrades to `DurableWorkflowEngine`
 
 **This document designs a unified 3-module workflow platform** that: covers all workflow kinds (ephemeral operator pipelines → fully durable long-running FSMs), is product-agnostic, and allows any product to adopt what it needs at the granularity it needs.
@@ -35,7 +35,7 @@ This divergence means:
 | **Pluggable everything** | State stores, expression evaluators, wait coordinators — all are interfaces; implementations are swappable |
 | **Backward compatible** | The existing `Workflow`, `WorkflowContext`, `WorkflowStep` and `DurableWorkflowEngine` public API must remain valid |
 | **Product-specific extensions** | Products can define their own step implementations, triggers, and expression functions without forking the core |
-| **Full lifecycle observability** | Lifecycle events emitted at every phase, consumable by observability-sdk and AEP |
+| **Full lifecycle observability** | Lifecycle events emitted at every phase, consumable by observability-sdk and event systems |
 
 ---
 
@@ -62,7 +62,7 @@ This divergence means:
          │ • DAGPipelineExecutor       │     │ • WorkflowDefinition (typed DSL) │
          │ • Promise-chained steps     │     │ • WorkflowInstances (persisted)  │
          │ • In-memory only            │     │ • PENDING→RUNNING→WAITING→       │
-         │ • AEP operators             │     │   COMPLETED/FAILED/CANCELLED     │
+         │ • Event operators           │     │   COMPLETED/FAILED/CANCELLED     │
          │ • Completes in <60s         │     │ • CEL conditions, WAIT steps     │
          │                             │     │ • Sub-workflows, PARALLEL steps  │
          └─────────────────────────────┘     │ • Saga compensation              │
@@ -104,7 +104,7 @@ workflow-jdbc ──depends──▶ workflow-runtime ──depends──▶ wor
 products (app-platform, tutorputor, etc.) ─────────────────┘
 ```
 
-A product that only needs ephemeral operator pipelines (e.g. a simple AEP extension) depends only on `workflow`.  
+A product that only needs ephemeral operator pipelines (e.g. a simple event processing extension) depends only on `workflow`.  
 A product needing durable FSM adds `workflow-runtime` and a state store (e.g. `workflow-jdbc`).
 
 ---
@@ -205,7 +205,7 @@ import java.util.Map;
 
 /**
  * Immutable lifecycle event emitted at every significant phase of workflow execution.
- * Consumed by: observability-sdk (Micrometer), AEP (event bus), audit-trail.
+ * Consumed by: observability-sdk (Micrometer), event systems, audit-trail.
  */
 public record WorkflowLifecycleEvent(
     @NotNull  String              runId,
@@ -247,7 +247,7 @@ package com.ghatana.platform.workflow;
  * SPI for observing workflow lifecycle events.
  * Multiple listeners can be registered; all are called synchronously in registration order.
  * Implementations: MetricsWorkflowListener (Micrometer), AuditWorkflowListener (audit-trail),
- *                  AepEventWorkflowListener (AEP event bus).
+ *                  EventWorkflowListener (event systems).
  */
 @FunctionalInterface
 public interface WorkflowLifecycleListener {
@@ -393,7 +393,7 @@ import java.util.Map;
  *   MANUAL  — wait for an explicit API signal from a human operator
  *
  * Default implementation: JdbcWorkflowWaitCoordinator (in workflow-jdbc)
- * AEP-backed implementation: AepWorkflowWaitCoordinator (in an AEP module)
+ * Event-backed implementation: EventWorkflowWaitCoordinator (in an event module)
  */
 public interface WorkflowWaitCoordinator {
 
@@ -602,14 +602,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
-/** Step kind taxonomy — covers all current app-platform use cases + future AEP integration. */
+/** Step kind taxonomy — covers all current app-platform use cases + future event processing integration. */
 public enum WorkflowStepKind {
     TASK,              // invoke a registered WorkflowStep by taskRef
     DECISION,          // evaluate CEL expression, select branch
     PARALLEL,          // fan out N branches, join with strategy (ALL/FIRST/N_OF_M)
     WAIT,              // pause until event/timer/manual signal
     SUB_WORKFLOW,      // invoke a child workflow (sync or async)
-    OPERATOR_PIPELINE  // run an ephemeral Pipeline as a step (AEP interop)
+    OPERATOR_PIPELINE  // run an ephemeral Pipeline as a step (event processing interop)
 }
 
 public enum WorkflowTriggerType { EVENT, SCHEDULE, MANUAL, API_WEBHOOK }
@@ -709,9 +709,9 @@ MetricsWorkflowListener    implements WorkflowLifecycleListener
 // Structured audit listener (delegates to platform AuditPort)
 AuditWorkflowListener      implements WorkflowLifecycleListener
 
-// AEP event-bus listener (publishes WorkflowLifecycleEvent as an AEP cloud event)
-// Lives in an AEP extension module, not workflow-runtime itself
-// AepWorkflowLifecycleListener  implements WorkflowLifecycleListener
+// Event-bus listener (publishes WorkflowLifecycleEvent as a cloud event)
+// Lives in an event processing extension module, not workflow-runtime itself
+// EventWorkflowLifecycleListener  implements WorkflowLifecycleListener
 ```
 
 ---
@@ -881,7 +881,7 @@ class PipelineWorkflowStepAdapter implements WorkflowStep {
 ### 8.2 Invoking a durable workflow from an ephemeral pipeline node
 
 ```java
-// An AEP operator (or ephemeral WorkflowStep) that needs to trigger a durable workflow:
+// An event operator (or ephemeral WorkflowStep) that needs to trigger a durable workflow:
 class TradeSettlementTriggerOperator extends AbstractOperator {
     private final DurableWorkflowRuntime runtime;
 
@@ -936,7 +936,7 @@ app-platform/kernel/workflow-orchestration/
 
 **Problems:**
 - 15 inner `AuditPort` / `EventBusPort` definitions (one per service) — duplicated
-- `EventBusPort` not wired to AEP
+- `EventBusPort` not wired to event systems
 - No connection to `platform:java:workflow` at all
 - Not reusable by other products
 
@@ -963,7 +963,7 @@ For each service, migrate in this order:
 5. **`ParallelStepExecutionService`** → replace with `ParallelStepExecutor` from workflow-runtime
 6. **`SubWorkflowCompositionService`** → replace with `SubWorkflowComposer` from workflow-runtime
 7. **Inner `AuditPort` duplicates** → replaced by `AuditWorkflowListener` registered on `DurableWorkflowRuntime`
-8. **Inner `EventBusPort` duplicates** → replaced by `AepWorkflowLifecycleListener` (wires to AEP)
+8. **Inner `EventBusPort` duplicates** → replaced by `EventWorkflowLifecycleListener` (wires to event systems)
 
 #### Phase 3 — Register app-platform's workflow business steps in `StepRegistry`
 ```java
@@ -983,25 +983,25 @@ DurableWorkflowRuntime runtime = DurableWorkflowRuntime.builder()
     .stepRegistry(registry)
     .addListener(new MetricsWorkflowListener(meterRegistry))
     .addListener(new AuditWorkflowListener(auditPort))
-    .addListener(new AepWorkflowLifecycleListener(eventBus))
+    .addListener(new EventWorkflowLifecycleListener(eventBus))
     .meterRegistry(meterRegistry)
     .build();
 ```
 
 ### 9.3 Existing DSL compatibility
 
-The current app-platform workflow DSL (YAML/JSON with `stepId`, `taskRef`, `condition`, etc.) maps 1:1 to `WorkflowStepDefinition`. The only new field is `kind: OPERATOR_PIPELINE` for AEP interop. No existing definitions need to be rewritten.
+The current app-platform workflow DSL (YAML/JSON with `stepId`, `taskRef`, `condition`, etc.) maps 1:1 to `WorkflowStepDefinition`. The only new field is `kind: OPERATOR_PIPELINE` for event processing interop. No existing definitions need to be rewritten.
 
 ---
 
-## 10. AEP Integration Pattern
+## 10. Event Processing Integration Pattern
 
-AEP's operator pipelines are an **ephemeral workflow** specialisation: they run inside the `DAGPipelineExecutor` using `UnifiedOperator` steps. The integration points are:
+Event processing operator pipelines are an **ephemeral workflow** specialisation: they run inside the `DAGPipelineExecutor` using `UnifiedOperator` steps. The integration points are:
 
-### 10.1 AEP triggers a durable workflow when persistence is needed
+### 10.1 Event processing triggers a durable workflow when persistence is needed
 
 ```java
-// AEP operator that hands off to a durable workflow:
+// Event processing operator that hands off to a durable workflow:
 class PersistToDataCloudOperator extends AbstractOperator {
     private final DurableWorkflowRuntime wfRuntime;
 
@@ -1014,17 +1014,17 @@ class PersistToDataCloudOperator extends AbstractOperator {
 }
 ```
 
-### 10.2 AEP receives lifecycle events from durable workflows
+### 10.2 Event processing receives lifecycle events from durable workflows
 
-Wire `AepWorkflowLifecycleListener` as a listener on `DurableWorkflowRuntime`:
+Wire `EventWorkflowLifecycleListener` as a listener on `DurableWorkflowRuntime`:
 ```java
-// AEP publishes these as cloud events into the AEP event bus.
-// Other AEP operators can subscribe to workflow.lifecycle.* events.
+// Event processing publishes these as cloud events into the event bus.
+// Other event processing operators can subscribe to workflow.lifecycle.* events.
 runtime.addListener(event ->
-    aepEventBus.publish("workflow.lifecycle." + event.phase().name().toLowerCase(), event));
+    eventBus.publish("workflow.lifecycle." + event.phase().name().toLowerCase(), event));
 ```
 
-### 10.3 Product-specific AEP operators registered via `OPERATOR_PIPELINE` step kind
+### 10.3 Product-specific event processing operators registered via `OPERATOR_PIPELINE` step kind
 
 App-platform registers its AI enrichment pipelines in the `StepRegistry` under named pipeline refs:
 ```java
@@ -1032,7 +1032,7 @@ registry.register("pipeline:instrument-enrichment", new PipelineWorkflowStepAdap
     PipelineBuilder.of("instrument-enrichment")
         .source("classifier", new AiInstrumentClassifierOperator())
         .then("enricher",     new AiInstrumentEnrichmentOperator())
-        .sink("publisher",    new AepEventPublisherOperator())
+        .sink("publisher",    new EventPublisherOperator())
         .build(),
     dagPipelineExecutor
 ));
@@ -1042,7 +1042,7 @@ registry.register("pipeline:instrument-enrichment", new PipelineWorkflowStepAdap
 
 ## 11. Other Products: Usage Patterns
 
-### 11.1 A product needing only ephemeral pipelines (e.g. simple AEP extension)
+### 11.1 A product needing only ephemeral pipelines (e.g. simple event processing extension)
 
 ```kotlin
 // build.gradle.kts
@@ -1074,16 +1074,16 @@ class CurriculumExpressionEvaluator implements WorkflowExpressionEvaluator {
 }
 ```
 
-### 11.4 A product needing AEP-backed wait coordination (event-driven resume)
+### 11.4 A product needing event-backed wait coordination (event-driven resume)
 
-Implement `WorkflowWaitCoordinator` that registers event subscriptions in AEP:
+Implement `WorkflowWaitCoordinator` that registers event subscriptions in an event system:
 ```java
-class AepWorkflowWaitCoordinator implements WorkflowWaitCoordinator {
-    private final AepEventCloudClient aepClient;
+class EventWorkflowWaitCoordinator implements WorkflowWaitCoordinator {
+    private final EventCloudClient eventClient;
 
     @Override
     public void registerEventWait(String runId, String eventType, String correlationKey, Duration timeout) {
-        aepClient.subscribe(eventType, event -> {
+        eventClient.subscribe(eventType, event -> {
             if (event.getCorrelationKey().equals(correlationKey)) {
                 signal(runId, Map.of("eventPayload", event));
             }
@@ -1182,12 +1182,12 @@ history per run. Products query this for: run replay, SLA reporting, debugging f
 - [ ] Register all `TASK` step refs in `StepRegistry`
 - [ ] Delete 15 inner `AuditPort` / `EventBusPort` duplicates
 - [ ] Wire `AuditWorkflowListener` (all 6 missing audit events now covered automatically)
-- [ ] Wire `AepWorkflowLifecycleListener` (replaces `EventBusPort` with AEP)
+- [ ] Wire `EventWorkflowLifecycleListener` (replaces `EventBusPort` with event system)
 
-### Sprint 5 (1 week) — AEP interop
+### Sprint 5 (1 week) — Event processing interop
 - [ ] Implement `PipelineWorkflowStepAdapter` (OPERATOR_PIPELINE step type)
-- [ ] Implement `AepWorkflowWaitCoordinator` (event-driven resume via AEP)
-- [ ] Implement `AepWorkflowLifecycleListener` (publish lifecycle events to AEP)
+- [ ] Implement `EventWorkflowWaitCoordinator` (event-driven resume via event system)
+- [ ] Implement `EventWorkflowLifecycleListener` (publish lifecycle events to event system)
 - [ ] Register app-platform AI enrichment pipelines as OPERATOR_PIPELINE steps
 
 ### Future
@@ -1200,10 +1200,10 @@ history per run. Products query this for: run replay, SLA reporting, debugging f
 
 ## 15. Summary: Compatibility Matrix
 
-| Product | Ephemeral Pipeline | Durable FSM | WAIT Steps | AEP Interop | JDBC State |
-|---------|:-----------------:|:-----------:|:----------:|:-----------:|:----------:|
+| Product | Ephemeral Pipeline | Durable FSM | WAIT Steps | Event Processing Interop | JDBC State |
+|---------|:-----------------:|:-----------:|:----------:|:-----------------------:|:----------:|
 | **app-platform** | via `workflow` | via `workflow-runtime` | ✓ | ✓ (Phase 2) | via `workflow-jdbc` |
-| **AEP** | ✓ (native Pipeline) | via `workflow-runtime` | via AepWaitCoordinator | ✓ (native) | optional |
+| **event-processing** | ✓ (native Pipeline) | via `workflow-runtime` | via EventWaitCoordinator | ✓ (native) | optional |
 | **audio-video** (transcoding) | ✓ (short pipeline) | not needed | — | optional | — |
 | **tutorputor** (curriculum) | ✓ (assessment pipeline) | via `workflow-runtime` | ✓ (human checkpoint) | optional | via `workflow-jdbc` |
 | **flashit** (spaced repetition) | ✓ (review pipeline) | not needed | — | optional | — |

@@ -20,6 +20,7 @@ dependencies {
     api(project(":platform:java:domain"))
     api(project(":platform:java:observability"))
     api(project(":platform:java:agent-core"))
+    api(project(":products:data-cloud:planes:event:core"))
 
     implementation(libs.slf4j.api)
 

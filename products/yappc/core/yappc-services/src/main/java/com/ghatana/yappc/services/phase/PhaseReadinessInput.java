@@ -7,6 +7,11 @@ import java.util.Map;
 
 /**
  * Input envelope for phase-specific readiness policy checks.
+ *
+ * @doc.type record
+ * @doc.purpose Phase readiness input envelope
+ * @doc.layer product
+ * @doc.pattern PhaseReadinessInput
  */
 public record PhaseReadinessInput(
         String phase,

@@ -1,27 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { SafeError } from '../components/SafeError';
-import { Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { Button, Card, CardContent, CardHeader, Checkbox } from '@ghatana/design-system';
 import { useParams } from 'react-router-dom';
 import { fetchRecordDetail } from '../api/recordsApi';
+import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { t } from '../i18n/phrI18n';
 import { usePhrSession } from '../auth/PhrSessionContext';
+import type { PatientRecordDetail } from '../types';
 
 export function RecordDetailPage(): React.ReactElement {
   const { recordId } = useParams();
   const { session } = usePhrSession();
-  const [recordData, setRecordData] = useState<{
-    record: { id: string; title: string; resourceType: string; category: string; updatedAt: string };
-    fhirJson: string;
-    accessAudit: { accessedAt: string; accessedBy: string };
-  } | null>(null);
+  const [recordData, setRecordData] = useState<PatientRecordDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SafeApiErrorState | null>(null);
   const [showRawFhir, setShowRawFhir] = useState<boolean>(false);
   const [fhirInvalid, setFhirInvalid] = useState<boolean>(false);
 
   useEffect(() => {
     if (!session || !recordId) {
-      setError(t('recordDetail.error.context'));
+      setError({ message: t('recordDetail.error.context') });
       setLoading(false);
       return;
     }
@@ -34,7 +32,7 @@ export function RecordDetailPage(): React.ReactElement {
       .then(setRecordData)
       .catch((err: unknown) => {
         const errorMessage = err instanceof Error ? err.message : t('recordDetail.error.load');
-        setError(errorMessage);
+        setError({ ...toSafeApiErrorState(err, t('recordDetail.error.load')), message: errorMessage });
         // Check if error indicates invalid FHIR payload
         if (errorMessage.toLowerCase().includes('invalid') || errorMessage.toLowerCase().includes('parse')) {
           setFhirInvalid(true);
@@ -89,7 +87,7 @@ export function RecordDetailPage(): React.ReactElement {
       <Card>
         <CardHeader title={t('recordDetail.unavailable.title')} subheader={t('recordDetail.error.load')} />
         <CardContent>
-          <SafeError message={error} correlationId={session?.tenantId + '-' + session?.principalId} />
+          <SafeError message={error.message} correlationId={error.correlationId} />
           {fhirInvalid && (
             <div className="warning-banner">
               <strong>{t('recordDetail.invalidFhir.title')}</strong>
@@ -133,20 +131,17 @@ export function RecordDetailPage(): React.ReactElement {
 
           {/* PHI safety controls */}
           <div className="phi-controls">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={showRawFhir}
-                onChange={(e) => setShowRawFhir(e.target.checked)}
-              />
-              {t('recordDetail.showRawFhir')}
-            </label>
-            <button onClick={handleCopyFhir} className="btn-secondary">
+            <Checkbox
+              checked={showRawFhir}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setShowRawFhir(e.target.checked)}
+              label={t('recordDetail.showRawFhir')}
+            />
+            <Button type="button" onClick={handleCopyFhir} variant="secondary">
               {t('recordDetail.copyFhir')}
-            </button>
-            <button onClick={handleDownloadFhir} className="btn-secondary">
+            </Button>
+            <Button type="button" onClick={handleDownloadFhir} variant="secondary">
               {t('recordDetail.downloadFhir')}
-            </button>
+            </Button>
           </div>
 
           {!showRawFhir && (

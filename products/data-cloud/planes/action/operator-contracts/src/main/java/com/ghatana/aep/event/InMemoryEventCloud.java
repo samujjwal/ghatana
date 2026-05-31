@@ -36,6 +36,7 @@ public class InMemoryEventCloud implements EventCloud {
 
     private final Duration defaultTtl;
     private final Map<String, List<StoredEvent>> eventsByTenant = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, CheckpointRecord>> checkpointsByTenant = new ConcurrentHashMap<>();
     private final List<SubscriptionEntry> subscriptions = new CopyOnWriteArrayList<>();
     private final AtomicLong eventCounter = new AtomicLong(0);
     private volatile long lastGlobalPurgeAtMs;
@@ -111,6 +112,65 @@ public class InMemoryEventCloud implements EventCloud {
         };
     }
 
+    @Override
+    public boolean createCheckpoint(String tenantId, String checkpointId, Map<String, Object> metadata) {
+        Objects.requireNonNull(tenantId, "tenantId required");
+        Objects.requireNonNull(checkpointId, "checkpointId required");
+        long offset = eventsByTenant.getOrDefault(tenantId, List.of()).size();
+        checkpointsByTenant.computeIfAbsent(tenantId, ignored -> new ConcurrentHashMap<>())
+            .put(checkpointId, new CheckpointRecord(offset, metadata == null ? Map.of() : Map.copyOf(metadata)));
+        return true;
+    }
+
+    @Override
+    public Map<String, Object> readCheckpoint(String tenantId, String checkpointId) {
+        Objects.requireNonNull(tenantId, "tenantId required");
+        Objects.requireNonNull(checkpointId, "checkpointId required");
+        CheckpointRecord checkpoint = checkpointsByTenant.getOrDefault(tenantId, Map.of()).get(checkpointId);
+        return checkpoint == null ? null : checkpoint.metadata();
+    }
+
+    @Override
+    public boolean deleteCheckpoint(String tenantId, String checkpointId) {
+        Objects.requireNonNull(tenantId, "tenantId required");
+        Objects.requireNonNull(checkpointId, "checkpointId required");
+        Map<String, CheckpointRecord> tenantCheckpoints = checkpointsByTenant.get(tenantId);
+        return tenantCheckpoints != null && tenantCheckpoints.remove(checkpointId) != null;
+    }
+
+    @Override
+    public List<CheckpointInfo> listCheckpoints(String tenantId) {
+        Objects.requireNonNull(tenantId, "tenantId required");
+        return checkpointsByTenant.getOrDefault(tenantId, Map.of()).entrySet().stream()
+            .map(entry -> new CheckpointInfo(entry.getKey(), entry.getValue().offset(), entry.getValue().metadata()))
+            .toList();
+    }
+
+    @Override
+    public ReplayStatistics replay(String tenantId, String checkpointId, ReplayMode mode, EventHandler handler) {
+        Objects.requireNonNull(tenantId, "tenantId required");
+        Objects.requireNonNull(checkpointId, "checkpointId required");
+        Objects.requireNonNull(mode, "mode required");
+        Objects.requireNonNull(handler, "handler required");
+
+        long startedAt = System.currentTimeMillis();
+        CheckpointRecord checkpoint = checkpointsByTenant.getOrDefault(tenantId, Map.of()).get(checkpointId);
+        if (checkpoint == null) {
+            throw new IllegalArgumentException("Unknown checkpoint: " + checkpointId);
+        }
+
+        List<StoredEvent> events = eventsByTenant.getOrDefault(tenantId, List.of());
+        int processed = 0;
+        for (int index = Math.toIntExact(Math.min(checkpoint.offset(), events.size())); index < events.size(); index++) {
+            StoredEvent event = events.get(index);
+            processed++;
+            if (mode == ReplayMode.REPLAY_WITH_SIDE_EFFECTS) {
+                handler.handle(event.eventId(), event.eventType(), event.payload());
+            }
+        }
+        return new ReplayStatistics(processed, processed, System.currentTimeMillis() - startedAt);
+    }
+
     /**
      * Get all events for a tenant (for testing).
      *
@@ -126,6 +186,7 @@ public class InMemoryEventCloud implements EventCloud {
      */
     public void clear() {
         eventsByTenant.clear();
+        checkpointsByTenant.clear();
         subscriptions.clear();
         eventCounter.set(0);
     }
@@ -196,6 +257,8 @@ public class InMemoryEventCloud implements EventCloud {
      * @param timestamp epoch millis when appended
      */
     public record StoredEvent(String eventId, String eventType, byte[] payload, long timestamp) {}
+
+    private record CheckpointRecord(long offset, Map<String, Object> metadata) {}
 
     private static class SubscriptionEntry {
         final String tenantId;

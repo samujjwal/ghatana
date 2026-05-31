@@ -38,7 +38,7 @@ import java.util.Set;
  * @param learningContractId          ID of the LearningContract or embedded digest
  * @param versionCompatibilityPolicyId ID of the VersionCompatibilityPolicy (replaces raw runtime version list)
  * @param freshnessPolicyId           ID of the FreshnessPolicy
- * @param compatibleRuntimeVersions   runtime version constraints (e.g., {@code ["aep-runtime:2.x"]})
+ * @param compatibleRuntimeVersions   runtime version constraints (e.g., {@code ["runtime:2.x"]})
  * @param signingReference            Sigstore bundle or attestation reference (nullable)
  * @param toolContractVersion         version of ToolContract at release time
  * @param telemetryContractVersion    version of AgentTelemetryContract expected

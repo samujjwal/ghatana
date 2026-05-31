@@ -27,10 +27,9 @@ import java.util.stream.Collectors;
  * Loads agent definitions from {@code agent-catalog.yaml} files distributed
  * across the repository.
  *
- * <p>Each product (YAPPC, AEP, Data-Cloud, etc.) may contain an
- * {@code agent-catalog.yaml} at its root that declares agent definition
- * paths via glob patterns. This loader discovers those files, parses
- * referenced agent definitions, and creates {@link FileBasedCatalog}
+ * <p>Each product may contain an {@code agent-catalog.yaml} at its root that
+ * declares agent definition paths via glob patterns. This loader discovers those
+ * files, parses referenced agent definitions, and creates {@link FileBasedCatalog}
  * instances that implement {@link AgentCatalog}.
  *
  * <h2>Discovery Flow</h2>

@@ -1,0 +1,32 @@
+{
+  "product": "sample-product",
+  "version": "1.0.0",
+  "usecases": [
+    {
+      "id": "uc-operator-dashboard",
+      "persona": "operator",
+      "screen": "Dashboard",
+      "iaRoute": "/dashboard",
+      "webRoute": "/dashboard",
+      "mobileScreen": "dashboard",
+      "backendApis": ["/api/v1/dashboard"],
+      "kernelCapability": "sample.dashboard.view",
+      "offlineSupport": false,
+      "status": "implemented",
+      "phase": "contract"
+    },
+    {
+      "id": "uc-operator-records",
+      "persona": "operator",
+      "screen": "Records",
+      "iaRoute": "/records",
+      "webRoute": "/records",
+      "mobileScreen": "records",
+      "backendApis": ["/api/v1/records"],
+      "kernelCapability": "sample.records.view",
+      "offlineSupport": false,
+      "status": "implemented",
+      "phase": "contract"
+    }
+  ]
+}

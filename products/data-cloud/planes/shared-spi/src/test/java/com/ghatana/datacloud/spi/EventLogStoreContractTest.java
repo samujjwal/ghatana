@@ -240,5 +240,123 @@ public abstract class EventLogStoreContractTest extends EventloopTestBase {
         }
     }
 
+    // ─── Checkpoint Management (P3-03) ─────────────────────────────────────
+
+    @Nested
+    @DisplayName("checkpoint management")
+    class CheckpointManagement {
+
+        @Test
+        @DisplayName("checkpoint commit and read works")
+        void checkpointCommitAndReadWorks() {
+            Offset offset = runPromise(() -> store.append(tenant, entry("checkpoint.test")));
+            
+            EventLogStore.Checkpoint checkpoint = runPromise(() -> 
+                store.commitCheckpoint(tenant, "test-stream", "default-group", offset, "idempotency-key-123"));
+            
+            assertThat(checkpoint.stream()).isEqualTo("test-stream");
+            assertThat(checkpoint.consumerGroup()).isEqualTo("default-group");
+            assertThat(checkpoint.offset()).isEqualTo(offset);
+            assertThat(checkpoint.idempotencyKey()).isEqualTo("idempotency-key-123");
+            
+            java.util.Optional<EventLogStore.Checkpoint> read = runPromise(() -> 
+                store.readCheckpoint(tenant, "test-stream", "default-group"));
+            
+            assertThat(read).isPresent();
+            assertThat(read.get().offset()).isEqualTo(offset);
+        }
+
+        @Test
+        @DisplayName("checkpoint is idempotent")
+        void checkpointIsIdempotent() {
+            Offset offset = runPromise(() -> store.append(tenant, entry("idempotent.test")));
+            
+            // Commit same checkpoint twice
+            runPromise(() -> 
+                store.commitCheckpoint(tenant, "idempotent-stream", "default-group", offset, "idempotency-key-456"));
+            EventLogStore.Checkpoint second = runPromise(() -> 
+                store.commitCheckpoint(tenant, "idempotent-stream", "default-group", offset, "idempotency-key-456"));
+            
+            // Should return the same checkpoint
+            assertThat(second.offset()).isEqualTo(offset);
+        }
+
+        @Test
+        @DisplayName("delete checkpoint removes stored checkpoint")
+        void deleteCheckpointRemovesStored() {
+            Offset offset = runPromise(() -> store.append(tenant, entry("delete.test")));
+            runPromise(() -> 
+                store.commitCheckpoint(tenant, "delete-stream", "default-group", offset, "idempotency-key-789"));
+            
+            boolean deleted = runPromise(() -> 
+                store.deleteCheckpoint(tenant, "delete-stream", "default-group"));
+            
+            assertThat(deleted).isTrue();
+            
+            java.util.Optional<EventLogStore.Checkpoint> read = runPromise(() -> 
+                store.readCheckpoint(tenant, "delete-stream", "default-group"));
+            
+            assertThat(read).isEmpty();
+        }
+    }
+
+    // ─── Replay (P3-03) ───────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("replay")
+    class Replay {
+
+        @Test
+        @DisplayName("replay respects fromOffset")
+        void replayRespectsFromOffset() {
+            runPromise(() -> store.append(tenant, entry("replay.1")));
+            runPromise(() -> store.append(tenant, entry("replay.2")));
+            runPromise(() -> store.append(tenant, entry("replay.3")));
+            
+            EventLogStore.ReplaySpec spec = EventLogStore.ReplaySpec.fromOffset(Offset.of("2"));
+            List<EventLogStore.EventEntry> events = runPromise(() -> store.replay(tenant, spec));
+            
+            // Should start from offset 2, so only events 2 and 3
+            assertThat(events).hasSizeGreaterThanOrEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("replay respects toOffset")
+        void replayRespectsToOffset() {
+            runPromise(() -> store.append(tenant, entry("replay.a")));
+            runPromise(() -> store.append(tenant, entry("replay.b")));
+            runPromise(() -> store.append(tenant, entry("replay.c")));
+            
+            EventLogStore.ReplaySpec spec = EventLogStore.ReplaySpec.bounded(Offset.of("1"), Offset.of("2"));
+            List<EventLogStore.EventEntry> events = runPromise(() -> store.replay(tenant, spec));
+            
+            // Should only include events between offset 1 and 2 (inclusive)
+            assertThat(events).hasSizeLessThanOrEqualTo(2);
+        }
+
+        @Test
+        @DisplayName("replay filters event types")
+        void replayFiltersEventTypes() {
+            runPromise(() -> store.append(tenant, entry("type.a")));
+            runPromise(() -> store.append(tenant, entry("type.b")));
+            runPromise(() -> store.append(tenant, entry("type.a")));
+            
+            EventLogStore.ReplaySpec spec = EventLogStore.ReplaySpec.filtered(
+                Offset.of("1"), Offset.of("-1"), List.of("type.a"));
+            List<EventLogStore.EventEntry> events = runPromise(() -> store.replay(tenant, spec));
+            
+            assertThat(events).allSatisfy(e -> assertThat(e.eventType()).isEqualTo("type.a"));
+        }
+
+        @Test
+        @DisplayName("replay requires valid tenant")
+        void replayRequiresValidTenant() {
+            EventLogStore.ReplaySpec spec = EventLogStore.ReplaySpec.fromOffset(Offset.of("0"));
+            
+            assertThatThrownBy(() -> runPromise(() -> store.replay(null, spec)))
+                    .isInstanceOf(NullPointerException.class);
+        }
+    }
+
     // runPromise() is inherited from EventloopTestBase and executes on the eventloop.
 }

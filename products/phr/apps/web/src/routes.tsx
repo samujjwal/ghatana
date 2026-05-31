@@ -3,7 +3,7 @@ import { Navigate, createBrowserRouter } from 'react-router-dom';
 import { AppShell } from './layout/AppShell';
 import { usePhrAccess } from './auth/PhrAccessContext';
 import { usePhrSession } from './auth/PhrSessionContext';
-import { isRouteAllowedForRole, phrRouteContracts } from './routeManifest';
+import { phrRoutePlugin } from './routeManifest';
 import { attachPhrRouteElement, type PhrRouteManifestEntry } from './phrRouteElements';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -20,15 +20,15 @@ export function ProtectedPhrRoute({ route }: { route: PhrRouteManifestEntry }): 
     return <Navigate to="/login" replace />;
   }
 
-  if (route.stability === 'hidden' || route.hidden === true) {
+  if (route.stability === 'hidden' || route.stability === 'deferred' || route.stability === 'removed' || route.hidden === true) {
     return <Navigate to="/not-found" replace />;
   }
 
-  if (route.stability === 'blocked' || route.blocked === true) {
+  if (route.stability === 'blocked' || route.stability === 'preview' || route.blocked === true) {
     return <Navigate to="/forbidden" replace />;
   }
 
-  if (!isRouteAllowedForRole(route, role)) {
+  if (!phrRoutePlugin.isAllowedForRole(route, role)) {
     return <Navigate to="/forbidden" replace />;
   }
 
@@ -42,7 +42,9 @@ function protectedRoute(route: PhrRouteManifestEntry): { path: string; element: 
   };
 }
 
-const phrRouteManifest = phrRouteContracts.map(attachPhrRouteElement);
+export const phrBrowserRouteManifest = phrRoutePlugin
+  .getBrowserRoutes()
+  .map(attachPhrRouteElement);
 
 export const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/login" replace /> },
@@ -51,7 +53,7 @@ export const router = createBrowserRouter([
     path: '/',
     element: <AppShell />,
     children: [
-      ...phrRouteManifest.map(protectedRoute),
+      ...phrBrowserRouteManifest.map(protectedRoute),
       // R-009: Catch-all route for unknown paths
       { path: '*', element: <NotFoundPage /> },
     ],

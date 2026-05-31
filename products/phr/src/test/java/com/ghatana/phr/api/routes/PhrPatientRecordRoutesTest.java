@@ -134,6 +134,7 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(201);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
         }
 
         @Test
@@ -153,6 +154,7 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
         @DisplayName("400 - missing context headers")
         void returns400WhenContextMissing() throws Exception {
             HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/")
+                .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
                 .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
                 .withBody(PATIENT_BODY.getBytes(StandardCharsets.UTF_8))
                 .build();
@@ -160,6 +162,7 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(400);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
         }
     }
 
@@ -176,6 +179,7 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(200);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
             verify(policyEvaluator).canAccessPhiResourceAsync(
                 any(), eq("patient-1"), eq("patient-records"), eq("READ"), eq("t1"), nullable(String.class));
         }
@@ -194,11 +198,14 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
         @Test
         @DisplayName("400 - missing context headers")
         void returns400WhenContextMissing() throws Exception {
-            HttpRequest request = HttpRequest.get("http://localhost/patient-1").build();
+            HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/patient-1")
+                .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
+                .build();
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(400);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
         }
     }
 
@@ -215,6 +222,7 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(200);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
             verify(policyEvaluator).canAccessPhiResourceAsync(
                 any(), eq("patient-1"), eq("patient-records"), eq("WRITE"), eq("t1"), nullable(String.class));
         }
@@ -240,11 +248,14 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
         @Test
         @DisplayName("400 - missing context headers")
         void returns400WhenContextMissing() throws Exception {
-            HttpRequest request = HttpRequest.get("http://localhost/?name=Test").build();
+            HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/?name=Test")
+                .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
+                .build();
 
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(400);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
         }
 
         @Test
@@ -256,6 +267,7 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(400);
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("test-corr-1");
         }
     }
 
@@ -265,6 +277,8 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
             .withHeader(HttpHeaders.of("X-Tenant-ID"), tenantId)
             .withHeader(HttpHeaders.of("X-Principal-ID"), principalId)
             .withHeader(HttpHeaders.of("X-Role"), role)
+            .withHeader(HttpHeaders.of("X-Persona"), role)
+            .withHeader(HttpHeaders.of("X-Tier"), "core")
             .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
             .build();
     }
@@ -275,6 +289,8 @@ class PhrPatientRecordRoutesTest extends EventloopTestBase {
             .withHeader(HttpHeaders.of("X-Tenant-ID"), tenantId)
             .withHeader(HttpHeaders.of("X-Principal-ID"), principalId)
             .withHeader(HttpHeaders.of("X-Role"), role)
+            .withHeader(HttpHeaders.of("X-Persona"), role)
+            .withHeader(HttpHeaders.of("X-Tier"), "core")
             .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
             .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
             .withBody(body.getBytes(StandardCharsets.UTF_8))

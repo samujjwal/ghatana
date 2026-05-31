@@ -8,6 +8,7 @@ import { SafeError } from '../components/SafeError';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, Badge } from '@ghatana/design-system';
 import { fetchObservationDetail } from '../api/clinicalApi';
+import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import { logError } from '../utils/safeLogger';
@@ -18,7 +19,7 @@ export function ObservationDetailPage(): React.ReactElement {
   const { session } = usePhrSession();
   const [observation, setObservation] = useState<ObservationSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SafeApiErrorState | null>(null);
 
   useEffect(() => {
     if (!session || !observationId) return;
@@ -28,13 +29,13 @@ export function ObservationDetailPage(): React.ReactElement {
       role: session.role,
     })
       .then(setObservation)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('observationDetail.error.load')))
+      .catch((err: unknown) => setError(toSafeApiErrorState(err, t('observationDetail.error.load'))))
       .finally(() => setLoading(false));
   }, [session, observationId]);
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('observationDetail.loading')}</div>;
-  if (error) return <SafeError title={t('observationDetail.error.load')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
-  if (!observation) return <SafeError title={t('observationDetail.error.load')} message={t('observationDetail.error.load')} correlationId={session?.tenantId + '-' + session?.principalId} />;
+  if (error) return <SafeError title={t('observationDetail.error.load')} message={error.message} correlationId={error.correlationId} />;
+  if (!observation) return <SafeError title={t('observationDetail.error.load')} message={t('observationDetail.error.load')} />;
 
   return (
     <div className="stack gap-lg">

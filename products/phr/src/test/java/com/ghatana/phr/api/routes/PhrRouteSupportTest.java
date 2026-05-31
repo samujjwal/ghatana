@@ -1,9 +1,14 @@
 package com.ghatana.phr.api.routes;
 
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
+import io.activej.http.HttpResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -15,14 +20,14 @@ import static org.mockito.Mockito.when;
  *
  * <p>Verifies the fail-closed security contract:
  * <ul>
- *   <li>All three headers must be present and non-blank.</li>
+ *   <li>Tenant, principal, role, persona, and tier headers must be present and non-blank.</li>
  *   <li>Role must be a member of the allowed set.</li>
- *   <li>No implicit default role is assigned on missing input.</li>
+ *   <li>No implicit default role, persona, or tier is assigned on missing input.</li>
  *   <li>Role is normalised to lower-case.</li>
  * </ul>
  */
 @DisplayName("PhrRouteSupport security context extraction")
-class PhrRouteSupportTest {
+class PhrRouteSupportTest extends EventloopTestBase {
 
     @Test
     @DisplayName("valid headers return a correctly populated context")
@@ -34,6 +39,8 @@ class PhrRouteSupportTest {
         assertThat(ctx.tenantId()).isEqualTo("tenant-1");
         assertThat(ctx.principalId()).isEqualTo("user-42");
         assertThat(ctx.role()).isEqualTo("patient");
+        assertThat(ctx.persona()).isEqualTo("patient");
+        assertThat(ctx.tier()).isEqualTo("core");
         assertThat(ctx.correlationId()).matches("^[0-9a-fA-F-]{36}$");
     }
 
@@ -94,6 +101,46 @@ class PhrRouteSupportTest {
         assertThatThrownBy(() -> PhrRouteSupport.requireContext(request))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("X-Role");
+    }
+
+    @Test
+    @DisplayName("missing X-Persona throws — no implicit default is assigned")
+    void missingPersonaThrows() {
+        HttpRequest request = requestWithFullContext("tenant-1", "user-42", "patient", null, "core", null);
+
+        assertThatThrownBy(() -> PhrRouteSupport.requireContext(request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("X-Persona");
+    }
+
+    @Test
+    @DisplayName("missing X-Tier throws — no implicit default is assigned")
+    void missingTierThrows() {
+        HttpRequest request = requestWithFullContext("tenant-1", "user-42", "patient", "patient", null, null);
+
+        assertThatThrownBy(() -> PhrRouteSupport.requireContext(request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("X-Tier");
+    }
+
+    @Test
+    @DisplayName("unrecognised persona throws")
+    void unrecognisedPersonaThrows() {
+        HttpRequest request = requestWithFullContext("tenant-1", "user-42", "patient", "auditor", "core", null);
+
+        assertThatThrownBy(() -> PhrRouteSupport.requireContext(request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("auditor");
+    }
+
+    @Test
+    @DisplayName("unrecognised tier throws")
+    void unrecognisedTierThrows() {
+        HttpRequest request = requestWithFullContext("tenant-1", "user-42", "patient", "patient", "external", null);
+
+        assertThatThrownBy(() -> PhrRouteSupport.requireContext(request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("external");
     }
 
     @Test
@@ -161,6 +208,29 @@ class PhrRouteSupportTest {
         }
     }
 
+    @Test
+    @DisplayName("JSON and error responses always include correlation headers")
+    void structuredResponsesAlwaysIncludeCorrelationHeaders() throws Exception {
+        HttpResponse jsonResponse = runPromise(() -> PhrRouteSupport.jsonResponse(200, Map.of("ok", true)));
+        HttpResponse errorResponse = runPromise(() -> PhrRouteSupport.errorResponse(403, "DENIED", "Denied"));
+
+        String jsonCorrelationId = jsonResponse.getHeader(HttpHeaders.of("X-Correlation-ID"));
+        String errorCorrelationId = errorResponse.getHeader(HttpHeaders.of("X-Correlation-ID"));
+        assertThat(jsonCorrelationId).matches("^[0-9a-fA-F-]{36}$");
+        assertThat(errorCorrelationId).matches("^[0-9a-fA-F-]{36}$");
+        assertThat(body(errorResponse)).contains("\"correlationId\":\"" + errorCorrelationId + "\"");
+    }
+
+    @Test
+    @DisplayName("text responses include generated correlation header")
+    void textResponsesIncludeCorrelationHeader() {
+        HttpResponse response = runPromise(
+            () -> PhrRouteSupport.textResponse(200, "ok", "text/plain"));
+
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID")))
+            .matches("^[0-9a-fA-F-]{36}$");
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /**
@@ -173,6 +243,18 @@ class PhrRouteSupportTest {
 
     private static HttpRequest requestWithCorrelation(
             String tenantId, String principalId, String role, String correlationId) {
+        return requestWithFullContext(
+            tenantId,
+            principalId,
+            role,
+            role == null ? null : role.strip().toLowerCase(),
+            "core",
+            correlationId
+        );
+    }
+
+    private static HttpRequest requestWithFullContext(
+            String tenantId, String principalId, String role, String persona, String tier, String correlationId) {
         HttpRequest request = mock(HttpRequest.class);
         // ActiveJ normalises header names to lower-case, so HttpHeaders.of("X-Tenant-ID") and
         // HttpHeaders.of("X-Tenant-Id") resolve to the same HttpHeader key. Stubbing both forms
@@ -181,7 +263,13 @@ class PhrRouteSupportTest {
         when(request.getHeader(HttpHeaders.of("X-Tenant-ID"))).thenReturn(tenantId);
         when(request.getHeader(HttpHeaders.of("X-Principal-ID"))).thenReturn(principalId);
         when(request.getHeader(HttpHeaders.of("X-Role"))).thenReturn(role);
+        when(request.getHeader(HttpHeaders.of("X-Persona"))).thenReturn(persona);
+        when(request.getHeader(HttpHeaders.of("X-Tier"))).thenReturn(tier);
         when(request.getHeader(HttpHeaders.of("X-Correlation-ID"))).thenReturn(correlationId);
         return request;
+    }
+
+    private String body(HttpResponse response) throws Exception {
+        return new String(runPromise(response::loadBody).asArray(), StandardCharsets.UTF_8);
     }
 }

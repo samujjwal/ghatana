@@ -11,12 +11,13 @@
  */
 
 import { Button } from "@ghatana/design-system";
-import { CheckCircle2, Clock3, RefreshCw, XCircle } from "lucide-react";
+import { CheckCircle2, Clock3, Filter, RefreshCw, XCircle } from "lucide-react";
 import React from "react";
 import { Link } from "react-router";
 import {
   useOperationTimeline,
   type OperationJob,
+  type OperationKind,
 } from "../api/operations.service";
 import { useOperations } from "../contexts/OperationsContext";
 import type { BackgroundJob } from "../contexts/OperationsContext";
@@ -50,6 +51,38 @@ function mapOperationStatus(status: OperationJob["status"]): BackgroundJob["stat
   return "pending";
 }
 
+// Pass 9: Cross-plane filtering types
+type PlaneType = "all" | "data-cloud" | "aep" | "agents" | "media" | "connectors";
+type StatusType = "all" | "INITIATED" | "RUNNING" | "COMPLETED" | "FAILED" | "CANCELLED" | "BLOCKED";
+
+const PLANE_FILTERS: { label: string; value: PlaneType; kinds: OperationKind[] }[] = [
+  { label: "All Planes", value: "all", kinds: [] },
+  { label: "Data Cloud", value: "data-cloud", kinds: ["PIPELINE_EXECUTION", "PIPELINE_CANCEL", "PIPELINE_RETRY", "PIPELINE_ROLLBACK", "PIPELINE_CHECKPOINT", "PIPELINE_RESTORE", "BACKGROUND_TASK"] },
+  { label: "AEP", value: "aep", kinds: ["AEP_PATTERN_RUN"] },
+  { label: "Agents", value: "agents", kinds: ["AGENT_RUN"] },
+  { label: "Media", value: "media", kinds: ["MEDIA_PROCESSING", "MEDIA_RETENTION", "MEDIA_DELETE"] },
+  { label: "Connectors", value: "connectors", kinds: ["CONNECTOR_SYNC", "CONNECTOR_TEST", "CONNECTOR_SCHEMA", "CONNECTOR_HEALTH", "CONNECTOR_CREDENTIAL_ROTATION"] },
+];
+
+const STATUS_FILTERS: { label: string; value: StatusType }[] = [
+  { label: "All Statuses", value: "all" },
+  { label: "Initiated", value: "INITIATED" },
+  { label: "Running", value: "RUNNING" },
+  { label: "Completed", value: "COMPLETED" },
+  { label: "Failed", value: "FAILED" },
+  { label: "Cancelled", value: "CANCELLED" },
+  { label: "Blocked", value: "BLOCKED" },
+];
+
+function getPlaneFromKind(kind: OperationKind): PlaneType {
+  if (PLANE_FILTERS.find((p) => p.value === "media")?.kinds.includes(kind)) return "media";
+  if (PLANE_FILTERS.find((p) => p.value === "connectors")?.kinds.includes(kind)) return "connectors";
+  if (PLANE_FILTERS.find((p) => p.value === "agents")?.kinds.includes(kind)) return "agents";
+  if (PLANE_FILTERS.find((p) => p.value === "aep")?.kinds.includes(kind)) return "aep";
+  if (PLANE_FILTERS.find((p) => p.value === "data-cloud")?.kinds.includes(kind)) return "data-cloud";
+  return "all";
+}
+
 function operationToJob(operation: OperationJob): BackgroundJob {
   return {
     id: operation.operationId,
@@ -67,11 +100,21 @@ function operationToJob(operation: OperationJob): BackgroundJob {
 export function OperationsJobCenterPage(): React.ReactElement {
   const { jobs, dismissJob, dismissAllCompleted } = useOperations();
   const { data: operationTimeline, isLoading } = useOperationTimeline(100);
+  const [selectedPlane, setSelectedPlane] = React.useState<PlaneType>("all");
+  const [selectedStatus, setSelectedStatus] = React.useState<StatusType>("all");
+  const [tenantFilter, setTenantFilter] = React.useState("");
+  const [correlationIdFilter, setCorrelationIdFilter] = React.useState("");
+  const [mediaJobIdFilter, setMediaJobIdFilter] = React.useState("");
+  const [pipelineExecutionIdFilter, setPipelineExecutionIdFilter] = React.useState("");
+  const [agentInvocationIdFilter, setAgentInvocationIdFilter] = React.useState("");
 
   const unifiedJobs = React.useMemo(() => {
     const byId = new Map<string, BackgroundJob>();
     for (const operation of operationTimeline?.items ?? []) {
-      byId.set(operation.operationId, operationToJob(operation));
+      const job = operationToJob(operation);
+      // Pass 9: Store plane info in metadata for filtering
+      (job as BackgroundJob & { plane?: PlaneType }).plane = getPlaneFromKind(operation.kind);
+      byId.set(operation.operationId, job);
     }
     for (const job of jobs) {
       byId.set(job.id, job);
@@ -82,8 +125,39 @@ export function OperationsJobCenterPage(): React.ReactElement {
     );
   }, [jobs, operationTimeline]);
 
-  const pendingJobs = unifiedJobs.filter((job) => job.status === "pending");
-  const completedJobs = unifiedJobs.filter((job) => job.status !== "pending");
+  // Pass 9: Filter by plane, status, tenant, correlation ID, media job ID, pipeline execution ID, agent invocation ID
+  const filteredJobs = React.useMemo(() => {
+    return unifiedJobs.filter((job) => {
+      const plane = (job as BackgroundJob & { plane?: PlaneType }).plane;
+      const operation = operationTimeline?.items.find((op) => op.operationId === job.id);
+      
+      // Plane filter
+      if (selectedPlane !== "all" && plane !== selectedPlane) return false;
+      
+      // Status filter
+      if (selectedStatus !== "all" && operation?.status !== selectedStatus) return false;
+      
+      // Tenant filter
+      if (tenantFilter && operation?.tenantId && !operation.tenantId.toLowerCase().includes(tenantFilter.toLowerCase())) return false;
+      
+      // Correlation ID filter
+      if (correlationIdFilter && operation?.correlationId && !operation.correlationId.toLowerCase().includes(correlationIdFilter.toLowerCase())) return false;
+      
+      // Media job ID filter
+      if (mediaJobIdFilter && operation?.metadata?.mediaJobId && !String(operation.metadata.mediaJobId).toLowerCase().includes(mediaJobIdFilter.toLowerCase())) return false;
+      
+      // Pipeline execution ID filter
+      if (pipelineExecutionIdFilter && operation?.metadata?.pipelineExecutionId && !String(operation.metadata.pipelineExecutionId).toLowerCase().includes(pipelineExecutionIdFilter.toLowerCase())) return false;
+      
+      // Agent invocation ID filter
+      if (agentInvocationIdFilter && operation?.metadata?.agentInvocationId && !String(operation.metadata.agentInvocationId).toLowerCase().includes(agentInvocationIdFilter.toLowerCase())) return false;
+      
+      return true;
+    });
+  }, [unifiedJobs, selectedPlane, selectedStatus, tenantFilter, correlationIdFilter, mediaJobIdFilter, pipelineExecutionIdFilter, agentInvocationIdFilter, operationTimeline]);
+
+  const pendingJobs = filteredJobs.filter((job) => job.status === "pending");
+  const completedJobs = filteredJobs.filter((job) => job.status !== "pending");
 
   return (
     <section
@@ -105,7 +179,81 @@ export function OperationsJobCenterPage(): React.ReactElement {
               </p>
             ) : null}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Pass 9: Plane filter */}
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-gray-500" />
+              <select
+                value={selectedPlane}
+                onChange={(e) => setSelectedPlane(e.target.value as PlaneType)}
+                className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-800"
+                aria-label="Filter by plane"
+              >
+                {PLANE_FILTERS.map((filter) => (
+                  <option key={filter.value} value={filter.value}>
+                    {filter.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* Pass 9: Status filter */}
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value as StatusType)}
+              className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-800"
+              aria-label="Filter by status"
+            >
+              {STATUS_FILTERS.map((filter) => (
+                <option key={filter.value} value={filter.value}>
+                  {filter.label}
+                </option>
+              ))}
+            </select>
+            {/* Pass 9: Tenant filter */}
+            <input
+              type="text"
+              placeholder="Tenant ID"
+              value={tenantFilter}
+              onChange={(e) => setTenantFilter(e.target.value)}
+              className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-800"
+              aria-label="Filter by tenant ID"
+            />
+            {/* Pass 9: Correlation ID filter */}
+            <input
+              type="text"
+              placeholder="Correlation ID"
+              value={correlationIdFilter}
+              onChange={(e) => setCorrelationIdFilter(e.target.value)}
+              className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-800"
+              aria-label="Filter by correlation ID"
+            />
+            {/* Pass 9: Media job ID filter */}
+            <input
+              type="text"
+              placeholder="Media Job ID"
+              value={mediaJobIdFilter}
+              onChange={(e) => setMediaJobIdFilter(e.target.value)}
+              className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-800"
+              aria-label="Filter by media job ID"
+            />
+            {/* Pass 9: Pipeline execution ID filter */}
+            <input
+              type="text"
+              placeholder="Pipeline Execution ID"
+              value={pipelineExecutionIdFilter}
+              onChange={(e) => setPipelineExecutionIdFilter(e.target.value)}
+              className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-800"
+              aria-label="Filter by pipeline execution ID"
+            />
+            {/* Pass 9: Agent invocation ID filter */}
+            <input
+              type="text"
+              placeholder="Agent Invocation ID"
+              value={agentInvocationIdFilter}
+              onChange={(e) => setAgentInvocationIdFilter(e.target.value)}
+              className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-800"
+              aria-label="Filter by agent invocation ID"
+            />
             <Button
               variant="outline"
               size="sm"
@@ -145,7 +293,9 @@ export function OperationsJobCenterPage(): React.ReactElement {
         <div className="mb-4 flex items-center justify-between">
           <h2 className={textStyles.h3}>Job Timeline</h2>
           <span className="text-xs text-gray-500 dark:text-gray-400">
-            Ordered by creation time
+            {selectedPlane === "all"
+              ? "Ordered by creation time"
+              : `Filtered by: ${PLANE_FILTERS.find((f) => f.value === selectedPlane)?.label}`}
           </span>
         </div>
 
@@ -154,14 +304,16 @@ export function OperationsJobCenterPage(): React.ReactElement {
             <RefreshCw className="mx-auto mb-2 h-5 w-5 animate-spin" />
             Loading operation timeline.
           </div>
-        ) : unifiedJobs.length === 0 ? (
+        ) : filteredJobs.length === 0 ? (
           <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
             <Clock3 className="mx-auto mb-2 h-5 w-5" />
-            No operation jobs recorded yet.
+            {selectedPlane === "all"
+              ? "No operation jobs recorded yet."
+              : `No jobs found for ${PLANE_FILTERS.find((f) => f.value === selectedPlane)?.label}.`}
           </div>
         ) : (
           <div className="space-y-2">
-            {unifiedJobs.map((job) => (
+            {filteredJobs.map((job) => (
               <div
                 key={job.id}
                 className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 px-3 py-2 dark:border-gray-700"

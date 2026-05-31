@@ -12,7 +12,15 @@ import { describe, expect, it } from 'vitest';
 import { isRouteAllowedForRole, phrRouteContracts, type PhrRole } from '../phrRouteContracts';
 
 function isSuppressedRoute(route: { stability?: string; hidden?: boolean; blocked?: boolean }): boolean {
-  return route.hidden === true || route.blocked === true || route.stability === 'hidden' || route.stability === 'blocked';
+  return (
+    route.hidden === true ||
+    route.blocked === true ||
+    route.stability === 'hidden' ||
+    route.stability === 'blocked' ||
+    route.stability === 'deferred' ||
+    route.stability === 'removed' ||
+    route.stability === 'preview'
+  );
 }
 
 describe('navigation grouping and visibility (G2-014)', () => {

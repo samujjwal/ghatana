@@ -2,16 +2,7 @@ package com.ghatana.aep.operator.agent;
 
 import com.ghatana.aep.model.EventContext;
 import com.ghatana.aep.model.UncertaintyContext;
-import com.ghatana.aep.operator.contract.CompileContext;
-import com.ghatana.aep.operator.contract.EventOperator;
-import com.ghatana.aep.operator.contract.EventOperatorResult;
-import com.ghatana.aep.operator.contract.OperatorKind;
-import com.ghatana.aep.operator.contract.OperatorRuntimeContext;
-import com.ghatana.aep.operator.contract.OperatorSpec;
-import com.ghatana.aep.operator.contract.OperatorVersion;
-import com.ghatana.aep.operator.contract.RuntimePlan;
-import com.ghatana.aep.operator.contract.ValidationContext;
-import com.ghatana.aep.operator.contract.ValidationResult;
+import com.ghatana.aep.operator.contract.*;
 import com.ghatana.core.operator.OperatorId;
 import io.activej.promise.Promise;
 
@@ -108,6 +99,31 @@ public final class AgentPredicateOperator implements EventOperator<Map<String, O
             ctx != null ? ctx.policies() : Map.of());
         return invocationClient.invoke(request)
             .map(output -> EventOperatorResult.success(output, uncertainty(input, output)));
+    }
+
+    @Override
+    public OperatorExplanation explain(RuntimePlan plan, ExplanationDetailLevel detailLevel) {
+        return OperatorLifecycleContract.OperatorExplanation.empty();
+    }
+
+    @Override
+    public SideEffectDeclaration declareSideEffects(OperatorSpec spec) {
+        return SideEffectDeclaration.none();
+    }
+
+    @Override
+    public ReplayBehavior declareReplayBehavior(OperatorSpec spec) {
+        return ReplayBehavior.idempotent();
+    }
+
+    @Override
+    public RequiredPolicies declareRequiredPolicies(OperatorSpec spec) {
+        return RequiredPolicies.none();
+    }
+
+    @Override
+    public ObservabilityRequirements declareObservabilityRequirements(OperatorSpec spec) {
+        return ObservabilityRequirements.minimal();
     }
 
     private Map<String, Object> recordedOutput(EventContext<Map<String, Object>> input) {

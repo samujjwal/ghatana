@@ -17,8 +17,7 @@
  */
 
 import * as SecureStore from "expo-secure-store";
-import { phiClearAll } from "./phiEncryptedStorage";
-import { clearDashboardOffline } from "./offlineStore";
+import { clearMobilePrivacyState } from "./mobilePrivacyPlugin";
 import type { MobileSession } from "../types";
 
 const SESSION_KEY = "phr-mobile-session-v1";
@@ -57,12 +56,12 @@ export async function loadMobileSession(
 
   if (new Date(session.expiresAt) <= new Date()) {
     // Session has expired; remove it so the next launch starts fresh.
-    await clearMobileSession();
+    await clearSessionAndPhi("session-expired");
     return null;
   }
 
   if (currentSession && hasSessionScopeChanged(currentSession, session)) {
-    await clearMobileSession();
+    await clearSessionAndPhi("session-scope-changed");
     return null;
   }
 
@@ -86,10 +85,11 @@ function hasSessionScopeChanged(
 /**
  * Clears PHI cache when a persisted session cannot safely be reused.
  */
-async function clearSessionAndPhi(): Promise<void> {
+async function clearSessionAndPhi(
+  reason: "session-clear" | "session-expired" | "session-scope-changed",
+): Promise<void> {
   await SecureStore.deleteItemAsync(SESSION_KEY);
-  await phiClearAll();
-  await clearDashboardOffline();
+  await clearMobilePrivacyState(reason);
 }
 
 /**
@@ -98,5 +98,5 @@ async function clearSessionAndPhi(): Promise<void> {
  * Also clears encrypted PHI cache to ensure no PHI persists after session termination.
  */
 export async function clearMobileSession(): Promise<void> {
-  await clearSessionAndPhi();
+  await clearSessionAndPhi("session-clear");
 }

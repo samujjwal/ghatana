@@ -42,7 +42,7 @@ export function SettingsPage(): React.ReactElement {
       setSyncStatus(response);
     } catch (err: unknown) {
       logError('Failed to export patient bundle', undefined, { error: err });
-      setSyncStatus('Export failed');
+      setSyncStatus(t('settings.sync.failed'));
     } finally {
       setExporting(false);
     }
@@ -76,8 +76,8 @@ export function SettingsPage(): React.ReactElement {
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleLanguageChange(e.target.value as 'en' | 'ne')}
                 aria-label={t('settings.profile.language')}
               >
-                <option value="en">English</option>
-                <option value="ne">नेपाली</option>
+                <option value="en">{t('settings.locale.en')}</option>
+                <option value="ne">{t('settings.locale.ne')}</option>
               </Select>
             </div>
             <div className="stack gap-sm">
@@ -103,7 +103,7 @@ export function SettingsPage(): React.ReactElement {
               disabled={exporting}
               aria-busy={exporting}
             >
-              {exporting ? 'Exporting...' : t('settings.hie.prepare')}
+              {exporting ? t('settings.sync.exporting') : t('settings.hie.prepare')}
             </Button>
             <code className="code-inline" role="status" aria-live="polite">{syncStatus}</code>
           </div>

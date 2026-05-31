@@ -12,8 +12,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Minimal invocation abstraction used by composition orchestrators.
  *
- * <p>This interface avoids a dependency on the AEP {@code AgentDispatcher}.
- * In production, the AEP runtime adapts its {@code AgentDispatcher} to this interface
+ * <p>This interface avoids a dependency on product-specific dispatchers.
+ * In production, the runtime adapts its dispatcher to this interface
  * when constructing composition orchestrators. Input and output types use {@code Object}
  * to remain a usable functional interface in Java (generic methods on @FunctionalInterface
  * prevent lambda construction).

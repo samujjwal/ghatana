@@ -53,7 +53,7 @@ const nextPromotionState = (asset: ProductAsset): 'hardened' | 'production' | 's
 };
 
 interface ReleasePanelProps {
-  readonly productKey: 'phr' | 'digital-marketing';
+  readonly productKey: 'sample-product' | 'digital-marketing';
   readonly title: string;
 }
 
@@ -234,7 +234,7 @@ const AssetRegistryPanel: React.FC = () => {
           onChange={(event) => setFilters((current) => ({ ...current, product: event.target.value }))}
           options={[
             { value: '', label: t('productFamily.assets.allProducts') },
-            { value: 'phr', label: t('productFamily.product.phr') },
+            { value: 'sample-product', label: t('productFamily.product.sampleProduct') },
             { value: 'digital-marketing', label: t('productFamily.product.digitalMarketing') },
           ]}
           fullWidth
@@ -394,7 +394,7 @@ const TruthAndReusePanel: React.FC = () => {
 
 const KernelTimelinePanel: React.FC = () => {
   const { t } = useTranslation('common');
-  const [productUnitId, setProductUnitId] = React.useState('phr');
+  const [productUnitId, setProductUnitId] = React.useState('sample-product');
   const query = useQuery({
     queryKey: ['product-family', 'kernel-timeline', productUnitId],
     queryFn: () => getKernelTimeline(productUnitId),
@@ -412,7 +412,7 @@ const KernelTimelinePanel: React.FC = () => {
           value={productUnitId}
           onChange={(event) => setProductUnitId(event.target.value)}
           options={[
-            { value: 'phr', label: t('productFamily.product.phr') },
+            { value: 'sample-product', label: t('productFamily.product.sampleProduct') },
             { value: 'digital-marketing', label: t('productFamily.product.digitalMarketing') },
           ]}
           fullWidth
@@ -528,21 +528,21 @@ export const ProductFamilyControlPlanePage: React.FC = () => {
         </div>
 
         <div className="grid gap-3 md:grid-cols-4">
-          <SummaryTile icon={<CheckCircle2 className="h-5 w-5" />} label={t('productFamily.summary.phr.label')} value={t('productFamily.summary.phr.value')} />
+          <SummaryTile icon={<CheckCircle2 className="h-5 w-5" />} label={t('productFamily.summary.sampleProduct.label')} value={t('productFamily.summary.sampleProduct.value')} />
           <SummaryTile icon={<GitBranch className="h-5 w-5" />} label={t('productFamily.summary.dmos.label')} value={t('productFamily.summary.dmos.value')} />
           <SummaryTile icon={<Boxes className="h-5 w-5" />} label={t('productFamily.summary.assets.label')} value={t('productFamily.summary.assets.value')} />
           <SummaryTile icon={<FileWarning className="h-5 w-5" />} label={t('productFamily.summary.truth.label')} value={t('productFamily.summary.truth.value')} />
         </div>
 
-        <Tabs defaultValue="phr" className="space-y-4">
+        <Tabs defaultValue="sample-product" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="phr">{t('productFamily.tabs.phr')}</TabsTrigger>
+            <TabsTrigger value="sample-product">{t('productFamily.tabs.sampleProduct')}</TabsTrigger>
             <TabsTrigger value="dmos">{t('productFamily.tabs.dmos')}</TabsTrigger>
             <TabsTrigger value="assets">{t('productFamily.tabs.assets')}</TabsTrigger>
             <TabsTrigger value="truth">{t('productFamily.tabs.truth')}</TabsTrigger>
             <TabsTrigger value="kernel">{t('productFamily.tabs.kernel')}</TabsTrigger>
           </TabsList>
-          <TabsContent value="phr"><ReleasePanel productKey="phr" title={t('productFamily.release.phrTitle')} /></TabsContent>
+          <TabsContent value="sample-product"><ReleasePanel productKey="sample-product" title={t('productFamily.release.sampleProductTitle')} /></TabsContent>
           <TabsContent value="dmos"><ReleasePanel productKey="digital-marketing" title={t('productFamily.release.dmosTitle')} /></TabsContent>
           <TabsContent value="assets"><AssetRegistryPanel /></TabsContent>
           <TabsContent value="truth"><TruthAndReusePanel /></TabsContent>

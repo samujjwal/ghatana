@@ -31,12 +31,11 @@ import java.util.stream.Collectors;
  * <ul>
  *   <li>Unit and integration tests that need a real registry without I/O</li>
  *   <li>Single-node development deployments where durability is not required</li>
- *   <li>AEP workers that manage a small, fixed set of operator agents</li>
+ *   <li>Workers that manage a small, fixed set of operator agents</li>
  * </ul>
  *
  * <p>Registered agents survive only for the lifetime of the JVM. For a
- * persistent, multi-instance registry use
- * {@code com.ghatana.datacloud.agent.registry.DataCloudAgentRegistry}.
+ * persistent, multi-instance registry use a product-specific implementation.
  *
  * @doc.type class
  * @doc.purpose In-memory agent registry for testing and single-node deployments

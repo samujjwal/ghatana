@@ -299,7 +299,7 @@ public class MediaArtifactEventEmitter {
      */
     public Promise<Offset> emitProcessingFailed(String artifactId, String tenantId, String agentId, String operation, String error) {
         String eventType = EVENT_TYPE_PREFIX + "processing.failed";
-        
+
         Map<String, String> headers = Map.of(
             "artifactId", artifactId,
             "agentId", agentId != null ? agentId : "",
@@ -309,7 +309,7 @@ public class MediaArtifactEventEmitter {
 
         String payload = String.format(
             "{\"artifactId\":\"%s\",\"tenantId\":\"%s\",\"agentId\":\"%s\",\"operation\":\"%s\",\"error\":\"%s\"}",
-            artifactId, tenantId, agentId != null ? agentId : "", 
+            artifactId, tenantId, agentId != null ? agentId : "",
             operation != null ? operation : "", error != null ? error.replace("\"", "\\\"") : ""
         );
 
@@ -325,15 +325,188 @@ public class MediaArtifactEventEmitter {
         );
 
         TenantContext tenantContext = TenantContext.of(tenantId);
-        
+
         return eventLogStore.append(tenantContext, entry)
             .map(offset -> {
-                log.info("[media-artifact] Emitted processing failed event artifactId={} tenantId={} operation={} offset={}", 
+                log.info("[media-artifact] Emitted processing failed event artifactId={} tenantId={} operation={} offset={}",
                     artifactId, tenantId, operation, offset);
                 return offset;
             })
             .whenException(e -> {
                 log.error("[media-artifact] Failed to emit processing failed event artifactId={}", artifactId, e);
+            });
+    }
+
+    /**
+     * Pass 6: Emit an event when a media artifact is updated.
+     */
+    public Promise<Offset> emitUpdated(String artifactId, String tenantId, String agentId, String updateType, String newValue) {
+        String eventType = EVENT_TYPE_PREFIX + "updated";
+
+        Map<String, String> headers = Map.of(
+            "artifactId", artifactId,
+            "agentId", agentId != null ? agentId : "",
+            "updateType", updateType != null ? updateType : "",
+            "source", "media-artifact-service"
+        );
+
+        String payload = String.format(
+            "{\"artifactId\":\"%s\",\"tenantId\":\"%s\",\"agentId\":\"%s\",\"updateType\":\"%s\",\"newValue\":\"%s\"}",
+            artifactId, tenantId, agentId != null ? agentId : "",
+            updateType != null ? updateType : "", newValue != null ? newValue.replace("\"", "\\\"") : ""
+        );
+
+        EventLogStore.EventEntry entry = new EventLogStore.EventEntry(
+            UUID.randomUUID(),
+            eventType,
+            "1.0",
+            Instant.now(),
+            ByteBuffer.wrap(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+            "application/json",
+            headers,
+            java.util.Optional.of(artifactId + ":" + (updateType != null ? updateType : "update")) // idempotency key
+        );
+
+        TenantContext tenantContext = TenantContext.of(tenantId);
+
+        return eventLogStore.append(tenantContext, entry)
+            .map(offset -> {
+                log.info("[media-artifact] Emitted updated event artifactId={} tenantId={} updateType={} offset={}",
+                    artifactId, tenantId, updateType, offset);
+                return offset;
+            })
+            .whenException(e -> {
+                log.error("[media-artifact] Failed to emit updated event artifactId={}", artifactId, e);
+            });
+    }
+
+    /**
+     * Pass 6: Emit an event when multimodal indexing is requested for a media artifact.
+     */
+    public Promise<Offset> emitMultimodalIndexRequested(String artifactId, String tenantId, String agentId, String indexType) {
+        String eventType = EVENT_TYPE_PREFIX + "multimodal.index.requested";
+
+        Map<String, String> headers = Map.of(
+            "artifactId", artifactId,
+            "agentId", agentId != null ? agentId : "",
+            "indexType", indexType != null ? indexType : "",
+            "source", "media-artifact-service"
+        );
+
+        String payload = String.format(
+            "{\"artifactId\":\"%s\",\"tenantId\":\"%s\",\"agentId\":\"%s\",\"indexType\":\"%s\"}",
+            artifactId, tenantId, agentId != null ? agentId : "", indexType != null ? indexType : ""
+        );
+
+        EventLogStore.EventEntry entry = new EventLogStore.EventEntry(
+            UUID.randomUUID(),
+            eventType,
+            "1.0",
+            Instant.now(),
+            ByteBuffer.wrap(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+            "application/json",
+            headers,
+            java.util.Optional.of(artifactId + ":multimodal:" + (indexType != null ? indexType : "index")) // idempotency key
+        );
+
+        TenantContext tenantContext = TenantContext.of(tenantId);
+
+        return eventLogStore.append(tenantContext, entry)
+            .map(offset -> {
+                log.info("[media-artifact] Emitted multimodal index requested event artifactId={} tenantId={} indexType={} offset={}",
+                    artifactId, tenantId, indexType, offset);
+                return offset;
+            })
+            .whenException(e -> {
+                log.error("[media-artifact] Failed to emit multimodal index requested event artifactId={}", artifactId, e);
+            });
+    }
+
+    /**
+     * Pass 6: Emit an event when multimodal indexing is completed for a media artifact.
+     */
+    public Promise<Offset> emitMultimodalIndexCompleted(String artifactId, String tenantId, String agentId, String indexId, String indexType, int indexedFields) {
+        String eventType = EVENT_TYPE_PREFIX + "multimodal.index.completed";
+
+        Map<String, String> headers = Map.of(
+            "artifactId", artifactId,
+            "indexId", indexId != null ? indexId : "",
+            "agentId", agentId != null ? agentId : "",
+            "indexType", indexType != null ? indexType : "",
+            "indexedFields", String.valueOf(indexedFields),
+            "source", "media-artifact-service"
+        );
+
+        String payload = String.format(
+            "{\"artifactId\":\"%s\",\"tenantId\":\"%s\",\"agentId\":\"%s\",\"indexId\":\"%s\",\"indexType\":\"%s\",\"indexedFields\":%d}",
+            artifactId, tenantId, agentId != null ? agentId : "",
+            indexId != null ? indexId : "", indexType != null ? indexType : "", indexedFields
+        );
+
+        EventLogStore.EventEntry entry = new EventLogStore.EventEntry(
+            UUID.randomUUID(),
+            eventType,
+            "1.0",
+            Instant.now(),
+            ByteBuffer.wrap(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+            "application/json",
+            headers,
+            java.util.Optional.of(artifactId + ":multimodal:" + (indexId != null ? indexId : "completed")) // idempotency key
+        );
+
+        TenantContext tenantContext = TenantContext.of(tenantId);
+
+        return eventLogStore.append(tenantContext, entry)
+            .map(offset -> {
+                log.info("[media-artifact] Emitted multimodal index completed event artifactId={} indexId={} tenantId={} offset={}",
+                    artifactId, indexId, tenantId, offset);
+                return offset;
+            })
+            .whenException(e -> {
+                log.error("[media-artifact] Failed to emit multimodal index completed event artifactId={}", artifactId, e);
+            });
+    }
+
+    /**
+     * Pass 6: Emit an event when multimodal indexing fails for a media artifact.
+     */
+    public Promise<Offset> emitMultimodalIndexFailed(String artifactId, String tenantId, String agentId, String indexType, String error) {
+        String eventType = EVENT_TYPE_PREFIX + "multimodal.index.failed";
+
+        Map<String, String> headers = Map.of(
+            "artifactId", artifactId,
+            "agentId", agentId != null ? agentId : "",
+            "indexType", indexType != null ? indexType : "",
+            "source", "media-artifact-service"
+        );
+
+        String payload = String.format(
+            "{\"artifactId\":\"%s\",\"tenantId\":\"%s\",\"agentId\":\"%s\",\"indexType\":\"%s\",\"error\":\"%s\"}",
+            artifactId, tenantId, agentId != null ? agentId : "",
+            indexType != null ? indexType : "", error != null ? error.replace("\"", "\\\"") : ""
+        );
+
+        EventLogStore.EventEntry entry = new EventLogStore.EventEntry(
+            UUID.randomUUID(),
+            eventType,
+            "1.0",
+            Instant.now(),
+            ByteBuffer.wrap(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+            "application/json",
+            headers,
+            java.util.Optional.empty() // no idempotency key for failures
+        );
+
+        TenantContext tenantContext = TenantContext.of(tenantId);
+
+        return eventLogStore.append(tenantContext, entry)
+            .map(offset -> {
+                log.info("[media-artifact] Emitted multimodal index failed event artifactId={} tenantId={} indexType={} offset={}",
+                    artifactId, tenantId, indexType, offset);
+                return offset;
+            })
+            .whenException(e -> {
+                log.error("[media-artifact] Failed to emit multimodal index failed event artifactId={}", artifactId, e);
             });
     }
 

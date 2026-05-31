@@ -196,6 +196,7 @@ export class RouteContractGenerator {
   generateTSManifest(): GeneratedTSManifest {
     return {
       routes: this.contract.routes.map(route => {
+        const metadata = this.routeMetadata(route);
         const result: GeneratedTSManifest['routes'][0] = {
           path: route.path,
           label: route.label,
@@ -234,12 +235,12 @@ export class RouteContractGenerator {
           }) as Array<string | { id: string; title: string; description: string }>;
         }
         if (route.featureFlag !== undefined) result.featureFlag = route.featureFlag;
-        if (route.metadata) {
+        if (Object.keys(metadata).length > 0) {
           result.metadata = {};
-          if (route.metadata.apiEndpoint) result.metadata.apiEndpoint = route.metadata.apiEndpoint;
-          if (route.metadata.policyId) result.metadata.policyId = route.metadata.policyId;
-          if (route.metadata.testId) result.metadata.testId = route.metadata.testId;
-          if (route.metadata.featureFlag) result.metadata.featureFlag = route.metadata.featureFlag;
+          if (metadata.apiEndpoint) result.metadata.apiEndpoint = metadata.apiEndpoint;
+          if (metadata.policyId) result.metadata.policyId = metadata.policyId;
+          if (metadata.testId) result.metadata.testId = metadata.testId;
+          if (metadata.featureFlag) result.metadata.featureFlag = metadata.featureFlag;
         }
         
         return result;
@@ -252,6 +253,7 @@ export class RouteContractGenerator {
       version: this.contract.version,
       roleOrder: this.contract.roleOrder,
       routes: this.contract.routes.map(route => {
+        const metadata = this.routeMetadata(route);
         const result: GeneratedBackendEntitlement['routes'][0] = {
           path: route.path,
           minimumRole: route.minimumRole,
@@ -263,9 +265,9 @@ export class RouteContractGenerator {
         if (route.actions) result.actions = route.actions.map(a => typeof a === 'string' ? a : a.id);
         if (route.cards) result.cards = route.cards.map(c => typeof c === 'string' ? c : c.id);
         if (route.featureFlag !== undefined) result.featureFlag = route.featureFlag;
-        if (route.metadata?.apiEndpoint) result.apiEndpoint = route.metadata.apiEndpoint;
-        if (route.metadata?.policyId) result.policyId = route.metadata.policyId;
-        if (route.metadata?.testId) result.testId = route.metadata.testId;
+        if (metadata.apiEndpoint) result.apiEndpoint = metadata.apiEndpoint;
+        if (metadata.policyId) result.policyId = metadata.policyId;
+        if (metadata.testId) result.testId = metadata.testId;
         
         return result;
       }),
@@ -276,6 +278,7 @@ export class RouteContractGenerator {
     return {
       version: this.contract.version,
       routes: this.contract.routes.map(route => {
+        const metadata = this.routeMetadata(route);
         const result: GeneratedRouteDocs['routes'][0] = {
           path: route.path,
           label: route.label,
@@ -284,11 +287,11 @@ export class RouteContractGenerator {
           stability: route.stability,
         };
         
-        if (route.metadata) {
+        if (metadata.apiEndpoint || metadata.policyId || metadata.testId) {
           result.metadata = {};
-          if (route.metadata.apiEndpoint) result.metadata.apiEndpoint = route.metadata.apiEndpoint;
-          if (route.metadata.policyId) result.metadata.policyId = route.metadata.policyId;
-          if (route.metadata.testId) result.metadata.testId = route.metadata.testId;
+          if (metadata.apiEndpoint) result.metadata.apiEndpoint = metadata.apiEndpoint;
+          if (metadata.policyId) result.metadata.policyId = metadata.policyId;
+          if (metadata.testId) result.metadata.testId = metadata.testId;
         }
         
         return result;
@@ -301,7 +304,11 @@ export class RouteContractGenerator {
       version: this.contract.version,
       roleOrder: this.contract.roleOrder,
       capabilities: this.contract.routes.map(route => {
-        const suppressed = route.stability === 'hidden' || route.stability === 'blocked';
+        const metadata = this.routeMetadata(route);
+        const suppressed = route.stability === 'hidden'
+          || route.stability === 'blocked'
+          || route.stability === 'deferred'
+          || route.stability === 'removed';
         const result: ProductRouteCapability = {
           path: route.path,
           stability: route.stability,
@@ -311,9 +318,9 @@ export class RouteContractGenerator {
         };
 
         if (route.featureFlag !== undefined) result.featureFlag = route.featureFlag;
-        if (route.metadata?.apiEndpoint) result.apiEndpoint = route.metadata.apiEndpoint;
-        if (route.metadata?.policyId) result.policyId = route.metadata.policyId;
-        if (route.metadata?.testId) result.testId = route.metadata.testId;
+        if (metadata.apiEndpoint) result.apiEndpoint = metadata.apiEndpoint;
+        if (metadata.policyId) result.policyId = metadata.policyId;
+        if (metadata.testId) result.testId = metadata.testId;
 
         return result;
       }),
@@ -326,6 +333,7 @@ export class RouteContractGenerator {
       className: this.className,
       version: this.contract.version,
       routes: this.contract.routes.map(route => {
+        const metadata = this.routeMetadata(route);
         const constantName = this.pathToConstantName(route.path);
         const result: GeneratedJavaRouteConstants['routes'][0] = {
           path: route.path,
@@ -335,9 +343,9 @@ export class RouteContractGenerator {
           stability: route.stability,
         };
 
-        if (route.metadata?.apiEndpoint) result.apiEndpoint = route.metadata.apiEndpoint;
-        if (route.metadata?.policyId) result.policyId = route.metadata.policyId;
-        if (route.metadata?.testId) result.testId = route.metadata.testId;
+        if (metadata.apiEndpoint) result.apiEndpoint = metadata.apiEndpoint;
+        if (metadata.policyId) result.policyId = metadata.policyId;
+        if (metadata.testId) result.testId = metadata.testId;
 
         return result;
       }),
@@ -351,6 +359,23 @@ export class RouteContractGenerator {
       .filter(segment => segment.length > 0)
       .map(segment => segment.toUpperCase().replace(/[^A-Z0-9]/g, '_'))
       .join('_');
+  }
+
+  private routeMetadata(route: ProductRouteContract['routes'][number]): {
+    apiEndpoint?: string;
+    policyId?: string;
+    testId?: string;
+    featureFlag?: string;
+  } {
+    return {
+      ...(route.metadata?.apiEndpoint !== undefined && { apiEndpoint: route.metadata.apiEndpoint }),
+      ...(route.apiEndpoint !== undefined && { apiEndpoint: route.apiEndpoint }),
+      ...(route.metadata?.policyId !== undefined && { policyId: route.metadata.policyId }),
+      ...(route.policyId !== undefined && { policyId: route.policyId }),
+      ...(route.metadata?.testId !== undefined && { testId: route.metadata.testId }),
+      ...(route.testId !== undefined && { testId: route.testId }),
+      ...(route.metadata?.featureFlag !== undefined && { featureFlag: route.metadata.featureFlag }),
+    };
   }
 
   generateAll(): {

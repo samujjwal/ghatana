@@ -1,5 +1,7 @@
 package com.ghatana.phr.api.routes;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.cache.IdentityAwareBoundedCache;
 import com.ghatana.platform.http.security.RouteEntitlementEvaluator;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -15,9 +17,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -45,6 +50,8 @@ import static org.mockito.Mockito.verify;
 @DisplayName("PhrEntitlementRoutes — enforcement matrix")
 @ExtendWith(MockitoExtension.class)
 class PhrEntitlementRoutesTest extends EventloopTestBase {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Mock
     private RouteEntitlementEvaluator routeEntitlementEvaluator;
@@ -121,11 +128,29 @@ class PhrEntitlementRoutesTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("backend entitlement evaluation receives only stable routes")
+    void entitlementEvaluationReceivesOnlyStableRoutes() throws Exception {
+        HttpRequest request = contextRequest("t1", "admin-1", "admin");
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        Set<String> stableRoutePaths = stableRoutePathsFromContract();
+        verify(routeEntitlementEvaluator).filterByRole(
+            argThat(routes -> routes != null && routes.stream().allMatch(route -> stableRoutePaths.contains(route.path()))),
+            eq("admin"),
+            any()
+        );
+    }
+
+    @Test
     @DisplayName("400 — missing X-Principal-Id header returns error")
     void missingPrincipalIdReturnsError() throws Exception {
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/")
             .withHeader(HttpHeaders.of("X-Tenant-Id"), "t1")
             .withHeader(HttpHeaders.of("X-Role"), "patient")
+            .withHeader(HttpHeaders.of("X-Persona"), "patient")
+            .withHeader(HttpHeaders.of("X-Tier"), "core")
             .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
@@ -139,6 +164,8 @@ class PhrEntitlementRoutesTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/")
             .withHeader(HttpHeaders.of("X-Principal-Id"), "patient-1")
             .withHeader(HttpHeaders.of("X-Role"), "patient")
+            .withHeader(HttpHeaders.of("X-Persona"), "patient")
+            .withHeader(HttpHeaders.of("X-Tier"), "core")
             .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));
@@ -184,7 +211,36 @@ class PhrEntitlementRoutesTest extends EventloopTestBase {
             .withHeader(HttpHeaders.of("X-Tenant-Id"), tenantId)
             .withHeader(HttpHeaders.of("X-Principal-Id"), principalId)
             .withHeader(HttpHeaders.of("X-Role"), role)
+            .withHeader(HttpHeaders.of("X-Persona"), role)
+            .withHeader(HttpHeaders.of("X-Tier"), "core")
             .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
             .build();
+    }
+
+    private static Set<String> stableRoutePathsFromContract() throws Exception {
+        JsonNode routes = OBJECT_MAPPER.readTree(Files.readString(resolveRouteContractPath()))
+            .path("routes");
+        assertThat(routes.isArray()).isTrue();
+
+        Set<String> stableRoutePaths = new java.util.LinkedHashSet<>();
+        for (JsonNode route : routes) {
+            if ("stable".equals(route.path("stability").asText())) {
+                stableRoutePaths.add(route.path("path").asText());
+            }
+        }
+        return stableRoutePaths;
+    }
+
+    private static Path resolveRouteContractPath() {
+        Path relativePath = Path.of("products/phr/config/phr-route-contract.json");
+        Path current = Path.of("").toAbsolutePath();
+        while (current != null) {
+            Path candidate = current.resolve(relativePath).normalize();
+            if (Files.exists(candidate)) {
+                return candidate;
+            }
+            current = current.getParent();
+        }
+        return relativePath;
     }
 }

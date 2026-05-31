@@ -235,7 +235,7 @@ public final class DataSourceRegistryHandler {
 
         String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+            return Promise.of(http.errorResponse(401, "Authentication required: valid tenant context not found"));
         }
 
         return client.query(tenantId, DC_CONNECTIONS, DataCloudClient.Query.limit(500))
@@ -270,7 +270,7 @@ public final class DataSourceRegistryHandler {
 
         String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+            return Promise.of(http.errorResponse(401, "Authentication required: valid tenant context not found"));
         }
 
         // P0-07: Check idempotency before processing
@@ -340,7 +340,7 @@ public final class DataSourceRegistryHandler {
 
         String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+            return Promise.of(http.errorResponse(401, "Authentication required: valid tenant context not found"));
         }
 
         String connectionId = request.getPathParameter("connectionId");
@@ -363,7 +363,7 @@ public final class DataSourceRegistryHandler {
 
         String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+            return Promise.of(http.errorResponse(401, "Authentication required: valid tenant context not found"));
         }
 
         String connectionId = request.getPathParameter("connectionId");
@@ -417,7 +417,7 @@ public final class DataSourceRegistryHandler {
             request,
             Map.of());
         String operationId = operation == null ? "" : operation.operationId();
-        return fabric.testConnection(connectionId)
+        return fabric.testConnection(tenantId, connectionId)
             .map(result -> {
                 String healthStatus = result.success() ? "healthy" : "unhealthy";
                 String state = result.success() ? "ACTIVE" : "ERROR";
@@ -471,7 +471,7 @@ public final class DataSourceRegistryHandler {
 
         String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+            return Promise.of(http.errorResponse(401, "Authentication required: valid tenant context not found"));
         }
 
         String connectionId = request.getPathParameter("connectionId");
@@ -501,7 +501,7 @@ public final class DataSourceRegistryHandler {
 
                 // Set state to TESTING during validation
                 return updateConnectionState(tenantId, connectionId, "TESTING", "validating")
-                    .then(e -> fabric.testConnection(connectionId))
+                    .then(e -> fabric.testConnection(tenantId, connectionId))
                     .map(result -> {
                         if (result.success()) {
                             // Validation passed - mark ACTIVE
@@ -552,7 +552,7 @@ public final class DataSourceRegistryHandler {
 
         String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+            return Promise.of(http.errorResponse(401, "Authentication required: valid tenant context not found"));
         }
 
         String connectionId = request.getPathParameter("connectionId");
@@ -568,8 +568,9 @@ public final class DataSourceRegistryHandler {
                 }
 
                 if (fabric != null) {
-                    return fabric.disconnect(connectionId)
-                        .then(() -> updateConnectionState(tenantId, connectionId, "INACTIVE", "disabled"))
+                    // Note: disconnect is not in the new DataFabricConnector interface
+                    // This is a placeholder for when it's added
+                    return updateConnectionState(tenantId, connectionId, "INACTIVE", "disabled")
                         .map(e -> {
                             emitConnectorAudit(tenantId, connectionId, "CONNECTOR_DISABLED", true);
                             Map<String, Object> responseBody = Map.of(
@@ -632,7 +633,7 @@ public final class DataSourceRegistryHandler {
 
         String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+            return Promise.of(http.errorResponse(401, "Authentication required: valid tenant context not found"));
         }
 
         String connectionId = request.getPathParameter("connectionId");
@@ -721,7 +722,7 @@ public final class DataSourceRegistryHandler {
 
         String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+            return Promise.of(http.errorResponse(401, "Authentication required: valid tenant context not found"));
         }
 
         String connectionId = request.getPathParameter("connectionId");
@@ -748,7 +749,7 @@ public final class DataSourceRegistryHandler {
                         request,
                         Map.of("previousHealthStatus", healthStatus));
                     String operationId = operation == null ? "" : operation.operationId();
-                    return fabric.testConnection(connectionId)
+                    return fabric.testConnection(tenantId, connectionId)
                         .map(result -> {
                             String liveHealth = result.success() ? "healthy" : "degraded";
                             updateConnectionStateAsync(tenantId, connectionId, state, liveHealth);
@@ -822,7 +823,7 @@ public final class DataSourceRegistryHandler {
 
         String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+            return Promise.of(http.errorResponse(401, "Authentication required: valid tenant context not found"));
         }
 
         String connectionId = request.getPathParameter("connectionId");
@@ -867,7 +868,7 @@ public final class DataSourceRegistryHandler {
             request,
             Map.of());
         String operationId = operation == null ? "" : operation.operationId();
-        return fabric.getSchema(connectionId)
+        return fabric.inferSchema(tenantId, connectionId, Map.of())
             .map(schema -> {
                 transitionOperation(tenantId, operationId, OperationStatus.SUCCEEDED, "Connector schema retrieved", Map.of());
                 return http.jsonResponse(Map.of(
@@ -904,7 +905,7 @@ public final class DataSourceRegistryHandler {
 
         String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+            return Promise.of(http.errorResponse(401, "Authentication required: valid tenant context not found"));
         }
 
         String connectionId = request.getPathParameter("connectionId");
@@ -939,18 +940,20 @@ public final class DataSourceRegistryHandler {
                     Map<String, Object> payload = buf == null || buf.readRemaining() == 0
                         ? Map.of()
                     : http.objectMapper().readValue(buf.getString(StandardCharsets.UTF_8), Map.class);
-                // Build a minimal SyncConfig from payload
+                // Build a minimal SyncRequest from payload
                 @SuppressWarnings("unchecked")
                 Map<String, Object> filters = payload.containsKey("filters") ? (Map<String, Object>) payload.get("filters") : Map.of();
                 @SuppressWarnings("unchecked")
+                Map<String, Object> mapping = payload.containsKey("mapping") ? (Map<String, Object>) payload.get("mapping") : Map.of();
+                @SuppressWarnings("unchecked")
                 List<String> columns = payload.containsKey("columns") ? (List<String>) payload.get("columns") : List.of();
-                DataFabricConnector.SyncConfig config = new DataFabricConnector.SyncConfig(
-                    (String) payload.getOrDefault("syncMode", "full"),
+                DataFabricConnector.SyncRequest syncRequest = new DataFabricConnector.SyncRequest(
                     (String) payload.get("targetCollection"),
-                    (String) payload.getOrDefault("schedule", "once"),
+                    (String) payload.getOrDefault("syncMode", "FULL"),
                     filters,
+                    mapping,
                     Boolean.TRUE.equals(payload.getOrDefault("incremental", Boolean.FALSE)),
-                    columns
+                    null // idempotencyKey
                 );
                 OperationRecord operation = recordConnectorOperation(
                     tenantId,
@@ -961,13 +964,13 @@ public final class DataSourceRegistryHandler {
                     "Connector sync requested",
                     request,
                     Map.of(
-                        "syncMode", config.syncMode(),
-                        "targetCollection", config.targetCollection() == null ? "" : config.targetCollection()
+                        "syncMode", syncRequest.mode(),
+                        "targetCollection", syncRequest.datasetId() == null ? "" : syncRequest.datasetId()
                     ));
                 String operationId = operation == null ? "" : operation.operationId();
 
                 return updateConnectionState(tenantId, connectionId, "SYNCING", "syncing")
-                        .then(e -> fabric.sync(connectionId, config))
+                        .then(e -> fabric.sync(tenantId, connectionId, syncRequest))
                         .map(result -> {
                             String postState = result.success() ? "ACTIVE" : "ERROR";
                             String postHealth = result.success() ? "healthy" : "unhealthy";
@@ -978,13 +981,13 @@ public final class DataSourceRegistryHandler {
                                 result.success() ? OperationStatus.SUCCEEDED : OperationStatus.FAILED,
                                 result.errorMessage(),
                                 Map.of(
-                                    "jobId", result.jobId() == null ? "" : result.jobId(),
-                                    "recordsSynced", result.recordsSynced(),
+                                    "jobId", result.syncId() == null ? "" : result.syncId(),
+                                    "recordsSynced", result.recordsProcessed(),
                                     "recordsFailed", result.recordsFailed()
                                 ));
 
                             // P4.4: Link connector sync output to target collection registry
-                            String targetCollection = config.targetCollection();
+                            String targetCollection = syncRequest.datasetId();
                             if (targetCollection != null && !targetCollection.isBlank()) {
                                 updateCollectionSyncMetadata(tenantId, targetCollection, connectionId, result);
                             }
@@ -992,10 +995,10 @@ public final class DataSourceRegistryHandler {
                             Map<String, Object> responseBody = Map.of(
                                 "tenantId", tenantId,
                                 "connectionId", connectionId,
-                                "jobId", result.jobId(),
+                                "jobId", result.syncId(),
                                 "operationId", operationId,
                                 "syncStatus", result.success() ? "completed" : "failed",
-                                "recordsSynced", result.recordsSynced(),
+                                "recordsSynced", result.recordsProcessed(),
                                 "recordsFailed", result.recordsFailed(),
                                 "message", result.errorMessage(),
                                 "targetCollection", targetCollection,
@@ -1038,7 +1041,7 @@ public final class DataSourceRegistryHandler {
 
         String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+            return Promise.of(http.errorResponse(401, "Authentication required: valid tenant context not found"));
         }
 
         String connectionId = request.getPathParameter("connectionId");
@@ -1058,7 +1061,7 @@ public final class DataSourceRegistryHandler {
                     ));
                 });
         }
-        return fabric.getSyncStatus(connectionId)
+        return fabric.getSyncStatus(tenantId, connectionId)
             .map(status -> http.jsonResponse(Map.of(
                 "tenantId", tenantId,
                 "connectionId", connectionId,
@@ -1077,6 +1080,210 @@ public final class DataSourceRegistryHandler {
                     log.error("[getSyncStatus] tenant={} id={} failed: {}", tenantId, connectionId, e.getMessage(), e);
                     return Promise.of(http.errorResponse(502, "Sync status retrieval failed: " + e.getMessage()));
                 });
+    }
+
+    // ─── GET /api/v1/connectors/:connectionId/dataset-link ─────────────────────
+
+    /**
+     * Gets the dataset linkage for a connector.
+     *
+     * <p>GET /api/v1/connectors/:connectionId/dataset-link
+     *
+     * @param request HTTP request
+     * @return Promise with dataset link information
+     */
+    public Promise<HttpResponse> handleGetDatasetLink(HttpRequest request) {
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:read");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(401, "Authentication required: valid tenant context not found"));
+        }
+
+        String connectionId = request.getPathParameter("connectionId");
+        if (connectionId == null || connectionId.isBlank()) {
+            return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
+        }
+
+        // P0-09: Fail closed when connector runtime is unavailable in production/staging/sovereign profiles
+        if (isConnectorRuntimeRequired() && fabric == null) {
+            return connectorRuntimeUnavailableResponse("dataset link retrieval");
+        }
+
+        if (fabric == null) {
+            // This path is only allowed in local/test profiles where connector runtime is optional.
+            return client.findById(tenantId, DC_CONNECTIONS, connectionId)
+                .map(opt -> {
+                    String state = opt.map(e -> String.valueOf(e.data().getOrDefault("state", "UNKNOWN"))).orElse("NOT_FOUND");
+                    return http.jsonResponse(Map.of(
+                        "tenantId", tenantId,
+                        "connectionId", connectionId,
+                        "linked", false,
+                        "message", "Data fabric connector not available",
+                        "timestamp", Instant.now().toString()
+                    ));
+                });
+        }
+
+        OperationRecord operation = recordConnectorOperation(
+            tenantId,
+            connectionId,
+            OperationKind.CONNECTOR_LINK_DATASET,
+            OperationStatus.RUNNING,
+            "Connector dataset link",
+            "Dataset link retrieval requested",
+            request,
+            Map.of());
+        String operationId = operation == null ? "" : operation.operationId();
+
+        return fabric.getDatasetLink(tenantId, connectionId)
+            .map(link -> {
+                transitionOperation(tenantId, operationId, OperationStatus.SUCCEEDED, "Dataset link retrieved", Map.of());
+                if (link == null) {
+                    return http.jsonResponse(Map.of(
+                        "tenantId", tenantId,
+                        "connectionId", connectionId,
+                        "operationId", operationId,
+                        "linked", false,
+                        "timestamp", Instant.now().toString()
+                    ));
+                }
+                Map<String, Object> responseBody = new LinkedHashMap<>();
+                responseBody.put("tenantId", tenantId);
+                responseBody.put("connectionId", connectionId);
+                responseBody.put("operationId", operationId);
+                responseBody.put("linkId", link.linkId());
+                responseBody.put("datasetId", link.datasetId());
+                responseBody.put("syncDirection", link.syncDirection());
+                responseBody.put("lastSyncVersion", link.lastSyncVersion());
+                responseBody.put("linkedAt", link.linkedAt().toString());
+                responseBody.put("linkedBy", link.linkedBy());
+                responseBody.put("linked", true);
+                responseBody.put("timestamp", Instant.now().toString());
+                return http.jsonResponse(responseBody);
+            })
+            .then(
+                r -> Promise.of(r),
+                e -> {
+                    log.error("[getDatasetLink] tenant={} id={} failed: {}", tenantId, connectionId, e.getMessage(), e);
+                    transitionOperation(tenantId, operationId, OperationStatus.FAILED, e.getMessage(), Map.of());
+                    return Promise.of(http.errorResponse(502, "Dataset link retrieval failed: " + e.getMessage()));
+                });
+    }
+
+    // ─── POST /api/v1/connectors/:connectionId/dataset-link ────────────────────
+
+    /**
+     * Creates or updates the dataset linkage for a connector.
+     *
+     * <p>POST /api/v1/connectors/:connectionId/dataset-link
+     *
+     * @param request HTTP request with dataset link payload
+     * @return Promise with link result
+     */
+    public Promise<HttpResponse> handleLinkDataset(HttpRequest request) {
+        RequestContextResolver.ResolutionResult contextResult = http.requireRequestContext(request);
+        if (!contextResult.isSuccess()) {
+            return Promise.of(http.errorResponse(contextResult.errorCode(), contextResult.errorMessage()));
+        }
+
+        RequestContextResolver.ResolutionResult permissionResult = http.requirePermission(request, "connector:link-dataset");
+        if (!permissionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(permissionResult.errorCode(), permissionResult.errorMessage()));
+        }
+
+        String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(401, "Authentication required: valid tenant context not found"));
+        }
+
+        String connectionId = request.getPathParameter("connectionId");
+        if (connectionId == null || connectionId.isBlank()) {
+            return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
+        }
+
+        // P0-09: Fail closed when connector runtime is unavailable in production/staging/sovereign profiles
+        if (isConnectorRuntimeRequired() && fabric == null) {
+            return connectorRuntimeUnavailableResponse("dataset link creation");
+        }
+
+        // P0-07: Check idempotency before processing
+        return checkIdempotency(tenantId, connectionId, "link-dataset", request)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
+                }
+
+                return request.loadBody().then(buf -> {
+                    try {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> payload = http.objectMapper().readValue(
+                            buf.getString(StandardCharsets.UTF_8), Map.class);
+
+                        String datasetId = (String) payload.get("datasetId");
+                        if (datasetId == null || datasetId.isBlank()) {
+                            return Promise.of(http.errorResponse(400, "datasetId is required"));
+                        }
+
+                        String userId = http.resolvePrincipalId(request);
+
+                        if (fabric == null) {
+                            return Promise.of(http.errorResponse(503, "Data fabric connector not available"));
+                        }
+
+                        OperationRecord operation = recordConnectorOperation(
+                            tenantId,
+                            connectionId,
+                            OperationKind.CONNECTOR_LINK_DATASET,
+                            OperationStatus.RUNNING,
+                            "Connector dataset link",
+                            "Dataset link requested: " + datasetId,
+                            request,
+                            Map.of("datasetId", datasetId));
+                        String operationId = operation == null ? "" : operation.operationId();
+
+                        return fabric.linkDataset(tenantId, connectionId, datasetId, userId)
+                            .map(link -> {
+                                transitionOperation(tenantId, operationId, OperationStatus.SUCCEEDED, "Dataset linked", Map.of("datasetId", datasetId));
+                                Map<String, Object> responseBody = Map.of(
+                                    "tenantId", tenantId,
+                                    "connectionId", connectionId,
+                                    "operationId", operationId,
+                                    "linkId", link.linkId(),
+                                    "datasetId", link.datasetId(),
+                                    "syncDirection", link.syncDirection(),
+                                    "linkedAt", link.linkedAt().toString(),
+                                    "linkedBy", link.linkedBy(),
+                                    "linked", true,
+                                    "timestamp", Instant.now().toString()
+                                );
+                                storeIdempotency(tenantId, connectionId, "link-dataset", request, responseBody);
+                                return http.jsonResponse(responseBody);
+                            })
+                            .then(
+                                r -> Promise.of(r),
+                                e -> {
+                                    log.error("[linkDataset] tenant={} id={} failed: {}", tenantId, connectionId, e.getMessage(), e);
+                                    transitionOperation(tenantId, operationId, OperationStatus.FAILED, e.getMessage(), Map.of("datasetId", datasetId));
+                                    return Promise.of(http.errorResponse(502, "Dataset link failed: " + e.getMessage()));
+                                });
+                    } catch (Exception e) {
+                        return Promise.of(http.errorResponse(400, "Invalid link payload: " + e.getMessage()));
+                    }
+                });
+            })
+            .then(Promise::of, e -> {
+                log.error("[linkDataset] tenant={} id={} failed: {}", tenantId, connectionId, e.getMessage(), e);
+                return Promise.of(http.errorResponse(500, "Failed to link dataset: " + e.getMessage()));
+            });
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -1187,11 +1394,16 @@ public final class DataSourceRegistryHandler {
             Map<String, Object> syncMetadata = new LinkedHashMap<>();
             syncMetadata.put("lastSyncConnectionId", connectionId);
             syncMetadata.put("lastSyncTimestamp", Instant.now().toString());
-            syncMetadata.put("lastSyncStatus", result.success() ? "completed" : "failed");
-            syncMetadata.put("lastSyncRecordsSynced", result.recordsSynced());
+            syncMetadata.put("lastSyncStatus", result.status());
+            syncMetadata.put("lastSyncRecordsProcessed", result.recordsProcessed());
+            syncMetadata.put("lastSyncRecordsInserted", result.recordsInserted());
+            syncMetadata.put("lastSyncRecordsUpdated", result.recordsUpdated());
             syncMetadata.put("lastSyncRecordsFailed", result.recordsFailed());
             if (result.errorMessage() != null) {
                 syncMetadata.put("lastSyncError", result.errorMessage());
+            }
+            if (result.datasetVersion() != null) {
+                syncMetadata.put("lastSyncDatasetVersion", result.datasetVersion());
             }
 
             Map<String, Object> collectionUpdate = new LinkedHashMap<>();
@@ -1231,7 +1443,7 @@ public final class DataSourceRegistryHandler {
 
         String tenantId = contextResult.context().map(com.ghatana.datacloud.launcher.http.security.RequestContext::tenantId).orElse(null);
         if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+            return Promise.of(http.errorResponse(401, "Authentication required: valid tenant context not found"));
         }
 
         // DC-P1-002: Gate behind DATA_CLOUD_DATA_FABRIC feature flag (disabled by default).

@@ -3,6 +3,7 @@ import { SafeError } from '../components/SafeError';
 import { useParams } from 'react-router-dom';
 import { Badge, Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { fetchConditionDetail } from '../api/clinicalApi';
+import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import type { ConditionSummary } from '../types';
@@ -12,7 +13,7 @@ export function ConditionDetailPage(): React.ReactElement {
   const { session } = usePhrSession();
   const [condition, setCondition] = useState<ConditionSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SafeApiErrorState | null>(null);
 
   useEffect(() => {
     if (!session || !conditionId) return;
@@ -22,13 +23,13 @@ export function ConditionDetailPage(): React.ReactElement {
       role: session.role,
     })
       .then(setCondition)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('conditionDetail.error.load')))
+      .catch((err: unknown) => setError(toSafeApiErrorState(err, t('conditionDetail.error.load'))))
       .finally(() => setLoading(false));
   }, [session, conditionId]);
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('conditionDetail.loading')}</div>;
-  if (error) return <SafeError title={t('conditionDetail.error.load')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
-  if (!condition) return <SafeError title={t('conditionDetail.error.load')} message={t('conditionDetail.error.load')} correlationId={session?.tenantId + '-' + session?.principalId} />;
+  if (error) return <SafeError title={t('conditionDetail.error.load')} message={error.message} correlationId={error.correlationId} />;
+  if (!condition) return <SafeError title={t('conditionDetail.error.load')} message={t('conditionDetail.error.load')} />;
 
   return (
     <div className="stack gap-lg">

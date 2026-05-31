@@ -1,15 +1,8 @@
 import React, { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { revokeConsentGrant } from '../services/phrMobileApi';
-import { phiClearAll } from '../services/phiEncryptedStorage';
-import { clearDashboardOffline } from '../services/offlineStore';
 import { t } from '../i18n/phrMobileI18n';
 import type { MobileConsent, MobileSession } from '../types';
-
-function newCorrelationId(): string {
-  return crypto.randomUUID();
-}
-
 
 interface ConsentScreenProps {
   consents: MobileConsent[];
@@ -32,10 +25,7 @@ export function ConsentScreen({ consents, session, onConsentRevoked }: ConsentSc
           onPress: () => {
             setRevoking(grantId);
             revokeConsentGrant(grantId, session.principalId, session)
-              .then(async () => {
-                // Clear encrypted PHI cache on consent revocation
-                await phiClearAll();
-                await clearDashboardOffline();
+              .then(() => {
                 onConsentRevoked(grantId);
               })
               .catch((err: unknown) => {
@@ -55,14 +45,14 @@ export function ConsentScreen({ consents, session, onConsentRevoked }: ConsentSc
 
   if (consents.length === 0) {
     return (
-      <View style={styles.container}>
+      <View style={styles.container} accessibilityLabel={t('consents.title')}>
         <Text style={styles.empty}>{t('consents.empty')}</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} accessibilityLabel={t('consents.title')}>
       {consents.map((consent) => (
         <View key={consent.id} style={styles.card}>
           <Text style={styles.title}>{consent.grantee}</Text>

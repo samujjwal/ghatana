@@ -25,7 +25,7 @@ import java.util.Objects;
  * Factory for creating and configuring planner agents.
  *
  * <p>Provides tool registration, global context management, and agent creation
- * from YAML configuration files. This replaces the external AEP planner dependency
+ * from YAML configuration files. This replaces external planner dependencies
  * with a framework-level abstraction.
  *
  * @doc.type class

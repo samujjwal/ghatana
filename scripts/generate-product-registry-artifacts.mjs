@@ -147,6 +147,27 @@ function generateProductShape(registry) {
       };
     }
 
+    // Add hardening markers for implementation pass (Data Cloud)
+    if (product.productCompletenessStatus) {
+      products[productId].productCompletenessStatus = product.productCompletenessStatus;
+    }
+    if (product.runtimeSurfaceStatus) {
+      products[productId].runtimeSurfaceStatus = product.runtimeSurfaceStatus;
+    }
+    if (product.releaseReadinessExecutionStatus) {
+      products[productId].releaseReadinessExecutionStatus = product.releaseReadinessExecutionStatus;
+    }
+    if (product.doNotRunReleaseReadinessChecks !== undefined) {
+      products[productId].doNotRunReleaseReadinessChecks = product.doNotRunReleaseReadinessChecks;
+    }
+    if (product.doNotGenerateReleaseEvidence !== undefined) {
+      products[productId].doNotGenerateReleaseEvidence = product.doNotGenerateReleaseEvidence;
+    }
+    // Add plane statuses if defined
+    if (product.planes) {
+      products[productId].planes = product.planes;
+    }
+
     if (backendOnly && product.metadata?.documentation) {
       products[productId].backendOnlyDeclaration = {
         file: product.metadata.documentation,

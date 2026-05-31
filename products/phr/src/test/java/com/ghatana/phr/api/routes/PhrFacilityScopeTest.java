@@ -130,6 +130,8 @@ class PhrFacilityScopeTest {
         when(request.getHeader(HttpHeaders.of("X-Tenant-ID"))).thenReturn("tenant-1");
         when(request.getHeader(HttpHeaders.of("X-Principal-ID"))).thenReturn("clinician-1");
         when(request.getHeader(HttpHeaders.of("X-Role"))).thenReturn("clinician");
+        when(request.getHeader(HttpHeaders.of("X-Persona"))).thenReturn("clinician");
+        when(request.getHeader(HttpHeaders.of("X-Tier"))).thenReturn("clinical");
         when(request.getHeader(HttpHeaders.of("X-Facility-Id"))).thenReturn("facility-123");
 
         PhrRouteSupport.PhrRequestContext ctx = PhrRouteSupport.requireContext(request);
@@ -154,6 +156,8 @@ class PhrFacilityScopeTest {
         when(request.getHeader(HttpHeaders.of("X-Tenant-ID"))).thenReturn(tenantId);
         when(request.getHeader(HttpHeaders.of("X-Principal-ID"))).thenReturn(principalId);
         when(request.getHeader(HttpHeaders.of("X-Role"))).thenReturn(role);
+        when(request.getHeader(HttpHeaders.of("X-Persona"))).thenReturn(role == null ? null : role.strip().toLowerCase());
+        when(request.getHeader(HttpHeaders.of("X-Tier"))).thenReturn("core");
         return request;
     }
 
@@ -163,6 +167,8 @@ class PhrFacilityScopeTest {
         when(request.getHeader(HttpHeaders.of("X-Tenant-ID"))).thenReturn(tenantId);
         when(request.getHeader(HttpHeaders.of("X-Principal-ID"))).thenReturn(principalId);
         when(request.getHeader(HttpHeaders.of("X-Role"))).thenReturn(role);
+        when(request.getHeader(HttpHeaders.of("X-Persona"))).thenReturn(role == null ? null : role.strip().toLowerCase());
+        when(request.getHeader(HttpHeaders.of("X-Tier"))).thenReturn("core");
         when(request.getHeader(HttpHeaders.of("X-Facility-ID"))).thenReturn(facilityId);
         return request;
     }

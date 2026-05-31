@@ -147,7 +147,7 @@ public final class PhrEntitlementRoutes {
                     this.contractLoaded = false;
                     return;
                 }
-                if (!List.of("stable", "preview", "blocked", "hidden").contains(stability)) {
+                if (!List.of("stable", "preview", "blocked", "hidden", "deferred", "removed").contains(stability)) {
                     LOG.error("Route {} has invalid stability {} - failing closed", path, stability);
                     this.contractLoaded = false;
                     return;
@@ -227,7 +227,7 @@ public final class PhrEntitlementRoutes {
                 if (description != null && !description.isBlank()) meta.put("description", description);
                 loadedMeta.put(path, meta);
 
-                if ("hidden".equals(stability) || "blocked".equals(stability)) {
+                if (!"stable".equals(stability)) {
                     continue;
                 }
 

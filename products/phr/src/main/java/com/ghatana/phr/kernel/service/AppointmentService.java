@@ -40,6 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AppointmentService extends PhrServiceBase {
 
     private static final String APPOINTMENT_DATASET = "phr.appointments";
+    private static final String APPOINTMENT_REQUEST_DATASET = "phr.appointment.requests";
     private static final String SLOT_DATASET = "phr.appointment.slots";
     private static final ZoneId NEPAL_ZONE = ZoneId.of("Asia/Kathmandu");
     private static final Duration RATE_LIMIT_WINDOW = Duration.ofMinutes(1);
@@ -110,6 +111,19 @@ public class AppointmentService extends PhrServiceBase {
             Map.of("retention", "7years")
         );
 
+        Promise<Void> requestSchema = createSchema(
+            APPOINTMENT_REQUEST_DATASET,
+            Map.of(
+                "id", "string",
+                "patientId", "string",
+                "specialty", "string",
+                "preferredDate", "string",
+                "status", "string",
+                "createdAt", "timestamp"
+            ),
+            Map.of("retention", "7years")
+        );
+
         Promise<Void> slotSchema = createSchema(
             SLOT_DATASET,
             Map.of(
@@ -121,7 +135,7 @@ public class AppointmentService extends PhrServiceBase {
             Map.of("retention", "1year")
         );
 
-        return appointmentSchema.then($ -> slotSchema);
+        return appointmentSchema.then($ -> requestSchema).then($ -> slotSchema);
     }
 
     @Override
@@ -131,6 +145,56 @@ public class AppointmentService extends PhrServiceBase {
     }
 
     // ==================== Core Appointment Operations ====================
+
+    /**
+     * Creates a persisted patient scheduling request for staff triage.
+     *
+     * @param request the patient scheduling request
+     * @param idempotencyKey optional client idempotency key
+     * @param requestedBy principal creating the request
+     * @return Promise containing the persisted scheduling request
+     */
+    public Promise<SchedulingRequest> createSchedulingRequest(
+            SchedulingRequest request,
+            String idempotencyKey,
+            String requestedBy) {
+        ensureRunning();
+
+        String patientId = PhrInputSanitizationUtils.requireSafeIdentifier(request.patientId(), "patientId");
+        String specialty = PhrInputSanitizationUtils.sanitizeRequiredText(request.specialty(), "specialty", 120);
+        String preferredDate = PhrInputSanitizationUtils.requireSafeCode(request.preferredDate(), "preferredDate");
+        String notes = request.notes() == null || request.notes().isBlank()
+            ? null
+            : PhrInputSanitizationUtils.sanitizeRequiredText(request.notes(), "notes", 500);
+        String id = request.id() != null && !request.id().isBlank() ? request.id() : generateId("aptreq");
+        Instant now = Instant.now();
+
+        SchedulingRequest toStore = new SchedulingRequest(
+            id,
+            patientId,
+            specialty,
+            preferredDate,
+            notes,
+            "REQUESTED",
+            now,
+            idempotencyKey
+        );
+
+        return createRecord(
+            APPOINTMENT_REQUEST_DATASET,
+            id,
+            toStore,
+            mutationMetadata(Map.of(
+                "patientId", patientId,
+                "specialty", specialty,
+                "status", toStore.status()
+            ), requestedBy != null ? requestedBy : patientId),
+            "SchedulingRequest",
+            1
+        ).then(stored -> audit("APPOINTMENT_REQUEST", patientId,
+            "Appointment request submitted for " + specialty)
+            .map($ -> stored));
+    }
 
     /**
      * Creates a new appointment with conflict detection.
@@ -576,6 +640,17 @@ public class AppointmentService extends PhrServiceBase {
     }
 
     // ==================== Inner Types ====================
+
+    public record SchedulingRequest(
+            String id,
+            String patientId,
+            String specialty,
+            String preferredDate,
+            String notes,
+            String status,
+            Instant createdAt,
+            String idempotencyKey
+    ) {}
 
     public static class Appointment {
         private final String id;

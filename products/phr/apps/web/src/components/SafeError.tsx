@@ -1,4 +1,6 @@
 import React from 'react';
+import { Button } from '@ghatana/design-system';
+import { t } from '../i18n/phrI18n';
 
 /**
  * W-002: Safe alert/error component.
@@ -19,7 +21,7 @@ export function SafeError({ title, message, correlationId, severity = 'error', o
   const iconColor = severity === 'error' ? 'text-red-500' : severity === 'warning' ? 'text-yellow-500' : 'text-blue-500';
 
   return (
-    <div className={`${bgColor} border ${borderColor} rounded-lg p-4`}>
+    <div className={`${bgColor} border ${borderColor} rounded-lg p-4`} role={severity === 'error' ? 'alert' : 'status'} aria-live={severity === 'error' ? 'assertive' : 'polite'}>
       <div className="flex">
         <div className="flex-shrink-0">
           {severity === 'error' && (
@@ -49,15 +51,17 @@ export function SafeError({ title, message, correlationId, severity = 'error', o
         </div>
         {onDismiss && (
           <div className="ml-auto pl-3">
-            <button
+            <Button
+              type="button"
               onClick={onDismiss}
-              className={`inline-flex ${iconColor} hover:opacity-75 focus:outline-none`}
+              variant="ghost"
+              aria-label={t('safeError.dismiss')}
             >
-              <span className="sr-only">Dismiss</span>
+              <span className="sr-only">{t('safeError.dismiss')}</span>
               <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
-            </button>
+            </Button>
           </div>
         )}
       </div>

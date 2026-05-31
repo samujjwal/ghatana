@@ -127,38 +127,46 @@ UI must use generated clients and frontend adapters, not backend internals.
 
 This iteration focuses on implementation, correctness, feature completeness, UI/UX, security/privacy, i18n/a11y, and observability. It is NOT release-readiness execution: do not run release-readiness checks, release evidence generation, product release promotion, or evidence freshness workflows as part of this pass.
 
+**Product Status:**
+- Data Cloud product is coherent but blocked for production completeness.
+- Action Plane is active but AEP semantic lifecycle is partial.
+- Context Plane is target-only.
+- Audio-video is metadata/control-plane integration until first-class lifecycle is implemented.
+- Release-readiness/evidence execution is explicitly out of scope for this implementation pass.
+
 **Plane Status:**
 - Data Plane: active
 - Event Plane: active
 - Intelligence Plane: active
 - Governance Plane: active
-- Action Plane: active but still has AEP naming/test-boundary debt
-- Context Plane: target plane, but not currently present as an active Gradle module unless added in this pass
-- Audio-video: external shared service with partial Data Cloud metadata integration, not yet full first-class modality
+- Action Plane: active but AEP semantic lifecycle is partial (requires PatternSpec compiler, EventCloud SPI, pattern lifecycle, learning-to-recommendation, replay-safe agent execution)
+- Context Plane: target-only (directory exists as placeholder and ownership boundary but is not an active Gradle module)
+- Operations Plane: active
+- Audio-video: partial external modality integration (not yet durable MediaArtifact job lifecycle with consent, retention, and processing workflow)
 
 ## Module Classification and Promotion
 
-Data Cloud modules are classified as either **release-blocking** or **advisory**:
+Data Cloud modules are classified as either **implementation-critical** or **advisory**:
 
-- **Release-blocking modules**: Must pass all checks before any release. These are production-critical surfaces.
-- **Advisory modules**: Compiled and tested in CI but not blocking releases. Used only for explicitly non-production surfaces.
+- **Implementation-critical modules**: Active Data Cloud modules that must be included in implementation hardening and targeted tests. Do not run release-readiness/evidence workflows.
+- **Advisory modules**: Compiled and tested in CI but optional for hardening scope. Used for explicitly non-production surfaces.
 
 ### Promotion Process
 
-When an advisory module becomes a production surface, it must be promoted to release-blocking status:
+When an advisory module becomes a production surface, it must be promoted to implementation-critical status:
 
-1. **Update module classification**: Edit `scripts/list-data-cloud-active-modules.mjs` to move the module from `advisoryModules` to `releaseBlockingModules`.
-2. **Verify release-blocking checks**: Ensure the module has comprehensive tests, linting, and security checks configured.
-3. **Update CI workflows**: The release workflow automatically includes all release-blocking modules in strict checks.
+1. **Update module classification**: Edit `scripts/list-data-cloud-active-modules.mjs` to add the module to `implementationCriticalModules`.
+2. **Verify implementation-critical checks**: Ensure the module has comprehensive tests, linting, and security checks configured.
+3. **Update CI workflows**: The hardening workflow automatically includes all implementation-critical modules in strict checks.
 4. **Document the change**: Add a note to the implementation tracker or changelog explaining why the module was promoted.
 
 **Note:** Do not run release-readiness/evidence execution in this hardening iteration. Skip release-readiness check tasks and any script that generates release evidence.
 
 ### Current Advisory Modules
 
-There are currently no active advisory modules in Data Cloud. API contract and integration suites are release-blocking and must pass for release gates.
+There are currently no active advisory modules in Data Cloud. API contract and integration suites are implementation-critical and must be included in hardening tests.
 
-Data Cloud UI readiness is also release-blocking for route/runtime/OpenAPI parity:
+Data Cloud UI readiness is also implementation-critical for route/runtime/OpenAPI parity:
 
 - `check:route-manifest` (backend registry/runtime parity + generated artifact drift)
 - `docs:routes:check` (route truth matrix drift)

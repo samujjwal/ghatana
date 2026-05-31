@@ -36,10 +36,9 @@ import java.util.List;
  * safety throughout pipelines, registries, and orchestrators.
  *
  * <p>The original {@link Agent} interface is retained for backward
- * compatibility with existing consumers (virtual-org, yappc); new code
- * should implement {@code TypedAgent} exclusively. Migration of
- * existing implementations is tracked under Task 2.11 of the
- * AEP-EventCloud Stabilization Plan.
+ * compatibility with existing consumers; new code should implement
+ * {@code TypedAgent} exclusively. Migration of existing implementations
+ * is tracked under the platform stabilization plan.
  *
  * <h2>Lifecycle</h2>
  * <pre>

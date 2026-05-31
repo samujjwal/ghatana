@@ -1797,6 +1797,466 @@ components:
           type: array
           items:
             type: string
+
+    # Pass 12: AEP semantic lifecycle contracts
+    PatternSpec:
+      type: object
+      required: [patternId, tenantId, patternDefinition, status]
+      properties:
+        patternId:
+          type: string
+          description: Unique pattern identifier
+        tenantId:
+          type: string
+          description: Tenant ID for multi-tenancy
+        patternDefinition:
+          type: object
+          additionalProperties: true
+          description: Pattern definition (event conditions, operators, actions)
+        status:
+          type: string
+          enum: [DRAFT, VALIDATED, ACTIVE, PAUSED, DEPRECATED, ARCHIVED]
+          description: Pattern lifecycle status
+        version:
+          type: string
+          description: Pattern version
+        inputSchema:
+          type: object
+          additionalProperties: true
+          description: Expected input schema for validation
+        outputSchema:
+          type: object
+          additionalProperties: true
+          description: Expected output schema for validation
+        owner:
+          type: string
+          description: Pattern owner
+        createdAt:
+          type: string
+          format: date-time
+          description: Pattern creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Pattern last update timestamp
+        validationResults:
+          type: array
+          items:
+            type: object
+          description: Validation results from pattern compilation
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Pattern metadata
+
+    PatternSpecValidationRequest:
+      type: object
+      required: [patternDefinition]
+      properties:
+        patternDefinition:
+          type: object
+          additionalProperties: true
+          description: Pattern definition to validate
+        inputSchema:
+          type: object
+          additionalProperties: true
+          description: Optional input schema for validation
+        outputSchema:
+          type: object
+          additionalProperties: true
+          description: Optional output schema for validation
+
+    PatternSpecValidationResult:
+      type: object
+      required: [isValid, validationErrors]
+      properties:
+        isValid:
+          type: boolean
+          description: Whether the pattern is valid
+        validationErrors:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+              message:
+                type: string
+              severity:
+                type: string
+                enum: [ERROR, WARNING, INFO]
+          description: Validation errors and warnings
+        compiledPlan:
+          type: object
+          additionalProperties: true
+          description: Compiled execution plan if validation succeeded
+        estimatedCost:
+          type: number
+          description: Estimated execution cost
+
+    PatternActivationRequest:
+      type: object
+      required: [patternId]
+      properties:
+        patternId:
+          type: string
+          description: Pattern ID to activate
+        version:
+          type: string
+          description: Specific version to activate (optional)
+        activationMode:
+          type: string
+          enum: [IMMEDIATE, SCHEDULED, DRY_RUN]
+          description: Activation mode
+        scheduledAt:
+          type: string
+          format: date-time
+          description: Scheduled activation time (for SCHEDULED mode)
+
+    PatternDeactivationRequest:
+      type: object
+      required: [patternId]
+      properties:
+        patternId:
+          type: string
+          description: Pattern ID to deactivate
+        reason:
+          type: string
+          description: Reason for deactivation
+
+    PatternMatchExplainRequest:
+      type: object
+      required: [patternId, eventId]
+      properties:
+        patternId:
+          type: string
+          description: Pattern ID to explain
+        eventId:
+          type: string
+          description: Event ID that triggered the match
+        includeTrace:
+          type: boolean
+          description: Include full execution trace
+
+    PatternMatchExplainResponse:
+      type: object
+      required: [patternId, eventId, matched, explanation]
+      properties:
+        patternId:
+          type: string
+          description: Pattern ID
+        eventId:
+          type: string
+          description: Event ID
+        matched:
+          type: boolean
+          description: Whether the pattern matched
+        explanation:
+          type: object
+          additionalProperties: true
+          description: Detailed explanation of match logic
+        matchedConditions:
+          type: array
+          items:
+            type: object
+          description: Conditions that matched
+        failedConditions:
+          type: array
+          items:
+            type: object
+          description: Conditions that failed
+        executionTrace:
+          type: array
+          items:
+            type: object
+          description: Execution trace if requested
+        confidence:
+          type: number
+          description: Match confidence score
+
+    LearningReviewRequest:
+      type: object
+      required: [agentId, skillId]
+      properties:
+        agentId:
+          type: string
+          description: Agent ID to review
+        skillId:
+          type: string
+          description: Skill ID to review
+        reviewScope:
+          type: string
+          enum: [SEMANTIC_FACTS, NEGATIVE_KNOWLEDGE, EPISODIC_CAPTURE, ALL]
+          description: Scope of learning review
+        timeRange:
+          type: object
+          properties:
+            from:
+              type: string
+              format: date-time
+            to:
+              type: string
+              format: date-time
+          description: Time range for review
+
+    LearningReviewResponse:
+      type: object
+      required: [reviewId, agentId, skillId, status]
+      properties:
+        reviewId:
+          type: string
+          description: Unique review identifier
+        agentId:
+          type: string
+          description: Agent ID
+        skillId:
+          type: string
+          description: Skill ID
+        status:
+          type: string
+          enum: [PENDING, IN_PROGRESS, COMPLETED, FAILED]
+          description: Review status
+        findings:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              description:
+                type: string
+              severity:
+                type: string
+                enum: [HIGH, MEDIUM, LOW]
+              recommendation:
+                type: string
+          description: Learning findings
+        promotionCandidates:
+          type: array
+          items:
+            type: object
+            properties:
+              itemId:
+                type: string
+              itemType:
+                type: string
+              confidence:
+                type: number
+          description: Items recommended for promotion
+        obsoleteItems:
+          type: array
+          items:
+            type: object
+            properties:
+              itemId:
+                type: string
+              itemType:
+                type: string
+              reason:
+                type: string
+          description: Items recommended for obsolescence
+        createdAt:
+          type: string
+          format: date-time
+          description: Review creation timestamp
+        completedAt:
+          type: string
+          format: date-time
+          description: Review completion timestamp
+
+    RecommendationCandidate:
+      type: object
+      required: [candidateId, candidateType, confidence]
+      properties:
+        candidateId:
+          type: string
+          description: Unique candidate identifier
+        candidateType:
+          type: string
+          enum: [SKILL_PROMOTION, KNOWLEDGE_UPDATE, PATTERN_SUGGESTION, AGENT_OPTIMIZATION]
+          description: Type of recommendation
+        confidence:
+          type: number
+          description: Confidence score (0-1)
+        source:
+          type: string
+          description: Source of recommendation
+        rationale:
+          type: string
+          description: Rationale for the recommendation
+        impact:
+          type: object
+          additionalProperties: true
+          description: Expected impact
+        suggestedAction:
+          type: object
+          additionalProperties: true
+          description: Suggested action to take
+        expiresAt:
+          type: string
+          format: date-time
+          description: Recommendation expiration time
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional metadata
+
+    ReplaySafeAgentInvocation:
+      type: object
+      required: [agentId, invocationId, tenantId, replayMode]
+      properties:
+        agentId:
+          type: string
+          description: Agent ID to invoke
+        invocationId:
+          type: string
+          description: Unique invocation identifier
+        tenantId:
+          type: string
+          description: Tenant ID
+        replayMode:
+          type: string
+          enum: [NONE, SAFE, FULL]
+          description: Replay mode for idempotency
+        input:
+          type: object
+          additionalProperties: true
+          description: Agent input
+        idempotencyKey:
+          type: string
+          description: Idempotency key for safe replay
+        dryRun:
+          type: boolean
+          description: Execute as dry-run (no side effects)
+        compensationStrategy:
+          type: string
+          enum: [NONE, ROLLBACK, COMPENSATING_ACTION]
+          description: Compensation strategy on failure
+        originalEventId:
+          type: string
+          description: Original event ID if this is a replay
+        status:
+          type: string
+          enum: [PENDING, RUNNING, COMPLETED, FAILED, CANCELLED, COMPENSATED]
+          description: Invocation status
+        result:
+          type: object
+          additionalProperties: true
+          description: Invocation result
+        error:
+          type: string
+          description: Error message if failed
+        startedAt:
+          type: string
+          format: date-time
+          description: Invocation start time
+        completedAt:
+          type: string
+          format: date-time
+          description: Invocation completion time
+        operationId:
+          type: string
+          description: Associated operation ID
+
+    # Pass 12: AEP lifecycle contracts
+    PatternExecution:
+      type: object
+      required: [executionId, patternId, tenantId, status, startTime]
+      properties:
+        executionId:
+          type: string
+          description: Unique execution identifier
+        patternId:
+          type: string
+          description: Pattern ID being executed
+        tenantId:
+          type: string
+          description: Tenant ID for multi-tenancy
+        status:
+          type: string
+          enum: [PENDING, RUNNING, COMPLETED, FAILED, CANCELLED, TIMEOUT, BLOCKED]
+          description: Execution status
+        startTime:
+          type: string
+          format: date-time
+          description: Execution start time
+        endTime:
+          type: string
+          format: date-time
+          description: Execution end time
+        durationMs:
+          type: integer
+          format: int64
+          description: Execution duration in milliseconds
+        agentId:
+          type: string
+          description: Agent ID executing the pattern
+        input:
+          type: object
+          additionalProperties: true
+          description: Pattern input parameters
+        output:
+          type: object
+          additionalProperties: true
+          description: Pattern output results
+        error:
+          type: string
+          description: Error message if failed
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Execution metadata
+        correlationId:
+          type: string
+          description: Correlation ID for traceability
+        operationId:
+          type: string
+          description: Associated operation ID from OperationsContext
+
+    PatternExecutionRequest:
+      type: object
+      required: [patternId]
+      properties:
+        patternId:
+          type: string
+          description: Pattern ID to execute
+        input:
+          type: object
+          additionalProperties: true
+          description: Pattern input parameters
+        agentId:
+          type: string
+          description: Optional agent ID to use for execution
+        timeoutMs:
+          type: integer
+          format: int64
+          description: Optional timeout in milliseconds
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Execution metadata
+
+    PatternExecutionResponse:
+      type: object
+      required: [executionId, status]
+      properties:
+        executionId:
+          type: string
+          description: Execution identifier
+        status:
+          type: string
+          enum: [PENDING, RUNNING, COMPLETED, FAILED, CANCELLED, TIMEOUT, BLOCKED]
+          description: Execution status
+        output:
+          type: object
+          additionalProperties: true
+          description: Pattern output results
+        error:
+          type: string
+          description: Error message if failed
+        operationId:
+          type: string
+          description: Associated operation ID
     ErrorResponse:
       type: object
       properties:

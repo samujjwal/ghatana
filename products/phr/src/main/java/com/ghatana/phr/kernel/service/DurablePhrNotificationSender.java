@@ -178,12 +178,12 @@ public final class DurablePhrNotificationSender extends PhrServiceBase implement
         String sanitizedNotificationId = PhrInputSanitizationUtils.requireSafeIdentifier(notificationId, "notificationId");
         String sanitizedPrincipalId = PhrInputSanitizationUtils.requireSafeIdentifier(principalId, "principalId");
 
-        return queryRecords(OUTBOX_DATASET, "id = :id", Map.of("id", sanitizedNotificationId), 1, 0, NotificationOutboxEntry.class)
-            .then(entries -> {
-                if (entries.isEmpty()) {
+        return readRecord(OUTBOX_DATASET, sanitizedNotificationId, NotificationOutboxEntry.class)
+            .then(entryOpt -> {
+                if (entryOpt.isEmpty()) {
                     return Promise.ofException(new IllegalStateException("Notification not found"));
                 }
-                NotificationOutboxEntry entry = entries.get(0);
+                NotificationOutboxEntry entry = entryOpt.get();
                 if (!entry.patientId().equals(sanitizedPrincipalId)) {
                     return Promise.ofException(new IllegalStateException("Cannot mark another user's notification as read"));
                 }
@@ -202,6 +202,8 @@ public final class DurablePhrNotificationSender extends PhrServiceBase implement
                     entry.createdAt(),
                     entry.correlationId(),
                     entry.traceOperation(),
+                    entry.safeReasonCode(),
+                    entry.deepLinkId(),
                     entry.deliveryAttemptedAt(),
                     entry.deliveredAt(),
                     entry.failureReason(),
@@ -226,27 +228,35 @@ public final class DurablePhrNotificationSender extends PhrServiceBase implement
         String sanitizedNotificationId = PhrInputSanitizationUtils.requireSafeIdentifier(notificationId, "notificationId");
         String sanitizedPrincipalId = PhrInputSanitizationUtils.requireSafeIdentifier(principalId, "principalId");
         String sanitizedAction = PhrInputSanitizationUtils.requireSafeCode(action, "action");
+        String result = switch (sanitizedAction) {
+            case "view" -> "viewed";
+            case "dismiss" -> "dismissed";
+            case "accept" -> "accepted";
+            case "decline" -> "declined";
+            default -> null;
+        };
+        if (result == null) {
+            return Promise.ofException(new IllegalArgumentException("Unsupported notification action: " + sanitizedAction));
+        }
 
-        return queryRecords(OUTBOX_DATASET, "id = :id", Map.of("id", sanitizedNotificationId), 1, 0, NotificationOutboxEntry.class)
-            .then(entries -> {
-                if (entries.isEmpty()) {
+        return readRecord(OUTBOX_DATASET, sanitizedNotificationId, NotificationOutboxEntry.class)
+            .then(entryOpt -> {
+                if (entryOpt.isEmpty()) {
                     return Promise.ofException(new IllegalStateException("Notification not found"));
                 }
-                NotificationOutboxEntry entry = entries.get(0);
+                NotificationOutboxEntry entry = entryOpt.get();
                 if (!entry.patientId().equals(sanitizedPrincipalId)) {
                     return Promise.ofException(new IllegalStateException("Cannot handle action for another user's notification"));
                 }
-
-                // Handle action based on notification type
-                String result = switch (sanitizedAction) {
-                    case "view" -> "viewed";
-                    case "dismiss" -> "dismissed";
-                    case "accept" -> "accepted";
-                    case "decline" -> "declined";
-                    default -> "unknown_action";
-                };
-
-                return Promise.of(result);
+                NotificationOutboxEntry updated = entry.withReadAt(Instant.now());
+                return updateRecord(
+                    OUTBOX_DATASET,
+                    sanitizedNotificationId,
+                    updated,
+                    mutationMetadata(metadataFor(updated), updated.recipientId()),
+                    "PhrNotificationOutboxEntry",
+                    1
+                ).map(__ -> result);
             });
     }
 
@@ -347,6 +357,8 @@ public final class DurablePhrNotificationSender extends PhrServiceBase implement
                     createdAt,
                     sanitizedCorrelationId,
                     sanitizedTraceOperation,
+                    safeReasonCode(sanitizedNotificationType),
+                    deepLinkId(sanitizedReferenceType, sanitizedReferenceId),
                     null,
                     null,
                     null,
@@ -393,7 +405,17 @@ public final class DurablePhrNotificationSender extends PhrServiceBase implement
         if (entry.providerId() != null) {
             metadata.put("providerId", entry.providerId());
         }
+        metadata.put("safeReasonCode", entry.safeReasonCode());
+        metadata.put("deepLinkId", entry.deepLinkId());
         return Map.copyOf(metadata);
+    }
+
+    static String safeReasonCode(String notificationType) {
+        return notificationType == null ? "SYSTEM" : notificationType;
+    }
+
+    static String deepLinkId(String referenceType, String referenceId) {
+        return referenceType + ":" + referenceId;
     }
 
     public enum NotificationStatus {
@@ -429,6 +451,8 @@ public final class DurablePhrNotificationSender extends PhrServiceBase implement
         Instant createdAt,
         String correlationId,
         String traceOperation,
+        String safeReasonCode,
+        String deepLinkId,
         Instant deliveryAttemptedAt,
         Instant deliveredAt,
         String failureReason,
@@ -448,6 +472,8 @@ public final class DurablePhrNotificationSender extends PhrServiceBase implement
             Objects.requireNonNull(createdAt, "createdAt must not be null");
             Objects.requireNonNull(correlationId, "correlationId must not be null");
             Objects.requireNonNull(traceOperation, "traceOperation must not be null");
+            Objects.requireNonNull(safeReasonCode, "safeReasonCode must not be null");
+            Objects.requireNonNull(deepLinkId, "deepLinkId must not be null");
         }
 
         NotificationOutboxEntry markDelivered(String messageId, Instant deliveredAt) {
@@ -465,6 +491,8 @@ public final class DurablePhrNotificationSender extends PhrServiceBase implement
                 createdAt,
                 correlationId,
                 traceOperation,
+                safeReasonCode,
+                deepLinkId,
                 deliveredAt,
                 deliveredAt,
                 null,
@@ -488,11 +516,38 @@ public final class DurablePhrNotificationSender extends PhrServiceBase implement
                 createdAt,
                 correlationId,
                 traceOperation,
+                safeReasonCode,
+                deepLinkId,
                 attemptedAt,
                 null,
                 failureReason,
                 null,
                 null
+            );
+        }
+
+        NotificationOutboxEntry withReadAt(Instant readAt) {
+            return new NotificationOutboxEntry(
+                id,
+                patientId,
+                recipientId,
+                providerId,
+                referenceId,
+                referenceType,
+                notificationType,
+                channel,
+                status,
+                scheduledFor,
+                createdAt,
+                correlationId,
+                traceOperation,
+                safeReasonCode,
+                deepLinkId,
+                deliveryAttemptedAt,
+                deliveredAt,
+                failureReason,
+                providerMessageId,
+                Objects.requireNonNull(readAt, "readAt must not be null")
             );
         }
     }

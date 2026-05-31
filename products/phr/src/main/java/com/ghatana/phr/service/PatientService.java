@@ -53,7 +53,7 @@ public class PatientService {
         enforceConsentForPatientRead(sanitizedPatientId);
         KernelTelemetryManager.Timer timer = telemetry.startTimer(
             "phr.patient.records.fetch",
-            "patient_id", sanitizedPatientId
+            "resource_type", "patient-record"
         );
 
         try {
@@ -62,7 +62,7 @@ public class PatientService {
             telemetry.recordMetric(
                 "phr.patient.records.count",
                 records.size(),
-                "patient_id", sanitizedPatientId
+                "resource_type", "patient-record"
             );
 
             AuditTrailService.AuditTrailEvent event = AuditTrailService.AuditTrailEvent.builder()
@@ -89,7 +89,7 @@ public class PatientService {
         Map<String, Object> sanitizedRecordData = PhrInputSanitizationUtils.sanitizeStructuredData(recordData, "recordData");
         KernelTelemetryManager.Timer timer = telemetry.startTimer(
             "phr.patient.records.create",
-            "patient_id", sanitizedPatientId
+            "resource_type", "patient-record"
         );
 
         try {
@@ -106,7 +106,7 @@ public class PatientService {
             telemetry.incrementCounter(
                 "phr.patient.records.created",
                 1,
-                "patient_id", sanitizedPatientId
+                "resource_type", "patient-record"
             );
 
             AuditTrailService.AuditTrailEvent event = AuditTrailService.AuditTrailEvent.builder()
@@ -137,7 +137,7 @@ public class PatientService {
             telemetry.incrementCounter(
                 "phr.patient.records.rollback",
                 1,
-                "patient_id", patientId
+                "resource_type", "patient-record"
             );
         } catch (RuntimeException rollbackException) {
             auditException.addSuppressed(rollbackException);

@@ -6,6 +6,11 @@ import java.util.List;
 
 /**
  * Builds intent model from canonical packet signals.
+ *
+ * @doc.type class
+ * @doc.purpose Build Intent phase models
+ * @doc.layer product
+ * @doc.pattern PhaseModelProvider
  */
 public final class IntentPhaseModelProvider {
 

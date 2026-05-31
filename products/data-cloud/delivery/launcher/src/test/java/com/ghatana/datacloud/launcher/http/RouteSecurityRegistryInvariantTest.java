@@ -239,4 +239,47 @@ class RouteSecurityRegistryInvariantTest {
                 }
                 throw new IllegalStateException("Unable to locate repository root for RouteSecurityRegistry invariants");
         }
+
+    @Test
+    @DisplayName("Pass 8: populateFromRegistrars populates dynamic metadata")
+    void populateFromRegistrarsPopulatesDynamicMetadata() {
+        RouteSecurityRegistry.clearDynamicMetadata();
+
+        RouteRegistrar testRegistrar = new RouteRegistrar() {
+            @Override
+            public String getPlaneId() { return "test-plane"; }
+            @Override
+            public String getRouteGroupId() { return "test-group"; }
+            @Override
+            public void registerRoutes(RoutingServlet.Builder builder) {}
+            @Override
+            public java.util.List<RouteMetadata> getRouteMetadata() {
+                return java.util.List.of(
+                    new RouteMetadata("route1", "/api/v1/test1", HttpMethod.GET, "test:read", "Test route 1", java.util.Map.of("plane", "test-plane")),
+                    new RouteMetadata("route2", "/api/v1/test2", HttpMethod.POST, "test:write", "Test route 2", java.util.Map.of("plane", "test-plane"))
+                );
+            }
+        };
+
+        RouteSecurityRegistry.populateFromRegistrars(java.util.List.of(testRegistrar));
+
+        assertThat(RouteSecurityRegistry.getMetadataIncludingDynamic(HttpMethod.GET, "/api/v1/test1"))
+            .isPresent();
+        assertThat(RouteSecurityRegistry.getMetadataIncludingDynamic(HttpMethod.POST, "/api/v1/test2"))
+            .isPresent();
+
+        RouteSecurityRegistry.clearDynamicMetadata();
+    }
+
+    @Test
+    @DisplayName("Pass 8: getMetadataIncludingDynamic falls back to static metadata")
+    void getMetadataIncludingDynamicFallsBackToStaticMetadata() {
+        RouteSecurityRegistry.clearDynamicMetadata();
+
+        // Test that static metadata is still available when no dynamic metadata exists
+        assertThat(RouteSecurityRegistry.getMetadataIncludingDynamic(HttpMethod.GET, "/health"))
+            .isPresent();
+
+        RouteSecurityRegistry.clearDynamicMetadata();
+    }
 }

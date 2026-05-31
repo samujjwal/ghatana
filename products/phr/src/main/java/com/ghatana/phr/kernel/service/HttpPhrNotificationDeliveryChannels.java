@@ -85,6 +85,16 @@ public final class HttpPhrNotificationDeliveryChannels implements PhrNotificatio
     private static String toJson(
             PhrNotificationSender.NotificationChannel channel,
             NotificationEnvelope envelope) {
+        if (channel == PhrNotificationSender.NotificationChannel.PUSH) {
+            return "{" +
+                jsonField("notificationId", envelope.notificationId()) + "," +
+                jsonField("reasonCode", envelope.safeReasonCode()) + "," +
+                jsonField("deepLinkId", envelope.deepLinkId()) + "," +
+                jsonField("channel", channel.name()) + "," +
+                jsonField("correlationId", envelope.correlationId()) + "," +
+                jsonField("traceOperation", envelope.traceOperation()) +
+                "}";
+        }
         return "{" +
             jsonField("notificationId", envelope.notificationId()) + "," +
             jsonField("patientId", envelope.patientId()) + "," +

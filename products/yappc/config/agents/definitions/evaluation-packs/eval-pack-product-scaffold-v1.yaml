@@ -1,0 +1,131 @@
+# Generic Kernel product scaffold pack.
+#
+# @doc.type pack
+# @doc.purpose Generic Kernel product scaffolding evaluation pack
+# @doc.layer yappc
+
+pack:
+  id: product-scaffold-v1
+  name: Kernel Product Scaffold Pack
+  version: 1.0.0
+  description: Generic scaffolding for Kernel product web, backend, and mobile code generation
+  category: scaffold
+
+capabilities:
+  - id: product-route-import
+    name: Product Route Contract Import
+    description: Import Kernel route contract and use-case baseline files
+    type: import
+    template: product-route-import
+
+  - id: product-web-route-generation
+    name: Product Web Route Generation
+    description: Generate product web route and page skeletons from Kernel contracts
+    type: generation
+    template: product-web-route
+
+  - id: product-backend-adapter-generation
+    name: Product Backend Adapter Generation
+    description: Generate product backend route adapter skeletons from Kernel contracts
+    type: generation
+    template: product-backend-adapter
+
+  - id: product-mobile-screen-generation
+    name: Product Mobile Screen Generation
+    description: Generate product mobile screen and API skeletons from Kernel contracts
+    type: generation
+    template: product-mobile-screen
+
+  - id: product-gap-visualization
+    name: Product Gap Visualization
+    description: Visualize generic product implementation gaps
+    type: visualization
+    template: product-gap-viz
+
+templates:
+  product-route-import:
+    input:
+      - route-contract.json
+      - usecase-baseline.json
+    output:
+      - ProductRouteContract
+      - ProductUseCaseBaseline
+
+  product-web-route:
+    input:
+      - ProductRouteContract
+    output:
+      - WebRouteSkeleton
+    mode:
+      - standard
+      - cleanup
+      - preview
+
+  product-backend-adapter:
+    input:
+      - ProductRouteContract
+    output:
+      - BackendRouteAdapterSkeleton
+
+  product-mobile-screen:
+    input:
+      - ProductRouteContract
+    output:
+      - MobileScreenSkeleton
+
+  product-gap-viz:
+    input:
+      - ProductGapModel
+    output:
+      - GapVisualizationReport
+      - GapMarkdownTable
+
+validation:
+  - id: product-route-contract-schema
+    name: Product Route Contract Schema Validation
+    description: Validate Kernel route contract against JSON schema
+    severity: error
+
+  - id: product-component-naming
+    name: Product Component Naming Convention
+    description: Ensure generated components follow product naming conventions
+    severity: warning
+
+  - id: product-role-completeness
+    name: Product Role Completeness Check
+    description: Verify all contract-required roles are covered
+    severity: error
+
+generation:
+  web:
+    base_path: products/<product-id>/apps/web/src
+    routes_dir: routes
+    pages_dir: pages
+    api_dir: api
+
+  backend:
+    base_path: products/<product-id>/backend/src/main/java
+    adapters_dir: adapters
+    handlers_dir: handlers
+
+  mobile:
+    base_path: products/<product-id>/apps/mobile/src
+    screens_dir: screens
+    services_dir: services
+
+gap_detection:
+  categories:
+    - stable_implemented
+    - stable_missing_api
+    - hidden
+    - blocked
+    - preview
+    - test_missing
+
+  severity:
+    stable_missing_api: critical
+    test_missing: high
+    blocked: high
+    hidden: medium
+    preview: low
+    stable_implemented: info

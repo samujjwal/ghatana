@@ -8,6 +8,7 @@ import routeContractJson from "../../../config/phr-route-contract.json";
 export type MobileScreenKey =
   | "dashboard"
   | "records"
+  | "recordDetail"
   | "consents"
   | "notifications"
   | "emergency"
@@ -51,6 +52,7 @@ const canonicalRouteContract =
 const PATH_TO_SCREEN_KEY: Record<string, MobileScreenKey> = {
   "/dashboard": "dashboard",
   "/records": "records",
+  "/records/:recordId": "recordDetail",
   "/consents": "consents",
   "/notifications": "notifications",
   "/emergency": "emergency",
@@ -61,6 +63,7 @@ const PATH_TO_SCREEN_KEY: Record<string, MobileScreenKey> = {
 const SCREEN_ICONS: Record<MobileScreenKey, string> = {
   dashboard: "H",
   records: "R",
+  recordDetail: "R",
   consents: "C",
   notifications: "N",
   emergency: "E",
@@ -71,19 +74,38 @@ function getMobileScreenKey(path: string): MobileScreenKey | null {
   return PATH_TO_SCREEN_KEY[path] ?? null;
 }
 
+function stableMobileRoutes(): readonly RouteContract[] {
+  return canonicalRouteContract.routes.filter(
+    (route) => route.surface?.includes("mobile") === true && route.stability === "stable",
+  );
+}
+
+export function getMobileRouteCoverageViolations(): string[] {
+  return stableMobileRoutes()
+    .filter((route) => getMobileScreenKey(route.path) === null)
+    .map((route) => route.path);
+}
+
+export function assertMobileRouteCoverage(): void {
+  const missingPaths = getMobileRouteCoverageViolations();
+  if (missingPaths.length > 0) {
+    throw new Error(`Stable mobile routes missing screen keys: ${missingPaths.join(", ")}`);
+  }
+}
+
 /**
  * Filter routes that are available on mobile surface and are stable
  */
 export function getMobileRoutes(): MobileRouteEntry[] {
-  return canonicalRouteContract.routes.flatMap((route): MobileRouteEntry[] => {
-    // Include only routes with mobile surface
-    const hasMobileSurface = route.surface?.includes("mobile");
-    // Include only stable routes (hidden/blocked not shown in navigation)
-    const isStable = route.stability === "stable";
-    // Include only routes that map to known screen keys
-    const screenKey = getMobileScreenKey(route.path);
+  assertMobileRouteCoverage();
 
-    if (!hasMobileSurface || !isStable || !screenKey) {
+  return stableMobileRoutes().flatMap((route): MobileRouteEntry[] => {
+    if (route.routeType === "detail") {
+      return [];
+    }
+
+    const screenKey = getMobileScreenKey(route.path);
+    if (!screenKey) {
       return [];
     }
 
@@ -116,6 +138,8 @@ export function isRouteAvailableOnMobile(path: string): boolean {
   if (!route) return false;
 
   return (
-    route.surface?.includes("mobile") === true && route.stability === "stable"
+    route.surface?.includes("mobile") === true &&
+    route.stability === "stable" &&
+    getMobileScreenKey(path) !== null
   );
 }

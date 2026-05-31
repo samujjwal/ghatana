@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { SafeError } from '../components/SafeError';
-import { Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { Button, Card, CardContent, CardHeader, Select } from '@ghatana/design-system';
 import { Link } from 'react-router-dom';
 import { fetchDocuments, downloadDocument } from '../api/documentsApi';
+import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import { logError } from '../utils/safeLogger';
@@ -13,11 +14,11 @@ export function DocumentsPage(): React.ReactElement {
   const { session } = usePhrSession();
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SafeApiErrorState | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [downloading, setDownloading] = useState<Set<string>>(new Set());
   const [previewing, setPreviewing] = useState<string | null>(null);
-  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<SafeApiErrorState | null>(null);
   const [previewDocument, setPreviewDocument] = useState<{
     documentId: string;
     title: string;
@@ -34,13 +35,14 @@ export function DocumentsPage(): React.ReactElement {
       role: session.role,
     })
       .then(setDocuments)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('documents.error.load')))
+      .catch((err: unknown) => setError(toSafeApiErrorState(err, t('documents.error.load'))))
       .finally(() => setLoading(false));
   }, [session]);
 
   const handleDownload = async (documentId: string): Promise<void> => {
     if (!session) return;
     setDownloading(prev => new Set(prev).add(documentId));
+    setActionError(null);
     try {
       const result = await downloadDocument(documentId, session.principalId, {
         tenantId: session.tenantId,
@@ -48,7 +50,8 @@ export function DocumentsPage(): React.ReactElement {
         role: session.role,
       });
       window.open(result.downloadUrl, '_blank');
-    } catch (err) {
+    } catch (err: unknown) {
+      setActionError(toSafeApiErrorState(err, t('documents.error.download')));
       logError(t('documents.error.download'), undefined, { error: err });
     } finally {
       setDownloading(prev => {
@@ -62,7 +65,7 @@ export function DocumentsPage(): React.ReactElement {
   const handlePreview = async (documentId: string, title: string, contentType: string): Promise<void> => {
     if (!session) return;
     setPreviewing(documentId);
-    setPreviewError(null);
+    setActionError(null);
     try {
       const result = await downloadDocument(documentId, session.principalId, {
         tenantId: session.tenantId,
@@ -76,8 +79,8 @@ export function DocumentsPage(): React.ReactElement {
         contentType,
         expiresAt: result.expiresAt,
       });
-    } catch (err) {
-      setPreviewError(err instanceof Error ? err.message : t('documents.error.preview'));
+    } catch (err: unknown) {
+      setActionError(toSafeApiErrorState(err, t('documents.error.preview')));
       logError(t('documents.error.preview'), undefined, { error: err });
     } finally {
       setPreviewing(null);
@@ -91,7 +94,7 @@ export function DocumentsPage(): React.ReactElement {
   };
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('documents.loading')}</div>;
-  if (error) return <SafeError title={t('documents.error')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
+  if (error) return <SafeError title={t('documents.error')} message={error.message} correlationId={error.correlationId} />;
 
   // Filter documents by content type (as a proxy for category)
   const filteredDocuments = categoryFilter
@@ -123,25 +126,33 @@ export function DocumentsPage(): React.ReactElement {
           }
         />
         <CardContent>
+          {actionError ? (
+            <SafeError
+              title={t('documents.error')}
+              message={actionError.message}
+              correlationId={actionError.correlationId}
+              onDismiss={() => setActionError(null)}
+            />
+          ) : null}
           {/* Category filter */}
           <div className="filter-bar">
-            <select
+            <Select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="filter-select"
             >
               <option value="">{t('documents.filter.all')}</option>
               {categories.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
-            </select>
+            </Select>
             {categoryFilter && (
-              <button
+              <Button
+                type="button"
                 onClick={() => setCategoryFilter('')}
-                className="filter-clear"
+                variant="secondary"
               >
                 {t('documents.filter.clear')}
-              </button>
+              </Button>
             )}
           </div>
 

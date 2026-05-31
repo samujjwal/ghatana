@@ -144,6 +144,136 @@ class AgentEventOperatorCapabilityAdapterTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("P4-06: validate checks input/output schema mismatch")
+    void validateChecksSchemaMismatch() {
+        TestAgent agent = new TestAgent("schema-agent");
+        var adapter = adapter(agent, "schema://agent/input", "schema://agent/output");
+
+        var spec = new com.ghatana.aep.operator.contract.OperatorSpec(
+            "test-operator",
+            com.ghatana.aep.operator.contract.OperatorKind.TRANSFORM,
+            "schema://wrong/input",  // Wrong input schema
+            "schema://agent/output",
+            Map.of(),
+            Map.of()
+        );
+
+        var ctx = new com.ghatana.aep.operator.contract.ValidationContext(
+            "tenant-1",
+            "trace-123",
+            "correlation-456"
+        );
+
+        var result = adapter.validate(spec, ctx);
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anyMatch(e -> e.contains("inputSchema mismatch"));
+    }
+
+    @Test
+    @DisplayName("P4-06: validate requires humanReviewPolicy for SIDE_EFFECTING agents")
+    void validateRequiresHumanReviewPolicyForSideEffecting() {
+        TestAgent agent = new TestAgent("side-effect-agent");
+        var adapter = new AgentEventOperatorCapabilityAdapter(
+            agent,
+            "agents/side-effect-agent@1.0.0",
+            AgentCapabilityRole.AGENT_REVIEW,
+            "schema://agent/input",
+            "schema://agent/output",
+            AgentSideEffectProfile.SIDE_EFFECTING,  // Side-effecting
+            policy("model"),
+            policy("tool"),
+            policy("memory"),
+            policy("retrieval"),
+            policy("guardrail"),
+            policy("replay"),
+            policy("uncertainty"),
+            Map.of(),  // Empty humanReviewPolicy - should fail
+            policy("observability"),
+            memoryStore()
+        );
+
+        var spec = new com.ghatana.aep.operator.contract.OperatorSpec(
+            "test-operator",
+            com.ghatana.aep.operator.contract.OperatorKind.TRANSFORM,
+            "schema://agent/input",
+            "schema://agent/output",
+            Map.of(),
+            Map.of()
+        );
+
+        var ctx = new com.ghatana.aep.operator.contract.ValidationContext(
+            "tenant-1",
+            "trace-123",
+            "correlation-456"
+        );
+
+        var result = adapter.validate(spec, ctx);
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anyMatch(e -> e.contains("humanReviewPolicy is required"));
+    }
+
+    @Test
+    @DisplayName("P4-06: validate requires traceId in ValidationContext")
+    void validateRequiresTraceId() {
+        TestAgent agent = new TestAgent("trace-agent");
+        var adapter = adapter(agent, "schema://agent/input", "schema://agent/output");
+
+        var spec = new com.ghatana.aep.operator.contract.OperatorSpec(
+            "test-operator",
+            com.ghatana.aep.operator.contract.OperatorKind.TRANSFORM,
+            "schema://agent/input",
+            "schema://agent/output",
+            Map.of(),
+            Map.of()
+        );
+
+        var ctx = new com.ghatana.aep.operator.contract.ValidationContext(
+            "tenant-1",
+            "",  // Empty traceId - should fail
+            "correlation-456"
+        );
+
+        var result = adapter.validate(spec, ctx);
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anyMatch(e -> e.contains("traceId is required"));
+    }
+
+    @Test
+    @DisplayName("P4-06: compile produces complete runtime plan")
+    void compileProducesCompleteRuntimePlan() {
+        TestAgent agent = new TestAgent("compile-agent");
+        var adapter = adapter(agent, "schema://agent/input", "schema://agent/output");
+
+        var spec = new com.ghatana.aep.operator.contract.OperatorSpec(
+            "test-operator",
+            com.ghatana.aep.operator.contract.OperatorKind.TRANSFORM,
+            "schema://agent/input",
+            "schema://agent/output",
+            Map.of(),
+            Map.of()
+        );
+
+        var ctx = new com.ghatana.aep.operator.contract.CompileContext(
+            "tenant-1",
+            "trace-123"
+        );
+
+        var plan = adapter.compile(spec, ctx);
+
+        assertThat(plan).isNotNull();
+        assertThat(plan.operatorId()).isNotEmpty();
+        assertThat(plan.parameters()).containsKey("inputSchema");
+        assertThat(plan.parameters()).containsKey("outputSchema");
+        assertThat(plan.parameters()).containsKey("sideEffectProfile");
+        assertThat(plan.executionPlan()).containsKey("operatorType");
+        assertThat(plan.executionPlan()).containsKey("replayMode");
+        assertThat(plan.executionPlan()).containsKey("idempotencyRequired");
+    }
+
+    @Test
     @DisplayName("empty guardrailPolicy fails instantiation")
     void emptyGuardrailPolicyFails() {
         TestAgent agent = new TestAgent("guardrail-agent");

@@ -108,7 +108,14 @@ public interface PluginRegistry {
     Promise<PluginHealth> getHealth(String pluginId);
 
     /**
-     * Plugin status.
+     * Pass 8: Canonical plugin lifecycle state.
+     */
+    enum PluginLifecycleState {
+        INSTALLED, REGISTERED, ACTIVATING, ACTIVE, DEACTIVATING, INACTIVE, ERROR, UNINSTALLING, UNINSTALLED
+    }
+
+    /**
+     * Plugin status (legacy, maintained for compatibility).
      */
     enum PluginStatus {
         REGISTERED, ACTIVE, INACTIVE, ERROR, UNREGISTERED
@@ -120,6 +127,104 @@ public interface PluginRegistry {
     enum PluginType {
         DATA_SOURCE, DATA_SINK, TRANSFORM, ANALYTICS, NOTIFICATION, CUSTOM
     }
+
+    /**
+     * Pass 8: Plugin descriptor with comprehensive metadata.
+     */
+    record PluginDescriptor(
+        String pluginId,
+        String name,
+        String description,
+        PluginVersion version,
+        String tenantId,
+        PluginType type,
+        PluginLifecycleState lifecycleState,
+        PluginConfigSchema configSchema,
+        PluginCapability capabilities,
+        PluginPolicyRequirements policyRequirements,
+        Map<String, Object> manifest,
+        Instant installedAt,
+        Instant activatedAt,
+        String installedBy
+    ) {
+        public boolean isActive() {
+            return lifecycleState == PluginLifecycleState.ACTIVE;
+        }
+    }
+
+    /**
+     * Pass 8: Plugin version with semantic versioning.
+     */
+    record PluginVersion(
+        String version,
+        int major,
+        int minor,
+        int patch,
+        String preRelease,
+        String buildMetadata
+    ) {
+        public PluginVersion {
+            if (version == null || version.isBlank()) {
+                throw new IllegalArgumentException("Version string is required");
+            }
+        }
+
+        public static PluginVersion parse(String versionString) {
+            String[] parts = versionString.split("\\.");
+            int major = parts.length > 0 ? Integer.parseInt(parts[0].split("-")[0]) : 0;
+            int minor = parts.length > 1 ? Integer.parseInt(parts[1].split("-")[0]) : 0;
+            int patch = parts.length > 2 ? Integer.parseInt(parts[2].split("-")[0]) : 0;
+            String preRelease = versionString.contains("-") ? versionString.substring(versionString.indexOf("-") + 1).split("\\+")[0] : null;
+            String buildMetadata = versionString.contains("+") ? versionString.substring(versionString.indexOf("+") + 1) : null;
+            return new PluginVersion(versionString, major, minor, patch, preRelease, buildMetadata);
+        }
+    }
+
+    /**
+     * Pass 8: Plugin configuration schema for validation.
+     */
+    record PluginConfigSchema(
+        String schemaId,
+        String schemaVersion,
+        Map<String, ConfigField> fields,
+        Map<String, Object> validationRules
+    ) {
+        public record ConfigField(
+            String name,
+            String type,
+            boolean required,
+            String description,
+            Object defaultValue,
+            Map<String, Object> constraints
+        ) {}
+    }
+
+    /**
+     * Pass 8: Plugin capability description.
+     */
+    record PluginCapability(
+        List<String> providedHooks,
+        List<String> requiredHooks,
+        List<String> dataTypes,
+        List<String> permissions,
+        boolean requiresSandbox,
+        boolean requiresIsolation,
+        Map<String, Object> resourceRequirements
+    ) {}
+
+    /**
+     * Pass 8: Plugin policy requirements.
+     */
+    record PluginPolicyRequirements(
+        boolean requiresDataResidency,
+        boolean requiresEncryptionAtRest,
+        boolean requiresEncryptionInTransit,
+        boolean requiresAuditLogging,
+        boolean requiresConsentManagement,
+        List<String> allowedDataClasses,
+        List<String> prohibitedDataClasses,
+        Map<String, String> complianceFrameworks
+    ) {}
 
     /**
      * Plugin metadata.

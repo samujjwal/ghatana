@@ -6,7 +6,7 @@
  */
 
 import { readFileSync, existsSync, unlinkSync, readdirSync, statSync } from 'fs';
-import { join, dirname } from 'path';
+import { basename, join } from 'path';
 
 export interface CleanupConfig {
   targetDirectory: string;
@@ -45,10 +45,10 @@ export class FixForwardCleanup {
       const relativePath = file.replace(config.targetDirectory, '').replace(/^[\\/]/, '');
       
       // Check if file matches legacy pattern
-      if (config.legacyFilePattern && config.legacyFilePattern.test(relativePath)) {
+      if (config.legacyFilePattern && matchesPath(config.legacyFilePattern, relativePath)) {
         // Check if corresponding generated file exists
         const hasGeneratedReplacement = files.some(f => 
-          config.generatedFilePattern.test(f.replace(config.targetDirectory, '').replace(/^[\\/]/, ''))
+          matchesPath(config.generatedFilePattern, f.replace(config.targetDirectory, '').replace(/^[\\/]/, ''))
         );
         
         if (hasGeneratedReplacement) {
@@ -110,10 +110,10 @@ export class FixForwardCleanup {
       const relativePath = file.replace(config.targetDirectory, '').replace(/^[\\/]/, '');
       
       // Check if file matches legacy pattern
-      if (config.legacyFilePattern && config.legacyFilePattern.test(relativePath)) {
+      if (config.legacyFilePattern && matchesPath(config.legacyFilePattern, relativePath)) {
         // Check if corresponding generated file exists
         const hasGeneratedReplacement = files.some(f => 
-          config.generatedFilePattern.test(f.replace(config.targetDirectory, '').replace(/^[\\/]/, ''))
+          matchesPath(config.generatedFilePattern, f.replace(config.targetDirectory, '').replace(/^[\\/]/, ''))
         );
         
         if (hasGeneratedReplacement) {
@@ -126,9 +126,9 @@ export class FixForwardCleanup {
   }
 
   /**
-   * Creates a cleanup configuration for PHR generated files.
+   * Creates a cleanup configuration for Product generated files.
    */
-  static createPhrCleanupConfig(targetDirectory: string, dryRun = false): CleanupConfig {
+  static createProductCleanupConfig(targetDirectory: string, dryRun = false): CleanupConfig {
     return {
       targetDirectory,
       generatedFilePattern: /^(generated|Generated).*\.(ts|tsx|java)$/,
@@ -138,10 +138,10 @@ export class FixForwardCleanup {
   }
 
   /**
-   * Performs cleanup with PHR-specific patterns.
+   * Performs cleanup with product patterns.
    */
-  static cleanupPhrGenerated(targetDirectory: string, dryRun = false): CleanupResult {
-    const config = this.createPhrCleanupConfig(targetDirectory, dryRun);
+  static cleanupProductGenerated(targetDirectory: string, dryRun = false): CleanupResult {
+    const config = this.createProductCleanupConfig(targetDirectory, dryRun);
     const cleanup = new FixForwardCleanup();
     return cleanup.cleanup(config);
   }
@@ -159,4 +159,8 @@ export function createFixForwardCleanup(): FixForwardCleanup {
  */
 export function performFixForwardCleanup(config: CleanupConfig): CleanupResult {
   return createFixForwardCleanup().cleanup(config);
+}
+
+function matchesPath(pattern: RegExp, relativePath: string): boolean {
+  return pattern.test(relativePath) || pattern.test(basename(relativePath));
 }

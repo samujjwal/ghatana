@@ -13,6 +13,8 @@ import java.util.UUID;
  * pipeline executions, agent runs, and background work can share one UI and
  * API contract without each surface inventing a separate job shape.
  *
+ * <p>Pass 9: Added traceId and requestId for unified cross-plane observability.
+ *
  * @doc.type record
  * @doc.purpose Shared operation lifecycle contract for Data Cloud surfaces
  * @doc.layer product
@@ -20,6 +22,8 @@ import java.util.UUID;
  */
 public record OperationRecord(
         String operationId,
+        String traceId,
+        String requestId,
         String tenantId,
         OperationKind kind,
         OperationStatus status,
@@ -47,6 +51,8 @@ public record OperationRecord(
         if (operationId.isBlank()) throw new IllegalArgumentException("operationId must not be blank");
         if (tenantId.isBlank()) throw new IllegalArgumentException("tenantId must not be blank");
         if (action.isBlank()) throw new IllegalArgumentException("action must not be blank");
+        traceId = traceId == null ? operationId : traceId;
+        requestId = requestId == null ? traceId : requestId;
         metadata = metadata == null ? Map.of() : Map.copyOf(metadata);
     }
 
@@ -63,8 +69,48 @@ public record OperationRecord(
             boolean cancellable,
             Map<String, Object> metadata) {
         Instant now = Instant.now();
+        String operationId = "op-" + UUID.randomUUID();
         return new OperationRecord(
-                "op-" + UUID.randomUUID(),
+                operationId,
+                operationId,
+                operationId,
+                tenantId,
+                kind,
+                status,
+                resourceType,
+                resourceId,
+                action,
+                summary,
+                null,
+                actorId,
+                correlationId,
+                now,
+                now,
+                terminal(status) ? now : null,
+                cancellable,
+                metadata);
+    }
+
+    public static OperationRecord create(
+            String tenantId,
+            String traceId,
+            String requestId,
+            OperationKind kind,
+            OperationStatus status,
+            String resourceType,
+            String resourceId,
+            String action,
+            String summary,
+            String actorId,
+            String correlationId,
+            boolean cancellable,
+            Map<String, Object> metadata) {
+        Instant now = Instant.now();
+        String operationId = "op-" + UUID.randomUUID();
+        return new OperationRecord(
+                operationId,
+                traceId,
+                requestId,
                 tenantId,
                 kind,
                 status,
@@ -90,6 +136,8 @@ public record OperationRecord(
         Instant now = Instant.now();
         return new OperationRecord(
                 operationId,
+                traceId,
+                requestId,
                 tenantId,
                 kind,
                 nextStatus,
@@ -110,6 +158,8 @@ public record OperationRecord(
     public Map<String, Object> toResponse() {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("operationId", operationId);
+        body.put("traceId", traceId);
+        body.put("requestId", requestId);
         body.put("tenantId", tenantId);
         body.put("kind", kind.name());
         body.put("status", status.name());

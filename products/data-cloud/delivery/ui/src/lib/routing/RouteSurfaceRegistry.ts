@@ -21,9 +21,23 @@ export const RouteLifecycleSchema = z.enum([
   "deprecated",
   "redirect",
   "removed",
+  // P5-01: New lifecycle values for runtime truth
+  "user-ready",
+  "operator-preview",
+  "internal-preview",
+  "target-only",
+  "disabled",
 ]);
 
 export type RouteLifecycle = z.infer<typeof RouteLifecycleSchema>;
+
+export const PreviewAudienceSchema = z.enum([
+  "internal",
+  "operator",
+  "admin",
+]);
+
+export type PreviewAudience = z.infer<typeof PreviewAudienceSchema>;
 
 export const RouteSurfaceSchema = z.object({
   path: z.string().min(1),
@@ -33,6 +47,8 @@ export const RouteSurfaceSchema = z.object({
     .enum(["primary-user", "operator", "admin"])
     .default("primary-user"),
   lifecycle: RouteLifecycleSchema.default("active"),
+  // P5-01: Preview audience for controlled preview access
+  previewAudience: PreviewAudienceSchema.optional(),
   capabilities: z.array(z.string()).default([]),
   discoverable: z.boolean().default(true),
   iconName: z.string().optional(),
@@ -161,7 +177,8 @@ export const canonicalRouteSurfaceRegistry: RouteSurfaceRegistry = {
     label: "Alerts",
     labelKey: "routes.alerts.label",
     minimumShellRole: "operator",
-    lifecycle: "preview",
+    lifecycle: "operator-preview",
+    previewAudience: "operator",
     capabilities: ["alert-triage", "monitoring"],
     discoverable: false,
     iconName: "Bell",
@@ -173,7 +190,8 @@ export const canonicalRouteSurfaceRegistry: RouteSurfaceRegistry = {
     label: "Memory",
     labelKey: "routes.memory.label",
     minimumShellRole: "operator",
-    lifecycle: "preview",
+    lifecycle: "operator-preview",
+    previewAudience: "operator",
     capabilities: ["context.plane", "memory-plane", "context"],
     discoverable: false,
     iconName: "Brain",
@@ -185,19 +203,21 @@ export const canonicalRouteSurfaceRegistry: RouteSurfaceRegistry = {
     label: "Entities",
     labelKey: "routes.entities.label",
     minimumShellRole: "operator",
-    lifecycle: "preview",
+    lifecycle: "operator-preview",
+    previewAudience: "operator",
     capabilities: ["data.entityStore", "entity-browser"],
     discoverable: false,
     iconName: "Box",
     description: "Entity browser",
     descriptionKey: "routes.entities.description",
   },
+  // P5-01: Context Plane is target-only until fully active
   context: {
     path: "/context",
     label: "Context",
     labelKey: "routes.context.label",
     minimumShellRole: "operator",
-    lifecycle: "preview",
+    lifecycle: "target-only",
     capabilities: ["context.plane", "context-explorer"],
     discoverable: false,
     iconName: "Network",
@@ -209,7 +229,8 @@ export const canonicalRouteSurfaceRegistry: RouteSurfaceRegistry = {
     label: "Data Fabric",
     labelKey: "routes.fabric.label",
     minimumShellRole: "operator",
-    lifecycle: "preview",
+    lifecycle: "operator-preview",
+    previewAudience: "operator",
     capabilities: ["data.storageProfiles", "data-fabric"],
     discoverable: false,
     iconName: "Network",
@@ -221,7 +242,8 @@ export const canonicalRouteSurfaceRegistry: RouteSurfaceRegistry = {
     label: "Agents",
     labelKey: "routes.agents.label",
     minimumShellRole: "operator",
-    lifecycle: "preview",
+    lifecycle: "operator-preview",
+    previewAudience: "operator",
     capabilities: ["action.agentRuntime", "agent-catalog"],
     discoverable: false,
     iconName: "Bot",
@@ -233,7 +255,8 @@ export const canonicalRouteSurfaceRegistry: RouteSurfaceRegistry = {
     label: "Media Artifacts",
     labelKey: "routes.mediaArtifacts.label",
     minimumShellRole: "operator",
-    lifecycle: "preview",
+    lifecycle: "operator-preview",
+    previewAudience: "operator",
     capabilities: [
       "media.audioVideo",
       "media",
@@ -282,12 +305,14 @@ export const canonicalRouteSurfaceRegistry: RouteSurfaceRegistry = {
       "Runtime truth, release gates, and evidence dashboard (non-release-readiness scope)",
     descriptionKey: "routes.operationsReleaseTruth.description",
   },
+  // P5-01: Plugins is operator-preview unless plugin lifecycle is complete
   plugins: {
     path: "/plugins",
     label: "Plugins",
     labelKey: "routes.plugins.label",
     minimumShellRole: "operator",
-    lifecycle: "active",
+    lifecycle: "operator-preview",
+    previewAudience: "operator",
     capabilities: ["plugin-management"],
     discoverable: false,
     iconName: "Package",
@@ -316,7 +341,10 @@ export function getDiscoverableRouteSurfaces(
     (route) =>
       route.discoverable &&
       roleMeetsMinimum(role, route.minimumShellRole) &&
-      (includesBoundary || route.lifecycle !== "boundary"),
+      (includesBoundary || route.lifecycle !== "boundary") &&
+      // P5-01: Do not show target-only routes in navigation/search
+      route.lifecycle !== "target-only" &&
+      route.lifecycle !== "disabled",
   );
 }
 
@@ -331,6 +359,12 @@ export function getRouteSurfacesByLifecycle(): Record<
     deprecated: [],
     redirect: [],
     removed: [],
+    // P5-01: New lifecycle values
+    "user-ready": [],
+    "operator-preview": [],
+    "internal-preview": [],
+    "target-only": [],
+    disabled: [],
   };
   for (const route of Object.values(canonicalRouteSurfaceRegistry)) {
     result[route.lifecycle].push(route);

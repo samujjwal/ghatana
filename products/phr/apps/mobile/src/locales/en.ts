@@ -146,6 +146,8 @@ export const en = {
   },
   offline: {
     banner: 'You are offline. Some features may be unavailable.',
+    cacheAvailable: 'Showing encrypted offline data from the last successful sync.',
+    cacheStaleWarning: 'Offline cache is stale; expired PHI will not be shown.',
   },
   notifications: {
     enablePush: 'Enable push notifications',
@@ -193,6 +195,8 @@ export const en = {
     invalidRole: 'Login response has an invalid role.',
     missingName: 'Login response missing name.',
     missingExpiresAt: 'Login response missing expiresAt.',
+    missingPersona: 'Session response missing persona.',
+    missingTier: 'Session response missing tier.',
     credentialsRequired: 'National ID and password are required.',
     invalidCredentials: 'Invalid national ID or password.',
     loginFailed: 'Login failed with status {{status}}.',

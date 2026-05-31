@@ -12,6 +12,7 @@ import io.activej.promise.Promise;
 
 import java.time.Instant;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -65,7 +66,7 @@ public final class PhrAppointmentRoutes {
             context = PhrRouteSupport.requireContext(request);
             idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         return request.loadBody()
@@ -74,7 +75,7 @@ public final class PhrAppointmentRoutes {
                 try {
                     appointmentRequest = parseAppointmentRequest(body.getString(StandardCharsets.UTF_8));
                 } catch (IllegalArgumentException ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_APPOINTMENT_REQUEST", ex.getMessage());
+                    return PhrRouteSupport.errorResponse(400, "INVALID_APPOINTMENT_REQUEST", ex.getMessage(), correlationId);
                 }
 
                 return requireAccess(context, appointmentRequest.getPatientId(), "appointments", "WRITE")
@@ -96,7 +97,7 @@ public final class PhrAppointmentRoutes {
             context = PhrRouteSupport.requireContext(request);
             appointmentId = request.getPathParameter("appointmentId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         return request.loadBody()
@@ -109,27 +110,23 @@ public final class PhrAppointmentRoutes {
                         throw new IllegalArgumentException("scheduledTime is required");
                     }
                 } catch (Exception ex) {
-                    return PhrRouteSupport.errorResponse(400, "INVALID_RESCHEDULE", ex.getMessage());
+                    return PhrRouteSupport.errorResponse(400, "INVALID_RESCHEDULE", ex.getMessage(), correlationId);
                 }
 
                 // For rescheduling, we need to get the appointment first to check patient access
                 return appointmentService.getPatientAppointments(context.principalId(), null)
                     .then(appointments -> {
-                        // Check if the appointment belongs to the patient
-                        boolean hasAccess = appointments.stream()
-                            .anyMatch(app -> app.getId().equals(appointmentId));
+                        var appointment = appointments.stream()
+                            .filter(app -> app.getId().equals(appointmentId))
+                            .findFirst();
 
-                        if (!hasAccess) {
+                        if (appointment.isEmpty()) {
                             return PhrRouteSupport.errorResponse(403, "APPOINTMENT_ACCESS_DENIED",
                                 "You do not have access to this appointment", context.correlationId());
                         }
 
-                        // TODO: Implement reschedule logic in AppointmentService
-                        return PhrRouteSupport.jsonResponse(200, Map.of(
-                            "appointmentId", appointmentId,
-                            "scheduledTime", newScheduledTime,
-                            "status", "RESCHEDULED"
-                        ), correlationId);
+                        return appointmentService.rescheduleAppointment(appointmentId, newScheduledTime)
+                            .then(updated -> PhrRouteSupport.jsonResponse(200, appointmentDto(updated), correlationId));
                     });
             });
     }
@@ -144,7 +141,7 @@ public final class PhrAppointmentRoutes {
             appointmentId = request.getPathParameter("appointmentId");
             reason = request.getQueryParameter("reason");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         return appointmentService.getPatientAppointments(context.principalId(), null)
@@ -177,7 +174,7 @@ public final class PhrAppointmentRoutes {
             providerId = PhrRouteSupport.requiredQuery(request, "providerId");
             date = request.getQueryParameter("date");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "INVALID_SLOT_QUERY", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "INVALID_SLOT_QUERY", ex.getMessage(), correlationId);
         }
 
         return appointmentService.getAvailableSlots(providerId, date != null ? date : java.time.LocalDate.now().toString())
@@ -186,7 +183,7 @@ public final class PhrAppointmentRoutes {
                 "date", date != null ? date : java.time.LocalDate.now().toString(),
                 "items", slots,
                 "count", slots.size()
-            )));
+            ), correlationId));
     }
 
     private Promise<HttpResponse> handleGetAppointment(HttpRequest request) {
@@ -197,7 +194,7 @@ public final class PhrAppointmentRoutes {
             context = PhrRouteSupport.requireContext(request);
             appointmentId = request.getPathParameter("appointmentId");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         return appointmentService.getPatientAppointments(context.principalId(), null)
@@ -211,7 +208,7 @@ public final class PhrAppointmentRoutes {
                         "Appointment not found or not accessible", context.correlationId());
                 }
 
-                return PhrRouteSupport.jsonResponse(200, appointment.get());
+                return PhrRouteSupport.jsonResponse(200, appointment.get(), correlationId);
             });
     }
 
@@ -223,7 +220,7 @@ public final class PhrAppointmentRoutes {
             context = PhrRouteSupport.requireContext(request);
             status = request.getQueryParameter("status");
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
         return appointmentService.getPatientAppointments(context.principalId(), status)
@@ -231,7 +228,7 @@ public final class PhrAppointmentRoutes {
                 "patientId", context.principalId(),
                 "items", appointments,
                 "count", appointments.size()
-            )));
+            ), correlationId));
     }
 
     private Promise<PhrPolicyEvaluator.PolicyDecision> requireAccess(
@@ -279,5 +276,19 @@ public final class PhrAppointmentRoutes {
     private static String text(com.fasterxml.jackson.databind.JsonNode node, String fieldName, String defaultValue) {
         var value = node.path(fieldName);
         return value.isMissingNode() || value.isNull() || value.asText().isBlank() ? defaultValue : value.asText();
+    }
+
+    private static Map<String, Object> appointmentDto(AppointmentService.Appointment appointment) {
+        Map<String, Object> dto = new LinkedHashMap<>();
+        dto.put("appointmentId", appointment.getId());
+        dto.put("patientId", appointment.getPatientId());
+        dto.put("providerId", appointment.getProviderId());
+        dto.put("slotId", appointment.getSlotId());
+        dto.put("scheduledTime", appointment.getScheduledTime() != null ? appointment.getScheduledTime().toString() : null);
+        dto.put("durationMinutes", appointment.getDurationMinutes());
+        dto.put("status", appointment.getStatus());
+        dto.put("appointmentType", appointment.getAppointmentType());
+        dto.put("version", appointment.getVersion());
+        return dto;
     }
 }

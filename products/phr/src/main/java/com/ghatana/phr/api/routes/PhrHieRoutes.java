@@ -1,6 +1,7 @@
 package com.ghatana.phr.api.routes;
 
-import com.ghatana.phr.hie.NepalHieIntegrationService;
+import com.ghatana.phr.hie.HieIntegrationContract;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -16,7 +17,7 @@ import java.util.Objects;
  * HIE (Health Information Exchange) API routes for the PHR product.
  *
  * <p>Provides user-facing endpoints for patients to export their data to the
- * Nepal HIE and import data from external HIE sources. All operations require
+ * configured HIE plugins and import data from external HIE sources. All operations require
  * patient consent and are audited.</p>
  *
  * @doc.type class
@@ -26,14 +27,19 @@ import java.util.Objects;
  */
 public final class PhrHieRoutes {
 
+    private static final String HIE_RESOURCE_TYPE = "hie-integration";
+
     private final Eventloop eventloop;
-    private final NepalHieIntegrationService hieService;
+    private final HieIntegrationContract hieContract;
+    private final PhrPolicyEvaluator policyEvaluator;
 
     public PhrHieRoutes(
             Eventloop eventloop,
-            NepalHieIntegrationService hieService) {
+            HieIntegrationContract hieContract,
+            PhrPolicyEvaluator policyEvaluator) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
-        this.hieService = Objects.requireNonNull(hieService, "hieService must not be null");
+        this.hieContract = Objects.requireNonNull(hieContract, "hieContract must not be null");
+        this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 
     /**
@@ -45,6 +51,7 @@ public final class PhrHieRoutes {
         return RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/export", this::handleExportToHie)
             .with(HttpMethod.POST, "/import", this::handleImportFromHie)
+            .with(HttpMethod.POST, "/sync", this::handleSyncWithHie)
             .with(HttpMethod.GET, "/status/:requestId", this::handleGetStatus)
             .build();
     }
@@ -57,7 +64,6 @@ public final class PhrHieRoutes {
      * valid consent for data sharing.</p>
      */
     private Promise<HttpResponse> handleExportToHie(HttpRequest request) {
-        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
@@ -65,26 +71,7 @@ public final class PhrHieRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        // Extract patientId from request body or use context principalId
-        String patientId = context.principalId();
-
-        return hieService.submitPatientSummary(patientId, context.correlationId())
-            .then(result -> {
-                if (result.accepted()) {
-                    return PhrRouteSupport.jsonResponse(202, Map.of(
-                        "requestId", result.messageControlId(),
-                        "status", "ACCEPTED",
-                        "message", "HIE export request accepted for processing",
-                        "patientId", patientId,
-                        "correlationId", context.correlationId()
-                    ), context.correlationId());
-                } else {
-                    return PhrRouteSupport.errorResponse(502, "HIE_EXPORT_FAILED", "HIE service rejected the export request: " + result.message(),
-                        context.correlationId());
-                }
-            })
-            .whenException(ex -> PhrRouteSupport.errorResponse(500, "HIE_EXPORT_ERROR", "Failed to submit HIE export request: " + ex.getMessage(),
-                context.correlationId()));
+        return submitOperation(HieIntegrationContract.Operation.EXPORT, context);
     }
 
     /**
@@ -95,7 +82,6 @@ public final class PhrHieRoutes {
      * valid consent for data retrieval.</p>
      */
     private Promise<HttpResponse> handleImportFromHie(HttpRequest request) {
-        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
@@ -103,25 +89,18 @@ public final class PhrHieRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        String patientId = context.principalId();
+        return submitOperation(HieIntegrationContract.Operation.IMPORT, context);
+    }
 
-        return hieService.submitPatientSummary(patientId, context.correlationId())
-            .then(result -> {
-                if (result.accepted()) {
-                    return PhrRouteSupport.jsonResponse(202, Map.of(
-                        "requestId", result.messageControlId(),
-                        "status", "ACCEPTED",
-                        "message", "HIE import request accepted for processing",
-                        "patientId", patientId,
-                        "correlationId", context.correlationId()
-                    ), context.correlationId());
-                } else {
-                    return PhrRouteSupport.errorResponse(502, "HIE_IMPORT_FAILED", "HIE service rejected the import request: " + result.message(),
-                        context.correlationId());
-                }
-            })
-            .whenException(ex -> PhrRouteSupport.errorResponse(500, "HIE_IMPORT_ERROR", "Failed to submit HIE import request: " + ex.getMessage(),
-                context.correlationId()));
+    private Promise<HttpResponse> handleSyncWithHie(HttpRequest request) {
+        PhrRouteSupport.PhrRequestContext context;
+        try {
+            context = PhrRouteSupport.requireContext(request);
+        } catch (IllegalArgumentException ex) {
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+        }
+
+        return submitOperation(HieIntegrationContract.Operation.SYNC, context);
     }
 
     /**
@@ -130,7 +109,6 @@ public final class PhrHieRoutes {
      * <p>Returns the current status of an asynchronous HIE operation.</p>
      */
     private Promise<HttpResponse> handleGetStatus(HttpRequest request) {
-        String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
@@ -144,11 +122,82 @@ public final class PhrHieRoutes {
                 "Request ID is required", context.correlationId());
         }
 
-        return PhrRouteSupport.jsonResponse(200, Map.of(
-            "requestId", requestId,
-            "status", "PROCESSING",
-            "message", "HIE operation is in progress",
-            "correlationId", context.correlationId()
-        ), context.correlationId());
+        return authorize(context, "READ")
+            .then(decision -> {
+                if (!decision.isAllowed()) {
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
+                }
+                return hieContract.getStatus(requestId, context.correlationId())
+                    .then(status -> PhrRouteSupport.jsonResponse(200, statusDto(status, context.correlationId()), context.correlationId()));
+            });
+    }
+
+    private Promise<HttpResponse> submitOperation(
+            HieIntegrationContract.Operation operation,
+            PhrRouteSupport.PhrRequestContext context) {
+        return authorize(context, operation.name())
+            .then(decision -> {
+                if (!decision.isAllowed()) {
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
+                }
+                HieIntegrationContract.HieIntegrationRequest integrationRequest =
+                    new HieIntegrationContract.HieIntegrationRequest(
+                        operation,
+                        context.principalId(),
+                        context.correlationId(),
+                        context.principalId(),
+                        context.tenantId(),
+                        "FHIR_R4_BUNDLE",
+                        Map.of("persona", context.persona(), "tier", context.tier())
+                    );
+                return hieContract.submit(integrationRequest)
+                    .then(result -> result.accepted()
+                        ? PhrRouteSupport.jsonResponse(202, resultDto(result, context.correlationId()), context.correlationId())
+                        : PhrRouteSupport.errorResponse(409, result.safeReasonCode(), result.message(), context.correlationId()));
+            })
+            .whenException(ex -> PhrRouteSupport.errorResponse(502, "HIE_CONTRACT_ERROR", "HIE contract failed to submit operation",
+                context.correlationId()));
+    }
+
+    private Promise<PhrPolicyEvaluator.PolicyDecision> authorize(
+            PhrRouteSupport.PhrRequestContext context,
+            String action) {
+        return policyEvaluator.canAccessPhiResourceAsync(
+            context,
+            context.principalId(),
+            HIE_RESOURCE_TYPE,
+            action,
+            context.tenantId(),
+            context.facilityId()
+        );
+    }
+
+    private static Map<String, Object> resultDto(
+            HieIntegrationContract.HieIntegrationResult result,
+            String correlationId) {
+        return Map.of(
+            "requestId", result.requestId(),
+            "operation", result.operation().name(),
+            "contractId", result.contractId(),
+            "status", result.status(),
+            "reasonCode", result.safeReasonCode(),
+            "correlationId", correlationId
+        );
+    }
+
+    private static Map<String, Object> statusDto(
+            HieIntegrationContract.HieIntegrationStatus status,
+            String correlationId) {
+        Map<String, Object> dto = new java.util.LinkedHashMap<>();
+        dto.put("requestId", status.requestId());
+        dto.put("contractId", status.contractId());
+        dto.put("status", status.status());
+        dto.put("reasonCode", status.safeReasonCode());
+        dto.put("message", status.message());
+        dto.put("correlationId", correlationId);
+        if (status.operation() != null) {
+            dto.put("operation", status.operation().name());
+        }
+        return dto;
     }
 }

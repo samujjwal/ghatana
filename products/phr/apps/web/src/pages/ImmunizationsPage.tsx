@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { SafeError } from '../components/SafeError';
-import { Badge, Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { Badge, Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { fetchImmunizations } from '../api/clinicalApi';
+import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { formatPhrDate, t } from '../i18n/phrI18n';
 import type { ImmunizationSummary } from '../types';
@@ -25,7 +26,7 @@ export function ImmunizationsPage(): React.ReactElement {
   const { session } = usePhrSession();
   const [immunizations, setImmunizations] = useState<ImmunizationSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SafeApiErrorState | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -36,12 +37,12 @@ export function ImmunizationsPage(): React.ReactElement {
       role: session.role,
     })
       .then(setImmunizations)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('immunizations.error')))
+      .catch((err: unknown) => setError(toSafeApiErrorState(err, t('immunizations.error'))))
       .finally(() => setLoading(false));
   }, [session]);
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('immunizations.loading')}</div>;
-  if (error) return <SafeError title={t('dashboard.errorPrefix')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
+  if (error) return <SafeError title={t('dashboard.errorPrefix')} message={error.message} correlationId={error.correlationId} />;
   if (!immunizations.length) return <div className="empty" role="status">{t('immunizations.empty')}</div>;
 
   const statuses: ImmunizationStatus[] = ['completed', 'not-done', 'entered-in-error', 'due'];
@@ -64,11 +65,12 @@ export function ImmunizationsPage(): React.ReactElement {
                       const isSelected = selectedId === immunization.id;
                       return (
                         <li key={immunization.id} className="immunization-entry" role="listitem">
-                          <button
+                          <Button
                             type="button"
                             className="data-card"
                             aria-expanded={isSelected}
                             onClick={() => setSelectedId(isSelected ? null : immunization.id)}
+                            variant="ghost"
                           >
                             <div>
                               <strong>{immunization.vaccine}</strong>
@@ -78,7 +80,7 @@ export function ImmunizationsPage(): React.ReactElement {
                               <Badge variant={statusVariant(status)} aria-label={statusLabel(status)}>{statusLabel(status)}</Badge>
                               <Badge variant="secondary" aria-label={t('immunizations.retention.permanent')}>{t('immunizations.retention.permanent')}</Badge>
                             </div>
-                          </button>
+                          </Button>
                           {isSelected && (
                             <dl className="detail-list">
                               {immunization.cvxCode != null && (

@@ -16,13 +16,13 @@ import java.util.Set;
 /**
  * SPI for pluggable agent catalogs.
  *
- * <p>Each product (YAPPC, AEP, Tutorputor, etc.) implements this interface to
- * expose its agent definitions to the platform. Discovery is performed via
- * {@link java.util.ServiceLoader} at startup.
+ * <p>Each product implements this interface to expose its agent definitions
+ * to the platform. Discovery is performed via {@link java.util.ServiceLoader}
+ * at startup.
  *
  * <h2>Contract</h2>
  * <ul>
- *   <li>{@link #getCatalogId()} — unique catalog name (e.g. "yappc", "aep")</li>
+ *   <li>{@link #getCatalogId()} — unique catalog name (e.g. "yappc", "platform")</li>
  *   <li>{@link #getDefinitions()} — all agent definitions in this catalog</li>
  *   <li>{@link #findById(String)} — resolve a specific agent by ID</li>
  *   <li>{@link #findByCapability(String)} — discover agents with a given capability</li>
@@ -43,7 +43,7 @@ import java.util.Set;
 public interface AgentCatalog {
 
     /**
-     * Unique catalog identifier (e.g. "yappc", "aep", "platform").
+     * Unique catalog identifier (e.g. "yappc", "platform").
      *
      * @return catalog ID (never null)
      */

@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <tr><th>Type</th><th>Use When</th><th>Latency</th><th>Determinism</th><th>Examples</th></tr>
  *   <tr><td>DETERMINISTIC</td><td>Rules, thresholds, FSM, policy, pattern</td><td>sub-ms</td><td>100%</td><td>Event routing, validation, governance checks</td></tr>
  *   <tr><td>PROBABILISTIC</td><td>ML model, Bayesian, LLM, classifier</td><td>ms–s</td><td>0%</td><td>Anomaly detection, NLP, scoring</td></tr>
- *   <tr><td>STREAM_PROCESSOR</td><td>Stateful event streams, CEP, windowed agg</td><td>sub-ms</td><td>varies</td><td>AEP operators, ingestion, transformation</td></tr>
+ *   <tr><td>STREAM_PROCESSOR</td><td>Stateful event streams, CEP, windowed agg</td><td>sub-ms</td><td>varies</td><td>Event operators, ingestion, transformation</td></tr>
  *   <tr><td>PLANNING</td><td>Goal-directed multi-step, HTN, ReAct, workflow</td><td>s–min</td><td>none</td><td>Orchestrators, task decomposition</td></tr>
  *   <tr><td>HYBRID</td><td>Fast-path + probabilistic fallback</td><td>sub-ms–ms</td><td>partial</td><td>Expert systems with LLM escalation</td></tr>
  *   <tr><td>ADAPTIVE</td><td>Bandits, RL, self-tuning, A/B</td><td>ms</td><td>0%</td><td>Parameter tuning, online learning</td></tr>
@@ -111,7 +111,7 @@ public enum AgentType {
      *
      * <p>Distinguishing characteristics: maintains window state and checkpoints,
      * processes ordered event streams with backpressure support, survives restarts
-     * via checkpoint recovery. Primary type for all AEP operators.
+     * via checkpoint recovery. Primary type for event processing operators.
      *
      * <p>Subtypes ({@link com.ghatana.agent.stream.StreamProcessorSubtype}):
      * {@code INGESTION}, {@code ROUTING}, {@code TRANSFORMATION}, {@code CEP},

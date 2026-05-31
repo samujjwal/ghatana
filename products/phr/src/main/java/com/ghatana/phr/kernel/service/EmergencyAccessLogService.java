@@ -121,7 +121,9 @@ public class EmergencyAccessLogService extends PhrServiceBase {
             ), toStore.accessorId()),
             "EmergencyAccessEvent",
             1
-        ).then($ -> reviewWorkflow.initiate(toStore).map(__ -> toStore));
+        ).then($ -> reviewWorkflow.initiate(toStore)
+            .then(__ -> reviewWorkflow.notifyPatient(toStore))
+            .map(__ -> toStore));
     }
 
     public Promise<EmergencyAccessEvent> markReviewed(

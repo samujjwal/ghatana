@@ -15,10 +15,14 @@ import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.http.RoutingServlet;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Provider (clinician) API for the PHR product.
@@ -82,61 +86,38 @@ public final class PhrProviderRoutes {
             return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
         }
 
-        // Use policy evaluator for PHI access decision (POL-001)
-        // Provider dashboard with work queue, appointments, recent patients, and alerts
-        // Use a generic patient ID for dashboard-level policy check (facility-scoped access)
-        return policyEvaluator.canAccessPhiResourceAsync(
-                context,
-                "dashboard-scope",
-                "provider-dashboard",
-                "READ",
-                context.tenantId(),
-                context.facilityId())
-            .then(decision -> {
-                if (!decision.isAllowed()) {
-                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
-                }
-                return patientRecordService.searchPatients(
-                    "deleted = false",
-                    Map.of(),
-                    10,
-                    0
-                ).then(patients -> {
-                    List<Map<String, Object>> recentPatients = patients.stream()
-                        .limit(5)
-                        .map(patient -> Map.<String, Object>of(
-                            "id", patient.getId(),
-                            "name", patient.getDemographics().getFullName(),
-                            "age", patient.getDemographics().getAge(),
-                            "status", "active",
-                            "lastVisit", patient.getMedicalHistory() != null ? "Recent" : "Unknown"
-                        ))
-                        .toList();
+        if (!"clinician".equals(context.role()) && !"admin".equals(context.role())) {
+            return PhrRouteSupport.errorResponse(403, "PROVIDER_ROLE_REQUIRED",
+                "Provider dashboard access requires clinician or admin role", context.correlationId());
+        }
 
-                    Map<String, Object> appointments = new java.util.LinkedHashMap<>();
-                    appointments.put("todayCount", 0);
-                    appointments.put("upcomingCount", 0);
-                    appointments.put("nextAppointment", null);
+        return scopedRosterCandidates(context, 10)
+            .then(patients -> authorizedPatientSummaries(context, patients, "provider-dashboard", 5)
+            .then(recentPatients -> {
 
-                    return PhrRouteSupport.jsonResponse(200, Map.of(
-                        "providerId", context.principalId(),
-                        "tenantId", context.tenantId(),
-                        "workQueue", Map.of(
-                            "pendingReviews", 0,
-                            "pendingEncounters", 0,
-                            "urgentPatients", 0
-                        ),
-                        "appointments", appointments,
-                        "recentPatients", recentPatients,
-                        "alerts", Map.of(
-                            "expiringConsents", 0,
-                            "emergencyAccessRequests", 0,
-                            "criticalLabs", 0
-                        ),
-                        "generatedAt", java.time.Instant.now().toString()
-                    ), context.correlationId());
-                });
-            });
+                Map<String, Object> appointments = new java.util.LinkedHashMap<>();
+                appointments.put("todayCount", 0);
+                appointments.put("upcomingCount", 0);
+                appointments.put("nextAppointment", null);
+
+                return PhrRouteSupport.jsonResponse(200, Map.of(
+                    "providerId", context.principalId(),
+                    "tenantId", context.tenantId(),
+                    "workQueue", Map.of(
+                        "pendingReviews", 0,
+                        "pendingEncounters", 0,
+                        "urgentPatients", 0
+                    ),
+                    "appointments", appointments,
+                    "recentPatients", recentPatients,
+                    "alerts", Map.of(
+                        "expiringConsents", 0,
+                        "emergencyAccessRequests", 0,
+                        "criticalLabs", 0
+                    ),
+                    "generatedAt", java.time.Instant.now().toString()
+                ), context.correlationId());
+            }));
     }
 
     private Promise<HttpResponse> handleGetPatients(HttpRequest request) {
@@ -153,46 +134,121 @@ public final class PhrProviderRoutes {
                 "Provider roster access requires clinician or admin role", context.correlationId());
         }
 
-        // Use policy evaluator for PHI access decision (POL-001)
-        String searchQuery = request.getQueryParameter("q");
         String limitParam = request.getQueryParameter("limit");
-        int limit = limitParam != null ? Integer.parseInt(limitParam) : 50;
+        int limit;
+        try {
+            limit = parseLimit(limitParam, 50, 200);
+        } catch (IllegalArgumentException ex) {
+            return PhrRouteSupport.errorResponse(400, "INVALID_LIMIT", ex.getMessage(), context.correlationId());
+        }
 
-        // Policy check for facility-scoped patient roster access
-        return policyEvaluator.canAccessPhiResourceAsync(
-                context,
-                "roster-scope",
-                "patient-roster",
-                "READ",
-                context.tenantId(),
-                context.facilityId())
-            .then(decision -> {
-                if (!decision.isAllowed()) {
-                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
-                }
-                return patientRecordService.searchPatients(
-                    "deleted = false",
-                    Map.of(),
-                    limit,
-                    0
-                ).then(patients -> {
-                    List<Map<String, Object>> patientSummaries = patients.stream()
-                        .map(patient -> Map.<String, Object>of(
-                            "id", patient.getId(),
-                            "name", patient.getDemographics().getFullName(),
-                            "age", patient.getDemographics().getAge(),
-                            "status", "active",
-                            "hasConsent", true,
-                            "lastVisit", patient.getMedicalHistory() != null ? "Recent" : "Unknown"
-                        ))
-                        .toList();
-                    return PhrRouteSupport.jsonResponse(200, Map.of(
-                        "items", patientSummaries,
-                        "count", patientSummaries.size()
-                    ), context.correlationId());
-                });
+        return scopedRosterCandidates(context, limit)
+            .then(patients -> authorizedPatientSummaries(context, patients, "patient-roster", limit)
+            .then(patientSummaries -> {
+                return PhrRouteSupport.jsonResponse(200, Map.of(
+                    "items", patientSummaries,
+                    "count", patientSummaries.size()
+                ), context.correlationId());
+            }));
+    }
+
+    private Promise<List<PatientRecordService.Patient>> scopedRosterCandidates(
+            PhrRouteSupport.PhrRequestContext context,
+            int limit) {
+        if ("admin".equals(context.role())) {
+            return Promise.of(List.of());
+        }
+
+        List<Promise<List<PatientRecordService.Patient>>> candidateSources = new ArrayList<>();
+        candidateSources.add(consentService.getActiveGrantsForRecipient(context.principalId())
+            .then(grants -> {
+                List<Promise<Optional<PatientRecordService.Patient>>> patientReads = grants.stream()
+                    .map(ConsentManagementService.ConsentGrant::getPatientId)
+                    .distinct()
+                    .limit(limit)
+                    .map(patientRecordService::getPatient)
+                    .toList();
+                return Promises.toList(patientReads)
+                    .map(patients -> patients.stream()
+                        .flatMap(Optional::stream)
+                        .toList());
+            }));
+
+        if (context.facilityId() != null && !context.facilityId().isBlank()) {
+            candidateSources.add(patientRecordService.searchPatients(
+                "facilityId = :facilityId AND deleted = false",
+                Map.of("facilityId", context.facilityId()),
+                limit,
+                0
+            ));
+        }
+
+        return Promises.toList(candidateSources)
+            .map(candidateLists -> {
+                Map<String, PatientRecordService.Patient> uniquePatients = new LinkedHashMap<>();
+                candidateLists.stream()
+                    .flatMap(List::stream)
+                    .forEach(patient -> uniquePatients.putIfAbsent(patient.getId(), patient));
+                return uniquePatients.values().stream()
+                    .limit(limit)
+                    .toList();
             });
     }
+
+    private Promise<List<Map<String, Object>>> authorizedPatientSummaries(
+            PhrRouteSupport.PhrRequestContext context,
+            List<PatientRecordService.Patient> patients,
+            String resourceType,
+            int limit) {
+        List<Promise<AuthorizedRosterPatient>> authorizationPromises = patients.stream()
+            .limit(limit)
+            .map(patient -> policyEvaluator.canAccessPhiResourceAsync(
+                    context,
+                    patient.getId(),
+                    resourceType,
+                    "READ",
+                    context.tenantId(),
+                    context.facilityId())
+                .map(decision -> new AuthorizedRosterPatient(patient, decision)))
+            .toList();
+
+        return Promises.toList(authorizationPromises)
+            .map(authorizedPatients -> authorizedPatients.stream()
+                .filter(authorizedPatient -> authorizedPatient.decision().isAllowed())
+                .map(this::patientSummary)
+                .toList());
+    }
+
+    private Map<String, Object> patientSummary(AuthorizedRosterPatient authorizedPatient) {
+        PatientRecordService.Patient patient = authorizedPatient.patient();
+        return Map.of(
+            "id", patient.getId(),
+            "name", patient.getDemographics().getFullName(),
+            "age", patient.getDemographics().getAge(),
+            "status", "active",
+            "policyStatus", authorizedPatient.decision().getReasonCode(),
+            "lastVisit", patient.getMedicalHistory() != null ? "Recent" : "Unknown"
+        );
+    }
+
+    private static int parseLimit(String limitParam, int defaultLimit, int maxLimit) {
+        if (limitParam == null || limitParam.isBlank()) {
+            return defaultLimit;
+        }
+        try {
+            int parsed = Integer.parseInt(limitParam);
+            if (parsed < 1 || parsed > maxLimit) {
+                throw new IllegalArgumentException("limit must be between 1 and " + maxLimit);
+            }
+            return parsed;
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("limit must be a positive integer", ex);
+        }
+    }
+
+    private record AuthorizedRosterPatient(
+            PatientRecordService.Patient patient,
+            PhrPolicyEvaluator.PolicyDecision decision) {}
 
     private Promise<HttpResponse> handleGetPatientSummary(HttpRequest request) {
         String correlationId = PhrRouteSupport.extractCorrelationId(request);

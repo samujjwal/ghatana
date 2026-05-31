@@ -225,6 +225,8 @@ class PhrCaregiverRoutesTest extends EventloopTestBase {
             .withHeader(HttpHeaders.of("X-Tenant-ID"), tenantId)
             .withHeader(HttpHeaders.of("X-Principal-ID"), principalId)
             .withHeader(HttpHeaders.of("X-Role"), role)
+            .withHeader(HttpHeaders.of("X-Persona"), role)
+            .withHeader(HttpHeaders.of("X-Tier"), "core")
             .build();
     }
 }

@@ -26,7 +26,9 @@ dependencies {
     api(project(":platform-plugins:plugin-compliance"))
     api(project(":platform-plugins:plugin-consent"))
     api(project(":platform-plugins:plugin-audit-trail"))
+    api(project(":platform-plugins:plugin-fraud-detection"))
     api(project(":platform-plugins:plugin-human-approval"))
+    api(project(":platform-plugins:plugin-risk-management"))
 
     // Platform Libraries
     api(project(":platform:java:security"))

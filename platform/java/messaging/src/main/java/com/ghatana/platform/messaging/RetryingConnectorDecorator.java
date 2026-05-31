@@ -20,7 +20,7 @@ import java.util.Objects;
  * underlying connector implementation.
  *
  * <p>Useful for legacy or external connectors that do not already have built-in retry.
- * The AEP built-in connectors ({@code KafkaProducerStrategy}, etc.) extend
+ * Built-in connectors ({@code KafkaProducerStrategy}, etc.) extend
  * {@link AbstractResilientConnector} directly, so this decorator is primarily for
  * third-party or dynamically-registered connectors.
  *

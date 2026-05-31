@@ -88,6 +88,8 @@ function parseRouteCapability(value: unknown, index: number): ProductRouteCapabi
     value.lifecycle !== 'preview' &&
     value.lifecycle !== 'hidden' &&
     value.lifecycle !== 'blocked' &&
+    value.lifecycle !== 'deferred' &&
+    value.lifecycle !== 'removed' &&
     value.lifecycle !== 'boundary' &&
     value.lifecycle !== 'deprecated'
   ) {
@@ -98,7 +100,9 @@ function parseRouteCapability(value: unknown, index: number): ProductRouteCapabi
     value.stability !== 'stable' &&
     value.stability !== 'preview' &&
     value.stability !== 'hidden' &&
-    value.stability !== 'blocked'
+    value.stability !== 'blocked' &&
+    value.stability !== 'deferred' &&
+    value.stability !== 'removed'
   ) {
     throw new Error(`Product entitlement route ${value.path} has an invalid stability`);
   }

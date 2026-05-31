@@ -21,7 +21,7 @@ import java.util.Objects;
  * fires, or manual approval is given. Implementations may use:
  * <ul>
  *   <li>PostgreSQL polling ({@code JdbcWorkflowWaitCoordinator} in {@code workflow-jdbc})</li>
- *   <li>AEP event subscriptions (for event-driven resume without polling)</li>
+ *   <li>Event subscriptions (for event-driven resume without polling)</li>
  * </ul>
  *
  * @doc.type interface

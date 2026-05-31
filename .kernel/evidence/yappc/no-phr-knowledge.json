@@ -1,0 +1,29 @@
+{
+  "checkId": "YAPPC-014 no PHR-specific knowledge",
+  "generatedAt": "2026-05-31T20:43:00.201Z",
+  "pass": true,
+  "evidenceRun": {
+    "generatedBy": "scripts/check-yappc-no-phr-knowledge.mjs",
+    "command": "node scripts/check-yappc-no-phr-knowledge.mjs",
+    "commit": "8c024b478ebcec4fbe5db75b854dcdfcc2775625"
+  },
+  "summary": {
+    "checkCount": 1,
+    "passedChecks": 1,
+    "violationCount": 0
+  },
+  "checks": [
+    {
+      "name": "YAPPC has no PHR-specific domain identifiers",
+      "pass": true,
+      "violationCount": 0,
+      "violations": []
+    }
+  ],
+  "violations": [],
+  "scannedRoots": [
+    "products/yappc",
+    "scripts/check-yappc-product-contract-roundtrip.mjs"
+  ],
+  "scannedAt": "2026-05-31T20:43:00.197Z"
+}

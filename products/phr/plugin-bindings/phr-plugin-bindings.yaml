@@ -11,7 +11,8 @@ description: "PHR plugin binding manifest — declares platform plugins used by 
 
 bindings:
 
-  - pluginId: consent-plugin
+  - canonicalPluginId: plugin-consent
+    pluginId: consent-plugin
     version: ">=1.0.0"
     enabled: true
     description: "Consent management for patient-owned health data"
@@ -40,7 +41,8 @@ bindings:
       # Consent revocation propagation window (seconds)
       revocationPropagationSec: 60
 
-  - pluginId: audit-trail-plugin
+  - canonicalPluginId: plugin-audit-trail
+    pluginId: audit-trail-plugin
     version: ">=1.0.0"
     enabled: true
     description: "Immutable audit trail for all PHR access and consent events"
@@ -56,7 +58,8 @@ bindings:
       sinkType: APPEND_ONLY_LOG
       encryptAtRest: true
 
-  - pluginId: compliance-plugin
+  - canonicalPluginId: plugin-compliance
+    pluginId: compliance-plugin
     version: ">=1.0.0"
     enabled: true
     description: "Healthcare compliance rule evaluation (Nepal 2081, FHIR conformance)"
@@ -68,7 +71,8 @@ bindings:
         - nepal-2081
         - nepal-privacy-act-2075
 
-  - pluginId: risk-management-plugin
+  - canonicalPluginId: plugin-risk-management
+    pluginId: risk-management-plugin
     version: ">=1.2.0"
     enabled: true
     description: "Healthcare operational and access risk management"
@@ -86,7 +90,8 @@ bindings:
         max.failed.auth.per.hour: 5
         max.emergency.overrides.per.day: 10
 
-  - pluginId: fraud-detection-plugin
+  - canonicalPluginId: plugin-fraud-detection
+    pluginId: fraud-detection-plugin
     version: ">=1.0.0"
     enabled: true
     description: "Identity fraud and unauthorized access detection for PHR"
@@ -106,7 +111,8 @@ bindings:
         flagScore: 0.5
         blockScore: 0.8
 
-  - pluginId: human-approval-plugin
+  - canonicalPluginId: plugin-human-approval
+    pluginId: human-approval-plugin
     version: ">=1.0.0"
     enabled: true
     description: "Human approval workflows for high-sensitivity PHR operations"
@@ -121,7 +127,8 @@ bindings:
           approvers: [data-protection-officer]
           slaMinutes: 1440
 
-  - pluginId: ledger-plugin
+  - canonicalPluginId: plugin-ledger
+    pluginId: ledger-plugin
     version: ">=1.0.0"
     enabled: true
     description: "PHR platform billing and usage ledger"

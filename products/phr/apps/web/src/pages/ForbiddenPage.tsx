@@ -1,7 +1,6 @@
 import React from 'react';
-import { SafeError } from '../components/SafeError';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { t } from '../i18n/phrI18n';
 
 export function ForbiddenPage(): React.ReactElement {
@@ -13,13 +12,13 @@ export function ForbiddenPage(): React.ReactElement {
         <CardHeader title={t('forbidden.title')} subheader="" />
         <CardContent>
           <p>{t('forbidden.message')}</p>
-          <button
+          <Button
             type="button"
-            className="btn btn--secondary"
+            variant="secondary"
             onClick={() => void navigate(-1)}
           >
             {t('forbidden.back')}
-          </button>
+          </Button>
         </CardContent>
       </Card>
     </div>

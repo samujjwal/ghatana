@@ -55,6 +55,7 @@ import com.ghatana.phr.api.routes.PhrEmergencyRoutes;
 import com.ghatana.phr.api.routes.PhrFchvRoutes;
 import com.ghatana.phr.api.routes.PhrFhirRoutes;
 import com.ghatana.phr.api.routes.PhrHealthRoutes;
+import com.ghatana.phr.api.routes.PhrHieRoutes;
 import com.ghatana.phr.api.routes.PhrMobileRoutes;
 import com.ghatana.phr.api.routes.PhrNotificationRoutes;
 import com.ghatana.phr.api.routes.PhrPatientProfileRoutes;
@@ -63,6 +64,7 @@ import com.ghatana.phr.api.routes.PhrProviderRoutes;
 import com.ghatana.phr.api.routes.PhrReleaseReadinessRoutes;
 import com.ghatana.phr.repository.UserRepository;
 import com.ghatana.phr.security.PhrPolicyEvaluator;
+import com.ghatana.phr.hie.HieIntegrationContract;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
@@ -164,17 +166,27 @@ class PhrHttpServerTest extends EventloopTestBase {
             kernelContext,
             consentCache
         );
-        PhrPolicyEvaluator policyEvaluator = new PhrPolicyEvaluator(
-            consentService,
-            treatmentRelationshipService,
-            fchvCommunityAssignmentService
-        );
         AuditTrailService auditTrailService = Mockito.mock(AuditTrailService.class);
         Mockito.when(auditTrailService.queryAuditEvents(Mockito.any()))
             .thenReturn(List.of());
+        PhrPolicyEvaluator policyEvaluator = new PhrPolicyEvaluator(
+            consentService,
+            treatmentRelationshipService,
+            fchvCommunityAssignmentService,
+            auditTrailService
+        );
         KernelSecurityManager securityManager = Mockito.mock(KernelSecurityManager.class);
         UserRepository userRepository = new UserRepository();
         ClinicalService clinicalService = new ClinicalServiceImpl();
+        RecordServiceImpl recordService = new RecordServiceImpl(
+            patientRecordService,
+            appointmentService,
+            medicationService,
+            labResultService,
+            immunizationService,
+            documentService,
+            consentService
+        );
         runPromise(patientRecordService::start);
         runPromise(labResultService::start);
         runPromise(medicationService::start);
@@ -191,7 +203,7 @@ class PhrHttpServerTest extends EventloopTestBase {
         runPromise(consentService::start);
 
         // Create route objects with eventloop
-        PhrFhirRoutes fhirRoutes = new PhrFhirRoutes(eventloop(), controller);
+        PhrFhirRoutes fhirRoutes = new PhrFhirRoutes(eventloop(), controller, policyEvaluator);
         PhrDashboardRoutes dashboardRoutes = new PhrDashboardRoutes(
             eventloop(),
             userRepository,
@@ -200,10 +212,11 @@ class PhrHttpServerTest extends EventloopTestBase {
             new PatientRecordServiceExtensions(patientRecordService),
             new DocumentServiceExtensions(documentService),
             new ConsentManagementServiceExtensions(consentService),
-            new EmergencyAccessLogServiceExtensions(emergencyAccessLogService)
+            new EmergencyAccessLogServiceExtensions(emergencyAccessLogService),
+            policyEvaluator
         );
         PhrPatientRecordRoutes patientRecordRoutes =
-            new PhrPatientRecordRoutes(eventloop(), patientRecordService, new RecordServiceImpl(), policyEvaluator);
+            new PhrPatientRecordRoutes(eventloop(), patientRecordService, recordService, policyEvaluator);
         PhrConsentRoutes consentRoutes = new PhrConsentRoutes(eventloop(), consentService, policyEvaluator);
         PhrClinicalRoutes clinicalRoutes = new PhrClinicalRoutes(
             eventloop(),
@@ -267,8 +280,9 @@ class PhrHttpServerTest extends EventloopTestBase {
             durableNotificationSender
         );
         PhrNotificationRoutes notificationRoutes = new PhrNotificationRoutes(eventloop(), durableNotificationSender);
-        PhrPatientProfileRoutes patientProfileRoutes = new PhrPatientProfileRoutes(eventloop(), patientRecordService);
-        PhrConditionRoutes conditionRoutes = new PhrConditionRoutes(eventloop(), policyEvaluator, new PatientRecordServiceExtensions(patientRecordService));
+        PhrPatientProfileRoutes patientProfileRoutes = new PhrPatientProfileRoutes(eventloop(), patientRecordService, policyEvaluator);
+        PhrConditionRoutes conditionRoutes = new PhrConditionRoutes(eventloop(), policyEvaluator, clinicalService);
+        PhrHieRoutes hieRoutes = new PhrHieRoutes(eventloop(), new StubHieIntegrationContract(), policyEvaluator);
 
         server = new PhrHttpServer(
             eventloop(),
@@ -291,7 +305,8 @@ class PhrHttpServerTest extends EventloopTestBase {
             fchvRoutes,
             mobileRoutes,
             notificationRoutes,
-            patientProfileRoutes
+            patientProfileRoutes,
+            hieRoutes
         );
         runPromise(server::start);
         servlet = server.getServlet();
@@ -367,7 +382,9 @@ class PhrHttpServerTest extends EventloopTestBase {
                 Map.of(
                     "X-Role", "patient",
                     "X-Tenant-Id", "default",
-                    "X-Principal-Id", "anonymous"
+                    "X-Principal-Id", "anonymous",
+                    "X-Persona", "patient",
+                    "X-Tier", "core"
                 ));
 
             assertThat(response.getCode()).isEqualTo(200);
@@ -388,13 +405,15 @@ class PhrHttpServerTest extends EventloopTestBase {
                 Map.of(
                     "X-Role", "patient",
                     "X-Tenant-Id", "tenant-health-1",
-                    "X-Principal-Id", "patient-1"
+                    "X-Principal-Id", "patient-1",
+                    "X-Persona", "patient",
+                    "X-Tier", "core"
                 ));
 
             JsonNode body = JSON.readTree(bodyString(response));
             JsonNode routes = body.path("routes");
             JsonNode actions = body.path("actions");
-            assertThat(routePaths(routes)).doesNotContain("/emergency");
+            assertThat(routePaths(routes)).doesNotContain("/api/v1/emergency");
             assertThat(actionIds(actions)).doesNotContain("break-glass-review");
         }
 
@@ -405,7 +424,9 @@ class PhrHttpServerTest extends EventloopTestBase {
                 Map.of(
                     "X-Role", "clinician",
                     "X-Tenant-Id", "tenant-health-1",
-                    "X-Principal-Id", "clinician-1"
+                    "X-Principal-Id", "clinician-1",
+                    "X-Persona", "clinician",
+                    "X-Tier", "clinical"
                 ));
 
             JsonNode body = JSON.readTree(bodyString(response));
@@ -422,7 +443,9 @@ class PhrHttpServerTest extends EventloopTestBase {
                 Map.of(
                     "X-Role", "admin",
                     "X-Tenant-Id", "tenant-health-1",
-                    "X-Principal-Id", "admin-1"
+                    "X-Principal-Id", "admin-1",
+                    "X-Persona", "admin",
+                    "X-Tier", "core"
                 ));
 
             JsonNode body = JSON.readTree(bodyString(response));
@@ -437,7 +460,9 @@ class PhrHttpServerTest extends EventloopTestBase {
                 Map.of(
                     "X-Role", "superuser",
                     "X-Tenant-Id", "tenant-health-1",
-                    "X-Principal-Id", "superuser-1"
+                    "X-Principal-Id", "superuser-1",
+                    "X-Persona", "admin",
+                    "X-Tier", "core"
                 ));
 
             JsonNode routes = JSON.readTree(bodyString(response)).path("routes");
@@ -469,34 +494,45 @@ class PhrHttpServerTest extends EventloopTestBase {
     class StableRouteGroups {
 
         @Test
-        @DisplayName("mounts all production route families")
-        void mountsAllProductionRouteFamilies() throws Exception {
-            assertMounted(HttpMethod.POST, "/auth/logout", null, Map.of());
-            assertMounted(HttpMethod.GET, "/dashboard", null, Map.of());
-            assertMounted(HttpMethod.GET, "/audit/events", null, Map.of());
-            assertMounted(HttpMethod.GET, "/provider/patients", null, Map.of());
-            assertMounted(HttpMethod.GET, "/caregiver/dependents", null, Map.of());
-            assertMounted(HttpMethod.GET, "/fchv/dashboard", null, Map.of());
-            assertMounted(HttpMethod.GET, "/notifications/", null, Map.of());
-            assertMounted(HttpMethod.GET, "/mobile/dashboard", null, Map.of());
+        @DisplayName("mounts only canonical production route families")
+        void mountsOnlyCanonicalProductionRouteFamilies() throws Exception {
+            assertMounted(HttpMethod.POST, "/api/v1/auth/logout", null, Map.of());
+            assertMounted(HttpMethod.GET, "/api/v1/dashboard", null, Map.of());
+            assertMounted(HttpMethod.GET, "/api/v1/audit/events", null, Map.of());
+            assertMounted(HttpMethod.GET, "/api/v1/notifications/", null, Map.of());
+            assertMounted(HttpMethod.GET, "/api/v1/mobile/dashboard", null, Map.of());
             assertMounted(HttpMethod.GET, "/route-entitlements", null, Map.of());
             assertMounted(HttpMethod.GET, "/health", null, Map.of());
             assertMounted(HttpMethod.GET, "/ready", null, Map.of());
         }
+
+        @Test
+        @DisplayName("does not mount legacy or hidden route families")
+        void doesNotMountLegacyOrHiddenRouteFamilies() throws Exception {
+            assertNotMounted(HttpMethod.GET, "/dashboard", null, Map.of());
+            assertNotMounted(HttpMethod.GET, "/records/documents", null, Map.of());
+            assertNotMounted(HttpMethod.GET, "/patients/patient-1", null, Map.of());
+            assertNotMounted(HttpMethod.GET, "/consents", null, Map.of());
+            assertNotMounted(HttpMethod.GET, "/clinical/labs", null, Map.of());
+            assertNotMounted(HttpMethod.GET, "/emergency/reviews", null, Map.of());
+            assertNotMounted(HttpMethod.GET, "/api/v1/provider/patients", null, Map.of());
+            assertNotMounted(HttpMethod.GET, "/api/v1/caregiver/dependents", null, Map.of());
+            assertNotMounted(HttpMethod.GET, "/api/v1/fchv/dashboard", null, Map.of());
+        }
     }
 
     // -----------------------------------------------------------------------
-    // GET /release-readiness
+    // GET /api/v1/release-readiness
     // -----------------------------------------------------------------------
 
     @Nested
-    @DisplayName("GET /release-readiness")
+    @DisplayName("GET /api/v1/release-readiness")
     class ReleaseReadinessRoute {
 
         @Test
         @DisplayName("requires tenant and principal headers")
         void requiresTenantAndPrincipalHeaders() throws Exception {
-            HttpResponse response = dispatch(HttpMethod.GET, "/release-readiness", null);
+            HttpResponse response = dispatch(HttpMethod.GET, "/api/v1/release-readiness", null);
 
             assertThat(response.getCode()).isEqualTo(400);
             JsonNode body = JSON.readTree(bodyString(response));
@@ -506,7 +542,7 @@ class PhrHttpServerTest extends EventloopTestBase {
         @Test
         @DisplayName("requires admin role")
         void requiresAdminRole() throws Exception {
-            HttpResponse response = dispatch(HttpMethod.GET, "/release-readiness", null,
+            HttpResponse response = dispatch(HttpMethod.GET, "/api/v1/release-readiness", null,
                 phrHeaders("clinician-1", "clinician"));
 
             assertThat(response.getCode()).isEqualTo(403);
@@ -517,7 +553,7 @@ class PhrHttpServerTest extends EventloopTestBase {
         @Test
         @DisplayName("returns runtime truth release sections for admin")
         void returnsReleaseReadinessForAdmin() throws Exception {
-            HttpResponse response = dispatch(HttpMethod.GET, "/release-readiness?environment=staging", null,
+            HttpResponse response = dispatch(HttpMethod.GET, "/api/v1/release-readiness?environment=staging", null,
                 phrHeaders("admin-1", "admin"));
 
             assertThat(response.getCode()).isEqualTo(200);
@@ -590,7 +626,7 @@ class PhrHttpServerTest extends EventloopTestBase {
         @DisplayName("returns 404 OperationOutcome for unsupported resource type")
         void unsupportedResourceTypeReturnsOperationOutcome() throws Exception {
             HttpResponse response = dispatch(HttpMethod.POST, "/fhir/Encounter",
-                "{\"resourceType\":\"Encounter\"}");
+                "{\"resourceType\":\"Encounter\",\"subject\":{\"reference\":\"Patient/patient-1\"}}");
 
             assertThat(response.getCode()).isEqualTo(404);
             JsonNode body = JSON.readTree(bodyString(response));
@@ -623,7 +659,8 @@ class PhrHttpServerTest extends EventloopTestBase {
         @Test
         @DisplayName("returns 404 for non-existent resource id")
         void readNonExistentPatientReturns404() throws Exception {
-            HttpResponse response = dispatch(HttpMethod.GET, "/fhir/Patient/does-not-exist", null);
+            HttpResponse response = dispatch(HttpMethod.GET, "/fhir/Patient/does-not-exist", null,
+                phrHeaders("does-not-exist", "patient"));
 
             assertThat(response.getCode()).isEqualTo(404);
         }
@@ -640,9 +677,11 @@ class PhrHttpServerTest extends EventloopTestBase {
         @Test
         @DisplayName("returns a FHIR Bundle searchset")
         void searchReturnsBundle() throws Exception {
-            dispatch(HttpMethod.POST, "/fhir/Observation", observationJson("obs-1", "patient-10"));
+            dispatch(HttpMethod.POST, "/fhir/Observation", observationJson("obs-1", "patient-10"),
+                phrHeaders("patient-10", "patient"));
 
-            HttpResponse response = dispatch(HttpMethod.GET, "/fhir/Observation?subject=patient-10", null);
+            HttpResponse response = dispatch(HttpMethod.GET, "/fhir/Observation?subject=patient-10", null,
+                phrHeaders("patient-10", "patient"));
 
             assertThat(response.getCode()).isEqualTo(200);
             JsonNode body = JSON.readTree(bodyString(response));
@@ -653,7 +692,8 @@ class PhrHttpServerTest extends EventloopTestBase {
         @Test
         @DisplayName("search with no matches returns empty bundle")
         void searchWithNoMatchesReturnsEmptyBundle() throws Exception {
-            HttpResponse response = dispatch(HttpMethod.GET, "/fhir/Observation?subject=nobody", null);
+            HttpResponse response = dispatch(HttpMethod.GET, "/fhir/Observation?subject=nobody", null,
+                phrHeaders("nobody", "patient"));
 
             assertThat(response.getCode()).isEqualTo(200);
             JsonNode body = JSON.readTree(bodyString(response));
@@ -674,7 +714,11 @@ class PhrHttpServerTest extends EventloopTestBase {
 
             for (Map.Entry<String, String> entry : payloads.entrySet()) {
                 dispatch(HttpMethod.POST, "/fhir/" + entry.getKey(), entry.getValue());
-                HttpResponse response = dispatch(HttpMethod.GET, "/fhir/" + entry.getKey(), null);
+                HttpResponse response = dispatch(
+                    HttpMethod.GET,
+                    "/fhir/" + entry.getKey() + fhirPatientScopeQuery(entry.getKey()),
+                    null
+                );
                 JsonNode body = JSON.readTree(bodyString(response));
                 assertThat(response.getCode()).as(entry.getKey()).isEqualTo(200);
                 assertThat(body.path("resourceType").asText()).isEqualTo("Bundle");
@@ -694,7 +738,7 @@ class PhrHttpServerTest extends EventloopTestBase {
         @Test
         @DisplayName("requires tenant and principal headers")
         void requiresTenantAndPrincipalHeaders() throws Exception {
-            HttpResponse response = dispatch(HttpMethod.GET, "/patients/patient-1", null);
+            HttpResponse response = dispatch(HttpMethod.GET, "/api/v1/records/patient-1", null);
 
             assertThat(response.getCode()).isEqualTo(400);
             JsonNode body = JSON.readTree(bodyString(response));
@@ -706,28 +750,28 @@ class PhrHttpServerTest extends EventloopTestBase {
         void patientRecordCrudSearchAndHistory() throws Exception {
             Map<String, String> headers = phrHeaders("patient-1", "patient");
 
-            HttpResponse created = dispatch(HttpMethod.POST, "/patients", patientRecordJson("patient-1", "Route"), headers);
+            HttpResponse created = dispatch(HttpMethod.POST, "/api/v1/records", patientRecordJson("patient-1", "Route"), headers);
             assertThat(created.getCode()).isEqualTo(201);
             JsonNode createdBody = JSON.readTree(bodyString(created));
             assertThat(createdBody.path("id").asText()).isEqualTo("patient-1");
 
-            HttpResponse read = dispatch(HttpMethod.GET, "/patients/patient-1", null, headers);
+            HttpResponse read = dispatch(HttpMethod.GET, "/api/v1/records/patient-1", null, headers);
             assertThat(read.getCode()).isEqualTo(200);
             assertThat(JSON.readTree(bodyString(read)).path("demographics").path("givenName").asText()).isEqualTo("Route");
 
-            HttpResponse searched = dispatch(HttpMethod.GET, "/patients?patientId=patient-1", null, headers);
+            HttpResponse searched = dispatch(HttpMethod.GET, "/api/v1/records?patientId=patient-1", null, headers);
             assertThat(searched.getCode()).isEqualTo(200);
             assertThat(JSON.readTree(bodyString(searched)).path("count").asInt()).isEqualTo(1);
 
-            HttpResponse updated = dispatch(HttpMethod.PUT, "/patients/patient-1", patientRecordJson("patient-1", "Updated"), headers);
+            HttpResponse updated = dispatch(HttpMethod.PUT, "/api/v1/records/patient-1", patientRecordJson("patient-1", "Updated"), headers);
             assertThat(updated.getCode()).isEqualTo(200);
             assertThat(JSON.readTree(bodyString(updated)).path("demographics").path("givenName").asText()).isEqualTo("Updated");
 
-            HttpResponse history = dispatch(HttpMethod.GET, "/patients/patient-1/history", null, headers);
+            HttpResponse history = dispatch(HttpMethod.GET, "/api/v1/records/patient-1/history", null, headers);
             assertThat(history.getCode()).isEqualTo(200);
             assertThat(JSON.readTree(bodyString(history)).path("history").isArray()).isTrue();
 
-            HttpResponse records = dispatch(HttpMethod.GET, "/patients/patient-1/records", null, headers);
+            HttpResponse records = dispatch(HttpMethod.GET, "/api/v1/records/patient-1/records", null, headers);
             assertThat(records.getCode()).isEqualTo(200);
             JsonNode recordsBody = JSON.readTree(bodyString(records));
             assertThat(recordsBody.path("items").isArray()).isTrue();
@@ -739,10 +783,10 @@ class PhrHttpServerTest extends EventloopTestBase {
         @Test
         @DisplayName("denies cross-principal read without consent")
         void deniesReadWithoutConsent() throws Exception {
-            dispatch(HttpMethod.POST, "/patients", patientRecordJson("patient-2", "Private"),
+            dispatch(HttpMethod.POST, "/api/v1/records", patientRecordJson("patient-2", "Private"),
                 phrHeaders("patient-2", "patient"));
 
-            HttpResponse response = dispatch(HttpMethod.GET, "/patients/patient-2", null,
+            HttpResponse response = dispatch(HttpMethod.GET, "/api/v1/records/patient-2", null,
                 phrHeaders("provider-1", "patient"));
 
             assertThat(response.getCode()).isEqualTo(403);
@@ -763,30 +807,30 @@ class PhrHttpServerTest extends EventloopTestBase {
         void consentGrantCheckListAndRevoke() throws Exception {
             Map<String, String> patientHeaders = phrHeaders("patient-3", "patient");
 
-            HttpResponse created = dispatch(HttpMethod.POST, "/consents/grants",
+            HttpResponse created = dispatch(HttpMethod.POST, "/api/v1/consents/grants",
                 consentGrantJson("patient-3", "provider-1", "patient-records"), patientHeaders);
             assertThat(created.getCode()).isEqualTo(201);
             String grantId = JSON.readTree(bodyString(created)).path("id").asText();
 
             HttpResponse allowed = dispatch(HttpMethod.GET,
-                "/consents/check?patientId=patient-3&accessorId=provider-1&resourceType=patient-records",
+                "/api/v1/consents/check?patientId=patient-3&accessorId=provider-1&resourceType=patient-records",
                 null,
                 phrHeaders("provider-1", "clinician"));
             assertThat(allowed.getCode()).isEqualTo(200);
             assertThat(JSON.readTree(bodyString(allowed)).path("allowed").asBoolean()).isTrue();
 
-            HttpResponse listed = dispatch(HttpMethod.GET, "/consents?patientId=patient-3", null, patientHeaders);
+            HttpResponse listed = dispatch(HttpMethod.GET, "/api/v1/consents?patientId=patient-3", null, patientHeaders);
             assertThat(listed.getCode()).isEqualTo(200);
             assertThat(JSON.readTree(bodyString(listed)).path("count").asInt()).isEqualTo(1);
 
             HttpResponse revoked = dispatch(HttpMethod.POST,
-                "/consents/grants/" + grantId + "/revoke?patientId=patient-3",
+                "/api/v1/consents/grants/" + grantId + "/revoke?patientId=patient-3",
                 null,
                 patientHeaders);
             assertThat(revoked.getCode()).isEqualTo(200);
 
             HttpResponse denied = dispatch(HttpMethod.GET,
-                "/consents/check?patientId=patient-3&accessorId=provider-1&resourceType=patient-records",
+                "/api/v1/consents/check?patientId=patient-3&accessorId=provider-1&resourceType=patient-records",
                 null,
                 phrHeaders("provider-1", "clinician"));
             assertThat(JSON.readTree(bodyString(denied)).path("allowed").asBoolean()).isFalse();
@@ -795,7 +839,7 @@ class PhrHttpServerTest extends EventloopTestBase {
         @Test
         @DisplayName("denies non-owner grant creation")
         void deniesNonOwnerGrantCreation() throws Exception {
-            HttpResponse response = dispatch(HttpMethod.POST, "/consents/grants",
+            HttpResponse response = dispatch(HttpMethod.POST, "/api/v1/consents/grants",
                 consentGrantJson("patient-4", "provider-1", "patient-records"),
                 phrHeaders("patient-5", "patient"));
 
@@ -817,36 +861,36 @@ class PhrHttpServerTest extends EventloopTestBase {
         void recordsAndListsClinicalResources() throws Exception {
             Map<String, String> headers = phrHeaders("patient-6", "patient");
 
-            HttpResponse lab = dispatch(HttpMethod.POST, "/clinical/labs/observations",
+            HttpResponse lab = dispatch(HttpMethod.POST, "/api/v1/clinical/labs/observations",
                 labObservationJson("patient-6"), headers);
             assertThat(lab.getCode()).isEqualTo(201);
             String labId = JSON.readTree(bodyString(lab)).path("id").asText();
-            assertThat(dispatch(HttpMethod.GET, "/clinical/labs/observations/" + labId, null, headers).getCode()).isEqualTo(200);
-            assertThat(dispatch(HttpMethod.GET, "/clinical/labs?patientId=patient-6", null, headers).getCode()).isEqualTo(200);
-            assertThat(dispatch(HttpMethod.GET, "/clinical/labs/trends?patientId=patient-6&loincCode=2160-0", null, headers).getCode()).isEqualTo(200);
+            assertThat(dispatch(HttpMethod.GET, "/api/v1/clinical/labs/observations/" + labId, null, headers).getCode()).isEqualTo(200);
+            assertThat(dispatch(HttpMethod.GET, "/api/v1/clinical/labs?patientId=patient-6", null, headers).getCode()).isEqualTo(200);
+            assertThat(dispatch(HttpMethod.GET, "/api/v1/clinical/labs/trends?patientId=patient-6&loincCode=2160-0", null, headers).getCode()).isEqualTo(200);
 
-            HttpResponse medication = dispatch(HttpMethod.POST, "/clinical/medications/prescriptions",
+            HttpResponse medication = dispatch(HttpMethod.POST, "/api/v1/clinical/medications/prescriptions",
                 prescriptionJson("patient-6"), headers);
             assertThat(medication.getCode()).isEqualTo(201);
             String prescriptionId = JSON.readTree(bodyString(medication)).path("id").asText();
-            assertThat(dispatch(HttpMethod.GET, "/clinical/medications/prescriptions/" + prescriptionId, null, headers).getCode()).isEqualTo(200);
-            assertThat(dispatch(HttpMethod.GET, "/clinical/medications?patientId=patient-6", null, headers).getCode()).isEqualTo(200);
+            assertThat(dispatch(HttpMethod.GET, "/api/v1/clinical/medications/prescriptions/" + prescriptionId, null, headers).getCode()).isEqualTo(200);
+            assertThat(dispatch(HttpMethod.GET, "/api/v1/clinical/medications?patientId=patient-6", null, headers).getCode()).isEqualTo(200);
 
-            HttpResponse immunization = dispatch(HttpMethod.POST, "/clinical/immunizations",
+            HttpResponse immunization = dispatch(HttpMethod.POST, "/api/v1/clinical/immunizations",
                 immunizationRecordJson("patient-6"), headers);
             assertThat(immunization.getCode()).isEqualTo(201);
             String immunizationId = JSON.readTree(bodyString(immunization)).path("id").asText();
-            assertThat(dispatch(HttpMethod.GET, "/clinical/immunizations/" + immunizationId, null, headers).getCode()).isEqualTo(200);
-            assertThat(dispatch(HttpMethod.GET, "/clinical/immunizations?patientId=patient-6", null, headers).getCode()).isEqualTo(200);
+            assertThat(dispatch(HttpMethod.GET, "/api/v1/clinical/immunizations/" + immunizationId, null, headers).getCode()).isEqualTo(200);
+            assertThat(dispatch(HttpMethod.GET, "/api/v1/clinical/immunizations?patientId=patient-6", null, headers).getCode()).isEqualTo(200);
         }
 
         @Test
         @DisplayName("denies sensitive clinical read without consent")
         void deniesClinicalReadWithoutConsent() throws Exception {
-            dispatch(HttpMethod.POST, "/clinical/labs/observations", labObservationJson("patient-7"),
+            dispatch(HttpMethod.POST, "/api/v1/clinical/labs/observations", labObservationJson("patient-7"),
                 phrHeaders("patient-7", "patient"));
 
-            HttpResponse response = dispatch(HttpMethod.GET, "/clinical/labs?patientId=patient-7", null,
+            HttpResponse response = dispatch(HttpMethod.GET, "/api/v1/clinical/labs?patientId=patient-7", null,
                 phrHeaders("provider-7", "clinician"));
 
             assertThat(response.getCode()).isEqualTo(403);
@@ -856,13 +900,13 @@ class PhrHttpServerTest extends EventloopTestBase {
         @Test
         @DisplayName("allows sensitive clinical read with consent")
         void allowsClinicalReadWithConsent() throws Exception {
-            dispatch(HttpMethod.POST, "/clinical/medications/prescriptions", prescriptionJson("patient-8"),
+            dispatch(HttpMethod.POST, "/api/v1/clinical/medications/prescriptions", prescriptionJson("patient-8"),
                 phrHeaders("patient-8", "patient"));
-            dispatch(HttpMethod.POST, "/consents/grants",
+            dispatch(HttpMethod.POST, "/api/v1/consents/grants",
                 consentGrantJson("patient-8", "provider-8", "medications"),
                 phrHeaders("patient-8", "patient"));
 
-            HttpResponse response = dispatch(HttpMethod.GET, "/clinical/medications?patientId=patient-8", null,
+            HttpResponse response = dispatch(HttpMethod.GET, "/api/v1/clinical/medications?patientId=patient-8", null,
                 phrHeaders("provider-8", "clinician"));
 
             assertThat(response.getCode()).isEqualTo(200);
@@ -884,7 +928,7 @@ class PhrHttpServerTest extends EventloopTestBase {
             Map<String, String> clinicianHeaders = phrHeaders("provider-9", "clinician");
             Map<String, String> adminHeaders = phrHeaders("admin-9", "admin");
 
-            HttpResponse logged = dispatch(HttpMethod.POST, "/emergency/access",
+            HttpResponse logged = dispatch(HttpMethod.POST, "/api/v1/emergency/access",
                 emergencyAccessJson("patient-9", "provider-9"), clinicianHeaders);
             assertThat(logged.getCode()).isEqualTo(201);
             JsonNode loggedBody = JSON.readTree(bodyString(logged));
@@ -892,19 +936,19 @@ class PhrHttpServerTest extends EventloopTestBase {
             assertThat(loggedBody.path("reviewStatus").asText()).isEqualTo("PENDING_REVIEW");
             assertThat(loggedBody.path("reviewCaseId").asText()).startsWith("EMR-");
 
-            HttpResponse event = dispatch(HttpMethod.GET, "/emergency/events/" + eventId, null, clinicianHeaders);
+            HttpResponse event = dispatch(HttpMethod.GET, "/api/v1/emergency/events/" + eventId, null, clinicianHeaders);
             assertThat(event.getCode()).isEqualTo(200);
 
-            HttpResponse patientLog = dispatch(HttpMethod.GET, "/emergency/patients/patient-9", null,
+            HttpResponse patientLog = dispatch(HttpMethod.GET, "/api/v1/emergency/patients/patient-9", null,
                 phrHeaders("patient-9", "patient"));
             assertThat(patientLog.getCode()).isEqualTo(200);
             assertThat(JSON.readTree(bodyString(patientLog)).path("count").asInt()).isEqualTo(1);
 
-            HttpResponse pending = dispatch(HttpMethod.GET, "/emergency/reviews/pending", null, adminHeaders);
+            HttpResponse pending = dispatch(HttpMethod.GET, "/api/v1/emergency/reviews/pending", null, adminHeaders);
             assertThat(pending.getCode()).isEqualTo(200);
             assertThat(JSON.readTree(bodyString(pending)).path("count").asInt()).isEqualTo(1);
 
-            HttpResponse reviewed = dispatch(HttpMethod.POST, "/emergency/reviews/" + eventId,
+            HttpResponse reviewed = dispatch(HttpMethod.POST, "/api/v1/emergency/reviews/" + eventId,
                 emergencyReviewJson("REVIEWED", "Clinically justified"), adminHeaders);
             assertThat(reviewed.getCode()).isEqualTo(200);
             assertThat(JSON.readTree(bodyString(reviewed)).path("reviewStatus").asText()).isEqualTo("REVIEWED");
@@ -913,7 +957,7 @@ class PhrHttpServerTest extends EventloopTestBase {
         @Test
         @DisplayName("requires admin role for emergency review queues")
         void requiresAdminForEmergencyReviewQueues() throws Exception {
-            HttpResponse response = dispatch(HttpMethod.GET, "/emergency/reviews/pending", null,
+            HttpResponse response = dispatch(HttpMethod.GET, "/api/v1/emergency/reviews/pending", null,
                 phrHeaders("provider-10", "clinician"));
 
             assertThat(response.getCode()).isEqualTo(403);
@@ -923,7 +967,7 @@ class PhrHttpServerTest extends EventloopTestBase {
         @Test
         @DisplayName("denies accessor spoofing for emergency access")
         void deniesAccessorSpoofing() throws Exception {
-            HttpResponse response = dispatch(HttpMethod.POST, "/emergency/access",
+            HttpResponse response = dispatch(HttpMethod.POST, "/api/v1/emergency/access",
                 emergencyAccessJson("patient-11", "provider-other"), phrHeaders("provider-11", "clinician"));
 
             assertThat(response.getCode()).isEqualTo(400);
@@ -944,15 +988,15 @@ class PhrHttpServerTest extends EventloopTestBase {
         void telemedicineLifecycle() throws Exception {
             Map<String, String> headers = phrHeaders("patient-12", "patient");
 
-            HttpResponse scheduled = dispatch(HttpMethod.POST, "/admin/telemedicine/sessions",
+            HttpResponse scheduled = dispatch(HttpMethod.POST, "/api/v1/admin/telemedicine/sessions",
                 telemedicineSessionJson("patient-12"), headers);
             assertThat(scheduled.getCode()).isEqualTo(201);
             String sessionId = JSON.readTree(bodyString(scheduled)).path("id").asText();
 
-            assertThat(dispatch(HttpMethod.GET, "/admin/telemedicine?patientId=patient-12", null, headers).getCode()).isEqualTo(200);
-            assertThat(dispatch(HttpMethod.POST, "/admin/telemedicine/sessions/" + sessionId + "/start?patientId=patient-12", null, headers).getCode()).isEqualTo(200);
+            assertThat(dispatch(HttpMethod.GET, "/api/v1/admin/telemedicine?patientId=patient-12", null, headers).getCode()).isEqualTo(200);
+            assertThat(dispatch(HttpMethod.POST, "/api/v1/admin/telemedicine/sessions/" + sessionId + "/start?patientId=patient-12", null, headers).getCode()).isEqualTo(200);
             HttpResponse completed = dispatch(HttpMethod.POST,
-                "/admin/telemedicine/sessions/" + sessionId + "/complete?patientId=patient-12&notes=done",
+                "/api/v1/admin/telemedicine/sessions/" + sessionId + "/complete?patientId=patient-12&notes=done",
                 null,
                 headers);
             assertThat(completed.getCode()).isEqualTo(200);
@@ -964,26 +1008,26 @@ class PhrHttpServerTest extends EventloopTestBase {
         void referralLifecycle() throws Exception {
             Map<String, String> headers = phrHeaders("patient-13", "patient");
 
-            HttpResponse created = dispatch(HttpMethod.POST, "/admin/referrals",
+            HttpResponse created = dispatch(HttpMethod.POST, "/api/v1/admin/referrals",
                 referralJson("patient-13"), headers);
             assertThat(created.getCode()).isEqualTo(201);
             String referralId = JSON.readTree(bodyString(created)).path("id").asText();
 
             HttpResponse accepted = dispatch(HttpMethod.POST,
-                "/admin/referrals/" + referralId + "/accept?patientId=patient-13",
+                "/api/v1/admin/referrals/" + referralId + "/accept?patientId=patient-13",
                 null,
                 headers);
             assertThat(accepted.getCode()).isEqualTo(200);
             assertThat(JSON.readTree(bodyString(accepted)).path("status").asText()).isEqualTo("ACCEPTED");
 
             HttpResponse closed = dispatch(HttpMethod.POST,
-                "/admin/referrals/" + referralId + "/close?patientId=patient-13&notes=completed",
+                "/api/v1/admin/referrals/" + referralId + "/close?patientId=patient-13&notes=completed",
                 null,
                 headers);
             assertThat(closed.getCode()).isEqualTo(200);
             assertThat(JSON.readTree(bodyString(closed)).path("status").asText()).isEqualTo("COMPLETED");
 
-            HttpResponse listed = dispatch(HttpMethod.GET, "/admin/referrals?patientId=patient-13", null, headers);
+            HttpResponse listed = dispatch(HttpMethod.GET, "/api/v1/admin/referrals?patientId=patient-13", null, headers);
             assertThat(listed.getCode()).isEqualTo(200);
             assertThat(JSON.readTree(bodyString(listed)).path("count").asInt()).isEqualTo(1);
         }
@@ -993,25 +1037,25 @@ class PhrHttpServerTest extends EventloopTestBase {
         void billingJourney() throws Exception {
             Map<String, String> headers = phrHeaders("patient-14", "patient");
 
-            HttpResponse encounter = dispatch(HttpMethod.POST, "/admin/billing/encounters",
+            HttpResponse encounter = dispatch(HttpMethod.POST, "/api/v1/admin/billing/encounters",
                 billingEncounterJson("patient-14"), headers);
             assertThat(encounter.getCode()).isEqualTo(201);
             String encounterId = JSON.readTree(bodyString(encounter)).path("id").asText();
 
             HttpResponse closed = dispatch(HttpMethod.POST,
-                "/admin/billing/encounters/" + encounterId + "/close?patientId=patient-14",
+                "/api/v1/admin/billing/encounters/" + encounterId + "/close?patientId=patient-14",
                 null,
                 headers);
             assertThat(closed.getCode()).isEqualTo(200);
             assertThat(JSON.readTree(bodyString(closed)).path("status").asText()).isEqualTo("CLOSED");
 
-            HttpResponse claim = dispatch(HttpMethod.POST, "/admin/billing/claims",
+            HttpResponse claim = dispatch(HttpMethod.POST, "/api/v1/admin/billing/claims",
                 insuranceClaimJson("patient-14", encounterId), headers);
             assertThat(claim.getCode()).isEqualTo(201);
             String claimId = JSON.readTree(bodyString(claim)).path("id").asText();
 
             HttpResponse approved = dispatch(HttpMethod.POST,
-                "/admin/billing/claims/" + claimId + "/status?patientId=patient-14",
+                "/api/v1/admin/billing/claims/" + claimId + "/status?patientId=patient-14",
                 "{\"status\":\"APPROVED\",\"note\":\"approved\"}",
                 headers);
             assertThat(approved.getCode()).isEqualTo(200);
@@ -1021,10 +1065,10 @@ class PhrHttpServerTest extends EventloopTestBase {
         @Test
         @DisplayName("denies administrative patient data without consent")
         void deniesAdministrativeDataWithoutConsent() throws Exception {
-            dispatch(HttpMethod.POST, "/admin/telemedicine/sessions",
+            dispatch(HttpMethod.POST, "/api/v1/admin/telemedicine/sessions",
                 telemedicineSessionJson("patient-15"), phrHeaders("patient-15", "patient"));
 
-            HttpResponse response = dispatch(HttpMethod.GET, "/admin/telemedicine?patientId=patient-15", null,
+            HttpResponse response = dispatch(HttpMethod.GET, "/api/v1/admin/telemedicine?patientId=patient-15", null,
                 phrHeaders("provider-15", "clinician"));
 
             assertThat(response.getCode()).isEqualTo(403);
@@ -1045,26 +1089,26 @@ class PhrHttpServerTest extends EventloopTestBase {
         void documentLifecycle() throws Exception {
             Map<String, String> headers = phrHeaders("patient-16", "patient");
 
-            HttpResponse uploaded = dispatch(HttpMethod.POST, "/records/documents",
+            HttpResponse uploaded = dispatch(HttpMethod.POST, "/api/v1/records/documents",
                 documentUploadJson("patient-16"), headers);
             assertThat(uploaded.getCode()).isEqualTo(201);
             String documentId = JSON.readTree(bodyString(uploaded)).path("id").asText();
 
-            assertThat(dispatch(HttpMethod.GET, "/records/documents/" + documentId, null, headers).getCode()).isEqualTo(200);
-            assertThat(dispatch(HttpMethod.GET, "/records/documents/" + documentId + "/content", null, headers).getCode()).isEqualTo(200);
-            HttpResponse fhir = dispatch(HttpMethod.GET, "/records/documents/" + documentId + "/fhir", null, headers);
+            assertThat(dispatch(HttpMethod.GET, "/api/v1/records/documents/" + documentId, null, headers).getCode()).isEqualTo(200);
+            assertThat(dispatch(HttpMethod.GET, "/api/v1/records/documents/" + documentId + "/content", null, headers).getCode()).isEqualTo(200);
+            HttpResponse fhir = dispatch(HttpMethod.GET, "/api/v1/records/documents/" + documentId + "/fhir", null, headers);
             assertThat(fhir.getCode()).isEqualTo(200);
             assertThat(bodyString(fhir)).contains("DocumentReference");
 
-            HttpResponse listed = dispatch(HttpMethod.GET, "/records/documents?patientId=patient-16", null, headers);
+            HttpResponse listed = dispatch(HttpMethod.GET, "/api/v1/records/documents?patientId=patient-16", null, headers);
             assertThat(listed.getCode()).isEqualTo(200);
             assertThat(JSON.readTree(bodyString(listed)).path("count").asInt()).isEqualTo(1);
 
-            HttpResponse consent = dispatch(HttpMethod.POST, "/records/documents/" + documentId + "/consent?patientId=patient-16",
+            HttpResponse consent = dispatch(HttpMethod.POST, "/api/v1/records/documents/" + documentId + "/consent?patientId=patient-16",
                 "{\"visibility\":\"private\"}", headers);
             assertThat(consent.getCode()).isEqualTo(200);
 
-            HttpResponse deleted = dispatch(HttpMethod.DELETE, "/records/documents/" + documentId + "?patientId=patient-16", null, headers);
+            HttpResponse deleted = dispatch(HttpMethod.DELETE, "/api/v1/records/documents/" + documentId + "?patientId=patient-16", null, headers);
             assertThat(deleted.getCode()).isEqualTo(200);
         }
 
@@ -1073,34 +1117,34 @@ class PhrHttpServerTest extends EventloopTestBase {
         void imagingJourney() throws Exception {
             Map<String, String> headers = phrHeaders("patient-17", "patient");
 
-            HttpResponse order = dispatch(HttpMethod.POST, "/records/imaging/orders",
+            HttpResponse order = dispatch(HttpMethod.POST, "/api/v1/records/imaging/orders",
                 imagingOrderJson("patient-17"), headers);
             assertThat(order.getCode()).isEqualTo(201);
             String orderId = JSON.readTree(bodyString(order)).path("id").asText();
-            assertThat(dispatch(HttpMethod.GET, "/records/imaging/orders/" + orderId, null, headers).getCode()).isEqualTo(200);
+            assertThat(dispatch(HttpMethod.GET, "/api/v1/records/imaging/orders/" + orderId, null, headers).getCode()).isEqualTo(200);
 
-            HttpResponse study = dispatch(HttpMethod.POST, "/records/imaging/studies",
+            HttpResponse study = dispatch(HttpMethod.POST, "/api/v1/records/imaging/studies",
                 imagingStudyJson("patient-17", orderId), headers);
             assertThat(study.getCode()).isEqualTo(201);
             String studyId = JSON.readTree(bodyString(study)).path("id").asText();
 
-            HttpResponse report = dispatch(HttpMethod.POST, "/records/imaging/reports",
+            HttpResponse report = dispatch(HttpMethod.POST, "/api/v1/records/imaging/reports",
                 radiologyReportJson("patient-17", studyId), headers);
             assertThat(report.getCode()).isEqualTo(201);
 
-            assertThat(dispatch(HttpMethod.GET, "/records/imaging/orders?patientId=patient-17", null, headers).getCode()).isEqualTo(200);
-            assertThat(dispatch(HttpMethod.GET, "/records/imaging/studies?patientId=patient-17", null, headers).getCode()).isEqualTo(200);
+            assertThat(dispatch(HttpMethod.GET, "/api/v1/records/imaging/orders?patientId=patient-17", null, headers).getCode()).isEqualTo(200);
+            assertThat(dispatch(HttpMethod.GET, "/api/v1/records/imaging/studies?patientId=patient-17", null, headers).getCode()).isEqualTo(200);
         }
 
         @Test
         @DisplayName("denies document list without consent")
         void deniesDocumentReadWithoutConsent() throws Exception {
-            dispatch(HttpMethod.POST, "/records/documents", documentUploadJson("patient-18"),
+            dispatch(HttpMethod.POST, "/api/v1/records/documents", documentUploadJson("patient-18"),
                 phrHeaders("patient-18", "patient"));
             Mockito.when(treatmentRelationshipService.hasActiveTreatmentRelationship("provider-18", "patient-18"))
                 .thenReturn(Promise.of(false));
 
-            HttpResponse response = dispatch(HttpMethod.GET, "/records/documents?patientId=patient-18", null,
+            HttpResponse response = dispatch(HttpMethod.GET, "/api/v1/records/documents?patientId=patient-18", null,
                 phrHeaders("provider-18", "clinician"));
 
             assertThat(response.getCode()).isEqualTo(403);
@@ -1138,6 +1182,20 @@ class PhrHttpServerTest extends EventloopTestBase {
             .isNotEqualTo(404);
     }
 
+    private void assertNotMounted(HttpMethod method, String path, String jsonBody, Map<String, String> headers)
+            throws Exception {
+        try {
+            HttpResponse response = dispatch(method, path, jsonBody, headers);
+            assertThat(response.getCode())
+                .as("%s %s should not be routed by PhrHttpServer", method, path)
+                .isEqualTo(404);
+        } catch (RuntimeException error) {
+            assertThat(error)
+                .as("%s %s should fail only because no route is mounted", method, path)
+                .hasCauseInstanceOf(io.activej.http.HttpError.class);
+        }
+    }
+
     private static java.util.List<String> routePaths(JsonNode routes) {
         java.util.List<String> paths = new java.util.ArrayList<>();
         routes.forEach(route -> paths.add(route.path("path").asText()));
@@ -1150,11 +1208,17 @@ class PhrHttpServerTest extends EventloopTestBase {
         return ids;
     }
 
+    private static String fhirPatientScopeQuery(String resourceType) {
+        return "Patient".equals(resourceType) ? "?_id=patient-1" : "?patient=patient-1";
+    }
+
     private static Map<String, String> phrHeaders(String principalId, String role) {
         return Map.of(
             "X-Tenant-ID", "tenant-health-1",
             "X-Principal-ID", principalId,
-            "X-Role", role
+            "X-Role", role,
+            "X-Persona", role,
+            "X-Tier", "core"
         );
     }
 
@@ -1167,6 +1231,7 @@ class PhrHttpServerTest extends EventloopTestBase {
         return """
             {
               "resourceType": "Patient",
+              "id": "patient-1",
               "name": [{"family": "Test", "given": ["Route"]}],
               "gender": "male",
               "birthDate": "1990-01-01"
@@ -1409,10 +1474,25 @@ class PhrHttpServerTest extends EventloopTestBase {
               "description": "Uploaded lab report",
               "contentType": "application/pdf",
               "content": "SGVsbG8=",
-              "contentHash": "sha256-test",
-              "visibility": "shared-with-provider"
+              "contentHash": "185f8db32271fe25f561a6fc938b2e264306ec304eda518007d1764826381969",
+              "visibility": "shared-with-provider",
+              "storagePolicy": {
+                "residency": "NP",
+                "retention": "25years",
+                "encryption": "managed-kms"
+              },
+              "provenance": {
+                "source": "patient-upload",
+                "uploadedBy": "%s",
+                "patientId": "%s"
+              },
+              "malwareScan": {
+                "status": "clean",
+                "engine": "clamav",
+                "scannedAt": "2026-01-01T00:00:00Z"
+              }
             }
-            """.formatted(patientId);
+            """.formatted(patientId, patientId, patientId);
     }
 
     private static String imagingOrderJson(String patientId) {
@@ -1572,6 +1652,44 @@ class PhrHttpServerTest extends EventloopTestBase {
                 EmergencyAccessReviewCase reviewCase,
                 EmergencyAccessLogService.EmergencyAccessEvent event) {
             return Promise.complete();
+        }
+    }
+
+    private static final class StubHieIntegrationContract implements HieIntegrationContract {
+        @Override
+        public String contractId() {
+            return "test-hie-contract";
+        }
+
+        @Override
+        public java.util.Set<Operation> supportedOperations() {
+            return java.util.Set.of(Operation.EXPORT, Operation.SYNC);
+        }
+
+        @Override
+        public Promise<HieIntegrationResult> submit(HieIntegrationRequest request) {
+            boolean supported = supportedOperations().contains(request.operation());
+            return Promise.of(new HieIntegrationResult(
+                "hie-test-1",
+                request.operation(),
+                contractId(),
+                supported ? "ACCEPTED" : "REJECTED",
+                supported,
+                supported ? "HIE_ACCEPTED" : "HIE_OPERATION_NOT_SUPPORTED",
+                supported ? "accepted" : "unsupported"
+            ));
+        }
+
+        @Override
+        public Promise<HieIntegrationStatus> getStatus(String requestId, String correlationId) {
+            return Promise.of(new HieIntegrationStatus(
+                requestId,
+                Operation.EXPORT,
+                contractId(),
+                "ACCEPTED",
+                "HIE_ACCEPTED",
+                "accepted"
+            ));
         }
     }
 }

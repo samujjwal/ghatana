@@ -135,6 +135,15 @@ export {
   validateMobilePhiReleaseValidationResult,
 } from "./policy/MobilePhiPolicyContract.js";
 
+export type {
+  MobilePrivacyCacheClearer,
+  MobilePrivacyClearReason,
+} from "./privacy/MobilePrivacyPlugin.js";
+export {
+  MobilePrivacyClearError,
+  clearKernelMobilePrivacyState,
+} from "./privacy/MobilePrivacyPlugin.js";
+
 // Correlation contracts (K-006)
 export type {
   CorrelationId,

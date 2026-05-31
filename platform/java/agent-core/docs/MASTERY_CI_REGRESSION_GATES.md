@@ -11,16 +11,16 @@ This document defines the regression gates for the mastery system to ensure chan
 **Purpose**: Ensure mastery persistence and querying work correctly
 
 **Required Tests**:
-- `DataCloudMasteryRegistryTest` - Basic CRUD operations
-- `DataCloudMasteryRegistryTest.testSaveAndRetrieve` - Save and retrieve mastery items
-- `DataCloudMasteryRegistryTest.testQueryWithFilters` - Query with skillId, agentId, state filters
-- `DataCloudMasteryRegistryTest.testTransition` - Mastery state transitions
-- `DataCloudMasteryRegistryTest.testFindBest` - Best item selection with ranking
-- `DataCloudMasteryRegistryTest.testSchemaValidation` - Schema validation on save
+- `MasteryRegistryTest` - Basic CRUD operations
+- `MasteryRegistryTest.testSaveAndRetrieve` - Save and retrieve mastery items
+- `MasteryRegistryTest.testQueryWithFilters` - Query with skillId, agentId, state filters
+- `MasteryRegistryTest.testTransition` - Mastery state transitions
+- `MasteryRegistryTest.testFindBest` - Best item selection with ranking
+- `MasteryRegistryTest.testSchemaValidation` - Schema validation on save
 
 **Gate**: Must pass with 100% success rate
 
-**Coverage**: Minimum 80% line coverage for DataCloudMasteryRegistry
+**Coverage**: Minimum 80% line coverage for MasteryRegistry
 
 ### 2. Promotion Engine Tests
 
@@ -86,7 +86,7 @@ This document defines the regression gates for the mastery system to ensure chan
 **Required Tests**:
 - `ObsolescenceDetectorTest` - Obsolescence detection
 - `ObsolescenceDetectorTest.testScanAll` - Full scan with environment fingerprint
-- `DataCloudObsolescenceSignalRepositoryTest` - Signal persistence
+- `ObsolescenceSignalRepositoryTest` - Signal persistence
 
 **Gate**: Must pass with 100% success rate
 
@@ -190,7 +190,6 @@ on:
       - 'platform/java/agent-core/src/main/java/com/ghatana/agent/mastery/**'
       - 'platform/java/agent-core/src/main/java/com/ghatana/agent/promotion/**'
       - 'platform/java/agent-core/src/main/java/com/ghatana/agent/learning/**'
-      - 'products/data-cloud/extensions/agent-registry/src/main/java/com/ghatana/datacloud/agent/mastery/**'
 
 jobs:
   mastery-tests:
@@ -205,7 +204,7 @@ jobs:
           distribution: 'temurin'
       
       - name: Run mastery registry tests
-        run: ./gradlew :platform:java:agent-core:test --tests "*DataCloudMasteryRegistryTest*"
+        run: ./gradlew :platform:java:agent-core:test --tests "*MasteryRegistryTest*"
       
       - name: Run promotion engine tests
         run: ./gradlew :platform:java:agent-core:test --tests "*DefaultPromotionEngineTest*"

@@ -17,6 +17,7 @@ import com.ghatana.phr.api.routes.PhrDocumentImagingRoutes;
 import com.ghatana.phr.api.routes.PhrEntitlementRoutes;
 import com.ghatana.phr.api.routes.PhrEmergencyRoutes;
 import com.ghatana.phr.api.routes.PhrFchvRoutes;
+import com.ghatana.phr.api.routes.PhrHieRoutes;
 import com.ghatana.phr.api.routes.PhrMobileRoutes;
 import com.ghatana.phr.api.routes.PhrFhirRoutes;
 import com.ghatana.phr.api.routes.PhrHealthRoutes;
@@ -82,11 +83,6 @@ import java.util.Objects;
  *   POST   /api/v1/auth/login                           — Session bootstrap via credentials
  *   POST   /api/v1/auth/logout                          — Session termination
  *
- *   Role-Specific Routes (hidden until implementation complete):
- *   GET    /api/v1/provider/dashboard                    — Provider dashboard
- *   GET    /api/v1/provider/patients                     — Provider patient list
- *   GET    /api/v1/caregiver/dependents                   — Caregiver dependent management
- *   GET    /api/v1/fchv/dashboard                        — FCHV community health dashboard
  *   GET    /api/v1/mobile/dashboard                      — Mobile patient dashboard (session-header auth)
  *
  *   System Routes:
@@ -130,6 +126,7 @@ public final class PhrHttpServer implements KernelLifecycleAware {
     private final PhrMobileRoutes mobileRoutes;
     private final PhrNotificationRoutes notificationRoutes;
     private final PhrPatientProfileRoutes patientProfileRoutes;
+    private final PhrHieRoutes hieRoutes;
     private volatile boolean started = false;
 
     /**
@@ -159,7 +156,8 @@ public final class PhrHttpServer implements KernelLifecycleAware {
             PhrFchvRoutes fchvRoutes,
             PhrMobileRoutes mobileRoutes,
             PhrNotificationRoutes notificationRoutes,
-            PhrPatientProfileRoutes patientProfileRoutes) {
+            PhrPatientProfileRoutes patientProfileRoutes,
+            PhrHieRoutes hieRoutes) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop cannot be null");
         this.fhirRoutes = Objects.requireNonNull(fhirRoutes, "fhirRoutes cannot be null");
         this.dashboardRoutes = Objects.requireNonNull(dashboardRoutes, "dashboardRoutes cannot be null");
@@ -181,6 +179,7 @@ public final class PhrHttpServer implements KernelLifecycleAware {
         this.mobileRoutes = Objects.requireNonNull(mobileRoutes, "mobileRoutes cannot be null");
         this.notificationRoutes = Objects.requireNonNull(notificationRoutes, "notificationRoutes cannot be null");
         this.patientProfileRoutes = Objects.requireNonNull(patientProfileRoutes, "patientProfileRoutes cannot be null");
+        this.hieRoutes = Objects.requireNonNull(hieRoutes, "hieRoutes cannot be null");
     }
 
     // -------------------------------------------------------------------------
@@ -231,32 +230,12 @@ public final class PhrHttpServer implements KernelLifecycleAware {
     public AsyncServlet getServlet() {
         RoutingServlet.Builder builder = RoutingServlet.builder(eventloop)
             .with("/fhir/*", fhirRoutes.getServlet())
-            // Legacy mounts kept for existing clients and test contract.
-            .with("/dashboard", dashboardRoutes.getServlet())
-            .with("/records/*", documentImagingRoutes.getServlet())
-            .with("/documents/*", documentImagingRoutes.getDocumentServlet())
-            .with("/patients/*", patientRecordRoutes.getServlet())
-            .with("/consents/*", consentRoutes.getServlet())
-            .with("/clinical/*", clinicalRoutes.getServlet())
-            .with("/emergency/*", emergencyRoutes.getServlet())
-            .with("/release-readiness", releaseReadinessRoutes.getServlet())
-            .with("/appointments/*", administrativeRoutes.getPatientFacingServlet())
-            .with("/admin/*", administrativeRoutes.getServlet())
-            .with("/phr/billing/*", administrativeRoutes.getBillingServlet())
-            .with("/audit/*", auditRoutes.getServlet())
-            .with("/auth/*", authRoutes.getServlet())
-            .with("/provider/*", providerRoutes.getServlet())
-            .with("/caregiver/*", caregiverRoutes.getServlet())
-            .with("/fchv/*", fchvRoutes.getServlet())
-            .with("/mobile/*", mobileRoutes.getServlet())
-            .with("/notifications/*", notificationRoutes.getServlet())
-            .with("/profile", patientProfileRoutes.getServlet())
-            .with("/profile/settings", patientProfileRoutes.getServlet())
-            // Versioned mounts.
             .with("/api/v1/dashboard", dashboardRoutes.getServlet())
             .with("/api/v1/records/documents/*", documentImagingRoutes.getDocumentServlet())
+            .with("/api/v1/records/imaging/*", documentImagingRoutes.getImagingServlet())
             .with("/api/v1/records/*", patientRecordRoutes.getServlet())
             .with("/api/v1/consents/*", consentRoutes.getServlet())
+            .with("/api/v1/clinical/conditions/*", conditionRoutes.getServlet())
             .with("/api/v1/clinical/*", clinicalRoutes.getServlet())
             .with("/api/v1/emergency/*", emergencyRoutes.getServlet())
             .with("/api/v1/release-readiness", releaseReadinessRoutes.getServlet())
@@ -265,13 +244,11 @@ public final class PhrHttpServer implements KernelLifecycleAware {
             .with("/api/v1/phr/billing/*", administrativeRoutes.getBillingServlet())
             .with("/api/v1/audit/*", auditRoutes.getServlet())
             .with("/api/v1/auth/*", authRoutes.getServlet())
-            .with("/api/v1/provider/*", providerRoutes.getServlet())
-            .with("/api/v1/caregiver/*", caregiverRoutes.getServlet())
-            .with("/api/v1/fchv/*", fchvRoutes.getServlet())
             .with("/api/v1/mobile/*", mobileRoutes.getServlet())
             .with("/api/v1/notifications/*", notificationRoutes.getServlet())
             .with("/api/v1/profile", patientProfileRoutes.getServlet())
-            .with("/api/v1/profile/settings", patientProfileRoutes.getServlet())
+            .with("/api/v1/profile/settings", patientProfileRoutes.getSettingsServlet())
+            .with("/api/v1/hie/*", hieRoutes.getServlet())
             .with("/route-entitlements", entitlementRoutes.getServlet())
             .with("/health", healthRoutes.getServlet())
             .with("/ready", healthRoutes.getReadyServlet());

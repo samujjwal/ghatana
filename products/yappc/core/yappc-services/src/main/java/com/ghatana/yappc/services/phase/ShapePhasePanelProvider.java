@@ -4,6 +4,14 @@ import com.ghatana.yappc.api.PhasePacket;
 
 import java.util.Map;
 
+/**
+ * Shape phase panel provider.
+ *
+ * @doc.type class
+ * @doc.purpose Provide Shape phase panel views
+ * @doc.layer product
+ * @doc.pattern PhasePanelProvider
+ */
 public final class ShapePhasePanelProvider implements PhasePanelProvider {
 
     private final ShapePhaseModelProvider modelProvider;

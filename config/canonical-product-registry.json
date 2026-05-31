@@ -947,6 +947,26 @@
       "productCompletenessStatus": "blocked",
       "runtimeSurfaceStatus": "degraded",
       "releaseReadinessExecutionStatus": "not-executed",
+      "doNotRunReleaseReadinessChecks": true,
+      "doNotGenerateReleaseEvidence": true,
+      "planes": {
+        "data": { "status": "active" },
+        "event": { "status": "active" },
+        "context": { "status": "target-only" },
+        "intelligence": { "status": "active" },
+        "governance": { "status": "active" },
+        "action": {
+          "status": "partial",
+          "semanticReadiness": "partial",
+          "blockers": [
+            "patternspec-compiler-incomplete",
+            "eventcloud-spi-incomplete",
+            "learning-to-recommendation-incomplete",
+            "replay-safe-agent-execution-incomplete"
+          ]
+        },
+        "operations": { "status": "active" }
+      },
       "lifecycleReadiness": {
         "reasonCodes": [
           "platform-provider-mode-required",

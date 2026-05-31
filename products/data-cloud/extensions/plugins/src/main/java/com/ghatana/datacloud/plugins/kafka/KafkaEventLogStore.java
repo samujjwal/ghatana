@@ -53,6 +53,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
+import org.apache.kafka.common.TopicPartition;
+
 /**
  * Kafka-backed implementation of the {@link EventLogStore} SPI.
  *
@@ -634,6 +636,80 @@ public class KafkaEventLogStore implements EventLogStore {
         byte[] bytes = new byte[buffer.remaining()];
         buffer.duplicate().get(bytes);
         return bytes;
+    }
+
+    // ==================== Checkpoint Management (P3-03) ====================
+
+    @Override
+    public Promise<Optional<Checkpoint>> readCheckpoint(TenantContext tenant, String stream, String consumerGroup) {
+        // P3-03: For Kafka, checkpoints are managed via consumer group offsets
+        // This is a simplified implementation that returns empty for now
+        // Production implementation would use Kafka consumer group offset management
+        return Promise.of(Optional.empty());
+    }
+
+    @Override
+    public Promise<Checkpoint> commitCheckpoint(TenantContext tenant, String stream, String consumerGroup, Offset offset, String idempotencyKey) {
+        // P3-03: For Kafka, checkpoint commits are handled via consumer group offset commits
+        // This is a simplified implementation that returns a checkpoint for now
+        // Production implementation would use Kafka consumer group offset commits
+        Checkpoint checkpoint = new Checkpoint(stream, consumerGroup, offset, Instant.now(), idempotencyKey);
+        return Promise.of(checkpoint);
+    }
+
+    @Override
+    public Promise<Boolean> deleteCheckpoint(TenantContext tenant, String stream, String consumerGroup) {
+        // P3-03: For Kafka, checkpoint deletion is handled via consumer group offset resets
+        // This is a simplified implementation that returns false for now
+        // Production implementation would use Kafka consumer group offset resets
+        return Promise.of(false);
+    }
+
+    @Override
+    public Promise<Map<String, Checkpoint>> getAllCheckpointsWithMetadata(TenantContext tenant) {
+        // P3-03: For Kafka, checkpoint metadata is available via consumer group offset metadata
+        // This is a simplified implementation that returns empty for now
+        // Production implementation would query Kafka consumer group offset metadata
+        return Promise.of(Map.of());
+    }
+
+    @Override
+    public Promise<List<EventEntry>> replay(TenantContext tenant, ReplaySpec spec) {
+        // P3-03: For Kafka, replay is implemented by creating a temporary consumer
+        // that reads from the specified offset range
+        return Promise.ofBlocking(blockingExecutor, () -> {
+            long fromOffsetValue = parseLong(spec.fromOffset());
+            long toOffsetValue = spec.toOffset().value().equals("-1") ? Long.MAX_VALUE : parseLong(spec.toOffset());
+            
+            String topic = topicFor(tenant.tenantId());
+            try (KafkaConsumer<String, byte[]> consumer = buildConsumer(config, "replay-" + UUID.randomUUID())) {
+                TopicPartition partition = new TopicPartition(topic, 0);
+                consumer.assign(List.of(partition));
+                consumer.seek(partition, fromOffsetValue);
+                
+                List<EventEntry> entries = new ArrayList<>();
+                while (entries.size() < 1000) { // Limit to prevent unbounded reads
+                    ConsumerRecords<String, byte[]> records = consumer.poll(Duration.ofMillis(100));
+                    if (records.isEmpty()) break;
+                    
+                    for (ConsumerRecord<String, byte[]> record : records) {
+                        if (record.offset() > toOffsetValue) break;
+                        if (spec.eventTypes().isEmpty() || spec.eventTypes().contains(headerValue(record.headers(), HDR_EVENT_TYPE))) {
+                            entries.add(fromConsumerRecord(record));
+                        }
+                    }
+                }
+                return entries;
+            }
+        });
+    }
+
+    @Override
+    public Promise<Void> unsubscribe(TenantContext tenant, SubscriptionId subscriptionId) {
+        // P3-03: For Kafka, unsubscribe is handled by the consumer's wakeup() method
+        // This is a simplified implementation that completes immediately
+        // Production implementation would track subscriptions and call wakeup()
+        return Promise.of(null);
     }
 
     // =========================================================================

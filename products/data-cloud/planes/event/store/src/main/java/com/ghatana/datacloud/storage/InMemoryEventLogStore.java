@@ -1,7 +1,7 @@
 package com.ghatana.datacloud.storage;
 
-import com.ghatana.platform.domain.eventstore.EventLogStore;
-import com.ghatana.platform.domain.eventstore.TenantContext;
+import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
 
@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
@@ -29,6 +30,12 @@ public final class InMemoryEventLogStore implements EventLogStore {
     private final Map<String, List<EventEntry>> store = new ConcurrentHashMap<>();
     private final Map<String, Long> offsets = new ConcurrentHashMap<>();
     private final Map<String, List<Consumer<EventEntry>>> tailListeners = new ConcurrentHashMap<>();
+    
+    // P3-03: In-memory checkpoint storage for testing
+    private final Map<String, Map<String, Checkpoint>> checkpoints = new ConcurrentHashMap<>();
+    
+    // P3-03: Track subscriptions for unsubscribe
+    private final Map<String, Map<String, Subscription>> subscriptions = new ConcurrentHashMap<>();
 
     @Override
     public Promise<Offset> append(TenantContext tenant, EventEntry entry) {
@@ -115,6 +122,7 @@ public final class InMemoryEventLogStore implements EventLogStore {
         }
 
         final boolean[] cancelled = {false};
+        String subscriptionId = java.util.UUID.randomUUID().toString();
         Consumer<EventEntry> guardedHandler = entry -> {
             if (!cancelled[0]) handler.accept(entry);
         };
@@ -122,19 +130,105 @@ public final class InMemoryEventLogStore implements EventLogStore {
             .computeIfAbsent(tenant.tenantId(), k -> new CopyOnWriteArrayList<>())
             .add(guardedHandler);
 
-        return Promise.of(new Subscription() {
+        Subscription subscription = new Subscription() {
             @Override
             public void cancel() {
                 cancelled[0] = true;
                 List<Consumer<EventEntry>> list = tailListeners.get(tenant.tenantId());
                 if (list != null) list.remove(guardedHandler);
+                // P3-03: Remove from tracked subscriptions
+                Map<String, Subscription> tenantSubs = subscriptions.get(tenant.tenantId());
+                if (tenantSubs != null) tenantSubs.remove(subscriptionId);
             }
 
             @Override
             public boolean isCancelled() {
                 return cancelled[0];
             }
-        });
+            
+            @Override
+            public SubscriptionId getId() {
+                return new SubscriptionId(subscriptionId);
+            }
+        };
+        
+        // P3-03: Track subscription for unsubscribe
+        subscriptions.computeIfAbsent(tenant.tenantId(), k -> new ConcurrentHashMap<>())
+            .put(subscriptionId, subscription);
+        
+        return Promise.of(subscription);
+    }
+
+    // ==================== Checkpoint Management (P3-03) ====================
+
+    @Override
+    public Promise<Optional<Checkpoint>> readCheckpoint(TenantContext tenant, String stream, String consumerGroup) {
+        String key = stream + ":" + consumerGroup;
+        Map<String, Checkpoint> tenantCheckpoints = checkpoints.get(tenant.tenantId());
+        if (tenantCheckpoints == null) {
+            return Promise.of(Optional.empty());
+        }
+        return Promise.of(Optional.ofNullable(tenantCheckpoints.get(key)));
+    }
+
+    @Override
+    public Promise<Checkpoint> commitCheckpoint(TenantContext tenant, String stream, String consumerGroup, Offset offset, String idempotencyKey) {
+        String key = stream + ":" + consumerGroup;
+        Checkpoint checkpoint = new Checkpoint(stream, consumerGroup, offset, Instant.now(), idempotencyKey);
+        checkpoints.computeIfAbsent(tenant.tenantId(), k -> new ConcurrentHashMap<>())
+            .put(key, checkpoint);
+        return Promise.of(checkpoint);
+    }
+
+    @Override
+    public Promise<Boolean> deleteCheckpoint(TenantContext tenant, String stream, String consumerGroup) {
+        String key = stream + ":" + consumerGroup;
+        Map<String, Checkpoint> tenantCheckpoints = checkpoints.get(tenant.tenantId());
+        if (tenantCheckpoints == null) {
+            return Promise.of(false);
+        }
+        return Promise.of(tenantCheckpoints.remove(key) != null);
+    }
+
+    @Override
+    public Promise<Map<String, Checkpoint>> getAllCheckpointsWithMetadata(TenantContext tenant) {
+        Map<String, Checkpoint> tenantCheckpoints = checkpoints.get(tenant.tenantId());
+        if (tenantCheckpoints == null) {
+            return Promise.of(Map.of());
+        }
+        return Promise.of(Map.copyOf(tenantCheckpoints));
+    }
+
+    // ==================== Replay (P3-03) ====================
+
+    @Override
+    public Promise<List<EventEntry>> replay(TenantContext tenant, ReplaySpec spec) {
+        List<EventEntry> entries = store.getOrDefault(tenant.tenantId(), List.of());
+        long fromOffsetValue = numericOffsetValue(spec.fromOffset());
+        long toOffsetValue = spec.toOffset().value().equals("-1") 
+            ? Long.MAX_VALUE 
+            : numericOffsetValue(spec.toOffset());
+        
+        return Promise.of(entries.stream()
+            .skip(fromOffsetValue)
+            .takeWhile(e -> {
+                long eventOffset = numericOffsetValue(Offset.of(String.valueOf(entries.indexOf(e) + 1)));
+                return eventOffset <= toOffsetValue;
+            })
+            .filter(e -> spec.eventTypes().isEmpty() || spec.eventTypes().contains(e.eventType()))
+            .toList());
+    }
+
+    @Override
+    public Promise<Void> unsubscribe(TenantContext tenant, SubscriptionId subscriptionId) {
+        Map<String, Subscription> tenantSubs = subscriptions.get(tenant.tenantId());
+        if (tenantSubs != null) {
+            Subscription subscription = tenantSubs.remove(subscriptionId.value());
+            if (subscription != null) {
+                subscription.cancel();
+            }
+        }
+        return Promise.of(null);
     }
 
     // ── Offset utilities ──────────────────────────────────────────────────────

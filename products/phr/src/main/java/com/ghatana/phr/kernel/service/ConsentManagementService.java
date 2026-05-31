@@ -469,6 +469,28 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
         );
     }
 
+    /**
+     * Gets active, unexpired grants issued to a recipient.
+     *
+     * @param recipientId the provider or caregiver identifier receiving delegated access
+     * @return active grants for the recipient; never null
+     */
+    public Promise<List<ConsentGrant>> getActiveGrantsForRecipient(String recipientId) {
+        ensureRunning();
+
+        String sanitizedRecipientId = PhrInputSanitizationUtils.requireSafeIdentifier(recipientId, "recipientId");
+        return queryRecords(
+            CONSENT_DATASET,
+            "recipientId = :recipientId AND status = :status",
+            Map.of("recipientId", sanitizedRecipientId, "status", "ACTIVE"),
+            1000,
+            0,
+            ConsentGrant.class
+        ).map(grants -> grants.stream()
+            .filter(grant -> !grant.isExpired())
+            .toList());
+    }
+
     // ==================== Emergency Break-the-Glass ====================
 
     /**

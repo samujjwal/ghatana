@@ -2,6 +2,7 @@ package com.ghatana.phr.api.routes;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.ghatana.phr.kernel.service.PatientRecordService;
+import com.ghatana.phr.security.PhrPolicyEvaluator;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -12,6 +13,7 @@ import io.activej.promise.Promise;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -46,10 +48,15 @@ public final class PhrPatientProfileRoutes {
 
     private final Eventloop eventloop;
     private final PatientRecordService patientRecordService;
+    private final PhrPolicyEvaluator policyEvaluator;
 
-    public PhrPatientProfileRoutes(Eventloop eventloop, PatientRecordService patientRecordService) {
+    public PhrPatientProfileRoutes(
+            Eventloop eventloop,
+            PatientRecordService patientRecordService,
+            PhrPolicyEvaluator policyEvaluator) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
         this.patientRecordService = Objects.requireNonNull(patientRecordService, "patientRecordService must not be null");
+        this.policyEvaluator = Objects.requireNonNull(policyEvaluator, "policyEvaluator must not be null");
     }
 
     /**
@@ -59,53 +66,51 @@ public final class PhrPatientProfileRoutes {
      */
     public AsyncServlet getServlet() {
         return RoutingServlet.builder(eventloop)
-            .with(HttpMethod.GET, "/", this::handleGetProfile)
-            .with(HttpMethod.PUT, "/", this::handleUpdateProfile)
+            .with(HttpMethod.GET, "/", request -> handleGetProfile(request, "phr.profile.access"))
+            .with(HttpMethod.PUT, "/", request -> handleUpdateProfile(request, "phr.profile.access"))
             .build();
     }
 
-    private Promise<HttpResponse> handleGetProfile(HttpRequest request) {
+    /**
+     * Returns the routing servlet for profile settings endpoints.
+     *
+     * @return routing servlet; never null
+     */
+    public AsyncServlet getSettingsServlet() {
+        return RoutingServlet.builder(eventloop)
+            .with(HttpMethod.GET, "/", request -> handleGetProfile(request, "phr.settings.access"))
+            .with(HttpMethod.PUT, "/", request -> handleUpdateProfile(request, "phr.settings.access"))
+            .build();
+    }
+
+    private Promise<HttpResponse> handleGetProfile(HttpRequest request, String policyId) {
         String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         try {
             context = PhrRouteSupport.requireContext(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
+        String patientId = targetPatientId(request, context);
 
-        // Fetch patient record from PatientRecordService
-        return patientRecordService.getPatient(context.principalId())
-            .then(patientOpt -> {
-                if (patientOpt.isEmpty()) {
-                    return PhrRouteSupport.errorResponse(404, "PATIENT_NOT_FOUND", "Patient not found");
+        return requireAccess(context, patientId, policyId, "READ")
+            .then(decision -> {
+                if (!decision.isAllowed()) {
+                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
                 }
+                return patientRecordService.getPatient(patientId)
+                    .then(patientOpt -> {
+                        if (patientOpt.isEmpty()) {
+                            return PhrRouteSupport.errorResponse(404, "PATIENT_NOT_FOUND", "Patient not found", context.correlationId());
+                        }
 
-                PatientRecordService.Patient patient = patientOpt.get();
-                PatientRecordService.Demographics demographics = patient.getDemographics();
-                PatientRecordService.Contact contact = demographics != null ? demographics.getContact() : null;
-                PatientRecordService.Address address = demographics != null ? demographics.getAddress() : null;
-
-                // Build profile response from actual patient data
-                Map<String, Object> profile = new LinkedHashMap<>();
-                profile.put("id", patient.getId());
-                profile.put("tenantId", context.tenantId());
-                profile.put("nationalId", patient.getNationalId() != null ? patient.getNationalId() : "");
-                profile.put("name", demographics != null ? demographics.getFullName() : "");
-                profile.put("birthDate", demographics != null ? demographics.getDateOfBirth() : "");
-                profile.put("gender", demographics != null ? demographics.getGender() : "");
-                profile.put("location", address != null ? (address.getDistrict() != null ? address.getDistrict() : "") : "");
-                profile.put("emergencyContact", contact != null ? (contact.getPhone() != null ? contact.getPhone() : "") : "");
-                profile.put("preferredLanguage", "en"); // TODO: Add to demographics model
-                profile.put("facilityId", ""); // TODO: Add to demographics model
-                profile.put("bloodType", ""); // TODO: Add to demographics model
-                profile.put("createdAt", patient.getCreatedAt() != null ? patient.getCreatedAt().toString() : "");
-                profile.put("updatedAt", patient.getUpdatedAt() != null ? patient.getUpdatedAt().toString() : "");
-
-                return PhrRouteSupport.jsonResponseWithCorrelation(200, profile, context.correlationId());
+                        return PhrRouteSupport.jsonResponseWithCorrelation(
+                            200, profileDto(patientOpt.get(), context, List.of()), context.correlationId());
+                    });
             });
     }
 
-    private Promise<HttpResponse> handleUpdateProfile(HttpRequest request) {
+    private Promise<HttpResponse> handleUpdateProfile(HttpRequest request, String policyId) {
         String correlationId = PhrRouteSupport.extractCorrelationId(request);
         PhrRouteSupport.PhrRequestContext context;
         String idempotencyKey;
@@ -113,10 +118,10 @@ public final class PhrPatientProfileRoutes {
             context = PhrRouteSupport.requireContext(request);
             idempotencyKey = PhrRouteSupport.extractIdempotencyKey(request);
         } catch (IllegalArgumentException ex) {
-            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage(), correlationId);
         }
 
-        // Validate role-based edit permissions
+        String patientId = targetPatientId(request, context);
         Set<String> allowedFields = getAllowedFieldsForRole(context.role());
 
         return request.loadBody()
@@ -130,64 +135,52 @@ public final class PhrPatientProfileRoutes {
                 try {
                     JsonNode node = PhrRouteSupport.JSON.readTree(raw);
 
-                    // Validate each field against permissions
-                    Map<String, Object> validatedUpdates = new LinkedHashMap<>();
-                    for (String fieldName : allowedFields) {
-                        if (node.has(fieldName)) {
-                            JsonNode fieldNode = node.get(fieldName);
-                            String value = fieldNode.isTextual() ? fieldNode.asText() : fieldNode.toString();
-
-                            // Field-level validation
-                            String validationError = validateField(fieldName, value);
-                            if (validationError != null) {
-                                return PhrRouteSupport.errorResponse(400, "INVALID_FIELD",
-                                    fieldName + ": " + validationError, context.correlationId());
-                            }
-
-                            validatedUpdates.put(fieldName, value);
-                        }
-                    }
-
-                    // Check for disallowed fields
+                    Map<String, String> validatedUpdates = new LinkedHashMap<>();
                     for (java.util.Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
                         String fieldName = it.next();
                         if (!allowedFields.contains(fieldName)) {
                             return PhrRouteSupport.errorResponse(403, "FIELD_NOT_EDITABLE", "Field '" + fieldName + "' cannot be edited by role: " + context.role(),
                                 context.correlationId());
                         }
+                        JsonNode fieldNode = node.get(fieldName);
+                        if (!fieldNode.isNull() && !fieldNode.isTextual()) {
+                            return PhrRouteSupport.errorResponse(400, "INVALID_FIELD",
+                                fieldName + ": value must be a string", context.correlationId());
+                        }
+                        String value = fieldNode.isNull() ? "" : fieldNode.asText();
+
+                        String validationError = validateField(fieldName, value);
+                        if (validationError != null) {
+                            return PhrRouteSupport.errorResponse(400, "INVALID_FIELD",
+                                fieldName + ": " + validationError, context.correlationId());
+                        }
+
+                        validatedUpdates.put(fieldName, value);
                     }
 
-                    // Fetch existing patient record and apply updates
-                    return patientRecordService.getPatient(context.principalId())
-                        .then(patientOpt -> {
-                            if (patientOpt.isEmpty()) {
-                                return PhrRouteSupport.errorResponse(404, "PATIENT_NOT_FOUND", "Patient not found", context.correlationId());
+                    if (validatedUpdates.isEmpty()) {
+                        return PhrRouteSupport.errorResponse(400, "NO_EDITABLE_FIELDS", "At least one editable profile field is required",
+                            context.correlationId());
+                    }
+
+                    return requireAccess(context, patientId, policyId, "WRITE")
+                        .then(decision -> {
+                            if (!decision.isAllowed()) {
+                                return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
                             }
+                            return patientRecordService.getPatient(patientId)
+                                .then(patientOpt -> {
+                                    if (patientOpt.isEmpty()) {
+                                        return PhrRouteSupport.errorResponse(404, "PATIENT_NOT_FOUND", "Patient not found", context.correlationId());
+                                    }
 
-                            PatientRecordService.Patient patient = patientOpt.get();
-                            PatientRecordService.Demographics demographics = patient.getDemographics();
-                            PatientRecordService.Contact contact = demographics != null ? demographics.getContact() : null;
-                            PatientRecordService.Address address = demographics != null ? demographics.getAddress() : null;
-
-                            // Apply validated updates to patient record
-                            // Note: This is a simplified implementation that updates contact/address fields
-                            // A full implementation would need to reconstruct the full Patient object with all nested types
-
-                            Map<String, Object> response = new LinkedHashMap<>();
-                            response.put("status", "updated");
-                            response.put("patientId", patient.getId());
-                            response.put("updatedFields", validatedUpdates.keySet());
-                            response.put("audit", Map.of(
-                                "action", "PROFILE_UPDATE",
-                                "actor", context.principalId(),
-                                "actorRole", context.role(),
-                                "timestamp", Instant.now().toString(),
-                                "correlationId", context.correlationId()
-                            ));
-
-                            // TODO: Implement actual persistence by reconstructing Patient object with updated fields
-                            // For now, return success with audit trail
-                            return PhrRouteSupport.jsonResponseWithCorrelation(200, response, context.correlationId());
+                                    PatientRecordService.Patient updated = applyUpdates(patientOpt.get(), validatedUpdates);
+                                    return patientRecordService.updatePatient(updated)
+                                        .then(stored -> PhrRouteSupport.jsonResponseWithCorrelation(
+                                            200,
+                                            profileDto(stored, context, List.copyOf(validatedUpdates.keySet())),
+                                            context.correlationId()));
+                                });
                         });
                 } catch (Exception ex) {
                     return PhrRouteSupport.errorResponse(400, "INVALID_JSON", "Request body must be valid JSON: " + ex.getMessage(), context.correlationId());
@@ -242,5 +235,135 @@ public final class PhrPatientProfileRoutes {
             }
             default -> null;
         };
+    }
+
+    private Promise<PhrPolicyEvaluator.PolicyDecision> requireAccess(
+            PhrRouteSupport.PhrRequestContext context,
+            String patientId,
+            String policyId,
+            String action) {
+        return policyEvaluator.evaluateByPolicyId(policyId, context, patientId, null)
+            .then(decision -> {
+                if (!decision.isAllowed()) {
+                    return Promise.of(decision);
+                }
+                return policyEvaluator.canAccessPhiResourceAsync(
+                    context,
+                    patientId,
+                    "profile-settings",
+                    action,
+                    context.tenantId(),
+                    context.facilityId());
+            });
+    }
+
+    private static String targetPatientId(HttpRequest request, PhrRouteSupport.PhrRequestContext context) {
+        String patientId = request.getQueryParameter("patientId");
+        return patientId == null || patientId.isBlank() ? context.principalId() : patientId.strip();
+    }
+
+    private static PatientRecordService.Patient applyUpdates(
+            PatientRecordService.Patient patient,
+            Map<String, String> updates) {
+        PatientRecordService.Demographics demographics = patient.getDemographics() != null
+            ? patient.getDemographics()
+            : new PatientRecordService.Demographics(null, null, null, "unknown", null, null);
+        PatientRecordService.Contact contact = demographics.getContact() != null
+            ? demographics.getContact()
+            : new PatientRecordService.Contact(null, null, null, null);
+        PatientRecordService.Address address = demographics.getAddress() != null
+            ? demographics.getAddress()
+            : new PatientRecordService.Address(null, null, null, null, null);
+        PatientRecordService.MedicalHistory medicalHistory = patient.getMedicalHistory() != null
+            ? patient.getMedicalHistory()
+            : new PatientRecordService.MedicalHistory(List.of(), List.of(), List.of(), null);
+
+        PatientRecordService.Demographics updatedDemographics = demographics;
+        PatientRecordService.MedicalHistory updatedMedicalHistory = medicalHistory;
+        for (Map.Entry<String, String> entry : updates.entrySet()) {
+            String value = entry.getValue();
+            switch (entry.getKey()) {
+                case "emergencyContact" -> updatedDemographics = updatedDemographics.withContact(contact.withEmergencyContact(value));
+                case "preferredLanguage" -> updatedDemographics = updatedDemographics.withPreferredLanguage(value);
+                case "facilityId" -> updatedDemographics = updatedDemographics.withFacilityId(value);
+                case "gender" -> updatedDemographics = updatedDemographics.withGender(value.toLowerCase());
+                case "location" -> updatedDemographics = updatedDemographics.withAddress(address.withDistrict(value));
+                case "bloodType" -> updatedMedicalHistory = updatedMedicalHistory.withBloodType(value);
+                default -> throw new IllegalArgumentException("Unsupported profile field: " + entry.getKey());
+            }
+            contact = updatedDemographics.getContact() != null ? updatedDemographics.getContact() : contact;
+            address = updatedDemographics.getAddress() != null ? updatedDemographics.getAddress() : address;
+        }
+
+        return patient.withDemographics(updatedDemographics).withMedicalHistory(updatedMedicalHistory);
+    }
+
+    private static Map<String, Object> profileDto(
+            PatientRecordService.Patient patient,
+            PhrRouteSupport.PhrRequestContext context,
+            List<String> updatedFields) {
+        PatientRecordService.Demographics demographics = patient.getDemographics();
+        PatientRecordService.Contact contact = demographics != null ? demographics.getContact() : null;
+        PatientRecordService.Address address = demographics != null ? demographics.getAddress() : null;
+        PatientRecordService.MedicalHistory medicalHistory = patient.getMedicalHistory();
+
+        Map<String, Object> profile = new LinkedHashMap<>();
+        profile.put("id", patient.getId());
+        profile.put("tenantId", context.tenantId());
+        profile.put("nationalId", value(patient.getNationalId()));
+        profile.put("mrn", value(patient.getNationalId()));
+        profile.put("name", demographics != null ? value(demographics.getFullName()) : "");
+        profile.put("birthDate", demographics != null ? value(demographics.getDateOfBirth()) : "");
+        profile.put("age", demographics != null ? numericAge(demographics.getAge()) : 0);
+        profile.put("gender", demographics != null ? value(demographics.getGender()) : "");
+        profile.put("location", address != null ? value(address.getDistrict()) : "");
+        profile.put("emergencyContact", contact != null ? value(contact.getEmergencyContact()) : "");
+        profile.put("preferredLanguage", demographics != null ? firstNonBlank(demographics.getPreferredLanguage(), "en") : "en");
+        profile.put("facilityId", demographics != null ? value(demographics.getFacilityId()) : "");
+        profile.put("bloodType", medicalHistory != null ? value(medicalHistory.getBloodType()) : "");
+        profile.put("createdAt", patient.getCreatedAt() != null ? patient.getCreatedAt().toString() : "");
+        profile.put("updatedAt", patient.getUpdatedAt() != null ? patient.getUpdatedAt().toString() : "");
+        profile.put("updatedFields", updatedFields);
+        profile.put("audit", Map.of(
+            "action", updatedFields.isEmpty() ? "PROFILE_READ" : "PROFILE_UPDATE",
+            "actor", context.principalId(),
+            "actorRole", context.role(),
+            "timestamp", Instant.now().toString(),
+            "correlationId", context.correlationId()
+        ));
+        profile.put("fieldClassification", fieldClassification());
+        return profile;
+    }
+
+    private static Map<String, String> fieldClassification() {
+        Map<String, String> fields = new LinkedHashMap<>();
+        fields.put("nationalId", "direct_identifier");
+        fields.put("mrn", "direct_identifier");
+        fields.put("name", "direct_identifier");
+        fields.put("birthDate", "demographic_phi");
+        fields.put("age", "demographic_phi");
+        fields.put("gender", "demographic_phi");
+        fields.put("location", "demographic_phi");
+        fields.put("emergencyContact", "contact_phi");
+        fields.put("preferredLanguage", "preference");
+        fields.put("facilityId", "care_network");
+        fields.put("bloodType", "clinical_phi");
+        return fields;
+    }
+
+    private static int numericAge(String age) {
+        try {
+            return Integer.parseInt(age);
+        } catch (NumberFormatException ex) {
+            return 0;
+        }
+    }
+
+    private static String firstNonBlank(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
+    }
+
+    private static String value(String value) {
+        return value != null ? value : "";
     }
 }

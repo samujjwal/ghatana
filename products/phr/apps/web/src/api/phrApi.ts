@@ -45,6 +45,7 @@ export {
 
 export {
   createConsentGrant,
+  fetchConsentGrants,
   revokeConsentGrant,
 } from './consentApi';
 

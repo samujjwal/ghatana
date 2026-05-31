@@ -437,6 +437,7 @@ export const routes: RouteObject[] = [
       },
 
       // Alerts - operator-facing alert triage console (restored as canonical route)
+      // P5-04: Explicit operator preview audience
       {
         path: "alerts",
         element: (
@@ -444,6 +445,7 @@ export const routes: RouteObject[] = [
             <RuntimeCapabilityRouteGate
               aliases={["alert-triage", "monitoring", "alerts"]}
               allowPreview
+              allowPreviewFor="operator"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage surfaceName="Alerts" />
               ))}
@@ -471,15 +473,15 @@ export const routes: RouteObject[] = [
           </RoleProtectedRoute>
         ),
       },
-      // Media Artifacts - Audio-video lifecycle management
-      // G22: Surface-driven navigation with runtime capability gate
+      // Media Artifacts - operator-preview surface per P5-01
       {
         path: "media/artifacts",
         element: (
           <RoleProtectedRoute routePath="/media/artifacts">
             <RuntimeCapabilityRouteGate
-              aliases={["media", "media-artifacts", "audio-video"]}
+              aliases={["media", "media-artifacts", "audio-video", "media.audioVideo"]}
               allowPreview
+              allowPreviewFor="operator"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage surfaceName="Media Artifacts" />
               ))}
@@ -492,25 +494,37 @@ export const routes: RouteObject[] = [
       // Release-truth route hidden per Group 7 requirement - not discoverable in this iteration
 
       // DC-P3-002: Runtime Truth — plane/surface/dependency drilldown
+      // P5-04: Internal preview surface
       {
         path: "operations/runtime-truth",
         element: (
           <RoleProtectedRoute routePath="/operations/runtime-truth">
-            {withSuspense(RuntimeTruthPage)}
+            <RuntimeCapabilityRouteGate
+              aliases={["runtime-truth", "runtime.truth.read"]}
+              allowPreview
+              allowPreviewFor="internal"
+              fallback={withSuspense(() => (
+                <DisabledSurfacePage
+                  surfaceName="Runtime Truth"
+                  surfaceDescription="Runtime Truth provides plane, surface, and dependency drilldown for internal diagnostics."
+                />
+              ))}
+            >
+              {withSuspense(RuntimeTruthPage)}
+            </RuntimeCapabilityRouteGate>
           </RoleProtectedRoute>
         ),
       },
 
       // AEP Integration Pages
       // Event Explorer — real-time AEP event stream explorer
-      // DC-P1-003: gated on runtime truth
+      // DC-P1-003: gated on runtime truth, P5-04: active lifecycle - no preview
       {
         path: "events",
         element: (
           <RoleProtectedRoute routePath="/events">
             <RuntimeCapabilityRouteGate
               aliases={["event-stream", "aep", "event-explorer", "events"]}
-              allowPreview
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Event Explorer"
@@ -523,7 +537,7 @@ export const routes: RouteObject[] = [
           </RoleProtectedRoute>
         ),
       },
-      // Memory Plane Viewer — restored as canonical route
+      // Memory Plane Viewer — operator-preview surface per P5-01
       {
         path: "memory",
         element: (
@@ -531,6 +545,7 @@ export const routes: RouteObject[] = [
             <RuntimeCapabilityRouteGate
               aliases={["memory-plane", "memory"]}
               allowPreview
+              allowPreviewFor="operator"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage surfaceName="Memory Plane" />
               ))}
@@ -540,7 +555,8 @@ export const routes: RouteObject[] = [
           </RoleProtectedRoute>
         ),
       },
-      // Entity Browser — preview operator surface gated on runtime truth
+      // Entity Browser — operator-preview surface
+      // P5-04: Explicit operator preview audience
       {
         path: "entities",
         element: (
@@ -548,6 +564,7 @@ export const routes: RouteObject[] = [
             <RuntimeCapabilityRouteGate
               aliases={["entity-browser", "entities"]}
               allowPreview
+              allowPreviewFor="operator"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Entity Browser"
@@ -560,18 +577,19 @@ export const routes: RouteObject[] = [
           </RoleProtectedRoute>
         ),
       },
-      // Context Explorer — preview operator surface gated on runtime truth
+      // Context Explorer — target-only surface per P5-01 (not discoverable)
       {
         path: "context",
         element: (
           <RoleProtectedRoute routePath="/context">
             <RuntimeCapabilityRouteGate
-              aliases={["context-explorer", "context"]}
-              allowPreview
+              aliases={["context-explorer", "context", "context.plane"]}
+              // P5-04: Target-only - no preview available
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Context Explorer"
-                  surfaceDescription="The Context Explorer surface provides contextual graph navigation for entities and events."
+                  status="UNAVAILABLE"
+                  surfaceDescription="Context Explorer is not yet available. This target-only surface is under active development."
                 />
               ))}
             >
@@ -580,14 +598,15 @@ export const routes: RouteObject[] = [
           </RoleProtectedRoute>
         ),
       },
-      // Data Fabric — preview operator surface gated on runtime truth
+      // Data Fabric — operator-preview surface per P5-01
       {
         path: "fabric",
         element: (
           <RoleProtectedRoute routePath="/fabric">
             <RuntimeCapabilityRouteGate
-              aliases={["data-fabric", "fabric"]}
+              aliases={["data-fabric", "fabric", "data.storageProfiles"]}
               allowPreview
+              allowPreviewFor="operator"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Data Fabric"
@@ -600,14 +619,15 @@ export const routes: RouteObject[] = [
           </RoleProtectedRoute>
         ),
       },
-      // Agent Catalog — restored as canonical operator-facing route
+      // Agent Catalog — operator-preview surface per P5-01
       {
         path: "agents",
         element: (
           <RoleProtectedRoute routePath="/agents">
             <RuntimeCapabilityRouteGate
-              aliases={["agent-catalog", "agents"]}
+              aliases={["agent-catalog", "agents", "action.agentRuntime"]}
               allowPreview
+              allowPreviewFor="operator"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage surfaceName="Agent Catalog" />
               ))}
@@ -618,14 +638,14 @@ export const routes: RouteObject[] = [
         ),
       },
 
-      // Settings
+      // Settings - boundary surface, no preview
+      // P5-04: Removed blanket allowPreview - settings is under development
       {
         path: "settings",
         element: (
           <RoleProtectedRoute routePath="/settings">
             <RuntimeCapabilityRouteGate
               aliases={["settings", "config"]}
-              allowPreview
               fallback={withSuspense(() => (
                 <DisabledSurfacePage surfaceName="Settings" />
               ))}
@@ -636,7 +656,7 @@ export const routes: RouteObject[] = [
         ),
       },
 
-      // Plugins — DC-P1-003: gated on runtime truth
+      // Plugins — operator-preview surface per P5-01 (unless plugin lifecycle is complete)
       // DC-P1-009: Fixed duplicate rendering by using Outlet pattern
       {
         path: "plugins",
@@ -645,6 +665,7 @@ export const routes: RouteObject[] = [
             <RuntimeCapabilityRouteGate
               aliases={["plugin-management", "plugins", "extensions"]}
               allowPreview
+              allowPreviewFor="operator"
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Plugins"
@@ -671,13 +692,13 @@ export const routes: RouteObject[] = [
       },
 
       // Connectors - Data source connector management
+      // P5-04: Active lifecycle - no preview
       {
         path: "connectors",
         element: (
           <RoleProtectedRoute routePath="/connectors">
             <RuntimeCapabilityRouteGate
               aliases={["data-connectors", "connectors"]}
-              allowPreview
               fallback={withSuspense(() => (
                 <DisabledSurfacePage
                   surfaceName="Data Connectors"

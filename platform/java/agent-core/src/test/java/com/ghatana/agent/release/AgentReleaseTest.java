@@ -242,7 +242,7 @@ class AgentReleaseTest {
                     .evaluationPackId("eval-pack-1")
                     .evaluationPackDigest("digest-1")
                     .memoryContractId("memory-contract-1")
-                    .addCompatibleRuntime("aep:2.x")
+                    .addCompatibleRuntime("runtime:2.x")
                     .build();
 
             assertThatThrownBy(() -> release.compatibleRuntimeVersions().add("extra"))

@@ -6,8 +6,8 @@ const context: CanvasAIContext = {
   selectedElementIds: [],
   activeLayer: "main",
   visibleElementIds: [],
-  userQuery: "build a PHR dashboard",
-  productMetadata: { productId: "phr" },
+  userQuery: "build a Product dashboard",
+  productMetadata: { productId: "sample-product" },
 };
 
 describe("YappcCanvasAIAdapter", () => {
@@ -46,7 +46,7 @@ describe("YappcCanvasAIAdapter", () => {
       }),
     );
 
-    await expect(new YappcCanvasAIAdapter().generateElements("PHR route", context))
+    await expect(new YappcCanvasAIAdapter().generateElements("Product route", context))
       .rejects.toThrow("Canvas AI element generation unavailable");
   });
 

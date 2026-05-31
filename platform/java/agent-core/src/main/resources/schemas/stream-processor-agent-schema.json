@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://ghatana.com/schemas/agent/v1/stream-processor-agent.json",
   "title": "Stream Processor Agent Configuration",
-  "description": "Schema for STREAM_PROCESSOR agent type — stateful event-driven stream processing with checkpointing (AEP operators)",
+  "description": "Schema for STREAM_PROCESSOR agent type — stateful event-driven stream processing with checkpointing",
   "allOf": [
     { "$ref": "agent-base-schema.json" }
   ],

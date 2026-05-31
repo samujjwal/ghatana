@@ -30,9 +30,29 @@ public final class ProductContract extends KernelContract {
      */
     public enum RouteState {
         /**
-         * Route is active and stable.
+         * Legacy alias for a stable route.
          */
         ACTIVE,
+        /**
+         * Route is stable and production mountable.
+         */
+        STABLE,
+        /**
+         * Route is available for controlled preview and is not broadly discoverable.
+         */
+        PREVIEW,
+        /**
+         * Route is present in the contract but blocked at runtime.
+         */
+        BLOCKED,
+        /**
+         * Route is intentionally hidden and must not be mounted as a live API.
+         */
+        HIDDEN,
+        /**
+         * Route is planned but deferred and must not be mounted as a live API.
+         */
+        DEFERRED,
         /**
          * Route is deprecated and will be removed in a future version.
          */
@@ -196,10 +216,10 @@ public final class ProductContract extends KernelContract {
                 throw new IllegalArgumentException("Invalid HTTP method: " + route.method());
             }
             // In no-legacy mode, reject deprecated/removed/migration states
-            if (noLegacyMode && route.state() != RouteState.ACTIVE) {
+            if (noLegacyMode && route.state() != RouteState.ACTIVE && route.state() != RouteState.STABLE) {
                 throw new IllegalArgumentException(
                     "No-legacy mode enabled: route " + route.id() + " has state " + route.state() +
-                    ", only ACTIVE state is allowed"
+                    ", only ACTIVE/STABLE state is allowed"
                 );
             }
         }

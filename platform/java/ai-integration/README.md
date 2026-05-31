@@ -2,7 +2,7 @@
 
 ## Overview
 
-The AI Platform provides shared infrastructure for managing AI models, features, and observability across all Ghatana products (Virtual-Org, Software-Org, YAPPC, AEP).
+The AI Platform provides shared infrastructure for managing AI models, features, and observability across all Ghatana products.
 
 ## Purpose
 
@@ -58,20 +58,14 @@ com.ghatana.aiplatform.featurestore.*  — Feature engineering, storage, and ser
 
 ## Integration Points
 
-### With AEP
+Products can integrate with the AI Platform for:
 
 - Feature computation from event patterns
 - Model serving in real-time pipelines
-- Prediction result events back to EventCloud
-
-### With Virtual-Org
-
+- Prediction result events back to event systems
 - Agent behavior models
 - Task recommendation engines
 - KPI prediction models
-
-### With Software-Org
-
 - Code quality models
 - Sprint velocity predictions
 - Incident classification models
@@ -115,8 +109,7 @@ Submodule documentation (planned, not yet implemented):
 ## Related Modules
 
 - `libs:ai-integration` - LLM/embedding integrations (OpenAI)
-- `products:agentic-event-processor` - Real-time event processing
-- `products:yappc` - Low-code app platform with AI features
+- Product-specific modules for real-time event processing and AI features
 
 @doc.type library
 @doc.purpose Shared AI infrastructure for model management and feature serving

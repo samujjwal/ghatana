@@ -30,9 +30,9 @@ vi.mock('../../../clients/productFamilyClient', () => ({
       {
         assetId: 'asset-1',
         type: 'module',
-        sourceProduct: 'phr',
-        displayName: 'Reusable consent module',
-        domain: 'healthcare',
+        sourceProduct: 'sample-product',
+        displayName: 'Reusable approval module',
+        domain: 'workflow',
         paths: [],
         maturity: 'candidate',
         reuseMode: 'reference',
@@ -68,7 +68,7 @@ vi.mock('../../../clients/productFamilyClient', () => ({
 }));
 
 describe('ProductFamilyControlPlanePage accessibility', () => {
-  it('has no axe violations in the default PHR cockpit view', async () => {
+  it('has no axe violations in the default Sample Product cockpit view', async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
@@ -82,7 +82,7 @@ describe('ProductFamilyControlPlanePage accessibility', () => {
       </QueryClientProvider>,
     );
 
-    await findByText('PHR Release Readiness Cockpit');
+    await findByText('Sample Product Release Readiness Cockpit');
 
     const results = await axe(container);
     expect(results).toHaveNoViolations();

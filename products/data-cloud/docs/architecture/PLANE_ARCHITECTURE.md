@@ -153,11 +153,11 @@ Status values: **active** means implemented as an active Gradle/runtime module, 
 | `planes/intelligence/feature-ingest/` | `planes/intelligence/feature-ingest/` | Intelligence | preview | Feature ingestion and ML substrate |
 | `planes/governance/core/` | `planes/governance/core/` | Governance | active | Governance and policy support |
 | `planes/operations/config/` | `planes/operations/config/` | Operations | active | Runtime configuration model |
-| `planes/action/operator-contracts/` | `planes/action/operator-contracts/` | Action | preview | Action Plane operator contracts and extension interfaces; AEP semantics still need executable lifecycle proof |
-| `planes/action/central-runtime/` | `planes/action/central-runtime/` | Action | preview | Central runtime infrastructure |
-| `planes/action/engine/` | `planes/action/engine/` | Action | preview | Pattern detection and adaptive learning engine foundations |
-| `planes/action/orchestrator/` | `planes/action/orchestrator/` | Action | preview | Pipeline and agent orchestration runtime foundations |
-| `planes/action/agent-runtime/` | `planes/action/agent-runtime/` | Action | preview | Agent execution context and lifecycle management foundations |
+| `planes/action/operator-contracts/` | `planes/action/operator-contracts/` | Action | active (semantic readiness partial) | Operator contracts defined; PatternSpec compiler, EventCloud SPI, and executable lifecycle still incomplete |
+| `planes/action/central-runtime/` | `planes/action/central-runtime/` | Action | active (semantic readiness partial) | Central runtime infrastructure active; replay-safe execution partial |
+| `planes/action/engine/` | `planes/action/engine/` | Action | active (semantic readiness partial) | Pattern detection active; PatternSpec compiler, learning-to-recommendation incomplete |
+| `planes/action/orchestrator/` | `planes/action/orchestrator/` | Action | active (replay-safe lifecycle partial) | Orchestration active; replay-safe lifecycle and idempotent execution incomplete |
+| `planes/action/agent-runtime/` | `planes/action/agent-runtime/` | Action | active (replay-safe execution partial) | Agent execution active; replay-safe execution, side-effect controls incomplete |
 | `planes/action/event-bridge/` | `planes/action/event-bridge/` | Action/Event | degraded | Event bridge between Data Cloud Event Plane and Action Plane |
 | `planes/action/server/` | `planes/action/server/` | Action/Delivery | preview | Action Plane HTTP server and API handlers |
 | `planes/action/registry/` | `planes/action/registry/` | Action | preview | Agent and pattern registry |
@@ -178,9 +178,10 @@ Status values: **active** means implemented as an active Gradle/runtime module, 
 | `extensions/agent-registry/` | `extensions/agent-registry/` | Extensions | preview | Data Cloud-backed agent registry extension and read model |
 | `extensions/agent-catalog/` | `extensions/agent-catalog/` | Extensions | preview | Agent metadata catalog |
 | `extensions/kernel-bridge/` | `extensions/kernel-bridge/` | Extensions | degraded | Kernel integration bridge |
+| `products/audio-video/` | `products/audio-video/` | Media (external) | partial | Audio-video external shared service; partial Data Cloud metadata integration, not yet full first-class modality with durable job lifecycle |
 | `deploy/helm/`, `deploy/k8s/`, `deploy/terraform/` | `deploy/*` | Operations | target-only | Deployment assets |
 
-**Context Plane Status:** Currently target-only. The `planes/context/` directory exists as a placeholder and ownership boundary but is not an active Gradle module. UI/runtime should not treat it as fully available.
+**Context Plane Status:** target-only, not user-visible. The `planes/context/` directory exists as a placeholder and ownership boundary but is not an active Gradle module. UI/runtime should not treat it as fully available until promoted from target-only status.
 
 ## Dependency Rules
 

@@ -116,9 +116,15 @@ async function importKey(b64: string): Promise<CryptoKey> {
 let cachedKey: CryptoKey | null = null;
 let cachedKeyVersion: number = 0;
 
-async function getOrCreateKey(): Promise<CryptoKey> {
+interface KeyAccessOptions {
+  skipBiometricCheck?: boolean;
+}
+
+async function getOrCreateKey(options: KeyAccessOptions = {}): Promise<CryptoKey> {
   if (cachedKey) {
-    await requireBiometricIfEnabled();
+    if (options.skipBiometricCheck !== true) {
+      await requireBiometricIfEnabled();
+    }
     // Update last access time on each cache hit
     await updateKeyAccessTime();
     return cachedKey;
@@ -140,7 +146,9 @@ async function getOrCreateKey(): Promise<CryptoKey> {
   const currentVersion = versionStr ? parseInt(versionStr, 10) : 0;
 
   if (stored) {
-    await requireBiometricIfEnabled();
+    if (options.skipBiometricCheck !== true) {
+      await requireBiometricIfEnabled();
+    }
 
     cachedKey = await importKey(stored);
     cachedKeyVersion = currentVersion;
@@ -166,6 +174,15 @@ async function requireBiometricIfEnabled(): Promise<void> {
   if (!authenticated) {
     throw new BiometricAuthenticationRequiredError();
   }
+}
+
+async function requireBiometricPolicyForPhiDecrypt(): Promise<void> {
+  if (!(await isBiometricPolicyEnabled())) {
+    await enableBiometricPolicy();
+    await logSecurityEvent("BIOMETRIC_POLICY_DEFAULT_ENABLED");
+  }
+
+  await requireBiometricIfEnabled();
 }
 
 async function initializeFreshKey(): Promise<CryptoKey> {
@@ -261,10 +278,6 @@ async function enableBiometricPolicy(): Promise<void> {
   await SecureStore.setItemAsync(BIOMETRIC_POLICY_KEY, "true", {
     keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
   });
-}
-
-async function disableBiometricPolicy(): Promise<void> {
-  await SecureStore.deleteItemAsync(BIOMETRIC_POLICY_KEY);
 }
 
 async function authenticateWithBiometrics(): Promise<boolean> {
@@ -417,7 +430,8 @@ async function encrypt(plaintext: string): Promise<string> {
 
 async function decrypt(b64: string): Promise<string> {
   const cryptoProvider = requireCrypto();
-  const key = await getOrCreateKey();
+  await requireBiometricPolicyForPhiDecrypt();
+  const key = await getOrCreateKey({ skipBiometricCheck: true });
   const combined = base64ToUint8Array(b64);
 
   const iv = combined.slice(0, IV_LENGTH_BYTES);
@@ -492,6 +506,8 @@ export function setPhiStorageAdapter(adapter: PhiStorageAdapter): void {
 /** Resets the adapter to the production default. Call in test `afterEach`. */
 export function resetPhiStorageAdapter(): void {
   activeAdapter = productionAdapter;
+  cachedKey = null;
+  cachedKeyVersion = 0;
 }
 
 /**
@@ -561,12 +577,12 @@ export async function phiEnableBiometricPolicy(): Promise<void> {
 }
 
 /**
- * Disables biometric authentication requirement for PHI access.
- * PHI will be accessible without biometric authentication after this call.
+ * Keeps biometric authentication required for PHI access.
+ * The mobile PHI policy is fail-closed, so opt-out requests preserve the gate.
  */
 export async function phiDisableBiometricPolicy(): Promise<void> {
-  await disableBiometricPolicy();
-  await logSecurityEvent("BIOMETRIC_POLICY_DISABLED");
+  await enableBiometricPolicy();
+  await logSecurityEvent("BIOMETRIC_POLICY_DISABLE_DENIED");
 }
 
 /**

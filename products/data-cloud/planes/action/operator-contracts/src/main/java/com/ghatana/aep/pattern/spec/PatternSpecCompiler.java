@@ -181,7 +181,8 @@ public final class PatternSpecCompiler {
             timePolicy,
             uncertaintyPolicy,
             isShadow,
-            isActive);
+            isActive,
+            null); // matcher will be set by default constructor
     }
 
     /**
@@ -245,7 +246,8 @@ public final class PatternSpecCompiler {
             timePolicy,
             uncertaintyPolicy,
             isShadow,
-            isActive);
+            isActive,
+            null); // matcher will be set by default constructor
     }
 
     private static PatternRuntimeNode compileExpression(

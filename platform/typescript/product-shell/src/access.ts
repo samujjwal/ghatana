@@ -111,8 +111,13 @@ function isRouteSuppressed(route: RouteAccessInput): boolean {
   // Blocked routes are completely inaccessible
   // Preview routes are discoverable but marked as preview
   // Stable routes are fully accessible
-  // Boundary and deprecated are suppressed for safety
-  return state === 'hidden' || state === 'blocked' || state === 'boundary' || state === 'deprecated';
+  // Deferred, removed, boundary, and deprecated routes are suppressed for safety
+  return state === 'hidden'
+    || state === 'blocked'
+    || state === 'deferred'
+    || state === 'removed'
+    || state === 'boundary'
+    || state === 'deprecated';
 }
 
 /**
@@ -127,7 +132,7 @@ function isRouteBlocked(route: RouteAccessInput): boolean {
 
   // Blocked stability state
   const state = route.stability ?? route.lifecycle;
-  return state === 'blocked';
+  return state === 'blocked' || state === 'removed';
 }
 
 export function filterDiscoverableRoutes(

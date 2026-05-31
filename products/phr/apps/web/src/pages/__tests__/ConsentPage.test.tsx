@@ -6,12 +6,9 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { ConsentPage } from '../../pages/ConsentPage';
 
-vi.mock('../../api/patientApi', () => ({
-  fetchDashboardData: vi.fn(),
-}));
-
 vi.mock('../../api/consentApi', () => ({
   createConsentGrant: vi.fn(),
+  fetchConsentGrants: vi.fn(),
   revokeConsentGrant: vi.fn(),
 }));
 
@@ -29,10 +26,9 @@ vi.mock('../../auth/PhrAccessContext', () => ({
   }),
 }));
 
-import { fetchDashboardData } from '../../api/patientApi';
-import { createConsentGrant, revokeConsentGrant } from '../../api/consentApi';
+import { createConsentGrant, fetchConsentGrants, revokeConsentGrant } from '../../api/consentApi';
 
-const mockFetchDashboard = fetchDashboardData as ReturnType<typeof vi.fn>;
+const mockFetchConsents = fetchConsentGrants as ReturnType<typeof vi.fn>;
 const mockCreate = createConsentGrant as ReturnType<typeof vi.fn>;
 const mockRevoke = revokeConsentGrant as ReturnType<typeof vi.fn>;
 
@@ -44,20 +40,12 @@ const sampleConsent = {
   status: 'active' as const,
 };
 
-const dashboardWithConsent = {
-  consents: [sampleConsent],
-  appointments: [],
-  labs: [],
-  medications: [],
-  records: [],
-};
-
 describe('ConsentPage', () => {
   beforeEach(() => {
-    mockFetchDashboard.mockReset();
+    mockFetchConsents.mockReset();
     mockCreate.mockReset();
     mockRevoke.mockReset();
-    mockFetchDashboard.mockResolvedValue(dashboardWithConsent);
+    mockFetchConsents.mockResolvedValue([sampleConsent]);
   });
 
   it('renders existing consents after load', async () => {
@@ -85,6 +73,7 @@ describe('ConsentPage', () => {
     fireEvent.change(inputs[0]!, { target: { value: 'grantee-42' } });
     fireEvent.change(inputs[1]!, { target: { value: 'Treatment' } });
     fireEvent.change(inputs[2]!, { target: { value: 'Patient,Observation' } });
+    fireEvent.change(screen.getByLabelText('consents.grant.actions'), { target: { value: 'read,download' } });
     fireEvent.change(screen.getByLabelText('consents.grant.expiresAt'), { target: { value: '2027-12-31' } });
 
     fireEvent.click(screen.getByText('consents.grant.submit'));
@@ -97,6 +86,7 @@ describe('ConsentPage', () => {
         purpose: 'Treatment',
         scope: expect.objectContaining({
           resourceTypes: ['Patient', 'Observation'],
+          actions: ['read', 'download'],
         }),
       }),
       expect.objectContaining({
@@ -118,6 +108,7 @@ describe('ConsentPage', () => {
     fireEvent.change(inputs[0]!, { target: { value: 'g1' } });
     fireEvent.change(inputs[1]!, { target: { value: 'Tx' } });
     fireEvent.change(inputs[2]!, { target: { value: 'Patient' } });
+    fireEvent.change(screen.getByLabelText('consents.grant.actions'), { target: { value: 'read' } });
     fireEvent.change(screen.getByLabelText('consents.grant.expiresAt'), { target: { value: '2027-01-01' } });
 
     fireEvent.click(screen.getByText('consents.grant.submit'));
@@ -128,11 +119,13 @@ describe('ConsentPage', () => {
 
   it('calls revokeConsentGrant when Revoke is clicked and confirmed', async () => {
     mockRevoke.mockResolvedValue({ grantId: 'grant-1', status: 'REVOKED' });
-    vi.stubGlobal('confirm', () => true);
+    const confirmSpy = vi.spyOn(window, 'confirm');
 
     render(<ConsentPage />);
     await waitFor(() => expect(screen.getByText('Dr. Sharma')).toBeTruthy());
 
+    fireEvent.click(screen.getByRole('button', { name: /consents.revoke Dr. Sharma/i }));
+    expect(screen.getByText('consents.revoke.confirmInline')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /consents.revoke Dr. Sharma/i }));
 
     await waitFor(() => expect(mockRevoke).toHaveBeenCalledWith(
@@ -144,7 +137,7 @@ describe('ConsentPage', () => {
         role: 'patient',
       }),
     ));
-
-    vi.unstubAllGlobals();
+    expect(confirmSpy).not.toHaveBeenCalled();
+    confirmSpy.mockRestore();
   });
 });

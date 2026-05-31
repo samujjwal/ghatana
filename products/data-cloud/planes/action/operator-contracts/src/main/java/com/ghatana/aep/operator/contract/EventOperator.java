@@ -10,7 +10,8 @@ import io.activej.promise.Promise;
  * @doc.layer product
  * @doc.pattern OperatorContract
  */
-public interface EventOperator<I, O> {
+public interface EventOperator<I, O>
+        extends OperatorLifecycleContract {
 
     OperatorId id();
 
@@ -18,9 +19,18 @@ public interface EventOperator<I, O> {
 
     OperatorVersion version();
 
+    @Override
     ValidationResult validate(OperatorSpec spec, ValidationContext ctx);
 
+    @Override
     RuntimePlan compile(OperatorSpec spec, CompileContext ctx);
 
     Promise<EventOperatorResult<O>> process(EventContext<I> input, OperatorRuntimeContext ctx);
+
+    // OperatorLifecycleContract methods are inherited:
+    // - explain(RuntimePlan, ExplanationDetailLevel)
+    // - declareSideEffects(OperatorSpec)
+    // - declareReplayBehavior(OperatorSpec)
+    // - declareRequiredPolicies(OperatorSpec)
+    // - declareObservabilityRequirements(OperatorSpec)
 }

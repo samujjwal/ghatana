@@ -93,7 +93,7 @@
           },
           "stability": {
             "type": "string",
-            "enum": ["stable", "preview", "blocked", "hidden"],
+            "enum": ["stable", "preview", "blocked", "hidden", "deferred", "removed"],
             "description": "Route stability status - only these values allowed per fix-forward policy"
           },
           "hidden": {

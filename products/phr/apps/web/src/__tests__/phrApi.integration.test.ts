@@ -75,16 +75,16 @@ describe('PHR API integration mapping', () => {
       role: 'patient',
     });
 
-    expect(dashboard.patient).toMatchObject({
-      id: 'patient-001',
-      name: 'Aarati Shrestha',
-      location: 'tenant-health-1',
+    expect(dashboard).toMatchObject({
+      tenantId: 'tenant-health-1',
+      principalId: 'patient-001',
+      profileSummary: {
+        name: 'Aarati Shrestha',
+      },
+      medications: {
+        activeCount: 2,
+      },
     });
-    expect(dashboard.medications).toEqual([]);
-    expect(dashboard.records).toEqual([]);
-    expect(dashboard.consents).toEqual([]);
-    expect(dashboard.appointments).toEqual([]);
-    expect(dashboard.labs).toEqual([]);
   });
 
   it('adds an idempotency key to mutation requests by default', async () => {
@@ -198,15 +198,22 @@ describe('PHR API integration mapping', () => {
     });
   });
 
-  it('accepts text patient export responses and empty logout responses', async () => {
+  it('uses contract-backed HIE export responses and empty logout responses', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
         const url = new URL(String(input));
-        if (url.pathname === '/fhir/Patient/current/$export') {
-          return new Response('Bundle export queued', {
-            status: 200,
-            headers: { 'Content-Type': 'text/plain' },
+        if (url.pathname === '/api/v1/hie/export') {
+          return new Response(JSON.stringify({
+            requestId: 'hie-1',
+            operation: 'EXPORT',
+            contractId: 'test-hie-contract',
+            status: 'ACCEPTED',
+            reasonCode: 'HIE_ACCEPTED',
+            correlationId: 'corr-1',
+          }), {
+            status: 202,
+            headers: { 'Content-Type': 'application/json' },
           });
         }
         if (url.pathname === '/api/v1/auth/logout') {
@@ -220,7 +227,7 @@ describe('PHR API integration mapping', () => {
       tenantId: 'tenant-health-1',
       principalId: 'patient-001',
       role: 'patient',
-    })).resolves.toBe('Bundle export queued');
+    })).resolves.toBe('ACCEPTED:hie-1');
     await expect(logoutSession({
       tenantId: 'tenant-health-1',
       principalId: 'patient-001',
@@ -332,6 +339,14 @@ describe('PHR API integration mapping', () => {
             medicationName: 'Metformin',
             dosage: '500mg',
             indication: 'Twice daily',
+            route: 'oral',
+            frequency: 'twice daily',
+            prescriberId: 'clinician-1',
+            startDate: '2026-05-28T01:00:00Z',
+            endDate: '2026-06-28T01:00:00Z',
+            adherenceSource: 'not-recorded',
+            warnings: ['HIGH: monitor renal function'],
+            interactions: ['Metformin interaction check complete'],
             status: 'ACTIVE',
             prescribedAt: '2026-05-28T01:00:00Z',
             refillsRemaining: 0,
@@ -358,8 +373,15 @@ describe('PHR API integration mapping', () => {
       role: 'patient',
     })).resolves.toMatchObject({
       id: 'rx-1',
-      warnings: ['No refills remain.'],
-      history: [{ action: 'Prescribed' }],
+      medication: 'Metformin',
+      refillsRemaining: 0,
+      prescribedAt: '2026-05-28T01:00:00Z',
+      route: 'oral',
+      frequency: 'twice daily',
+      prescriberId: 'clinician-1',
+      warnings: ['HIGH: monitor renal function'],
+      interactions: ['Metformin interaction check complete'],
+      adherenceSource: 'not-recorded',
     });
   });
 });

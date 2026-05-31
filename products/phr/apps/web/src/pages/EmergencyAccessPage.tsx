@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { SafeError } from '../components/SafeError';
 import { Button, Card, CardContent, CardHeader, Input } from '@ghatana/design-system';
 import { requestEmergencyAccess } from '../api/emergencyApi';
+import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrAccess } from '../auth/PhrAccessContext';
 import { t } from '../i18n/phrI18n';
 import { logError } from '../utils/safeLogger';
@@ -15,23 +16,42 @@ export function EmergencyAccessPage(): React.ReactElement {
   const [reason, setReason] = useState<string>('');
   const [clinicianId, setClinicianId] = useState<string>('');
   const [requesting, setRequesting] = useState<boolean>(false);
-  const [requestError, setRequestError] = useState<string | null>(null);
+  const [confirmingRequest, setConfirmingRequest] = useState<boolean>(false);
+  const [requestError, setRequestError] = useState<SafeApiErrorState | null>(null);
   const [requestResult, setRequestResult] = useState<EmergencyAccessEvent | null>(null);
 
-  const handleRequestAccess = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
+  const validateRequest = (): boolean => {
+    if (!patientId.trim() || !reason.trim() || !clinicianId.trim()) {
+      setRequestError({ message: t('emergency.error.required') });
+      return false;
+    }
+    if (reason.trim().length < 5) {
+      setRequestError({ message: t('emergency.error.request') });
+      return false;
+    }
+    return true;
+  };
+
+  const handleRequestAccess = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
     setRequestError(null);
     setRequestResult(null);
 
-    if (!patientId.trim() || !reason.trim() || !clinicianId.trim()) {
-      setRequestError(t('validation.required', { field: 'Patient ID, reason, and clinician ID' }));
-      return;
-    }
-    if (reason.trim().length < 5) {
-      setRequestError(t('emergency.error.request'));
+    if (!validateRequest()) {
+      setConfirmingRequest(false);
       return;
     }
 
+    setConfirmingRequest(true);
+  };
+
+  const submitConfirmedRequest = async (): Promise<void> => {
+    setRequestError(null);
+    setRequestResult(null);
+    if (!validateRequest()) {
+      setConfirmingRequest(false);
+      return;
+    }
     setRequesting(true);
     try {
       const result = await requestEmergencyAccess(
@@ -42,12 +62,28 @@ export function EmergencyAccessPage(): React.ReactElement {
       setPatientId('');
       setReason('');
       setClinicianId('');
+      setConfirmingRequest(false);
     } catch (err: unknown) {
-      setRequestError(err instanceof Error ? err.message : t('emergency.error.request'));
+      setRequestError(toSafeApiErrorState(err, t('emergency.error.request')));
       logError('Failed to request emergency access', undefined, { error: err });
     } finally {
       setRequesting(false);
     }
+  };
+
+  const updatePatientId = (value: string): void => {
+    setPatientId(value);
+    setConfirmingRequest(false);
+  };
+
+  const updateClinicianId = (value: string): void => {
+    setClinicianId(value);
+    setConfirmingRequest(false);
+  };
+
+  const updateReason = (value: string): void => {
+    setReason(value);
+    setConfirmingRequest(false);
   };
 
   return (
@@ -70,7 +106,13 @@ export function EmergencyAccessPage(): React.ReactElement {
             </div>
           )}
           {requestError && (
-            <div role="alert" className="error mt-4">{requestError}</div>
+            <div className="mt-4">
+              <SafeError
+                message={requestError.message}
+                correlationId={requestError.correlationId}
+                onDismiss={() => setRequestError(null)}
+              />
+            </div>
           )}
 
           <form onSubmit={(e) => void handleRequestAccess(e)} className="stack gap-md mt-6" noValidate>
@@ -78,27 +120,50 @@ export function EmergencyAccessPage(): React.ReactElement {
               aria-label={t('emergency.patientId.label')}
               placeholder={t('emergency.patientId.placeholder')}
               value={patientId}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPatientId(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePatientId(e.target.value)}
               required
             />
             <Input
               aria-label={t('emergency.clinicianId.label')}
               placeholder={t('emergency.clinicianId.placeholder')}
               value={clinicianId}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setClinicianId(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateClinicianId(e.target.value)}
               required
             />
             <Input
               aria-label={t('emergency.reason.label')}
               placeholder={t('emergency.reason.placeholder')}
               value={reason}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setReason(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateReason(e.target.value)}
               required
             />
             <Button type="submit" variant="destructive" disabled={requesting} aria-busy={requesting}>
               {requesting ? t('emergency.requesting') : t('emergency.request')}
             </Button>
           </form>
+
+          {confirmingRequest && (
+            <div className="data-card mt-4" role="status">
+              <div>
+                <strong>{t('emergency.confirm.title')}</strong>
+                <p className="muted">{t('emergency.confirm.body')}</p>
+              </div>
+              <div className="row gap-sm">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  disabled={requesting}
+                  aria-busy={requesting}
+                  onClick={() => void submitConfirmedRequest()}
+                >
+                  {requesting ? t('emergency.requesting') : t('emergency.confirm.submit')}
+                </Button>
+                <Button type="button" variant="secondary" disabled={requesting} onClick={() => setConfirmingRequest(false)}>
+                  {t('emergency.confirm.cancel')}
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -3,71 +3,51 @@ import { SafeError } from '../components/SafeError';
 import { Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { Link } from 'react-router-dom';
 import { fetchMedications } from '../api/clinicalApi';
+import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
-import { logInfo, logError } from '../utils/safeLogger';
+import type { PhrMessageKey } from '../i18n/phrI18n';
 import type { MedicationSummary } from '../types';
+
+const medicationStatusKeys: Record<NonNullable<MedicationSummary['status']>, PhrMessageKey> = {
+  active: 'medications.status.active',
+  history: 'medications.status.history',
+  stopped: 'medications.status.stopped',
+};
+
+function medicationStatusLabel(status: NonNullable<MedicationSummary['status']>): string {
+  return t(medicationStatusKeys[status]);
+}
 
 export function MedicationsPage(): React.ReactElement {
   const { session } = usePhrSession();
   const [medications, setMedications] = useState<MedicationSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SafeApiErrorState | null>(null);
   const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
-  const [refillingId, setRefillingId] = useState<string | null>(null);
-  const [discontinuingId, setDiscontinuingId] = useState<string | null>(null);
-
   useEffect(() => {
     if (!session) return;
     fetchMedications(session.principalId, {
       tenantId: session.tenantId,
       principalId: session.principalId,
       role: session.role,
+      persona: session.persona,
+      tier: session.tier,
+      facilityId: session.facilityId,
     })
       .then(setMedications)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('medications.error')))
+      .catch((err: unknown) => setError(toSafeApiErrorState(err, t('medications.error'))))
       .finally(() => setLoading(false));
   }, [session]);
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('medications.loading')}</div>;
-  if (error) return <SafeError title={t('dashboard.errorPrefix')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
+  if (error) return <SafeError title={t('dashboard.errorPrefix')} message={error.message} correlationId={error.correlationId} />;
 
   const visibleMedications = medications.filter((medication) => (
     activeTab === 'active'
       ? medication.status == null || medication.status === 'active'
       : medication.status === 'history' || medication.status === 'stopped'
   ));
-
-  const handleRefill = async (medicationId: string): Promise<void> => {
-    if (!session) return;
-    setRefillingId(medicationId);
-    try {
-      logInfo('Medication refill requested', undefined, { medicationId, principalId: session.principalId });
-      // Refill API not yet implemented in backend - disable button until available
-      setError('Medication refill API not yet available');
-    } catch (err: unknown) {
-      logError('Failed to request medication refill', undefined, { medicationId, error: err });
-      setError('Failed to request refill');
-    } finally {
-      setRefillingId(null);
-    }
-  };
-
-  const handleDiscontinue = async (medicationId: string): Promise<void> => {
-    if (!session) return;
-    if (!confirm('Are you sure you want to discontinue this medication?')) return;
-    setDiscontinuingId(medicationId);
-    try {
-      logInfo('Medication discontinuation requested', undefined, { medicationId, principalId: session.principalId });
-      // Discontinue API not yet implemented in backend - disable button until available
-      setError('Medication discontinue API not yet available');
-    } catch (err: unknown) {
-      logError('Failed to discontinue medication', undefined, { medicationId, error: err });
-      setError('Failed to discontinue medication');
-    } finally {
-      setDiscontinuingId(null);
-    }
-  };
 
   return (
     <div className="stack gap-lg">
@@ -105,45 +85,24 @@ export function MedicationsPage(): React.ReactElement {
                       <Link to={`/medications/${medication.id}`} className="medication-link">
                         <div>
                           <strong>{medication.medication} {medication.dosage}</strong>
-                          <p className="muted">{medication.schedule}</p>
+                          {medication.schedule && <p className="muted">{medication.schedule}</p>}
                           {medication.warnings && medication.warnings.length > 0 && (
-                            <p className="warning-text" aria-label="Medication warnings">
+                            <p className="warning-text" aria-label={t('medications.warnings.label')}>
                               {medication.warnings.map((warning, idx) => (
-                                <span key={idx} className="warning-badge">⚠️ {warning}</span>
+                                <span key={idx} className="warning-badge">{warning}</span>
                               ))}
                             </p>
                           )}
                         </div>
                         <div className="row gap-sm align-center">
-                          <span className="pill">
-                            {t('medications.adherenceLabel')}: {medication.adherence}%
-                          </span>
-                          {medication.status && <span className={`badge badge--${medication.status}`}>{medication.status}</span>}
+                          {medication.adherence !== undefined && (
+                            <span className="pill">
+                              {t('medications.adherenceLabel')}: {medication.adherence}%
+                            </span>
+                          )}
+                          {medication.status && <span className={`badge badge--${medication.status}`}>{medicationStatusLabel(medication.status)}</span>}
                         </div>
                       </Link>
-                      {activeTab === 'active' && medication.status !== 'stopped' && (
-                        <div className="row gap-sm mt-2">
-                          <Button
-                            size="small"
-                            variant="outline"
-                            onClick={() => void handleRefill(medication.id)}
-                            disabled={refillingId === medication.id}
-                            aria-busy={refillingId === medication.id}
-                          >
-                            {refillingId === medication.id ? 'Requesting...' : 'Refill'}
-                          </Button>
-                          <Button
-                            size="small"
-                            variant="outline"
-                            tone="danger"
-                            onClick={() => void handleDiscontinue(medication.id)}
-                            disabled={discontinuingId === medication.id}
-                            aria-busy={discontinuingId === medication.id}
-                          >
-                            {discontinuingId === medication.id ? 'Discontinuing...' : 'Discontinue'}
-                          </Button>
-                        </div>
-                      )}
                     </div>
                   </li>
                 ))}

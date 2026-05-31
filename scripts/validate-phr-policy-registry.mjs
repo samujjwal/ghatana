@@ -17,15 +17,18 @@ const __dirname = dirname(__filename);
 
 const routeContractPath = join(__dirname, '..', 'products', 'phr', 'config', 'phr-route-contract.json');
 const policyRegistryPath = join(__dirname, '..', 'products', 'phr', 'config', 'policy-registry.json');
+const policyEvaluatorPath = join(__dirname, '..', 'products', 'phr', 'src', 'main', 'java', 'com', 'ghatana', 'phr', 'security', 'PhrPolicyEvaluator.java');
 
 const routeContract = JSON.parse(readFileSync(routeContractPath, 'utf-8'));
 const policyRegistry = JSON.parse(readFileSync(policyRegistryPath, 'utf-8'));
+const policyEvaluatorSource = readFileSync(policyEvaluatorPath, 'utf-8');
 
 console.log('Validating PHR route contract policyIds against policy registry...\n');
 
 const registeredPolicies = new Set(Object.keys(policyRegistry.policies));
 const missingPolicies = new Set();
 const unknownPolicies = new Set();
+const policiesMissingEvaluatorMapping = new Set();
 const routesWithoutPolicy = [];
 
 for (const route of routeContract.routes) {
@@ -50,6 +53,11 @@ const usedPolicies = new Set(
     .map(r => r.policyId)
 );
 const unusedPolicies = [...registeredPolicies].filter(p => !usedPolicies.has(p));
+for (const policyId of usedPolicies) {
+  if (!policyEvaluatorSource.includes(`"${policyId}"`)) {
+    policiesMissingEvaluatorMapping.add(policyId);
+  }
+}
 
 let errors = 0;
 let warnings = 0;
@@ -67,6 +75,14 @@ if (routesWithoutPolicy.length > 0) {
   for (const routeId of routesWithoutPolicy) {
     console.warn(`   - ${routeId}`);
     warnings++;
+  }
+}
+
+if (policiesMissingEvaluatorMapping.size > 0) {
+  console.error('❌ PolicyIds in route contract missing PhrPolicyEvaluator dispatch mapping:');
+  for (const policyId of policiesMissingEvaluatorMapping) {
+    console.error(`   - ${policyId}`);
+    errors++;
   }
 }
 

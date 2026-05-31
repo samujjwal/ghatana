@@ -56,19 +56,37 @@ function makeRouteContract(overrides: Partial<ProductRouteContract> = {}): Produ
         minimumRole: "admin",
         stability: "blocked",
       },
+      {
+        path: "/appointments/follow-up",
+        label: "Follow-up appointments",
+        description: "Deferred follow-up appointment scheduling",
+        group: "care",
+        minimumRole: "patient",
+        stability: "deferred",
+      },
+      {
+        path: "/legacy/documents",
+        label: "Legacy documents",
+        description: "Removed document workflow",
+        group: "care",
+        minimumRole: "patient",
+        stability: "removed",
+      },
     ],
     ...overrides,
   };
 }
 
 describe("ProductRouteContractSchema", () => {
-  it("parses route contracts with stable, hidden, and blocked route states", () => {
+  it("parses route contracts with supported lifecycle route states", () => {
     const contract = parseProductRouteContract(makeRouteContract());
 
     expect(contract.routes.map((route) => route.stability)).toEqual([
       "stable",
       "hidden",
       "blocked",
+      "deferred",
+      "removed",
     ]);
     expect(validateProductRouteContract(contract)).toBe(true);
   });
@@ -147,7 +165,7 @@ describe("RouteContractGenerator", () => {
     );
   });
 
-  it("marks hidden and blocked route capabilities as not direct-link accessible", () => {
+  it("marks non-active route capabilities as not direct-link accessible", () => {
     const generated = createRouteContractGenerator(makeRouteContract()).generateRouteCapabilities();
 
     expect(generated.capabilities).toContainEqual(
@@ -160,6 +178,20 @@ describe("RouteContractGenerator", () => {
     expect(generated.capabilities).toContainEqual(
       expect.objectContaining({
         path: "/admin/release",
+        directLinkAllowed: false,
+        discoverable: false,
+      }),
+    );
+    expect(generated.capabilities).toContainEqual(
+      expect.objectContaining({
+        path: "/appointments/follow-up",
+        directLinkAllowed: false,
+        discoverable: false,
+      }),
+    );
+    expect(generated.capabilities).toContainEqual(
+      expect.objectContaining({
+        path: "/legacy/documents",
         directLinkAllowed: false,
         discoverable: false,
       }),

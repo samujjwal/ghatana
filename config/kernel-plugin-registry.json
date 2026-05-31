@@ -61,7 +61,7 @@
       "id": "policy",
       "name": "Policy Plugin",
       "kind": "pre-phase",
-      "status": "declared",
+      "status": "implemented",
       "safeForDefault": false,
       "capabilities": [
         "policy.evaluate",
@@ -77,12 +77,15 @@
       "gateOutput": [
         "policy-gate"
       ],
-      "implementationRef": null,
-      "tests": [],
-      "maturity": "declared-only",
+      "implementationRef": "platform-kernel/kernel-core/src/main/java/com/ghatana/kernel/policy/KernelPolicyPlugin.java",
+      "tests": [
+        "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/policy/KernelPolicyPluginTest.java",
+        "products/phr/src/test/java/com/ghatana/phr/security/PhrPolicyEvaluatorTest.java"
+      ],
+      "maturity": "pilot",
       "ownerLayer": "kernel-plugin-provider",
       "currentLimitations": [
-        "No executable provider wired into lifecycle gate execution yet"
+        "Policy providers are product-supplied; lifecycle gate execution still opts in per product"
       ]
     },
     "compliance": {
@@ -390,6 +393,104 @@
       "ownerLayer": "kernel-plugin-provider",
       "currentLimitations": [
         "No executable provider wired into lifecycle gate execution yet"
+      ]
+    },
+    "fhir-hl7": {
+      "id": "fhir-hl7",
+      "name": "FHIR/HL7 Interop Plugin",
+      "kind": "platform-plugin",
+      "status": "implemented",
+      "safeForDefault": false,
+      "capabilities": [
+        "fhir.r4.validate",
+        "hl7.interface",
+        "hie.exchange"
+      ],
+      "lifecycleHooks": [
+        "onProductValidated",
+        "onProductDeployed"
+      ],
+      "healthOutput": [
+        "fhir-hl7-interop-status"
+      ],
+      "gateOutput": [
+        "fhir-contract-validation"
+      ],
+      "implementationRef": "platform-kernel/kernel-core/src/main/java/com/ghatana/kernel/interop/KernelFhirHl7Plugin.java",
+      "tests": [
+        "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/interop/KernelFhirHl7PluginTest.java",
+        "products/phr/src/test/java/com/ghatana/phr/plugin/FhirInteropKernelPluginTest.java"
+      ],
+      "maturity": "pilot",
+      "ownerLayer": "kernel-plugin-provider",
+      "currentLimitations": [
+        "FHIR structural validation is Kernel-owned; product-specific profiles, storage, HL7 transforms, and HIE adapters remain product-supplied"
+      ]
+    },
+    "document-ocr": {
+      "id": "document-ocr",
+      "name": "Document/OCR Plugin",
+      "kind": "platform-plugin",
+      "status": "implemented",
+      "safeForDefault": false,
+      "capabilities": [
+        "document.upload.validate",
+        "document.storage-policy.validate",
+        "ocr.review-transition.validate",
+        "document.provenance.validate"
+      ],
+      "lifecycleHooks": [
+        "onProductValidated",
+        "onProductDeployed"
+      ],
+      "healthOutput": [
+        "document-ocr-status"
+      ],
+      "gateOutput": [
+        "document-ocr-lifecycle-gate"
+      ],
+      "implementationRef": "platform-kernel/kernel-core/src/main/java/com/ghatana/kernel/document/KernelDocumentOcrPlugin.java",
+      "tests": [
+        "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/document/KernelDocumentOcrPluginTest.java",
+        "products/phr/src/test/java/com/ghatana/phr/kernel/service/DocumentServiceTest.java"
+      ],
+      "maturity": "pilot",
+      "ownerLayer": "kernel-plugin-provider",
+      "currentLimitations": [
+        "Kernel validates lifecycle rules; product-specific persistence, authorization, audit event names, and OCR engines remain product-supplied"
+      ]
+    },
+    "localization-accessibility": {
+      "id": "localization-accessibility",
+      "name": "Localization/Accessibility Plugin",
+      "kind": "platform-plugin",
+      "status": "implemented",
+      "safeForDefault": false,
+      "capabilities": [
+        "i18n.raw-string.scan",
+        "a11y.static.scan",
+        "product-ui.conformance"
+      ],
+      "lifecycleHooks": [
+        "onProductValidated"
+      ],
+      "healthOutput": [
+        "localization-accessibility-status"
+      ],
+      "gateOutput": [
+        "i18n-conformance",
+        "accessibility-conformance"
+      ],
+      "implementationRef": "scripts/lib/kernel-product-i18n-plugin.mjs",
+      "tests": [
+        "scripts/__tests__/kernel-product-localization-accessibility-plugin.test.mjs",
+        "scripts/check-phr-i18n-conformance.mjs",
+        "scripts/check-phr-accessibility.mjs"
+      ],
+      "maturity": "pilot",
+      "ownerLayer": "kernel-plugin-provider",
+      "currentLimitations": [
+        "Static scanners are generic Kernel plugins; product adapters still provide scan directories and allowlists"
       ]
     }
   }

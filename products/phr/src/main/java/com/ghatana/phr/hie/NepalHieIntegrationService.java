@@ -11,6 +11,8 @@ import io.activej.promise.Promise;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -19,15 +21,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @doc.layer product
  * @doc.pattern Service
  */
-public class NepalHieIntegrationService implements KernelLifecycleAware {
+public class NepalHieIntegrationService implements KernelLifecycleAware, HieIntegrationContract {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final String CONTRACT_ID = "configured-hl7-fhir-hie";
 
     private final PhrFhirR4Server fhirServer;
     private final NepalHieClient hieClient;
     private final NepalHieMessageBuilder messageBuilder;
     private final NepalHieConfig config;
     private final AtomicBoolean started = new AtomicBoolean(false);
+    private final ConcurrentHashMap<String, HieIntegrationStatus> statuses = new ConcurrentHashMap<>();
 
     public NepalHieIntegrationService(
         PhrFhirR4Server fhirServer,
@@ -85,6 +89,71 @@ public class NepalHieIntegrationService implements KernelLifecycleAware {
                                 immunizationResponse
                             ))));
             });
+    }
+
+    @Override
+    public String contractId() {
+        return CONTRACT_ID;
+    }
+
+    @Override
+    public Set<Operation> supportedOperations() {
+        return Set.of(Operation.EXPORT, Operation.SYNC);
+    }
+
+    @Override
+    public Promise<HieIntegrationResult> submit(HieIntegrationRequest request) {
+        if (request == null || request.operation() == null) {
+            return Promise.ofException(new IllegalArgumentException("HIE operation is required"));
+        }
+        if (!supportedOperations().contains(request.operation())) {
+            HieIntegrationResult result = new HieIntegrationResult(
+                request.correlationId(),
+                request.operation(),
+                contractId(),
+                "REJECTED",
+                false,
+                "HIE_OPERATION_NOT_SUPPORTED",
+                "Configured HIE contract does not support this operation"
+            );
+            statuses.put(result.requestId(), new HieIntegrationStatus(
+                result.requestId(), result.operation(), result.contractId(), result.status(), result.safeReasonCode(), result.message()));
+            return Promise.of(result);
+        }
+
+        return submitPatientSummary(request.patientId(), request.correlationId())
+            .map(syncResult -> {
+                String status = syncResult.accepted() ? "ACCEPTED" : "REJECTED";
+                String reason = syncResult.accepted() ? "HIE_ACCEPTED" : "HIE_REJECTED";
+                HieIntegrationResult result = new HieIntegrationResult(
+                    syncResult.messageControlId(),
+                    request.operation(),
+                    contractId(),
+                    status,
+                    syncResult.accepted(),
+                    reason,
+                    syncResult.message()
+                );
+                statuses.put(result.requestId(), new HieIntegrationStatus(
+                    result.requestId(), result.operation(), result.contractId(), result.status(), result.safeReasonCode(), result.message()));
+                return result;
+            });
+    }
+
+    @Override
+    public Promise<HieIntegrationStatus> getStatus(String requestId, String correlationId) {
+        HieIntegrationStatus status = statuses.get(requestId);
+        if (status != null) {
+            return Promise.of(status);
+        }
+        return Promise.of(new HieIntegrationStatus(
+            requestId,
+            null,
+            contractId(),
+            "UNKNOWN",
+            "HIE_REQUEST_UNKNOWN",
+            "No HIE operation status was found for this request"
+        ));
     }
 
     private Promise<NepalHieSyncResult> submitBuiltSummary(

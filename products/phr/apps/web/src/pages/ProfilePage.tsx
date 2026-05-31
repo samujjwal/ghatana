@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, Button, TextField, Select, FormControl } from '@ghatana/design-system';
 import { fetchPatientProfile, updatePatientProfile } from '../api/patientApi';
+import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import { logError, logInfo } from '../utils/safeLogger';
@@ -17,13 +18,13 @@ export function ProfilePage(): React.ReactElement {
   const { session } = usePhrSession();
   const [data, setData] = useState<PatientProfileExtended | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SafeApiErrorState | null>(null);
   const [editing, setEditing] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [auditResult, setAuditResult] = useState<{ timestamp: string; correlationId: string } | null>(null);
+  const [auditResult, setAuditResult] = useState<{ timestamp: string } | null>(null);
   const [draft, setDraft] = useState<PatientProfileUpdateRequest>({});
   const canEditFacility = session?.role === 'admin';
   const validationErrorRef = React.useRef<HTMLDivElement>(null);
@@ -62,7 +63,7 @@ export function ProfilePage(): React.ReactElement {
           facilityId: profile.facilityId,
         });
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('profile.error')))
+      .catch((err: unknown) => setError(toSafeApiErrorState(err, t('profile.error'))))
       .finally(() => setLoading(false));
   }, [session]);
 
@@ -131,10 +132,8 @@ export function ProfilePage(): React.ReactElement {
       setData(updated);
       setEditing(false);
       setSavedMessage(t('profile.saved'));
-      // Capture audit result for display (timestamp and correlation ID from response headers if available)
       setAuditResult({
         timestamp: new Date().toISOString(),
-        correlationId: session.tenantId + '-' + session.principalId + '-' + Date.now(),
       });
       logInfo('PHR profile preferences updated', undefined, { principalId: session.principalId });
     } catch (err: unknown) {
@@ -146,8 +145,8 @@ export function ProfilePage(): React.ReactElement {
   };
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('profile.loading')}</div>;
-  if (error) return <SafeError title={t('profile.error')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
-  if (!data) return <SafeError title={t('profile.error')} message="Profile data not found" correlationId={session?.tenantId + '-' + session?.principalId} />;
+  if (error) return <SafeError title={t('profile.error')} message={error.message} correlationId={error.correlationId} />;
+  if (!data) return <SafeError title={t('profile.error')} message={t('profile.notFound')} />;
 
   return (
     <div className="stack gap-lg">
@@ -256,9 +255,9 @@ export function ProfilePage(): React.ReactElement {
             </div>
           )}
           {auditResult && (
-            <div className="audit-info" role="note" aria-label="Audit information">
+            <div className="audit-info" role="note" aria-label={t('profile.audit.label')}>
               <small className="muted">
-                Audit ID: {auditResult.correlationId} • Updated: {new Date(auditResult.timestamp).toLocaleString()}
+                {t('profile.audit.updated', { date: new Date(auditResult.timestamp).toLocaleString() })}
               </small>
             </div>
           )}

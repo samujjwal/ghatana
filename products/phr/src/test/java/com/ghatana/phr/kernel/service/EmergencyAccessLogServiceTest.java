@@ -77,6 +77,7 @@ class EmergencyAccessLogServiceTest extends EventloopTestBase {
             assertThat(stored.reviewCaseId()).startsWith("EMR-");
             assertThat(notificationSender.complianceNotifications).hasSize(1);
             assertThat(notificationSender.reviewSchedules).hasSize(1);
+            assertThat(notificationSender.patientNotifications).hasSize(1);
             assertThat(auditLogger.queuedCases).hasSize(1);
         }
 
@@ -268,6 +269,7 @@ class EmergencyAccessLogServiceTest extends EventloopTestBase {
         private final java.util.List<EmergencyAccessReviewCase> complianceNotifications = new java.util.ArrayList<>();
         private final java.util.List<EmergencyAccessReviewCase> reviewSchedules = new java.util.ArrayList<>();
         private final java.util.List<EmergencyAccessReviewCase> escalations = new java.util.ArrayList<>();
+        private final java.util.List<EmergencyAccessReviewCase> patientNotifications = new java.util.ArrayList<>();
 
         @Override
         public io.activej.promise.Promise<Void> notifyComplianceLead(
@@ -297,6 +299,7 @@ class EmergencyAccessLogServiceTest extends EventloopTestBase {
         public io.activej.promise.Promise<Void> notifyPatient(
                 EmergencyAccessReviewCase reviewCase,
                 EmergencyAccessEvent event) {
+            patientNotifications.add(reviewCase);
             return io.activej.promise.Promise.complete();
         }
     }

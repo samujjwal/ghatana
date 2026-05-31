@@ -1,5 +1,6 @@
 package com.ghatana.phr.api.routes;
 
+import com.ghatana.kernel.observability.AuditTrailService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.phr.kernel.service.EmergencyAccessLogService;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
@@ -30,6 +31,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 /**
  * Enforcement matrix tests for {@link PhrEmergencyRoutes}.
@@ -63,6 +66,9 @@ class PhrEmergencyRoutesTest extends EventloopTestBase {
     @Mock
     private FchvCommunityAssignmentService fchvCommunityAssignmentService;
 
+    @Mock
+    private AuditTrailService auditTrailService;
+
     private AsyncServlet servlet;
 
     private static final String ACCESS_BODY = """
@@ -79,7 +85,8 @@ class PhrEmergencyRoutesTest extends EventloopTestBase {
         PhrPolicyEvaluator policyEvaluator = new PhrPolicyEvaluator(
             consentService,
             treatmentRelationshipService,
-            fchvCommunityAssignmentService
+            fchvCommunityAssignmentService,
+            auditTrailService
         );
         servlet = new PhrEmergencyRoutes(
             eventloop(),
@@ -119,6 +126,7 @@ class PhrEmergencyRoutesTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> servlet.serve(request));
 
             assertThat(response.getCode()).isEqualTo(201);
+            verify(emergencyAccessLogService, never()).notifyPatientOfEmergencyAccess(any());
         }
 
         @Test
@@ -263,6 +271,8 @@ class PhrEmergencyRoutesTest extends EventloopTestBase {
             .withHeader(HttpHeaders.of("X-Tenant-ID"), tenantId)
             .withHeader(HttpHeaders.of("X-Principal-ID"), principalId)
             .withHeader(HttpHeaders.of("X-Role"), role)
+            .withHeader(HttpHeaders.of("X-Persona"), role)
+            .withHeader(HttpHeaders.of("X-Tier"), "core")
             .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
             .build();
     }
@@ -273,6 +283,8 @@ class PhrEmergencyRoutesTest extends EventloopTestBase {
             .withHeader(HttpHeaders.of("X-Tenant-ID"), tenantId)
             .withHeader(HttpHeaders.of("X-Principal-ID"), principalId)
             .withHeader(HttpHeaders.of("X-Role"), role)
+            .withHeader(HttpHeaders.of("X-Persona"), role)
+            .withHeader(HttpHeaders.of("X-Tier"), "core")
             .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
             .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
             .withBody(body.getBytes(StandardCharsets.UTF_8))

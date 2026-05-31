@@ -810,6 +810,160 @@ public class HttpHandlerSupport {
         }
     }
 
+    // ─── Canonical Security Error Responses ─────────────────────────────────────
+
+    /**
+     * Builds a 403 Forbidden response with PERMISSION_DENIED error code.
+     *
+     * @param permission the required permission that was denied
+     * @param correlationId request correlation ID for tracing
+     * @param routeId the route ID for context
+     * @return HTTP 403 response with PERMISSION_DENIED error code
+     */
+    public HttpResponse permissionDeniedResponse(String permission, String correlationId, String routeId) {
+        String traceId = correlationId != null && !correlationId.isBlank()
+            ? correlationId
+            : UUID.randomUUID().toString();
+        String route = routeId != null ? routeId : "unknown";
+        try {
+            ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(403)
+                .error("PERMISSION_DENIED")
+                .message("Permission denied: " + permission)
+                .timestamp(System.currentTimeMillis())
+                .traceId(traceId)
+                .build();
+            String json = objectMapper.writeValueAsString(errorResponse);
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(403))
+                .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(corsAllowOrigin))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(corsAllowHeaders))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Credentials"), HttpHeaderValue.of("true"))
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(traceId))
+                .withHeader(HttpHeaders.of("X-Route-Id"), HttpHeaderValue.of(route))
+                .withBody(json.getBytes(StandardCharsets.UTF_8))
+                .build();
+        } catch (JsonProcessingException e) {
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(403))
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(traceId))
+                .withHeader(HttpHeaders.of("X-Route-Id"), HttpHeaderValue.of(route))
+                .withBody(("{\"error\":\"Permission denied\", \"traceId\":\"" + traceId + "\"}").getBytes(StandardCharsets.UTF_8))
+                .build();
+        }
+    }
+
+    /**
+     * Builds a 401 Unauthorized response with AUTHENTICATION_REQUIRED error code.
+     *
+     * @param message error message exposed to callers
+     * @param correlationId request correlation ID for tracing
+     * @return HTTP 401 response with AUTHENTICATION_REQUIRED error code
+     */
+    public HttpResponse authenticationRequiredResponse(String message, String correlationId) {
+        String traceId = correlationId != null && !correlationId.isBlank()
+            ? correlationId
+            : UUID.randomUUID().toString();
+        try {
+            ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(401)
+                .error("AUTHENTICATION_REQUIRED")
+                .message(message != null ? message : "Authentication required")
+                .timestamp(System.currentTimeMillis())
+                .traceId(traceId)
+                .build();
+            String json = objectMapper.writeValueAsString(errorResponse);
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(401))
+                .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(corsAllowOrigin))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(corsAllowHeaders))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Credentials"), HttpHeaderValue.of("true"))
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(traceId))
+                .withBody(json.getBytes(StandardCharsets.UTF_8))
+                .build();
+        } catch (JsonProcessingException e) {
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(401))
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(traceId))
+                .withBody(("{\"error\":\"Authentication required\", \"traceId\":\"" + traceId + "\"}").getBytes(StandardCharsets.UTF_8))
+                .build();
+        }
+    }
+
+    /**
+     * Builds a 400 Bad Request response with TENANT_REQUIRED error code.
+     *
+     * @param message error message exposed to callers
+     * @param correlationId request correlation ID for tracing
+     * @return HTTP 400 response with TENANT_REQUIRED error code
+     */
+    public HttpResponse tenantRequiredResponse(String message, String correlationId) {
+        String traceId = correlationId != null && !correlationId.isBlank()
+            ? correlationId
+            : UUID.randomUUID().toString();
+        try {
+            ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(400)
+                .error("TENANT_REQUIRED")
+                .message(message != null ? message : "Tenant identifier required")
+                .timestamp(System.currentTimeMillis())
+                .traceId(traceId)
+                .build();
+            String json = objectMapper.writeValueAsString(errorResponse);
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(400))
+                .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(corsAllowOrigin))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(corsAllowHeaders))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Credentials"), HttpHeaderValue.of("true"))
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(traceId))
+                .withBody(json.getBytes(StandardCharsets.UTF_8))
+                .build();
+        } catch (JsonProcessingException e) {
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(400))
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(traceId))
+                .withBody(("{\"error\":\"Tenant required\", \"traceId\":\"" + traceId + "\"}").getBytes(StandardCharsets.UTF_8))
+                .build();
+        }
+    }
+
+    /**
+     * Builds a 403 Forbidden response with SUPPORT_DELEGATION_REQUIRED error code.
+     *
+     * @param message error message exposed to callers
+     * @param correlationId request correlation ID for tracing
+     * @return HTTP 403 response with SUPPORT_DELEGATION_REQUIRED error code
+     */
+    public HttpResponse supportDelegationRequiredResponse(String message, String correlationId) {
+        String traceId = correlationId != null && !correlationId.isBlank()
+            ? correlationId
+            : UUID.randomUUID().toString();
+        try {
+            ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(403)
+                .error("SUPPORT_DELEGATION_REQUIRED")
+                .message(message != null ? message : "Support delegation token required")
+                .timestamp(System.currentTimeMillis())
+                .traceId(traceId)
+                .build();
+            String json = objectMapper.writeValueAsString(errorResponse);
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(403))
+                .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(corsAllowOrigin))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(corsAllowHeaders))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Credentials"), HttpHeaderValue.of("true"))
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(traceId))
+                .withBody(json.getBytes(StandardCharsets.UTF_8))
+                .build();
+        } catch (JsonProcessingException e) {
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(403))
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(traceId))
+                .withBody(("{\"error\":\"Support delegation required\", \"traceId\":\"" + traceId + "\"}").getBytes(StandardCharsets.UTF_8))
+                .build();
+        }
+    }
+
     /**
      * @deprecated Use RequestContextResolver for production-grade tenant resolution
      */

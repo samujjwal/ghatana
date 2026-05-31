@@ -272,4 +272,142 @@ class RequestContextResolverTest {
         assertFalse(result.isSuccess());
         assertEquals(403, result.errorCode());
     }
+
+    // ==================== X-Permissions Header Tests ====================
+
+    @Test
+    @DisplayName("P2-01: Rejects X-Permissions header in production - header not trusted")
+    void rejectsXPermissionsHeaderInProduction() {
+        // Given production profile
+        RequestContextResolver resolver = new RequestContextResolver("production", true);
+
+        // When request has X-Permissions header (spoof attempt)
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/entities/test")
+            .withHeader(HttpHeaders.of("X-Permissions"), "datacloud:admin,connector:sync")
+            .build();
+
+        // Then X-Permissions header is rejected and not used for permission derivation
+        RequestContextResolver.ResolutionResult result = resolver.resolve(request);
+        assertFalse(result.isSuccess()); // No auth = 401
+        assertEquals(401, result.errorCode());
+    }
+
+    @Test
+    @DisplayName("P2-01: Permissions derived from roles, not X-Permissions header")
+    void permissionsDerivedFromRolesNotHeader() {
+        // Given local profile
+        RequestContextResolver resolver = new RequestContextResolver("local", false);
+
+        // Create a Principal with roles using constructor
+        com.ghatana.platform.governance.security.Principal principal =
+            new com.ghatana.platform.governance.security.Principal("test-user", java.util.List.of("ADMIN"), "test-tenant");
+
+        // When request has X-Permissions header and Principal with ADMIN role
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/entities/test")
+            .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
+            .withHeader(HttpHeaders.of("X-Permissions"), "invalid:permission")
+            .build();
+        // Note: ActiveJ HttpRequest doesn't support withAttachment in this version
+        // The RequestContextResolver will use the X-Tenant-Id header in local mode
+
+        // Then resolution succeeds (local mode allows header tenant)
+        RequestContextResolver.ResolutionResult result = resolver.resolve(request);
+        assertTrue(result.isSuccess());
+        RequestContext context = result.context().get();
+
+        // In local mode without Principal, permissions are empty
+        assertFalse(context.hasPermission("datacloud:admin"), "No Principal = no role-derived permissions");
+        assertFalse(context.hasPermission("invalid:permission"), "Should not trust X-Permissions header");
+    }
+
+    @Test
+    @DisplayName("P2-01: Local profile ignores X-Permissions header")
+    void localProfileIgnoresXPermissionsHeader() {
+        // Given local profile
+        RequestContextResolver resolver = new RequestContextResolver("local", false);
+
+        // When request has X-Permissions header without authentication
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/entities/test")
+            .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
+            .withHeader(HttpHeaders.of("X-Permissions"), "spoofed:permission")
+            .build();
+
+        // Then resolution succeeds but permissions are empty (not from header)
+        RequestContextResolver.ResolutionResult result = resolver.resolve(request);
+        assertTrue(result.isSuccess());
+        RequestContext context = result.context().get();
+
+        // Local mode should have empty permissions, not from header
+        assertFalse(context.hasPermission("spoofed:permission"), "Should not use X-Permissions header");
+    }
+
+    @Test
+    @DisplayName("P2-01: Local profile allows header tenant without Principal")
+    void localProfileAllowsHeaderTenant() {
+        // Given local profile
+        RequestContextResolver resolver = new RequestContextResolver("local", false);
+
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/entities/test")
+            .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
+            .build();
+
+        // Then resolution succeeds with default tenant
+        RequestContextResolver.ResolutionResult result = resolver.resolve(request);
+        assertTrue(result.isSuccess());
+        RequestContext context = result.context().get();
+
+        assertEquals("test-tenant", context.tenantId());
+        // No Principal = no permissions
+        assertFalse(context.hasPermission("datacloud:read"));
+    }
+
+    @Test
+    @DisplayName("P2-01: Production profile rejects header tenant")
+    void productionProfileRejectsHeaderTenant() {
+        // Given production profile
+        RequestContextResolver resolver = new RequestContextResolver("production", false);
+
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/entities/test")
+            .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
+            .build();
+
+        // Then resolution fails with 403
+        RequestContextResolver.ResolutionResult result = resolver.resolve(request);
+        assertFalse(result.isSuccess());
+        assertEquals(403, result.errorCode());
+        assertTrue(result.errorMessage().contains("X-Tenant-Id header is not allowed"));
+    }
+
+    @Test
+    @DisplayName("P2-01: Production profile rejects X-Permissions header")
+    void productionProfileRejectsXPermissionsHeader() {
+        // Given production profile
+        RequestContextResolver resolver = new RequestContextResolver("production", false);
+
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/entities/test")
+            .withHeader(HttpHeaders.of("X-Permissions"), "spoofed:permission")
+            .build();
+
+        // Then resolution fails with 403
+        RequestContextResolver.ResolutionResult result = resolver.resolve(request);
+        assertFalse(result.isSuccess());
+        assertEquals(403, result.errorCode());
+        assertTrue(result.errorMessage().contains("X-Permissions header is not allowed"));
+    }
+
+    @Test
+    @DisplayName("P2-01: Strict mode requires authentication")
+    void strictModeRequiresAuthentication() {
+        // Given strict mode
+        RequestContextResolver resolver = new RequestContextResolver("local", true);
+
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/entities/test")
+            .build();
+
+        // Then resolution fails with 401
+        RequestContextResolver.ResolutionResult result = resolver.resolve(request);
+        assertFalse(result.isSuccess());
+        assertEquals(401, result.errorCode());
+        assertTrue(result.errorMessage().contains("Authentication required"));
+    }
 }

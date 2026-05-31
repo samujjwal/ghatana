@@ -23,19 +23,189 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests for plugin registry lifecycle (PF001). 
+ * Tests for plugin registry lifecycle (PF001) and Pass 8 plugin contract validation.
  *
  * @doc.type class
- * @doc.purpose Plugin lifecycle tests
+ * @doc.purpose Plugin lifecycle and contract validation tests
  * @doc.layer product
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) 
-@DisplayName("PluginRegistry – Plugin Lifecycle (PF001)")
+@DisplayName("PluginRegistry – Plugin Lifecycle (PF001) and Pass 8 Contract Validation")
 class PluginRegistryTest extends EventloopTestBase {
 
     @Mock
     private PluginRegistry pluginRegistry;
+
+    @Nested
+    @DisplayName("Pass 8: Plugin Version Validation")
+    class PluginVersionTests {
+
+        @Test
+        @DisplayName("Pass 8: parse_valid_semantic_version")
+        void parseValidSemanticVersion() {
+            PluginRegistry.PluginVersion version = PluginRegistry.PluginVersion.parse("1.2.3");
+            assertThat(version.version()).isEqualTo("1.2.3");
+            assertThat(version.major()).isEqualTo(1);
+            assertThat(version.minor()).isEqualTo(2);
+            assertThat(version.patch()).isEqualTo(3);
+        }
+
+        @Test
+        @DisplayName("Pass 8: parse_version_with_prerelease")
+        void parseVersionWithPrerelease() {
+            PluginRegistry.PluginVersion version = PluginRegistry.PluginVersion.parse("1.2.3-alpha.1");
+            assertThat(version.version()).isEqualTo("1.2.3-alpha.1");
+            assertThat(version.major()).isEqualTo(1);
+            assertThat(version.minor()).isEqualTo(2);
+            assertThat(version.patch()).isEqualTo(3);
+            assertThat(version.preRelease()).isEqualTo("alpha.1");
+        }
+
+        @Test
+        @DisplayName("Pass 8: parse_version_with_build_metadata")
+        void parseVersionWithBuildMetadata() {
+            PluginRegistry.PluginVersion version = PluginRegistry.PluginVersion.parse("1.2.3+build.123");
+            assertThat(version.version()).isEqualTo("1.2.3+build.123");
+            assertThat(version.buildMetadata()).isEqualTo("build.123");
+        }
+
+        @Test
+        @DisplayName("Pass 8: reject_null_version_string")
+        void rejectNullVersionString() {
+            assertThatThrownBy(() -> new PluginRegistry.PluginVersion(null, 1, 2, 3, null, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Version string is required");
+        }
+
+        @Test
+        @DisplayName("Pass 8: reject_blank_version_string")
+        void rejectBlankVersionString() {
+            assertThatThrownBy(() -> new PluginRegistry.PluginVersion("", 1, 2, 3, null, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Version string is required");
+        }
+    }
+
+    @Nested
+    @DisplayName("Pass 8: Plugin Lifecycle State")
+    class PluginLifecycleStateTests {
+
+        @Test
+        @DisplayName("Pass 8: lifecycle_state_transitions")
+        void lifecycleStateTransitions() {
+            PluginRegistry.PluginLifecycleState[] states = PluginRegistry.PluginLifecycleState.values();
+            assertThat(states).containsExactly(
+                PluginRegistry.PluginLifecycleState.INSTALLED,
+                PluginRegistry.PluginLifecycleState.REGISTERED,
+                PluginRegistry.PluginLifecycleState.ACTIVATING,
+                PluginRegistry.PluginLifecycleState.ACTIVE,
+                PluginRegistry.PluginLifecycleState.DEACTIVATING,
+                PluginRegistry.PluginLifecycleState.INACTIVE,
+                PluginRegistry.PluginLifecycleState.ERROR,
+                PluginRegistry.PluginLifecycleState.UNINSTALLING,
+                PluginRegistry.PluginLifecycleState.UNINSTALLED
+            );
+        }
+    }
+
+    @Nested
+    @DisplayName("Pass 8: Plugin Descriptor")
+    class PluginDescriptorTests {
+
+        @Test
+        @DisplayName("Pass 8: descriptor_isActive_check")
+        void descriptorIsActiveCheck() {
+            PluginRegistry.PluginVersion version = PluginRegistry.PluginVersion.parse("1.0.0");
+            PluginRegistry.PluginConfigSchema schema = new PluginRegistry.PluginConfigSchema(
+                "schema-1", "1.0", Map.of(), Map.of()
+            );
+            PluginRegistry.PluginCapability capability = new PluginRegistry.PluginCapability(
+                List.of("onInit"), List.of(), List.of("json"), List.of("read"),
+                true, true, Map.of("memory", "512m")
+            );
+            PluginRegistry.PluginPolicyRequirements policy = new PluginRegistry.PluginPolicyRequirements(
+                true, true, true, true, false,
+                List.of("public"), List.of("pii"), Map.of("gdpr", "strict")
+            );
+
+            PluginRegistry.PluginDescriptor activeDescriptor = new PluginRegistry.PluginDescriptor(
+                "plugin-1", "Test Plugin", "Test", version, "tenant-1",
+                PluginRegistry.PluginType.CUSTOM, PluginRegistry.PluginLifecycleState.ACTIVE,
+                schema, capability, policy, Map.of(), Instant.now(), Instant.now(), "user-1"
+            );
+
+            assertThat(activeDescriptor.isActive()).isTrue();
+
+            PluginRegistry.PluginDescriptor inactiveDescriptor = new PluginRegistry.PluginDescriptor(
+                "plugin-1", "Test Plugin", "Test", version, "tenant-1",
+                PluginRegistry.PluginType.CUSTOM, PluginRegistry.PluginLifecycleState.INACTIVE,
+                schema, capability, policy, Map.of(), Instant.now(), null, "user-1"
+            );
+
+            assertThat(inactiveDescriptor.isActive()).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("Pass 8: Plugin Policy Requirements")
+    class PluginPolicyRequirementsTests {
+
+        @Test
+        @DisplayName("Pass 8: policy_requires_encryption")
+        void policyRequiresEncryption() {
+            PluginRegistry.PluginPolicyRequirements strictPolicy = new PluginRegistry.PluginPolicyRequirements(
+                true, true, true, true, true,
+                List.of("public"), List.of("pii"), Map.of()
+            );
+
+            assertThat(strictPolicy.requiresEncryptionAtRest()).isTrue();
+            assertThat(strictPolicy.requiresEncryptionInTransit()).isTrue();
+            assertThat(strictPolicy.requiresConsentManagement()).isTrue();
+        }
+
+        @Test
+        @DisplayName("Pass 8: policy_data_class_restrictions")
+        void policyDataClassRestrictions() {
+            PluginRegistry.PluginPolicyRequirements policy = new PluginRegistry.PluginPolicyRequirements(
+                false, false, false, false, false,
+                List.of("public", "internal"), List.of("pii", "phi"), Map.of()
+            );
+
+            assertThat(policy.allowedDataClasses()).containsExactly("public", "internal");
+            assertThat(policy.prohibitedDataClasses()).containsExactly("pii", "phi");
+        }
+    }
+
+    @Nested
+    @DisplayName("Pass 8: Plugin Capability")
+    class PluginCapabilityTests {
+
+        @Test
+        @DisplayName("Pass 8: capability_requires_sandbox")
+        void capabilityRequiresSandbox() {
+            PluginRegistry.PluginCapability sandboxedCapability = new PluginRegistry.PluginCapability(
+                List.of("onData"), List.of("onInit"), List.of("json"), List.of("read"),
+                true, true, Map.of()
+            );
+
+            assertThat(sandboxedCapability.requiresSandbox()).isTrue();
+            assertThat(sandboxedCapability.requiresIsolation()).isTrue();
+        }
+
+        @Test
+        @DisplayName("Pass 8: capability_hook_provision")
+        void capabilityHookProvision() {
+            PluginRegistry.PluginCapability capability = new PluginRegistry.PluginCapability(
+                List.of("onInit", "onData", "onShutdown"), List.of("onConfig"),
+                List.of("json", "csv"), List.of("read", "write"),
+                false, false, Map.of()
+            );
+
+            assertThat(capability.providedHooks()).containsExactly("onInit", "onData", "onShutdown");
+            assertThat(capability.requiredHooks()).containsExactly("onConfig");
+        }
+    }
 
     @Nested
     @DisplayName("Registration")

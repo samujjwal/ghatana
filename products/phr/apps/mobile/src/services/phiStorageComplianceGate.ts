@@ -101,7 +101,7 @@ function validateFieldClassification(category: Category, field: string): Sensiti
   const categoryFields = PHI_CLASSIFICATION_REGISTRY[category];
   if (!categoryFields) {
     throw new ComplianceError(
-      `Unknown category: ${category}`,
+      `UNKNOWN_CATEGORY: Unknown category ${category}`,
       'UNKNOWN_CATEGORY',
       { category, field, sensitivity: 'high', operation: 'set', timestamp: Date.now() }
     );
@@ -110,7 +110,7 @@ function validateFieldClassification(category: Category, field: string): Sensiti
   const sensitivity = categoryFields[field];
   if (!sensitivity) {
     throw new ComplianceError(
-      `Field ${field} not classified in category ${category}`,
+      `UNCLASSIFIED_FIELD: Field ${field} not classified in category ${category}`,
       'UNCLASSIFIED_FIELD',
       { category, field, sensitivity: 'high', operation: 'set', timestamp: Date.now() }
     );
@@ -118,7 +118,7 @@ function validateFieldClassification(category: Category, field: string): Sensiti
 
   if (sensitivity !== 'high' && sensitivity !== 'medium' && sensitivity !== 'low') {
     throw new ComplianceError(
-      `Invalid sensitivity level for field ${field}: ${sensitivity}`,
+      `INVALID_SENSITIVITY: Invalid sensitivity level for field ${field}: ${sensitivity}`,
       'INVALID_SENSITIVITY',
       { category, field, sensitivity: sensitivity as SensitivityLevel, operation: 'set', timestamp: Date.now() }
     );

@@ -10,6 +10,7 @@ import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.platform.security.SecurityUtils;
 import com.ghatana.platform.security.port.JwtTokenProvider;
+import com.ghatana.platform.security.rbac.InMemoryRolePermissionRegistry;
 import com.ghatana.datacloud.launcher.support.RequestContext;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
@@ -99,6 +100,7 @@ public final class DataCloudSecurityFilter {
     private final boolean strictTenantResolution;
     private final Set<String> breakGlassTenants;
     private final String deploymentProfile;
+    private final DataCloudPermissionRegistry permissionRegistry;
 
     private DataCloudSecurityFilter(Builder b) {
         if (b.apiKeyResolver == null && b.jwtProvider == null) {
@@ -116,6 +118,11 @@ public final class DataCloudSecurityFilter {
         this.breakGlassTenants  = b.breakGlassTenants != null
             ? Set.copyOf(b.breakGlassTenants) : Set.of();
         this.deploymentProfile      = b.deploymentProfile != null ? b.deploymentProfile : "local";
+        this.permissionRegistry     = b.permissionRegistry != null
+            ? b.permissionRegistry
+            : new DataCloudPermissionRegistry(new com.ghatana.platform.security.rbac.InMemoryRolePermissionRegistry());
+        // Initialize canonical permission mappings
+        this.permissionRegistry.initialize();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -330,11 +337,32 @@ public final class DataCloudSecurityFilter {
 
         RouteSecurityMetadata metadata = RouteSecurityRegistry.lookupRuntimePath(method, path).orElse(null);
         AccessLevel requiredAccess = requiredAccess(method, path, sensitivity, metadata);
-        if (!hasRequiredAccess(principal, requiredAccess)) {
-            log.warn("Forbidden request: principal={} method={} path={} requiredAccess={}",
-                    principal.getName(), method, path, requiredAccess.name());
+
+        // Canonical permission check - derive permissions from identity provider
+        Set<String> principalPermissions = deriveCanonicalPermissions(principal);
+        Set<String> requiredPermissions = metadata != null ? metadata.requiredPermissions() : Set.of();
+
+        // Check coarse-grained access level
+        boolean hasAccessLevel = hasRequiredAccess(principal, requiredAccess);
+        // Check fine-grained permissions
+        boolean hasPermissions = requiredPermissions.isEmpty() ||
+            requiredPermissions.stream().anyMatch(principalPermissions::contains);
+
+        if (!hasAccessLevel || !hasPermissions) {
+            String missingPermission = requiredPermissions.isEmpty() ?
+                requiredAccess.name() : requiredPermissions.stream()
+                    .filter(p -> !principalPermissions.contains(p))
+                    .findFirst().orElse(requiredAccess.name());
+
+            log.warn("[DC-SEC] Permission denied: principal={} method={} path={} requiredAccess={} requiredPermissions={} hasAccessLevel={} hasPermissions={}",
+                    principal.getName(), method, path, requiredAccess.name(),
+                    requiredPermissions, hasAccessLevel, hasPermissions);
+
             if (enforcing) {
-                return Promise.of(forbiddenResponse(requestId, requiredAccess));
+                // Emit audit for denied permission with full context
+                emitPermissionDeniedAudit(request, path, method, principal, principalTenantId, requestId,
+                    requiredAccess, missingPermission, metadata != null ? metadata.routeId() : null);
+                return Promise.of(forbiddenPermissionResponse(requestId, missingPermission, metadata != null ? metadata.routeId() : null));
             }
         }
 
@@ -445,15 +473,29 @@ public final class DataCloudSecurityFilter {
             return serveDelegate(tenantWrapped, request);
         }
 
-        Map<String, Object> ctx = Map.of(
+        // Derive canonical permissions for policy engine
+        Set<String> canonicalPermissions = deriveCanonicalPermissions(principal);
+
+        Map<String, Object> ctx = new java.util.HashMap<>(Map.of(
             "tenantId",    tenantId,
             "path",        path,
             "method",      method,
             "sensitivity", sensitivity.name(),
             "roles",       principal.getRoles(),
+            "permissions", canonicalPermissions,
             "requestId",   requestId,
             "timestamp",   Instant.now().toString()
-        );
+        ));
+
+        // Add route metadata to policy context if available
+        if (metadata != null) {
+            ctx.put("routeId", metadata.routeId() != null ? metadata.routeId() : "unknown");
+            ctx.put("operationId", metadata.operationId() != null ? metadata.operationId() : "unknown");
+            ctx.put("requiredPermissions", metadata.requiredPermissions());
+            if (metadata.requiresPolicy()) {
+                ctx.put("policyRequired", true);
+            }
+        }
 
         return policyEngine.evaluate("datacloud.sensitive-route-access", ctx)
             .then(allowed -> {
@@ -887,6 +929,70 @@ public final class DataCloudSecurityFilter {
         }
     }
 
+    /**
+     * Derives canonical permissions from Principal roles.
+     * Permissions are resolved from authenticated identity provider only.
+     */
+    private Set<String> deriveCanonicalPermissions(Principal principal) {
+        Set<String> permissions = new java.util.HashSet<>();
+        if (principal == null || principal.getRoles() == null) {
+            return Set.of();
+        }
+
+        // Permissions are derived from roles using canonical permission registry
+        // Expand role-based permissions using canonical permission registry
+        for (String role : principal.getRoles()) {
+            String normalizedRole = role == null ? "" : role.trim().toUpperCase(Locale.ROOT).replace('-', '_');
+            Set<String> rolePermissions = permissionRegistry.getPermissions(normalizedRole);
+            if (rolePermissions != null) {
+                permissions.addAll(rolePermissions);
+            }
+        }
+
+        return Set.copyOf(permissions);
+    }
+
+    /**
+     * Emits audit event for permission denial with full context.
+     */
+    private void emitPermissionDeniedAudit(io.activej.http.HttpRequest request, String path, String method,
+                                           Principal principal, String tenantId, String requestId,
+                                           AccessLevel requiredAccess, String missingPermission, String routeId) {
+        if (auditService == null) {
+            log.warn("[DC-SEC] Cannot emit permission denied audit - auditService is null");
+            return;
+        }
+
+        AuditEvent event = AuditEvent.builder()
+            .tenantId(tenantId != null ? tenantId : "unknown")
+            .eventType("PERMISSION_DENIED")
+            .principal(principal != null ? principal.getName() : "anonymous")
+            .resourceType("HTTP_ENDPOINT")
+            .resourceId(method + " " + path)
+            .success(false)
+            .detail("requestId", requestId)
+            .detail("routeId", routeId != null ? routeId : "unknown")
+            .detail("requiredAccess", requiredAccess.name())
+            .detail("missingPermission", missingPermission)
+            .detail("principalRoles", principal != null ? principal.getRoles() : Set.of())
+            .detail("remoteIp", remoteIp(request))
+            .build();
+
+        auditService.record(event).whenException(e ->
+            log.warn("[DC-SEC] Permission denied audit emission failed for requestId={}: {}", requestId, e.getMessage()));
+    }
+
+    private static HttpResponse forbiddenPermissionResponse(String requestId, String missingPermission, String routeId) {
+        String body = "{\"error\":{\"code\":\"PERMISSION_DENIED\","
+            + "\"message\":\"Permission denied: " + missingPermission + "\","
+            + "\"requestId\":\"" + requestId + "\","
+            + "\"routeId\":\"" + (routeId != null ? routeId : "unknown") + "\"}}";
+        return HttpResponse.ofCode(403)
+            .withHeader(HttpHeaders.CONTENT_TYPE, io.activej.http.HttpHeaderValue.of("application/json"))
+            .withBody(body.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+            .build();
+    }
+
     private static HttpResponse policyDenyResponse(String requestId) {
         String body = "{\"error\":{\"code\":\"POLICY_DENY\","
             + "\"message\":\"Request blocked by governance policy\","
@@ -1114,6 +1220,7 @@ public final class DataCloudSecurityFilter {
         private boolean strictTenantResolution;
         private Set<String> breakGlassTenants;
         private String deploymentProfile = "local";
+        private DataCloudPermissionRegistry permissionRegistry;
 
         /**
          * Resolver that validates API keys and maps them to {@link com.ghatana.platform.governance.security.Principal}.
@@ -1191,6 +1298,15 @@ public final class DataCloudSecurityFilter {
          */
         public Builder deploymentProfile(String profile) {
             this.deploymentProfile = profile;
+            return this;
+        }
+
+        /**
+         * Canonical permission registry for Data Cloud.
+         * If not provided, a default in-memory registry with canonical mappings will be used.
+         */
+        public Builder permissionRegistry(DataCloudPermissionRegistry registry) {
+            this.permissionRegistry = registry;
             return this;
         }
 

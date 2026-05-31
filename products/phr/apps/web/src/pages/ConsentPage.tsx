@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { SafeError } from '../components/SafeError';
-import { Badge, Button, Card, CardContent, CardHeader, Input } from '@ghatana/design-system';
-import { createConsentGrant, revokeConsentGrant } from '../api/consentApi';
-import { fetchDashboardData } from '../api/patientApi';
+import { Badge, Button, Card, CardContent, CardHeader, Checkbox, Input } from '@ghatana/design-system';
+import { createConsentGrant, fetchConsentGrants, revokeConsentGrant } from '../api/consentApi';
+import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrAccess } from '../auth/PhrAccessContext';
 import { formatPhrDate, t } from '../i18n/phrI18n';
 import type { ConsentGrant, ConsentGrantRequest } from '../types';
@@ -41,14 +41,14 @@ type ConsentPageAction =
   | { type: 'set_field'; field: keyof GrantFormState; value: string }
   | { type: 'set_boolean_field'; field: keyof GrantFormState; value: boolean }
   | { type: 'set_submitting'; value: boolean }
-  | { type: 'set_error'; message: string | null }
+  | { type: 'set_error'; error: SafeApiErrorState | null }
   | { type: 'set_success'; message: string | null };
 
 interface ConsentPageState {
   showGrantForm: boolean;
   form: GrantFormState;
   submitting: boolean;
-  formError: string | null;
+  formError: SafeApiErrorState | null;
   successMessage: string | null;
 }
 
@@ -65,7 +65,7 @@ function consentPageReducer(state: ConsentPageState, action: ConsentPageAction):
     case 'set_submitting':
       return { ...state, submitting: action.value };
     case 'set_error':
-      return { ...state, formError: action.message };
+      return { ...state, formError: action.error };
     case 'set_success':
       return { ...state, successMessage: action.message };
   }
@@ -85,7 +85,9 @@ export function ConsentPage(): React.ReactElement {
   const apiContext = useMemo(() => ({ tenantId, principalId, role }), [tenantId, principalId, role]);
   const [consents, setConsents] = useState<ConsentGrant[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<SafeApiErrorState | null>(null);
+  const [pendingRevokeId, setPendingRevokeId] = useState<string | null>(null);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
   const [state, dispatch] = useReducer(consentPageReducer, INITIAL_STATE);
   const formErrorRef = React.useRef<HTMLDivElement>(null);
   const successMessageRef = React.useRef<HTMLDivElement>(null);
@@ -107,9 +109,9 @@ export function ConsentPage(): React.ReactElement {
   const loadConsents = useCallback((): void => {
     setLoading(true);
     setLoadError(null);
-    fetchDashboardData(apiContext)
-      .then((data) => setConsents(data.consents))
-      .catch((err: unknown) => setLoadError(err instanceof Error ? err.message : t('error.consentsLoad')))
+    fetchConsentGrants(principalId, apiContext)
+      .then(setConsents)
+      .catch((err: unknown) => setLoadError(toSafeApiErrorState(err, t('error.consentsLoad'))))
       .finally(() => setLoading(false));
   }, [apiContext]);
 
@@ -119,11 +121,20 @@ export function ConsentPage(): React.ReactElement {
 
   const handleGrantSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
-    dispatch({ type: 'set_error', message: null });
+    dispatch({ type: 'set_error', error: null });
 
-    const { recipientId, purpose, resourceTypes, expiresAt } = state.form;
-    if (!recipientId.trim() || !purpose.trim() || !resourceTypes.trim() || !expiresAt.trim()) {
-      dispatch({ type: 'set_error', message: t('validation.required', { field: 'All fields' }) });
+    const { recipientId, purpose, resourceTypes, actions, expiresAt } = state.form;
+    if (!recipientId.trim() || !purpose.trim() || !resourceTypes.trim() || !actions.trim() || !expiresAt.trim()) {
+      dispatch({ type: 'set_error', error: { message: t('consents.validation.required') } });
+      return;
+    }
+    if (new Date(expiresAt).getTime() <= Date.now()) {
+      dispatch({ type: 'set_error', error: { message: t('consents.validation.expiryFuture') } });
+      return;
+    }
+    const allowedActions = actions.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+    if (allowedActions.some((action) => action !== 'read' && action !== 'download')) {
+      dispatch({ type: 'set_error', error: { message: t('consents.validation.actions') } });
       return;
     }
 
@@ -135,7 +146,7 @@ export function ConsentPage(): React.ReactElement {
         resourceTypes: resourceTypes.split(',').map((s) => s.trim()).filter(Boolean),
         allDocuments: state.form.allDocuments,
         specificDocumentIds: state.form.specificDocumentIds ? state.form.specificDocumentIds.split(',').map((s) => s.trim()).filter(Boolean) : undefined,
-        actions: state.form.actions ? state.form.actions.split(',').map((s) => s.trim()).filter(Boolean) : undefined,
+        actions: allowedActions,
       },
       expiresAt: expiresAt.trim(),
     };
@@ -147,25 +158,29 @@ export function ConsentPage(): React.ReactElement {
       dispatch({ type: 'close_grant_form' });
       loadConsents();
     } catch (err: unknown) {
-      dispatch({ type: 'set_error', message: err instanceof Error ? err.message : t('consents.error.create') });
+      dispatch({ type: 'set_error', error: toSafeApiErrorState(err, t('consents.error.create')) });
     } finally {
       dispatch({ type: 'set_submitting', value: false });
     }
   };
 
   const handleRevoke = async (consent: ConsentGrant): Promise<void> => {
-    if (!confirm(t('consents.revoke.confirm'))) return;
+    setRevokingId(consent.id);
+    dispatch({ type: 'set_error', error: null });
     try {
       await revokeConsentGrant(consent.id, principalId, apiContext);
       dispatch({ type: 'set_success', message: t('consents.revoke.success') });
+      setPendingRevokeId(null);
       loadConsents();
     } catch (err: unknown) {
-      dispatch({ type: 'set_error', message: err instanceof Error ? err.message : t('consents.error.revoke') });
+      dispatch({ type: 'set_error', error: toSafeApiErrorState(err, t('consents.error.revoke')) });
+    } finally {
+      setRevokingId(null);
     }
   };
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('consents.loading')}</div>;
-  if (loadError) return <div role="alert" className="error">{t('dashboard.errorPrefix')}: {loadError}</div>;
+  if (loadError) return <SafeError title={t('dashboard.errorPrefix')} message={loadError.message} correlationId={loadError.correlationId} />;
 
   return (
     <Card>
@@ -182,17 +197,17 @@ export function ConsentPage(): React.ReactElement {
           </div>
         )}
         {state.formError && (
-          <div 
-            ref={formErrorRef}
-            role="alert" 
-            className="error mb-4"
-            tabIndex={-1}
-          >
-            {state.formError}
+          <div ref={formErrorRef} tabIndex={-1}>
+            <SafeError
+              title={t('dashboard.errorPrefix')}
+              message={state.formError.message}
+              correlationId={state.formError.correlationId}
+            />
           </div>
         )}
 
         <div className="stack gap-md">
+          {consents.length === 0 ? <p className="empty" role="status">{t('consents.empty')}</p> : null}
           {consents.map((consent) => (
             <section key={consent.id} className="data-card">
               <div>
@@ -204,13 +219,35 @@ export function ConsentPage(): React.ReactElement {
               <div className="row gap-sm">
                 <Badge tone={consentBadgeTone[consent.status]}>{consent.status}</Badge>
                 {consent.status !== 'revoked' && (
-                  <Button
-                    variant="destructive"
-                    onClick={() => void handleRevoke(consent)}
-                    aria-label={`${t('consents.revoke')} ${consent.recipient}`}
-                  >
-                    {t('consents.revoke')}
-                  </Button>
+                  pendingRevokeId === consent.id ? (
+                    <>
+                      <span className="muted">{t('consents.revoke.confirmInline')}</span>
+                      <Button
+                        variant="destructive"
+                        onClick={() => void handleRevoke(consent)}
+                        disabled={revokingId === consent.id}
+                        aria-busy={revokingId === consent.id}
+                        aria-label={`${t('consents.revoke')} ${consent.recipient}`}
+                      >
+                        {t('consents.revoke')}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        onClick={() => setPendingRevokeId(null)}
+                        disabled={revokingId === consent.id}
+                      >
+                        {t('consents.revoke.cancel')}
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="destructive"
+                      onClick={() => setPendingRevokeId(consent.id)}
+                      aria-label={`${t('consents.revoke')} ${consent.recipient}`}
+                    >
+                      {t('consents.revoke')}
+                    </Button>
+                  )
                 )}
               </div>
             </section>
@@ -255,16 +292,13 @@ export function ConsentPage(): React.ReactElement {
                 }
                 required
               />
-              <label className="row gap-sm align-center">
-                <input
-                  type="checkbox"
-                  checked={state.form.allDocuments}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    dispatch({ type: 'set_boolean_field', field: 'allDocuments', value: e.target.checked })
-                  }
-                />
-                <span>{t('consents.grant.allDocuments')}</span>
-              </label>
+              <Checkbox
+                checked={state.form.allDocuments}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  dispatch({ type: 'set_boolean_field', field: 'allDocuments', value: e.target.checked })
+                }
+                label={t('consents.grant.allDocuments')}
+              />
               {!state.form.allDocuments && (
                 <Input
                   aria-label={t('consents.grant.specificDocumentIds')}

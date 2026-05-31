@@ -13,6 +13,14 @@
     "./route": {
       "types": "./dist/route/index.d.ts",
       "import": "./dist/route/index.js"
+    },
+    "./policy": {
+      "types": "./dist/policy/MobilePhiPolicyContract.d.ts",
+      "import": "./dist/policy/MobilePhiPolicyContract.js"
+    },
+    "./mobile-privacy": {
+      "types": "./dist/privacy/index.d.ts",
+      "import": "./dist/privacy/index.js"
     }
   },
   "scripts": {

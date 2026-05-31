@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { SafeError } from '../components/SafeError';
-import { Badge, Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { Badge, Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { Link } from 'react-router-dom';
 import { fetchConditions } from '../api/clinicalApi';
+import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { formatPhrDate, t } from '../i18n/phrI18n';
 import type { ConditionSummary } from '../types';
@@ -21,7 +22,7 @@ export function ConditionsPage(): React.ReactElement {
   const { session } = usePhrSession();
   const [conditions, setConditions] = useState<ConditionSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SafeApiErrorState | null>(null);
   const [filter, setFilter] = useState<ConditionFilter>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -33,14 +34,14 @@ export function ConditionsPage(): React.ReactElement {
       role: session.role,
     })
       .then(setConditions)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('conditions.error')))
+      .catch((err: unknown) => setError(toSafeApiErrorState(err, t('conditions.error'))))
       .finally(() => setLoading(false));
   }, [session]);
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('conditions.loading')}</div>;
   if (error) {
-    const message = isForbiddenError(error) ? t('conditions.denied') : error;
-    return <SafeError title={t('dashboard.errorPrefix')} message={message} correlationId={session?.tenantId + '-' + session?.principalId} />;
+    const message = isForbiddenError(error.message) ? t('conditions.denied') : error.message;
+    return <SafeError title={t('dashboard.errorPrefix')} message={message} correlationId={error.correlationId} />;
   }
 
   const filteredConditions = filter === 'all' ? conditions : conditions.filter((condition) => condition.status === filter);
@@ -52,19 +53,19 @@ export function ConditionsPage(): React.ReactElement {
         <CardContent>
           <div className="row gap-sm wrap" role="tablist" aria-label={t('conditions.filters.label')}>
             {(['all', 'active', 'chronic', 'resolved'] as const).map((status) => (
-              <button
+              <Button
                 key={status}
                 type="button"
                 role="tab"
                 aria-selected={filter === status}
-                className={filter === status ? 'primary' : 'secondary'}
+                variant={filter === status ? 'primary' : 'secondary'}
                 onClick={() => {
                   setFilter(status);
                   setSelectedId(null);
                 }}
               >
                 {status === 'all' ? t('conditions.filters.all') : conditionStatusLabel(status)}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -90,14 +91,14 @@ export function ConditionsPage(): React.ReactElement {
                           {condition.code && <code>{condition.code}</code>}
                         </div>
                       </div>
-                      <button
+                      <Button
                         type="button"
-                        className="secondary"
+                        variant="secondary"
                         aria-expanded={isSelected}
                         onClick={() => setSelectedId(isSelected ? null : condition.id)}
                       >
                         {t('conditions.detail.toggle')}
-                      </button>
+                      </Button>
                     </div>
                     {isSelected && (
                       <dl className="detail-list" aria-label={t('conditions.detail.label', { condition: condition.display })}>

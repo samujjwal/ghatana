@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,6 +59,16 @@ class PhrOcrAuthorizationTest extends EventloopTestBase {
             ))));
         when(documentService.confirmOcrDocument("doc-123", "patient-1", "Reviewed OCR text"))
             .thenReturn(Promise.complete());
+        when(documentService.confirmOcrDocument("doc-123", "patient-1", "Reviewed OCR text", null))
+            .thenReturn(Promise.of(new DocumentService.OcrDocument(
+                "doc-123",
+                "Lab report",
+                "CONFIRMED",
+                0.91,
+                "Reviewed OCR text",
+                "patient-1",
+                Instant.parse("2026-01-01T00:00:00Z")
+            )));
         when(documentService.toFhirDocumentReference("doc-123"))
             .thenReturn(Promise.of("{\"resourceType\":\"DocumentReference\",\"id\":\"doc-123\"}"));
         PhrDocumentImagingRoutes routes = new PhrDocumentImagingRoutes(
@@ -241,7 +252,9 @@ class PhrOcrAuthorizationTest extends EventloopTestBase {
         HttpRequest.Builder builder = HttpRequest.builder(method, "http://localhost" + path)
             .withHeader(HttpHeaders.of("X-Tenant-ID"), tenantId)
             .withHeader(HttpHeaders.of("X-Principal-ID"), principalId)
-            .withHeader(HttpHeaders.of("X-Role"), role);
+            .withHeader(HttpHeaders.of("X-Role"), role)
+            .withHeader(HttpHeaders.of("X-Persona"), role)
+            .withHeader(HttpHeaders.of("X-Tier"), "core");
         if (method == HttpMethod.POST) {
             builder.withBody(confirmBody());
         }

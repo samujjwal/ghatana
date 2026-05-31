@@ -9,6 +9,8 @@ import com.ghatana.kernel.adapter.datacloud.QueryResult;
 import com.ghatana.kernel.adapter.datacloud.SchemaCreateRequest;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
+import com.ghatana.kernel.interop.KernelFhirHl7Plugin;
+import com.ghatana.kernel.interop.KernelFhirValidationResult;
 import com.ghatana.kernel.plugin.KernelPlugin;
 import com.ghatana.kernel.plugin.PluginManifest;
 import com.ghatana.platform.health.HealthStatus;
@@ -27,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -56,10 +59,19 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
 
     private volatile KernelContext context;
     private volatile DependencyAvailability dataCloudAvailability;
+    private final KernelFhirHl7Plugin kernelFhirPlugin;
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final AtomicBoolean started = new AtomicBoolean(false);
     private final AtomicBoolean installed = new AtomicBoolean(false);
     private final ConcurrentHashMap<String, FhirResource> resourceCache = new ConcurrentHashMap<>();
+
+    public FhirInteropKernelPlugin() {
+        this(new KernelFhirHl7Plugin());
+    }
+
+    FhirInteropKernelPlugin(KernelFhirHl7Plugin kernelFhirPlugin) {
+        this.kernelFhirPlugin = Objects.requireNonNull(kernelFhirPlugin, "kernelFhirPlugin cannot be null");
+    }
 
     @Override
     public PluginManifest getManifest() {
@@ -94,6 +106,7 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
     @Override
     public Set<String> getExportedContracts() {
         return Set.of(
+            "com.ghatana.kernel.interop.KernelFhirHl7Plugin",
             "com.ghatana.phr.fhir.FhirResourceService",
             "com.ghatana.phr.fhir.FhirValidator",
             "com.ghatana.phr.fhir.FhirTransformer"
@@ -215,11 +228,9 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
             return Promise.ofException(new IllegalStateException("Plugin not started"));
         }
 
-        // Perform FHIR R4 validation
-        boolean valid = performValidation(resourceType, resourceJson);
-        String message = valid ? "Valid FHIR R4 resource" : "Validation failed";
+        KernelFhirValidationResult result = kernelFhirPlugin.validateResource(resourceType, resourceJson);
 
-        return Promise.of(new ValidationResult(valid, message, resourceType));
+        return Promise.of(new ValidationResult(result.valid(), result.message(), result.resourceType()));
     }
 
     /** {@inheritDoc} */
@@ -335,53 +346,6 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
 
     private Promise<Void> stopFhirServices() {
         return Promise.complete();
-    }
-
-    private boolean performValidation(String resourceType, String resourceJson) {
-        if (resourceJson == null || resourceJson.isBlank()) {
-            return false;
-        }
-
-        // Allowed FHIR R4 resource types
-        Set<String> allowedTypes = Set.of(
-                "Patient", "Observation", "Encounter", "Condition", "Procedure",
-                "Medication", "AllergyIntolerance", "DiagnosticReport",
-                "MedicationRequest", "Immunization", "DocumentReference", "CarePlan", "Coverage");
-        if (!allowedTypes.contains(resourceType)) {
-            return false;
-        }
-
-        // Parse JSON and validate required FHIR R4 structural fields
-        try {
-            JsonNode root = JSON_MAPPER.readTree(resourceJson);
-
-            // FHIR R4 requires `resourceType` field matching the declared type
-            JsonNode rtNode = root.get("resourceType");
-            if (rtNode == null || !resourceType.equals(rtNode.asText())) {
-                return false;
-            }
-
-            // Resource-type-specific required field checks (PHR-03 contract correctness)
-            return switch (resourceType) {
-                case "Patient" ->
-                        root.has("id") || root.has("identifier") || root.has("name");
-                case "Observation" ->
-                        root.has("status") && root.has("code") && root.has("subject");
-                case "Encounter" ->
-                        root.has("status") && root.has("class") && root.has("subject");
-                case "Condition" ->
-                        root.has("code") && root.has("subject");
-                case "Procedure" ->
-                        root.has("status") && root.has("code") && root.has("subject");
-                case "DiagnosticReport" ->
-                        root.has("status") && root.has("code") && root.has("subject");
-                case "DocumentReference" ->
-                        root.has("status") && root.has("type") && root.has("subject");
-                default -> true; // Other supported types: structural check sufficient
-            };
-        } catch (Exception e) {
-            return false;
-        }
     }
 
     private String performTransformation(Object internalData, String targetResourceType) {

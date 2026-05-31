@@ -7,8 +7,8 @@ package com.ghatana.datacloud.storage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.platform.domain.eventstore.EventLogStore;
-import com.ghatana.platform.domain.eventstore.TenantContext;
+import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -403,7 +403,11 @@ public class WarmTierEventLogStore implements EventLogStore {
                 ByteBuffer.wrap(payloadBytes != null ? payloadBytes : new byte[0]),
                 contentType,
                 headers,
-                Optional.ofNullable(idempotencyKey)
+                Optional.ofNullable(idempotencyKey),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty()
         );
     }
 
@@ -428,6 +432,165 @@ public class WarmTierEventLogStore implements EventLogStore {
                 return 0L;
             }
         }
+    }
+
+    // ==================== Checkpoint Management (P3-03) ====================
+
+    @Override
+    public Promise<Optional<Checkpoint>> readCheckpoint(TenantContext tenant, String stream, String consumerGroup) {
+        return Promise.ofBlocking(executor, () -> {
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(
+                     "SELECT stream_name, consumer_group, offset_value, committed_at, idempotency_key " +
+                     "FROM event_log_checkpoints " +
+                     "WHERE tenant_id = ? AND stream_name = ? AND consumer_group = ?")) {
+                ps.setString(1, tenant.tenantId());
+                ps.setString(2, stream);
+                ps.setString(3, consumerGroup);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        return Optional.of(new Checkpoint(
+                            rs.getString("stream_name"),
+                            rs.getString("consumer_group"),
+                            Offset.of(String.valueOf(rs.getLong("offset_value"))),
+                            rs.getTimestamp("committed_at").toInstant(),
+                            rs.getString("idempotency_key")
+                        ));
+                    }
+                    return Optional.empty();
+                }
+            }
+        });
+    }
+
+    @Override
+    public Promise<Checkpoint> commitCheckpoint(TenantContext tenant, String stream, String consumerGroup, Offset offset, String idempotencyKey) {
+        return Promise.ofBlocking(executor, () -> {
+            try (Connection conn = dataSource.getConnection()) {
+                boolean originalAutoCommit = conn.getAutoCommit();
+                conn.setAutoCommit(false);
+                try {
+                    // P3-03: Idempotent checkpoint commit using UPSERT
+                    try (PreparedStatement ps = conn.prepareStatement("""
+                        INSERT INTO event_log_checkpoints (tenant_id, stream_name, consumer_group, offset_value, committed_at, idempotency_key)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        ON CONFLICT (tenant_id, stream_name, consumer_group)
+                        DO UPDATE SET offset_value = EXCLUDED.offset_value, committed_at = EXCLUDED.committed_at, idempotency_key = EXCLUDED.idempotency_key
+                        """)) {
+                        ps.setString(1, tenant.tenantId());
+                        ps.setString(2, stream);
+                        ps.setString(3, consumerGroup);
+                        ps.setLong(4, Long.parseLong(offset.value()));
+                        ps.setTimestamp(5, Timestamp.from(Instant.now()));
+                        ps.setString(6, idempotencyKey);
+                        ps.executeUpdate();
+                    }
+                    conn.commit();
+                    return new Checkpoint(stream, consumerGroup, offset, Instant.now(), idempotencyKey);
+                } catch (Exception e) {
+                    conn.rollback();
+                    throw e;
+                } finally {
+                    conn.setAutoCommit(originalAutoCommit);
+                }
+            }
+        });
+    }
+
+    @Override
+    public Promise<Boolean> deleteCheckpoint(TenantContext tenant, String stream, String consumerGroup) {
+        return Promise.ofBlocking(executor, () -> {
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(
+                     "DELETE FROM event_log_checkpoints WHERE tenant_id = ? AND stream_name = ? AND consumer_group = ?")) {
+                ps.setString(1, tenant.tenantId());
+                ps.setString(2, stream);
+                ps.setString(3, consumerGroup);
+                int rows = ps.executeUpdate();
+                return rows > 0;
+            }
+        });
+    }
+
+    @Override
+    public Promise<Map<String, Checkpoint>> getAllCheckpointsWithMetadata(TenantContext tenant) {
+        return Promise.ofBlocking(executor, () -> {
+            Map<String, Checkpoint> result = new HashMap<>();
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(
+                     "SELECT stream_name, consumer_group, offset_value, committed_at, idempotency_key " +
+                     "FROM event_log_checkpoints WHERE tenant_id = ?")) {
+                ps.setString(1, tenant.tenantId());
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        String key = rs.getString("stream_name") + ":" + rs.getString("consumer_group");
+                        result.put(key, new Checkpoint(
+                            rs.getString("stream_name"),
+                            rs.getString("consumer_group"),
+                            Offset.of(String.valueOf(rs.getLong("offset_value"))),
+                            rs.getTimestamp("committed_at").toInstant(),
+                            rs.getString("idempotency_key")
+                        ));
+                    }
+                }
+            }
+            return result;
+        });
+    }
+
+    // ==================== Replay (P3-03) ====================
+
+    @Override
+    public Promise<List<EventEntry>> replay(TenantContext tenant, ReplaySpec spec) {
+        return Promise.ofBlocking(executor, () -> {
+            long fromOffsetValue = Long.parseLong(spec.fromOffset().value());
+            long toOffsetValue = spec.toOffset().value().equals("-1") 
+                ? Long.MAX_VALUE 
+                : Long.parseLong(spec.toOffset().value());
+            
+            StringBuilder sql = new StringBuilder(
+                "SELECT offset_value, event_id, event_type, event_version, payload, content_type, headers, idempotency_key, created_at " +
+                "FROM event_log " +
+                "WHERE tenant_id = ? AND offset_value >= ? AND offset_value <= ?");
+            
+            List<Object> params = new ArrayList<>();
+            params.add(tenant.tenantId());
+            params.add(fromOffsetValue);
+            params.add(toOffsetValue);
+            
+            if (!spec.eventTypes().isEmpty()) {
+                sql.append(" AND event_type IN (");
+                for (int i = 0; i < spec.eventTypes().size(); i++) {
+                    if (i > 0) sql.append(", ");
+                    sql.append("?");
+                    params.add(spec.eventTypes().get(i));
+                }
+                sql.append(")");
+            }
+            
+            sql.append(" ORDER BY offset_value ASC");
+            
+            List<EventEntry> result = new ArrayList<>();
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+                for (int i = 0; i < params.size(); i++) {
+                    ps.setObject(i + 1, params.get(i));
+                }
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        result.add(rowToEntry(rs));
+                    }
+                }
+            }
+            return result;
+        });
+    }
+
+    @Override
+    public Promise<Void> unsubscribe(TenantContext tenant, SubscriptionId subscriptionId) {
+        // P3-03: For polling subscriptions, cancel is handled via Subscription.cancel()
+        // This is a no-op for the polling implementation since subscriptions self-manage
+        return Promise.of(null);
     }
 
     // =========================================================================

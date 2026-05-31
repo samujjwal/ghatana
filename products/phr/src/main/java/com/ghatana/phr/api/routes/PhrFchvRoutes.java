@@ -68,7 +68,7 @@ public final class PhrFchvRoutes {
         // Use policy evaluator for PHI access decision (POL-001)
         return policyEvaluator.canAccessPhiResourceAsync(
                 context,
-                "fchv-dashboard-scope",
+                context.principalId(),
                 "fchv-dashboard",
                 "READ",
                 context.tenantId(),
@@ -78,31 +78,12 @@ public final class PhrFchvRoutes {
                     return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
                 }
 
-                // FCHV dashboard with community assignment, scoped patient list, and vitals capture links
-                return Promise.of(List.of(
-                    Map.of(
-                        "id", "patient-001",
-                        "name", "[REDACTED]",
-                        "village", "Sindhuli-3",
-                        "riskLevel", "high",
-                        "lastContact", "2026-05-20",
-                        "pendingVitals", true
-                    ),
-                    Map.of(
-                        "id", "patient-002",
-                        "name", "[REDACTED]",
-                        "village", "Sindhuli-5",
-                        "riskLevel", "low",
-                        "lastContact", "2026-05-22",
-                        "pendingVitals", false
-                    )
-                )).then(patients -> PhrRouteSupport.jsonResponse(200, Map.of(
+                List<Map<String, Object>> patients = List.of();
+                return PhrRouteSupport.jsonResponse(200, Map.of(
                         "fchvId", context.principalId(),
                         "tenantId", context.tenantId(),
                         "communityAssignment", Map.of(
-                            "village", "Sindhuli",
-                            "ward", "3",
-                            "assignedHouseholds", 150,
+                            "facilityId", context.facilityId() != null ? context.facilityId() : "",
                             "activePatients", patients.size()
                         ),
                         "patients", patients,
@@ -118,7 +99,7 @@ public final class PhrFchvRoutes {
                         ),
                         "generatedAt", java.time.Instant.now().toString()
                         ),
-                        context.correlationId()));
+                        context.correlationId());
                     });
     }
 
@@ -134,7 +115,7 @@ public final class PhrFchvRoutes {
         // Use policy evaluator for PHI access decision (POL-001)
         return policyEvaluator.canAccessPhiResourceAsync(
                 context,
-                "fchv-patient-list-scope",
+                context.principalId(),
                 "fchv-patient-list",
                 "READ",
                 context.tenantId(),
@@ -144,28 +125,14 @@ public final class PhrFchvRoutes {
                     return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
                 }
 
-                return Promise.of(List.of(
-                    Map.of(
-                        "id", "patient-001",
-                        "name", "[REDACTED]",
-                        "village", "Sindhuli-3",
-                        "riskLevel", "high",
-                        "lastContact", "2026-05-20"
-                    ),
-                    Map.of(
-                        "id", "patient-002",
-                        "name", "[REDACTED]",
-                        "village", "Sindhuli-5",
-                        "riskLevel", "low",
-                        "lastContact", "2026-05-22"
-                    )
-                )).then(patients -> PhrRouteSupport.jsonResponse(200, Map.of(
+                List<Map<String, Object>> patients = List.of();
+                return PhrRouteSupport.jsonResponse(200, Map.of(
                         "fchvId", context.principalId(),
                         "tenantId", context.tenantId(),
                         "items", patients,
                         "count", patients.size()
                     ),
-                    context.correlationId()));
+                    context.correlationId());
             });
     }
 
@@ -181,7 +148,7 @@ public final class PhrFchvRoutes {
         // Use policy evaluator for PHI access decision (POL-001)
         return policyEvaluator.canAccessPhiResourceAsync(
                 context,
-                "fchv-registration-scope",
+                context.principalId(),
                 "fchv-patient-registration",
                 "WRITE",
                 context.tenantId(),
@@ -293,7 +260,7 @@ public final class PhrFchvRoutes {
         // Use policy evaluator for PHI access decision (POL-001)
         return policyEvaluator.canAccessPhiResourceAsync(
                 context,
-                "fchv-sync-scope",
+                context.principalId(),
                 "fchv-sync-status",
                 "READ",
                 context.tenantId(),
@@ -325,7 +292,7 @@ public final class PhrFchvRoutes {
 
         return policyEvaluator.canAccessPhiResourceAsync(
                 context,
-                "fchv-sync-operations-scope",
+                context.principalId(),
                 "fchv-sync-operations",
                 "WRITE",
                 context.tenantId(),

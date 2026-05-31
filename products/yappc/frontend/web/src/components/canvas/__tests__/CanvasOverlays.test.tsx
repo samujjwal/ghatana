@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { CanvasOverlays, type CanvasOverlaysProps } from '../CanvasOverlays';
 import { LifecyclePhase } from '../../../types/lifecycle';
-import type { PhrCompletenessOverlayModel } from '../../../lib/phr/phrCompletenessOverlay';
+import type { ProductCompletenessOverlayModel } from '../../../lib/product/productCompletenessOverlay';
 
 vi.mock('../workspace', () => ({
     NextBestTaskCard: () => null,
@@ -82,9 +82,9 @@ function buildProps(overrides: Partial<CanvasOverlaysProps> = {}): CanvasOverlay
 }
 
 describe('CanvasOverlays', () => {
-    it('renders the PHR route completeness overlay when a model is provided', () => {
-        const phrCompletenessOverlay: PhrCompletenessOverlayModel = {
-            product: 'phr',
+    it('renders the Product route completeness overlay when a model is provided', () => {
+        const productCompletenessOverlay: ProductCompletenessOverlayModel = {
+            product: 'sample-product',
             generatedAt: '2026-05-28T00:00:00.000Z',
             totals: {
                 routes: 2,
@@ -99,9 +99,9 @@ describe('CanvasOverlays', () => {
                 {
                     path: '/records',
                     label: 'Records',
-                    group: 'care',
+                    group: 'workspace',
                     lifecycle: 'stable',
-                    useCaseIds: ['uc-patient-records'],
+                    useCaseIds: ['uc-operator-records'],
                     webCovered: true,
                     mobileCovered: false,
                     backendCovered: true,
@@ -110,11 +110,11 @@ describe('CanvasOverlays', () => {
                     score: 75,
                 },
                 {
-                    path: '/provider',
-                    label: 'Provider',
-                    group: 'provider',
+                    path: '/admin',
+                    label: 'Admin',
+                    group: 'admin',
                     lifecycle: 'hidden',
-                    useCaseIds: ['uc-provider-dashboard'],
+                    useCaseIds: ['uc-admin-dashboard'],
                     webCovered: true,
                     mobileCovered: false,
                     backendCovered: true,
@@ -132,10 +132,10 @@ describe('CanvasOverlays', () => {
             ],
         };
 
-        render(<CanvasOverlays {...buildProps({ phrCompletenessOverlay })} />);
+        render(<CanvasOverlays {...buildProps({ productCompletenessOverlay })} />);
 
-        expect(screen.getByRole('complementary', { name: /phr route completeness/i })).toBeInTheDocument();
-        expect(screen.getByText('PHR route completeness')).toBeInTheDocument();
+        expect(screen.getByRole('complementary', { name: /product route completeness/i })).toBeInTheDocument();
+        expect(screen.getByText('Product route completeness')).toBeInTheDocument();
         expect(screen.getByText('75%')).toBeInTheDocument();
     });
 

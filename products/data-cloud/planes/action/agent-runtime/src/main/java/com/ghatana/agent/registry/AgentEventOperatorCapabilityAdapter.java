@@ -17,6 +17,7 @@ import com.ghatana.aep.model.UncertaintyContext;
 import com.ghatana.aep.operator.contract.CompileContext;
 import com.ghatana.aep.operator.contract.EventOperatorResult;
 import com.ghatana.aep.operator.contract.OperatorKind;
+import com.ghatana.aep.operator.contract.OperatorLifecycleContract;
 import com.ghatana.aep.operator.contract.OperatorRuntimeContext;
 import com.ghatana.aep.operator.contract.OperatorSpec;
 import com.ghatana.aep.operator.contract.OperatorVersion;
@@ -228,23 +229,295 @@ public final class AgentEventOperatorCapabilityAdapter
 
     @Override
     public ValidationResult validate(OperatorSpec spec, ValidationContext ctx) {
+        // P4-06: Enhanced validation with comprehensive checks
+        java.util.List<String> errors = new java.util.ArrayList<>();
+
+        // Check operator kind
         if (spec.kind() != kind()) {
-            return ValidationResult.invalid(List.of("AgentEventOperatorCapabilityAdapter requires " + kind() + " spec"));
+            errors.add("AgentEventOperatorCapabilityAdapter requires " + kind() + " spec, got " + spec.kind());
         }
-        return ValidationResult.ok();
+
+        // Validate input schema
+        if (spec.inputSchema() == null || spec.inputSchema().isBlank()) {
+            errors.add("inputSchema is required");
+        } else if (!spec.inputSchema().equals(descriptor.inputSchema())) {
+            errors.add("inputSchema mismatch: expected " + descriptor.inputSchema() + ", got " + spec.inputSchema());
+        }
+
+        // Validate output schema
+        if (spec.outputSchema() == null || spec.outputSchema().isBlank()) {
+            errors.add("outputSchema is required");
+        } else if (!spec.outputSchema().equals(descriptor.outputSchema())) {
+            errors.add("outputSchema mismatch: expected " + descriptor.outputSchema() + ", got " + spec.outputSchema());
+        }
+
+        // Validate side-effect policy
+        if (descriptor.sideEffectProfile().name().equals("SIDE_EFFECTING")) {
+            if (humanReviewPolicy == null || humanReviewPolicy.isEmpty()) {
+                errors.add("humanReviewPolicy is required for SIDE_EFFECTING agents");
+            }
+            if (observabilityPolicy == null || observabilityPolicy.isEmpty()) {
+                errors.add("observabilityPolicy is required for SIDE_EFFECTING agents");
+            }
+        }
+
+        // Validate replay policy
+        if (replayPolicy == null || replayPolicy.isEmpty()) {
+            errors.add("replayPolicy is required");
+        } else {
+            Boolean idempotencyRequired = (Boolean) replayPolicy.get("idempotencyRequired");
+            if (idempotencyRequired == null) {
+                errors.add("replayPolicy.idempotencyRequired is required");
+            }
+        }
+
+        // Validate tenant context
+        if (ctx != null && ctx.tenantId() == null) {
+            errors.add("tenantId is required in ValidationContext");
+        }
+
+        return errors.isEmpty() ? ValidationResult.ok() : ValidationResult.invalid(errors);
     }
 
     @Override
     public RuntimePlan compile(OperatorSpec spec, CompileContext ctx) {
-        ValidationResult validation = validate(spec, null);
+        // P4-06: Compile a real runtime plan with complete information
+        ValidationContext validationContext = new ValidationContext(
+            ctx.tenantId(),
+            Map.of(),
+            ctx.runtimeOptions());
+        ValidationResult validation = validate(spec, validationContext);
         if (!validation.valid()) {
             throw new IllegalArgumentException(String.join("; ", validation.errors()));
         }
+
+        // Build comprehensive runtime plan
+        Map<String, Object> parameters = Map.of(
+            "agentRef", agentRef,
+            "capabilityId", capabilityId.value(),
+            "operatorKind", operatorKind.name(),
+            "inputSchema", spec.inputSchema(),
+            "outputSchema", spec.outputSchema(),
+            "sideEffectProfile", descriptor.sideEffectProfile().name(),
+            "capabilities", capabilities
+        );
+
+        Map<String, Object> executionPlan = new LinkedHashMap<>();
+        executionPlan.put("operatorType", "agent-capability");
+        executionPlan.put("operatorId", operatorId.toString());
+        executionPlan.put("operatorName", operatorName);
+        executionPlan.put("operatorDescription", operatorDescription);
+        executionPlan.put("deploymentProfile", deploymentProfile);
+        executionPlan.put("replayMode", replayPolicy.getOrDefault("replayMode", "AT_LEAST_ONCE"));
+        executionPlan.put("idempotencyRequired", replayPolicy.getOrDefault("idempotencyRequired", false));
+        executionPlan.put("requiresDurableMemory", memoryPolicy.getOrDefault("durableRequired", true));
+        executionPlan.put("sideEffecting", descriptor.sideEffectProfile().name().equals("SIDE_EFFECTING"));
+        executionPlan.put("requiresHumanReview", humanReviewPolicy.getOrDefault("required", false));
+        executionPlan.put("observabilityEnabled", observabilityPolicy.getOrDefault("enabled", true));
+
         return new RuntimePlan(
             "agent-capability-" + operatorId.getName(),
             List.of(operatorId.toString()),
-            Map.of("agentRef", agentRef, "capabilityId", capabilityId.value()),
-            Map.of("operatorType", "agent-capability"));
+            parameters,
+            executionPlan
+        );
+    }
+
+    // ==================== OperatorLifecycleContract Methods (P4-06) ====================
+
+    @Override
+    public OperatorLifecycleContract.OperatorExplanation explain(RuntimePlan plan, OperatorLifecycleContract.ExplanationDetailLevel detailLevel) {
+        String summary = String.format(
+            "Agent capability operator '%s' (ref: %s) executes agent '%s' for %s operations",
+            operatorName, capabilityId.value(), agentRef, operatorKind.name()
+        );
+
+        List<String> steps = List.of(
+            "1. Validate input against inputSchema: " + descriptor.inputSchema(),
+            "2. Create agent context with tenant isolation",
+            "3. Execute agent with trace/correlation IDs",
+            "4. Map agent result to EventOperatorResult",
+            "5. Build evidence for audit trail",
+            "6. Return result with uncertainty metadata"
+        );
+
+        Map<String, Object> dataFlow = Map.of(
+            "input", descriptor.inputSchema(),
+            "output", descriptor.outputSchema(),
+            "sideEffectProfile", descriptor.sideEffectProfile().name(),
+            "agentRef", agentRef,
+            "capabilityId", capabilityId.value()
+        );
+
+        List<String> warnings = descriptor.sideEffectProfile().name().equals("SIDE_EFFECTING")
+            ? List.of("SIDE_EFFECTING: Ensure humanReviewPolicy and observabilityPolicy are configured")
+            : List.of();
+
+        Optional<String> estimate = Optional.of("Typical latency: varies by agent complexity");
+
+        return new OperatorLifecycleContract.OperatorExplanation(summary, steps, dataFlow, warnings, estimate);
+    }
+
+    @Override
+    public OperatorLifecycleContract.SideEffectDeclaration declareSideEffects(OperatorSpec spec) {
+        java.util.Set<OperatorLifecycleContract.SideEffectType> effects = new java.util.HashSet<>();
+
+        // Agent execution always produces event emission
+        effects.add(OperatorLifecycleContract.SideEffectType.EVENT_EMISSION);
+
+        // Check for side-effecting operations based on profile and policies
+        if (descriptor.sideEffectProfile().name().equals("SIDE_EFFECTING")) {
+            effects.add(OperatorLifecycleContract.SideEffectType.EXTERNAL_CALL);
+            effects.add(OperatorLifecycleContract.SideEffectType.STATE_CHANGE);
+
+            // Check if toolPolicy allows data mutations
+            if (toolPolicy.containsKey("allowedTools") || toolPolicy.containsKey("mutationsAllowed")) {
+                effects.add(OperatorLifecycleContract.SideEffectType.DATA_MUTATION);
+            }
+        }
+
+        boolean isDestructive = effects.contains(OperatorLifecycleContract.SideEffectType.DATA_MUTATION);
+        boolean isReversible = Boolean.TRUE.equals(replayPolicy.get("idempotencyRequired"));
+
+        Optional<String> rollback = Optional.ofNullable(
+            replayPolicy.get("compensationStrategy") != null
+                ? replayPolicy.get("compensationStrategy").toString()
+                : null
+        );
+
+        return new OperatorLifecycleContract.SideEffectDeclaration(
+            effects,
+            List.of("agent-execution", "memory-store"),
+            isDestructive,
+            isReversible,
+            rollback
+        );
+    }
+
+    @Override
+    public OperatorLifecycleContract.ReplayBehavior declareReplayBehavior(OperatorSpec spec) {
+        boolean isIdempotent = Boolean.TRUE.equals(replayPolicy.get("idempotencyRequired"));
+
+        // Determine state recovery mode based on memory policy
+        OperatorLifecycleContract.StateRecoveryMode recoveryMode;
+        if (memoryPolicy.containsKey("snapshotEnabled") && Boolean.TRUE.equals(memoryPolicy.get("snapshotEnabled"))) {
+            recoveryMode = OperatorLifecycleContract.StateRecoveryMode.SNAPSHOT;
+        } else if (memoryPolicy.containsKey("eventSourcing") && Boolean.TRUE.equals(memoryPolicy.get("eventSourcing"))) {
+            recoveryMode = OperatorLifecycleContract.StateRecoveryMode.EVENT_SOURCING;
+        } else {
+            recoveryMode = OperatorLifecycleContract.StateRecoveryMode.STATELESS;
+        }
+
+        // Deduplication strategy
+        OperatorLifecycleContract.DeduplicationStrategy dedupStrategy = isIdempotent
+            ? OperatorLifecycleContract.DeduplicationStrategy.NONE
+            : OperatorLifecycleContract.DeduplicationStrategy.EVENT_ID;
+
+        return new OperatorLifecycleContract.ReplayBehavior(
+            isIdempotent,
+            isIdempotent,  // exactly-once requires idempotency
+            true,            // at-least-once always supported
+            recoveryMode,
+            dedupStrategy,
+            Optional.of("operationId")  // use operationId for deduplication
+        );
+    }
+
+    @Override
+    public OperatorLifecycleContract.RequiredPolicies declareRequiredPolicies(OperatorSpec spec) {
+        java.util.List<OperatorLifecycleContract.PolicyRequirement> dataGovernance = new java.util.ArrayList<>();
+        java.util.List<OperatorLifecycleContract.PolicyRequirement> security = new java.util.ArrayList<>();
+        java.util.List<OperatorLifecycleContract.PolicyRequirement> compliance = new java.util.ArrayList<>();
+        java.util.List<OperatorLifecycleContract.PolicyRequirement> resource = new java.util.ArrayList<>();
+
+        // Data governance policies
+        if (memoryPolicy.containsKey("retentionPolicy")) {
+            dataGovernance.add(new OperatorLifecycleContract.PolicyRequirement(
+                "data-retention", "memory-retention",
+                Map.of("policy", memoryPolicy.get("retentionPolicy")),
+                OperatorLifecycleContract.EnforcementLevel.REQUIRED
+            ));
+        }
+
+        // Security policies
+        if (guardrailPolicy.containsKey("invariants")) {
+            security.add(new OperatorLifecycleContract.PolicyRequirement(
+                "guardrails", "agent-invariants",
+                Map.of("invariants", guardrailPolicy.get("invariants")),
+                OperatorLifecycleContract.EnforcementLevel.REQUIRED
+            ));
+        }
+
+        // Compliance policies
+        if (observabilityPolicy.containsKey("auditPolicy")) {
+            compliance.add(new OperatorLifecycleContract.PolicyRequirement(
+                "audit", "operation-auditing",
+                Map.of("auditPolicy", observabilityPolicy.get("auditPolicy")),
+                OperatorLifecycleContract.EnforcementLevel.REQUIRED
+            ));
+        }
+
+        // Human review for side-effecting capabilities
+        if (descriptor.sideEffectProfile().name().equals("SIDE_EFFECTING")) {
+            compliance.add(new OperatorLifecycleContract.PolicyRequirement(
+                "human-oversight", "approval-required",
+                Map.of("reviewPolicy", humanReviewPolicy),
+                OperatorLifecycleContract.EnforcementLevel.REQUIRED
+            ));
+        }
+
+        // Resource policies
+        if (modelPolicy.containsKey("maxTokens") || modelPolicy.containsKey("timeout")) {
+            resource.add(new OperatorLifecycleContract.PolicyRequirement(
+                "resource-limits", "execution-bounds",
+                Map.of("modelPolicy", modelPolicy),
+                OperatorLifecycleContract.EnforcementLevel.PREFERRED
+            ));
+        }
+
+        return new OperatorLifecycleContract.RequiredPolicies(
+            dataGovernance, security, compliance, resource
+        );
+    }
+
+    @Override
+    public OperatorLifecycleContract.ObservabilityRequirements declareObservabilityRequirements(OperatorSpec spec) {
+        // Metrics
+        java.util.List<OperatorLifecycleContract.MetricRequirement> metrics = java.util.List.of(
+            new OperatorLifecycleContract.MetricRequirement(
+                "agent.invocation.count", OperatorLifecycleContract.MetricType.COUNTER, OperatorLifecycleContract.AggregationMode.SUM),
+            new OperatorLifecycleContract.MetricRequirement(
+                "agent.latency", OperatorLifecycleContract.MetricType.TIMER, OperatorLifecycleContract.AggregationMode.PERCENTILE),
+            new OperatorLifecycleContract.MetricRequirement(
+                "agent.confidence", OperatorLifecycleContract.MetricType.GAUGE, OperatorLifecycleContract.AggregationMode.AVG),
+            new OperatorLifecycleContract.MetricRequirement(
+                "agent.success.rate", OperatorLifecycleContract.MetricType.GAUGE, OperatorLifecycleContract.AggregationMode.AVG)
+        );
+
+        // Traces
+        java.util.List<OperatorLifecycleContract.TraceRequirement> traces = java.util.List.of(
+            new OperatorLifecycleContract.TraceRequirement(
+                "agent-execution", List.of("agentRef", "capabilityId", "tenantId"), true),
+            new OperatorLifecycleContract.TraceRequirement(
+                "capability-invocation", List.of("invocationId", "correlationId"), false)
+        );
+
+        // Logs
+        java.util.List<OperatorLifecycleContract.LogRequirement> logs = java.util.List.of(
+            new OperatorLifecycleContract.LogRequirement(
+                "agent-execution", OperatorLifecycleContract.LogLevel.INFO,
+                List.of("agentRef", "result", "latencyNanos", "confidence")),
+            new OperatorLifecycleContract.LogRequirement(
+                "agent-errors", OperatorLifecycleContract.LogLevel.ERROR,
+                List.of("agentRef", "error", "stackTrace"))
+        );
+
+        boolean requiresDistributedTracing = true;
+        boolean requiresCustomDashboards = descriptor.sideEffectProfile().name().equals("SIDE_EFFECTING");
+
+        return new OperatorLifecycleContract.ObservabilityRequirements(
+            metrics, traces, logs, requiresDistributedTracing, requiresCustomDashboards
+        );
     }
 
     @Override

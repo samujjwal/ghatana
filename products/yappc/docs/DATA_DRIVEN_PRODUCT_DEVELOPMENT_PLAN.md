@@ -942,7 +942,7 @@ Contract-Driven UI → Interface definitions
 | **dcmaar**           | design-system                                              | Device health, parent dashboard, UI library | ✅ None (no shared modules changing) |
 | **audio-video**      | design-system                                              | Desktop apps, UI library                    | ✅ None (no shared modules changing) |
 | **software-org**     | design-system                                              | Web app                                     | ✅ None (no shared modules changing) |
-| **phr**              | design-system                                              | Web app                                     | ✅ None (no shared modules changing) |
+| **sample-product**   | design-system                                              | Web app                                     | ✅ None (no shared modules changing) |
 | **flashit**          | design-system                                              | Web app                                     | ✅ None (no shared modules changing) |
 | **finance**          | -                                                          | (not checked)                               | ✅ None                              |
 | **aura**             | -                                                          | (not checked)                               | ✅ None                              |

@@ -1843,7 +1843,21 @@ export type DataQualityTrustScores = z.infer<
 
 export const MediaTypeSchema = z.enum(["audio", "video", "image"]);
 
-export const ConsentStatusSchema = z.enum(["GRANTED", "DENIED", "PENDING"]);
+export const ConsentStatusSchema = z.enum(["GRANTED", "DENIED", "PENDING", "NOT_REQUIRED"]);
+
+export const ProcessingStateSchema = z.enum([
+  "REGISTERED",
+  "CONSENT_PENDING",
+  "CONSENT_DENIED",
+  "QUEUED",
+  "PROCESSING",
+  "TRANSCRIBED",
+  "ANALYZED",
+  "INDEXED",
+  "FAILED",
+  "RETAINED",
+  "DELETED",
+]);
 
 export const MediaArtifactCreateRequestSchema = z.object({
   agentId: z.string(),
@@ -1871,10 +1885,25 @@ export const MediaArtifactSchema = z.object({
   originToolId: z.string().optional(),
   correlationId: z.string().optional(),
   metadata: z.record(z.string(), z.string()).optional(),
+  // Pass 6: Lifecycle and consent fields
+  status: z.string().optional(),
+  processingState: ProcessingStateSchema.optional(),
   consentStatus: ConsentStatusSchema.optional(),
   retentionPolicy: z.string().optional(),
   retentionUntil: z.string().optional(),
+  createdBy: z.string().optional(),
+  updatedBy: z.string().optional(),
   createdAt: z.string(),
+  updatedAt: z.string().optional(),
+  deletedAt: z.string().optional(),
+  // Pass 6: Job and result references
+  transcriptId: z.string().optional(),
+  frameIndexId: z.string().optional(),
+  processingJobId: z.string().optional(),
+  lastError: z.string().optional(),
+  // Pass 6: Computed booleans
+  canBeProcessed: z.boolean().optional(),
+  requiresConsent: z.boolean().optional(),
 });
 
 export const TranscriptionRequestSchema = z.object({

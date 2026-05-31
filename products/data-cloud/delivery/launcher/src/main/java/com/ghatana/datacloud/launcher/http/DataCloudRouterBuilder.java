@@ -80,6 +80,7 @@ public class DataCloudRouterBuilder {
     private static final Logger log = LoggerFactory.getLogger(DataCloudRouterBuilder.class);
 
     private RoutingServlet.Builder builder;
+    private final java.util.List<RouteRegistrar> routeRegistrars = new java.util.ArrayList<>();
 
     /**
      * Creates a new router builder.
@@ -88,6 +89,35 @@ public class DataCloudRouterBuilder {
      */
     public DataCloudRouterBuilder(Eventloop eventloop) {
         this.builder = RoutingServlet.builder(eventloop);
+    }
+
+    /**
+     * Pass 8: Adds a plane-owned route registrar.
+     *
+     * @param registrar the route registrar
+     * @return this builder
+     */
+    public DataCloudRouterBuilder withRouteRegistrar(RouteRegistrar registrar) {
+        if (registrar != null) {
+            routeRegistrars.add(registrar);
+            registrar.registerRoutes(builder);
+            log.info("Registered route group: plane={}, group={}", 
+                registrar.getPlaneId(), registrar.getRouteGroupId());
+        }
+        return this;
+    }
+
+    /**
+     * Pass 8: Gets all route metadata from registrars.
+     *
+     * @return list of route metadata
+     */
+    public java.util.List<RouteRegistrar.RouteMetadata> getAllRouteMetadata() {
+        java.util.List<RouteRegistrar.RouteMetadata> metadata = new java.util.ArrayList<>();
+        for (RouteRegistrar registrar : routeRegistrars) {
+            metadata.addAll(registrar.getRouteMetadata());
+        }
+        return metadata;
     }
 
     /**

@@ -74,48 +74,9 @@ public final class PhrCaregiverRoutes {
                 "Caregiver dependent access requires caregiver or admin role", context.correlationId());
         }
 
-        // Use policy evaluator for PHI access decision (POL-001)
-        return policyEvaluator.canAccessPhiResourceAsync(
-                context,
-                "caregiver-dashboard-scope",
-                "caregiver-dashboard",
-                "READ",
-                context.tenantId(),
-                context.facilityId())
-            .then(decision -> {
-                if (!decision.isAllowed()) {
-                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
-                }
-
-                // Caregiver dashboard with dependent list, consent status, and alerts
-                return caregiverService.getPatientsForCaregiver(context.principalId())
+        return caregiverService.getPatientsForCaregiver(context.principalId())
             .then(relationships -> {
-                List<Promise<Map<String, Object>>> dependentPromises = relationships.stream()
-                    .map(rel -> patientRecordService.getPatient(rel.patientId())
-                        .then(opt -> {
-                            if (opt.isEmpty()) {
-                                return Promise.of(Map.<String, Object>of(
-                                    "id", rel.patientId(),
-                                    "name", "[REDACTED]",
-                                    "relationship", rel.relationshipType(),
-                                    "consentStatus", rel.status(),
-                                    "expiresAt", rel.expiresAt() != null ? rel.expiresAt().toString() : ""
-                                ));
-                            }
-                            var patient = opt.get();
-                            return Promise.of(Map.<String, Object>of(
-                                "id", patient.getId(),
-                                "name", patient.getDemographics().getFullName(),
-                                "relationship", rel.relationshipType(),
-                                "consentStatus", rel.status(),
-                                "expiresAt", rel.expiresAt() != null ? rel.expiresAt().toString() : "",
-                                "age", patient.getDemographics().getAge(),
-                                "alertCount", 0
-                            ));
-                        }))
-                    .toList();
-
-                return Promises.all(dependentPromises)
+                return dependentDtos(context, relationships, "caregiver-dashboard")
                     .then(dependents -> PhrRouteSupport.jsonResponse(200, Map.of(
                         "caregiverId", context.principalId(),
                         "tenantId", context.tenantId(),
@@ -127,7 +88,6 @@ public final class PhrCaregiverRoutes {
                         ),
                         "generatedAt", java.time.Instant.now().toString()
                     ), context.correlationId()));
-            });
             });
     }
 
@@ -145,55 +105,63 @@ public final class PhrCaregiverRoutes {
                 "Caregiver dependent access requires caregiver or admin role", context.correlationId());
         }
 
-        // Use policy evaluator for PHI access decision (POL-001)
-        return policyEvaluator.canAccessPhiResourceAsync(
-                context,
-                "caregiver-dependents-scope",
-                "caregiver-dependents",
-                "READ",
-                context.tenantId(),
-                context.facilityId())
-            .then(decision -> {
-                if (!decision.isAllowed()) {
-                    return PhrRouteSupport.policyDenialResponse(403, context.correlationId(), decision.getReasonCode());
-                }
+        return caregiverService.getPatientsForCaregiver(context.principalId())
+            .then(relationships -> dependentDtos(context, relationships, "caregiver-dependents")
+                .then(dependents -> PhrRouteSupport.jsonResponse(200, Map.of(
+                    "dependents", dependents,
+                    "total", dependents.size()
+                ), context.correlationId())));
+    }
 
-                return caregiverService.getPatientsForCaregiver(context.principalId())
-                    .then(relationships -> {
-                        List<Promise<Map<String, Object>>> dependentPromises = relationships.stream()
-                            .map(rel -> patientRecordService.getPatient(rel.patientId())
-                                .then(opt -> {
-                                    if (opt.isPresent()) {
-                                        var patient = opt.get();
-                                        Map<String, Object> dependent = new LinkedHashMap<>();
-                                        dependent.put("id", patient.getId());
-                                        dependent.put("name", patient.getDemographics().getFullName());
-                                        dependent.put("relationship", rel.relationshipType().name());
-                                        dependent.put("age", patient.getDemographics().getAge());
-                                        dependent.put("consentScope", rel.consentScope());
-                                        dependent.put("relationshipId", rel.id());
-                                        dependent.put("status", rel.status().name());
-                                        if (rel.expiresAt() != null) {
-                                            dependent.put("expiresAt", rel.expiresAt().toString());
-                                        }
-                                        return Promise.of(dependent);
-                                    }
-                                    return Promise.of(Map.<String, Object>of(
-                                        "id", rel.patientId(),
-                                        "name", "Unknown",
-                                        "relationship", rel.relationshipType().name(),
-                                        "status", rel.status().name()
-                                    ));
-                                }))
-                            .toList();
+    private Promise<List<Map<String, Object>>> dependentDtos(
+            PhrRouteSupport.PhrRequestContext context,
+            List<CaregiverService.CaregiverRelationship> relationships,
+            String resourceType) {
+        List<Promise<Map<String, Object>>> dependentPromises = relationships.stream()
+            .map(rel -> policyEvaluator.canAccessPhiResourceAsync(
+                    context,
+                    rel.patientId(),
+                    resourceType,
+                    "READ",
+                    context.tenantId(),
+                    context.facilityId())
+                .then(decision -> {
+                    if (!decision.isAllowed()) {
+                        return Promise.of(Map.<String, Object>of());
+                    }
+                    return patientRecordService.getPatient(rel.patientId())
+                        .then(opt -> {
+                            if (opt.isPresent()) {
+                                var patient = opt.get();
+                                Map<String, Object> dependent = new LinkedHashMap<>();
+                                dependent.put("id", patient.getId());
+                                dependent.put("name", patient.getDemographics().getFullName());
+                                dependent.put("relationship", rel.relationshipType().name());
+                                dependent.put("age", patient.getDemographics().getAge());
+                                dependent.put("consentScope", rel.consentScope());
+                                dependent.put("relationshipId", rel.id());
+                                dependent.put("status", rel.status().name());
+                                dependent.put("policyStatus", decision.getReasonCode());
+                                if (rel.expiresAt() != null) {
+                                    dependent.put("expiresAt", rel.expiresAt().toString());
+                                }
+                                return Promise.of(dependent);
+                            }
+                            return Promise.of(Map.<String, Object>of(
+                                "id", rel.patientId(),
+                                "name", "[REDACTED]",
+                                "relationship", rel.relationshipType().name(),
+                                "status", rel.status().name(),
+                                "policyStatus", decision.getReasonCode()
+                            ));
+                        });
+                }))
+            .toList();
 
-                        return Promises.toList(dependentPromises)
-                            .then(dependents -> PhrRouteSupport.jsonResponse(200, Map.of(
-                                "dependents", dependents,
-                                "total", dependents.size()
-                            ), context.correlationId()));
-                    });
-        });
+        return Promises.toList(dependentPromises)
+            .map(dependents -> dependents.stream()
+                .filter(dependent -> !dependent.isEmpty())
+                .toList());
     }
 
     private Promise<HttpResponse> handleGetPatientSummary(HttpRequest request) {

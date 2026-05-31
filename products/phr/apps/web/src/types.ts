@@ -20,6 +20,21 @@ export interface PatientRecordSummary {
   provenance?: Record<string, unknown>;
 }
 
+export interface PatientRecordAccessAudit {
+  accessedAt: string;
+  accessedBy: string;
+  accessRole?: string;
+  correlationId?: string;
+  policyReason?: string;
+  requiresAudit?: boolean;
+}
+
+export interface PatientRecordDetail {
+  record: PatientRecordSummary;
+  fhirJson: string;
+  accessAudit: PatientRecordAccessAudit;
+}
+
 export interface ConsentGrant {
   id: string;
   recipient: string;
@@ -30,9 +45,16 @@ export interface ConsentGrant {
 
 export interface AppointmentSummary {
   id: string;
+  appointmentId?: string;
+  patientId?: string;
   provider: string;
+  providerId?: string;
   specialty: string;
   startsAt: string;
+  scheduledTime?: string;
+  durationMinutes?: number;
+  appointmentType?: string;
+  slotId?: string;
   location: string;
   status?: 'requested' | 'confirmed' | 'completed' | 'cancelled';
   reminderSent?: boolean;
@@ -50,19 +72,76 @@ export interface MedicationSummary {
   id: string;
   medication: string;
   dosage: string;
-  schedule: string;
-  adherence: number;
+  schedule?: string;
+  adherence?: number;
+  route?: string | null;
+  routeSource?: string;
+  frequency?: string;
   status?: 'active' | 'history' | 'stopped';
+  prescriberId?: string;
   warnings?: string[];
+  interactions?: string[];
+  prescribedAt?: string;
+  startDate?: string;
+  expiresAt?: string;
+  endDate?: string;
+  refillsRemaining?: number;
+  adherenceSource?: string;
+  adherenceStatus?: {
+    measured: boolean;
+    source: string;
+  };
+}
+
+export interface MedicationHistoryEntry {
+  date: string;
+  action: string;
+}
+
+export interface MedicationDetail extends MedicationSummary {
+  interactions?: string[];
+  warnings?: string[];
+  history?: MedicationHistoryEntry[];
 }
 
 export interface DashboardData {
-  patient: PatientProfile;
-  records: PatientRecordSummary[];
-  consents: ConsentGrant[];
-  appointments: AppointmentSummary[];
-  labs: LabResultSummary[];
-  medications: MedicationSummary[];
+  tenantId: string;
+  principalId: string;
+  role: string;
+  correlationId: string;
+  profileSummary: {
+    name: string;
+    email?: string | null;
+    providerId?: string | null;
+    active: boolean;
+  };
+  nextAppointment: {
+    appointmentId: string;
+    scheduledTime: string;
+    provider: string;
+    type: string;
+  } | null;
+  medications: {
+    activeCount: number;
+    adherenceAlert: boolean;
+  };
+  recentObservations: {
+    count: number;
+    hasCritical: boolean;
+  };
+  activeConditions: {
+    count: number;
+    hasChronic: boolean;
+  };
+  documents: {
+    totalCount: number;
+    pendingOcr: number;
+  };
+  accessAlerts: {
+    expiringConsents: number;
+    emergencyAccessPending: boolean;
+  };
+  generatedAt: string;
 }
 
 export interface SessionContext {
@@ -194,6 +273,10 @@ export interface PhrSession {
   role: 'patient' | 'caregiver' | 'fchv' | 'clinician' | 'admin';
   name: string;
   expiresAt: string;
+  persona?: string;
+  tier?: string;
+  facilityId?: string;
+  correlationId?: string;
 }
 
 export interface PhrLoginRequest {
@@ -273,15 +356,33 @@ export interface ObservationSummary {
 export interface ImmunizationSummary {
   id: string;
   vaccine: string;
+  vaccineName?: string;
   date: string;
   /** ISO date of vaccine administration; aliases `date` for wire response compatibility. */
   occurrenceDate: string;
   dose?: string;
+  doseNumber?: number;
   /** Vaccine lot number. */
   lotNumber?: string;
   site?: string;
   cvxCode?: string;
+  route?: string;
+  seriesName?: string;
   status?: 'completed' | 'not-done' | 'entered-in-error' | 'due';
+  source?: {
+    system: string;
+    administeredBy?: string;
+  };
+  nextDue?: {
+    id: string;
+    vaccine: string;
+    vaccineName?: string;
+    cvxCode?: string;
+    seriesName?: string;
+    doseNumber?: number;
+    dueDate: string;
+    status: string;
+  };
 }
 
 // ─── Documents ────────────────────────────────────────────────────────────────

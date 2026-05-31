@@ -201,29 +201,237 @@ public interface DataCloudClient extends AutoCloseable {
     /**
      * Replay events between two offsets.
      *
+     * <p>P3-03: Offset semantics:
+     * <ul>
+     *   <li>fromOffset: inclusive - events at or after this offset are included</li>
+     *   <li>toOffset: inclusive upper bound - events at or before this offset are included</li>
+     *   <li>toOffset = -1: special value meaning "latest available offset"</li>
+     * </ul>
+     *
+     * <p>P3-03: This method is deprecated in favor of {@link #replay(ReplayRequest)} which
+     * provides richer replay semantics including event type filtering, replay modes,
+     * and idempotency keys.
+     *
      * @param tenantId   tenant identifier
      * @param fromOffset start offset (inclusive)
-     * @param toOffset   end offset (inclusive upper bound)
+     * @param toOffset   end offset (inclusive upper bound, -1 for latest)
      * @return promise of events in that range
+     * @deprecated Use {@link #replay(ReplayRequest)} for production-grade replay semantics
      */
+    @Deprecated(since = "2026.05", forRemoval = true)
     default Promise<List<Event>> replayEvents(String tenantId, long fromOffset, long toOffset) {
-        int limit = (int) Math.min(toOffset - fromOffset + 1, 1000);
+        if (fromOffset < 0) {
+            return Promise.ofException(new IllegalArgumentException("fromOffset must be >= 0"));
+        }
+        if (toOffset < -1) {
+            return Promise.ofException(new IllegalArgumentException("toOffset must be >= 0 or -1 for latest"));
+        }
+        if (toOffset >= 0 && toOffset < fromOffset) {
+            return Promise.ofException(new IllegalArgumentException("toOffset must be >= fromOffset"));
+        }
+        
+        int limit = toOffset >= 0 ? (int) Math.min(toOffset - fromOffset + 1, 1000) : 1000;
         return queryEvents(tenantId, new EventQuery(List.of(), null, null, Offset.of(fromOffset), limit));
     }
 
     /**
      * Store a consumer checkpoint (commit offset) for a named stream.
      *
-     * <p>Default implementation is a no-op that returns {@code true}. Override
-     * in concrete implementations to durably persist checkpoints.
+     * <p>P3-01: Checkpoint semantics ensure exactly-once processing guarantees.
+     * Checkpoints are durably stored with the following properties:
+     * <ul>
+     *   <li>Atomic: Checkpoints are written atomically with processing completion</li>
+     *   <li>Idempotent: Storing the same checkpoint multiple times is safe</li>
+     *   <li>Durable: Checkpoints survive client restarts</li>
+     *   <li>Scoped: Per-tenant, per-stream isolation</li>
+     * </ul>
+     *
+     * <p>P3-03: This method is deprecated in favor of {@link #commitCheckpoint} which
+     * provides idempotency guarantees and consumer group scoping.
      *
      * @param tenantId tenant identifier
      * @param stream   stream / event-type identifier
      * @param offset   offset to commit
      * @return promise of {@code true} when the checkpoint is stored
+     * @deprecated Use {@link #commitCheckpoint(String, String, String, long, String)} for production-grade checkpoint management
      */
+    @Deprecated(since = "2026.05", forRemoval = true)
     default Promise<Boolean> checkpoint(String tenantId, String stream, long offset) {
-        return Promise.of(true);
+        return Promise.ofException(new UnsupportedOperationException(
+            "checkpoint() is deprecated. Use commitCheckpoint() with consumer group and idempotency key for production-grade checkpoint management."));
+    }
+
+    /**
+     * Retrieve the last stored checkpoint for a named stream.
+     *
+     * <p>P3-01: Enables consumers to resume processing from last committed offset
+     * after restarts or failures.
+     *
+     * <p>P3-03: This method is deprecated in favor of {@link #readCheckpoint} which
+     * provides consumer group scoping and structured checkpoint metadata.
+     *
+     * @param tenantId tenant identifier
+     * @param stream   stream / event-type identifier
+     * @return promise of optional offset (empty if no checkpoint exists)
+     * @deprecated Use {@link #readCheckpoint(String, String, String)} for production-grade checkpoint reading
+     */
+    @Deprecated(since = "2026.05", forRemoval = true)
+    default Promise<Optional<Offset>> getLastCheckpoint(String tenantId, String stream) {
+        return Promise.ofException(new UnsupportedOperationException(
+            "getLastCheckpoint() is deprecated. Use readCheckpoint() with consumer group for production-grade checkpoint management."));
+    }
+
+    /**
+     * Delete a checkpoint for a named stream.
+     *
+     * <p>P3-01: Used when a consumer no longer needs to track position
+     * or when resetting processing to the beginning.
+     *
+     * @param tenantId tenant identifier
+     * @param stream   stream / event-type identifier
+     * @return promise of {@code true} if checkpoint was deleted
+     */
+    default Promise<Boolean> deleteCheckpoint(String tenantId, String stream) {
+        return Promise.ofException(new UnsupportedOperationException(
+            "deleteCheckpoint() requires consumer group context. Use EventLogStore SPI methods for production-grade checkpoint management."));
+    }
+
+    /**
+     * Replay events between two offsets with optional filtering.
+     *
+     * <p>P3-01: Enhanced replay semantics for:
+     * <ul>
+     *   <li>Recovery: Replay from last checkpoint after failure</li>
+     *   <li>Debugging: Replay specific event ranges for troubleshooting</li>
+     *   <li>Replication: Stream events to downstream systems</li>
+     *   <li>Audit: Extract event history for compliance</li>
+     * </ul>
+     *
+     * <p>P3-03: This method is deprecated in favor of {@link #replay(ReplayRequest)}.
+     *
+     * @param tenantId   tenant identifier
+     * @param fromOffset start offset (inclusive)
+     * @param toOffset   end offset (inclusive upper bound, -1 for latest)
+     * @param filter     optional filter criteria for event types
+     * @return promise of events in that range
+     * @deprecated Use {@link #replay(ReplayRequest)} for production-grade replay semantics
+     */
+    @Deprecated(since = "2026.05", forRemoval = true)
+    default Promise<List<Event>> replayEvents(String tenantId, long fromOffset, long toOffset, EventReplayFilter filter) {
+        if (fromOffset < 0) {
+            return Promise.ofException(new IllegalArgumentException("fromOffset must be >= 0"));
+        }
+        if (toOffset < -1) {
+            return Promise.ofException(new IllegalArgumentException("toOffset must be >= 0 or -1 for latest"));
+        }
+        if (toOffset >= 0 && toOffset < fromOffset) {
+            return Promise.ofException(new IllegalArgumentException("toOffset must be >= fromOffset"));
+        }
+        
+        int limit = toOffset >= 0 ? (int) Math.min(toOffset - fromOffset + 1, 1000) : 1000;
+        EventQuery query = new EventQuery(
+            filter != null ? filter.eventTypes() : List.of(),
+            filter != null ? filter.startTime() : null,
+            filter != null ? filter.endTime() : null,
+            Offset.of(fromOffset),
+            limit
+        );
+        return queryEvents(tenantId, query);
+    }
+
+    /**
+     * Replay events starting from a checkpoint with automatic progress tracking.
+     *
+     * <p>P3-01: Combines replay with automatic checkpoint management for
+     * exactly-once processing semantics. The provided handler receives events
+     * and must return true to advance the checkpoint.
+     *
+     * <p>P3-03: This method is deprecated in favor of {@link #replay(ReplayRequest)} and
+     * {@link #commitCheckpoint}.
+     *
+     * @param tenantId tenant identifier
+     * @param stream   stream identifier for checkpoint tracking
+     * @param handler  event processor (returns true to checkpoint, false to retry)
+     * @return promise of events processed
+     * @deprecated Use {@link #replay(ReplayRequest)} with {@link #commitCheckpoint} for production-grade replay
+     */
+    @Deprecated(since = "2026.05", forRemoval = true)
+    default Promise<ReplayResult> replayFromCheckpoint(String tenantId, String stream, EventProcessor handler) {
+        return Promise.ofException(new UnsupportedOperationException(
+            "replayFromCheckpoint() is deprecated. Use replay(ReplayRequest) with commitCheckpoint() for production-grade replay."));
+    }
+
+    /**
+     * Replay events with comprehensive replay semantics.
+     *
+     * <p>P3-03: Production-grade replay supporting:
+     * <ul>
+     *   <li>Bounded offset ranges with inclusive semantics</li>
+     *   <li>Event type filtering</li>
+     *   <li>Replay mode selection (AT_LEAST_ONCE, EXACTLY_ONCE, AT_MOST_ONCE)</li>
+     *   <li>Idempotency keys for safe retry</li>
+     *   <li>Consumer group scoping</li>
+     * </ul>
+     *
+     * @param tenantId tenant identifier
+     * @param request  replay request with comprehensive parameters
+     * @return promise of events in the specified range
+     */
+    default Promise<List<Event>> replay(String tenantId, ReplayRequest request) {
+        return Promise.ofException(new UnsupportedOperationException(
+            "replay() requires EventLogStore SPI implementation. Use eventLogStore().replay() for production-grade replay."));
+    }
+
+    /**
+     * Read a checkpoint for a specific consumer group.
+     *
+     * <p>P3-03: Returns structured checkpoint metadata including offset,
+     * timestamp, and consumer group information.
+     *
+     * @param tenantId     tenant identifier
+     * @param stream       stream identifier
+     * @param consumerGroup consumer group name
+     * @return promise of checkpoint (empty if no checkpoint exists)
+     */
+    default Promise<Optional<Checkpoint>> readCheckpoint(String tenantId, String stream, String consumerGroup) {
+        return Promise.ofException(new UnsupportedOperationException(
+            "readCheckpoint() requires EventLogStore SPI implementation. Use eventLogStore().readCheckpoint() for production-grade checkpoint reading."));
+    }
+
+    /**
+     * Commit a checkpoint with idempotency guarantees.
+     *
+     * <p>P3-03: Idempotent checkpoint commit that:
+     * <ul>
+     *   <li>Stores the offset for the tenant/stream/consumer-group tuple</li>
+     *   <li>Uses idempotency key to prevent duplicate commits</li>
+     *   <li>Returns the committed checkpoint metadata</li>
+     * </ul>
+     *
+     * @param tenantId     tenant identifier
+     * @param stream       stream identifier
+     * @param consumerGroup consumer group name
+     * @param offset       offset to commit
+     * @param idempotencyKey idempotency key for safe retry
+     * @return promise of committed checkpoint
+     */
+    default Promise<Checkpoint> commitCheckpoint(String tenantId, String stream, String consumerGroup, long offset, String idempotencyKey) {
+        return Promise.ofException(new UnsupportedOperationException(
+            "commitCheckpoint() requires EventLogStore SPI implementation. Use eventLogStore().commitCheckpoint() for production-grade checkpoint management."));
+    }
+
+    /**
+     * Get checkpoint status for all streams in a tenant.
+     *
+     * <p>P3-01: Administrative API for monitoring consumer progress
+     * and detecting lag or stalled consumers.
+     *
+     * @param tenantId tenant identifier
+     * @return promise of map from stream name to checkpoint info
+     */
+    default Promise<Map<String, CheckpointInfo>> getAllCheckpoints(String tenantId) {
+        return Promise.ofException(new UnsupportedOperationException(
+            "getAllCheckpoints() requires EventLogStore SPI implementation. Use eventLogStore().getAllCheckpoints() for production-grade checkpoint monitoring."));
     }
 
     // ==================== Lifecycle (1 method) ====================
@@ -629,5 +837,215 @@ public interface DataCloudClient extends AutoCloseable {
     interface Subscription {
         void cancel();
         boolean isCancelled();
+    }
+
+    // ==================== Checkpoint/Replay Types (P3-01) ====================
+
+    /**
+     * Replay request with comprehensive replay semantics.
+     *
+     * <p>P3-03: Enables production-grade event replay with:
+     * <ul>
+     *   <li>Bounded offset ranges (inclusive fromOffset, inclusive toOffset or -1 for latest)</li>
+     *   <li>Event type filtering for selective replay</li>
+     *   <li>Replay mode selection (AT_LEAST_ONCE, EXACTLY_ONCE, AT_MOST_ONCE)</li>
+     *   <li>Idempotency keys for safe retry semantics</li>
+     *   <li>Consumer group scoping for independent consumer tracking</li>
+     * </ul>
+     *
+     * <p>Offset semantics:
+     * <ul>
+     *   <li>fromOffset: inclusive - events at or after this offset are included</li>
+     *   <li>toOffset: inclusive upper bound - events at or before this offset are included</li>
+     *   <li>toOffset = -1: special value meaning "latest available offset"</li>
+     * </ul>
+     */
+    record ReplayRequest(
+        long fromOffset,
+        long toOffset,
+        List<String> eventTypes,
+        ReplayMode replayMode,
+        String idempotencyKey,
+        String consumerGroup
+    ) {
+        public ReplayRequest {
+            if (fromOffset < 0) {
+                throw new IllegalArgumentException("fromOffset must be >= 0");
+            }
+            if (toOffset < -1) {
+                throw new IllegalArgumentException("toOffset must be >= 0 or -1 for latest");
+            }
+            if (toOffset >= 0 && toOffset < fromOffset) {
+                throw new IllegalArgumentException("toOffset must be >= fromOffset");
+            }
+            eventTypes = eventTypes != null ? List.copyOf(eventTypes) : List.of();
+            replayMode = replayMode != null ? replayMode : ReplayMode.AT_LEAST_ONCE;
+            consumerGroup = consumerGroup != null && !consumerGroup.isBlank() ? consumerGroup : "default";
+        }
+
+        public static ReplayRequest fromOffset(long fromOffset) {
+            return new ReplayRequest(fromOffset, -1, List.of(), ReplayMode.AT_LEAST_ONCE, null, "default");
+        }
+
+        public static ReplayRequest bounded(long fromOffset, long toOffset) {
+            return new ReplayRequest(fromOffset, toOffset, List.of(), ReplayMode.AT_LEAST_ONCE, null, "default");
+        }
+
+        public static ReplayRequest filtered(long fromOffset, long toOffset, List<String> eventTypes) {
+            return new ReplayRequest(fromOffset, toOffset, eventTypes, ReplayMode.AT_LEAST_ONCE, null, "default");
+        }
+
+        public static ReplayRequest withIdempotency(long fromOffset, long toOffset, String idempotencyKey) {
+            return new ReplayRequest(fromOffset, toOffset, List.of(), ReplayMode.EXACTLY_ONCE, idempotencyKey, "default");
+        }
+
+        public static ReplayRequest forConsumerGroup(long fromOffset, long toOffset, String consumerGroup) {
+            return new ReplayRequest(fromOffset, toOffset, List.of(), ReplayMode.AT_LEAST_ONCE, null, consumerGroup);
+        }
+    }
+
+    /**
+     * Replay mode semantics.
+     */
+    enum ReplayMode {
+        /**
+         * At-least-once semantics: events may be delivered multiple times on failure/retry.
+         * Consumers must be idempotent.
+         */
+        AT_LEAST_ONCE,
+        /**
+         * Exactly-once semantics: events are delivered exactly once using idempotency keys.
+         * Requires idempotencyKey to be set.
+         */
+        EXACTLY_ONCE,
+        /**
+         * At-most-once semantics: events may be lost on failure but never duplicated.
+         */
+        AT_MOST_ONCE
+    }
+
+    /**
+     * Filter criteria for event replay operations.
+     *
+     * <p>P3-01: Enables selective replay by event type, time range, or both.
+     */
+    record EventReplayFilter(
+        List<String> eventTypes,
+        java.time.Instant startTime,
+        java.time.Instant endTime
+    ) {
+        public EventReplayFilter {
+            eventTypes = eventTypes != null ? List.copyOf(eventTypes) : List.of();
+        }
+
+        public static EventReplayFilter byType(String... types) {
+            return new EventReplayFilter(List.of(types), null, null);
+        }
+
+        public static EventReplayFilter byTimeRange(java.time.Instant start, java.time.Instant end) {
+            return new EventReplayFilter(List.of(), start, end);
+        }
+
+        public static EventReplayFilter all() {
+            return new EventReplayFilter(List.of(), null, null);
+        }
+    }
+
+    /**
+     * Event processor for checkpoint-based replay.
+     *
+     * <p>P3-01: Functional interface for processing events during replay.
+     * Implementations should return true to advance checkpoint, false to retry.
+     */
+    @FunctionalInterface
+    interface EventProcessor {
+        /**
+         * Process a single event.
+         *
+         * @param event the event to process
+         * @return true if processing succeeded and checkpoint should advance
+         */
+        boolean process(Event event);
+    }
+
+    /**
+     * Result of a replay operation.
+     *
+     * <p>P3-01: Contains statistics about the replay operation.
+     */
+    record ReplayResult(
+        int eventsProcessed,
+        long lastOffset,
+        boolean checkpointStored
+    ) {
+        /**
+         * Check if any events were processed.
+         */
+        public boolean hasEvents() {
+            return eventsProcessed > 0;
+        }
+    }
+
+    /**
+     * Checkpoint information for monitoring.
+     *
+     * <p>P3-01: Metadata about a consumer's checkpoint including
+     * lag metrics for monitoring and alerting.
+     */
+    record CheckpointInfo(
+        String stream,
+        long checkpointOffset,
+        long latestOffset,
+        java.time.Instant lastCheckpointTime,
+        String consumerId
+    ) {
+        /**
+         * Calculate lag in number of events.
+         */
+        public long lag() {
+            return latestOffset - checkpointOffset;
+        }
+
+        /**
+         * Check if consumer is caught up (minimal lag).
+         */
+        public boolean isCaughtUp() {
+            return lag() <= 1;
+        }
+
+        /**
+         * Check if checkpoint is stale (older than threshold).
+         */
+        public boolean isStale(java.time.Duration threshold) {
+            return lastCheckpointTime != null &&
+                   lastCheckpointTime.plus(threshold).isBefore(java.time.Instant.now());
+        }
+    }
+
+    /**
+     * Structured checkpoint with metadata.
+     *
+     * <p>P3-03: Contains checkpoint offset, timestamp, consumer group,
+     * and idempotency key for production-grade checkpoint management.
+     */
+    record Checkpoint(
+        String stream,
+        String consumerGroup,
+        long offset,
+        java.time.Instant timestamp,
+        String idempotencyKey
+    ) {
+        public Checkpoint {
+            if (stream == null || stream.isBlank()) {
+                throw new IllegalArgumentException("stream is required");
+            }
+            if (consumerGroup == null || consumerGroup.isBlank()) {
+                throw new IllegalArgumentException("consumerGroup is required");
+            }
+            if (offset < 0) {
+                throw new IllegalArgumentException("offset must be >= 0");
+            }
+            timestamp = timestamp != null ? timestamp : java.time.Instant.now();
+        }
     }
 }

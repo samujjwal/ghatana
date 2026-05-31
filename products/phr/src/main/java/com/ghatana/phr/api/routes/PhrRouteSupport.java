@@ -14,6 +14,7 @@ import io.activej.promise.Promise;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Shared helpers for PHR ActiveJ route adapters.
@@ -37,6 +38,8 @@ public final class PhrRouteSupport {
 
     /** Roles permitted to call PHR routes. */
     static final Set<String> ALLOWED_ROLES = Set.of("patient", "caregiver", "clinician", "admin", "fchv");
+    static final Set<String> ALLOWED_PERSONAS = Set.of("patient", "caregiver", "clinician", "admin", "fchv");
+    static final Set<String> ALLOWED_TIERS = Set.of("core", "clinical", "emergency");
 
     /** Static telemetry manager for metrics emission. */
     private static volatile KernelTelemetryManager telemetryManager;
@@ -81,6 +84,20 @@ public final class PhrRouteSupport {
         if (!ALLOWED_ROLES.contains(normalisedRole)) {
             throw new IllegalArgumentException("Unrecognised role: " + role);
         }
+        if (persona == null || persona.isBlank()) {
+            throw new IllegalArgumentException("X-Persona header is required");
+        }
+        String normalisedPersona = persona.strip().toLowerCase();
+        if (!ALLOWED_PERSONAS.contains(normalisedPersona)) {
+            throw new IllegalArgumentException("Unrecognised persona: " + persona);
+        }
+        if (tier == null || tier.isBlank()) {
+            throw new IllegalArgumentException("X-Tier header is required");
+        }
+        String normalisedTier = tier.strip().toLowerCase();
+        if (!ALLOWED_TIERS.contains(normalisedTier)) {
+            throw new IllegalArgumentException("Unrecognised tier: " + tier);
+        }
 
         PolicyValidationHelper.validateTenantId(tenantId.strip());
         PolicyValidationHelper.validatePrincipalId(principalId.strip());
@@ -94,8 +111,8 @@ public final class PhrRouteSupport {
             principalId.strip(),
             normalisedRole,
             correlationId,
-            persona != null ? persona.strip() : normalisedRole, // Default persona to role if not provided
-            tier != null ? tier.strip() : "core", // Default tier to core if not provided
+            normalisedPersona,
+            normalisedTier,
             facilityId != null ? facilityId.strip() : null
         );
     }
@@ -114,7 +131,7 @@ public final class PhrRouteSupport {
 
 
     static Promise<HttpResponse> jsonResponseWithCorrelation(int statusCode, Object body, String correlationId) {
-        return Promise.of(ActiveJHttpExchangeSupport.jsonResponse(JSON, statusCode, body, correlationId));
+        return Promise.of(ActiveJHttpExchangeSupport.jsonResponse(JSON, statusCode, body, responseCorrelationId(correlationId)));
     }
 
     static Promise<HttpResponse> jsonResponse(int statusCode, Object body) {
@@ -130,11 +147,11 @@ public final class PhrRouteSupport {
     }
 
     static Promise<HttpResponse> errorResponse(int statusCode, String code, String message, String correlationId) {
-        return Promise.of(ActiveJHttpExchangeSupport.errorResponse(JSON, statusCode, code, message, correlationId));
+        return Promise.of(ActiveJHttpExchangeSupport.errorResponse(JSON, statusCode, code, message, responseCorrelationId(correlationId)));
     }
 
     static Promise<HttpResponse> errorResponse(int statusCode, String code, String message, String correlationId, Map<String, Object> details) {
-        return Promise.of(ActiveJHttpExchangeSupport.errorResponse(JSON, statusCode, code, message, correlationId, details));
+        return Promise.of(ActiveJHttpExchangeSupport.errorResponse(JSON, statusCode, code, message, responseCorrelationId(correlationId), details));
     }
 
     /**
@@ -250,10 +267,22 @@ public final class PhrRouteSupport {
 
 
     static Promise<HttpResponse> textResponse(int statusCode, String text, String contentType) {
+        return textResponse(statusCode, text, contentType, null);
+    }
+
+    static Promise<HttpResponse> textResponse(int statusCode, String text, String contentType, String correlationId) {
         return Promise.of(HttpResponse.ofCode(statusCode)
             .withHeader(HttpHeaders.of("Content-Type"), contentType)
+            .withHeader(HttpHeaders.of(ActiveJHttpExchangeSupport.CORRELATION_HEADER), responseCorrelationId(correlationId))
             .withBody(ByteBuf.wrapForReading(text.getBytes(java.nio.charset.StandardCharsets.UTF_8)))
             .build());
+    }
+
+    private static String responseCorrelationId(String correlationId) {
+        if (correlationId != null && !correlationId.isBlank()) {
+            return correlationId.strip();
+        }
+        return UUID.randomUUID().toString();
     }
 
     /**

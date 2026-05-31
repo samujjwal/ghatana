@@ -1,8 +1,8 @@
 import React from 'react';
 import type { PhrRouteContract, PhrRoutePath } from './phrRouteContracts';
+import { phrRoutePlugin } from './phrRoutePlugin';
 import { AppointmentsPage } from './pages/AppointmentsPage';
 import { AuditPage } from './pages/AuditPage';
-// CaregiverDependentsPage not imported - route is hidden in contract
 import { ConditionsPage } from './pages/ConditionsPage';
 import { ConsentPage } from './pages/ConsentPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -10,7 +10,6 @@ import { DocumentsPage } from './pages/DocumentsPage';
 import { DocumentUploadPage } from './pages/DocumentUploadPage';
 import { EmergencyAccessPage } from './pages/EmergencyAccessPage';
 import { EmergencyReviewsPage } from './pages/EmergencyReviewsPage';
-// FchvDashboardPage not imported - route is hidden in contract
 import { ForbiddenPage } from './pages/ForbiddenPage';
 import { ImmunizationsPage } from './pages/ImmunizationsPage';
 import { LabsPage } from './pages/LabsPage';
@@ -21,7 +20,6 @@ import { NotificationsPage } from './pages/NotificationsPage';
 import { ObservationsPage } from './pages/ObservationsPage';
 import { OcrReviewPage } from './pages/OcrReviewPage';
 import { ProfilePage } from './pages/ProfilePage';
-// ProviderDashboardPage, ProviderPatientsPage not imported - routes are hidden in contract
 import { RecordDetailPage } from './pages/RecordDetailPage';
 import { RecordsPage } from './pages/RecordsPage';
 import { ReleaseCockpitPage } from './pages/ReleaseCockpitPage';
@@ -57,24 +55,22 @@ const routeElements: Record<PhrRoutePath, React.ReactElement> = {
   '/notifications': <NotificationsPage />,
   '/forbidden': <ForbiddenPage />,
   '/not-found': <NotFoundPage />,
-  // Role-specific routes mapped to NotFoundPage since they are hidden in contract
-  '/provider/dashboard': <NotFoundPage />,
-  '/provider/patients': <NotFoundPage />,
-  '/caregiver/dependents': <NotFoundPage />,
-  '/fchv/dashboard': <NotFoundPage />,
 };
 
+export function isPhrRouteBrowserMountable(route: PhrRouteContract): boolean {
+  return phrRoutePlugin.isBrowserMountable(route);
+}
+
 export function attachPhrRouteElement(route: PhrRouteContract): PhrRouteManifestEntry {
-  const element = routeElements[route.path as PhrRoutePath];
-  if (!element) {
+  const finalElement = route.stability === 'blocked' || route.stability === 'preview'
+    ? <ForbiddenPage />
+    : route.stability === 'hidden' || route.stability === 'deferred' || route.stability === 'removed'
+    ? <NotFoundPage />
+    : routeElements[route.path as PhrRoutePath];
+
+  if (!finalElement) {
     throw new Error(`PHR route element is missing for path ${route.path}`);
   }
-
-  const finalElement = route.stability === 'blocked'
-    ? <ForbiddenPage />
-    : route.stability === 'hidden'
-    ? <NotFoundPage />
-    : element;
 
   return {
     ...route,

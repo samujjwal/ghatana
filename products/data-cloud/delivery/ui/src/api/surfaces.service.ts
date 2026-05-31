@@ -27,6 +27,13 @@ export type SurfaceStatus =
   | "UNAVAILABLE"
   | "MISCONFIGURED";
 
+/** P5-03: Readiness class for surface availability */
+export type ReadinessClass =
+  | "user-ready"
+  | "operator-preview"
+  | "internal-preview"
+  | "target-only";
+
 export interface SurfaceSignal {
   readonly key: string;
   readonly label: string;
@@ -42,6 +49,12 @@ export interface SurfaceSignal {
   readonly actionsAllowed: readonly string[];
   readonly runtimePosture?: Record<string, unknown>;
   readonly rawValue: unknown;
+  // P5-03: Preview audience for controlled access
+  readonly audience?: "internal" | "operator" | "admin";
+  // P5-03: Readiness class for surface categorization
+  readonly readinessClass?: ReadinessClass;
+  // P5-03: Target-only flag
+  readonly targetOnly?: boolean;
 }
 
 export interface SurfaceRegistrySnapshot {
@@ -107,6 +120,7 @@ function normalizeSurfaceStatus(rawValue: unknown): SurfaceStatus {
         "HEALTHY",
         "OK",
         "PRODUCTION",
+        "USER-READY",
       ].includes(s)
     ) {
       return "LIVE";
@@ -115,8 +129,8 @@ function normalizeSurfaceStatus(rawValue: unknown): SurfaceStatus {
     if (["DEGRADED", "PARTIAL", "WARNING", "LIMITED"].includes(s)) {
       return "DEGRADED";
     }
-    // PREVIEW aliases
-    if (["PREVIEW", "DEMO", "BETA", "EXPERIMENTAL"].includes(s)) {
+    // PREVIEW aliases - P5-03: Now includes operator-preview and internal-preview
+    if (["PREVIEW", "DEMO", "BETA", "EXPERIMENTAL", "OPERATOR-PREVIEW", "INTERNAL-PREVIEW"].includes(s)) {
       return "PREVIEW";
     }
     // MISCONFIGURED aliases
@@ -139,6 +153,10 @@ function normalizeSurfaceStatus(rawValue: unknown): SurfaceStatus {
     if (["UNAVAILABLE", "UNKNOWN"].includes(s)) {
       return "UNAVAILABLE";
     }
+    // P5-03: TARGET-ONLY surfaces are considered unavailable for general use
+    if (["TARGET-ONLY"].includes(s)) {
+      return "UNAVAILABLE";
+    }
   }
 
   if (typeof rawValue === "object" && rawValue !== null) {
@@ -151,6 +169,10 @@ function normalizeSurfaceStatus(rawValue: unknown): SurfaceStatus {
       record["available"] ?? record["enabled"] ?? record["healthy"];
     if (typeof availability === "boolean") {
       return availability ? "LIVE" : "DISABLED";
+    }
+    // P5-03: Check for targetOnly flag
+    if (record["targetOnly"] === true || record["targetOnly"] === "true") {
+      return "UNAVAILABLE";
     }
   }
 
@@ -183,6 +205,36 @@ function summarizeSurface(
   return { summary: status };
 }
 
+function normalizeReadinessClass(
+  record: Record<string, unknown>,
+  status: SurfaceStatus
+): ReadinessClass | undefined {
+  // P5-03: Extract readiness class from record
+  const readiness = record["readinessClass"] ?? record["readiness"];
+  if (typeof readiness === "string") {
+    if (["user-ready", "operator-preview", "internal-preview", "target-only"].includes(readiness)) {
+      return readiness as ReadinessClass;
+    }
+  }
+  // Infer from status if not explicitly set
+  if (status === "LIVE") return "user-ready";
+  if (record["targetOnly"] === true) return "target-only";
+  return undefined;
+}
+
+function normalizeAudience(
+  record: Record<string, unknown>
+): "internal" | "operator" | "admin" | undefined {
+  // P5-03: Extract audience from record
+  const audience = record["audience"] ?? record["previewAudience"];
+  if (typeof audience === "string") {
+    if (["internal", "operator", "admin"].includes(audience)) {
+      return audience as "internal" | "operator" | "admin";
+    }
+  }
+  return undefined;
+}
+
 function normalizeSurfaceEntry(key: string, rawValue: unknown): SurfaceSignal {
   const status = normalizeSurfaceStatus(rawValue);
   const { summary, detail } = summarizeSurface(status, rawValue);
@@ -211,6 +263,17 @@ function normalizeSurfaceEntry(key: string, rawValue: unknown): SurfaceSignal {
       ? (record.runtimePosture as Record<string, unknown>)
       : undefined;
 
+  // P5-03: Normalize targetOnly, audience, and readinessClass
+  const targetOnly = record["targetOnly"] === true || record["targetOnly"] === "true";
+  const audience = normalizeAudience(record);
+  const readinessClass = normalizeReadinessClass(record, status);
+
+  // P5-03: Combine limitations from multiple sources
+  const limitations = [
+    typeof record.limitations === "string" ? record.limitations : "",
+    targetOnly ? "Target-only surface - not yet generally available" : "",
+  ].filter(Boolean).join("; ");
+
   return {
     key,
     label: formatSurfaceLabel(key),
@@ -227,11 +290,14 @@ function normalizeSurfaceEntry(key: string, rawValue: unknown): SurfaceSignal {
       typeof record.runtimeProfile === "string"
         ? record.runtimeProfile
         : "unknown",
-    limitations:
-      typeof record.limitations === "string" ? record.limitations : "",
+    limitations,
     actionsAllowed,
     runtimePosture,
     rawValue,
+    // P5-03: New fields
+    audience,
+    readinessClass,
+    targetOnly,
   };
 }
 
@@ -365,12 +431,37 @@ export function getCapabilitySignal(
   );
 }
 
-/** Return true if the surface is considered usable (LIVE, DEGRADED, or PREVIEW). */
-export function isSurfaceAvailable(signal: SurfaceSignal | undefined): boolean {
+/**
+ * P5-03: Return true if the surface is considered usable.
+ * PREVIEW is NOT globally available - requires explicit preview audience match.
+ */
+export function isSurfaceAvailable(
+  signal: SurfaceSignal | undefined,
+  options?: { allowPreview?: boolean; previewAudience?: "internal" | "operator" | "admin" }
+): boolean {
   if (!signal) return false;
-  return (
-    signal.status === "LIVE" ||
-    signal.status === "DEGRADED" ||
-    signal.status === "PREVIEW"
-  );
+
+  // LIVE and DEGRADED are always available
+  if (signal.status === "LIVE" || signal.status === "DEGRADED") {
+    return true;
+  }
+
+  // P5-03: PREVIEW requires explicit opt-in and audience match
+  if (signal.status === "PREVIEW") {
+    if (!options?.allowPreview) return false;
+    // If preview audience specified, check match
+    if (options?.previewAudience && signal.audience) {
+      return signal.audience === options.previewAudience ||
+        // Admin can access any preview
+        options.previewAudience === "admin";
+    }
+    return true;
+  }
+
+  // P5-03: TARGET-ONLY surfaces are never generally available
+  if (signal.targetOnly || signal.readinessClass === "target-only") {
+    return false;
+  }
+
+  return false;
 }

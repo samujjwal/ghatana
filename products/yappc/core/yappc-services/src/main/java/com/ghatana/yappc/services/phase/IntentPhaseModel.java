@@ -4,6 +4,11 @@ import java.util.List;
 
 /**
  * Intent-phase lifecycle model.
+ *
+ * @doc.type record
+ * @doc.purpose Model Intent phase data
+ * @doc.layer product
+ * @doc.pattern PhaseModel
  */
 public record IntentPhaseModel(
         List<String> goals,

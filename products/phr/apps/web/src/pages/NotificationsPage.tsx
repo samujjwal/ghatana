@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { SafeError } from '../components/SafeError';
 import { Card, CardContent, CardHeader, Badge, Button } from '@ghatana/design-system';
 import { fetchNotifications, markNotificationRead } from '../api/notificationsApi';
+import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import { logError } from '../utils/safeLogger';
@@ -23,7 +24,7 @@ export function NotificationsPage(): React.ReactElement {
   const { session } = usePhrSession();
   const [notifications, setNotifications] = useState<NotificationSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SafeApiErrorState | null>(null);
   const [markingId, setMarkingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -34,7 +35,7 @@ export function NotificationsPage(): React.ReactElement {
       role: session.role,
     })
       .then(setNotifications)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('notifications.error')))
+      .catch((err: unknown) => setError(toSafeApiErrorState(err, t('notifications.error'))))
       .finally(() => setLoading(false));
   }, [session]);
 
@@ -54,14 +55,14 @@ export function NotificationsPage(): React.ReactElement {
       )));
     } catch (err: unknown) {
       logError('Failed to mark notification as read', undefined, { notificationId, error: err });
-      setError(err instanceof Error ? err.message : t('notifications.markReadError'));
+      setError(toSafeApiErrorState(err, t('notifications.markReadError')));
     } finally {
       setMarkingId(null);
     }
   }
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('notifications.loading')}</div>;
-  if (error) return <SafeError title={t('notifications.error')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
+  if (error) return <SafeError title={t('notifications.error')} message={error.message} correlationId={error.correlationId} />;
 
   return (
     <Card>

@@ -4,6 +4,14 @@ import com.ghatana.yappc.api.PhasePacket;
 
 import java.util.List;
 
+/**
+ * Shape phase model provider.
+ *
+ * @doc.type class
+ * @doc.purpose Build Shape phase models
+ * @doc.layer product
+ * @doc.pattern PhaseModelProvider
+ */
 public final class ShapePhaseModelProvider {
 
     public ShapePhaseModel build(PhasePanelInput input) {

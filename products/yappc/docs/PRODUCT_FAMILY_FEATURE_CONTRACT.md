@@ -59,7 +59,7 @@ Asset promotion is also fail-closed in `ProductFamilyControlPlaneController.prom
 
 | Tab | Behavior |
 | --- | --- |
-| PHR | Shows release readiness, evidence counts, commit alignment, gates, blockers, and foundation readiness for `phr`. |
+| Sample Product | Shows release readiness, evidence counts, commit alignment, gates, blockers, and foundation readiness for a generic product key. |
 | Digital Marketing | Shows the same release readiness contract plus connector, approval, and AI action gates for `digital-marketing`. |
 | Assets | Lists reusable assets with search/product/type/maturity/reuse/domain/compatibility filters and promotion actions. |
 | Truth | Shows doc-truth warnings plus guided reuse recommendations for Tutorputor and Flashit. |

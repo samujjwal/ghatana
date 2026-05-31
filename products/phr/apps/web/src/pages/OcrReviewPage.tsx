@@ -3,10 +3,23 @@ import { SafeError } from '../components/SafeError';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, Button, TextArea, Badge } from '@ghatana/design-system';
 import { confirmOcrDocument, fetchOcrDocument, rejectOcrDocument } from '../api/documentsApi';
+import { toSafeApiErrorState, type SafeApiErrorState } from '../api/safeApiError';
 import { usePhrSession } from '../auth/PhrSessionContext';
 import { t } from '../i18n/phrI18n';
 import { logError } from '../utils/safeLogger';
 import type { OcrReviewDocument } from '../types';
+
+function provenanceText(provenance: Record<string, unknown>): string {
+  const source = typeof provenance.source === 'string' && provenance.source.trim()
+    ? provenance.source
+    : t('ocr.provenance.unknown');
+  const processedAt = typeof provenance.processedAt === 'string' && provenance.processedAt.trim()
+    ? new Date(provenance.processedAt).toLocaleString()
+    : undefined;
+  return processedAt
+    ? t('ocr.provenance.withProcessedAt', { source, processedAt })
+    : t('ocr.provenance.source', { source });
+}
 
 export function OcrReviewPage(): React.ReactElement {
   const [params] = useSearchParams();
@@ -16,7 +29,7 @@ export function OcrReviewPage(): React.ReactElement {
 
   const [doc, setDoc] = useState<OcrReviewDocument | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SafeApiErrorState | null>(null);
   const [confirming, setConfirming] = useState<boolean>(false);
   const [rejecting, setRejecting] = useState<boolean>(false);
   const [confirmed, setConfirmed] = useState<boolean>(false);
@@ -25,7 +38,7 @@ export function OcrReviewPage(): React.ReactElement {
 
   useEffect(() => {
     if (!documentId || !session) {
-      setError(t('documents.ocr.error'));
+      setError({ message: t('documents.ocr.error') });
       setLoading(false);
       return;
     }
@@ -38,7 +51,7 @@ export function OcrReviewPage(): React.ReactElement {
         setDoc(fetchedDoc);
         setCorrectedText(fetchedDoc.extractedText);
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('documents.ocr.error')))
+      .catch((err: unknown) => setError(toSafeApiErrorState(err, t('documents.ocr.error'))))
       .finally(() => setLoading(false));
   }, [documentId, session]);
 
@@ -58,7 +71,7 @@ export function OcrReviewPage(): React.ReactElement {
       setConfirmed(true);
       setDoc((current) => current ? { ...current, correctedText, status: 'confirmed' } : current);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t('ocr.error.confirm'));
+      setError(toSafeApiErrorState(err, t('ocr.error.confirm')));
       logError('Failed to confirm OCR', undefined, { error: err });
     } finally {
       setConfirming(false);
@@ -80,7 +93,7 @@ export function OcrReviewPage(): React.ReactElement {
       setRejected(true);
       setDoc((current) => current ? { ...current, status: 'rejected' } : current);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t('ocr.error.reject'));
+      setError(toSafeApiErrorState(err, t('ocr.error.reject')));
       logError('Failed to reject OCR', undefined, { error: err });
     } finally {
       setRejecting(false);
@@ -88,8 +101,8 @@ export function OcrReviewPage(): React.ReactElement {
   }
 
   if (loading) return <div className="loading" role="status" aria-live="polite">{t('documents.ocr.loading')}</div>;
-  if (error) return <SafeError title={t('documents.ocr.error')} message={error} correlationId={session?.tenantId + '-' + session?.principalId} />;
-  if (!doc) return <SafeError title={t('documents.ocr.error')} message={t('documents.ocr.error')} correlationId={session?.tenantId + '-' + session?.principalId} />;
+  if (error) return <SafeError title={t('documents.ocr.error')} message={error.message} correlationId={error.correlationId} />;
+  if (!doc) return <SafeError title={t('documents.ocr.error')} message={t('documents.ocr.error')} />;
 
   return (
     <div className="stack gap-lg">
@@ -105,11 +118,8 @@ export function OcrReviewPage(): React.ReactElement {
               {t('ocr.confidence', { percent: Math.round(doc.confidence * 100) })}
             </Badge>
             {doc.provenance && (
-              <p className="muted" aria-label="Provenance information">
-                Source: {String(doc.provenance.source ?? 'Unknown')}
-                {doc.provenance.processedAt as string && (
-                  <span> • Processed: {new Date(doc.provenance.processedAt as string).toLocaleString()}</span>
-                )}
+              <p className="muted" aria-label={t('ocr.provenance.label')}>
+                {provenanceText(doc.provenance)}
               </p>
             )}
           </div>

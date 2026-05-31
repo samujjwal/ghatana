@@ -4,6 +4,14 @@ import com.ghatana.yappc.api.PhasePacket;
 
 import java.util.List;
 
+/**
+ * Generate phase model provider.
+ *
+ * @doc.type class
+ * @doc.purpose Build Generate phase models
+ * @doc.layer product
+ * @doc.pattern PhaseModelProvider
+ */
 public final class GeneratePhaseModelProvider {
 
     public GeneratePhaseModel build(PhasePanelInput input) {

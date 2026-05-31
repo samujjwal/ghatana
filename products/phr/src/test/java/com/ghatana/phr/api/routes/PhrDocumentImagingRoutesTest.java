@@ -73,6 +73,16 @@ class PhrDocumentImagingRoutesTest extends EventloopTestBase {
             .thenReturn(Promise.of(List.of()));
         lenient().when(documentService.getDocument(anyString(), anyString()))
             .thenReturn(Promise.of(Optional.empty()));
+        lenient().when(documentService.getOcrDocument(anyString(), anyString()))
+            .thenReturn(Promise.of(Optional.of(ocrDocument("PENDING_REVIEW"))));
+        lenient().when(documentService.confirmOcrDocument(anyString(), anyString(), nullable(String.class), any()))
+            .thenReturn(Promise.of(ocrDocument("CONFIRMED")));
+        lenient().when(documentService.rejectOcrDocument(anyString(), anyString(), any()))
+            .thenReturn(Promise.of(ocrDocument("REJECTED")));
+        lenient().when(documentService.toFhirDocumentReference(anyString()))
+            .thenReturn(Promise.of("{\"resourceType\":\"DocumentReference\",\"id\":\"doc-1\"}"));
+        lenient().when(documentService.uploadDocument(any()))
+            .thenReturn(Promise.of(patientDocument()));
         lenient().when(imagingService.getPatientOrders(anyString()))
             .thenReturn(Promise.of(List.of()));
         lenient().when(imagingService.getPatientStudies(anyString()))
@@ -90,6 +100,165 @@ class PhrDocumentImagingRoutesTest extends EventloopTestBase {
                 Instant.parse("2026-01-01T00:00:00Z"),
                 null
             )));
+    }
+
+    @Nested
+    @DisplayName("OCR review lifecycle")
+    class OcrReviewLifecycle {
+
+        @Test
+        @DisplayName("200 - OCR fetch returns web contract shape with normalized status")
+        void ocrFetchReturnsContractShape() throws Exception {
+            HttpRequest request = contextRequest(
+                HttpMethod.GET, "/documents/doc-1/ocr", "tenant-1", "patient-1", "patient");
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(200);
+            assertThat(body(response)).contains(
+                "\"id\":\"doc-1\"",
+                "\"documentId\":\"doc-1\"",
+                "\"ocrText\":\"Extracted OCR text\"",
+                "\"extractedText\":\"Extracted OCR text\"",
+                "\"status\":\"pending_review\""
+            );
+        }
+
+        @Test
+        @DisplayName("200 - OCR confirm accepts empty body and returns normalized review DTO")
+        void ocrConfirmAcceptsEmptyBody() throws Exception {
+            HttpRequest request = contextRequestWithBody(
+                HttpMethod.POST,
+                "/documents/doc-1/ocr/confirm",
+                "tenant-1",
+                "patient-1",
+                "patient",
+                ""
+            );
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(200);
+            assertThat(body(response)).contains(
+                "\"id\":\"doc-1\"",
+                "\"confirmed\":true",
+                "\"status\":\"confirmed\"",
+                "\"fhirResource\":\"{\\\"resourceType\\\":\\\"DocumentReference\\\",\\\"id\\\":\\\"doc-1\\\"}\""
+            );
+            verify(policyEvaluator).canAccessPhiResourceAsync(
+                any(), eq("ocr-review-scope"), eq("ocr-document-review"), eq("WRITE"), eq("tenant-1"), nullable(String.class));
+        }
+
+        @Test
+        @DisplayName("403 - OCR reject respects route policy before mutation")
+        void ocrRejectRespectsRoutePolicy() throws Exception {
+            lenient().when(policyEvaluator.canAccessPhiResourceAsync(
+                    any(), eq("ocr-review-scope"), eq("ocr-document-review"), eq("WRITE"), eq("tenant-1"), nullable(String.class)))
+                .thenReturn(Promise.of(PhrPolicyEvaluator.PolicyDecision.denied("OCR_REVIEW_DENIED", "denied")));
+            HttpRequest request = contextRequestWithBody(
+                HttpMethod.POST,
+                "/documents/doc-1/ocr/reject",
+                "tenant-1",
+                "caregiver-1",
+                "caregiver",
+                ""
+            );
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(403);
+            assertThat(body(response)).contains("OCR_REVIEW_DENIED");
+        }
+
+        @Test
+        @DisplayName("200 - OCR reject returns normalized review DTO and reject marker")
+        void ocrRejectReturnsNormalizedDto() throws Exception {
+            HttpRequest request = contextRequestWithBody(
+                HttpMethod.POST,
+                "/documents/doc-1/ocr/reject",
+                "tenant-1",
+                "patient-1",
+                "patient",
+                ""
+            );
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(200);
+            assertThat(body(response)).contains(
+                "\"id\":\"doc-1\"",
+                "\"documentId\":\"doc-1\"",
+                "\"rejected\":true",
+                "\"status\":\"rejected\""
+            );
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /documents - upload policy")
+    class UploadDocument {
+
+        @Test
+        @DisplayName("201 - upload requires policy, clean malware scan, provenance, and patient write access")
+        void uploadRequiresPolicyAndCleanScan() throws Exception {
+            HttpRequest request = contextRequestWithBody(
+                HttpMethod.POST,
+                "/documents/",
+                "tenant-1",
+                "patient-1",
+                "patient",
+                documentUploadBody()
+            );
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(201);
+            String body = body(response);
+            assertThat(body).contains(
+                "\"storagePolicy\":{\"residency\":\"NP\"",
+                "\"provenance\":{\"source\":\"patient-upload\"",
+                "\"malwareScan\":{\"status\":\"clean\""
+            );
+            verify(policyEvaluator).canAccessPhiResourceAsync(
+                any(), eq("patient-1"), eq("documents"), eq("WRITE"), eq("tenant-1"), nullable(String.class));
+            verify(documentService).uploadDocument(any());
+        }
+
+        @Test
+        @DisplayName("400 - upload without storage policy is rejected before service call")
+        void uploadWithoutStoragePolicyRejected() throws Exception {
+            HttpRequest request = contextRequestWithBody(
+                HttpMethod.POST,
+                "/documents/",
+                "tenant-1",
+                "patient-1",
+                "patient",
+                documentUploadBodyWithoutStoragePolicy()
+            );
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(400);
+            assertThat(body(response)).contains("storagePolicy is required");
+        }
+
+        @Test
+        @DisplayName("400 - upload with non-clean malware scan is rejected")
+        void uploadWithNonCleanScanRejected() throws Exception {
+            HttpRequest request = contextRequestWithBody(
+                HttpMethod.POST,
+                "/documents/",
+                "tenant-1",
+                "patient-1",
+                "patient",
+                documentUploadBody().replace("\"status\": \"clean\"", "\"status\": \"infected\"")
+            );
+
+            HttpResponse response = runPromise(() -> servlet.serve(request));
+
+            assertThat(response.getCode()).isEqualTo(400);
+            assertThat(body(response)).contains("malwareScan.status must be clean");
+        }
     }
 
     @Nested
@@ -201,6 +370,8 @@ class PhrDocumentImagingRoutesTest extends EventloopTestBase {
             .withHeader(HttpHeaders.of("X-Tenant-ID"), tenantId)
             .withHeader(HttpHeaders.of("X-Principal-ID"), principalId)
             .withHeader(HttpHeaders.of("X-Role"), role)
+            .withHeader(HttpHeaders.of("X-Persona"), role)
+            .withHeader(HttpHeaders.of("X-Tier"), "core")
             .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
             .build();
     }
@@ -211,10 +382,109 @@ class PhrDocumentImagingRoutesTest extends EventloopTestBase {
             .withHeader(HttpHeaders.of("X-Tenant-ID"), tenantId)
             .withHeader(HttpHeaders.of("X-Principal-ID"), principalId)
             .withHeader(HttpHeaders.of("X-Role"), role)
+            .withHeader(HttpHeaders.of("X-Persona"), role)
+            .withHeader(HttpHeaders.of("X-Tier"), "core")
             .withHeader(HttpHeaders.of("X-Correlation-ID"), "test-corr-1")
             .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
             .withBody(body.getBytes(StandardCharsets.UTF_8))
             .build();
+    }
+
+    private String body(HttpResponse response) throws Exception {
+        return new String(runPromise(response::loadBody).asArray(), StandardCharsets.UTF_8);
+    }
+
+    private static String documentUploadBody() {
+        return """
+            {
+              "patientId": "patient-1",
+              "documentType": "LAB_REPORT",
+              "title": "Lab report",
+              "description": "Uploaded lab report",
+              "contentType": "application/pdf",
+              "content": "SGVsbG8=",
+              "contentHash": "185f8db32271fe25f561a6fc938b2e264306ec304eda518007d1764826381969",
+              "visibility": "shared-with-provider",
+              "storagePolicy": {
+                "residency": "NP",
+                "retention": "25years",
+                "encryption": "managed-kms"
+              },
+              "provenance": {
+                "source": "patient-upload",
+                "uploadedBy": "patient-1",
+                "patientId": "patient-1"
+              },
+              "malwareScan": {
+                "status": "clean",
+                "engine": "clamav",
+                "scannedAt": "2026-01-01T00:00:00Z"
+              }
+            }
+            """;
+    }
+
+    private static String documentUploadBodyWithoutStoragePolicy() {
+        return """
+            {
+              "patientId": "patient-1",
+              "documentType": "LAB_REPORT",
+              "title": "Lab report",
+              "description": "Uploaded lab report",
+              "contentType": "application/pdf",
+              "content": "SGVsbG8=",
+              "contentHash": "185f8db32271fe25f561a6fc938b2e264306ec304eda518007d1764826381969",
+              "visibility": "shared-with-provider",
+              "provenance": {
+                "source": "patient-upload",
+                "uploadedBy": "patient-1",
+                "patientId": "patient-1"
+              },
+              "malwareScan": {
+                "status": "clean",
+                "engine": "clamav",
+                "scannedAt": "2026-01-01T00:00:00Z"
+              }
+            }
+            """;
+    }
+
+    private static DocumentService.PatientDocument patientDocument() {
+        return new DocumentService.PatientDocument(
+            "doc-1",
+            "patient-1",
+            "LAB_REPORT",
+            "Lab report",
+            "Uploaded lab report",
+            Instant.parse("2026-01-01T00:00:00Z"),
+            "application/pdf",
+            5,
+            "content-1",
+            new DocumentService.DocumentConsent("shared-with-provider", Instant.parse("2026-01-01T00:00:00Z")),
+            new DocumentService.DocumentStoragePolicy("NP", "25years", "managed-kms"),
+            new DocumentService.UploadProvenance("patient-upload", "patient-1", "patient-1"),
+            new DocumentService.MalwareScanAttestation("clean", "clamav", Instant.parse("2026-01-01T00:00:00Z")),
+            "PENDING_REVIEW",
+            null,
+            null,
+            null,
+            null,
+            Instant.parse("2026-01-01T00:00:00Z"),
+            Instant.parse("2026-01-01T00:00:00Z"),
+            false
+        );
+    }
+
+    private static DocumentService.OcrDocument ocrDocument(String status) {
+        return new DocumentService.OcrDocument(
+            "doc-1",
+            "Lab report",
+            status,
+            0.91,
+            "Extracted OCR text",
+            "patient-1",
+            Instant.parse("2026-01-02T00:00:00Z")
+        );
     }
 
     private static String imagingOrderBody() {

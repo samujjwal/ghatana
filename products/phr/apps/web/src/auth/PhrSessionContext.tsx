@@ -71,11 +71,23 @@ export function PhrSessionProvider({ children }: { children: React.ReactNode }):
       try {
         const response = await phrFetch('/auth/me', {
           context: {
-            principalId: stored.principalId,
-            tenantId: stored.tenantId,
-            role: stored.role,
-          },
-        }) as { principalId: string; tenantId: string; role: string; name: string; permissions: string[] };
+          principalId: stored.principalId,
+          tenantId: stored.tenantId,
+          role: stored.role,
+          persona: stored.persona,
+          tier: stored.tier,
+          facilityId: stored.facilityId,
+        },
+      }) as {
+        principalId: string;
+        tenantId: string;
+        role: string;
+        name: string;
+        permissions: string[];
+        persona?: string;
+        tier?: string;
+        facilityId?: string;
+      };
 
         setSessionState({
           principalId: response.principalId,
@@ -83,6 +95,9 @@ export function PhrSessionProvider({ children }: { children: React.ReactNode }):
           role: response.role as 'patient' | 'caregiver' | 'fchv' | 'clinician' | 'admin',
           name: response.name,
           expiresAt: stored.expiresAt,
+          persona: response.persona ?? stored.persona,
+          tier: response.tier ?? stored.tier,
+          facilityId: response.facilityId ?? stored.facilityId,
         });
       } catch {
         logWarn('Session validation failed');

@@ -30,6 +30,14 @@ const routeElementsContent = readRequired(
   resolve(PHR_WEB_SRC_DIR, 'phrRouteElements.tsx'),
   'phrRouteElements.tsx'
 );
+const routePluginContent = readRequired(
+  resolve(PHR_WEB_SRC_DIR, 'phrRoutePlugin.ts'),
+  'phrRoutePlugin.ts'
+);
+const routesContent = readRequired(
+  resolve(PHR_WEB_SRC_DIR, 'routes.tsx'),
+  'routes.tsx'
+);
 const backendEntitlementContent = readRequired(
   resolve(PHR_BACKEND_DIR, 'api/routes/PhrEntitlementRoutes.java'),
   'PhrEntitlementRoutes.java'
@@ -53,6 +61,21 @@ if (!tsContractContent.includes("../../../config/phr-route-contract.json")) {
 
 if (/path:\s*['"`]\//.test(tsContractContent)) {
   console.error('ERROR: phrRouteContracts.ts contains hand-maintained route path literals');
+  hasErrors = true;
+}
+
+if (!routePluginContent.includes('createRouteContractGenerator(routeContractJson)')) {
+  console.error('ERROR: phrRoutePlugin.ts must use the Kernel route contract generator');
+  hasErrors = true;
+}
+
+if (!/phrRoutePlugin\s*\.getBrowserRoutes\(\)/.test(routesContent)) {
+  console.error('ERROR: routes.tsx must register browser routes through phrRoutePlugin.getBrowserRoutes()');
+  hasErrors = true;
+}
+
+if (!routeElementsContent.includes('phrRoutePlugin.isBrowserMountable(route)')) {
+  console.error('ERROR: phrRouteElements.tsx must delegate browser visibility to the PHR route plugin');
   hasErrors = true;
 }
 

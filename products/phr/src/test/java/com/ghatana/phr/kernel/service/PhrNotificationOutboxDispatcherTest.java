@@ -58,6 +58,10 @@ class PhrNotificationOutboxDispatcherTest extends EventloopTestBase {
         assertThat(deliveryChannels.smsNotifications()).hasSize(1);
         assertThat(deliveryChannels.pushNotifications()).hasSize(1);
         assertThat(deliveryChannels.emailNotifications().getFirst().correlationId()).isEqualTo("corr-dispatch-1");
+        assertThat(deliveryChannels.pushNotifications().getFirst().safeReasonCode())
+            .isEqualTo("APPOINTMENT_REMINDER_SCHEDULED");
+        assertThat(deliveryChannels.pushNotifications().getFirst().deepLinkId())
+            .isEqualTo("appointment:appointment-1");
 
         List<DurablePhrNotificationSender.NotificationOutboxEntry> entries = runPromise(() -> durableSender.getPendingNotifications(10));
         assertThat(entries).isEmpty();

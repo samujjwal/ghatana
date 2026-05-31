@@ -30,8 +30,41 @@ public interface PhrNotificationDeliveryChannels {
         Instant scheduledFor,
         Instant createdAt,
         String correlationId,
-        String traceOperation
+        String traceOperation,
+        String safeReasonCode,
+        String deepLinkId
     ) {
+        public NotificationEnvelope(
+                String notificationId,
+                String patientId,
+                String recipientId,
+                String providerId,
+                String referenceId,
+                String referenceType,
+                String notificationType,
+                PhrNotificationSender.NotificationChannel channel,
+                Instant scheduledFor,
+                Instant createdAt,
+                String correlationId,
+                String traceOperation) {
+            this(
+                notificationId,
+                patientId,
+                recipientId,
+                providerId,
+                referenceId,
+                referenceType,
+                notificationType,
+                channel,
+                scheduledFor,
+                createdAt,
+                correlationId,
+                traceOperation,
+                notificationType,
+                referenceType + ":" + referenceId
+            );
+        }
+
         public NotificationEnvelope {
             Objects.requireNonNull(notificationId, "notificationId must not be null");
             Objects.requireNonNull(patientId, "patientId must not be null");
@@ -44,6 +77,8 @@ public interface PhrNotificationDeliveryChannels {
             Objects.requireNonNull(createdAt, "createdAt must not be null");
             Objects.requireNonNull(correlationId, "correlationId must not be null");
             Objects.requireNonNull(traceOperation, "traceOperation must not be null");
+            Objects.requireNonNull(safeReasonCode, "safeReasonCode must not be null");
+            Objects.requireNonNull(deepLinkId, "deepLinkId must not be null");
         }
     }
 

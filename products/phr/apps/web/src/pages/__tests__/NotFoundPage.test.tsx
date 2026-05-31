@@ -13,6 +13,8 @@ vi.mock('react-router-dom', () => ({
 }));
 
 vi.mock('@ghatana/design-system', () => ({
+  Button: ({ children, onClick, type }: { children: React.ReactNode; onClick?: () => void; type?: 'button' }) =>
+    React.createElement('button', { onClick, type }, children),
   Card: ({ children }: { children: React.ReactNode }) => React.createElement('div', null, children),
   CardHeader: ({ title }: { title: string }) => React.createElement('h1', null, title),
   CardContent: ({ children }: { children: React.ReactNode }) => React.createElement('div', null, children),

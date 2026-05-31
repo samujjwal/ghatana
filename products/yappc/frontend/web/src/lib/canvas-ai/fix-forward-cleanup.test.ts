@@ -124,8 +124,8 @@ describe('FixForwardCleanup', () => {
     expect(result.errors).toHaveLength(0);
   });
 
-  it('creates PHR-specific cleanup configuration', () => {
-    const config = FixForwardCleanup.createPhrCleanupConfig(testDir, true);
+  it('creates product cleanup configuration', () => {
+    const config = FixForwardCleanup.createProductCleanupConfig(testDir, true);
 
     expect(config.targetDirectory).toBe(testDir);
     expect(config.dryRun).toBe(true);
@@ -133,7 +133,7 @@ describe('FixForwardCleanup', () => {
     expect(config.legacyFilePattern).toBeDefined();
   });
 
-  it('performs PHR-specific cleanup', () => {
+  it('performs product cleanup', () => {
     // Create generated file
     writeFileSync(join(testDir, 'src', 'GeneratedDashboard.ts'), '// generated');
     
@@ -141,7 +141,7 @@ describe('FixForwardCleanup', () => {
     const legacyPath = join(testDir, 'src', 'legacyDashboard.ts');
     writeFileSync(legacyPath, '// legacy');
 
-    const result = FixForwardCleanup.cleanupPhrGenerated(testDir, true);
+    const result = FixForwardCleanup.cleanupProductGenerated(testDir, true);
 
     expect(result.skippedFiles).toHaveLength(1);
     expect(result.skippedFiles[0]).toBe('src/legacyDashboard.ts');
